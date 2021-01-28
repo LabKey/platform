@@ -649,7 +649,7 @@ public class ExperimentController extends SpringActionController
 
             if (!getContainer().equals(_sampleType.getContainer()))
             {
-                ActionURL definitionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType);
+                ActionURL definitionURL = urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType);
                 SimpleDisplayColumn definedInCol = new SimpleDisplayColumn("<a href=\"" +
                         PageFlowUtil.filter(definitionURL) +
                         "\">" +
@@ -1495,7 +1495,7 @@ public class ExperimentController extends SpringActionController
                     if (pipelineRoot.isUnderRoot(runRoot))
                     {
                         String path = pipelineRoot.relativePath(runRoot);
-                        tree.addChild("View Files", PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(_experimentRun.getContainer(), null, path));
+                        tree.addChild("View Files", urlProvider(PipelineUrls.class).urlBrowse(_experimentRun.getContainer(), null, path));
                     }
                 }
             }
@@ -1853,7 +1853,7 @@ public class ExperimentController extends SpringActionController
                             }
                         }
                     }
-                    ActionURL browseURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL(), relativePath);
+                    ActionURL browseURL = urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL(), relativePath);
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
                 }
             }
@@ -2880,7 +2880,7 @@ public class ExperimentController extends SpringActionController
             {
                 for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
+                    ActionURL url = urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
                     if (dataset.canWrite(getUser()))
                     {
                         permissionDatasetRows.add(new Pair<>(dataset, url));
@@ -3131,7 +3131,7 @@ public class ExperimentController extends SpringActionController
                     }
                     for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
                     {
-                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
+                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))
                         {
                             deleteableDatasets.add(entry);
@@ -4631,7 +4631,7 @@ public class ExperimentController extends SpringActionController
 
             if (root == null || !root.isValid())
             {
-                ActionURL pipelineURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c);
+                ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
                 return new HtmlView(DOM.DIV("You must ",
                     DOM.A(DOM.at(href, pipelineURL), "configure a valid pipeline root for this folder"),
                     " before deriving samples."));

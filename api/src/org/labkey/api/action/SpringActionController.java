@@ -86,6 +86,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -244,6 +245,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
     protected User getUser()
     {
         return getViewContext().getUser();
+    }
+
+    // Convenience method
+    protected static <P extends UrlProvider> P urlProvider(Class<P> inter)
+    {
+        return Objects.requireNonNull(PageFlowUtil.urlProvider(inter));
     }
 
     protected void requiresLogin()

@@ -64,8 +64,6 @@
 
 </style>
 
-<h2>Log4j Loggers</h2>
-
 <input id="search" type="text" size="120">
 
 <p style='padding-left:0.75em; margin:0.5em;'>
