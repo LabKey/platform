@@ -681,9 +681,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             removableFilters = removableFilters.concat(this.getDataRegionFilters());
         }
 
+        var allFilters = this.getUniqueFilters(filters.concat(removableFilters));
         var userSort = LABKEY.Filter.getSortFromUrl(this.getFilterURL(), this.dataRegionName);
 
-        this.currentFilterStr = this.createFilterString(removableFilters);
+        this.currentFilterStr = this.createFilterString(allFilters);
         this.currentParameterStr = Ext4.JSON.encode(this.parameters);
 
         var wpConfig = {
@@ -714,7 +715,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // save the dataregion
         this.panelDataRegionName = wp.dataRegionName;
 
-        // issue 21418: support for parameterized queries
+        // Issue 21418: support for parameterized queries
         wp.on('render', function(){
             if (wp.parameters)
                 Ext4.apply(this.parameters, wp.parameters);
@@ -723,6 +724,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         wp.render(renderTo);
     },
 
+    /**
+     * Returns the filters applied to the associated Data Region. This region's presence is optional.
+     * If this region is not available, then this method will return any filters found explicitly on the URL.
+     */
     getDataRegionFilters : function()
     {
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
@@ -739,15 +744,22 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return LABKEY.ActionURL.getParameters(this.baseUrl)['filterUrl'];
     },
 
+    /**
+     * Returns the filters applied to the associated QueryWebPart (QWP). The QWP's presence is optional.
+     * If this QWP is available, then this method will return any user modifiable filters from the QWP.
+     */
     getQWPFilters : function()
     {
-        var qwpRegion = LABKEY.DataRegions[this.panelDataRegionName];
-
         // The associated QWP may not exist yet if the user hasn't viewed it
-        if (qwpRegion)
-            return qwpRegion.getUserFilterArray();
+        if (this.isQWPPresent())
+            return LABKEY.DataRegions[this.panelDataRegionName].getUserFilterArray();
 
         return [];
+    },
+
+    isQWPPresent : function()
+    {
+        return LABKEY.DataRegions[this.panelDataRegionName] !== undefined;
     },
 
     // Returns a configuration based on the baseUrl plus any filters applied on the dataregion panel
@@ -819,8 +831,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // 2. Filters defined on associated QWP (panelDataRegionName)
         // 3. Filters defined on associated Data Region (dataRegionName)
         // 4. Filters defined on URL for associated Data Region (overlap with #3)
+        var filters = this.getDataRegionFilters();
 
-        var filters = this.userFilters.concat(this.getQWPFilters(), this.getDataRegionFilters());
+        // If the QWP is present, then it is expected to have the "userFilters" already applied.
+        // Additionally, they are removable from the QWP so respect the current filters on the QWP.
+        if (this.isQWPPresent())
+            filters = filters.concat(this.getQWPFilters());
+        else
+            filters = filters.concat(this.userFilters);
+
+        filters = this.getUniqueFilters(filters);
 
         if (serialize)
         {
@@ -838,6 +858,31 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config.filterArray = filters;
 
         return config;
+    },
+
+    filterToString : function(filter)
+    {
+        return filter.getURLParameterName() + '=' + filter.getURLParameterValue();
+    },
+
+    getUniqueFilters : function(filters)
+    {
+        var filterKeys = {};
+        var filterSet = [];
+
+        for (var x=0; x < filters.length; x++)
+        {
+            var ff = filters[x];
+            var key = this.filterToString(ff);
+
+            if (!filterKeys[key])
+            {
+                filterKeys[key] = true;
+                filterSet.push(ff);
+            }
+        }
+
+        return filterSet;
     },
 
     getQueryConfigColumns : function()
@@ -1980,13 +2025,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.getExportScriptWindow().show();
     },
 
-    createFilterString : function(filterArray)
+    createFilterString : function(filters)
     {
         var filterParams = [];
-        for (var i = 0; i < filterArray.length; i++){
-            filterParams.push(filterArray[i].getURLParameterName() + '=' + filterArray[i].getURLParameterValue());
+        for (var i = 0; i < filters.length; i++)
+        {
+            filterParams.push(this.filterToString(filters[i]));
         }
 
+        filterParams.sort();
         return filterParams.join('&');
     },
 
