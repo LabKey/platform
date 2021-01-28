@@ -37,8 +37,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.view.Portal.urlProvider;
-
 /**
  * User: klum
  * Date: Jan 17, 2011
@@ -58,12 +56,14 @@ public class FolderManagement
                     TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(this).get(action.getClass());
                     PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, provider.getText(), null);
                 }
+                else
+                {
+                    if (c.isContainerTab())
+                        root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
 
-                if (c.isContainerTab())
-                    root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
-
-                root.addChild(c.getName(), c.getStartURL(user));
-                root.addChild("Folder Management");
+                    root.addChild(c.getName(), c.getStartURL(user));
+                    root.addChild("Folder Management");
+                }
             }
 
             @Override
