@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
@@ -115,16 +116,24 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
-    /** Log an audit event to capture a data change made to this table */
-    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    class _DoNothingAuditHandler implements AuditHandler
     {
-        QueryService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, parameters);
+        @Override
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        {
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> updatedRows)
+        {
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
+    default AuditHandler getAuditHandler()
     {
-        QueryService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(parameters));
+        if (!supportsAuditTracking() || getAuditBehavior()==AuditBehaviorType.NONE)
+            return new _DoNothingAuditHandler();
+        return QueryService.get().getDefaultAuditHandler();
     }
 
     enum IndexType

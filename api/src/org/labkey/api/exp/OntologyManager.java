@@ -2029,6 +2029,7 @@ public class OntologyManager
      * @deprecated Use {@link #insertProperties(Container, User, String, ObjectProperty...)} so that a user can be
      * supplied.
      */
+    @Deprecated
     public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
         User user = HttpView.hasCurrentView() ? HttpView.currentContext().getUser() : null;
