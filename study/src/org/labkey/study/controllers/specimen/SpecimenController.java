@@ -2654,7 +2654,7 @@ public class SpecimenController extends BaseStudyController
 
     private ActionURL getManageStudyURL()
     {
-        return PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
+        return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
     }
 
     public static class EmailSpecimenListForm extends IdForm
@@ -3888,11 +3888,10 @@ public class SpecimenController extends BaseStudyController
             return true;
         }
 
-
         @Override
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 
@@ -3931,7 +3930,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 

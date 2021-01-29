@@ -1057,7 +1057,7 @@ public class ReportsController extends SpringActionController
         {
             if (_report != null && getContainer().hasPermission(getUser(), AdminPermission.class))
             {
-                return PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
+                return urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
                         addParameter(ReportDescriptor.Prop.reportId, _report.getDescriptor().getReportId().toString());
             }
 

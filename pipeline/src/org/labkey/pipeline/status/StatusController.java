@@ -16,7 +16,6 @@
 
 package org.labkey.pipeline.status;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +31,7 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleStreamAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -100,7 +100,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
 import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
@@ -256,13 +255,13 @@ public class StatusController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Data Pipeline");
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Pipeline", new ActionURL(getClass(), getContainer()));
         }
     }
 
     public static class EnterprisePipelineBean
     {
-        private Set<String> _locations;
+        private final Set<String> _locations;
 
         public EnterprisePipelineBean(Set<String> locations)
         {
