@@ -22,14 +22,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Manages registration for links to be shown in the Admin Console, as well as experimental features that can
@@ -60,7 +61,7 @@ public class AdminConsole
     }
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
-    private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<>();
+    private static final Set<ExperimentalFeatureFlag> _experimentalFlags = new ConcurrentSkipListSet<>();
 
     static
     {
@@ -140,18 +141,12 @@ public class AdminConsole
 
     public static void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
     {
-        synchronized (_experimentalFlags)
-        {
-            _experimentalFlags.add(new ExperimentalFeatureFlag(flag, title, description, requiresRestart));
-        }
+        _experimentalFlags.add(new ExperimentalFeatureFlag(flag, title, description, requiresRestart));
     }
 
     public static Collection<ExperimentalFeatureFlag> getExperimentalFeatureFlags()
     {
-        synchronized (_experimentalFlags)
-        {
-            return Collections.unmodifiableList(_experimentalFlags);
-        }
+        return Collections.unmodifiableSet(_experimentalFlags);
     }
 
     public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>
@@ -192,7 +187,7 @@ public class AdminConsole
         @Override
         public int compareTo(@NotNull ExperimentalFeatureFlag o)
         {
-            return getFlag().compareToIgnoreCase(o.getFlag());
+            return getTitle().compareToIgnoreCase(o.getTitle());
         }
 
         public boolean isEnabled()

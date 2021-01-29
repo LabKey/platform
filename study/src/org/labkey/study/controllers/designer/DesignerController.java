@@ -471,7 +471,7 @@ public class DesignerController extends SpringActionController
                     Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()),
                             form.getFolderName(), form.getBeginDate(), form.getSubjectNounSingular(), form.getSubjectNounPlural(),
                             form.getSubjectColumnName(), _info, participantMaps, getSpecimens());
-                    _successURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
+                    _successURL = urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
                     return true;
             }
             return false;
@@ -546,7 +546,7 @@ public class DesignerController extends SpringActionController
         //Now see if the study already exists.
         if (info.isActive())
         {
-            throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
+            throw new RedirectException(urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
         }
 
         //Make sure we haven't done some crazy back/forward thing
