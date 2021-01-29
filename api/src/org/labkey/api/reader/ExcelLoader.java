@@ -57,8 +57,10 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,6 +76,7 @@ public class ExcelLoader extends DataLoader
 {
     public static FileType FILE_TYPE = new FileType(Arrays.asList(".xlsx", ".xls"), ".xlsx",
             Arrays.asList("application/" + ExcelFactory.SUB_TYPE_BIFF8, "application/" + ExcelFactory.SUB_TYPE_XSSF, "application/" + ExcelFactory.SUB_TYPE_BIFF5));
+    private Boolean _isStartDate1904 = null;
 
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
@@ -155,6 +158,45 @@ public class ExcelLoader extends DataLoader
         setScrollable(true);
     }
 
+    // Issue 42244: From the Excel documentation:
+    // "Excel supports two date systems. Each date system uses a unique starting date from which all other workbook
+    // dates are calculated. Excel 2008 for Mac and earlier Excel for Mac versions calculate dates based on the 1904
+    // date system. Excel for Mac 2011 uses the 1900 date system, which guarantees date compatibility with Excel for
+    // Windows. All versions of Excel for Windows calculate dates based on the 1900 date system."
+    //
+    // When using the SAXParser, we need to know whether this current workbook/sheet is 1904-base or 1900-based.
+    // We are not using getDateCellValue in that case, which knows how to determine which date system is in use, so
+    // we hack up our own way to detect this.  This is derived from this posting:
+    // https://alandix.com/code2/apache-poi-detect-1904-date-option/
+    void setIsStartDate1904()
+    {
+        try
+        {
+            Sheet sheet = getSheet();
+            Row row = sheet.createRow(sheet.getLastRowNum() + 1);
+            Cell cell = row.createCell(0);
+            cell.setCellValue(0.0);
+            double value = cell.getNumericCellValue();
+            Date date = cell.getDateCellValue();
+            Calendar cal = new GregorianCalendar();
+            cal.setTime(date);
+            long year1900 = cal.get(Calendar.YEAR)-1900;
+            long yearEst1900 = Math.round(value/(365.25));
+            _isStartDate1904 =  year1900 > yearEst1900;
+            sheet.removeRow(row);
+        }
+        catch (IOException e) // can't read the sheet
+        {
+            _isStartDate1904 = false;
+        }
+    }
+
+    private boolean getIsStartDate1904()
+    {
+        if (_isStartDate1904 == null)
+            setIsStartDate1904();
+        return _isStartDate1904;
+    }
 
     private Workbook getWorkbook() throws IOException
     {
@@ -219,7 +261,6 @@ public class ExcelLoader extends DataLoader
             throw new IOException("Invalid Excel file");
         }
     }
-
 
     @Override
     public String[][] getFirstNLines(int n) throws IOException
@@ -405,7 +446,7 @@ public class ExcelLoader extends DataLoader
                 SAXParserFactory saxFactory = SAXParserFactory.newInstance();
                 SAXParser saxParser = saxFactory.newSAXParser();
                 XMLReader sheetParser = saxParser.getXMLReader();
-                SheetHandler handler = new SheetHandler(styles, strings, 1, collect);
+                SheetHandler handler = new SheetHandler(styles, strings, 1, collect, getIsStartDate1904());
                 sheetParser.setContentHandler(handler);
                 sheetParser.parse(sheetSource);
             }
@@ -741,6 +782,7 @@ public class ExcelLoader extends DataLoader
         private String formatString;
         private final DataFormatter formatter;
         private int thisColumn = -1;
+        private boolean isStartDate1904 = false;
 
         // Gathers characters as they are seen.
         private StringBuilder value;
@@ -749,16 +791,16 @@ public class ExcelLoader extends DataLoader
 
         /**
          * Accepts objects needed while parsing.
-         *
-         * @param strings Table of shared strings
+         *  @param strings Table of shared strings
          * @param cols    Minimum number of columns to show
          * @param target  Sink for output
+         * @param isStartDate1904 Indicates which date system is in use for this sheet
          */
         SheetHandler(
                 StylesTable styles,
                 ReadOnlySharedStringsTable strings,
                 int cols,
-                Collection<List<Object>> target)
+                Collection<List<Object>> target, boolean isStartDate1904)
         {
             this.stylesTable = styles;
             this.sharedStringsTable = strings;
@@ -768,6 +810,7 @@ public class ExcelLoader extends DataLoader
             this.output = target;
             this.formatter = new DataFormatter();
             this.useFormats = false;
+            this.isStartDate1904 = isStartDate1904;
         }
 
         private void debugPrint(String s)
@@ -904,7 +947,7 @@ public class ExcelLoader extends DataLoader
                             thisValue = "";
                         else if (this.formatString != null && (useFormats || isDateFormat))
                         {
-                            thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString);
+                            thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString, this.isStartDate1904);
                         }
                         else
                         {
