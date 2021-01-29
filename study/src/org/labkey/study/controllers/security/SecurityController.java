@@ -564,7 +564,7 @@ public class SecurityController extends SpringActionController
                 root.addChild(study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
 
                 if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                    root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()).getLocalURIString());
+                    root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()).getLocalURIString());
             }
             catch (Exception e)
             {

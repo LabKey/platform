@@ -24,7 +24,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -85,7 +84,7 @@ public class StudyDefinitionController extends BaseStudyController
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
             // since the study additional properties domain is scoped to the project, use the domain.getContainer() here instead of getContainer()
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(_domain.getContainer(), _domain);
+            ActionURL url = urlProvider(ExperimentUrls.class).getDomainEditorURL(_domain.getContainer(), _domain);
             form.propagateReturnURL(url);
             return url;
         }
