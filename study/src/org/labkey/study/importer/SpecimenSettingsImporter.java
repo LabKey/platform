@@ -44,7 +44,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
-import org.labkey.study.xml.LegacySpecimenSettingsType;
 import org.labkey.study.xml.SpecimenRepositoryType;
 import org.labkey.study.xml.SpecimenSettingsType;
 import org.labkey.study.xml.SpecimensDocument;
@@ -90,31 +89,20 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         {
             StudyDocument.Study.Specimens xmlSettings = ctx.getXml().getSpecimens();
 
-            ctx.getLogger().info("Loading " + getDescription());
-
-            StudyImpl study = ctx.getStudy().createMutable();
-
             if (xmlSettings.getSettings() != null)
             {
-                // Import specimen settings from specimen_settings.xml doc for versions >= 13.2.
+                ctx.getLogger().info("Loading " + getDescription());
+
+                // Import specimen settings from specimen_settings.xml doc
                 VirtualFile settingsDir = studyDir;
                 if (xmlSettings.getDir() != null)
                     settingsDir = studyDir.getDir(xmlSettings.getDir());
 
                 SpecimensDocument specimensDoc = (SpecimensDocument)settingsDir.getXmlBean(xmlSettings.getSettings());
-                SpecimenSettingsType xmlSpecimens = specimensDoc.getSpecimens();
+                importSettings(ctx, specimensDoc.getSpecimens());
 
-                importSettings(study, ctx, xmlSpecimens);
+                ctx.getLogger().info("Done importing " + getDescription());
             }
-            else
-            {
-                // Import specimen settings from study.xml doc for versions <13.2.
-                importLegacySettings(study, ctx, xmlSettings);
-            }
-
-            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
-
-            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 
@@ -124,8 +112,8 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         return ctx.getXml() != null && ctx.getXml().getSpecimens() != null;
     }
 
-    // Import specimen settings for versions >= 13.2.
-    private void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
+    // Import specimen settings from specimen_settings.xml
+    private void importSettings(StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
         RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
@@ -161,6 +149,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
         if (null != xmlLocationTypes)
         {
+            StudyImpl study = ctx.getStudy().createMutable();
             if (xmlLocationTypes.isSetRepository() && xmlLocationTypes.getRepository().isSetAllowRequests())
                 study.setAllowReqLocRepository(xmlLocationTypes.getRepository().getAllowRequests());
             if (xmlLocationTypes.isSetClinic() && xmlLocationTypes.getClinic().isSetAllowRequests())
@@ -169,18 +158,19 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 study.setAllowReqLocSal(xmlLocationTypes.getSiteAffiliatedLab().getAllowRequests());
             if (xmlLocationTypes.isSetEndpointLab() && xmlLocationTypes.getEndpointLab().isSetAllowRequests())
                 study.setAllowReqLocEndpoint(xmlLocationTypes.getEndpointLab().getAllowRequests());
+            StudyManager.getInstance().updateStudy(ctx.getUser(), study);
         }
 
-        importRequestStatuses(study, ctx, xmlSettings);
-        importRequestActors(study, ctx, xmlSettings);
-        importDefaultRequirements(study, ctx, xmlSettings);
+        importRequestStatuses(ctx, xmlSettings);
+        importRequestActors(ctx, xmlSettings);
+        importDefaultRequirements(ctx, xmlSettings);
         importDisplaySettings(ctx, xmlSettings);
         importRequestForm(ctx, xmlSettings);
         importNotifications(ctx, xmlSettings);
         importRequestabilityRules(ctx, xmlSettings);
     }
 
-    private void importRequestStatuses(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestStatuses(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = xmlSettings.getRequestStatuses();
         if (xmlRequestStatuses != null)
@@ -189,9 +179,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             if (xmlStatusArray.length > 0)
             {
                 // remove any existing not in-use, non-system statuses for this container before importing the new ones
-                Set<Integer> inUseStatusIds = SpecimenRequestManager.get().getRequestStatusIdsInUse(study.getContainer());
+                Set<Integer> inUseStatusIds = SpecimenRequestManager.get().getRequestStatusIdsInUse(ctx.getContainer());
                 List<String> inUseStatusLabels = new ArrayList<>();
-                for (SpecimenRequestStatus existingStatus : SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), ctx.getUser()))
+                for (SpecimenRequestStatus existingStatus : SpecimenRequestManager.get().getRequestStatuses(ctx.getContainer(), ctx.getUser()))
                 {
                     if (!existingStatus.isSystemStatus() && !inUseStatusIds.contains(existingStatus.getRowId()))
                         SpecimenRequestManager.get().deleteRequestStatus(existingStatus);
@@ -237,7 +227,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importRequestActors(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importRequestActors(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.RequestActors xmlRequestActors = xmlSettings.getRequestActors();
         if (xmlRequestActors != null)
@@ -247,9 +237,9 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             {
                 // remove any existing not in-use actors
                 // note: this will also remove all groups and members for that actor
-                Set<Integer> inUseActorIds = study.getSpecimenRequestActorsInUse();
+                Set<Integer> inUseActorIds = SpecimenRequestRequirementProvider.get().getActorsInUseSet(ctx.getContainer());
                 Map<String, SpecimenRequestActor> inUseActors = new HashMap<>();
-                for (SpecimenRequestActor existingActor : study.getSpecimenRequestActors())
+                for (SpecimenRequestActor existingActor : SpecimenRequestRequirementProvider.get().getActors(ctx.getContainer()))
                 {
                     if (!inUseActorIds.contains(existingActor.getRowId()))
                         existingActor.delete();
@@ -312,13 +302,13 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         }
     }
 
-    private void importDefaultRequirements(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings)
+    private void importDefaultRequirements(StudyImportContext ctx, SpecimenSettingsType xmlSettings)
     {
         SpecimenSettingsType.DefaultRequirements xmlDefRequirements = xmlSettings.getDefaultRequirements();
         if (xmlDefRequirements != null)
         {
             // remove existing default requirements for this container, full replacement
-            ManageReqsBean existingDefaultReqBeans = new ManageReqsBean(ctx.getUser(), study.getContainer());
+            ManageReqsBean existingDefaultReqBeans = new ManageReqsBean(ctx.getUser(), ctx.getContainer());
             List<SpecimenRequestRequirement> existingDefaultReqs = new ArrayList<>();
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getOriginatorRequirements()));
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getProviderRequirements()));
@@ -367,47 +357,6 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 }
             }
         }
-    }
-
-    // Import specimen settings from study.xml doc for versions <13.2.
-    private void importLegacySettings(StudyImpl study, StudyImportContext ctx, LegacySpecimenSettingsType xmlSettings)
-    {
-        Container c = ctx.getContainer();
-        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
-
-        // webpart groupings
-        StudyDocument.Study.Specimens.SpecimenWebPartGroupings xmlSpecimenWebPartGroupings = xmlSettings.getSpecimenWebPartGroupings();
-        if (null != xmlSpecimenWebPartGroupings)
-        {
-            StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping[] xmlGroupings = xmlSpecimenWebPartGroupings.getGroupingArray();
-            if (null != xmlGroupings)
-            {
-                ArrayList<String[]> groupings = new ArrayList<>(2);
-                for (StudyDocument.Study.Specimens.SpecimenWebPartGroupings.Grouping xmlGrouping : xmlGroupings)
-                {
-                    String[] groupBys = xmlGrouping.getGroupByArray();
-                    groupings.add(groupBys);
-                }
-                reposSettings.setSpecimenWebPartGroupings(groupings);
-            }
-        }
-
-        // repository type
-        SpecimenRepositoryType.Enum repositoryType = xmlSettings.getRepositoryType();
-        boolean simple = (SpecimenRepositoryType.STANDARD == repositoryType);
-        reposSettings.setSimple(simple);
-        reposSettings.setEnableRequests(!simple);
-        SettingsManager.get().saveRepositorySettings(c, reposSettings);
-
-        // location types
-        if (xmlSettings.isSetAllowReqLocRepository())
-            study.setAllowReqLocRepository(xmlSettings.getAllowReqLocRepository());
-        if (xmlSettings.isSetAllowReqLocClinic())
-            study.setAllowReqLocClinic(xmlSettings.getAllowReqLocClinic());
-        if (xmlSettings.isSetAllowReqLocSal())
-            study.setAllowReqLocSal(xmlSettings.getAllowReqLocSal());
-        if (xmlSettings.isSetAllowReqLocEndpoint())
-            study.setAllowReqLocEndpoint(xmlSettings.getAllowReqLocEndpoint());
     }
 
     private void importDisplaySettings(StudyImportContext ctx, SpecimenSettingsType xmlSettings)

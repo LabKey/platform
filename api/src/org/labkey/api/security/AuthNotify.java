@@ -21,5 +21,5 @@ package org.labkey.api.security;
  */
 public enum AuthNotify
 {
-    LoggedIn, LoggedOut
+    LoggedIn, LoggedOut, SessionLogOut
 }

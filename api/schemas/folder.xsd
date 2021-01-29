@@ -78,6 +78,7 @@
                 <xs:element name="subfolders" minOccurs="0" type="exportDirType"/>
                 <xs:element name="moduleProperties" minOccurs="0" type="modulePropertiesType"/>
                 <xs:element name="xar" minOccurs="0" type="exportDirType" />
+                <xs:element name="inventory" minOccurs="0" type="exportDirType"/>
             </xs:all>
             <xs:attribute name="archiveVersion" type="xs:double">
                 <xs:annotation>

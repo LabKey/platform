@@ -118,7 +118,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         public Collection<Writer> getChildren(boolean sort, boolean forTemplate)
         {
             List<Writer> children = new ArrayList<>();
-            for (SimpleStudyWriter writer : StudySerializationRegistryImpl.get().getRegisteredStudyWriters())
+            for (SimpleStudyWriter writer : StudySerializationRegistryImpl.get().getSimpleStudyWriters())
             {
                 if (!forTemplate || writer.includeWithTemplate())
                     children.add(writer);
