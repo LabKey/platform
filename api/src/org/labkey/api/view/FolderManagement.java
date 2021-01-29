@@ -56,12 +56,14 @@ public class FolderManagement
                     TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(this).get(action.getClass());
                     PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, provider.getText(), null);
                 }
+                else
+                {
+                    if (c.isContainerTab())
+                        root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
 
-                if (c.isContainerTab())
-                    root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
-
-                root.addChild(c.getName(), c.getStartURL(user));
-                root.addChild("Folder Management");
+                    root.addChild(c.getName(), c.getStartURL(user));
+                    root.addChild("Folder Management");
+                }
             }
 
             @Override
@@ -92,8 +94,7 @@ public class FolderManagement
             void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic(new HelpTopic("customizeLook"));
-                root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-                root.addChild("Look and Feel Settings");
+                PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Look and Feel Settings", null);
             }
 
             @Override

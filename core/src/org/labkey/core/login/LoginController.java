@@ -33,6 +33,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
@@ -136,7 +137,6 @@ import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
  * User: adam
@@ -171,13 +171,6 @@ public class LoginController extends SpringActionController
 
     public static class LoginUrlsImpl implements LoginUrls
     {
-        @Override
-        public void addAuthenticationNavTrail(NavTree root)
-        {
-            root.addChild("Admin Console", AdminController.getShowAdminURL());
-            root.addChild("Authentication", getConfigureURL());
-        }
-
         @Override
         public ActionURL getConfigureURL()
         {
@@ -2407,7 +2400,7 @@ public class LoginController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            getUrls().addAuthenticationNavTrail(root);
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", new ActionURL(getClass(), getContainer()));
         }
     }
 
