@@ -16,9 +16,7 @@
 
 package org.labkey.mothership;
 
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.JsonPathException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -86,6 +84,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -964,12 +963,6 @@ public class MothershipController extends SpringActionController
             _serverHostName = serverHostName;
         }
 
-        private String getJsonProperty(DocumentContext dc, String jsonPath)
-        {
-            Object val = dc.read(jsonPath);
-            return val == null || "".equals(val) ? null : val.toString();
-        }
-
         public Pair<ServerSession, SoftwareRelease> toSession(Container container)
         {
             String vcsUrl = null;
@@ -984,23 +977,38 @@ public class MothershipController extends SpringActionController
                 try
                 {
                     // Capture the Core module's info to put into mothership.SoftwareRelease
-                    DocumentContext dc = JsonPath.parse(getJsonMetrics());
-                    vcsUrl = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsUrl");
-                    vcsBranch = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsBranch");
-                    vcsTag = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsTag");
-                    vcsRevision = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsRevision");
-                    buildNumber = getJsonProperty(dc, "$.modules.Core.buildInfo.buildNumber");
-                    String buildTimeString = getJsonProperty(dc, "$.modules.Core.buildInfo.buildTime");
-                    if (buildTimeString != null)
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, Object> parsed = mapper.readValue(getJsonMetrics(), Map.class);
+                    Object modulesObject = parsed.get("modules");
+                    if (modulesObject instanceof Map)
                     {
-                        try
+                        Object coreObject = ((Map)modulesObject).get("Core");
+                        if (coreObject instanceof Map)
                         {
-                            buildTime = new Date(DateUtil.parseDateTime(container, buildTimeString));
+                            Object buildInfoObject = ((Map)coreObject).get("buildInfo");
+                            if (buildInfoObject instanceof Map)
+                            {
+                                Map<String, Object> buildInfo = (Map<String, Object>) buildInfoObject;
+                                vcsUrl = Objects.toString(buildInfo.get("vcsUrl"), null);
+                                vcsBranch = Objects.toString(buildInfo.get("vcsBranch"), null);
+                                vcsTag = Objects.toString(buildInfo.get("vcsTag"), null);
+                                vcsRevision = Objects.toString(buildInfo.get("vcsRevision"), null);
+                                buildNumber = Objects.toString(buildInfo.get("buildNumber"), null);
+                                String buildTimeString = Objects.toString(buildInfo.get("buildTime"), null);
+                                if (buildTimeString != null)
+                                {
+                                    try
+                                    {
+                                        buildTime = new Date(DateUtil.parseDateTime(container, buildTimeString));
+                                    }
+                                    catch (ConversionException ignored) {}
+                                }
+                            }
+
                         }
-                        catch (ConversionException ignored) {}
                     }
                 }
-                catch (JsonPathException ignored) {}
+                catch (IOException ignored) {}
             }
 
             // For older servers that are submitting data, fall back to form-based values where they used to be POSTed

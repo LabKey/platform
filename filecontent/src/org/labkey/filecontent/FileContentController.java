@@ -762,7 +762,7 @@ public class FileContentController extends SpringActionController
 
                     if (containsFileWebPart(c))
                     {
-                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getFileRootsURL(c);
+                        ActionURL config = urlProvider(AdminUrls.class).getFileRootsURL(c);
 
                         node.put("configureURL", config.getEncodedLocalURIString());
                         node.put("browseURL", browse.getEncodedLocalURIString());

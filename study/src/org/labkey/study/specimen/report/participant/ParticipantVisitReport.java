@@ -16,16 +16,15 @@
 package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.report.SpecimenReportTitle;
+import org.labkey.api.specimen.report.SummaryByVisitParticipant;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.CohortFilter;
-import org.labkey.study.SpecimenManager;
-import org.labkey.api.specimen.report.SummaryByVisitParticipant;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.api.specimen.report.SpecimenReportTitle;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
@@ -42,10 +41,10 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
 {
     private final boolean _showCohorts;
 
-    public ParticipantVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
+    public ParticipantVisitReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
         super(titlePrefix, visits, filter, parameters);
-        _showCohorts = StudyManager.getInstance().showCohorts(_container, getUser());
+        _showCohorts = StudyService.get().showCohorts(_container, getUser());
     }
 
     @Override
@@ -53,7 +52,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     {
         CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
         Collection<SummaryByVisitParticipant> countSummary =
-                SpecimenManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
+                SpecimenManager.get().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
         Map<String, Row> rows = new TreeMap<>();
         for (SummaryByVisitParticipant count : countSummary)
         {
@@ -87,7 +86,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     }
 
     @Override
-    protected String[] getCellExcelText(VisitImpl visit, SummaryByVisitParticipant summary)
+    protected String[] getCellExcelText(Visit visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -105,7 +104,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     }
 
     @Override
-    protected String getCellHtml(VisitImpl visit, SummaryByVisitParticipant summary)
+    protected String getCellHtml(Visit visit, SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

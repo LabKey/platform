@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -39,9 +40,21 @@ public interface SpecimenUrls extends UrlProvider
 
     ActionURL getRequestDetailsURL(Container c, int requestId);
 
+    ActionURL getRequestDetailsURL(Container c, String requestId);
+
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
 
     ActionURL getShowSearchURL(Container c);
 
     ActionURL getAutoReportListURL(Container c);
+
+    ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL);
+
+    ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+
+    ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+
+    ActionURL getSubmitRequestURL(Container c, String id);
+
+    ActionURL getDeleteRequestURL(Container c, String id);
 }

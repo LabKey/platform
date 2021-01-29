@@ -35,6 +35,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.compliance.ComplianceService;
@@ -115,7 +116,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -385,8 +385,15 @@ public class PipelineController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
-            root.addChild("Data Processing Pipeline Setup");
+            if (getContainer().isRoot())
+            {
+                urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Processing Pipeline Setup", new ActionURL(getClass(), getContainer()));
+            }
+            else
+            {
+                root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
+                root.addChild("Data Processing Pipeline Setup");
+            }
         }
     }
 
@@ -1436,11 +1443,11 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
             if (_importContainers.size() == 1 && _importContainers.get(0).equals(c))
             {
-                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+                return urlProvider(PipelineStatusUrls.class).urlBegin(c);
             }
             else
             {
-                ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
+                ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
                 url.addParameter("StatusFiles.containerFilterName", ContainerFilter.Type.CurrentAndSubfolders.name());
                 return url;
             }
@@ -1619,19 +1626,14 @@ public class PipelineController extends SpringActionController
             URLHelper url;
 
             PipelineService.get().saveTriggerConfig(getContainer(), getUser(), form);
-            if (form.getReturnUrl() != null)
+            if (form.getReturnActionURL() != null)
             {
-                try
-                {
-                    url = new URLHelper(form.getReturnUrl());
-                }
-                catch (URISyntaxException e)
-                {
-                    url = getContainer().getStartURL(getUser());
-                }
+                url = form.getReturnActionURL();
             }
             else
+            {
                 url = getContainer().getStartURL(getUser());
+            }
 
             response.put("success", true);
             response.put(ActionURL.Param.returnUrl.name(), url.toString());
@@ -1701,7 +1703,7 @@ public class PipelineController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
+        ActionURL url = urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline email notification", url, AdminOperationsPermission.class);
     }
 

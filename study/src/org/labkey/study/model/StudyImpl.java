@@ -53,8 +53,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -84,11 +82,9 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -275,20 +271,6 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public Set<PropertyDescriptor> getSharedProperties()
     {
         return StudyManager.getInstance().getSharedProperties(this);
-    }
-
-    public SpecimenRequestActor[] getSampleRequestActors()
-    {
-        return SpecimenRequestRequirementProvider.get().getActors(getContainer());
-    }
-
-    public Set<Integer> getSampleRequestActorsInUse()
-    {
-        Collection<SpecimenRequestActor> actors = SpecimenRequestRequirementProvider.get().getActorsInUse(getContainer());
-        Set<Integer> ids = new HashSet<>();
-        for (SpecimenRequestActor actor : actors)
-            ids.add(actor.getRowId());
-        return ids;
     }
 
     @Override

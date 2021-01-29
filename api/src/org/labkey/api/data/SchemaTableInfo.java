@@ -960,7 +960,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return new TableInsertDataIteratorBuilder(data, this, null);
+        return new TableInsertDataIteratorBuilder(data, this);
     }
 
     @Override

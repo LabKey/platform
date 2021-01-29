@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
@@ -43,9 +44,9 @@ import org.labkey.api.specimen.importer.StandardSpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.model.StudyManager;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.File;
@@ -64,6 +65,7 @@ import java.util.Set;
  * Date: Apr 26, 2007
  * Time: 1:17:36 PM
  */
+@Migrate // Depends only on SpecimenImporter
 public class SimpleSpecimenImporter extends SpecimenImporter
 {
     public static final String RECORD_ID = "record_id";
@@ -251,7 +253,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
                 specimenRow.put(labLookup.getForeignKeyCol(), labLookup.getDefaultLabId());
 
             if (study.getTimepointType() != TimepointType.VISIT)
-                specimenRow.put(VISIT, StudyManager.sequenceNumFromDate((Date) specimenRow.get(DRAW_TIMESTAMP)));
+                specimenRow.put(VISIT, StudyUtils.sequenceNumFromDate((Date) specimenRow.get(DRAW_TIMESTAMP)));
 
             if (!row.containsKey(VIAL_ID))
                 specimenRow.put(VIAL_ID, specimenRow.get(SAMPLE_ID));

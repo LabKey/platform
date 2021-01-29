@@ -16,10 +16,10 @@
 package org.labkey.study.specimen.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.CohortFilter;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 
@@ -31,9 +31,9 @@ import java.util.List;
  */
 public class TypeCohortReport extends SpecimenTypeVisitReport
 {
-    private CohortFilter _cohortFilter;
+    private final CohortFilter _cohortFilter;
 
-    public TypeCohortReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, CohortFilter cohortFilter)
+    public TypeCohortReport(String titlePrefix, List<? extends Visit> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters, CohortFilter cohortFilter)
     {
         super(titlePrefix, visits, filter, parameters);
         _cohortFilter = cohortFilter;

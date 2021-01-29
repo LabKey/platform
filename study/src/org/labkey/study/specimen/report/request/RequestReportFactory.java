@@ -16,10 +16,10 @@
 package org.labkey.study.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.Location;
-import org.labkey.study.SpecimenManager;
+import org.labkey.api.study.Visit;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 
 import java.util.ArrayList;
@@ -53,11 +53,11 @@ public class RequestReportFactory extends BaseRequestReportFactory
     @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        Location[] locations = SpecimenManager.getInstance().getSitesWithRequests(getContainer());
+        Location[] locations = SpecimenManager.get().getSitesWithRequests(getContainer());
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<? extends Visit> visits = SpecimenManager.get().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         if (isCompletedRequestsOnly())
         {

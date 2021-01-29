@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.study.CohortFilter;
 
 import java.util.Collections;
 import java.util.Map;

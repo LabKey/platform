@@ -29,6 +29,8 @@ import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -167,6 +169,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
             // we need to force a participant/visit refresh in those study containers (if any):
             for (StudyImpl dependentStudy : StudyManager.getInstance().getAncillaryStudies(ctx.getContainer()))
+                StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.emptySet());
+            for (Study dependentStudy : StudyService.get().getAncillaryStudies(ctx.getContainer()))
                 StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.emptySet());
         }
     }

@@ -40,7 +40,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -79,7 +78,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
                 VirtualFile specimenDir = ctx.getRoot().getDir(specimens.getDir());
                 if (null != specimenDir && null != specimens.getFile())
                 {
-                    XmlObject schemaXml = specimenDir.getXmlBean(SpecimenArchiveWriter.SCHEMA_FILENAME);
+                    XmlObject schemaXml = specimenDir.getXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME);
                     return (schemaXml instanceof TablesDocument);
                 }
             }
@@ -114,11 +113,11 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
         TablesDocument tablesDoc;
         try
         {
-            XmlObject schemaXml = root.getXmlBean(SpecimenArchiveWriter.SCHEMA_FILENAME);
+            XmlObject schemaXml = root.getXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME);
             if (schemaXml instanceof TablesDocument)
             {
                 tablesDoc = (TablesDocument)schemaXml;
-                XmlBeansUtil.validateXmlDocument(tablesDoc, SpecimenArchiveWriter.SCHEMA_FILENAME);
+                XmlBeansUtil.validateXmlDocument(tablesDoc, SpecimenArchiveDataTypes.SCHEMA_FILENAME);
             }
             else
             {
@@ -128,7 +127,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
         }
         catch (XmlValidationException e)
         {
-            throw new InvalidFileException(SpecimenArchiveWriter.SCHEMA_FILENAME, e);
+            throw new InvalidFileException(SpecimenArchiveDataTypes.SCHEMA_FILENAME, e);
         }
 
         TablesType tablesXml = tablesDoc.getTables();
@@ -159,7 +158,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
 
                 ImportPropertyDescriptorsList pds = importHelper.getImportPropertyDescriptors(factory, propErrors, container);
                 if (!propErrors.isEmpty())
-                    throw new ImportException("Unable to get an instance of TablesDocument from " + SpecimenArchiveWriter.SCHEMA_FILENAME);
+                    throw new ImportException("Unable to get an instance of TablesDocument from " + SpecimenArchiveDataTypes.SCHEMA_FILENAME);
 
                 boolean isDirty = false;
                 for (OntologyManager.ImportPropertyDescriptor ipd : pds.properties)
@@ -184,7 +183,7 @@ public class SpecimenSchemaImporter implements InternalStudyImporter
     {
         try
         {
-            return root != null && root.getXmlBean(SpecimenArchiveWriter.SCHEMA_FILENAME) != null;
+            return root != null && root.getXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME) != null;
         }
         catch (IOException e)
         {

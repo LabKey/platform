@@ -254,7 +254,7 @@ public class DavController extends SpringActionController
 
     ActionURL getLoginURL()
     {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getContainer(), getURL());
+        return urlProvider(LoginUrls.class).getLoginURL(getContainer(), getURL());
     }
 
 

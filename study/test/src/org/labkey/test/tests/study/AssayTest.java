@@ -203,7 +203,7 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         DataRegionTable assayRuns = new DataRegionTable("Runs", this);
         assayRuns.checkCheckbox(0);
-        assayRuns.clickHeaderButton("Delete");
+        assayRuns.clickHeaderButtonAndWait("Delete");
         // Make sure that it shows that the data is part of study datasets
         assertTextPresent(TEST_RUN3, "2 dataset(s)", TEST_ASSAY);
         assertTextNotPresent("FirstRun");
@@ -511,7 +511,7 @@ public class AssayTest extends AbstractAssayTest
         //select all the data rows and click publish
         DataRegionTable table = new DataRegionTable("Data", this);
         table.checkAllOnPage();
-        table.clickHeaderButton("Copy to Study");
+        table.clickHeaderButtonAndWait("Copy to Study");
 
         //the target study selected before was Study2, but the PI is not an editor there
         //so ensure that system has correctly caught this fact and now asks the PI to
@@ -639,7 +639,7 @@ public class AssayTest extends AbstractAssayTest
         //select all the data rows and click publish
         DataRegionTable table = new DataRegionTable("Data", getDriver());
         table.checkAll();
-        table.clickHeaderButton("Copy to Study");
+        table.clickHeaderButtonAndWait("Copy to Study");
 
         checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
@@ -664,7 +664,7 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
         DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
-        copyStudy.clickHeaderButton("Re-Validate");
+        copyStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
@@ -677,7 +677,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
         assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
 
-        copyStudy.clickHeaderButton("Copy to Study");
+        copyStudy.clickHeaderButtonAndWait("Copy to Study");
 
         log("Verifying that the data was published");
         assertTextPresent(
@@ -740,7 +740,7 @@ public class AssayTest extends AbstractAssayTest
         //select all the data rows and click publish
         DataRegionTable table = new DataRegionTable("Data", getDriver());
         table.checkAll();
-        table.clickHeaderButton("Copy to Study");
+        table.clickHeaderButtonAndWait("Copy to Study");
 
         checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
@@ -765,7 +765,7 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
         DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
-        copyStudy.clickHeaderButton("Re-Validate");
+        copyStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td/a[text()='AAA07XMC-02']]"));
@@ -778,7 +778,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-08']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-11']]"));
 
-        copyStudy.clickHeaderButton("Copy to Study");
+        copyStudy.clickHeaderButtonAndWait("Copy to Study");
 
         log("Verifying that the data was published");
         assertTextPresent(
@@ -903,7 +903,7 @@ public class AssayTest extends AbstractAssayTest
 
         region = new DataRegionTable("Data", this);
         region.checkAll();
-        region.clickHeaderButton("Copy to Study");
+        region.clickHeaderButtonAndWait("Copy to Study");
         clickButton("Next");
 
         verifySpecimensPresent(0, 0, 3);

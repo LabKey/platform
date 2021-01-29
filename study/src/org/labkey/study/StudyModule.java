@@ -120,7 +120,6 @@ import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
-import org.labkey.study.controllers.specimen.SpecimenApiController;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenReportWebPartFactory;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -172,10 +171,10 @@ import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
-import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
+import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
@@ -185,7 +184,6 @@ import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
-import org.labkey.api.specimen.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
@@ -223,7 +221,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     @Migrate
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenReportWebPartFactory();
-    public static final WebPartFactory specimenSearchWebPartFactory = new SpecimenSearchWebPartFactory(HttpView.BODY);
 
     @Override
     public String getName()
@@ -240,7 +237,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     protected void init()
     {
-        addController("study", StudyController.class);  // Default controller for this module -- must be registered first
+        addController("study", StudyController.class);  // Default controller for this module -- must be registered first!
         addController("cohort", CohortController.class);
         addController("dataset", DatasetController.class);
         addController("participant-group", ParticipantGroupController.class);
@@ -250,10 +247,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-designer", DesignerController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
-        addController("study-samples", SpecimenController.class);
-        addController("study-samples-api", SpecimenApiController.class);
         addController("study-security", SecurityController.class);
         addController("study-shared", SharedStudyController.class);
+
+        // @Migrate
+        addController("study-samples", SpecimenController.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -318,8 +316,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             vaccineDesignWebPartFactory,
             new SharedStudyController.StudyFilterWebPartFactory(),
 
-            specimenReportWebPartFactory,
-            specimenSearchWebPartFactory
+            specimenReportWebPartFactory
         );
     }
 
@@ -398,7 +395,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
-        SystemMaintenance.addTask(new SpecimenRefreshMaintainanceTask());
+        SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
         SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 
@@ -596,12 +593,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public SubjectsWebPartFactory()
         {
-            super("Subject List", SubjectsWebPart.class,
-                    WebPartFactory.LOCATION_BODY,
-                    WebPartFactory.LOCATION_RIGHT,
-                    Participant.class.getName() + ":" + WebPartFactory.LOCATION_BODY,
-                    Participant.class.getName() + ":" + WebPartFactory.LOCATION_RIGHT
-                    );
+            super(
+                "Subject List",
+                SubjectsWebPart.class,
+                WebPartFactory.LOCATION_BODY,
+                WebPartFactory.LOCATION_RIGHT,
+                Participant.class.getName() + ":" + WebPartFactory.LOCATION_BODY,
+                Participant.class.getName() + ":" + WebPartFactory.LOCATION_RIGHT
+            );
         }
 
         @Override
@@ -712,8 +711,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
             SampleMindedTransformTask.TestCase.class,
-            SequenceNumImportHelper.SequenceNumTest.class,
-            SpecimenWriter.TestCase.class
+            SequenceNumImportHelper.SequenceNumTest.class
         );
     }
 

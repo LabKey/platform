@@ -1573,7 +1573,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public boolean hasTriggers(Container c)
+    public boolean hasTriggers(@Nullable Container c)
     {
         return !getTriggers(c).isEmpty();
     }
@@ -1594,7 +1594,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private Collection<Trigger> _triggers = null;
 
     @NotNull
-    protected Collection<Trigger> getTriggers(Container c)
+    protected Collection<Trigger> getTriggers(@Nullable Container c)
     {
         if (_triggers == null)
         {
@@ -1605,9 +1605,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
 
     @NotNull
-    private Collection<Trigger> loadTriggers(Container c)
+    private Collection<Trigger> loadTriggers(@Nullable Container c)
     {
-        if (_triggerFactories == null || _triggerFactories.isEmpty())
+        if (_triggerFactories.isEmpty())
             return Collections.emptyList();
 
         List<Trigger> scripts = new ArrayList<>(_triggerFactories.size());

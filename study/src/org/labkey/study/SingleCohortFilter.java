@@ -27,7 +27,6 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
 /**
@@ -99,7 +98,7 @@ public class SingleCohortFilter extends BaseCohortFilter
     }
 
     @Override
-    public CohortImpl getCohort(Container container, User user)
+    public Cohort getCohort(Container container, User user)
     {
         if (!StudyManager.getInstance().showCohorts(container, user))
             return null;
@@ -112,7 +111,7 @@ public class SingleCohortFilter extends BaseCohortFilter
     @Override
     public String getDescription(Container container, User user)
     {
-        CohortImpl cohort = getCohort(container, user);
+        Cohort cohort = getCohort(container, user);
         if (cohort == null)
             return null;
         return getType().getTitle() + " is " + cohort.getLabel();
@@ -204,7 +203,7 @@ public class SingleCohortFilter extends BaseCohortFilter
         }
 
         @Override
-        public CohortImpl getCohort(Container container, User user)
+        public Cohort getCohort(Container container, User user)
         {
             return null;
         }

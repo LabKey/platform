@@ -135,12 +135,12 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.specimen.view.SpecimenWebPartFactory;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -184,7 +184,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
@@ -349,13 +348,13 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishStartAction.class);
+            return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishStartAction.class);
         }
 
         @Override
         public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishConfirmAction.class);
+            return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishConfirmAction.class);
         }
     }
 
@@ -3712,7 +3711,7 @@ public class StudyController extends BaseStudyController
                     _log.warn("ResetPipelineAction redirect string invalid: " + redirect);
                 }
             }
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 
@@ -3940,7 +3939,7 @@ public class StudyController extends BaseStudyController
                     VirtualFile datasetsDir = new FileSystemFile(f.getParentFile());
                     DatasetImportUtils.submitStudyBatch(study, datasetsDir, f.getName(), c, getUser(), getViewContext().getActionURL(), root);
                 }
-                _successUrl = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+                _successUrl = urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
             }
             catch (DatasetImportUtils.DatasetLockExistsException e)
             {
@@ -3967,7 +3966,7 @@ public class StudyController extends BaseStudyController
         {
             Container c = getContainer();
             File studyFile = form.getValidatedSingleFile(c);
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyFile, true, null, false);
+            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyFile, true, null, false);
         }
 
         @Override
@@ -4677,14 +4676,14 @@ public class StudyController extends BaseStudyController
             else if (form.getReturnUrl() != null && form.getReturnUrl().length() > 0)
                 return new ActionURL(form.getReturnUrl());
             else
-                return PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
+                return urlProvider(ReportUrls.class).urlManageViews(getContainer());
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             _addManageStudy(root);
-            root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+            root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
         }
     }
@@ -5696,7 +5695,7 @@ public class StudyController extends BaseStudyController
 
             if (null != _currentParticipantId && null != ss)
             {
-                ActionURL search = PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
+                ActionURL search = urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
                 out.print(PageFlowUtil.textLink("Search for '" + id(_currentParticipantId, c, user) + "'", search));
                 out.print("&nbsp;");
             }
@@ -5995,25 +5994,6 @@ public class StudyController extends BaseStudyController
         {
             _addNavTrail(root);
             root.addChild("Datasets");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class SamplesAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new SpecimenWebPartFactory().getWebPartView(getViewContext(), new SpecimenWebPartFactory().createWebPart());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            Study study = getStudy();
-            if (study != null)
-                root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
-            root.addChild("Samples");
         }
     }
 
@@ -7573,13 +7553,13 @@ public class StudyController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(MasterPatientProviderSettings form)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Configure Master Patient Index");
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Configure Master Patient Index", new ActionURL(getClass(), getContainer()));
         }
     }
 
@@ -7713,7 +7693,7 @@ public class StudyController extends BaseStudyController
                     PipelineService.get().queueJob(job);
 
                     response.put("success", true);
-                    response.put(ActionURL.Param.returnUrl.name(), PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+                    response.put(ActionURL.Param.returnUrl.name(), urlProvider(PipelineUrls.class).urlBegin(getContainer()));
                 }
                 else
                 {

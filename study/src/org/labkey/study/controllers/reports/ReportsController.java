@@ -115,7 +115,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class ReportsController extends BaseStudyController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
@@ -151,7 +150,7 @@ public class ReportsController extends BaseStudyController
             if (_study == null)
                 root.addChild("No Study In Folder");
             else if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 root.addChild("Views");
         }
@@ -295,7 +294,7 @@ public class ReportsController extends BaseStudyController
                     }
                     else
                     {
-                        _successURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
+                        _successURL = urlProvider(ReportUrls.class).urlManageViews(getContainer());
                     }
                 }
 
@@ -1190,7 +1189,7 @@ public class ReportsController extends BaseStudyController
             addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
         catch (Exception e)
         {
@@ -1205,7 +1204,7 @@ public class ReportsController extends BaseStudyController
             Study study = addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
 
             VisitImpl visit = null;
 
@@ -1286,7 +1285,7 @@ public class ReportsController extends BaseStudyController
                 {
                     NavTree menu = new NavTree();
                     menu.addChild("New " + StudyService.get().getSubjectNounSingular(getContainer()) + " Report", new ActionURL(this.getClass(), getContainer()));
-                    menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                    menu.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
                     view.setNavMenu(menu);
                 }
                 return view;
