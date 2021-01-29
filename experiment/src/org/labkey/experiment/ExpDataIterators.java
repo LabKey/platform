@@ -353,7 +353,8 @@ public class ExpDataIterators
                         else
                         {
                             ExpData data = ExperimentService.get().getExpData(lsid);
-                            data.setComment(_user, flag);
+                            if (data != null)
+                                data.setComment(_user, flag);
                         }
                     }
                     catch (ValidationException e)

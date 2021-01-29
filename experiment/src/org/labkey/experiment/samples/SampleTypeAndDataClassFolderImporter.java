@@ -31,6 +31,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.xar.XarImportContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -107,6 +108,11 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 }
             }
 
+            // push in an additional context so that other XAR Importers can share states
+            XarImportContext xarCtx = new XarImportContext();
+            xarCtx.setStrictValidateExistingSampleType(false);
+            ctx.addContext(XarImportContext.class, xarCtx);
+
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
                 if (typesXarFile != null)
@@ -165,7 +171,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     }
                     log.info("Importing the types XAR file: " + typesXarFile.getName());
                     XarReader typesReader = new XarReader(typesXarSource, job);
-                    typesReader.setStrictValidateExistingSampleType(false);
+                    typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false);
 
                     // process any sample type data files and data class files
@@ -189,7 +195,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         }
                         log.info("Importing the runs XAR file: " + runsXarFile.getName());
                         XarReader runsReader = new XarReader(runsXarSource, job);
-                        runsReader.setStrictValidateExistingSampleType(false);
+                        runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                         runsReader.parseAndLoad(false);
                     }
                 }
@@ -273,8 +279,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         @Override
         public int getPriority()
         {
-            // make sure this importer runs after the FolderXarImporter (i.e. "Experiments and runs")
-            //return 75;
+            // make sure this importer runs before the FolderXarImporter (i.e. "Experiments and runs")
             return 65;
         }
     }

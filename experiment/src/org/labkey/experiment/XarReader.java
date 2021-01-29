@@ -1474,7 +1474,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            getLog().warn("No data file found for " + expData.getName() + ", unable to import. (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
+            getLog().info("No data file found for " + expData.getName() + ". (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
         }
 
 
