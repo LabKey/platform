@@ -24,6 +24,8 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
@@ -68,7 +70,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             Set<Container> containers = ContainerManager.getAllChildren(c);
             for(Container container: containers)
             {
-                if(getRuns(container).size() > 0)
+                if (getProtocols(container).size() > 0 || getRuns(container).size() > 0)
                 {
                     return true;
                 }
@@ -85,10 +87,13 @@ public class FolderXarWriterFactory implements FolderWriterFactory
                     .collect(Collectors.toList());
         }
 
-        @Override
-        public boolean selectedByDefault(AbstractFolderContext.ExportType type)
+        private List<Integer> getProtocols(Container c)
         {
-            return false; // Should be unchecked by default.
+            // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            return ExperimentService.get().getExpProtocols(c).stream()
+                    .filter(protocol -> !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME))
+                    .map(ExpObject::getRowId)
+                    .collect(Collectors.toList());
         }
 
         @Override
@@ -106,6 +111,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             {
                 selection.addExperimentIds(exp.getRowId());
             }
+
+            selection.addProtocolIds(getProtocols(ctx.getContainer()));
 
             selection.addRuns(getRuns(ctx.getContainer()));
 
