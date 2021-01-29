@@ -644,7 +644,6 @@ ended very recently. --%>
                         else {
                             // we failed to read the log file or the log file hasn't changed since last fetch
                             offsetUnchangedCount++;
-                            console.log("offset " + nextOffset + " unchanged (" + offsetUnchangedCount + ")");
                         }
 
                         if (!active) {
