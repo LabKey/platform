@@ -308,7 +308,8 @@ public class ExpLineage
                         seen.add(parent);
                     }
                 }
-                else if (parent instanceof ExpData || parent instanceof ExpMaterial)
+                else if ((parentClazz == ExpMaterial.class && parent instanceof ExpMaterial) ||
+                         (parentClazz == ExpData.class && parent instanceof ExpData))
                 {
                     parents.add((T) parent);
                 }
