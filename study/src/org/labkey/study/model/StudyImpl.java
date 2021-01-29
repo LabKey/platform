@@ -88,6 +88,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -1186,7 +1187,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
         if (participantID != null && date != null && !getTimepointType().isVisitBased())
         {
-            // Translate the date into a sequencenum based on the particpant's start date
+            // Translate the date into a sequencenum based on the participant's start date
             Participant participant = StudyManager.getInstance().getParticipant(this, participantID);
             Calendar startCal = new GregorianCalendar();
             if (participant != null && participant.getStartDate() != null)
@@ -1233,7 +1234,19 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             endDate = temp;
         }
         Calendar date = (Calendar) startDate.clone();
-        int daysBetween = 0;
+
+        // Calculate the difference in terms of days
+        long diffInMillis = endDate.getTimeInMillis() - startDate.getTimeInMillis();
+        int daysBetween = (int)(diffInMillis / TimeUnit.DAYS.toMillis(1));
+
+        if (daysBetween > 0)
+        {
+            // Round down to ensure consistent results with original implementation, which added one day at a time and
+            // was a performance bottleneck when the supplied dates were many years apart
+            daysBetween--;
+            date.add(Calendar.DAY_OF_MONTH, daysBetween);
+        }
+
         while (date.before(endDate))
         {
             date.add(Calendar.DAY_OF_MONTH, 1);
