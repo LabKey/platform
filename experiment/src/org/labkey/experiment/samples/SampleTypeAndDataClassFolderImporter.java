@@ -11,6 +11,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
@@ -172,7 +173,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     log.info("Importing the types XAR file: " + typesXarFile.getName());
                     XarReader typesReader = new XarReader(typesXarSource, job);
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
-                    typesReader.parseAndLoad(false);
+                    typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
                     // process any sample type data files and data class files
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
@@ -196,7 +197,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         log.info("Importing the runs XAR file: " + runsXarFile.getName());
                         XarReader runsReader = new XarReader(runsXarSource, job);
                         runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
-                        runsReader.parseAndLoad(false);
+                        runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
                     }
                 }
                 else
@@ -239,6 +240,16 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+                                    Map<Enum, Object> options = new HashMap<>();
+                                    try
+                                    {
+                                        options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, ctx.getAuditBehaviorType());
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        log.error("Unable to get audit behavior for import. Default behavior will be used.");
+                                    }
+                                    context.setConfigParameters(options);
 
                                     int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);

@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -67,11 +68,15 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -85,6 +90,7 @@ import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
+import org.labkey.api.exp.xar.XarReaderRegistry;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -113,18 +119,18 @@ import java.util.Set;
 
 public class XarReader extends AbstractXarImporter
 {
-    private Set<String> _experimentLSIDs = new HashSet<>();
-    private Map<String, Integer> _propertyIdMap = new HashMap<>();
+    private final Set<String> _experimentLSIDs = new HashSet<>();
+    private final Map<String, Integer> _propertyIdMap = new HashMap<>();
 
-    private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
+    private final List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
     private boolean _reloadExistingRuns = false;
     private boolean _useOriginalFileUrl = false;
     private boolean _strictValidateExistingSampleType = true;
 
-    private List<ExpRun> _loadedRuns = new ArrayList<>();
-    private List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
-    private List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
+    private final List<ExpRun> _loadedRuns = new ArrayList<>();
+    private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
+    private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -134,7 +140,8 @@ public class XarReader extends AbstractXarImporter
 
     public static final String ORIGINAL_URL_PROPERTY = "terms.fhcrc.org#Data.OriginalURL";
     public static final String ORIGINAL_URL_PROPERTY_NAME = "OriginalURL";
-    private List<String> _processedRunsLSIDs = new ArrayList<>();
+    private final List<String> _processedRunsLSIDs = new ArrayList<>();
+    private AuditBehaviorType _auditBehaviorType = null;
 
     public XarReader(XarSource source, PipelineJob job)
     {
@@ -156,9 +163,10 @@ public class XarReader extends AbstractXarImporter
         _strictValidateExistingSampleType = strictValidateExistingSampleType;
     }
 
-    public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
+    public void parseAndLoad(boolean reloadExistingRuns, @Nullable AuditBehaviorType auditBehaviorType) throws ExperimentException
     {
         _reloadExistingRuns = reloadExistingRuns;
+        _auditBehaviorType = auditBehaviorType;
         parseAndLoad();
     }
 
@@ -883,8 +891,6 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
-        TableInfo tiExperimentRun = ExperimentServiceImpl.get().getTinfoExperimentRun();
-
         ExperimentRun run = ExperimentServiceImpl.get().getExperimentRun(pRunLSID.toString());
 
         if (null != run)
@@ -987,6 +993,7 @@ public class XarReader extends AbstractXarImporter
         _processedRunsLSIDs.add(runLSID);
         ExpRun loadedRun = ExperimentService.get().getExpRun(runLSID);
         assert loadedRun != null;
+        XarReaderRegistry.get().postProcessImportedRun(getContainer(), getUser(), loadedRun, getLog());
         _loadedRuns.add(loadedRun);
         getLog().debug("Finished loading ExperimentRun with LSID '" + runLSID + "'");
     }
@@ -1235,6 +1242,11 @@ public class XarReader extends AbstractXarImporter
                 mi.save(getUser());
                 mi.setProperties(getUser(), props);
 
+                if (_auditBehaviorType == AuditBehaviorType.DETAILED)
+                {
+                    SampleTypeServiceImpl service = SampleTypeServiceImpl.get();
+                    service.addAuditEvent(getUser(), getContainer(), service.getCommentDetailed(QueryService.AuditAction.INSERT, false), mi, null);
+                }
                 if (xbMaterial.isSetAlias())
                 {
                     AliasInsertHelper.handleInsertUpdate(getContainer(), getUser(), mi.getLSID(),
@@ -1412,10 +1424,14 @@ public class XarReader extends AbstractXarImporter
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));
             data.setCpasType(declaredType);
+            ExpDataClass currentDataClass = null;
             for (ExpDataClass dataClass : _loadedDataClasses)
             {
                 if (dataClass.getLSID().equals(declaredType))
+                {
+                    currentDataClass = dataClass;
                     data.setClassId(dataClass.getRowId());
+                }
             }
 
             // This existing hack is that newData has the source URL, but the dest container
@@ -1450,6 +1466,16 @@ public class XarReader extends AbstractXarImporter
 
             expData = new ExpDataImpl(data);
             expData.save(getUser());
+            if (_auditBehaviorType == AuditBehaviorType.DETAILED && currentDataClass != null)
+            {
+                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), ExpSchema.SCHEMA_EXP_DATA.toString());
+                TableInfo dataTable = userSchema.getTable(currentDataClass.getName());
+                if (dataTable != null)
+                {
+                    Map<String, Object> row = BeanObjectFactory.Registry.getFactory(Data.class).toMap(data, null);
+                    dataTable.getAuditHandler().addAuditEvent(getUser(), getContainer(), dataTable, _auditBehaviorType, null, QueryService.AuditAction.INSERT, Collections.singletonList(row), null);
+                }
+            }
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)

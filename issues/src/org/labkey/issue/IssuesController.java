@@ -2202,7 +2202,7 @@ public class IssuesController extends SpringActionController
                 }
 
                 //Search for the query term instead
-                return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME);
+                return urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME);
             }
 
             ActionURL url = getViewContext().cloneActionURL();
@@ -2375,7 +2375,7 @@ public class IssuesController extends SpringActionController
         @Override
         public URLHelper getRedirectURL(SearchForm form)
         {
-            return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
+            return urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
         }
     }
 

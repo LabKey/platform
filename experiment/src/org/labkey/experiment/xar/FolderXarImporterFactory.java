@@ -151,7 +151,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 {
                     reader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                 }
-                reader.parseAndLoad(false);
+                reader.parseAndLoad(false, ctx.getAuditBehaviorType());
             }
 
             ctx.getLogger().info("Done importing " + getDescription());

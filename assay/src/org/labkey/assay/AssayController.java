@@ -16,7 +16,6 @@
 
 package org.labkey.assay;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
@@ -167,38 +166,38 @@ import java.util.zip.ZipOutputStream;
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
-            GetAssayBatchAction.class,
-            GetAssayBatchesAction.class,
-            SaveAssayBatchAction.class,
-            GetAssayRunAction.class,
-            GetAssayRunsAction.class,
-            SaveAssayRunsAction.class,
-            ImportRunApiAction.class,
-            UploadWizardAction.class,
-            TransformResultsAction.class,
-            PlateBasedUploadWizardAction.class,
-            PipelineDataCollectorRedirectAction.class,
-            DeleteAction.class,
-            DesignerAction.class,
-            ImportAction.class,
-            TsvImportAction.class,
-            TemplateAction.class,
-            AssayBatchesAction.class,
-            AssayBatchDetailsAction.class,
-            AssayRunsAction.class,
-            AssayRunDetailsAction.class,
-            AssayResultsAction.class,
-            AssayResultDetailsAction.class,
-            ReimportRedirectAction.class,
-            ShowSelectedRunsAction.class,
-            ShowSelectedDataAction.class,
-            SetDefaultValuesAssayAction.class,
-            AssayDetailRedirectAction.class,
-            SaveProtocolAction.class,
-            GetProtocolAction.class,
-            DeleteProtocolAction.class,
-            AssayPlateMetadataTemplateAction.class
-        );
+        GetAssayBatchAction.class,
+        GetAssayBatchesAction.class,
+        SaveAssayBatchAction.class,
+        GetAssayRunAction.class,
+        GetAssayRunsAction.class,
+        SaveAssayRunsAction.class,
+        ImportRunApiAction.class,
+        UploadWizardAction.class,
+        TransformResultsAction.class,
+        PlateBasedUploadWizardAction.class,
+        PipelineDataCollectorRedirectAction.class,
+        DeleteAction.class,
+        DesignerAction.class,
+        ImportAction.class,
+        TsvImportAction.class,
+        TemplateAction.class,
+        AssayBatchesAction.class,
+        AssayBatchDetailsAction.class,
+        AssayRunsAction.class,
+        AssayRunDetailsAction.class,
+        AssayResultsAction.class,
+        AssayResultDetailsAction.class,
+        ReimportRedirectAction.class,
+        ShowSelectedRunsAction.class,
+        ShowSelectedDataAction.class,
+        SetDefaultValuesAssayAction.class,
+        AssayDetailRedirectAction.class,
+        SaveProtocolAction.class,
+        GetProtocolAction.class,
+        DeleteProtocolAction.class,
+        AssayPlateMetadataTemplateAction.class
+    );
 
     public AssayController()
     {
@@ -330,7 +329,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
         assayProperties.put("reRunSupport", provider.getReRunSupport());
-        assayProperties.put("templateLink", PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
+        assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
@@ -376,7 +375,7 @@ public class AssayController extends SpringActionController
     private static Map<String, Object> serializeAssayLinks(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
         Map<String, Object> links = new HashMap<>();
-        AssayUrls urlProvider = PageFlowUtil.urlProvider(AssayUrls.class);
+        AssayUrls urlProvider = urlProvider(AssayUrls.class);
 
         links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
         links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
@@ -496,7 +495,7 @@ public class AssayController extends SpringActionController
 
             final Container currentContainer = getContainer();
             final User user = getUser();
-            final ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
+            final ProjectUrls projectUrls = urlProvider(ProjectUrls.class);
 
             ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null)
             {
@@ -507,7 +506,7 @@ public class AssayController extends SpringActionController
                     //the current container
                     ActionURL returnURL = (c.hasPermission(user, ReadPermission.class)) ? projectUrls.getStartURL(c) : projectUrls.getStartURL(currentContainer);
 
-                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnURL);
+                    ActionURL copyURL = urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnURL);
                     html.append("<a href=\"");
                     html.append(copyURL.getEncodedLocalURIString());
                     html.append("\">");
@@ -515,7 +514,7 @@ public class AssayController extends SpringActionController
                     html.append("</a>");
                 }
             };
-            ActionURL copyHereURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
+            ActionURL copyHereURL = urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
             HtmlView fileTree = new HtmlView(HtmlStringBuilder.of()
                     .append(HtmlString.unsafe("<table><tr><td><b>Select destination folder:</b></td></tr>"))
                     .append(tree.getHtmlString())
@@ -542,7 +541,7 @@ public class AssayController extends SpringActionController
         @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
-            throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol()));
+            throw new RedirectException(urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol()));
         }
 
         @Override
@@ -1661,7 +1660,7 @@ public class AssayController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             Container c = getContainer();
-            ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
+            ActionURL batchListURL = urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
             super.addNavTrail(root);
             root.addChild(_protocol.getName() + " Batches", batchListURL);
