@@ -2897,9 +2897,9 @@ public class QueryServiceImpl implements QueryService
             }
 
             @Override
-            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow)
             {
-                return createAuditRecord(c, tinfo, action.getCommentDetailed(), row);
+                return createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow);
             }
 
             private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)

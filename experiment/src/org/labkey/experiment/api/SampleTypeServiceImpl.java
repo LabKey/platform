@@ -907,10 +907,10 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow)
     {
         // not doing anything with userComment at the moment
-        return createAuditRecord(c, getCommentDetailed(action, !updatedRow.isEmpty()), row, updatedRow, action);
+        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), updatedRow, existingRow, action);
     }
 
     @Override
@@ -939,7 +939,7 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
         return createAuditRecord(c, comment, row, null, null);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable QueryService.AuditAction action)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
         var tx = getExpSchema().getScope().getCurrentTransaction();
@@ -955,14 +955,14 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
             event.setLineageUpdate(parentFields.isPresent());
         }
 
-        if (row != null)
+        if (updatedRow != null)
         {
             String sampleTypeLsid = null;
-            if (row.containsKey(CPAS_TYPE))
-                sampleTypeLsid =  String.valueOf(row.get(CPAS_TYPE));
+            if (updatedRow.containsKey(CPAS_TYPE))
+                sampleTypeLsid =  String.valueOf(updatedRow.get(CPAS_TYPE));
             // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
-            if (sampleTypeLsid == null && row.containsKey("sampleset"))
-                sampleTypeLsid = String.valueOf(row.get("sampleset"));
+            if (sampleTypeLsid == null && updatedRow.containsKey("sampleset"))
+                sampleTypeLsid = String.valueOf(updatedRow.get("sampleset"));
             if (sampleTypeLsid != null)
             {
                 ExpSampleType sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
@@ -972,12 +972,12 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
                     event.setSampleTypeId(sampleType.getRowId());
                 }
             }
-            if (row.containsKey(LSID))
-                event.setSampleLsid(String.valueOf(row.get(LSID)));
-            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
-                event.setSampleId((Integer) row.get(ROW_ID));
-            if (row.containsKey(NAME))
-                event.setSampleName(String.valueOf(row.get(NAME)));
+            if (updatedRow.containsKey(LSID))
+                event.setSampleLsid(String.valueOf(updatedRow.get(LSID)));
+            if (updatedRow.containsKey(ROW_ID) && updatedRow.get(ROW_ID) != null)
+                event.setSampleId((Integer) updatedRow.get(ROW_ID));
+            if (updatedRow.containsKey(NAME))
+                event.setSampleName(String.valueOf(updatedRow.get(NAME)));
         }
 
         if (action != null)

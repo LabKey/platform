@@ -115,10 +115,16 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
         return _delegate.supportsGetExistingRecord();
     }
 
+
+    /* if !supportsGetExistingRecord() then this method should return null
+     * if supportsGetExistingRecord() this method should return a map, an empty map means no existing record found
+     */
     @Override
     public Map<String, Object> getExistingRecord()
     {
-        return _delegate.getExistingRecord();
+        var ret = _delegate.getExistingRecord();
+        assert supportsGetExistingRecord() == (null != ret);
+        return ret;
     }
 
     @Override

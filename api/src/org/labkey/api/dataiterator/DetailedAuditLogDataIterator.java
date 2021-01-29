@@ -16,7 +16,7 @@
 package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
@@ -40,25 +41,30 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 {
     public enum AuditConfigs {
         AuditBehavior,
-        AuditUserComment;
+        AuditUserComment
     }
 
-    final DataIterator _data;
+    final MapDataIterator _data;
     final User _user;
     final Container _container;
     final TableInfo _table;
     final String _userComment;
     final QueryService.AuditAction _auditAction;
+    final AuditHandler _auditHandler;
 
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c)
     {
         super(context);
         _table = table;
-        _data = data;
+        _data = (MapDataIterator)data;
         _user = user;
         _container = c;
         _userComment = (String) _context.getConfigParameter(AuditConfigs.AuditUserComment);
         _auditAction = auditAction;
+        _auditHandler = table.getAuditHandler();
+
+        assert DETAILED == table.getAuditBehavior() || DETAILED == context.getConfigParameter(AuditConfigs.AuditBehavior);
+        assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
     }
 
     @Override
@@ -79,7 +85,9 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (!_data.next())
             return false;
 
-        _table.getAuditHandler().addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, List.of(((MapDataIterator) _data).getMap()), null);
+        Map<String,Object> row = _data.getMap();
+        Map<String,Object> existing = _data.getExistingRecord();
+        _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, List.of(row), null==existing ? null : List.of(existing));
         return true;
     }
 

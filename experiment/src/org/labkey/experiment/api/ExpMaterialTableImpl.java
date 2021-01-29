@@ -853,16 +853,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Override
-        public void addAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> updatedRows)
+        public void addAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
         {
             // If we are doing a merge/replace and we don't have before records, then fetch them
-            if (auditAction == QueryService.AuditAction.MERGE && null == updatedRows)
+            if (auditAction == QueryService.AuditAction.MERGE && null == existingRows)
             {
                 for (var map : rows)
                     _addMergeAuditEvent(user, container, table, auditType, userComment, auditAction, map);
                 return;
             }
-            auditHandler.addAuditEvent(user, container, table, auditType, userComment, auditAction, rows, updatedRows);
+            auditHandler.addAuditEvent(user, container, table, auditType, userComment, auditAction, rows, existingRows);
         }
     }
 }

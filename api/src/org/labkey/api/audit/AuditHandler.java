@@ -112,15 +112,15 @@ public interface AuditHandler
 
                         for (int i=0; i < rows.size(); i++)
                         {
-                            Map<String, Object> row = rows.get(i);
+                            Map<String, Object> updatedRow = rows.get(i);
                             Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
-                            DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow);
+                            DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, updatedRow, existingRow);
 
                             switch (action)
                             {
                                 case INSERT:
                                 {
-                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, updatedRow);
                                     if (newRecord != null)
                                         event.setNewRecordMap(newRecord);
                                     break;
@@ -129,26 +129,27 @@ public interface AuditHandler
                                 {
                                     if (existingRow.isEmpty())
                                     {
-                                        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, updatedRow);
                                         if (newRecord != null)
                                             event.setNewRecordMap(newRecord);
                                     }
                                     else
                                     {
-                                        setOldAndNewMapsForUpdate(event, c, row, existingRow, table);
+                                        setOldAndNewMapsForUpdate(event, c, existingRow, updatedRow, table);
                                     }
                                     break;
                                 }
                                 case DELETE:
                                 {
-                                    String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                    Map<String,Object> deletedRow = null!=updatedRow ? updatedRow : existingRow;
+                                    String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, deletedRow);
                                     if (oldRecord != null)
                                         event.setOldRecordMap(oldRecord);
                                     break;
                                 }
                                 case UPDATE:
                                 {
-                                    setOldAndNewMapsForUpdate(event, c, row, existingRow, table);
+                                    setOldAndNewMapsForUpdate(event, c, existingRow, updatedRow, table);
                                     break;
                                 }
                             }
@@ -160,15 +161,15 @@ public interface AuditHandler
             }
         }
 
-        private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> updatedRow, TableInfo table)
+        private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> oldRow, Map<String, Object> updatedRow, TableInfo table)
         {
-            Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
+            Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(oldRow, updatedRow, table.getExtraDetailedUpdateAuditFields());
 
             Map<String, Object> originalRow = rowPair.first;
             Map<String, Object> modifiedRow = rowPair.second;
 
             // allow for adding fields that may be present in the updated row but not represented in the original row
-            addDetailedModifiedFields(row, modifiedRow, updatedRow);
+            addDetailedModifiedFields(oldRow, modifiedRow, updatedRow);
 
             String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
             if (oldRecord != null)
@@ -189,13 +190,13 @@ public interface AuditHandler
     // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
     Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy", "Created", "CreatedBy");
 
-    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
+    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> existingRow, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
     {
         // record modified fields
         Map<String, Object> originalRow = new HashMap<>();
         Map<String, Object> modifiedRow = new HashMap<>();
 
-        for (Map.Entry<String, Object> entry : row.entrySet())
+        for (Map.Entry<String, Object> entry : existingRow.entrySet())
         {
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
             if (!excludedFromDetailDiff.contains(entry.getKey()) && updatedRow.containsKey(entry.getKey()))

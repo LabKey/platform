@@ -43,6 +43,8 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -2170,15 +2172,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+        DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
 
         if (context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) == AuditBehaviorType.DETAILED)
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(this.getTableInfo(user, false), dib, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+        {
+        }
 
-        dib = ((UpdateableTableInfo)table).persistRows(dib, context);
-        CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
-        ((TableInsertDataIteratorBuilder)dib).setDontUpdate(dontUpdate);
-        return dib;
+        DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
+        DataIteratorBuilder persist = ((UpdateableTableInfo)table).persistRows(existing, context);
+        { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
+            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
+        }
+        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+        return LoggingDataIterator.wrap(audit);
     }
 
 
