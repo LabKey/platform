@@ -26,7 +26,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
@@ -52,6 +52,10 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     final QueryService.AuditAction _auditAction;
     final AuditHandler _auditHandler;
 
+    // for batching
+    final ArrayList<Map<String,Object>> _updatedRows = new ArrayList<>();
+    final ArrayList<Map<String,Object>> _existingRows;
+
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c)
     {
         super(context);
@@ -65,6 +69,8 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 
         assert DETAILED == table.getAuditBehavior() || DETAILED == context.getConfigParameter(AuditConfigs.AuditBehavior);
         assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
+
+        _existingRows = _data.supportsGetExistingRecord() ? new ArrayList<>() : null;
     }
 
     @Override
@@ -82,13 +88,23 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
-        if (!_data.next())
-            return false;
+        boolean hasNext = _data.next();
 
-        Map<String,Object> row = _data.getMap();
-        Map<String,Object> existing = _data.getExistingRecord();
-        _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, List.of(row), null==existing ? null : List.of(existing));
-        return true;
+        if (!hasNext || _updatedRows.size() > 1000)
+        {
+            if (!_updatedRows.isEmpty())
+                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows);
+            _updatedRows.clear();
+            if (null != _existingRows)
+                _existingRows.clear();
+        }
+        if (hasNext)
+        {
+            _updatedRows.add(_data.getMap());
+            if (null != _existingRows)
+                _existingRows.add(_data.getExistingRecord());
+        }
+        return hasNext;
     }
 
     @Override
