@@ -1144,7 +1144,7 @@ public class XarReader extends AbstractXarImporter
             ExpData data = _xarSource.getData(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
             {
-                _xarSource.addData(experimentRun.getLSID(), data);
+                _xarSource.addData(experimentRun.getLSID(), data, null);
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId());
@@ -1341,8 +1341,23 @@ public class XarReader extends AbstractXarImporter
         checkDataCpasType(declaredType);
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
-
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
+        ExpDataClass expDataClass = ExperimentService.get().getDataClass(declaredType);
+        if (expData == null && expDataClass != null)
+        {
+            // Try resolving it by name within the data class in case we have it under a different LSID
+            ExpData data = expDataClass.getData(getContainer(), xbData.getName());
+            if (data instanceof ExpDataImpl)
+            {
+                // Remember this as an alternate LSID during import
+                _xarSource.addData(null, data, dataLSID);
+                if (experimentRun != null)
+                {
+                    _xarSource.addData(experimentRun.getLSID(), data, dataLSID);
+                }
+                expData = (ExpDataImpl)data;
+            }
+        }
 
         if (expData != null)
         {
@@ -1463,7 +1478,7 @@ public class XarReader extends AbstractXarImporter
         }
 
 
-        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);
+        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData, null);
         getLog().debug("Finished loading Data with LSID '" + dataLSID + "'");
         return expData.getDataObject();
     }
