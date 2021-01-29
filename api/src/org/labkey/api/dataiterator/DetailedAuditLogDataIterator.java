@@ -47,6 +47,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     final User _user;
     final Container _container;
     final TableInfo _table;
+    final String _userComment;
     final QueryService.AuditAction _auditAction;
 
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c)
@@ -56,6 +57,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _data = data;
         _user = user;
         _container = c;
+        _userComment = (String) _context.getConfigParameter(AuditConfigs.AuditUserComment);
         _auditAction = auditAction;
     }
 
@@ -77,19 +79,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (!_data.next())
             return false;
 
-        if (_table.supportsAuditTracking())
-        {
-            AuditConfigurable auditConfigurable = (AuditConfigurable) _table;
-
-            // configParameter value overrides value from the tableInfo
-            AuditBehaviorType auditType = (AuditBehaviorType) _context.getConfigParameter(AuditConfigs.AuditBehavior);
-            if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
-                auditType = auditConfigurable.getAuditBehavior();
-
-            if (auditType == DETAILED)
-                _table.getAuditHandler().addAuditEvent(_user, _container, _table, auditType, (String) _context.getConfigParameter(AuditConfigs.AuditUserComment), _auditAction, List.of(((MapDataIterator) _data).getMap()), null);
-        }
-
+        _table.getAuditHandler().addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, List.of(((MapDataIterator) _data).getMap()), null);
         return true;
     }
 
@@ -105,14 +95,28 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _data.close();
     }
 
-
     public static DataIteratorBuilder getDataIteratorBuilder(TableInfo queryTable, @NotNull final DataIteratorBuilder builder, QueryService.AuditAction auditAction, final User user, final Container container)
     {
         return context ->
         {
-            DataIterator it = builder.getDataIterator(context);
-            DataIterator in = DataIteratorUtil.wrapMap(it, false);
-            return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
+            if (queryTable.supportsAuditTracking())
+            {
+                AuditConfigurable auditConfigurable = (AuditConfigurable) queryTable;
+
+                // configParameter value overrides value from the tableInfo
+                AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior);
+                if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
+                    auditType = auditConfigurable.getAuditBehavior();
+
+                if (auditType == DETAILED)
+                {
+                    DataIterator it = builder.getDataIterator(context);
+                    DataIterator in = DataIteratorUtil.wrapMap(it, false);
+                    return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
+                }
+            }
+            // Nothing to do, so just return input DataIterator
+            return builder.getDataIterator(context);
         };
     }
 
