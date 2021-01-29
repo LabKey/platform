@@ -105,7 +105,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-
 public class ProjectController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ProjectController.class);
@@ -447,12 +446,12 @@ public class ProjectController extends SpringActionController
             if (path.startsWith(pipeline))
             {
                 path = pipeline.relativize(path);
-                redirect = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c).addParameter("path", path.encode());
+                redirect = urlProvider(PipelineUrls.class).urlBrowse(c).addParameter("path", path.encode());
             }
             else if (path.startsWith(files))
             {
                 path = files.relativize(path);
-                redirect = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("path", path.encode());
+                redirect = urlProvider(FileUrls.class).urlBegin(c).addParameter("path", path.encode());
             }
             else
             {
