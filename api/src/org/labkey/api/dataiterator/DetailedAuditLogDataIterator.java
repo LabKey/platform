@@ -99,21 +99,14 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     {
         return context ->
         {
+            AuditBehaviorType auditType = AuditBehaviorType.NONE;
             if (queryTable.supportsAuditTracking())
+                auditType = queryTable.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior));
+            if (auditType == DETAILED)
             {
-                AuditConfigurable auditConfigurable = (AuditConfigurable) queryTable;
-
-                // configParameter value overrides value from the tableInfo
-                AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(AuditConfigs.AuditBehavior);
-                if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
-                    auditType = auditConfigurable.getAuditBehavior();
-
-                if (auditType == DETAILED)
-                {
-                    DataIterator it = builder.getDataIterator(context);
-                    DataIterator in = DataIteratorUtil.wrapMap(it, false);
-                    return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
-                }
+                DataIterator it = builder.getDataIterator(context);
+                DataIterator in = DataIteratorUtil.wrapMap(it, false);
+                return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
             }
             // Nothing to do, so just return input DataIterator
             return builder.getDataIterator(context);
