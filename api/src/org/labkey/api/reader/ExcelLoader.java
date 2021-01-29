@@ -168,7 +168,7 @@ public class ExcelLoader extends DataLoader
     // We are not using getDateCellValue in that case, which knows how to determine which date system is in use, so
     // we hack up our own way to detect this.  This is derived from this posting:
     // https://alandix.com/code2/apache-poi-detect-1904-date-option/
-    void setIsStartDate1904()
+    void computeIsStartDate1904()
     {
         try
         {
@@ -176,13 +176,11 @@ public class ExcelLoader extends DataLoader
             Row row = sheet.createRow(sheet.getLastRowNum() + 1);
             Cell cell = row.createCell(0);
             cell.setCellValue(0.0);
-            double value = cell.getNumericCellValue();
             Date date = cell.getDateCellValue();
             Calendar cal = new GregorianCalendar();
             cal.setTime(date);
             long year1900 = cal.get(Calendar.YEAR)-1900;
-            long yearEst1900 = Math.round(value/(365.25));
-            _isStartDate1904 =  year1900 > yearEst1900;
+            _isStartDate1904 =  year1900 > 0;
             sheet.removeRow(row);
         }
         catch (IOException e) // can't read the sheet
@@ -194,7 +192,7 @@ public class ExcelLoader extends DataLoader
     private boolean getIsStartDate1904()
     {
         if (_isStartDate1904 == null)
-            setIsStartDate1904();
+            computeIsStartDate1904();
         return _isStartDate1904;
     }
 
