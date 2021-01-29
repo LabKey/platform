@@ -1,5 +1,6 @@
 package org.labkey.test.tests.study;
 
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -15,6 +16,7 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -61,10 +63,10 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testFileField()
+    public void testFileField() throws IOException
     {
         String datasetName = "Dataset-1";
-        File filePath = TestFileUtils.getSampleData("fileTypes/xml_sample.xml"); //random file
+        File inputFile = TestFileUtils.getSampleData("fileTypes/sample.txt"); //random file
         goToProjectHome();
         createDataset(datasetName);
 
@@ -76,7 +78,7 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         insertDataPage.insert(Map.of("ParticipantId", "1",
                 "SequenceNum", "2",
                 "date", "2020-08-04",
-                "fileField", filePath.toString(),
+                "fileField", inputFile.toString(),
                 "textField", "Hello World..!",
                 "intField", "25"));
 
@@ -86,8 +88,9 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
         setFormElement(Locator.name("quf_textField"), "Welcome..!");
         clickButton("Submit");
 
-        log("Verify file field is not deleted");
-        checker().verifyEquals("Incorrect file name ", " datasetdata\\xml_sample.xml", table.getDataAsText(0, "fileField"));
+        log("Verify file field is not deleted after edit");
+        File downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
+        checker().verifyTrue("Incorrect file name ", FileUtils.contentEquals(downloadedFile, inputFile));
     }
 
     protected void createDataset(String name)
