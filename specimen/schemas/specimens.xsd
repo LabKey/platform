@@ -5,8 +5,8 @@
            attributeFormDefault="unqualified"
            elementFormDefault="qualified">
 
-    <xs:import namespace="http://labkey.org/study/xml" schemaLocation="study.xsd"/>
-    <xs:import namespace="http://labkey.org/security/xml" schemaLocation="security.xsd"/>
+    <xs:import namespace="http://labkey.org/study/xml" schemaLocation="../../api/schemas/study.xsd"/>
+    <xs:import namespace="http://labkey.org/security/xml" schemaLocation="../../api/schemas/security.xsd"/>
 
     <xs:element name="specimens" type="specimenSettingsType">
         <xs:annotation>
