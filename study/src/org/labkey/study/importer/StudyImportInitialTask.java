@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.ImportTemplate;
 import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.TimepointType;
@@ -105,7 +106,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (hasSpecimenSchemasToImport)
             {
                 // if specimen schemas will be imported, don't create optional specimen table fields
-                previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
+                previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new ImportTemplate());
             }
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties

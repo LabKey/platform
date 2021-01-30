@@ -38,7 +38,7 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
+import org.labkey.api.specimen.importer.ImportTemplate;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
@@ -89,7 +89,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         try
         {
             // Need to set optional fields to null, or user-added metadata on those fields won't be copied over properly
-            previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
+            previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new ImportTemplate());
             StudyImpl newStudy = createNewStudy(form);
 
             if (newStudy != null)

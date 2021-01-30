@@ -17,10 +17,9 @@ package org.labkey.study.writer;
 
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
-import org.labkey.api.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.importer.SimpleStudyImporter;
+import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.study.importer.AssayScheduleImporter;
@@ -129,9 +128,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
 
     public Collection<SimpleStudyImporter> getSimpleStudyImporters()
     {
-        return List.of(
-            new SpecimenSettingsImporter(),
-            new SpecimenSchemaImporter()
-        );
+        return SimpleStudyImporterRegistry.getSimpleStudyImporters();
     }
 }

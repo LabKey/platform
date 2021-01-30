@@ -28,6 +28,8 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
+import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
+import org.labkey.api.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
@@ -37,6 +39,7 @@ import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
@@ -109,6 +112,11 @@ public class SpecimenModule extends CodeOnlyModule
         SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
             new SpecimenSettingsWriter(),
             new SpecimenArchiveWriter()
+        ));
+
+        SimpleStudyImporterRegistry.registerSimpleStudyImporterProvider(() -> List.of(
+            new SpecimenSettingsImporter(),
+            new SpecimenSchemaImporter()
         ));
     }
 

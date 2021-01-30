@@ -21,7 +21,6 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager;
@@ -29,7 +28,6 @@ import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.SpecimenTablesTemplate;
@@ -47,10 +45,8 @@ import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by klum on 2/7/14.
@@ -191,31 +187,6 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
         catch (IOException e)
         {
             return false;
-        }
-    }
-
-    /**
-     * A specimen tables template implementation that only provides the required (built in) fields but none of the optional
-     * fields. This makes it easier to handle both additions and subtractions to the specimen domains on export/import.
-     */
-    public static class ImportTemplate extends DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
-    {
-        @Override
-        public Set<PropertyStorageSpec> getExtraSpecimenEventProperties()
-        {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public Set<PropertyStorageSpec> getExtraVialProperties()
-        {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public Set<PropertyStorageSpec> getExtraSpecimenProperties()
-        {
-            return Collections.emptySet();
         }
     }
 }
