@@ -267,33 +267,34 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // export objects from the parent study, then import them into the new study
                 getLogger().info("Exporting data from parent study.");
                 exportFromParentStudy(folderExportContext, vf);
+                VirtualFile studyDir = vf.getDir("study");
 
-                StudyImportContext studyImportContext = importToDestinationStudy(errors, destStudy, vf);
+                StudyImportContext studyImportContext = importToDestinationStudy(errors, destStudy, studyDir);
 
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
 
                 // copy participants
-                exportParticipantGroups(_form, sourceStudy, participantGroups, folderExportContext, vf);
+                exportParticipantGroups(_form, sourceStudy, participantGroups, folderExportContext, studyDir);
 
                 // assay schedule and treatment data (study design)
-                importStudyDesignData(errors, vf, studyImportContext);
+                importStudyDesignData(errors, studyDir, studyImportContext);
 
                 // import dataset data or create snapshot datasets
                 importDatasetData(context, _form, sourceStudy, destStudy, snapshot, datasets, participantGroups, vf, errors, studyImportContext);
 
                 // import the specimen data and settings
-                importSpecimenMetadata(errors, vf, studyImportContext);
-                importSpecimenSettings(errors, vf, studyImportContext);
-                importSpecimenData(destStudy, vf);
+                importSpecimenMetadata(errors, studyImportContext);
+                importSpecimenSettings(errors, studyDir, studyImportContext);
+                importSpecimenData(destStudy, studyDir);
 
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
-                importCohortSettings(errors, vf, studyImportContext);
+                importCohortSettings(errors, studyDir, studyImportContext);
 
                 // import TreatmentVisitMap, needs to happen after cohort info is loaded (issue 19947)
-                importTreatmentVisitMapData(errors, vf, studyImportContext);
+                importTreatmentVisitMapData(errors, studyDir, studyImportContext);
 
-                new TopLevelStudyPropertiesImporter().process(studyImportContext, vf, errors);
+                new TopLevelStudyPropertiesImporter().process(studyImportContext, studyDir, errors);
             }
 
             if (errors.hasErrors())
@@ -387,39 +388,31 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         return dataTypes;
     }
 
-    private void importCohortSettings(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception
+    private void importCohortSettings(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        VirtualFile studyDir = vf.getDir("study");
-
         if (importContext != null)
         {
             new CohortImporter().process(importContext, studyDir, errors);
         }
     }
 
-    private void importSpecimenMetadata(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception
+    private void importSpecimenMetadata(BindException errors, StudyImportContext importContext) throws Exception
     {
         VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(importContext);
 
-        if (importContext != null)
-        {
-            new SpecimenSchemaImporter().process(importContext, specimenDir, errors);
-        }
+        new SpecimenSchemaImporter().process(importContext, specimenDir, errors);
     }
 
-    private void importSpecimenSettings(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception
+    private void importSpecimenSettings(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        VirtualFile studyDir = vf.getDir("study");
-
         if (importContext != null)
         {
             new SpecimenSettingsImporter().process(importContext, studyDir, errors);
         }
     }
 
-    private StudyImportContext importToDestinationStudy(BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
+    private StudyImportContext importToDestinationStudy(BindException errors, StudyImpl newStudy, VirtualFile studyDir) throws Exception
     {
-        VirtualFile studyDir = vf.getDir("study");
         StudyDocument studyDoc = getStudyDocument(studyDir);
         StudyImportContext importContext = null;
 
@@ -464,10 +457,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     /**
      * Study design data includes treatment data, assay schedule and study design tables.
      */
-    private void importStudyDesignData(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception
+    private void importStudyDesignData(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        VirtualFile studyDir = vf.getDir("study");
-
         if (importContext != null)
         {
             // assay schedule and treatment data (study design)
@@ -479,10 +470,8 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
     }
 
-    private void importTreatmentVisitMapData(BindException errors, VirtualFile vf, StudyImportContext importContext) throws Exception
+    private void importTreatmentVisitMapData(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        VirtualFile studyDir = vf.getDir("study");
-
         if (importContext != null)
         {
             new TreatmentVisitMapImporter().process(importContext, studyDir, errors);
@@ -581,7 +570,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         }
     }
 
-    private void exportParticipantGroups(ChildStudyDefinition form, StudyImpl sourceStudy, List<ParticipantGroup> participantGroups, FolderExportContext ctx, VirtualFile vf) throws Exception
+    private void exportParticipantGroups(ChildStudyDefinition form, StudyImpl sourceStudy, List<ParticipantGroup> participantGroups, FolderExportContext ctx, VirtualFile studyDir) throws Exception
     {
         List<ParticipantGroup> groupsToCopy = new ArrayList<>();
         if (form.isCopyParticipantGroups())
@@ -592,8 +581,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             // query snapshots need to have participants created ahead of the snapshot
             if (form.isUpdate())
                 ensureGroupParticipants(participantGroups, sourceStudy, _form.isUseAlternateParticipantIds());
-
-            VirtualFile studyDir = vf.getDir("study");
 
             ParticipantGroupWriter groupWriter = new ParticipantGroupWriter();
             groupWriter.setGroupsToCopy(groupsToCopy);

@@ -110,9 +110,8 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
         writer.write(ctx.getContainer(), ctx, vf);
     }
 
-    protected void importSpecimenData(StudyImpl destStudy, VirtualFile vf) throws Exception
+    protected void importSpecimenData(StudyImpl destStudy, VirtualFile studyDir) throws Exception
     {
-        VirtualFile studyDir = vf.getDir("study");
         StudyDocument studyDoc = getStudyDocument(studyDir);
         if (studyDoc != null)
         {

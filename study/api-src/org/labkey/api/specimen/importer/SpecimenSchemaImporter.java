@@ -30,7 +30,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
-import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.Pair;
@@ -53,8 +52,6 @@ import java.util.Map;
  */
 public class SpecimenSchemaImporter implements SimpleStudyImporter
 {
-    SpecimenTablesTemplate _template = new ImportTemplate();
-
     @Override
     public String getDescription()
     {
@@ -90,7 +87,7 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
     }
 
     @Nullable
-    public static VirtualFile getSpecimenFolder(SimpleStudyImportContext ctx) throws org.labkey.api.admin.ImportException
+    public static VirtualFile getSpecimenFolder(SimpleStudyImportContext ctx) throws ImportException
     {
         StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
         if (null != specimens && null != specimens.getDir())
@@ -130,7 +127,7 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
         }
 
         TablesType tablesXml = tablesDoc.getTables();
-        SpecimenTablesProvider tablesProvider = new SpecimenTablesProvider(ctx.getContainer(), ctx.getUser(), _template);
+        SpecimenTablesProvider tablesProvider = new SpecimenTablesProvider(ctx.getContainer(), ctx.getUser(), new ImportTemplate());
 
         for (TableType tableXml : tablesXml.getTableArray())
         {
