@@ -82,6 +82,11 @@ public class XarExportSelection implements Serializable
         }
     }
 
+    public void addProtocolIds(Collection<Integer> protocolIds)
+    {
+        _protocolIds.addAll(protocolIds);
+    }
+
     public boolean isIncludeXarXml()
     {
         return _includeXarXml;
