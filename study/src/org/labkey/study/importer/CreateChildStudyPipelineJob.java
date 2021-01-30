@@ -38,13 +38,13 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
-import org.labkey.api.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.importer.SimpleStudyImporter;
+import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -283,9 +283,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // import dataset data or create snapshot datasets
                 importDatasetData(context, _form, sourceStudy, destStudy, snapshot, datasets, participantGroups, vf, errors, studyImportContext);
 
-                // import the specimen data and settings
-                importSpecimenMetadata(errors, studyImportContext);
-                importSpecimenSettings(errors, studyDir, studyImportContext);
+                // import using the "simple study importers" (i.e., schema and settings)
+                for (SimpleStudyImporter ssi : SimpleStudyImporterRegistry.getSimpleStudyImporters())
+                    ssi.process(studyImportContext, studyDir, errors);
+
+                // import specimen data
                 importSpecimenData(destStudy, studyDir);
 
                 // import the cohort settings, needs to happen after the dataset data and specimen data is imported so the full ptid list is available
@@ -393,19 +395,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (importContext != null)
         {
             new CohortImporter().process(importContext, studyDir, errors);
-        }
-    }
-
-    private void importSpecimenMetadata(BindException errors, StudyImportContext importContext) throws Exception
-    {
-        new SpecimenSchemaImporter().process(importContext, null, errors);
-    }
-
-    private void importSpecimenSettings(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
-    {
-        if (importContext != null)
-        {
-            new SpecimenSettingsImporter().process(importContext, studyDir, errors);
         }
     }
 

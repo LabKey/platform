@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.AttachmentService;
@@ -24,6 +24,7 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.actions.ManageReqsBean;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
