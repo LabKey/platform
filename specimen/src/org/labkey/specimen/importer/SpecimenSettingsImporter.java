@@ -69,6 +69,22 @@ import java.util.Set;
 public class SpecimenSettingsImporter implements SimpleStudyImporter
 {
     @Override
+    public Timing getTiming()
+    {
+        return Timing.Late; // Can't setup specimen request actors until the locations have been created
+    }
+
+    @Override
+    public void preHandling(SimpleStudyImportContext ctx)
+    {
+    }
+
+    @Override
+    public void postHandling(SimpleStudyImportContext ctx)
+    {
+    }
+
+    @Override
     public String getDescription()
     {
         return "specimen settings";

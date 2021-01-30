@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.importer;
+package org.labkey.specimen.importer;
 
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
@@ -28,8 +28,11 @@ import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.importer.ImportTemplate;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.writer.SpecimenArchiveDataTypes;
+import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.Pair;
@@ -52,6 +55,29 @@ import java.util.Map;
  */
 public class SpecimenSchemaImporter implements SimpleStudyImporter
 {
+    private SpecimenTablesTemplate _previousTablesTemplate;
+
+    @Override
+    public Timing getTiming()
+    {
+        return Timing.Early;
+    }
+
+    @Override
+    public void preHandling(SimpleStudyImportContext ctx) throws ImportException
+    {
+        // if specimen schemas will be imported, don't create optional specimen table fields
+        if (containsSchemasToImport(ctx))
+            _previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new ImportTemplate());
+    }
+
+    @Override
+    public void postHandling(SimpleStudyImportContext ctx)
+    {
+        if (_previousTablesTemplate != null)
+            SpecimenSchema.get().setSpecimenTablesTemplates(_previousTablesTemplate);
+    }
+
     @Override
     public String getDescription()
     {
@@ -64,7 +90,7 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
         return SpecimenArchiveDataTypes.SPECIMENS;
     }
 
-    public static boolean containsSchemasToImport(SimpleStudyImportContext ctx) throws ImportException
+    private boolean containsSchemasToImport(SimpleStudyImportContext ctx) throws ImportException
     {
         StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
         if (null != specimens && null != specimens.getDir())
@@ -103,9 +129,12 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(ctx);
+        VirtualFile specimenDir = getSpecimenFolder(ctx);
 
         if (!isValidForImportArchive(ctx, specimenDir))
+            return;
+
+        if (!containsSchemasToImport(ctx))
             return;
 
         TablesDocument tablesDoc;

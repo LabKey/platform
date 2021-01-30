@@ -24,23 +24,21 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.importer.ImportTemplate;
-import org.labkey.api.specimen.importer.SpecimenSchemaImporter;
-import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.FileType;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /*
 * User: adam
@@ -71,7 +69,11 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
     {
-        SpecimenTablesTemplate previousTablesTemplate = null;
+        // Construct all the SimpleStudyImporters that are designated as "Early"
+        List<SimpleStudyImporter> simpleStudyImporters = StudySerializationRegistryImpl.get().getSimpleStudyImporters().stream()
+            .filter(ssi->ssi.getTiming() == SimpleStudyImporter.Timing.Early)
+            .collect(Collectors.toList());
+
         try
         {
             StudyDocument.Study studyXml = ctx.getXml();
@@ -100,14 +102,10 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                     catch (InterruptedException ignored) {}
                 }
             }
-            
-            boolean hasSpecimenSchemasToImport = SpecimenSchemaImporter.containsSchemasToImport(ctx);
 
-            if (hasSpecimenSchemasToImport)
-            {
-                // if specimen schemas will be imported, don't create optional specimen table fields
-                previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new ImportTemplate());
-            }
+            // Initialize the SimpleStudyImporters
+            for (SimpleStudyImporter ssi : simpleStudyImporters)
+                ssi.preHandling(ctx);
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
@@ -151,9 +149,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             if (errors.hasErrors())
                 throwFirstErrorAsPipelineJobException(errors);
 
-            if (hasSpecimenSchemasToImport)
+            for (SimpleStudyImporter importer : simpleStudyImporters)
             {
-                new SpecimenSchemaImporter().process(ctx, null, errors);
+                importer.process(ctx, ctx.getRoot(), errors);
                 if (errors.hasErrors())
                     throwFirstErrorAsPipelineJobException(errors);
             }
@@ -169,8 +167,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         }
         finally
         {
-            if (previousTablesTemplate != null)
-                SpecimenSchema.get().setSpecimenTablesTemplates(previousTablesTemplate);
+            for (SimpleStudyImporter importer : simpleStudyImporters)
+                importer.postHandling(ctx);
         }
     }
 
