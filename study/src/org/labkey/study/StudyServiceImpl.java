@@ -297,6 +297,7 @@ public class StudyServiceImpl implements StudyService
         AuditLogService.get().addEvent(user, event);
     }
 
+
     @Override
     public void addStudyAuditEvent(Container container, User user, String comment)
     {
@@ -304,64 +305,6 @@ public class StudyServiceImpl implements StudyService
         AuditLogService.get().addEvent(user, event);
     }
 
-    /**
-     * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
-     * if both are set, it's an edit
-     */
-    public static void addDatasetAuditEvent(User u, Dataset def, @Nullable Map<String, Object> oldRecord, @Nullable Map<String, Object> newRecord)
-    {
-        String comment;
-        if (oldRecord == null)
-            comment = "A new dataset record was inserted";
-        else if (newRecord == null)
-            comment = "A dataset record was deleted";
-        else
-            comment = "A dataset record was modified";
-        addDatasetAuditEvent(u, def, oldRecord, newRecord, comment);
-    }
-
-    /**
-     * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
-     * if both are set, it's an edit
-     */
-    public static void addDatasetAuditEvent(User u, Dataset def, Map<String, Object> oldRecord, Map<String, Object> newRecord, String auditComment)
-    {
-        Container c = def.getContainer();
-        DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
-
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
-        event.setDatasetId(def.getDatasetId());
-        event.setHasDetails(true);
-
-        String oldRecordString = null;
-        String newRecordString = null;
-        Object lsid;
-        if (oldRecord == null)
-        {
-            newRecordString = DatasetAuditProvider.encodeForDataMap(c, newRecord);
-            lsid = newRecord.get("lsid");
-        }
-        else if (newRecord == null)
-        {
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, oldRecord);
-            lsid = oldRecord.get("lsid");
-        }
-        else
-        {
-            Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(oldRecord, newRecord, Collections.emptySet());
-
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
-            newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
-            lsid = newRecord.get("lsid");
-        }
-        event.setLsid(lsid == null ? null : lsid.toString());
-
-        if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
-        if (newRecordString != null) event.setNewRecordMap(newRecordString);
-
-        AuditLogService.get().addEvent(u, event);
-    }
 
     public static void addDatasetAuditEvent(User u, Container c, Dataset def, String comment, UploadLog ul /*optional*/)
     {
@@ -376,6 +319,7 @@ public class StudyServiceImpl implements StudyService
         }
         AuditLogService.get().addEvent(u,event);
     }
+
 
     @Override
     public void applyDefaultQCStateFilter(DataView view)
