@@ -230,9 +230,6 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         //noinspection ConstantConditions
         assert value != null : "Shouldn't be validating a null value";
 
-        if (value != null)
-            value = ConvertHelper.convert(value, crpField.getJavaObjectClass());
-
         if (crpField instanceof PropertyDescriptor)
         {
             PropertyDescriptor field = (PropertyDescriptor) crpField;
