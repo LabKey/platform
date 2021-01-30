@@ -98,18 +98,20 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
     }
 
     @Override
-    public void process(SimpleStudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(SimpleStudyImportContext ctx, VirtualFile studyDir, BindException errors) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
-        if (!isValidForImportArchive(ctx, root))
+        VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(ctx);
+
+        if (!isValidForImportArchive(ctx, specimenDir))
             return;
 
         TablesDocument tablesDoc;
         try
         {
-            XmlObject schemaXml = root.getXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME);
+            XmlObject schemaXml = specimenDir.getXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME);
             if (schemaXml instanceof TablesDocument)
             {
                 tablesDoc = (TablesDocument)schemaXml;

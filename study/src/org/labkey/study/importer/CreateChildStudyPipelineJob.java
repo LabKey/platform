@@ -398,9 +398,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
     private void importSpecimenMetadata(BindException errors, StudyImportContext importContext) throws Exception
     {
-        VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(importContext);
-
-        new SpecimenSchemaImporter().process(importContext, specimenDir, errors);
+        new SpecimenSchemaImporter().process(importContext, null, errors);
     }
 
     private void importSpecimenSettings(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception

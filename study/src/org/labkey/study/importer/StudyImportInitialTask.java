@@ -153,13 +153,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             if (hasSpecimenSchemasToImport)
             {
-                VirtualFile specimenDir = SpecimenSchemaImporter.getSpecimenFolder(ctx);
-                if (null != specimenDir)
-                {
-                    new SpecimenSchemaImporter().process(ctx, specimenDir, errors);
-                    if (errors.hasErrors())
-                        throwFirstErrorAsPipelineJobException(errors);
-                }
+                new SpecimenSchemaImporter().process(ctx, null, errors);
+                if (errors.hasErrors())
+                    throwFirstErrorAsPipelineJobException(errors);
             }
         }
         catch (CancelledException e)
