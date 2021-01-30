@@ -19,6 +19,7 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
@@ -194,5 +195,11 @@ public interface FolderType
      */
     @NotNull
     List<NavTree> getExtraSetupSteps(Container c);
+
+    @Nullable
+    default AuditBehaviorType getImportAuditBehavior()
+    {
+        return null;
+    }
 }
 

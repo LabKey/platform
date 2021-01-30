@@ -900,7 +900,7 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
         return true;
     }
 
-    protected String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
+    public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {
         String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action, isUpdate);
         return StringUtils.isEmpty(comment) ? action.getCommentDetailed() : comment;
