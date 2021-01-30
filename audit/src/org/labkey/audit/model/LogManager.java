@@ -154,6 +154,7 @@ public class LogManager
                 {
                     event = validateFields(provider, event);
                     Map<String,Object> map = ObjectFactory.Registry.getFactory((Class<K>)event.getClass()).toMap(event, null);
+                    stmt.clearParameters();
                     stmt.putAll(map);
                     stmt.addBatch();
                 }
