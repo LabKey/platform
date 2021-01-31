@@ -17,6 +17,9 @@ package org.labkey.api.admin;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
+import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
@@ -144,5 +147,12 @@ public class FolderImportContext extends AbstractFolderContext
     public void addImportedReport(ReportDescriptor d)
     {
         _importedReports.add(ReportUtil.getSerializedName(d));
+    }
+
+    @Override
+    public AuditBehaviorType getAuditBehaviorType() throws Exception
+    {
+        FolderType folderType = FolderTypeManager.get().getFolderType(this.getXml().getFolderType().getName());
+        return folderType == null ? null : folderType.getImportAuditBehavior();
     }
 }
