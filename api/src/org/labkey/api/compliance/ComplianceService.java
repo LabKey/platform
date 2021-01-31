@@ -27,6 +27,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -69,6 +71,7 @@ public interface ComplianceService
      */
     Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException;
     SignedSnapshot getSignedSnapshot(Container container, int snapshotId);
+    Collection<SignedSnapshot> getSignedSnapshots(Container container, String ownerEntityId);
     Map<String, Object> deleteSignedSnapshot(Container container, User user, int snapshotId);
 
     class DefaultComplianceService implements ComplianceService
@@ -118,6 +121,12 @@ public interface ComplianceService
         public SignedSnapshot getSignedSnapshot(Container container, int snapshotId)
         {
             return null;
+        }
+
+        @Override
+        public Collection<SignedSnapshot> getSignedSnapshots(Container container, String ownerEntityId)
+        {
+            return Collections.emptyList();
         }
 
         @Override
