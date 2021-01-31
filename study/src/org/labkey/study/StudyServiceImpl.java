@@ -1326,4 +1326,16 @@ public class StudyServiceImpl implements StudyService
             mutable.setAllowReqLocEndpoint(allowReqLocEndpoint);
         StudyManager.getInstance().updateStudy(user, mutable);
     }
+
+    @Override
+    public Collection<String> getParticipantIds(Study study, User user)
+    {
+        return StudyManager.getInstance().getParticipantIds(study, user);
+    }
+
+    @Override
+    public boolean participantExists(Study study, String participantId)
+    {
+        return null != StudyManager.getInstance().getParticipant(study, participantId);
+    }
 }

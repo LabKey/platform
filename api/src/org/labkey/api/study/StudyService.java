@@ -277,4 +277,8 @@ public interface StudyService
     List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort);
 
     void saveLocationSettings(Study study, User user, @Nullable Boolean allowReqLocRepository, @Nullable Boolean allowReqLocClinic, @Nullable Boolean allowReqLocSal, @Nullable Boolean allowReqLocEndpoint);
+
+    Collection<String> getParticipantIds(Study study, User user);
+
+    boolean participantExists(Study study, String participantId);
 }

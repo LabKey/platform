@@ -35,6 +35,7 @@ import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.model.VialDomainKind;
+import org.labkey.api.specimen.view.SpecimenReportWebPartFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
@@ -75,7 +76,8 @@ public class SpecimenModule extends CodeOnlyModule
         return List.of(
             new SpecimenSearchWebPartFactory(HttpView.BODY),
             new SpecimenToolsWebPartFactory(),
-            new SpecimenWebPartFactory()
+            new SpecimenWebPartFactory(),
+            new SpecimenReportWebPartFactory()
         );
     }
 

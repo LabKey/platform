@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -81,6 +80,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.model.CohortService;
+import org.labkey.api.study.model.ParticipantGroupService;
+import org.labkey.api.study.model.VisitService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
@@ -121,7 +123,6 @@ import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.controllers.specimen.SpecimenReportWebPartFactory;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -137,6 +138,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantGroupServiceImpl;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.ProtocolDocumentType;
 import org.labkey.study.model.SequenceNumImportHelper;
@@ -219,9 +221,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
 
-    @Migrate
-    public static final WebPartFactory specimenReportWebPartFactory = new SpecimenReportWebPartFactory();
-
     @Override
     public String getName()
     {
@@ -255,6 +254,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
+        ParticipantGroupService.setInstance(new ParticipantGroupServiceImpl());
+        CohortService.setInstance(new CohortServiceImpl());
+        VisitService.setInstance(new VisitServiceImpl());
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
@@ -314,9 +316,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             subjectDetailsWebPartFactory,
             subjectsWebPartFactory,
             vaccineDesignWebPartFactory,
-            new SharedStudyController.StudyFilterWebPartFactory(),
-
-            specimenReportWebPartFactory
+            new SharedStudyController.StudyFilterWebPartFactory()
         );
     }
 

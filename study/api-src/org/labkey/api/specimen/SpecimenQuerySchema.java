@@ -12,6 +12,7 @@ import java.util.Set;
 
 public class SpecimenQuerySchema extends UserSchema
 {
+    public static final String SCHEMA_NAME = "Study";
     public static final String SIMPLE_SPECIMEN_TABLE_NAME = "SimpleSpecimen";
     public static final String SPECIMEN_DETAIL_TABLE_NAME = "SpecimenDetail";
     public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
