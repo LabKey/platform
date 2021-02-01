@@ -633,7 +633,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, oldRows, result);
+        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows);
 
         return result;
     }
