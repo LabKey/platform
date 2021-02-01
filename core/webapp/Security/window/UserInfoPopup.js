@@ -17,7 +17,7 @@ Ext4.define('Security.window.UserInfoPopup', {
             this.user = this.cache.getPrincipal(config.userId);
 
         Ext4.applyIf(this, {
-            title       : this.user.Name + ' Information',
+            title       : this.htmlEncode(this.user.Name) + ' Information',
             autoScroll  : true,
             closeable   : true,
             closeAction : 'close',
@@ -39,11 +39,15 @@ Ext4.define('Security.window.UserInfoPopup', {
         this.updateItems();
     },
 
+    htmlEncode : function(value) {
+        return Ext4.String.htmlEncode(value);
+    },
+
     updateItems : function()
     {
         var toAdd = [],
             isGroup = this.user.Type == 'g' || this.user.Type == 'r',
-            hdrHtml = "<span style='font-size: 14px; font-weight: bold;'>" + (isGroup?'Group ':'User ') + this.user.Name + "</span>",
+            hdrHtml = "<span style='font-size: 14px; font-weight: bold;'>" + (isGroup?'Group ':'User ') + this.htmlEncode(this.user.Name) + "</span>",
             container = (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId);
 
         // links
@@ -127,7 +131,7 @@ Ext4.define('Security.window.UserInfoPopup', {
 
             for (var g=0; g < groups.length; g++)
             {
-                html += '<li>' + groups[g].Name + '</li>';
+                html += '<li>' + this.htmlEncode(groups[g].Name) + '</li>';
                 // UNDONE: also render inherited groups (indented)?
             }
 
@@ -152,7 +156,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                 {
                     role = allRoles[r];
                     if (roles[role.uniqueName])
-                        html += '<li>' + ((role && role.name) ? role.name : role.uniqueName) + '</li>';
+                        html += '<li>' + this.htmlEncode((role && role.name) ? role.name : role.uniqueName) + '</li>';
                 }
 
                 html += '</ul>';
@@ -188,15 +192,15 @@ Ext4.define('Security.window.UserInfoPopup', {
                     if (isMemberGroup)
                     {
                         var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId) : '/'),{id:user.UserId});
-                        html += '<a style="font-size: 95%; font-weight: bold;" href="' + url + '">' + (user.Container ? "" : "Site:&nbsp;") + Ext4.String.htmlEncode(user.Name) + '</a>';
+                        html += '<a style="font-size: 95%; font-weight: bold;" href="' + url + '">' + (user.Container ? "" : "Site:&nbsp;") + this.htmlEncode(user.Name) + '</a>';
                     }
                     else
                     {
-                        html += Ext4.String.htmlEncode(user.Name);
+                        html += this.htmlEncode(user.Name);
                         // issue 17704, add display name for users
                         if (user.Name != user.DisplayName && user.DisplayName && user.DisplayName.length > 0)
                         {
-                            html += " (" + Ext4.String.htmlEncode(user.DisplayName) + ")"
+                            html += " (" + this.htmlEncode(user.DisplayName) + ")"
                         }
                     }
                     html += '</td>';
@@ -321,7 +325,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                 if(info && info.users && info.users.length == 0){
                     Ext4.Msg.show({
                         title   : 'Create New User',
-                        msg     : 'User was not found. Would you like to create the user for \'' + Ext4.String.htmlEncode(email) + '\'?',
+                        msg     : 'User was not found. Would you like to create the user for \'' + this.htmlEncode(email) + '\'?',
                         buttons : Ext4.MessageBox.YESNO,
                         fn : function(btn, text){
                             if(btn == 'yes'){
