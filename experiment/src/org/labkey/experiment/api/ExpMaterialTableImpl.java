@@ -98,7 +98,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static org.labkey.experiment.ExpDataIterators.NOT_FOR_UPDATE;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -783,6 +782,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
+    static final Set<String> excludeFromDetailedAuditField;
+    static
+    {
+        var set = new CaseInsensitiveHashSet();
+        set.addAll(TableInfo.defaultExcludedDetailedUpdateAuditFields);
+        set.addAll(ExpDataIterators.NOT_FOR_UPDATE);
+        excludeFromDetailedAuditField = Collections.unmodifiableSet(set);
+    }
+
+    @Override
+    public @NotNull Set<String> getExcludedDetailedUpdateAuditFields()
+    {
+        return excludeFromDetailedAuditField;
+    }
+
     /**
      * THIS IS A HACK
      * Really the caller should be providing the before record.
@@ -823,7 +837,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(ExpDataTable.Column.LSID.toString()))), true);
                                 if (existingRows != null && !existingRows.isEmpty())
                                 {
-                                    NOT_FOR_UPDATE.forEach(name -> existingRows.get(0).remove(name));
                                     existingRow = existingRows.get(0);
                                     rowId = existingRow.get(ExpDataTable.Column.RowId.toString());
                                 }
@@ -838,7 +851,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         if (rowId != null)
                         {
                             newRow.put(ExpDataTable.Column.RowId.toString(), rowId);
-                            NOT_FOR_UPDATE.forEach(newRow::remove);
                             // We don't want the inventory columns to show up in the sample timeline audit record;
                             // they are captured in their own audit record.
                             InventoryService.INVENTORY_STATUS_COLUMN_NAMES.forEach(newRow::remove);

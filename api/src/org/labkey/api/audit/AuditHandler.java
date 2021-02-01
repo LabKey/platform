@@ -163,7 +163,7 @@ public interface AuditHandler
 
         private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> oldRow, Map<String, Object> updatedRow, TableInfo table)
         {
-            Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(oldRow, updatedRow, table.getExtraDetailedUpdateAuditFields());
+            Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(oldRow, updatedRow, table.getExtraDetailedUpdateAuditFields(), table.getExcludedDetailedUpdateAuditFields());
 
             Map<String, Object> originalRow = rowPair.first;
             Map<String, Object> modifiedRow = rowPair.second;
@@ -182,15 +182,12 @@ public interface AuditHandler
     }
 
 
+    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> existingRow, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
+    {
+        return getOldAndNewRecordForMerge(existingRow, updatedRow, extraFieldsToInclude, TableInfo.defaultExcludedDetailedUpdateAuditFields);
+    }
 
-    /* NOTE there is probably a better place for this helper.  AuditService? */
-
-    // we exclude these from the detailed record because they are already on the audit record itself and
-    // depending on the data iterator behavior (e.g., for ExpDataIteraotrs.getDataIterator), these values
-    // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
-    Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy", "Created", "CreatedBy");
-
-    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> existingRow, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
+    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> existingRow, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude, Set<String> excludedFromDetailDiff)
     {
         // record modified fields
         Map<String, Object> originalRow = new HashMap<>();
