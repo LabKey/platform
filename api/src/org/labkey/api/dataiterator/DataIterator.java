@@ -36,6 +36,8 @@ import java.util.stream.Stream;
  */
 public interface DataIterator extends DataIteratorBuilder, Closeable
 {
+    String ROWNUMBER_COLUMNNAME = "_rowNumber";        // TODO change to something like DataIterator.class().getName() + "#_rowNumber"
+
     @Override
     default DataIterator getDataIterator(DataIteratorContext context)
     {

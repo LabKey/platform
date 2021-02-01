@@ -57,7 +57,6 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -65,14 +64,11 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -132,7 +128,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
             // Special case sample auditing to help build a useful timeline view
-            return new _WrappedSampleTypeAuditHandler();
+            return SampleTypeServiceImpl.get();
         }
         else
         {
@@ -788,6 +784,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         var set = new CaseInsensitiveHashSet();
         set.addAll(TableInfo.defaultExcludedDetailedUpdateAuditFields);
         set.addAll(ExpDataIterators.NOT_FOR_UPDATE);
+        // We don't want the inventory columns to show up in the sample timeline audit record;
+        // they are captured in their own audit record.
+        set.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
         excludeFromDetailedAuditField = Collections.unmodifiableSet(set);
     }
 
@@ -795,86 +794,5 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     public @NotNull Set<String> getExcludedDetailedUpdateAuditFields()
     {
         return excludeFromDetailedAuditField;
-    }
-
-    /**
-     * THIS IS A HACK
-     * Really the caller should be providing the before record.
-     * For the moment, this implementation supports DataIterator.MERGE which does not yet provide the before records
-     */
-    class _WrappedSampleTypeAuditHandler implements AuditHandler
-    {
-        final AuditHandler auditHandler = SampleTypeServiceImpl.get();
-
-        @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
-        {
-            auditHandler.addSummaryAuditEvent(user, c, table, action, dataRowCount);
-        }
-
-        private void _addMergeAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
-        {
-            Map<String, Object> newRow = new CaseInsensitiveHashMap<>(parameters);
-            Map<String, Object> existingRow = null;
-            Object rowId = null;
-            if (auditAction.equals(QueryService.AuditAction.MERGE))
-            {
-                AuditBehaviorType sampleAuditType = auditBehavior;
-                if (sampleAuditType == null || table.getXmlAuditBehaviorType() != null)
-                    sampleAuditType = table.getAuditBehavior();
-
-                if (sampleAuditType == AuditBehaviorType.DETAILED || sampleAuditType == AuditBehaviorType.SUMMARY)
-                {
-                    // material.rowid is a dbsequence column that auto increments during merge, even if rowId is not updated
-                    // need to reselect rowId
-                    if (newRow.containsKey(ExpDataTable.Column.LSID.toString()))
-                    {
-                        try
-                        {
-                            SampleTypeUpdateServiceDI qus = (SampleTypeUpdateServiceDI) table.getUpdateService();
-                            if (qus != null)
-                            {
-                                List<Map<String, Object>> existingRows = qus.getRows(user, container, Collections.singletonList(Map.of("LSID", newRow.get(ExpDataTable.Column.LSID.toString()))), true);
-                                if (existingRows != null && !existingRows.isEmpty())
-                                {
-                                    existingRow = existingRows.get(0);
-                                    rowId = existingRow.get(ExpDataTable.Column.RowId.toString());
-                                }
-                            }
-                        }
-                        catch (QueryUpdateServiceException e)
-                        {
-                            ExpMaterial sample = ExperimentService.get().getExpMaterial((String) newRow.get(ExpDataTable.Column.LSID.toString()));
-                            rowId = sample.getRowId();
-                        }
-
-                        if (rowId != null)
-                        {
-                            newRow.put(ExpDataTable.Column.RowId.toString(), rowId);
-                            // We don't want the inventory columns to show up in the sample timeline audit record;
-                            // they are captured in their own audit record.
-                            InventoryService.INVENTORY_STATUS_COLUMN_NAMES.forEach(newRow::remove);
-                        }
-                    }
-                }
-            }
-            if (existingRow != null)
-                auditHandler.addAuditEvent(user, container, table, auditBehavior, userComment, auditAction, Collections.singletonList(newRow), Collections.singletonList(existingRow));
-            else
-                auditHandler.addAuditEvent(user, container, table, auditBehavior, userComment, auditAction, Collections.singletonList(newRow), null);
-        }
-
-        @Override
-        public void addAuditEvent(User user, Container container, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
-        {
-            // If we are doing a merge/replace and we don't have before records, then fetch them
-            if (auditAction == QueryService.AuditAction.MERGE && null == existingRows)
-            {
-                for (var map : rows)
-                    _addMergeAuditEvent(user, container, table, auditType, userComment, auditAction, map);
-                return;
-            }
-            auditHandler.addAuditEvent(user, container, table, auditType, userComment, auditAction, rows, existingRows);
-        }
     }
 }

@@ -6,6 +6,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -14,6 +16,7 @@ import org.labkey.api.util.Pair;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -110,6 +113,9 @@ public interface AuditHandler
                     {
                         assert null != rows;
 
+                        AuditLogService auditLog = AuditLogService.get();
+                        List<DetailedAuditTypeEvent> batch = new ArrayList<>();
+
                         for (int i=0; i < rows.size(); i++)
                         {
                             Map<String, Object> updatedRow = rows.get(i);
@@ -120,7 +126,7 @@ public interface AuditHandler
                             {
                                 case INSERT:
                                 {
-                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, updatedRow);
+                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, getRecordForInsert(updatedRow));
                                     if (newRecord != null)
                                         event.setNewRecordMap(newRecord);
                                     break;
@@ -129,7 +135,7 @@ public interface AuditHandler
                                 {
                                     if (existingRow.isEmpty())
                                     {
-                                        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, updatedRow);
+                                        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, getRecordForInsert(updatedRow));
                                         if (newRecord != null)
                                             event.setNewRecordMap(newRecord);
                                     }
@@ -153,7 +159,17 @@ public interface AuditHandler
                                     break;
                                 }
                             }
-                            AuditLogService.get().addEvent(user, event);
+                            batch.add(event);
+                            if (batch.size() > 1000)
+                            {
+                                auditLog.addEvents(user, batch);
+                                batch.clear();
+                            }
+                        }
+                        if (batch.size() > 0)
+                        {
+                            auditLog.addEvents(user, batch);
+                            batch.clear();
                         }
                         break;
                     }
@@ -179,6 +195,16 @@ public interface AuditHandler
             if (newRecord != null)
                 event.setNewRecordMap(newRecord);
         }
+    }
+
+
+    static Map<String, Object> getRecordForInsert(Map<String, Object> updatedRow)
+    {
+        Map<String, Object> modifiedRow = new HashMap<>(updatedRow);
+        // remove DataIterator artifacts
+        modifiedRow.remove(DataIterator.ROWNUMBER_COLUMNNAME);
+        modifiedRow.remove(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME);
+        return modifiedRow;
     }
 
 

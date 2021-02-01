@@ -1654,7 +1654,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     auditLog.addEvents(user, batch);
                     batch.clear();
                 }
-                auditLog.addEvent(user, event);
             }
             if (batch.size() > 0)
             {
