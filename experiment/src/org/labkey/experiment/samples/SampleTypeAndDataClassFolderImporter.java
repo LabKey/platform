@@ -11,6 +11,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
@@ -155,7 +156,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     log.info("Importing XAR file: " + xarFile.getName());
                     XarReader reader = new XarReader(xarSource, job);
                     reader.setStrictValidateExistingSampleType(false);
-                    reader.parseAndLoad(false);
+                    reader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
                     // process any sample type data files and data class files
                     importTsvData(ctx, SamplesSchema.SCHEMA_NAME, reader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
@@ -203,6 +204,16 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+                                    Map<Enum, Object> options = new HashMap<>();
+                                    try
+                                    {
+                                        options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, ctx.getAuditBehaviorType());
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        log.error("Unable to get audit behavior for import. Default behavior will be used.");
+                                    }
+                                    context.setConfigParameters(options);
 
                                     qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
                                     if (context.getErrors().hasErrors())
@@ -242,7 +253,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         @Override
         public int getPriority()
         {
-            // make sure this importer runs after the FolderXarImporter (i.e. "Experiments and runs")
+            // make sure this importer runs after the FolderXarImporter (i.e. "Experiments, Protocols, and Runs")
             return 75;
         }
     }

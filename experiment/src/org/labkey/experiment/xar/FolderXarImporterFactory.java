@@ -146,7 +146,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 }
 
                 FolderExportXarReader reader = new FolderExportXarReader(xarSource, job);
-                reader.parseAndLoad(false);
+                reader.parseAndLoad(false, ctx.getAuditBehaviorType());
             }
 
             ctx.getLogger().info("Done importing " + getDescription());

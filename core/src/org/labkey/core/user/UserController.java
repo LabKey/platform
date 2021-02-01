@@ -105,7 +105,6 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
@@ -328,7 +327,7 @@ public class UserController extends SpringActionController
 
         if (canAddUser)
         {
-            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
+            ActionButton insert = new ActionButton(urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
         }
@@ -1094,7 +1093,7 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(QueryUpdateForm form)
         {
-            return form.getReturnActionURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
+            return form.getReturnActionURL(urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
         }
 
         @Override
@@ -1551,7 +1550,7 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
-                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
+                ActionButton changePasswordButton = new ActionButton(urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
                 changePasswordButton.setActionType(ActionButton.Action.LINK);
                 changePasswordButton.addContextualRole(OwnerRole.class);
                 bb.add(changePasswordButton);
