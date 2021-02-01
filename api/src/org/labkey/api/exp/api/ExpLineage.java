@@ -283,7 +283,7 @@ public class ExpLineage
 
         assert parentClazz == ExpMaterial.class || parentClazz == ExpData.class;
 
-        // walk from start through edges looking for all sample children, stopping at first datas found
+        // walk from start through edges looking for all sample children, stopping at first ones found
         Set<T> parents = new HashSet<>();
         Queue<Identifiable> stack = new LinkedList<>();
         Set<Identifiable> seen = new HashSet<>();
