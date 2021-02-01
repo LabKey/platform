@@ -16,6 +16,7 @@
 
 package org.labkey.api.admin;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
@@ -65,4 +66,10 @@ public interface AdminUrls extends UrlProvider
     ActionURL getTrackedAllocationsViewerURL();
 
     void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
+
+    /**
+     * For actions that use the root container when accessed via the Admin Console (and therefore want a nav trail
+     * that includes it) but are also used in the context of a specific container
+     */
+    void addAdminNavTrailIfRoot(NavTree root, String childTitle, @Nullable ActionURL childURL, @NotNull Container container);
 }

@@ -621,6 +621,12 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public void addAdminNavTrailIfRoot(NavTree root, String childTitle, @Nullable ActionURL childURL, @NotNull Container container)
+        {
+            AdminController.addAdminNavTrail(root, childTitle, childURL, container);
+        }
+
+        @Override
         public ActionURL getFileRootsURL(Container c)
         {
             return new ActionURL(FileRootsAction.class, c);
