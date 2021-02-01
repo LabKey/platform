@@ -255,7 +255,15 @@ public class StatusController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Pipeline", new ActionURL(getClass(), getContainer()));
+            // This action is used both for the site-wide listing via the Admin Console and a container's list
+            if (getContainer().isRoot())
+            {
+                urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Pipeline", new ActionURL(getClass(), getContainer()));
+            }
+            else
+            {
+                root.addChild("Data Pipeline");
+            }
         }
     }
 
