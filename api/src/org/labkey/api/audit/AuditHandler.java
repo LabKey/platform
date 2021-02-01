@@ -160,15 +160,15 @@ public interface AuditHandler
             }
         }
 
-        private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> updatedRow, TableInfo table)
+        private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> existingRow, TableInfo table)
         {
-            Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
+            Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(row, existingRow, table.getExtraDetailedUpdateAuditFields());
 
             Map<String, Object> originalRow = rowPair.first;
             Map<String, Object> modifiedRow = rowPair.second;
 
             // allow for adding fields that may be present in the updated row but not represented in the original row
-            addDetailedModifiedFields(row, modifiedRow, updatedRow);
+            addDetailedModifiedFields(existingRow, modifiedRow, row);
 
             String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
             if (oldRecord != null)
@@ -189,7 +189,7 @@ public interface AuditHandler
     // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
     Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy", "Created", "CreatedBy");
 
-    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
+    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> existingRow, Set<String> extraFieldsToInclude)
     {
         // record modified fields
         Map<String, Object> originalRow = new HashMap<>();
@@ -198,10 +198,10 @@ public interface AuditHandler
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
-            if (!excludedFromDetailDiff.contains(entry.getKey()) && updatedRow.containsKey(entry.getKey()))
+            if (!excludedFromDetailDiff.contains(entry.getKey()) && existingRow.containsKey(entry.getKey()))
             {
-                Object newValue = updatedRow.get(entry.getKey());
-                Object oldValue = entry.getValue();
+                Object oldValue = existingRow.get(entry.getKey());
+                Object newValue = entry.getValue();
                 // compare dates using string values to allow for both Date and Timestamp types
                 if (newValue instanceof Date && oldValue != null)
                 {
@@ -239,7 +239,7 @@ public interface AuditHandler
                 }
                 else if (!Objects.equals(oldValue, newValue) || isExtraAuditField)
                 {
-                    originalRow.put(entry.getKey(), entry.getValue());
+                    originalRow.put(entry.getKey(), oldValue);
                     modifiedRow.put(entry.getKey(), newValue);
                 }
             }
