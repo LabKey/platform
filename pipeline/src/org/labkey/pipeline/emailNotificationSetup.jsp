@@ -55,7 +55,7 @@
     HtmlString displaySuccess = h(notifyOwnerOnSuccess || !StringUtils.isEmpty(notifyUsersOnSuccess) ? "" : "none");
     HtmlString displayError = h(notifyOwnerOnError || !StringUtils.isEmpty(notifyUsersOnError) ? "" : "none");
 
-    String completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(c);
+    ActionURL completeUserUrl = urlProvider(SecurityUrls.class).getCompleteUserURL(c);
 %>
 <script type="text/javascript">
 

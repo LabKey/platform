@@ -108,6 +108,7 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
@@ -1203,11 +1204,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private static class AutoCompleteDisplayColumnFactory implements DisplayColumnFactory
     {
-        private String _completionBase;
+        private final ActionURL _completionBase;
 
         public AutoCompleteDisplayColumnFactory(Container studyContainer, SpecimenService.CompletionType type)
         {
-            _completionBase = SpecimenService.get().getCompletionURLBase(studyContainer, type);
+            _completionBase = SpecimenService.get().getCompletionURL(studyContainer, type);
         }
 
         @Override
@@ -1218,7 +1219,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 @Override
                 protected String getAutoCompleteURLPrefix()
                 {
-                    return _completionBase;
+                    return _completionBase.getLocalURIString();
                 }
             };
         }
