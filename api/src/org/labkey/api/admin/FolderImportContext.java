@@ -152,7 +152,10 @@ public class FolderImportContext extends AbstractFolderContext
     @Override
     public AuditBehaviorType getAuditBehaviorType() throws Exception
     {
-        FolderType folderType = FolderTypeManager.get().getFolderType(this.getXml().getFolderType().getName());
+        var xmlFolderType = this.getXml().getFolderType();
+        FolderType folderType = null;
+        if (xmlFolderType != null)
+            folderType = FolderTypeManager.get().getFolderType(xmlFolderType.getName());
         return folderType == null ? null : folderType.getImportAuditBehavior();
     }
 }
