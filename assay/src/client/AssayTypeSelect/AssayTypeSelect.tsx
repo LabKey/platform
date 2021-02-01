@@ -84,6 +84,7 @@ export const App: FC<any> = memo(props => {
                 <Panel.Body>
                     <AssayPicker
                         showImport={true}
+                        showContainerSelect={true}
                         onChange={onChange}
                         selectedTab={tab}
                     />
