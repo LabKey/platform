@@ -44,10 +44,10 @@ import java.util.Set;
  */
 public class StudyPropertiesImporter extends DefaultStudyDesignImporter
 {
-    Map<Object, Object> _personnelIdMap = new HashMap<>();
-    Map<Object, Object> _objectiveIdMap = new HashMap<>();
-    private SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
-    private SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
+    private final Map<Object, Object> _personnelIdMap = new HashMap<>();
+    private final Map<Object, Object> _objectiveIdMap = new HashMap<>();
+    private final SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
+    private final SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
 
     private String getDataType()
     {
@@ -78,7 +78,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     importTableinfo(ctx, vf, StudyPropertiesWriter.SCHEMA_FILENAME);
 
                     // import the objective and personnel tables
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudy(), ctx.getUser(), true);
+                    StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser(), true);
                     StudyQuerySchema projectSchema = isDataspaceProject ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
 
                     if (!isDataspaceProject)

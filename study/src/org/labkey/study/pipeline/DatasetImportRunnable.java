@@ -259,7 +259,7 @@ public class DatasetImportRunnable implements Runnable
                     {
                         if (0 < b.getProcessed())
                         {
-                            String msg = (_datasetDefinition.getLabel() + ": Processed  " + b.getProcessed() + " rows from " + _fileName);
+                            String msg = (_datasetDefinition.getLabel() + ": Processed " + b.getProcessed() + " rows from " + _fileName);
                             if (useCutoff && skippedRowCount[0] > 0)
                                 msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
                             importMessages.add(msg);

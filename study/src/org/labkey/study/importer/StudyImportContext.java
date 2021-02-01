@@ -24,7 +24,7 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.study.writer.AbstractContext;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -46,7 +46,7 @@ import java.util.Set;
  * Date: May 16, 2009
  * Time: 2:48:59 PM
  */
-public class StudyImportContext extends AbstractContext
+public class StudyImportContext extends SimpleStudyImportContext
 {
     public static final String ALLOW_DOMAIN_UPDATES = "allowDomainUpdates";
 
@@ -104,7 +104,7 @@ public class StudyImportContext extends AbstractContext
     }
 
     // Convenience method that either returns a StudyImpl (if it exists) or throws. Gets a fresh study on every call to ensure it's completely up-to-date
-    public @NotNull StudyImpl getStudy()
+    public @NotNull StudyImpl getStudyImpl()
     {
         StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
 

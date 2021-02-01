@@ -39,6 +39,10 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -742,15 +746,15 @@ public class StudyQuerySchema extends UserSchema
         }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByPrimaryType(this, cf);
+            return new SpecimenPivotByPrimaryType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByDerivativeType(this, cf);
+            return new SpecimenPivotByDerivativeType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByRequestingLocation(this, cf);
+            return new SpecimenPivotByRequestingLocation(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {

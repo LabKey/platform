@@ -82,7 +82,7 @@ public abstract class AutoCompleteTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        // TODO: HtmlString
+        // TODO: SafeToRenderBuilder
 
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
         StringBuilder sb = new StringBuilder();
