@@ -24,6 +24,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * User: jgarms
@@ -65,11 +66,13 @@ public interface AdminUrls extends UrlProvider
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();
 
-    void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
-
     /**
-     * For actions that use the root container when accessed via the Admin Console (and therefore want a nav trail
-     * that includes it) but are also used in the context of a specific container
+     * Displays an "Admin Console" link at the start of the nav trail if invoked in the root container. Otherwise,
+     * childTitle is the start and links to the action, appropriate for actions that are invoked in the context of
+     * both the root and a specific container.
      */
-    void addAdminNavTrailIfRoot(NavTree root, String childTitle, @Nullable ActionURL childURL, @NotNull Container container);
+    void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container);
+
+    @Deprecated // Use the other variant
+    void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
 }
