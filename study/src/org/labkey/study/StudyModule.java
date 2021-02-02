@@ -250,7 +250,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-shared", SharedStudyController.class);
 
         // @Migrate
-        addController("study-samples", SpecimenController.class);
+        addController("specimen", SpecimenController.class, "study-samples");
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
