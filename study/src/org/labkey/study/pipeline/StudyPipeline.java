@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.specimen.pipeline.SpecimenBatch;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;

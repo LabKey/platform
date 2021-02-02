@@ -26,19 +26,19 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
+import org.labkey.api.specimen.pipeline.SpecimenBatch;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.StudyJobSupport;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
@@ -67,7 +67,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         {
             PipelineJob job = getJob();
             File specimenArchive = getSpecimenFile(job);
-            StudyImportContext ctx = getImportContext(job);
+            SimpleStudyImportContext ctx = getImportContext(job);
 
             doImport(specimenArchive, job, ctx, isMerge(), true, getImportHelper());
         }
@@ -89,12 +89,12 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return support.getSpecimenArchive();
     }
 
-    StudyImportContext getImportContext(PipelineJob job)
+    SimpleStudyImportContext getImportContext(PipelineJob job)
     {
         return job.getJobSupport(StudyJobSupport.class).getImportContext();
     }
 
-    public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge,
+    public static void doImport(@Nullable File inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
             boolean syncParticipantVisit) throws PipelineJobException
     {
         doImport(inputFile, job, ctx, merge, syncParticipantVisit, new DefaultImportHelper());
@@ -111,8 +111,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         }
     }
 
-    public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge,
-            boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
+    public static void doImport(@Nullable File inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
+                                boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
     {
         // do nothing if we've specified data types and specimen is not one of them
         if (!ctx.isDataTypeSelected(StudyImportSpecimenTask.getType()))
@@ -168,8 +168,6 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
             // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
             // we need to force a participant/visit refresh in those study containers (if any):
-            for (StudyImpl dependentStudy : StudyManager.getInstance().getAncillaryStudies(ctx.getContainer()))
-                StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.emptySet());
             for (Study dependentStudy : StudyService.get().getAncillaryStudies(ctx.getContainer()))
                 StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.emptySet());
         }
@@ -187,8 +185,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
     public interface ImportHelper
     {
-        VirtualFile getSpecimenDir(PipelineJob job, StudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException;
-        void afterImport(StudyImportContext ctx);
+        VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException;
+        void afterImport(SimpleStudyImportContext ctx);
     }
 
     protected static class DefaultImportHelper implements ImportHelper
@@ -196,7 +194,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         private File _unzipDir;
 
         @Override
-        public VirtualFile getSpecimenDir(PipelineJob job, StudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
+        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
         {
             // backwards compatibility, if we are given a specimen archive as a zip file, we need to extract it
             if (inputFile != null)
@@ -243,13 +241,13 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         }
 
         @Override
-        public void afterImport(StudyImportContext ctx)
+        public void afterImport(SimpleStudyImportContext ctx)
         {
             if (_unzipDir != null)
                 delete(_unzipDir, ctx);
         }
 
-        protected void delete(File file, StudyImportContext ctx)
+        protected void delete(File file, SimpleStudyImportContext ctx)
         {
             Logger log = ctx.getLogger();
 

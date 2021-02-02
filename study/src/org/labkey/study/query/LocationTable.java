@@ -268,67 +268,6 @@ public class LocationTable extends BaseStudyTable
         return schema.getSqlDialect().wrapExistsExpression(existsSQL);
     }
 
-    public static void updateLocationTableInUse(TableInfo locationTableInfo, Container container)
-    {
-        final String tableAlias = locationTableInfo.getSelectName();
-        SpecimenSchema schema = SpecimenSchema.get();
-        TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(container);
-        TableInfo vialTableInfo = schema.getTableInfoVialIfExists(container);
-        TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(container);
-        if (null != eventTableInfo && null != vialTableInfo && null != specimentTableInfo)
-        {
-            var inUseColumn = locationTableInfo.getColumn("InUse");
-
-            SQLFragment existsSQL = new SQLFragment();
-            existsSQL
-                .append(EXISTS)
-                .append(eventTableInfo, "se")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = se.LabId OR ")
-                .append(tableAlias)
-                .append(".RowId = se.OriginatingLocationId)) ");
-
-            existsSQL
-                .append(" OR\n")
-                .append(EXISTS)
-                .append(vialTableInfo, "v")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = v.CurrentLocation OR ")
-                .append(tableAlias)
-                .append(".RowId = v.ProcessingLocation)) ");
-
-            existsSQL
-                .append(" OR\n")
-                .append(EXISTS)
-                .append(specimentTableInfo, "s")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = s.OriginatingLocationId OR ")
-                .append(tableAlias)
-                .append(".RowId = s.ProcessingLocation)) ");
-
-            SQLFragment updateSQL = new SQLFragment("UPDATE ");
-            updateSQL
-                .append(locationTableInfo.getSelectName())
-                .append(" SET ")
-                .append(inUseColumn.getSelectName())
-                .append(" = ")
-                .append(schema.getSqlDialect().wrapExistsExpression(existsSQL));
-
-            try
-            {
-                new SqlExecutor(locationTableInfo.getSchema()).execute(updateSQL);
-            }
-            finally
-            {
-                // Not strictly required, since LocationImpl doesn't currently hold inUse
-                LocationCache.clear(container);
-            }
-        }
-    }
-
     public static Collection<Container> getStudyContainers(Container root, ContainerFilter cFilter)
     {
         Collection<GUID> ids = cFilter.getIds();

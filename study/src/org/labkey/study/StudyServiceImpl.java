@@ -44,8 +44,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.dataiterator.DataIteratorBuilder;
-import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
@@ -99,7 +97,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
 import org.labkey.study.query.BaseStudyTable;
@@ -744,13 +741,6 @@ public class StudyServiceImpl implements StudyService
         {
             return false;
         }
-    }
-
-
-    @Override
-    public DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
-    {
-        return SampleMindedTransformTask.wrapSampleMindedTransform(user, in,context,study,target);
     }
 
     @Override

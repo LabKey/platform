@@ -80,6 +80,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.ParticipantGroupService;
 import org.labkey.api.study.model.VisitService;
@@ -136,6 +137,7 @@ import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.ImportHelperServiceImpl;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantGroupServiceImpl;
@@ -150,8 +152,6 @@ import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SampleMindedTransform;
-import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -257,6 +257,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ParticipantGroupService.setInstance(new ParticipantGroupServiceImpl());
         CohortService.setInstance(new CohortServiceImpl());
         VisitService.setInstance(new VisitServiceImpl());
+        ImportHelperService.setInstance(new ImportHelperServiceImpl());
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
@@ -354,7 +355,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.setInstance(new AssayPublishManager());
         SpecimenService.setInstance(new SpecimenServiceImpl());
-        SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiRenderingService wikiService = WikiRenderingService.get();
@@ -710,7 +710,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DatasetDataWriter.TestCase.class,
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
-            SampleMindedTransformTask.TestCase.class,
             SequenceNumImportHelper.SequenceNumTest.class
         );
     }

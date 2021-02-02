@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
@@ -42,6 +43,7 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.pipeline.SpecimenReloadJob;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -54,7 +56,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.pipeline.SpecimenReloadJob;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,6 +75,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Date: Oct 2, 2007
  * Time: 3:38:28 PM
  */
+@Migrate // Depends only on SimpleSpecimenImporter -- move directly to specimen module
 public class SpecimenServiceImpl implements SpecimenService
 {
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();

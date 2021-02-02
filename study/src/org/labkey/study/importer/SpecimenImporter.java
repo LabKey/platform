@@ -86,6 +86,9 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.importer.ImportHelperService;
+import org.labkey.api.study.importer.ImportHelperService.ParticipantIdTranslator;
+import org.labkey.api.study.importer.ImportHelperService.SequenceNumTranslator;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
@@ -99,10 +102,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.model.ParticipantIdImportHelper;
-import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.LocationTable;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
@@ -286,7 +286,7 @@ public class SpecimenImporter extends SpecimenTableManager
         }
 
         info("Updating locations in use...");
-        LocationTable.updateLocationTableInUse(getTableInfoLocation(), getContainer());
+        LocationManager.updateLocationTableInUse(getTableInfoLocation(), getContainer());
     }
 
     private void updateAllStatistics()
@@ -2308,8 +2308,9 @@ public class SpecimenImporter extends SpecimenTableManager
         }
 
         final Study study = StudyService.get().getStudy(getContainer());
-        final SequenceNumImportHelper h = new SequenceNumImportHelper(study, null);
-        final ParticipantIdImportHelper piih = new ParticipantIdImportHelper(study, getUser(), null);
+        final ImportHelperService ihs = ImportHelperService.get();
+        final SequenceNumTranslator snt = ihs.getSequenceNumTranslator(study);
+        final ParticipantIdTranslator pit = ihs.getParticipantIdTranslator(study, getUser());
         final SpecimenColumn visitCol = _visitCol;
         final SpecimenColumn dateCol = DRAW_TIMESTAMP;
         final SpecimenColumn participantIdCol = _participantIdCol;
@@ -2327,7 +2328,7 @@ public class SpecimenImporter extends SpecimenTableManager
             public Object getValue(Map<String, Object> row) throws ValidationException
             {
                 Object p = SpecimenImporter.this.getValue(participantIdCol, row);
-                return piih.translateParticipantId(p);
+                return pit.translateParticipantId(p);
             }
         };
 
@@ -2344,7 +2345,7 @@ public class SpecimenImporter extends SpecimenTableManager
             {
                 Object s = SpecimenImporter.this.getValue(visitCol, row);
                 Object d = SpecimenImporter.this.getValue(dateCol, row);
-                Double sequencenum = h.translateSequenceNum(s, d);
+                Double sequencenum = snt.translateSequenceNum(s, d);
 //                if (sequencenum == null)
 //                    throw new org.apache.commons.beanutils.ConversionException("No visit_value provided: visit_value=" + String.valueOf(s) + " draw_timestamp=" + String.valueOf(d));
                 if (null == sequencenum)

@@ -13,6 +13,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -72,7 +73,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         private File _tempDir;
 
         @Override
-        public VirtualFile getSpecimenDir(PipelineJob job, StudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
+        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
         {
             if (inputFile != null)
             {
@@ -111,7 +112,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         }
 
         @Override
-        public void afterImport(StudyImportContext ctx)
+        public void afterImport(SimpleStudyImportContext ctx)
         {
             super.afterImport(ctx);
 

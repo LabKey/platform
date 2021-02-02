@@ -133,9 +133,9 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
- * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+     * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
-* study. If null, all participants will be checked to see if they are still in the study.
+     * study. If null, all participants will be checked to see if they are still in the study.
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
      * @param isSpecimenImport true if called from specimen import, which forces updateParticipantCohorts()
      * @param logger Log4j logger to use for detailed performance information

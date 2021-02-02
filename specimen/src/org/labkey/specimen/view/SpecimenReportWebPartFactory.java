@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,6 +69,6 @@ public class SpecimenReportWebPartFactory extends BaseWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<>("/org/labkey/study/view/specimen/customizeSpecimenReportWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/specimen/view/customizeSpecimenReportWebPart.jsp", webPart);
     }
 }
