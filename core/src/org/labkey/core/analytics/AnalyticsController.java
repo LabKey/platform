@@ -76,7 +76,7 @@ public class AnalyticsController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Analytics", null);
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Analytics", getClass(), getContainer());
         }
 
         @Override

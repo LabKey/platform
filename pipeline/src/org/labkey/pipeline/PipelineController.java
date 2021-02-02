@@ -387,7 +387,7 @@ public class PipelineController extends SpringActionController
         {
             if (getContainer().isRoot())
             {
-                urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Processing Pipeline Setup", new ActionURL(getClass(), getContainer()));
+                urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Processing Pipeline Setup", getClass(), getContainer());
             }
             else
             {
