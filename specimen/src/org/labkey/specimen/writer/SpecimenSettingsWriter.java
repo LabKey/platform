@@ -16,7 +16,6 @@
 package org.labkey.specimen.writer;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
@@ -55,7 +54,6 @@ import java.util.List;
  * User: kevink
  * Date: 6/13/13
  */
-@Migrate // Move specimen.xsd from api to specimen module once SpecimenSettingsImporter is moved
 public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 {
     private static final String DEFAULT_SETTINGS_FILE = "specimen_settings.xml";

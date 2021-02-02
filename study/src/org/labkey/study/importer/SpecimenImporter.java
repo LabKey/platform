@@ -86,6 +86,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -307,7 +308,7 @@ public class SpecimenImporter extends SpecimenTableManager
         return updated;
     }
 
-    public void process(VirtualFile specimensDir, boolean merge, StudyImportContext ctx, @Nullable PipelineJob job, boolean syncParticipantVisit)
+    public void process(VirtualFile specimensDir, boolean merge, SimpleStudyImportContext ctx, @Nullable PipelineJob job, boolean syncParticipantVisit)
             throws IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());

@@ -16,27 +16,13 @@
 
 package org.labkey.study.importer;
 
-import org.labkey.api.admin.ImportException;
-import org.labkey.api.writer.VirtualFile;
-import org.springframework.validation.BindException;
+import org.labkey.api.study.importer.BaseStudyImporter;
 
 /*
 * User: adam
 * Date: Aug 31, 2009
 * Time: 2:06:34 PM
 */
-public interface InternalStudyImporter
+public interface InternalStudyImporter extends BaseStudyImporter<StudyImportContext>
 {
-    String getDataType();
-    String getDescription();
-    void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception;
-
-    /**
-     * Validate if the study importer is valid for the given import context. Default to true.
-     * @return boolean
-     */
-    default boolean isValidForImportArchive(StudyImportContext ctx, VirtualFile root) throws ImportException
-    {
-        return true;
-    }
 }

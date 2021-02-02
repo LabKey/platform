@@ -104,7 +104,7 @@ function submitRequest()
         {
             if (button == 'yes')
             {
-                document.location = LABKEY.ActionURL.buildURL("study-samples", "submitRequest",
+                document.location = LABKEY.ActionURL.buildURL("specimen", "submitRequest",
                         LABKEY.ActionURL.getContainer(), { id: getSelectedRequestId()});
             }
         });
@@ -131,7 +131,7 @@ function cancelRequest()
 
 function showRequestDetails()
 {
-    document.location = LABKEY.ActionURL.buildURL("study-samples", "manageRequest",
+    document.location = LABKEY.ActionURL.buildURL("specimen", "manageRequest",
             LABKEY.ActionURL.getContainer(), { id: getSelectedRequestId()});
 }
 

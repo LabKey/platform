@@ -39,7 +39,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(StudyImportContext ctx, VirtualFile studyDir, BindException errors) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;

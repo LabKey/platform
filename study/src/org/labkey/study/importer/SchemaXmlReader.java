@@ -24,6 +24,7 @@ import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -36,7 +37,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.importer.DatasetDefinitionImporter.DatasetImportProperties;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.StudyImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ public class SchemaXmlReader implements SchemaReader
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
     List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
 
-    public SchemaXmlReader(final StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, ImportException
+    public SchemaXmlReader(final Study study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, ImportException
     {
         TablesDocument tablesDoc;
 

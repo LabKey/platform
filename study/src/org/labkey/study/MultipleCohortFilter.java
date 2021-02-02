@@ -24,6 +24,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Config;
+import org.labkey.api.study.Params;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 
@@ -37,9 +39,9 @@ public class MultipleCohortFilter extends BaseCohortFilter
     private final boolean _includeUnassigned;
     private final String _description;
 
-    public MultipleCohortFilter(CohortFilterFactory.Config config, boolean includeUnassigned, String description)
+    public MultipleCohortFilter(Config config, boolean includeUnassigned, String description)
     {
-        super(config.type);
+        super(config.getType());
 
         _includeUnassigned = includeUnassigned;
         _description = description;
@@ -104,8 +106,8 @@ public class MultipleCohortFilter extends BaseCohortFilter
         }
         else
         {
-            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
-            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortEnrolled, "1");
+            url.replaceParameter(dataregion + "." + Params.cohortFilterType, getType().name());
+            url.replaceParameter(dataregion + "." + Params.cohortEnrolled, "1");
         }
         return url;
     }
