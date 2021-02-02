@@ -61,8 +61,6 @@ public class LogManager
 {
     private static final Logger _log = org.apache.logging.log4j.LogManager.getLogger(LogManager.class);
     private static final LogManager _instance = new LogManager();
-    private static final int COMMENT_MAX = 500;
-    private static final int STRING_KEY_MAX = 1000;
 
     private LogManager(){}
     static public LogManager get()
@@ -74,38 +72,6 @@ public class LogManager
     {
         return AuditSchema.getInstance().getSchema();
     }
-
-    /*
-    public <K extends AuditTypeEvent> K insertEvent(User user, K type)
-    {
-        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
-        auditLogger.info(type.getAuditLogMessage());
-
-        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
-
-        if (provider != null)
-        {
-            Container c = ContainerManager.getForId(type.getContainer());
-
-            UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
-
-            if (schema != null)
-            {
-                TableInfo table = schema.getTable(provider.getEventName(), false);
-
-                if (table instanceof DefaultAuditTypeTable)
-                {
-                    // consider using etl data iterator for inserts
-                    type = validateFields(provider, type);
-                    TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
-                    K ret = Table.insert(user, dbTable, type);
-                    return ret;
-                }
-            }
-        }
-        return null;
-    }
-    */
 
     public void insertEvent(User user, AuditTypeEvent event)
     {
@@ -119,13 +85,20 @@ public class LogManager
             return;
 
         AuditTypeEvent type = events.get(0);
-        boolean optimize = true;
-        for (var event : events)
+
+        // Out of an abundance of caution and backward compatible behavior, do one-at-a-time logging if
+        // there is no transaction.  Can revisit if this is not necessary.
+        // Keep in mind that the audit schema might not be in the same scope as table that is being logged about.
+        boolean optimize = getSchema().getScope().isTransactionActive();
+        if (optimize)
         {
-            if (!Objects.equals(type.getEventType(),event.getEventType()))
-                optimize = false;
-            if (!Objects.equals(type.getContainer(),event.getContainer()))
-                optimize = false;
+            for (var event : events)
+            {
+                if (!Objects.equals(type.getEventType(), event.getEventType()))
+                    optimize = false;
+                if (!Objects.equals(type.getContainer(), event.getContainer()))
+                    optimize = false;
+            }
         }
 
         if (!optimize)
