@@ -57,8 +57,6 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             {
                 ExpData data = (ExpData)o;
                 // Most DataClass data don't have a dataFileUrl, but some do -- like NucSequence imported from a genbank file
-                // UNDONE: Don't have user and fetching DataClass is expensive-ish. Maybe add data.hasDataClass() or something
-                // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
                 if (data.getDataFileUrl() == null || data.getDataClass() != null)
                 {
                     // If we don't have a URL for this data object, we can't use AutoFileLSID. Instead,

@@ -70,6 +70,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.exp.xar.XarReaderRegistry;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -90,7 +91,6 @@ import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
-import org.labkey.api.exp.xar.XarReaderRegistry;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -1354,12 +1354,12 @@ public class XarReader extends AbstractXarImporter
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
-        ExpDataClass expDataClass = ExperimentService.get().getDataClass(declaredType);
+        ExpDataClassImpl expDataClass = ExperimentServiceImpl.get().getDataClass(declaredType);
         if (expData == null && expDataClass != null)
         {
             // Try resolving it by name within the data class in case we have it under a different LSID
-            ExpData data = expDataClass.getData(getContainer(), xbData.getName());
-            if (data instanceof ExpDataImpl)
+            ExpDataImpl data = expDataClass.getData(getContainer(), xbData.getName());
+            if (data != null)
             {
                 // Remember this as an alternate LSID during import
                 _xarSource.addData(null, data, dataLSID);
@@ -1367,7 +1367,7 @@ public class XarReader extends AbstractXarImporter
                 {
                     _xarSource.addData(experimentRun.getLSID(), data, dataLSID);
                 }
-                expData = (ExpDataImpl)data;
+                expData = data;
             }
         }
 
