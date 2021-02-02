@@ -189,7 +189,8 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
                 Map<String,Object> record = existing.getExistingRecord();
                 if ("NO_SUCH_MODULE".equals(name))
                 {
-                    assertNull(record);
+                    assertNotNull(record);
+                    assertTrue(record.isEmpty());
                 }
                 else
                 {
