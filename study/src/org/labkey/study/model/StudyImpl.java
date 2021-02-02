@@ -1247,6 +1247,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             date.add(Calendar.DAY_OF_MONTH, daysBetween);
         }
 
+        // Now iterate for one or possibly two more days until we go beyond the original date
         while (date.before(endDate))
         {
             date.add(Calendar.DAY_OF_MONTH, 1);
@@ -1270,6 +1271,33 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public int hashCode()
     {
         return getContainer() != null ? getContainer().hashCode() : 0;
+    }
+
+    public static class DateMathTestCase extends Assert
+    {
+        @Test
+        public void testDayInterval()
+        {
+            // The behavior here is questionable - arguments that differ by one
+            // millisecond will return a difference of 1 day (plus or minus), but keeping as-is during the optimization
+            // to not increment by one day for the whole interval
+            Calendar jan1 = new GregorianCalendar();
+            jan1.setTimeInMillis(DateUtil.parseISODateTime("2020-01-01"));
+            Calendar c = new GregorianCalendar();
+            c.setTimeInMillis(jan1.getTimeInMillis());
+            assertEquals(0, daysBetween(jan1, c));
+
+            c.setTimeInMillis(jan1.getTimeInMillis() + 1);
+            assertEquals(1, daysBetween(jan1, c));
+
+            c.add(Calendar.DATE, 1);
+            assertEquals(2, daysBetween(jan1, c));
+
+            c.setTimeInMillis(jan1.getTimeInMillis() - 1);
+            assertEquals(-1, daysBetween(jan1, c));
+            c.add(Calendar.DATE, -1);
+            assertEquals(-2, daysBetween(jan1, c));
+        }
     }
 
 

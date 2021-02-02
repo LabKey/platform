@@ -801,13 +801,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-//    @Override
-//    public ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol)
-//    {
-//        Set<ExpData> datas = getDatasForDataRows(Collections.singleton(dataRowId), protocol, new ResolverCache());
-//        return datas.isEmpty() ? null : datas.iterator().next();
-//    }
-
     @Nullable
     public final ExpData getDataForDataRow(int resultRowId, ExpProtocol protocol)
     {
@@ -833,6 +826,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 return null;
             }
+            // Don't use computeIfAbsent() because it treats null values as if they weren't in the map at all
             if (cache.containsKey(key))
             {
                 return cache.get(key);
