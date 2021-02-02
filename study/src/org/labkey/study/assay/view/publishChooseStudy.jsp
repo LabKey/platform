@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -170,8 +171,11 @@
     <%
         if (!bean.getRunIds().isEmpty())
         {
+            String autoCopyLabel = "Auto copy data from " +
+                    StringUtilsLabKey.pluralize(bean.getRunIds().size(), "run") + " (" +
+                    StringUtilsLabKey.pluralize(bean.getIds().size(), "row") + ")";
     %>
-    <labkey:input type="checkbox" label="Auto copy the selected run(s)" id="autoCopy" forceSmallContext="true"
+    <labkey:input type="checkbox" label="<%= autoCopyLabel %>" id="autoCopy" forceSmallContext="true"
                   contextContent="Selecting this checkbox will skip the confirmation step and run the copy to study process in a pipeline job. Run data missing valid subject IDs and timepoints will be ignored."/>
     <%
         }
