@@ -58,7 +58,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         bean.setWebPartId(1);
         setTitle(_title);
 
-        return new JspView<>("/org/labkey/study/view/specimen/search.jsp", bean);
+        return new JspView<>("/org/labkey/specimen/view/search.jsp", bean);
     }
 
     @Override

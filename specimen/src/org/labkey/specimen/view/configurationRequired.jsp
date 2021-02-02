@@ -1,3 +1,4 @@
+<%
 /*
  * Copyright (c) 2014-2019 LabKey Corporation
  *
@@ -13,26 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen;
-
-import org.labkey.api.view.JspView;
-
-/**
- * User: brittp
- * Date: Oct 21, 2010 1:39:16 PM
- */
-public class SpecimenSearchWebPart extends JspView<SpecimenSearchBean>
-{
-    public SpecimenSearchWebPart()
-    {
-        this(true);
-    }
-
-    public SpecimenSearchWebPart(boolean showVials)
-    {
-        super("/org/labkey/specimen/view/search.jsp", new SpecimenSearchBean());
-        getModelBean().init(getViewContext(), showVials, true);
-        getModelBean().setWebPartId(getWebPartRowId());
-        setTitle(showVials ? "Vial Search" : "Vial Group Search");
-    }
-}
+%>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+Specimen management is not configured for this study.<br><br>
+A project administrator must first configure request statuses and actors before this action can be performed.

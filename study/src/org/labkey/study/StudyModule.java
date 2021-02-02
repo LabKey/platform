@@ -68,8 +68,10 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.ParticipantCategory;
@@ -179,7 +181,7 @@ import org.labkey.study.view.StudySummaryWebPartFactory;
 import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
-import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
@@ -258,6 +260,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         CohortService.setInstance(new CohortServiceImpl());
         VisitService.setInstance(new VisitServiceImpl());
         ImportHelperService.setInstance(new ImportHelperServiceImpl());
+        SpecimenMigrationService.setInstance(new SpecimenMigrationService()
+        {
+            @Override
+            public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
+            {
+                return SpecimenController.getDownloadURL(event, name);
+            }
+        });
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());

@@ -276,6 +276,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getManageRequestURL(Container c)
+        {
+            return new ActionURL(SpecimenController.ManageRequestAction.class, c);
+        }
+
+        @Override
         public ActionURL getManageRequestStatusURL(Container c, int requestId)
         {
             return new ActionURL(ManageRequestStatusAction.class, c).addParameter("id", requestId);
@@ -927,7 +933,7 @@ public class SpecimenController extends BaseStudyController
                     relevantRequests = queryView;
                 }
                 else
-                    relevantRequests = new JspView("/org/labkey/study/view/specimen/relevantRequests.jsp");
+                    relevantRequests = new JspView("/org/labkey/specimen/view/relevantRequests.jsp");
                 relevantRequests.setTitle("Relevant Vial Requests");
                 vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
             }
@@ -2606,7 +2612,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/study/view/specimen/configurationRequired.jsp");
+            return new JspView("/org/labkey/specimen/view/configurationRequired.jsp");
         }
 
         @Override
@@ -5260,7 +5266,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView("/org/labkey/study/view/specimen/configRequestabilityRules.jsp");
+            return new JspView("/org/labkey/specimen/view/configRequestabilityRules.jsp");
         }
 
         @Override
@@ -5663,7 +5669,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/pivot.jsp");
+            return new JspView<>("/org/labkey/specimen/view/pivot.jsp");
         }
 
         @Override
