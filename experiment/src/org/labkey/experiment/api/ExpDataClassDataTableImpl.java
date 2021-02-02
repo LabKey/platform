@@ -63,6 +63,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
@@ -843,7 +844,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
             StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
-            DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(etl, getQueryTable(), null);
+            DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(etl, getQueryTable(), Set.of(ExpDataTable.Column.LSID.toString()));
             DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(existing, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,
                     container, getAttachmentParentFactory(), FieldKey.fromParts(Column.LSID));
