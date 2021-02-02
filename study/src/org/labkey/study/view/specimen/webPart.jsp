@@ -91,7 +91,7 @@
         {
             var html = '<i>No specimens found.</i>';
             <% if (isAdmin && !c.isDataspace()) {%>
-                var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+                var importUrl = LABKEY.ActionURL.buildURL('specimen', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
                 html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
             <% } %>
             document.getElementById(names.content).innerHTML = html;

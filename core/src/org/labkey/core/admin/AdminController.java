@@ -615,6 +615,13 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container)
+        {
+            AdminController.addAdminNavTrail(root, childTitle, new ActionURL(action, container), container);
+        }
+
+        @Override
+        @Deprecated
         public void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
             AdminController.addAdminNavTrail(root, childTitle, childURL, ContainerManager.getRoot());
