@@ -3236,7 +3236,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
+            return new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
         }
 
         @Override
