@@ -89,7 +89,7 @@ public class LogManager
         // Out of an abundance of caution and backward compatible behavior, do one-at-a-time logging if
         // there is no transaction.  Can revisit if this is not necessary.
         // Keep in mind that the audit schema might not be in the same scope as table that is being logged about.
-        boolean optimize = getSchema().getScope().isTransactionActive();
+        boolean optimize = events.size() == 1 || getSchema().getScope().isTransactionActive();
         if (optimize)
         {
             for (var event : events)
