@@ -19,11 +19,11 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -65,7 +65,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
         if (!isValidForImportArchive(ctx, root))
             return;
 
-        StudyImpl study = ctx.getStudy();
+        StudyImpl study = ctx.getStudyImpl();
         try
         {
             XmlObject xml = root.getXmlBean(ParticipantGroupWriter.FILE_NAME);

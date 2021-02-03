@@ -608,7 +608,7 @@ public class AnalysisController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Internal List Pipelines", new ActionURL(getClass(), getContainer()));
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Internal List Pipelines", getClass(), getContainer());
         }
     }
 

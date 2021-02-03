@@ -113,7 +113,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
 
             // import the specimen data
             info("Importing specimen data into child study.");
-            importSpecimenData(destStudy, vf);
+            importSpecimenData(destStudy, vf.getDir("study"));
         }
         catch (Exception e)
         {

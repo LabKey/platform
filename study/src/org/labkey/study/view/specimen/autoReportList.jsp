@@ -15,26 +15,26 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.AbstractParticipantCategory"%>
+<%@ page import="org.labkey.api.data.AbstractParticipantGroup" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.specimen.actions.ReportConfigurationBean" %>
+<%@ page import="org.labkey.api.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
+<%@ page import="org.labkey.api.study.Params" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.study.CohortFilterFactory" %>
-<%@ page import="org.labkey.study.controllers.specimen.ReportConfigurationBean" %>
-<%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -44,15 +44,15 @@
     ReportConfigurationBean bean = me.getModelBean();
     Container container = getContainer();
     User user = getUser();
-    boolean showCohorts = StudyManager.getInstance().showCohorts(container, user);
-    Study study = StudyManager.getInstance().getStudy(container);
+    boolean showCohorts = StudyService.get().showCohorts(container, user);
+    Study study = StudyService.get().getStudy(container);
     List<? extends Cohort> cohorts = null;
     if (showCohorts)
         cohorts = StudyManager.getInstance().getCohorts(container, user);
     HtmlString optionLabelStyle = HtmlString.unsafe("text-align: left; padding: 5px 5px 0 5px;");
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 
-    List<ParticipantCategoryImpl> categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
+    List<? extends AbstractParticipantCategory> categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
     boolean showParticipantGroups = categories != null && !categories.isEmpty();
 %>
 <%
@@ -139,7 +139,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
-                            <select name="<%= CohortFilterFactory.Params.cohortId %>" class="form-control">
+                            <select name="<%= Params.cohortId %>" class="form-control">
                                 <option value="">All Cohorts</option>
                             <%
                                 for (Cohort cohort : cohorts)
@@ -161,7 +161,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter type</td>
                         <td>
-                            <select name="<%= CohortFilterFactory.Params.cohortFilterType %>" class="form-control">
+                            <select name="<%= Params.cohortFilterType %>" class="form-control">
                             <%
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
@@ -180,7 +180,7 @@ This folder does not contain a study.
                         else
                         {
                 %>
-                        <input type="hidden" name="<%= CohortFilterFactory.Params.cohortFilterType %>" value="<%= CohortFilter.Type.PTID_CURRENT %>">
+                        <input type="hidden" name="<%= Params.cohortFilterType %>" value="<%= CohortFilter.Type.PTID_CURRENT %>">
                 <%
                         }
                     }
@@ -194,12 +194,12 @@ This folder does not contain a study.
                                 <select name="participantGroupFilter" class="form-control">
                                     <option value="">All Groups</option>
                                     <%
-                                        for (ParticipantCategoryImpl cat : categories)
+                                        for (AbstractParticipantCategory cat : categories)
                                         {
-                                            ParticipantGroup[] groups = cat.getGroups();
+                                            AbstractParticipantGroup[] groups = cat.getGroups();
                                             if (null != groups)
                                             {
-                                                for (ParticipantGroup grp : groups)
+                                                for (AbstractParticipantGroup grp : groups)
                                                 {
                                                     %>
                                                     <option value="<%= grp.getRowId() %>"<%=selected(grp.getRowId() == factory.getParticipantGroupFilter())%>>
@@ -264,7 +264,7 @@ This folder does not contain a study.
                     }
 
                     // AdditionalFormInputs values are html generated in classes that extend SpecimenVisitReportParameters
-                    List<Pair<String, HtmlString>> additionalFormInputs = factory.getAdditionalFormInputHtml();
+                    List<Pair<String, HtmlString>> additionalFormInputs = factory.getAdditionalFormInputHtml(user);
                     for (Pair<String, HtmlString> inputPair : additionalFormInputs)
                     {
                 %>

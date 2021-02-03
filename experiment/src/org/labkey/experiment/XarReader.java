@@ -70,6 +70,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.exp.xar.XarReaderRegistry;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -90,7 +91,6 @@ import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExpander;
-import org.labkey.api.exp.xar.XarReaderRegistry;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -1151,7 +1151,7 @@ public class XarReader extends AbstractXarImporter
             ExpData data = _xarSource.getData(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
             {
-                _xarSource.addData(experimentRun.getLSID(), data);
+                _xarSource.addData(experimentRun.getLSID(), data, null);
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId());
@@ -1353,8 +1353,23 @@ public class XarReader extends AbstractXarImporter
         checkDataCpasType(declaredType);
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
-
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
+        ExpDataClassImpl expDataClass = ExperimentServiceImpl.get().getDataClass(declaredType);
+        if (expData == null && expDataClass != null)
+        {
+            // Try resolving it by name within the data class in case we have it under a different LSID
+            ExpDataImpl data = expDataClass.getData(getContainer(), xbData.getName());
+            if (data != null)
+            {
+                // Remember this as an alternate LSID during import
+                _xarSource.addData(null, data, dataLSID);
+                if (experimentRun != null)
+                {
+                    _xarSource.addData(experimentRun.getLSID(), data, dataLSID);
+                }
+                expData = data;
+            }
+        }
 
         if (expData != null)
         {
@@ -1485,11 +1500,11 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            getLog().warn("No data file found for " + expData.getName() + ", unable to import. (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
+            getLog().info("No data file found for " + expData.getName() + ". (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
         }
 
 
-        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);
+        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData, null);
         getLog().debug("Finished loading Data with LSID '" + dataLSID + "'");
         return expData.getDataObject();
     }

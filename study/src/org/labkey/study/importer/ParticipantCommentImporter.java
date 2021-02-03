@@ -46,7 +46,7 @@ public class ParticipantCommentImporter implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            StudyImpl study = ctx.getStudy();
+            StudyImpl study = ctx.getStudyImpl();
             StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
 
             ctx.getLogger().info("Loading " + getDescription());

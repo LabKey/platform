@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
+<%@ page import="org.labkey.api.study.Params" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -28,7 +29,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.SharedFormParameters" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DefaultDatasetReportAction" %>
@@ -117,9 +117,9 @@
         if (showCohorts)
         {
     %>
-    <input type="hidden" name="<%= h(CohortFilterFactory.Params.cohortFilterType.name()) %>"
+    <input type="hidden" name="<%= h(Params.cohortFilterType.name()) %>"
            value="<%= h(CohortFilter.Type.PTID_CURRENT.name()) %>">
-    <%= h(subjectNoun) %>'s current cohort: <select name="<%= h(CohortFilterFactory.Params.cohortId.name()) %>"
+    <%= h(subjectNoun) %>'s current cohort: <select name="<%= h(Params.cohortId.name()) %>"
                                                     onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%

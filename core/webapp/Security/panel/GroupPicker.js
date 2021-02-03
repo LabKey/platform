@@ -84,7 +84,7 @@ Ext4.define('Security.panel.GroupPicker', {
                 width: 220,
                 dataIndex: 'name',
                 renderer: function(value, metaData, record) {
-                    return Ext4.String.format('<div class="{0}" groupId="{1}" style="cursor:pointer;">{2}</div>', record.data.extraClass, record.data.id, value);
+                    return Ext4.String.format('<div class="{0}" groupId="{1}" style="cursor:pointer;">{2}</div>', record.data.extraClass, record.data.id, Ext4.String.htmlEncode(value));
                 }
             },{
                 header: '<span ext:qtip="Direct group memberships for the group">Member Groups</span>',

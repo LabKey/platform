@@ -19,8 +19,8 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
+import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
@@ -52,7 +52,7 @@ public class ProtocolDocumentImporter implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            StudyImpl study = ctx.getStudy();
+            Study study = ctx.getStudy();
             ExportDirType protocolXml = ctx.getXml().getProtocolDocs();
 
             ctx.getLogger().info("Loading " + getDescription());
