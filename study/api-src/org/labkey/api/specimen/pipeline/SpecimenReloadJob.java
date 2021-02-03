@@ -15,6 +15,7 @@
  */
 package org.labkey.api.specimen.pipeline;
 
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
@@ -29,6 +30,7 @@ import java.io.Serializable;
 /**
  * Created by klum on 5/24/2014.
  */
+@Migrate // studyContext.xml is the only dependent
 public class SpecimenReloadJob extends SpecimenBatch implements Serializable, SpecimenReloadJobSupport
 {
     private String _transformName;

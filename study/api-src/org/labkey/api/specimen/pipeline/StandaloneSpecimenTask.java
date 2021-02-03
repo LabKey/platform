@@ -16,6 +16,7 @@
 
 package org.labkey.api.specimen.pipeline;
 
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.PipelineJob;
 
 /*
@@ -24,7 +25,8 @@ import org.labkey.api.pipeline.PipelineJob;
 * Time: 4:37:31 PM
 */
 
-// This task is used to import specimen archives directly via the pipeline ui.  SpecimenBatch is the associated pipeline job.
+// This task is used to import specimen archives directly via the pipeline ui. SpecimenBatch is the associated pipeline job.
+@Migrate // studyContext.xml is the only dependent
 public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpecimenTask.Factory>
 {
     private StandaloneSpecimenTask(Factory factory, PipelineJob job)

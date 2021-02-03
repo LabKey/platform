@@ -27,7 +27,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.api.specimen.importer.DefaultSpecimenImportStrategyFactory;
+import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
@@ -42,6 +42,7 @@ import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.action.SpecimenApiController;
+import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.pipeline.SampleMindedTransform;
@@ -141,6 +142,14 @@ public class SpecimenModule extends CodeOnlyModule
         return Set.of(
             SpecimenWriter.TestCase.class,
             SampleMindedTransformTask.TestCase.class
+        );
+    }
+
+    @Override
+    public @NotNull Set<Class> getIntegrationTests()
+    {
+        return Set.of(
+            SpecimenImporter.TestCase.class
         );
     }
 }

@@ -70,7 +70,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
-import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.LocationDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.settings.RepositorySettings;
@@ -280,7 +279,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         // specimen-related domain kinds
         PropertyService.get().registerDomainKind(new LocationDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind()); // TODO: Move to specimen module?
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
@@ -700,7 +699,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return Set.of(
             DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
             ParticipantGroupManager.ParticipantGroupTestCase.class,
-            SpecimenImporter.TestCase.class,
             StudyImpl.ProtocolDocumentTestCase.class,
             StudyManager.AssayScheduleTestCase.class,
             StudyManager.DatasetImportTestCase.class,

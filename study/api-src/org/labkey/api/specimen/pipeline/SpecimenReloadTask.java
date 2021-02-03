@@ -16,6 +16,7 @@
 package org.labkey.api.specimen.pipeline;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipeRoot;
@@ -35,6 +36,7 @@ import java.util.List;
 /**
  * Created by klum on 5/24/2014.
  */
+@Migrate // studyContext.xml is the only dependent
 public class SpecimenReloadTask extends PipelineJob.Task<SpecimenReloadTask.Factory>
 {
     private SpecimenReloadTask(Factory factory, PipelineJob job)
