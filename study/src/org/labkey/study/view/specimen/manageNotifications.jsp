@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
@@ -50,7 +51,7 @@ function setElementDisplayByCheckbox(checkbox, element)
     RequestNotificationSettings bean = me.getModelBean();
     Container container = getContainer();
 
-    String completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(container);
+    ActionURL completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURL(container);
     boolean newRequestNotifyChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
             bean.isNewRequestNotifyCheckbox() : StringUtils.isNotEmpty(bean.getNewRequestNotify()));
     boolean ccChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?

@@ -230,19 +230,15 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public String getCompleteUserURLPrefix(Container container)
+        public ActionURL getCompleteUserURL(Container container)
         {
-            ActionURL url = new ActionURL(CompleteUserAction.class, container);
-            url.addParameter("prefix", "");
-            return url.getLocalURIString();
+            return new ActionURL(CompleteUserAction.class, container).addParameter("prefix", "");
         }
 
         @Override
-        public String getCompleteUserReadURLPrefix(Container container)
+        public ActionURL getCompleteUserReadURL(Container container)
         {
-            ActionURL url = new ActionURL(CompleteUserReadAction.class, container);
-            url.addParameter("prefix", "");
-            return url.getLocalURIString();
+            return new ActionURL(CompleteUserReadAction.class, container).addParameter("prefix", "");
         }
 
         @Override

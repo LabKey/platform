@@ -60,33 +60,34 @@ public class AutoCompleteTextareaTag extends AutoCompleteTag
     // TODO: HtmlString
 
     @Override
-    protected String getTagConfig()
+    protected String getTagConfig(String padding)
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder()
+            .append(padding).append("tagConfig: {\n")
+            .append(padding).append("    tag          : 'textarea',\n");
 
-        sb.append(
-            "            tagConfig   : {\n" +
-            "                tag     : 'textarea',\n");
-        addOptionalAttrs(sb);
-        sb.append(
-            "                name    : " + PageFlowUtil.jsString(getName()) + ",\n" +
-            "                rows    : " + getRows() + ",\n" +
-            "                cols    : " + getCols() + ",\n" +
-            "                autocomplete : 'off'\n" +
-            "            }\n");
+        addOptionalAttrs(sb, padding);
+
+        sb
+            .append(padding).append("    name         : ").append(PageFlowUtil.jsString(getName())).append(",\n")
+            .append(padding).append("    rows         : ").append(getRows()).append(",\n")
+            .append(padding).append("    cols         : ").append(getCols()).append(",\n")
+            .append(padding).append("    autocomplete : 'off'\n")
+            .append(padding).append("}\n");
 
         return sb.toString();
     }
 
     @Override
-    protected void addOptionalAttrs(StringBuilder sb)
+    protected void addOptionalAttrs(StringBuilder sb, String padding)
     {
-        super.addOptionalAttrs(sb);
+        super.addOptionalAttrs(sb, padding);
 
-        sb.append("                tabIndex    : " + getTabindex() + ",\n");
+        sb.append(padding).append("    tabIndex     : ").append(getTabindex()).append(",\n");
 
         if (getValue() != null)
-            sb.append("                html : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
-        sb.append("                class: \"form-control\", \n");
+            sb.append(padding).append("    html         : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
+
+        sb.append(padding).append("    class        : \"form-control\", \n");
     }
 }

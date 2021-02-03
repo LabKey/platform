@@ -259,14 +259,15 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
-    public String getCompletionURLBase(Container studyContainer, SpecimenService.CompletionType type)
+    public ActionURL getCompletionURL(Container studyContainer, SpecimenService.CompletionType type)
     {
         if (studyContainer == null)
             return null;
 
         ActionURL url = new ActionURL(AutoCompleteAction.class, studyContainer);
         url.addParameter("type", type.name());
-        return url.getLocalURIString() + "&prefix=";
+        url.addParameter("prefix", "");
+        return url;
     }
 
     @Override

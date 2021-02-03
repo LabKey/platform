@@ -38,7 +38,7 @@
     Container c = getContainer();
     ActionURL postUrl = bean.getCustomizePostURL(ctx);
     String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
-    String ptidCompletionBase = SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
+    ActionURL ptidCompletionBase = SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.ParticipantId);
 
     String selectedData = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.DATA_TYPE_KEY);
     if (selectedData == null)

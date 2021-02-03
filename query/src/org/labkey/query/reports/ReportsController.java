@@ -60,6 +60,7 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -84,6 +85,7 @@ import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
@@ -129,6 +131,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.SortHelpers;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -3968,10 +3971,14 @@ public class ReportsController extends SpringActionController
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
 
             RReport report = new RReport();
+            report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.runInBackground, "true");
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
 
             RReportJob job = new RReportJob(ReportsPipelineProvider.NAME, info, report, root);
+            testSerialize(job, _log);
 
+            job = new RReportJob(ReportsPipelineProvider.NAME, info,
+                    new ModuleReportIdentifier(ModuleLoader.getInstance().getModule("query"), Path.parse("/test/test.R")), root);
             testSerialize(job, _log);
         }
     }
