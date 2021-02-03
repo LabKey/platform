@@ -148,7 +148,7 @@ public class RReportJob extends PipelineJob implements Serializable
         if (!(report instanceof RReport))
             throw new UnsupportedOperationException("The report is not a valid instance of an RReport");
 
-        String s = _report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground);
+        String s = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground);
         Boolean runInBackground = (Boolean)JdbcType.BOOLEAN.convert(s);
         if (Boolean.TRUE != runInBackground)
             throw new UnsupportedOperationException("Report should have runInBackground property set to true.");
