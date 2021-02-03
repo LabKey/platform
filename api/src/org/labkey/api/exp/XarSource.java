@@ -138,10 +138,14 @@ public abstract class XarSource implements Serializable
         return null;
     }
 
-    public void addData(String experimentRunLSID, ExpData data)
+    public void addData(String experimentRunLSID, ExpData data, @Nullable String additionalDataLSID)
     {
-        Map<String, ExpData> existingMap = _data.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
-        existingMap.put(data.getLSID(), data);
+        Map<String, ExpData> map = _data.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
+        map.put(data.getLSID(), data);
+        if (additionalDataLSID != null)
+        {
+            map.put(additionalDataLSID, data);
+        }
     }
 
     public void addMaterial(String experimentRunLSID, ExpMaterial material, @Nullable String additionalMaterialLSID)
@@ -164,6 +168,11 @@ public abstract class XarSource implements Serializable
             if (experimentRun == null)
             {
                 result = ExperimentService.get().getExpData(dataLSID);
+            }
+            if (result == null)
+            {
+                // Try for a non-run scoped variant
+                result = _data.computeIfAbsent(null, k -> new HashMap<>()).get(dataLSID);
             }
             if (result == null)
             {
