@@ -39,7 +39,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
-import org.labkey.study.pipeline.StudyImportSpecimenTask;
+import org.labkey.api.specimen.pipeline.StudyImportSpecimenTask;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;

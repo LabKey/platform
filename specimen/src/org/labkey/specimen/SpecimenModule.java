@@ -100,13 +100,16 @@ public class SpecimenModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
 
         addController("specimen-api", SpecimenApiController.class, "study-samples-api");
+
+        // Register early -- some modules don't declare a runtime dependency on specimen module, but will use the
+        // service if it's available
+        SpecimenService.setInstance(new SpecimenServiceImpl());
     }
 
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(SpecimenRequestManager.get());
-        SpecimenService.setInstance(new SpecimenServiceImpl());
 
         StudyService.get().registerStudyTabProvider(tabs->tabs.add(new SpecimensPage("Specimen Data")));
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
