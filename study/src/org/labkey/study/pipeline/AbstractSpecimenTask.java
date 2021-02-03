@@ -38,7 +38,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
@@ -91,7 +90,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
     SimpleStudyImportContext getImportContext(PipelineJob job)
     {
-        return job.getJobSupport(StudyJobSupport.class).getImportContext();
+        return job.getJobSupport(SpecimenJobSupport.class).getImportContext();
     }
 
     public static void doImport(@Nullable File inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,

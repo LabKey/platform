@@ -16,12 +16,14 @@
 
 package org.labkey.api.specimen.pipeline;
 
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.specimen.SpecimensPage;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.pipeline.StudyBatch;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -85,6 +87,12 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     public boolean isMerge()
     {
         return _isMerge;
+    }
+
+    @Override
+    public SimpleStudyImportContext getImportContext()
+    {
+        return new SimpleStudyImportContext(getUser(), getContainer(), null, null, new PipelineJobLoggerGetter(this), null);
     }
 
     @Override

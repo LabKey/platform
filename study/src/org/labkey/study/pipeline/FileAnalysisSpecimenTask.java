@@ -44,7 +44,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
     }
 
     @Override
-    StudyImportContext getImportContext(PipelineJob job)
+    SimpleStudyImportContext getImportContext(PipelineJob job)
     {
         return new StudyImportContext(job.getUser(), job.getContainer(), null, new PipelineJobLoggerGetter(job));
     }
