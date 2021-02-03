@@ -17,6 +17,7 @@ package org.labkey.api.specimen.view;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
@@ -50,12 +51,13 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
     private NotificationBean _notification;
     private User _originatingUser;
 
-    /** Instead of in-lining a long String, we store the default body template as a ClassLoader resource */
+    /** Instead of in-lining a long String, we store the default body template as a module resource */
+    // TODO: Use a text block once we support source=15
     private static String loadBody()
     {
         try
         {
-            try (InputStream is = SpecimenRequestNotificationEmailTemplate.class.getResourceAsStream("/org/labkey/specimen/view/notification.txt"))
+            try (InputStream is = ModuleLoader.getInstance().getModule("Specimen").getModuleResource("notification.txt").getInputStream())
             {
                 return PageFlowUtil.getStreamContentsAsString(is);
             }
