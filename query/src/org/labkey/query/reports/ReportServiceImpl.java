@@ -103,6 +103,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -986,9 +987,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             // re-load the report to get the updated property information (i.e container, etc.)
             report = ReportService.get().getReport(ctx.getContainer(), rowId);
 
-            // copy over the serialized report name
-            report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportName,
-                    descriptor.getProperty(ReportDescriptor.Prop.serializedReportName));
+            assert Objects.equals(
+                    descriptor.getProperty(ReportDescriptor.Prop.serializedReportName),
+                    report.getDescriptor().getProperty(ReportDescriptor.Prop.serializedReportName));
 
             report.afterSave(ctx.getContainer(), ctx.getUser(), root);
 

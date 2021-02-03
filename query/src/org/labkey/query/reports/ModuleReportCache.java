@@ -96,6 +96,7 @@ public class ModuleReportCache
 
             descriptors.forEach((key, value) ->
             {
+                value.setLocked(true);
                 map.put(key.toString(), value);
                 Path path = key.getParent();
                 String subpath = path.subpath(2, path.size()).toString();
@@ -183,7 +184,9 @@ public class ModuleReportCache
                 descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource));
             }
 
-            return descriptors.isEmpty() ? EMPTY_REPORT_COLLECTIONS : new ReportCollections(descriptors);
+            var ret = descriptors.isEmpty() ? EMPTY_REPORT_COLLECTIONS : new ReportCollections(descriptors);
+            assert ret.getDescriptors(null).stream().allMatch(ReportDescriptor::isLocked);
+            return ret;
         }
 
         private boolean isResourceFile(String filename)

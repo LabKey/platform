@@ -42,7 +42,12 @@ import java.util.Map;
  */
 public class DatabaseReportCache
 {
-    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache", (c, argument) -> new ReportCollections(c));
+    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache", (c, argument) ->
+        {
+            var ret = new ReportCollections(c);
+            assert ret.getReports().stream().allMatch(r -> r.getDescriptor().isLocked());
+            return ret;
+        });
 
     private static class ReportCollections
     {
@@ -72,6 +77,7 @@ public class DatabaseReportCache
                     if ((reportDB.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
                         inheritableReports.add(report);
                 }
+                report.getDescriptor().setLocked(true);
             });
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);

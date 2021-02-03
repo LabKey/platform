@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.LogManager;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -44,6 +45,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRenderEnum;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
@@ -134,14 +136,22 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     }
 
     @Override
-    public ReportDescriptor clone() throws CloneNotSupportedException
+    public ReportDescriptor clone()
     {
-        ReportDescriptor clone = (ReportDescriptor)super.clone();
+        try
+        {
+            ReportDescriptor clone = (ReportDescriptor) super.clone();
+            clone._locked = false;
 
-        clone._props = new LinkedHashMap<>(_props);
-        clone._mapReportProps = new HashMap<>(_mapReportProps);
+            clone._props = new LinkedHashMap<>(_props);
+            clone._mapReportProps = new HashMap<>(_mapReportProps);
 
-        return clone;
+            return clone;
+        }
+        catch (CloneNotSupportedException x)
+        {
+            throw UnexpectedException.wrap(x);
+        }
     }
 
     public interface ReportProperty
@@ -159,8 +169,15 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return ReportService.get().getReportIdentifier(getProperty(Prop.reportId), null, null);
     }
 
-    public void setReportKey(String key){_reportKey = key;}
-    public String getReportKey(){return _reportKey;}
+    public void setReportKey(String key)
+    {
+        checkLocked();
+        _reportKey = key;
+    }
+    public String getReportKey()
+    {
+        return _reportKey;
+    }
 
     /**
      * Specify the type of report associated with this descriptor, valid types must
@@ -198,16 +215,19 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setProperty(String key, String value)
     {
+        checkLocked();
         _props.put(key, value);
     }
 
     public void setProperties(List<Pair<String,String>> props)
     {
+        checkLocked();
         init(props);
     }
 
     public void setProperties(Map<String, Object> props)
     {
+        checkLocked();
         _props.putAll(props);
     }
 
@@ -217,16 +237,19 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setProperty(ReportProperty prop, String value)
     {
+        checkLocked();
         _props.put(prop.toString(), value);
     }
 
     public void setProperty(ReportProperty prop, int value)
     {
+        checkLocked();
         _props.put(prop.toString(), String.valueOf(value));
     }
 
     public void setProperty(ReportProperty prop, boolean value)
     {
+        checkLocked();
         _props.put(prop.toString(), String.valueOf(value));
     }
 
@@ -246,6 +269,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setDescriptorType(String type)
     {
+        checkLocked();
         setProperty(Prop.descriptorType, type);
     }
 
@@ -268,7 +292,11 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     public Integer getOwner(){return _owner;}
 
     // TODO: Replace "owner" column with boolean "shared" column
-    public void setOwner(Integer owner){_owner = owner;}
+    public void setOwner(Integer owner)
+    {
+        checkLocked();
+        _owner = owner;
+    }
 
     public boolean isShared()
     {
@@ -280,6 +308,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     // otherwise determine this state change, since it doesn't receive old and new versions of the report.
     public void setWasShared()
     {
+        checkLocked();
         _wasShared = true;
     }
 
@@ -304,6 +333,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     //ReportViewProvider will set these as objects
     public void setAuthor(Object author)
     {
+        checkLocked();
         _mapReportProps.put(Prop.author.name(), author);
     }
 
@@ -314,11 +344,13 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setRefeshDate(Object refreshDate)
     {
+        checkLocked();
         _mapReportProps.put(Prop.refreshDate.name(), refreshDate);
     }
 
     public void setAuthor(Integer author)
     {
+        checkLocked();
         _mapReportProps.put(Prop.author.name(), author);
     }
 
@@ -330,6 +362,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setRefreshDate(Date refreshDate)
     {
+        checkLocked();
         _mapReportProps.put(Prop.refreshDate.name(), refreshDate);
     }
 
@@ -340,7 +373,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setStatus(String value)
     {
-         _mapReportProps.put(Prop.status.name(), value);
+        checkLocked();
+        _mapReportProps.put(Prop.status.name(), value);
     }
 
     public void initFromQueryString(String queryString)
@@ -355,6 +389,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setFlags(int flags)
     {
+        checkLocked();
         _flags = flags;
     }
 
@@ -698,6 +733,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public ReportDescriptorType setDescriptorFromXML(String xmlString) throws XmlException
     {
+        checkLocked();
         ReportDescriptorType d;
 
         XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
@@ -791,6 +827,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setHidden(boolean hidden)
     {
+        checkLocked();
         if (hidden)
             _flags = _flags | ReportDescriptor.FLAG_HIDDEN;
         else
@@ -883,11 +920,13 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setCategoryId(Integer categoryId)
     {
+        checkLocked();
         _categoryId = categoryId;
     }
 
     public void setCategoryParts(String[] categoryParts)
     {
+        checkLocked();
         _categoryParts = categoryParts;
     }
 
@@ -898,6 +937,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setDisplayOrder(int displayOrder)
     {
+        checkLocked();
         _displayOrder = displayOrder;
     }
 
@@ -908,11 +948,13 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public void setContentModified()
     {
+        checkLocked();
         setContentModified(null);
     }
 
     public void setContentModified(@Nullable Date contentModified)
     {
+        checkLocked();
         // either set to the parameter value or the current date/time
         if (contentModified != null)
             _contentModified = contentModified;
@@ -976,5 +1018,38 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     public boolean hasCustomAccess()
     {
         return REPORT_ACCESS_CUSTOM.equals(getAccess());
+    }
+
+
+    //
+    // ReportDescriptors are cached, let's make sure they are immutable
+    //
+
+    public void checkLocked()
+    {
+        if (_locked)
+        {
+            LogManager.getLogger(ReportDescriptor.class).error("ReportDescriptor is locked: " + getReportName() + " (" + getReportId() + ")", new Throwable());
+            //throw new IllegalStateException("ReportDescriptor is locked: " + getReportName() + " (" + getReportId() + ")");
+        }
+    }
+
+    boolean _locked;
+
+    public void setLocked(boolean b)
+    {
+        if (_locked && !b)
+            throw new IllegalStateException("Can't unlock a ReportDescriptor: " + getReportName());
+        if (!_locked && b)
+        {
+            _props = Collections.unmodifiableMap(_props);
+            _mapReportProps = Collections.unmodifiableMap(_mapReportProps);
+        }
+        _locked = b;
+    }
+
+    public boolean isLocked()
+    {
+        return _locked;
     }
 }

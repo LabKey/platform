@@ -52,6 +52,9 @@ public class ReportDataRegion extends DataRegion
 
         try
         {
+            // TODO(immutablereport)
+            report.setDescriptor(report.getDescriptor().clone());
+
             // subtle, but we always want to use the data region specified from the enclosing query
             report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
 
