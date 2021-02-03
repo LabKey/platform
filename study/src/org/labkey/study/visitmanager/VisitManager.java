@@ -37,7 +37,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -106,14 +105,17 @@ public abstract class VisitManager
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
+
     public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, logger);
     }
-    public void updateParticipantVisitsFromSpecimenImport(User user, @Nullable Logger logger)
+
+    public void updateParticipantVisitsWithCohortUpdate(User user, @Nullable Logger logger)
     {
         updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
     }
+
     public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
                                         @Nullable Logger logger)
@@ -137,12 +139,12 @@ public abstract class VisitManager
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
      * study. If null, all participants will be checked to see if they are still in the study.
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
-     * @param isSpecimenImport true if called from specimen import, which forces updateParticipantCohorts()
+     * @param forceUpdateCohorts If true, forces updateParticipantCohorts() (specimen import case)
      * @param logger Log4j logger to use for detailed performance information
      */
     public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
-                                        boolean isSpecimenImport, @Nullable Logger logger)
+                                        boolean forceUpdateCohorts, @Nullable Logger logger)
     {
         info(logger, "Updating participants");
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
@@ -173,7 +175,7 @@ public abstract class VisitManager
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&
                 cohortDatasetId != null &&
-                    (isSpecimenImport ||
+                    (forceUpdateCohorts ||
                     changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId))))
         {
             CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
@@ -187,17 +189,6 @@ public abstract class VisitManager
     public String getLabel()
     {
         return "Visit";
-    }
-
-
-    public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
-    {
-        SqlDialect dialect = schema.getSqlDialect();
-        String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
-
-        //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
-
-        return "(" + dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")") + ")";
     }
 
 

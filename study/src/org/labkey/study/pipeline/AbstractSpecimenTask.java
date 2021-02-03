@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 import org.labkey.api.specimen.pipeline.SpecimenBatch;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
@@ -33,17 +34,15 @@ import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
+import org.labkey.api.study.model.VisitService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.model.StudyManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.BatchUpdateException;
-import java.util.Collections;
 import java.util.Date;
 
 /*
@@ -168,7 +167,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
             // we need to force a participant/visit refresh in those study containers (if any):
             for (Study dependentStudy : StudyService.get().getAncillaryStudies(ctx.getContainer()))
-                StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.emptySet());
+                VisitService.get().updateParticipantVisits(dependentStudy, ctx.getUser());
         }
     }
 

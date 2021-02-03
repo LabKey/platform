@@ -106,6 +106,7 @@ public class SpecimenModule extends CodeOnlyModule
     public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(SpecimenRequestManager.get());
+        SpecimenService.setInstance(new SpecimenServiceImpl());
 
         StudyService.get().registerStudyTabProvider(tabs->tabs.add(new SpecimensPage("Specimen Data")));
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());

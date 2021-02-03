@@ -70,14 +70,15 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
+import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.LocationDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.ParticipantCategory;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -133,7 +134,6 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.MissingValueImporterFactory;
-import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.model.CohortDomainKind;
@@ -260,6 +260,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         CohortService.setInstance(new CohortServiceImpl());
         VisitService.setInstance(new VisitServiceImpl());
         ImportHelperService.setInstance(new ImportHelperServiceImpl());
+        StudyInternalService.setInstance(new StudyInternalServiceImpl());
         SpecimenMigrationService.setInstance(new SpecimenMigrationService()
         {
             @Override
@@ -364,7 +365,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         // because Study needs the metadata held by Experiment to delete properly.
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
         AssayPublishService.setInstance(new AssayPublishManager());
-        SpecimenService.setInstance(new SpecimenServiceImpl());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiRenderingService wikiService = WikiRenderingService.get();
