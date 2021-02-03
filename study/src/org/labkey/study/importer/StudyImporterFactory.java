@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
+import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.FileSystemFile;
@@ -170,6 +171,12 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     dataTypes.put(studyImporter.getDataType(), sCtx != null && studyImporter.isValidForImportArchive(sCtx, sCtx.getRoot()));
             }
 
+            for (SimpleStudyImporter importer : StudySerializationRegistryImpl.get().getSimpleStudyImporters())
+            {
+                if (importer.getDataType() != null)
+                    dataTypes.put(importer.getDataType(), sCtx != null && importer.isValidForImportArchive(sCtx, sCtx.getRoot()));
+            }
+
             // specifically add those "importers" that aren't implementers of InternalStudyImporter
             dataTypes.put(StudyImportDatasetTask.getType(), sCtx != null && StudyImportDatasetTask.isValidForImportArchive(sCtx, sCtx.getRoot()));
             dataTypes.put(StudyImportSpecimenTask.getType(), sCtx != null && sCtx.getSpecimenArchive(sCtx.getRoot()) != null);
@@ -182,16 +189,16 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         {
             if (archiveFilePath != null)
             {
-                    File archiveFile = new File(archiveFilePath);
-                    if (archiveFile.exists() && archiveFile.isFile())
-                    {
-                        VirtualFile vf = new FileSystemFile(archiveFile.getParentFile());
-                        VirtualFile studyDir = vf.getXmlBean("study.xml") != null ? vf : vf.getDir("study");
-                        XmlObject studyXml = studyDir.getXmlBean("study.xml");
+                File archiveFile = new File(archiveFilePath);
+                if (archiveFile.exists() && archiveFile.isFile())
+                {
+                    VirtualFile vf = new FileSystemFile(archiveFile.getParentFile());
+                    VirtualFile studyDir = vf.getXmlBean("study.xml") != null ? vf : vf.getDir("study");
+                    XmlObject studyXml = studyDir.getXmlBean("study.xml");
 
-                        if (studyXml instanceof StudyDocument)
-                            return new StudyImportContext(user, container, (StudyDocument)studyXml, null, null, studyDir);
-                    }
+                    if (studyXml instanceof StudyDocument)
+                        return new StudyImportContext(user, container, (StudyDocument)studyXml, null, null, studyDir);
+                }
             }
 
             return null;

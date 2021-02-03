@@ -2984,41 +2984,42 @@ public class StudyManager
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Long.class);
     }
 
-    public String[] getParticipantIds(Study study, User user)
+    public Collection<String> getParticipantIds(Study study, User user)
     {
         return getParticipantIds(study, user, -1);
     }
 
     /** study container only (not dataspace!) */
-    public String[] getParticipantIdsForGroup(Study study, User user, int groupId)
+    public Collection<String> getParticipantIdsForGroup(Study study, User user, int groupId)
     {
         return getParticipantIds(study, user, null, groupId, -1);
     }
 
     /** study container only (not dataspace!) */
-    public String[] getParticipantIds(Study study, User user, int rowLimit)
+    public Collection<String> getParticipantIds(Study study, User user, int rowLimit)
     {
         return getParticipantIds(study, user, null, -1, rowLimit);
     }
 
-    public String[] getParticipantIds(Study study, User user, ContainerFilter cf, int rowLimit)
+    public Collection<String> getParticipantIds(Study study, User user, ContainerFilter cf, int rowLimit)
     {
         return getParticipantIds(study, user, cf, -1, rowLimit);
     }
 
     /** study container only (not dataspace!) */
-    private String[] getParticipantIds(Study study, User user, ContainerFilter cf, int participantGroupId, int rowLimit)
+    private Collection<String> getParticipantIds(Study study, User user, ContainerFilter cf, int participantGroupId, int rowLimit)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         SQLFragment sql = getSQLFragmentForParticipantIds(study, user, cf, participantGroupId, rowLimit, schema, "ParticipantId");
-        return new SqlSelector(schema, sql).getArray(String.class);
+        return new SqlSelector(schema, sql).getCollection(String.class);
     }
 
     private static final String ALTERNATEID_COLUMN_NAME = "AlternateId";
     private static final String DATEOFFSET_COLUMN_NAME = "DateOffset";
     private static final String PTID_COLUMN_NAME = "ParticipantId";
     private static final String CONTAINER_COLUMN_NAME = "Container";
-    public class ParticipantInfo
+
+    public static class ParticipantInfo
     {
         private final String _containerId;
         private final String _alternateId;
@@ -3151,7 +3152,7 @@ public class StudyManager
     {
         if (study.isDataspaceStudy())
             return;
-        String [] participantIds = getParticipantIds(study,null);
+        Collection<String> participantIds = getParticipantIds(study,null);
 
         for (String participantId : participantIds)
             setAlternateId(study, study.getContainer().getId(), participantId, null);

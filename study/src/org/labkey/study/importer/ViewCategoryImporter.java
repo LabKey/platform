@@ -21,6 +21,7 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -58,7 +59,7 @@ public class ViewCategoryImporter implements InternalStudyImporter
         if (!isValidForImportArchive(ctx, root))
             return;
 
-        StudyImpl study = ctx.getStudy();
+        StudyImpl study = ctx.getStudyImpl();
         try
         {
             XmlObject xml = root.getXmlBean(ViewCategoryWriter.FILE_NAME);

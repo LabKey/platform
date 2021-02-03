@@ -29,7 +29,7 @@ public class SpecimensPage extends FolderTab.PortalPage
     public boolean isSelectedPage(ViewContext viewContext)
     {
         return super.isSelectedPage(viewContext) ||
-                "study-samples".equals(viewContext.getActionURL().getController());
+                "specimen".equals(viewContext.getActionURL().getController());
     }
 
     @Override
