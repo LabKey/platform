@@ -109,7 +109,7 @@
         issueListDef = IssueManager.getIssueListDef(issue);
 
     BindException errors = bean.getErrors();
-    String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(c);
+    ActionURL completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURL(c);
     ActionURL cancelURL;
 
     if (bean.getReturnURL() != null)

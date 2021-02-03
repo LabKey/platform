@@ -711,7 +711,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
             SampleMindedTransformTask.TestCase.class,
-            SequenceNumImportHelper.SequenceNumTest.class
+            SequenceNumImportHelper.SequenceNumTest.class,
+            StudyImpl.DateMathTestCase.class
         );
     }
 

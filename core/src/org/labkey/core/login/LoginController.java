@@ -2400,7 +2400,7 @@ public class LoginController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", new ActionURL(getClass(), getContainer()));
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", getClass(), getContainer());
         }
     }
 

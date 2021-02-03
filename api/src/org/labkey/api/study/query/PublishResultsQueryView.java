@@ -334,7 +334,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         private final ColumnInfo _specimenVisitCol;
         private final ColumnInfo _specimenDateCol;
         private final ColumnInfo _targetStudyCol;
-        private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
+        private final Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
 
         private Map<Object, String> _reshowVisits;
         private Map<Object, String> _reshowDates;
@@ -709,11 +709,11 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     public static abstract class InputColumn extends SimpleDisplayColumn
     {
-        private static String RENDERED_REQUIRES_COMPLETION = InputColumn.class.getName() + "-requiresScript";
+        private static final String RENDERED_REQUIRES_COMPLETION = InputColumn.class.getName() + "-requiresScript";
 
         protected boolean _editable;
         protected String _formElementName;
-        private String _completionBase;
+        private final String _completionBase;
         protected final ResolverHelper _resolverHelper;
 
         public InputColumn(String caption, boolean editable, String formElementName, String completionBase, ResolverHelper resolverHelper)
@@ -821,7 +821,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         protected String getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
+            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.ParticipantId).getLocalURIString();
         }
 
         @Override
@@ -843,7 +843,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         protected String getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.VisitId);
+            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.VisitId).getLocalURIString();
         }
 
         @Override
@@ -855,7 +855,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     private class DateDataInputColumn extends DataInputColumn
     {
-        private boolean _includeTimestamp;
+        private final boolean _includeTimestamp;
 
         public DateDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol, boolean includeTimestamp)
         {

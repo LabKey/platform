@@ -272,9 +272,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return _returnUrl;
         }
 
-        public String getCompleteUsersPrefix()
+        public ActionURL getCompleteUsersPrefix()
         {
-            return PageFlowUtil.urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(_actor.getContainer());
+            return PageFlowUtil.urlProvider(SecurityUrls.class).getCompleteUserURL(_actor.getContainer());
         }
     }
 }

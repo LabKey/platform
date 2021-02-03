@@ -88,6 +88,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -1186,7 +1187,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
         if (participantID != null && date != null && !getTimepointType().isVisitBased())
         {
-            // Translate the date into a sequencenum based on the particpant's start date
+            // Translate the date into a sequencenum based on the participant's start date
             Participant participant = StudyManager.getInstance().getParticipant(this, participantID);
             Calendar startCal = new GregorianCalendar();
             if (participant != null && participant.getStartDate() != null)
@@ -1233,7 +1234,20 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             endDate = temp;
         }
         Calendar date = (Calendar) startDate.clone();
-        int daysBetween = 0;
+
+        // Calculate the difference in terms of days
+        long diffInMillis = endDate.getTimeInMillis() - startDate.getTimeInMillis();
+        int daysBetween = (int)(diffInMillis / TimeUnit.DAYS.toMillis(1));
+
+        if (daysBetween > 0)
+        {
+            // Round down to ensure consistent results with original implementation, which added one day at a time and
+            // was a performance bottleneck when the supplied dates were many years apart
+            daysBetween--;
+            date.add(Calendar.DAY_OF_MONTH, daysBetween);
+        }
+
+        // Now iterate for one or possibly two more days until we go beyond the original date
         while (date.before(endDate))
         {
             date.add(Calendar.DAY_OF_MONTH, 1);
@@ -1257,6 +1271,33 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public int hashCode()
     {
         return getContainer() != null ? getContainer().hashCode() : 0;
+    }
+
+    public static class DateMathTestCase extends Assert
+    {
+        @Test
+        public void testDayInterval()
+        {
+            // The behavior here is questionable - arguments that differ by one
+            // millisecond will return a difference of 1 day (plus or minus), but keeping as-is during the optimization
+            // to not increment by one day for the whole interval
+            Calendar jan1 = new GregorianCalendar();
+            jan1.setTimeInMillis(DateUtil.parseISODateTime("2020-01-01"));
+            Calendar c = new GregorianCalendar();
+            c.setTimeInMillis(jan1.getTimeInMillis());
+            assertEquals(0, daysBetween(jan1, c));
+
+            c.setTimeInMillis(jan1.getTimeInMillis() + 1);
+            assertEquals(1, daysBetween(jan1, c));
+
+            c.add(Calendar.DATE, 1);
+            assertEquals(2, daysBetween(jan1, c));
+
+            c.setTimeInMillis(jan1.getTimeInMillis() - 1);
+            assertEquals(-1, daysBetween(jan1, c));
+            c.add(Calendar.DATE, -1);
+            assertEquals(-2, daysBetween(jan1, c));
+        }
     }
 
 
