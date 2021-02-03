@@ -388,6 +388,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
 
     /**
+     * Find the ExpData objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start);
+
+    /**
+     * Find the ExpMaterial objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start);
+
+    /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
      * stopping at the first parent generation (no grandparents.)
      */

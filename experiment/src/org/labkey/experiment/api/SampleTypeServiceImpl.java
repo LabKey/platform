@@ -907,10 +907,10 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
         // not doing anything with userComment at the moment
-        return createAuditRecord(c, getCommentDetailed(action, !updatedRow.isEmpty()), row, updatedRow, action);
+        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), row, action);
     }
 
     @Override
@@ -936,10 +936,10 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, row, null, null);
+        return createAuditRecord(c, comment, row, null);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, @Nullable QueryService.AuditAction action)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
         var tx = getExpSchema().getScope().getCurrentTransaction();
@@ -949,14 +949,11 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
 
-        if (updatedRow != null)
-        {
-            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
-            event.setLineageUpdate(parentFields.isPresent());
-        }
-
         if (row != null)
         {
+            Optional<String> parentFields = row.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+
             String sampleTypeLsid = null;
             if (row.containsKey(CPAS_TYPE))
                 sampleTypeLsid =  String.valueOf(row.get(CPAS_TYPE));
