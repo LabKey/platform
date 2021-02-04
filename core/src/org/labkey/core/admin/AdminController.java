@@ -296,7 +296,7 @@ public class AdminController extends SpringActionController
         Container root = ContainerManager.getRoot();
 
         // Configuration
-        AdminConsole.addLink(Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
+        AdminConsole.addLink(Configuration, "authentication", urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
@@ -314,11 +314,11 @@ public class AdminController extends SpringActionController
 /*
         // Management
         // note these should match (link and permissions) with SiteAdminMenu.getNavTree()
-        AdminConsole.addLink(Management, "site admins", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(root, "Administrators"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site developers", PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(root, "Developers"), AdminOperationsPermission.class);
-        AdminConsole.addLink(Management, "site users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL(), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site groups", PageFlowUtil.urlProvider(SecurityUrls.class).getSiteGroupsURL(root, null), UserManagementPermission.class);
-        AdminConsole.addLink(Management, "site permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(root), UserManagementPermission.class);
+        AdminConsole.addLink(Management, "site admins", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Administrators"), AdminOperationsPermission.class);
+        AdminConsole.addLink(Management, "site developers", urlProvider(SecurityUrls.class).getManageGroupURL(root, "Developers"), AdminOperationsPermission.class);
+        AdminConsole.addLink(Management, "site users", urlProvider(UserUrls.class).getSiteUsersURL(), UserManagementPermission.class);
+        AdminConsole.addLink(Management, "site groups", urlProvider(SecurityUrls.class).getSiteGroupsURL(root, null), UserManagementPermission.class);
+        AdminConsole.addLink(Management, "site permissions", urlProvider(SecurityUrls.class).getPermissionsURL(root), UserManagementPermission.class);
 */
 
         // Diagnostics
@@ -399,26 +399,24 @@ public class AdminController extends SpringActionController
 
     private void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
-        addAdminNavTrail(root, childTitle, action, getContainer());
+        addAdminNavTrail(root, childTitle, null != action ? new ActionURL(action, getContainer()) : null, getContainer());
     }
 
-    private static void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
+    private static void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL url, Container container)
     {
         if (container.isRoot())
-            root.addChild("Admin Console", getShowAdminURL());
+            root.addChild("Admin Console", getShowAdminURL().setFragment("links"));
 
-        if (null == action)
+        if (null == url)
             root.addChild(childTitle);
         else
-            root.addChild(childTitle, new ActionURL(action, container));
+            root.addChild(childTitle, url);
     }
-
 
     public static ActionURL getShowAdminURL()
     {
         return new ActionURL(ShowAdminAction.class, ContainerManager.getRoot());
     }
-
 
     @AdminConsoleAction
     public static class ShowAdminAction extends SimpleViewAction
@@ -617,14 +615,16 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container)
+        {
+            AdminController.addAdminNavTrail(root, childTitle, new ActionURL(action, container), container);
+        }
+
+        @Override
+        @Deprecated
         public void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
-            root.addChild("Admin Console", getAdminConsoleURL().setFragment("links") );
-
-            if (null != childURL)
-                root.addChild(childTitle, childURL);
-            else
-                root.addChild(childTitle);
+            AdminController.addAdminNavTrail(root, childTitle, childURL, ContainerManager.getRoot());
         }
 
         @Override
@@ -757,9 +757,9 @@ public class AdminController extends SpringActionController
             {
                 URLHelper returnURL = form.getReturnURLHelper();
                 if (returnURL != null)
-                    loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
+                    loginURL = urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
                 else
-                    loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL();
+                    loginURL = urlProvider(LoginUrls.class).getLoginURL();
             }
 
             MaintenanceBean bean = new MaintenanceBean();
@@ -2296,7 +2296,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
-            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Heap dump", null);
+            addAdminNavTrail(root, "Heap dump", null, getContainer());
         }
     }
 
@@ -3043,7 +3043,7 @@ public class AdminController extends SpringActionController
             if (null != jobGuid)
                 _jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
 
-            PipelineStatusUrls urls = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+            PipelineStatusUrls urls = urlProvider(PipelineStatusUrls.class);
             _url = null != _jobId ? urls.urlDetails(getContainer(), _jobId) : urls.urlBegin(getContainer());
 
             return true;
@@ -4342,7 +4342,7 @@ public class AdminController extends SpringActionController
                         {
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                         }
-                        _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
+                        _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     }
                     break;
                 }
@@ -4363,7 +4363,7 @@ public class AdminController extends SpringActionController
                     {
                         errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                     }
-                    _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(container);
+                    _successURL = urlProvider(PipelineUrls.class).urlBrowse(container);
                     break;
                 }
                 case 2:
@@ -4525,7 +4525,7 @@ public class AdminController extends SpringActionController
             }
 
             // make sure we have a pipeline url provider to use for the success URL redirect
-            pipelineUrlProvider = PageFlowUtil.urlProvider(PipelineUrls.class);
+            pipelineUrlProvider = urlProvider(PipelineUrls.class);
             if (pipelineUrlProvider == null)
             {
                 errors.reject("folderImport", "Pipeline url provider does not exist.");
@@ -4928,7 +4928,7 @@ public class AdminController extends SpringActionController
 
             if (form.isWizard())
             {
-                _successURL = PageFlowUtil.urlProvider(SecurityUrls.class).getContainerURL(container);
+                _successURL = urlProvider(SecurityUrls.class).getContainerURL(container);
                 _successURL.addParameter("wizard", Boolean.TRUE.toString());
             }
             else
@@ -4943,7 +4943,6 @@ public class AdminController extends SpringActionController
             return _successURL;
         }
     }
-
 
     @SuppressWarnings("unused")
     public static class FileRootsForm extends SetupForm implements FileManagementForm
@@ -7517,8 +7516,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
-            root.addChild("Test Email Configuration");
+            addAdminNavTrail(root, "Test Email Configuration", getClass());
         }
     }
 
@@ -7842,7 +7840,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(Object o)
         {
-            return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
+            return urlProvider(PipelineUrls.class).urlBegin(ContainerManager.getRoot());
         }
     }
 
@@ -8400,7 +8398,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("experimental");
-            root.addChild("Experimental Features");
+            addAdminNavTrail(root, "Experimental Features", getClass());
         }
     }
 
@@ -8466,7 +8464,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Folder Types");
+            addAdminNavTrail(root, "Folder Types", getClass());
         }
     }
 
@@ -9061,7 +9059,7 @@ public class AdminController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public static class ShortURLAdminAction extends FormViewAction<ShortURLForm>
+    public class ShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
         public void validateCommand(ShortURLForm target, Errors errors) {}
@@ -9167,7 +9165,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("shortURL");
-            root.addChild("Short URL Admin");
+            addAdminNavTrail(root, "Short URL Admin", getClass());
         }
     }
 
@@ -9555,7 +9553,7 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction()
-    public static class ExternalRedirectAdminAction extends FormViewAction<ExternalRedirectForm>
+    public class ExternalRedirectAdminAction extends FormViewAction<ExternalRedirectForm>
     {
         @Override
         public void validateCommand(ExternalRedirectForm target, Errors errors)
@@ -9682,7 +9680,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("externalRedirectsURL");
-            root.addChild("External Redirect Host Admin");
+            addAdminNavTrail(root, "External Redirect Host Admin", getClass());
         }
     }
 
@@ -10309,7 +10307,7 @@ public class AdminController extends SpringActionController
                     controller.new MemTrackerAction(),
                     controller.new MemoryChartAction(),
                     controller.new FolderTypesAction(),
-                    new ShortURLAdminAction(),
+                    controller.new ShortURLAdminAction(),
                     controller.new CustomizeSiteAction(),
                     controller.new CachesAction(),
                     controller.new EnvironmentVariablesAction(),

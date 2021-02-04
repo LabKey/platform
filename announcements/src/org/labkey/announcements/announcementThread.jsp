@@ -74,7 +74,7 @@ if (announcementModel.isSpam())
 }
 else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminPermission.class))
 {
-    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> requires moderator review.<%
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> requires <%=link("moderator review", new ActionURL(AnnouncementsController.ModeratorReviewAction.class, c)).clearClasses()%>.<%
 }
 %>
 

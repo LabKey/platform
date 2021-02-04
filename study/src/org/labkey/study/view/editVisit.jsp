@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Dataset"%>
+<%@ page import="org.labkey.api.study.Params"%>
 <%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.study.Visit"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfirmDeleteVisitAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitSummaryAction" %>
@@ -129,7 +129,7 @@
                     else
                     {
                     %>
-                    <select name="<%=CohortFilterFactory.Params.cohortId%>">
+                    <select name="<%=Params.cohortId%>">
                         <option value="">All</option>
                     <%
 

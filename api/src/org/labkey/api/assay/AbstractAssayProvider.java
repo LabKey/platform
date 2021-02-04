@@ -133,6 +133,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: jeckels
@@ -757,52 +758,100 @@ public abstract class AbstractAssayProvider implements AssayProvider
     // CONSIDER: combining with .getTargetStudy()
     // UNDONE: Doesn't look at TargetStudy in Results domain yet.
     @Override
-    public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
+    public Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Integer> rowIds)
     {
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = findTargetStudyProperty(protocol);
         if (pair == null)
-            return null;
+            return Collections.emptySet();
 
         DomainProperty targetStudyColumn = pair.second;
 
-        ExpData data = getDataForDataRow(dataId, protocol);
-        if (data == null)
-            return null;
-        ExpRun run = data.getRun();
-        if (run == null)
-            return null;
+        ResolverCache cache = new ResolverCache();
 
-        ExpObject source;
-        switch (pair.first)
+        Set<Container> result = new HashSet<>();
+
+        for (ExpData data : getDatasForResultRows(rowIds, protocol, cache))
         {
+            Container container = null;
+            if (data.getRunId() != null)
+            {
+                ExpRun run = cache.getRun(data.getRunId());
+                if (run != null)
+                {
+                    // Ignore Results domain TargetStudy for now.
+                    // The participant resolver will find the TargetStudy on the row.
+                    ExpObject source = switch (pair.first)
+                    {
+                        case Run -> run;
+                        default -> cache.getBatch(run);
+                    };
 
-            case Run:
-                source = run;
-                break;
+                    if (source != null)
+                    {
+                        Map<String, Object> properties = OntologyManager.getProperties(source.getContainer(), source.getLSID());
+                        String targetStudyId = (String) properties.get(targetStudyColumn.getPropertyURI());
 
-            case Result:
-                // Ignore Results domain TargetStudy for now.
-                // The participant resolver will find the TargetStudy on the row.
-            case Batch:
-            default:
-                source = AssayService.get().findBatch(run);
-                break;
+                        if (targetStudyId != null)
+                            container = ContainerManager.getForId(targetStudyId);
+                    }
+                }
+            }
+            result.add(container);
         }
-
-        if (source != null)
-        {
-            Map<String, Object> properties = OntologyManager.getProperties(source.getContainer(), source.getLSID());
-            String targetStudyId = (String) properties.get(targetStudyColumn.getPropertyURI());
-
-            if (targetStudyId != null)
-                return ContainerManager.getForId(targetStudyId);
-        }
-        
-        return null;
+        return result;
     }
 
-    public abstract ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol);
+    @Nullable
+    public final ExpData getDataForDataRow(int resultRowId, ExpProtocol protocol)
+    {
+        Set<ExpData> matches = getDatasForResultRows(Collections.singleton(resultRowId), protocol, new ResolverCache());
+        return matches.isEmpty() ? null : matches.iterator().next();
+    }
 
+    /** Resolve result rows to their owning ExpData object. Optional method for assays that support copy-to-study */
+    public Set<ExpData> getDatasForResultRows(Collection<Integer> rowIds, ExpProtocol protocol, ResolverCache cache)
+    {
+        return Collections.emptySet();
+    }
+
+    public static class ResolverCache
+    {
+        private final Map<Integer, ExpData> _dataById = new HashMap<>();
+        private final Map<Integer, ExpRun> _runById = new HashMap<>();
+        private final Map<ExpRun, ExpExperiment> _batchByRun = new HashMap<>();
+
+        private <K, T extends ExpObject> T get(K key, Map<K, T> cache, Supplier<T> supplier)
+        {
+            if (key == null)
+            {
+                return null;
+            }
+            // Don't use computeIfAbsent() because it treats null values as if they weren't in the map at all
+            if (cache.containsKey(key))
+            {
+                return cache.get(key);
+            }
+            T result = supplier.get();
+            cache.put(key, result);
+            return result;
+
+        }
+
+        public ExpData getDataById(int dataId)
+        {
+            return get(dataId, _dataById, () -> ExperimentService.get().getExpData(dataId));
+        }
+
+        public ExpRun getRun(int runId)
+        {
+            return get(runId, _runById, () -> ExperimentService.get().getExpRun(runId));
+        }
+
+        public ExpExperiment getBatch(ExpRun run)
+        {
+            return get(run, _batchByRun, () -> AssayService.get().findBatch(run));
+        }
+    }
 
     @Override
     public ActionURL getImportURL(Container container, ExpProtocol protocol)

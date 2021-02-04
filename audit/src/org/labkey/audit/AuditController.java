@@ -25,19 +25,11 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.audit.view.AuditChangesView;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
@@ -55,7 +47,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -69,14 +60,11 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -106,7 +94,7 @@ public class AuditController extends SpringActionController
             if (getContainer() != null && getContainer().isRoot())
                 return new ActionURL(ShowAuditLogAction.class, getContainer());
             else
-                return PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), "auditLog");
+                return urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), "auditLog");
         }
     }
 
@@ -156,12 +144,7 @@ public class AuditController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("audits"));
-            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Audit Log", getURL());
-        }
-
-        public ActionURL getURL()
-        {
-            return new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Audit Log", getClass(), getContainer());
         }
     }
 
@@ -226,7 +209,7 @@ public class AuditController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
+            root.addChild("Admin Console", urlProvider(AdminUrls.class).getAdminConsoleURL());
 
             ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
             urlLog.addParameter("view", SiteSettingsAuditProvider.AUDIT_EVENT_TYPE);

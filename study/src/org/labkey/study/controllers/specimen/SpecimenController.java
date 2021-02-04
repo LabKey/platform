@@ -92,6 +92,7 @@ import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.actions.ManageReqsBean;
+import org.labkey.api.specimen.actions.ReportConfigurationBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -126,6 +127,7 @@ import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
@@ -184,18 +186,6 @@ import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.specimen.report.SpecimenReportExcelWriter;
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.study.specimen.report.participant.ParticipantSiteReportFactory;
-import org.labkey.study.specimen.report.participant.ParticipantSummaryReportFactory;
-import org.labkey.study.specimen.report.participant.ParticipantTypeReportFactory;
-import org.labkey.study.specimen.report.request.RequestEnrollmentSiteReportFactory;
-import org.labkey.study.specimen.report.request.RequestLocationReportFactory;
-import org.labkey.study.specimen.report.request.RequestParticipantReportFactory;
-import org.labkey.study.specimen.report.request.RequestReportFactory;
-import org.labkey.study.specimen.report.specimentype.TypeCohortReportFactory;
-import org.labkey.study.specimen.report.specimentype.TypeParticipantReportFactory;
-import org.labkey.study.specimen.report.specimentype.TypeSummaryReportFactory;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -242,7 +232,19 @@ public class SpecimenController extends BaseStudyController
         ShowSearchAction.class,
         AutoCompleteAction.class,
         ParticipantCommentAction.SpecimenCommentInsertAction.class,
-        ParticipantCommentAction.SpecimenCommentUpdateAction.class
+        ParticipantCommentAction.SpecimenCommentUpdateAction.class,
+
+        // Report actions from SpecimenReportActions
+        SpecimenReportActions.ParticipantSummaryReportAction.class,
+        SpecimenReportActions.ParticipantTypeReportAction.class,
+        SpecimenReportActions.ParticipantSiteReportAction.class,
+        SpecimenReportActions.RequestReportAction.class,
+        SpecimenReportActions.RequestEnrollmentSiteReportAction.class,
+        SpecimenReportActions.RequestSiteReportAction.class,
+        SpecimenReportActions.RequestParticipantReportAction.class,
+        SpecimenReportActions.TypeParticipantReportAction.class,
+        SpecimenReportActions.TypeSummaryReportAction.class,
+        SpecimenReportActions.TypeCohortReportAction.class
     );
 
     public SpecimenController()
@@ -361,6 +363,27 @@ public class SpecimenController extends BaseStudyController
         {
             return new ActionURL(SpecimenController.DeleteRequestAction.class, c).addParameter("id", "${requestId}");
         }
+
+        @Override
+        public ActionURL getCompleteSpecimenURL(Container c, String type)
+        {
+            return new ActionURL(SpecimenController.CompleteSpecimenAction.class, c).addParameter("type", type);
+        }
+
+        @Override
+        public ActionURL getTypeParticipantReportURL(Container c)
+        {
+            return new ActionURL(SpecimenReportActions.TypeParticipantReportAction.class, c);
+        }
+
+        @Override
+        public void addSpecimenNavTrail(NavTree root, String childTitle, Container c)
+        {
+            ActionURL overviewURL = new ActionURL(OverviewAction.class, c);
+            root.addChild("Specimen Overview", overviewURL);
+            root.addChild("Available Reports", new ActionURL(SpecimenController.AutoReportListAction.class, c));
+            root.addChild(childTitle);
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -396,7 +419,7 @@ public class SpecimenController extends BaseStudyController
     private void addBaseSpecimenNavTrail(NavTree root)
     {
         _addNavTrail(root);
-        ActionURL overviewURL = new ActionURL(OverviewAction.class,  getContainer());
+        ActionURL overviewURL = new ActionURL(OverviewAction.class, getContainer());
         root.addChild("Specimen Overview", overviewURL);
     }
 
@@ -2654,7 +2677,7 @@ public class SpecimenController extends BaseStudyController
 
     private ActionURL getManageStudyURL()
     {
-        return PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
+        return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
     }
 
     public static class EmailSpecimenListForm extends IdForm
@@ -3207,161 +3230,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public abstract class SpecimenVisitReportAction<FormType extends SpecimenVisitReportParameters> extends SimpleViewAction<FormType>
-    {
-        private FormType _form;
-
-        public SpecimenVisitReportAction(Class<FormType> beanClass)
-        {
-            super(beanClass);
-        }
-
-        @Override
-        public ModelAndView getView(FormType specimenVisitReportForm, BindException errors)
-        {
-            _form = specimenVisitReportForm;
-            if (specimenVisitReportForm.isExcelExport())
-            {
-                SpecimenReportExcelWriter writer = new SpecimenReportExcelWriter(specimenVisitReportForm);
-                writer.write(getViewContext().getResponse());
-                return null;
-            }
-            else
-            {
-                JspView<FormType> reportView = new JspView<>("/org/labkey/study/view/specimen/specimenVisitReport.jsp", specimenVisitReportForm);
-                reportView.setIsWebPart(false);
-                if (this.isPrint())
-                {
-                    return reportView;
-                }
-                else
-                {
-                    // Need unique id only in webpart case
-                    ReportConfigurationBean bean = new ReportConfigurationBean(specimenVisitReportForm, false, 0);
-                    return new VBox(new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", bean), reportView);
-                }
-            }
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBaseSpecimenNavTrail(root);
-            root.addChild("Available Reports", new ActionURL(AutoReportListAction.class, getContainer()));
-            root.addChild("Specimen Report: " + _form.getLabel());
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class TypeSummaryReportAction extends SpecimenVisitReportAction<TypeSummaryReportFactory>
-    {
-        public TypeSummaryReportAction()
-        {
-            super(TypeSummaryReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class TypeParticipantReportAction extends SpecimenVisitReportAction<TypeParticipantReportFactory>
-    {
-        public TypeParticipantReportAction()
-        {
-            super(TypeParticipantReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestReportAction extends SpecimenVisitReportAction<RequestReportFactory>
-    {
-        public RequestReportAction()
-        {
-            super(RequestReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class TypeCohortReportAction extends SpecimenVisitReportAction<TypeCohortReportFactory>
-    {
-        public TypeCohortReportAction()
-        {
-            super(TypeCohortReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestSiteReportAction extends SpecimenVisitReportAction<RequestLocationReportFactory>
-    {
-        public RequestSiteReportAction()
-        {
-            super(RequestLocationReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ParticipantSummaryReportAction extends SpecimenVisitReportAction<ParticipantSummaryReportFactory>
-    {
-        public ParticipantSummaryReportAction()
-        {
-            super(ParticipantSummaryReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ParticipantTypeReportAction extends SpecimenVisitReportAction<ParticipantTypeReportFactory>
-    {
-        public ParticipantTypeReportAction()
-        {
-            super(ParticipantTypeReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ParticipantSiteReportAction extends SpecimenVisitReportAction<ParticipantSiteReportFactory>
-    {
-        public ParticipantSiteReportAction()
-        {
-            super(ParticipantSiteReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestEnrollmentSiteReportAction extends SpecimenVisitReportAction<RequestEnrollmentSiteReportFactory>
-    {
-        public RequestEnrollmentSiteReportAction()
-        {
-            super(RequestEnrollmentSiteReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestParticipantReportAction extends SpecimenVisitReportAction<RequestParticipantReportFactory>
-    {
-        public RequestParticipantReportAction()
-        {
-            super(RequestParticipantReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class AutoReportListAction extends SimpleViewAction
     {
@@ -3888,11 +3756,10 @@ public class SpecimenController extends BaseStudyController
             return true;
         }
 
-
         @Override
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 
@@ -3931,7 +3798,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 

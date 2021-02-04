@@ -1536,7 +1536,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     Collection<String> getParticipantIds()
     {
-        return Arrays.asList(StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1));
+        return StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1);
     }
 
     Collection<String> getParticipantIdsNotInGroupCategory(ParticipantCategoryImpl category)

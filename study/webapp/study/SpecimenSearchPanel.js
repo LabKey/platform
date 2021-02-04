@@ -380,7 +380,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
         if (form.down('#searchPanel'))
             Ext4.apply(params, form.down('#searchPanel').getParams(dataRegionName));
 
-        window.location = LABKEY.ActionURL.buildURL('study-samples', 'samples', null, params);
+        window.location = LABKEY.ActionURL.buildURL('specimen', 'specimens', null, params);
     },
 
     optimizeFilter: function(op, values, field){

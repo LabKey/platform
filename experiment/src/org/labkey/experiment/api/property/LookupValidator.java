@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -228,6 +229,9 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
     {
         //noinspection ConstantConditions
         assert value != null : "Shouldn't be validating a null value";
+
+        if (value != null)
+            value = ConvertHelper.convert(value, crpField.getJavaObjectClass());
 
         if (crpField instanceof PropertyDescriptor)
         {

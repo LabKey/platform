@@ -21,6 +21,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 
 /**
  * User: adam
@@ -57,4 +58,10 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getSubmitRequestURL(Container c, String id);
 
     ActionURL getDeleteRequestURL(Container c, String id);
+
+    ActionURL getCompleteSpecimenURL(Container c, String type);
+
+    ActionURL getTypeParticipantReportURL(Container c);
+
+    void addSpecimenNavTrail(NavTree root, String childTitle, Container c);
 }

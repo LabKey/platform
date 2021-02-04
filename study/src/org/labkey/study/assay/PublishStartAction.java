@@ -58,7 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -264,19 +264,23 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         }
         else
         {
-            Set<Container> containers = new HashSet<>();
             boolean nullsFound = false;
             boolean insufficientPermissions = false;
-            for (Integer id : ids)
+
+            Set<Container> containers = provider.getAssociatedStudyContainers(_protocol, ids);
+            Iterator<Container> i = containers.iterator();
+            while (i.hasNext())
             {
-                Container studyContainer = provider.getAssociatedStudyContainer(_protocol, id);
-                if (studyContainer == null)
-                    nullsFound = true;
-                else
+                Container c = i.next();
+                if (c == null)
                 {
-                    if (!studyContainer.hasPermission(getUser(), InsertPermission.class))
-                        insufficientPermissions = true;
-                    containers.add(studyContainer);
+                    nullsFound = true;
+                    i.remove();
+                }
+                else if (!c.hasPermission(getUser(), InsertPermission.class))
+                {
+                    insufficientPermissions = true;
+                    i.remove();
                 }
             }
 

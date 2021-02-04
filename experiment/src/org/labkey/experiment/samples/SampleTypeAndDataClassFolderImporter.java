@@ -11,6 +11,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.CompressedInputStreamXarSource;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.XarSource;
@@ -31,6 +32,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.xar.XarImportContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +46,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
+import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
 
 public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 {
@@ -70,7 +74,8 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
         if (xarDir != null)
         {
-            File xarFile = null;
+            File typesXarFile = null;
+            File runsXarFile = null;
             Map<String, String> sampleTypeDataFiles = new HashMap<>();
             Map<String, String> dataClassDataFiles = new HashMap<>();
             Logger log = ctx.getLogger();
@@ -81,12 +86,19 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
 
             for (String file: xarDir.list())
             {
-                if (file.toLowerCase().endsWith(".xar"))
+                if (file.equalsIgnoreCase(XAR_TYPES_NAME))
                 {
-                    if (xarFile == null)
-                        xarFile = new File(xarDir.getLocation(), file);
+                    if (typesXarFile == null)
+                        typesXarFile = new File(xarDir.getLocation(), file);
                     else
-                        log.error("More than one XAR file found in the sample type directory: ", file);
+                        log.error("More than one types XAR file found in the sample type directory: ", file);
+                }
+                else if (file.equalsIgnoreCase(XAR_RUNS_NAME))
+                {
+                    if (runsXarFile == null)
+                        runsXarFile = new File(xarDir.getLocation(), file);
+                    else
+                        log.error("More than one runs XAR file found in the sample type directory: ", file);
                 }
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
@@ -97,14 +109,19 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 }
             }
 
+            // push in an additional context so that other XAR Importers can share states
+            XarImportContext xarCtx = new XarImportContext();
+            xarCtx.setStrictValidateExistingSampleType(false);
+            ctx.addContext(XarImportContext.class, xarCtx);
+
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                if (xarFile != null)
+                if (typesXarFile != null)
                 {
                     File logFile = null;
                     // we don't need the log file in cases where the xarFile is a virtual file and not in the file system
-                    if (xarFile.exists())
-                        logFile = CompressedInputStreamXarSource.getLogFileFor(xarFile);
+                    if (typesXarFile.exists())
+                        logFile = CompressedInputStreamXarSource.getLogFileFor(typesXarFile);
 
                     if (job == null)
                     {
@@ -138,33 +155,53 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                             @Override
                             public String getDescription()
                             {
-                                return "Sample Type XAR Import";
+                                return "Sample Type and Data Class XAR Import";
                             }
                         };
                     }
-                    XarSource xarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(xarFile.getName()), xarFile, logFile, job);
+
+                    XarSource typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getName()), typesXarFile, logFile, job);
                     try
                     {
-                        xarSource.init();
+                        typesXarSource.init();
                     }
                     catch (Exception e)
                     {
-                        log.error("Failed to initialize XAR source", e);
+                        log.error("Failed to initialize types XAR source", e);
                         throw(e);
                     }
-                    log.info("Importing XAR file: " + xarFile.getName());
-                    XarReader reader = new XarReader(xarSource, job);
-                    reader.setStrictValidateExistingSampleType(false);
-                    reader.parseAndLoad(false);
+                    log.info("Importing the types XAR file: " + typesXarFile.getName());
+                    XarReader typesReader = new XarReader(typesXarSource, job);
+                    typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
+                    typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
                     // process any sample type data files and data class files
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, reader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
+                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
                             sampleTypeDataFiles, xarDir);
-                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), reader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
+                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).collect(Collectors.toList()),
                             dataClassDataFiles, xarDir);
+
+                    // handle wiring up any derivation runs
+                    if (runsXarFile != null)
+                    {
+                        XarSource runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getName()), runsXarFile, logFile, job);
+                        try
+                        {
+                            runsXarSource.init();
+                        }
+                        catch (Exception e)
+                        {
+                            log.error("Failed to initialize runs XAR source", e);
+                            throw(e);
+                        }
+                        log.info("Importing the runs XAR file: " + runsXarFile.getName());
+                        XarReader runsReader = new XarReader(runsXarSource, job);
+                        runsReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
+                        runsReader.parseAndLoad(false, ctx.getAuditBehaviorType());
+                    }
                 }
                 else
-                    log.info("No xar file to process.");
+                    log.info("No types XAR file to process.");
 
                 transaction.commit();
                 log.info("Finished importing Sample Types and Data Classes");
@@ -203,8 +240,19 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                     context.setAllowImportLookupByAlternateKey(true);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
+                                    Map<Enum, Object> options = new HashMap<>();
+                                    try
+                                    {
+                                        options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, ctx.getAuditBehaviorType());
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        log.error("Unable to get audit behavior for import. Default behavior will be used.");
+                                    }
+                                    context.setConfigParameters(options);
 
-                                    qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
+                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, null);
+                                    log.info("Imported a total of " + count + " rows into : " + tableName);
                                     if (context.getErrors().hasErrors())
                                     {
                                         for (ValidationException error : context.getErrors().getRowErrors())
@@ -242,8 +290,8 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         @Override
         public int getPriority()
         {
-            // make sure this importer runs after the FolderXarImporter (i.e. "Experiments and runs")
-            return 75;
+            // make sure this importer runs before the FolderXarImporter (i.e. "Experiments and runs")
+            return 65;
         }
     }
 }

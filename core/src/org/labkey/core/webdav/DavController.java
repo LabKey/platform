@@ -254,7 +254,7 @@ public class DavController extends SpringActionController
 
     ActionURL getLoginURL()
     {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getContainer(), getURL());
+        return urlProvider(LoginUrls.class).getLoginURL(getContainer(), getURL());
     }
 
 
@@ -4984,7 +4984,7 @@ public class DavController extends SpringActionController
         if (p.startsWith(jquery))
             return true;
         String name = p.getName();
-        return name.contains(".cache.") || name.endsWith(".ttf") || name.endsWith(".woff2");
+        return name.contains(".cache.") || name.endsWith(".ttf") || name.endsWith(".woff") || name.endsWith(".woff2");
     }
 
     private WebdavStatus serveResource(WebdavResource resource, boolean content)

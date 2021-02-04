@@ -146,9 +146,10 @@ public class XarExporter
     AssayProvider.XarCallbacks assayCallbacks = null;
 
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user)
     {
-        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer);
+        // UNDONE: Is it ok to share the relativizedLSIDs across XarExporters and tsv writers?
+        _relativizedLSIDs = relativizedLSIDs;
         _urlRewriter = urlRewriter;
         _user = user;
 
@@ -156,9 +157,19 @@ public class XarExporter
         _archive = _document.addNewExperimentArchive();
     }
 
+    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    {
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user);
+    }
+
     public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
     {
-        this(lsidRelativizer, selection.createURLRewriter(), user);
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), selection, user, xarXmlFileName, log);
+    }
+
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
+    {
+        this(relativizedLSIDs, selection.createURLRewriter(), user);
         _log = log;
 
         selection.addContent(this);
@@ -517,7 +528,7 @@ public class XarExporter
     }
 
     private String relativizeLSIDPropertyValue(String value, SimpleTypeNames.Enum type)
-    {
+    {// NOTE: this is interesting - we fixup LSID values in the xar xml
         if (type == SimpleTypeNames.STRING &&
             value != null &&
             value.indexOf("urn:lsid:") == 0)

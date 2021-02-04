@@ -230,19 +230,15 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public String getCompleteUserURLPrefix(Container container)
+        public ActionURL getCompleteUserURL(Container container)
         {
-            ActionURL url = new ActionURL(CompleteUserAction.class, container);
-            url.addParameter("prefix", "");
-            return url.getLocalURIString();
+            return new ActionURL(CompleteUserAction.class, container).addParameter("prefix", "");
         }
 
         @Override
-        public String getCompleteUserReadURLPrefix(Container container)
+        public ActionURL getCompleteUserReadURL(Container container)
         {
-            ActionURL url = new ActionURL(CompleteUserReadAction.class, container);
-            url.addParameter("prefix", "");
-            return url.getLocalURIString();
+            return new ActionURL(CompleteUserReadAction.class, container).addParameter("prefix", "");
         }
 
         @Override
@@ -1324,7 +1320,7 @@ public class SecurityController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
-            root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
+            root.addChild("Site Users", urlProvider(UserUrls.class).getSiteUsersURL());
             root.addChild("Add Users");
         }
 
@@ -1386,7 +1382,7 @@ public class SecurityController extends SpringActionController
 
                 if (HtmlString.isBlank(result) && user != null)
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
+                    ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
                     result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
                 }
                 else if (userToClone != null)

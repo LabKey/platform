@@ -802,7 +802,8 @@ public class DOM
                     }
                 }
             var csrfInput = !isPost ? null : new CsrfInput(HttpView.currentContext());
-            return DOM.FORM(attrs, body, csrfInput);
+            // Put the CSRF token first to ensure it's available even if the full HTTP POST body hasn't been parsed
+            return DOM.FORM(attrs, csrfInput, body);
         }
 
         public static Renderable ERRORS(PageContext pageContext)

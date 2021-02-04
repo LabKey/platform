@@ -32,6 +32,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
@@ -601,13 +602,13 @@ public class AnalysisController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/pipeline/analysis/internalListPipelines.jsp", null, errors);
+            return new JspView<>("/org/labkey/pipeline/analysis/internalListPipelines.jsp", null, errors);
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Internal List Pipelines");
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Internal List Pipelines", getClass(), getContainer());
         }
     }
 

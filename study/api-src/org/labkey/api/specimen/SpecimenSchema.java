@@ -222,6 +222,11 @@ public class SpecimenSchema
         return getSchema().getTable("Participant");
     }
 
+    public TableInfo getTableInfoParticipantGroupMap()
+    {
+        return getSchema().getTable("ParticipantGroupMap");
+    }
+
     public TableInfo getTableInfoVisit()
     {
         return getSchema().getTable("Visit");

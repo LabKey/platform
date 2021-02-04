@@ -35,7 +35,6 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -118,7 +117,7 @@ public class PublishController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer()));
+            root.addChild("Assay List", urlProvider(AssayUrls.class).getBeginURL(getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy-to-Study History");
         }
@@ -137,7 +136,7 @@ public class PublishController extends SpringActionController
             if (null != jobGuid)
                 jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
 
-            PipelineStatusUrls urls = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+            PipelineStatusUrls urls = urlProvider(PipelineStatusUrls.class);
             ActionURL url  = null != jobId ? urls.urlDetails(getContainer(), jobId) : urls.urlBegin(getContainer());
 
             response.put("success", true);
