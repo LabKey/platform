@@ -288,6 +288,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _jobGUID = GUID.makeGUID();
         _activeTaskStatus = TaskStatus.waiting;
 
+
         _pipeRoot = root;
 
         _actionSet = new RecordedActionSet();
@@ -441,7 +442,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public File getLogFile()
     {
-        Path logFilePath =  getLogFilePath();
+        Path logFilePath = getLogFilePath();
         if (null != logFilePath && !FileUtil.hasCloudScheme(logFilePath))
             return logFilePath.toFile();
         return null;
