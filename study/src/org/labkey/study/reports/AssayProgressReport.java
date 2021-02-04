@@ -87,7 +87,7 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_UNUSABLE = "unusable";
     public static final String SPECIMEN_RESULTS_UNEXPECTED = "unexpected";
 
-    private final SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
+//    private final SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
 
     public enum SpecimenStatus
     {
@@ -185,8 +185,6 @@ public class AssayProgressReport extends AbstractReport
 
         Map<Integer, Map<String, Object>> assayData = new LinkedHashMap<>();
 
-        _copiedToStudyData.clear();
-
         // assay expectations from the assay schedule
         List<AssayExpectation> assayExpectations = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), TableSelector.ALL_COLUMNS, SimpleFilter.createContainerFilter(context.getContainer()), new Sort(FieldKey.fromParts("AssayName"))).getArrayList(AssayExpectation.class);
 
@@ -261,7 +259,7 @@ public class AssayProgressReport extends AbstractReport
                 AssayData assaySource = createAssayDataSource(study, assay);
                 Map<String, Object> data = new HashMap<>();
 
-                getDatasetData(assay, study, context);
+                SetValuedMap<String, ParticipantVisit> copiedToStudyData = getDatasetData(assay, study, context);
 
                 List<Integer> visits = assaySource.getVisits(context).stream()
                         .map(Visit::getId)
@@ -276,7 +274,7 @@ public class AssayProgressReport extends AbstractReport
                 data.put(PARTICIPANTS, assaySource.getParticipants(context));
 
                 // create the heat map data
-                data.put(HEAT_MAP, createHeatMapData(context, assay, assaySource));
+                data.put(HEAT_MAP, createHeatMapData(context, assay, assaySource, copiedToStudyData));
 
                 assayData.put(assay.getRowId(), data);
             }
@@ -297,7 +295,7 @@ public class AssayProgressReport extends AbstractReport
             return new DefaultAssayProgressSource(expectation, study);
     }
 
-    Map<String, Map<String, String>> createHeatMapData(ViewContext context, AssayExpectation assay, AssayData assayData)
+    Map<String, Map<String, String>> createHeatMapData(ViewContext context, AssayExpectation assay, AssayData assayData, SetValuedMap<String, ParticipantVisit> copiedToStudyData)
     {
         Map<String, Map<String, String>> heatmap = new HashMap<>();
 
@@ -316,7 +314,7 @@ public class AssayProgressReport extends AbstractReport
 
         // results available (copied to study)
         SpecimenStatus available = SpecimenStatus.getForName(SPECIMEN_AVAILABLE);
-        for (ParticipantVisit visit : _copiedToStudyData.get(assay.getAssayName()))
+        for (ParticipantVisit visit : copiedToStudyData.get(assay.getAssayName()))
         {
             heatmap.put(visit.getKey(), PageFlowUtil.map("iconcls", available.getIconClass(),
                     "tooltip", available.getDescription(),
@@ -325,8 +323,9 @@ public class AssayProgressReport extends AbstractReport
         return heatmap;
     }
 
-    private void getDatasetData(AssayExpectation assay, Study study, ViewContext context)
+    private SetValuedMap<String, ParticipantVisit> getDatasetData(AssayExpectation assay, Study study, ViewContext context)
     {
+        SetValuedMap<String, ParticipantVisit> copiedToStudyData = new HashSetValuedHashMap<>();
         if (assay.getDataset() != null)
         {
             Dataset dataset = study.getDataset(assay.getDataset());
@@ -350,13 +349,14 @@ public class AssayProgressReport extends AbstractReport
                             Visit visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
                             if (visit != null)
                             {
-                                _copiedToStudyData.put(assay.getAssayName(), new ParticipantVisit(ptid, visitId));
+                                copiedToStudyData.put(assay.getAssayName(), new ParticipantVisit(ptid, visitId));
                             }
                         }
                     });
                 }
             }
         }
+        return copiedToStudyData;
     }
 
     @Nullable
