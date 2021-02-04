@@ -1,7 +1,11 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.model.ParticipantInfo;
+
+import java.util.Map;
 
 /**
  * Provides access to internal study methods for modules that depend on study and are aware of study internals
@@ -25,4 +29,8 @@ public interface StudyInternalService
      * @param container The study container where cache clearing will take place
      */
     void clearCaches(Container container);
+
+    Map<String, ParticipantInfo> getParticipantInfos(Study study, User user, boolean isShiftDates, boolean isAlternateIds);
+
+    void generateNeededAlternateParticipantIds(Study study, User user);
 }

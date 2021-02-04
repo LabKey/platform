@@ -79,6 +79,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -709,7 +710,7 @@ public class StudyServiceImpl implements StudyService
     public Map<String, String> getAlternateIdMap(Container container)
     {
         Map<String, String> alternateIdMap = new HashMap<>();
-        Map<String, StudyManager.ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
+        Map<String, ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
 
         for(String ptid : pairMap.keySet())
             alternateIdMap.put(ptid, pairMap.get(ptid).getAlternateId());
