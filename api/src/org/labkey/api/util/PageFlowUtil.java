@@ -380,6 +380,11 @@ public class PageFlowUtil
         return HtmlString.unsafe(jsString(hs.toString()));
     }
 
+    public static String jsString(ActionURL url)
+    {
+        return jsString(url.getLocalURIString());
+    }
+
     public static String jsString(String s)
     {
         if (s == null)
