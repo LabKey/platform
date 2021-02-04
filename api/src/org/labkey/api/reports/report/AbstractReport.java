@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
+import org.apache.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
@@ -106,14 +107,15 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
             getDescriptor().setContentModified();
     }
 
-    @Override  // TODO: Temporary workaround for current save report pattern, which pulls reports from the cache, mutates them, and saves. Should switch to a builder pattern.
+    /** returned report should be unlocked */
+    @Override  // TODO: Temporary workaround for current save report pattergn, which pulls reports from the cache, mutates them, and saves. Should switch to a builder pattern.
     public Report clone()
     {
         try
         {
-            Report clone = (Report) super.clone();
+            var clone = (AbstractReport)super.clone();
+            clone._locked = false;
             clone.setDescriptor(clone.getDescriptor().clone());
-
             return clone;
         }
         catch (CloneNotSupportedException e)
@@ -173,6 +175,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     @Override
     public void setDescriptor(ReportDescriptor descriptor)
     {
+        checkLocked();
         _descriptor = descriptor;
     }
 
@@ -673,5 +676,33 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     public boolean isSandboxed()
     {
         return false;
+    }
+
+
+    //
+    // Reports can be cached, let's make sure they are immutable when they are
+    //
+
+    boolean _locked;
+
+    public void checkLocked()
+    {
+        if (_locked)
+        {
+            LogManager.getLogger(ReportDescriptor.class).error("Report is locked: " + getReportId(), new Throwable());
+            //throw new IllegalStateException("Report is locked: " + getReportId(), new Throwable());
+        }
+    }
+
+    public void setLocked(boolean b)
+    {
+        if (_locked && !b)
+            throw new IllegalStateException("Can't unlock a Report: " + getReportId());
+        _locked = b;
+    }
+
+    public boolean isLocked()
+    {
+        return _locked;
     }
 }

@@ -101,14 +101,14 @@ public class AssayProgressReport extends AbstractReport
         UNEXPECTED(SPECIMEN_RESULTS_UNEXPECTED, "Unexpected results", "Needs QC Check", "fa fa-flag");
 
         private final String _name;
-        private final String _lable;
+        private final String _label;
         private final String _iconClass;
         private final String _description;
 
         SpecimenStatus(String name, String label, String description, String iconClass)
         {
             _name = name;
-            _lable = label;
+            _label = label;
             _description = description;
             _iconClass = iconClass;
         }
@@ -120,7 +120,7 @@ public class AssayProgressReport extends AbstractReport
 
         public String getLabel()
         {
-            return _lable;
+            return _label;
         }
 
         public String getIconClass()

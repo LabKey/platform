@@ -213,6 +213,7 @@ public class ReportDesignBean<R extends Report> extends ReportForm
 
         if (report != null)
         {
+            report = (R)report.clone();
             ReportDescriptor descriptor = report.getDescriptor();
             if (getQueryName() != null) descriptor.setProperty(ReportDescriptor.Prop.queryName, getQueryName());
             if (getSchemaName() != null) descriptor.setProperty(ReportDescriptor.Prop.schemaName, getSchemaName());

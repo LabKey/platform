@@ -52,18 +52,17 @@ public class ReportDataRegion extends DataRegion
 
         try
         {
-            // TODO(immutablereport)
-            report.setDescriptor(report.getDescriptor().clone());
+            _report = report.clone();
+            _report.setDescriptor(report.getDescriptor().clone());
 
             // subtle, but we always want to use the data region specified from the enclosing query
-            report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
+            _report.getDescriptor().setProperty(ReportDescriptor.Prop.dataRegionName, settings.getDataRegionName());
 
             // Update in case the resolved schemaName and queryName differ from the one that was stored (which
             // will be the case if the report is associated with a legacy schema/query name)
-            report.getDescriptor().setProperty(ReportDescriptor.Prop.schemaName, settings.getSchemaName());
-            report.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, settings.getQueryName());
-            _report = report;
-            _reportView = report.getRunReportView(context);
+            _report.getDescriptor().setProperty(ReportDescriptor.Prop.schemaName, settings.getSchemaName());
+            _report.getDescriptor().setProperty(ReportDescriptor.Prop.queryName, settings.getQueryName());
+            _reportView = _report.getRunReportView(context);
             setAllowHeaderLock(false);
             setShowPagination(false);
             setShowPaginationCount(false);

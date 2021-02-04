@@ -134,7 +134,8 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
             try
             {
                 boolean hasUpdates = false;
-                ReportDescriptor descriptor = report.getDescriptor().clone();
+                report = report.clone();
+                ReportDescriptor descriptor = report.getDescriptor();
 
                 // update reportKey (stored in core.Report)
                 String[] keyParts = ReportUtil.splitReportKey(descriptor.getReportKey());
@@ -169,8 +170,6 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                     if (reportOwner != null)
                     {
                         ContainerUser rptContext = new DefaultContainerUser(container, reportOwner);
-                        // TODO(immutablereport)
-                        report.setDescriptor(descriptor);
                         ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
                     }
                     else

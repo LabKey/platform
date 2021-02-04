@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.apache.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
@@ -40,6 +41,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -229,4 +231,12 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * e.g. This report can run code that runs outside labkey's security context
      */
     boolean isSandboxed();
+
+
+    //
+    // Reports can be cached, let's make sure they are immutable when they are
+    //
+
+    public void setLocked(boolean b);
+    public boolean isLocked();
 }

@@ -135,6 +135,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             setProperty(Prop.version, String.valueOf(queryModule.getSchemaVersion()));
     }
 
+
+    /** NOTE returned object is unlocked */
     @Override
     public ReportDescriptor clone()
     {
@@ -1022,8 +1024,10 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
 
     //
-    // ReportDescriptors are cached, let's make sure they are immutable
+    // ReportDescriptors can be cached, let's make sure they are immutable when they are
     //
+
+    boolean _locked;
 
     public void checkLocked()
     {
@@ -1033,8 +1037,6 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
             //throw new IllegalStateException("ReportDescriptor is locked: " + getReportName() + " (" + getReportId() + ")");
         }
     }
-
-    boolean _locked;
 
     public void setLocked(boolean b)
     {
