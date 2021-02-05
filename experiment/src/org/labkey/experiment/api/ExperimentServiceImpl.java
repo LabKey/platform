@@ -2212,6 +2212,30 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
+    public Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+        options.setDepth(2); // 2 because of the ExpRun that will always be in between
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentDatas(start);
+    }
+
+    @Override
+    @NotNull
+    public Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+        options.setDepth(2); // 2 because of the ExpRun that will always be in between.
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentMaterials(start);
+    }
+
+    @Override
+    @NotNull
     public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
