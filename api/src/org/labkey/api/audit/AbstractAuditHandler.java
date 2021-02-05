@@ -25,7 +25,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
     {
         if (table.supportsAuditTracking())
         {
-            AuditConfigurable auditConfigurable = (AuditConfigurable) table;
+            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
             AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
 
             if (auditType == SUMMARY)
@@ -44,7 +44,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
      *
      * @param originalRow the original data
      * @param modifiedRow the data from the updated row that has changed (after/new)
-     * @param updatedRow  the row that has been updated, which may include fields that have not changed (before/existing)
+     * @param updatedRow the row that has been updated, which may include fields that have not changed (before/existing)
      */
     protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
     {
@@ -56,7 +56,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
     {
         if (table.supportsAuditTracking())
         {
-            AuditConfigurable auditConfigurable = (AuditConfigurable) table;
+            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
             if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
                 auditType = auditConfigurable.getAuditBehavior();
 
@@ -97,17 +97,17 @@ public abstract class AbstractAuditHandler implements AuditHandler
                     AuditLogService auditLog = AuditLogService.get();
                     List<DetailedAuditTypeEvent> batch = new ArrayList<>();
 
-                    for (int i = 0; i < rows.size(); i++)
+                    for (int i=0; i < rows.size(); i++)
                     {
-                        Map<String, Object> updatedRow = rows.get(i);
+                        Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, updatedRow, existingRow);
+                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow);
 
                         switch (action)
                         {
                             case INSERT:
                             {
-                                String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, AuditHandler.getRecordForInsert(updatedRow));
+                                String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord);
                                 break;
@@ -116,27 +116,26 @@ public abstract class AbstractAuditHandler implements AuditHandler
                             {
                                 if (existingRow.isEmpty())
                                 {
-                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, AuditHandler.getRecordForInsert(updatedRow));
+                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
                                     if (newRecord != null)
                                         event.setNewRecordMap(newRecord);
                                 }
                                 else
                                 {
-                                    setOldAndNewMapsForUpdate(event, c, existingRow, updatedRow, table);
+                                    setOldAndNewMapsForUpdate(event, c, row, existingRow, table);
                                 }
                                 break;
                             }
                             case DELETE:
                             {
-                                Map<String, Object> deletedRow = null != updatedRow ? updatedRow : existingRow;
-                                String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, deletedRow);
+                                String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
                                 if (oldRecord != null)
                                     event.setOldRecordMap(oldRecord);
                                 break;
                             }
                             case UPDATE:
                             {
-                                setOldAndNewMapsForUpdate(event, c, existingRow, updatedRow, table);
+                                setOldAndNewMapsForUpdate(event, c, row, existingRow, table);
                                 break;
                             }
                         }
@@ -158,15 +157,15 @@ public abstract class AbstractAuditHandler implements AuditHandler
         }
     }
 
-    private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> oldRow, Map<String, Object> updatedRow, TableInfo table)
+    private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> existingRow, TableInfo table)
     {
-        Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(oldRow, updatedRow, table.getExtraDetailedUpdateAuditFields(), table.getExcludedDetailedUpdateAuditFields());
+        Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(row, existingRow, table.getExtraDetailedUpdateAuditFields());
 
         Map<String, Object> originalRow = rowPair.first;
         Map<String, Object> modifiedRow = rowPair.second;
 
         // allow for adding fields that may be present in the updated row but not represented in the original row
-        addDetailedModifiedFields(oldRow, modifiedRow, updatedRow);
+        addDetailedModifiedFields(existingRow, modifiedRow, row);
 
         String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
         if (oldRecord != null)
