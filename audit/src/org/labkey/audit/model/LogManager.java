@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 
 /**
@@ -92,13 +93,13 @@ public class LogManager
         boolean optimize = events.size() == 1 || getSchema().getScope().isTransactionActive();
         if (optimize)
         {
-            for (var event : events)
-            {
-                if (!Objects.equals(type.getEventType(), event.getEventType()))
-                    optimize = false;
-                if (!Objects.equals(type.getContainer(), event.getContainer()))
-                    optimize = false;
-            }
+            // make sure all events are the same type
+            final String expectedEventType = type.getEventType();
+            final String expectedContainer = type.getContainer();
+            Optional<K> problemEvent = events.stream()
+                    .filter(event -> !Objects.equals(expectedEventType, event.getEventType()) || !Objects.equals(expectedContainer, event.getContainer()))
+                    .findAny();
+            optimize = problemEvent.isEmpty();
         }
 
         if (!optimize)
