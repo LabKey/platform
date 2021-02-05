@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
@@ -631,6 +632,19 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     {
         return Collections.emptySet();
     }
+
+
+    // we exclude these from the detailed record because they are already on the audit record itself and
+    // depending on the data iterator behavior (e.g., for ExpDataIteraotrs.getDataIterator), these values
+    // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
+    Set<String> defaultExcludedDetailedUpdateAuditFields = CaseInsensitiveHashSet.of("Modified", "ModifiedBy", "Created", "CreatedBy");
+
+    @NotNull
+    default Set<String> getExcludedDetailedUpdateAuditFields()
+    {
+        return defaultExcludedDetailedUpdateAuditFields;
+    }
+
 
     /**
      * Returns the row primary key column to use for audit history details. Note, this must

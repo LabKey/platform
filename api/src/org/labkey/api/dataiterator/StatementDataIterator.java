@@ -282,6 +282,11 @@ public class StatementDataIterator extends AbstractDataIterator
             _embargoDataIterator.setReleasedRowNumber(rowNumber);
     }
 
+    @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord();
+    }
 
     @Override
     public boolean next() throws BatchValidationException

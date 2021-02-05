@@ -25,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
@@ -116,7 +116,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
     public static SampleTypeServiceImpl get()
     {
