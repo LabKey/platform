@@ -90,6 +90,18 @@ public interface MapDataIterator extends DataIterator
         }
 
         @Override
+        public boolean supportsGetExistingRecord()
+        {
+            return _input.supportsGetExistingRecord();
+        }
+
+        @Override
+        public Map<String, Object> getExistingRecord()
+        {
+            return _input.getExistingRecord();
+        }
+
+        @Override
         public int getColumnCount()
         {
             return _input.getColumnCount();

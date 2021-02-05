@@ -97,7 +97,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             while (!_eventTypeQueue.isEmpty())
             {
                 Pair<User, AuditTypeEvent> event = _eventTypeQueue.remove();
-                _addEvent(event.first, event.second);
+                addEvents(event.first, List.of(event.second));
             }
         }
     }
@@ -109,14 +109,16 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     }
 
     @Override
-    public <K extends AuditTypeEvent> K addEvent(User user, K type)
+    public <K extends AuditTypeEvent> K addEvent(User user, K event)
     {
-        return _addEvent(user, type);
+        addEvents(user, List.of(event));
+        return event;
     }
 
-    private <K extends AuditTypeEvent> K _addEvent(User user, K event)
+    @Override
+    public <K extends AuditTypeEvent> void addEvents(User user, List<K> events)
     {
-        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        for (var event : events)
         {
             assert event.getContainer() != null : "Container cannot be null";
 
@@ -149,7 +151,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 User impersonatingUser = user.getImpersonatingUser();
                 event.setImpersonatedBy(impersonatingUser.getUserId());
             }
+        }
 
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        {
             if (!_logToDatabase.get())
             {
                 /*
@@ -161,15 +166,19 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 {
                     if (_logToDatabase.get())
                     {
-                        LogManager.get()._insertEvent(user, event);
+                        for (var event : events)
+                            LogManager.get().insertEvent(user, event);
                     }
                     else
-                        _eventTypeQueue.add(new Pair<>(user, event));
+                    {
+                        for (var event : events)
+                            _eventTypeQueue.add(new Pair<>(user, event));
+                    }
                 }
             }
             else
             {
-                return LogManager.get()._insertEvent(user, event);
+                LogManager.get().insertEvents(user, events);
             }
         }
         catch (RuntimeException e)
@@ -178,7 +187,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             AuditLogService.handleAuditFailure(user, e);
             throw e;
         }
-        return null;
     }
 
     @Override

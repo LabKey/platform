@@ -18,6 +18,7 @@ package org.labkey.study.dataset;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ContainerFilter;
@@ -184,13 +185,11 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         return (Class<K>)DatasetAuditEvent.class;
     }
 
-    public static class DatasetAuditEvent extends AuditTypeEvent
+    public static class DatasetAuditEvent extends DetailedAuditTypeEvent
     {
         private int _datasetId;
         private boolean _hasDetails;
         private String _lsid;
-        private String _oldRecordMap;
-        private String _newRecordMap;
 
         public DatasetAuditEvent()
         {
@@ -230,26 +229,6 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         public void setLsid(String lsid)
         {
             _lsid = lsid;
-        }
-
-        public String getOldRecordMap()
-        {
-            return _oldRecordMap;
-        }
-
-        public void setOldRecordMap(String oldRecordMap)
-        {
-            _oldRecordMap = oldRecordMap;
-        }
-
-        public String getNewRecordMap()
-        {
-            return _newRecordMap;
-        }
-
-        public void setNewRecordMap(String newRecordMap)
-        {
-            _newRecordMap = newRecordMap;
         }
 
         @Override
