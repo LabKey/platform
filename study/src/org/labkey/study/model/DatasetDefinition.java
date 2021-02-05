@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -1609,7 +1610,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
-    private class DatasetAuditHandler extends AuditHandler.AbstractAuditHandler
+    private class DatasetAuditHandler extends AbstractAuditHandler
     {
         @Override
         public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)

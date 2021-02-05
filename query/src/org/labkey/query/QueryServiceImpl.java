@@ -31,6 +31,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -2888,7 +2889,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public AuditHandler getDefaultAuditHandler()
     {
-        return new AuditHandler.AbstractAuditHandler()
+        return new AbstractAuditHandler()
         {
             @Override
             protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
