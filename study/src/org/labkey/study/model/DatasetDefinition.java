@@ -1224,9 +1224,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             return new DataColumn(colInfo)
             {
                 @Override
-                protected String getAutoCompleteURLPrefix()
+                protected ActionURL getAutoCompleteURLPrefix()
                 {
-                    return _completionBase.getLocalURIString();
+                    return _completionBase;
                 }
             };
         }
