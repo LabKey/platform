@@ -224,7 +224,9 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         }
         catch (InvocationTargetException x)
         {
-            throw UnexpectedException.wrap(x.getTargetException());
+            if (null != x.getTargetException())
+                throw UnexpectedException.wrap(x.getTargetException());
+            throw UnexpectedException.wrap(x);
         }
         fixupMap(m, bean);
         return m;
