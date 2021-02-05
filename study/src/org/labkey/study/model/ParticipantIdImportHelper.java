@@ -26,6 +26,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.importer.ImportHelperService.ParticipantIdTranslator;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.HashMap;
@@ -38,7 +39,7 @@ import java.util.concurrent.Callable;
  * User: gktaylor
  * Date: 2013-12-17
  */
-public class ParticipantIdImportHelper
+public class ParticipantIdImportHelper implements ParticipantIdTranslator
 {
     Study _study;
     User _user;
@@ -140,21 +141,16 @@ public class ParticipantIdImportHelper
      */
     public Callable<Object> getCallable(@NotNull final DataIterator it, @Nullable final Integer participantIndex)
     {
-        return new Callable<Object>()
-        {
-            @Override
-            public Object call() throws Exception
-            {
-                Object pid = null==participantIndex ? null : it.get(participantIndex);
-                String participantId = translateParticipantId(pid);
-                return participantId;
-            }
+        return () -> {
+            Object pid = null==participantIndex ? null : it.get(participantIndex);
+            return translateParticipantId(pid);
         };
     }
 
     /*
      * translateParticipantId performs the lookup of the participantId value using the alias created on helper setup
      */
+    @Override
     public String translateParticipantId(@Nullable Object p) throws ValidationException
     {
         String participantId = null;

@@ -213,7 +213,7 @@ public class EmailTemplateService
         }
         catch (Exception e)
         {
-            throw new IllegalArgumentException("The specified class could not be created: " + templateClass.getName());
+            throw new IllegalArgumentException("The specified class could not be created: " + templateClass.getName(), e);
         }
     }
 

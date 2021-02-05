@@ -32,6 +32,7 @@ public interface StudyJobSupport extends SpecimenJobSupport
 
     StudyImpl getStudy(boolean allowNullStudy);
 
+    @Override
     StudyImportContext getImportContext();
 
     VirtualFile getRoot();

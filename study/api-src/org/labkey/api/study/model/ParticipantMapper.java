@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.model;
+package org.labkey.api.study.model;
 
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyInternalService;
 
 import java.util.Map;
 
@@ -30,7 +31,7 @@ import java.util.Map;
  */
 public class ParticipantMapper
 {
-    private Map<String, StudyManager.ParticipantInfo> _participantInfoMap = null;
+    private Map<String, ParticipantInfo> _participantInfoMap = null;
     private final boolean _isShiftDates;
     private final boolean _isAlternateIds;
 
@@ -40,11 +41,13 @@ public class ParticipantMapper
         _isAlternateIds = isAlternateIds;
         if (isShiftDates || isAlternateIds)
         {
+            StudyInternalService sis = StudyInternalService.get();
+
             // If we need alternateIds, ensure that all participants have ids
             if (isAlternateIds)
-                StudyManager.getInstance().generateNeededAlternateParticipantIds(study, user);
+                sis.generateNeededAlternateParticipantIds(study, user);
 
-            _participantInfoMap = StudyManager.getInstance().getParticipantInfos(study, user, isShiftDates, isAlternateIds);
+            _participantInfoMap = sis.getParticipantInfos(study, user, isShiftDates, isAlternateIds);
         }
     }
 

@@ -40,6 +40,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -90,6 +91,12 @@ public class SpecimenManager
     public static SpecimenManager get()
     {
         return INSTANCE;
+    }
+
+    public boolean isSpecimenModuleActive(Container c)
+    {
+        Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
+        return null != specimenModule && c.getActiveModules().contains(specimenModule);
     }
 
     public long getMaxExternalId(Container container)

@@ -63,7 +63,7 @@
         if (bean.isMixedFlagState())
         {
 %>
-        <b>Note:</b> A subset of the selected vials have quality control flags.  See vial list below for details.<p>
+        <b>Note:</b> A subset of the selected vials have quality control flags. See vial list below for details.<p>
 <%
         }
 %>

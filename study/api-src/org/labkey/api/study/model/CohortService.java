@@ -9,6 +9,7 @@ import org.labkey.api.study.CohortFilter;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Provides specimen module access to a few cohort methods while keeping CohortFilterFactory and all its
@@ -33,4 +34,6 @@ public interface CohortService
     Cohort getCurrentCohortForParticipant(Container c, User user, String participantId);
 
     Collection<CohortFilter> getCohortFilters(CohortFilter.Type type, Container c, User user);
+
+    List<? extends Cohort> getCohorts(Container container, User user);
 }

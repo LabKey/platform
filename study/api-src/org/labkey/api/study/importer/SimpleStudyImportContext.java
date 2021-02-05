@@ -14,7 +14,7 @@ import java.util.Set;
 
 public class SimpleStudyImportContext extends AbstractContext
 {
-    protected SimpleStudyImportContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
+    public SimpleStudyImportContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, @Nullable VirtualFile root)
     {
         super(user, c, studyDoc, dataTypes, logger, root);
     }

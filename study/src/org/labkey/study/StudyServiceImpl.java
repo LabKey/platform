@@ -44,8 +44,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.dataiterator.DataIteratorBuilder;
-import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
@@ -81,6 +79,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -99,7 +98,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
 import org.labkey.study.query.BaseStudyTable;
@@ -656,7 +654,7 @@ public class StudyServiceImpl implements StudyService
     public Map<String, String> getAlternateIdMap(Container container)
     {
         Map<String, String> alternateIdMap = new HashMap<>();
-        Map<String, StudyManager.ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
+        Map<String, ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
 
         for(String ptid : pairMap.keySet())
             alternateIdMap.put(ptid, pairMap.get(ptid).getAlternateId());
@@ -688,13 +686,6 @@ public class StudyServiceImpl implements StudyService
         {
             return false;
         }
-    }
-
-
-    @Override
-    public DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
-    {
-        return SampleMindedTransformTask.wrapSampleMindedTransform(user, in,context,study,target);
     }
 
     @Override

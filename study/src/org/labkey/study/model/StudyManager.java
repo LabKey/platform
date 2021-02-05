@@ -130,6 +130,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantDataset;
+import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -3018,32 +3019,6 @@ public class StudyManager
     private static final String DATEOFFSET_COLUMN_NAME = "DateOffset";
     private static final String PTID_COLUMN_NAME = "ParticipantId";
     private static final String CONTAINER_COLUMN_NAME = "Container";
-
-    public static class ParticipantInfo
-    {
-        private final String _containerId;
-        private final String _alternateId;
-        private final int _dateOffset;
-
-        public ParticipantInfo(String containerId, String alternateId, int dateOffset)
-        {
-            _containerId = containerId;
-            _alternateId = alternateId;
-            _dateOffset = dateOffset;
-        }
-        public String getContainerId()
-        {
-            return _containerId;
-        }
-        public String getAlternateId()
-        {
-            return _alternateId;
-        }
-        public int getDateOffset()
-        {
-            return _dateOffset;
-        }
-    }
 
     public Map<String, ParticipantInfo> getParticipantInfos(Study study, User user, final boolean isShiftDates, final boolean isAlternateIds)
     {
