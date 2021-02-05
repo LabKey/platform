@@ -843,8 +843,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
-            DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(etl, getQueryTable(), Set.of(ExpDataTable.Column.LSID.toString()));
+            StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
+            DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, getQueryTable(), Set.of(ExpDataTable.Column.LSID.toString()));
             DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(existing, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,
                     container, getAttachmentParentFactory(), FieldKey.fromParts(Column.LSID));

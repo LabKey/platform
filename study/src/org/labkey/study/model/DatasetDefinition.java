@@ -1627,21 +1627,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             Objects.requireNonNull(rows);
             AuditLogService auditLog = AuditLogService.get();
 
-            if (null == existingRows && action == QueryService.AuditAction.MERGE)
-            {
-                assert false : "Please provide list of existing rows!";
-                for (int i=0; i < rows.size(); i++)
-                {
-                    Map<String, Object> row = rows.get(i);
-                    String lsid = String.valueOf(row.get("lsid"));
-                    var oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
-                    if (null == oldRow)
-                        oldRow = Map.of();
-                    var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, oldRow);
-                    auditLog.addEvent(user, event);
-                }
-                return;
-            }
+            // Caller should provide existing rows for MERGE
+            assert action != QueryService.AuditAction.MERGE || null != existingRows;
 
             List<DatasetAuditProvider.DatasetAuditEvent> batch = new ArrayList<>();
             for (int i=0; i < rows.size(); i++)
@@ -2246,10 +2233,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
         DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
-
-        if (context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) == AuditBehaviorType.DETAILED)
-        {
-        }
 
         DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
         DataIteratorBuilder persist = ((UpdateableTableInfo)table).persistRows(existing, context);
