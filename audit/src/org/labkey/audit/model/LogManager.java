@@ -111,6 +111,8 @@ public class LogManager
         }
 
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
+        if (null == provider)
+            return;
         Container c = ContainerManager.getForId(type.getContainer());
         UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
         TableInfo table = null==schema ? null : schema.getTable(provider.getEventName(), false);
