@@ -90,6 +90,12 @@ public class MockModule implements Module
     }
 
     @Override
+    public List<String> getOldNames()
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
     public @Nullable Double getSchemaVersion()
     {
         return _schemaVersion;

@@ -161,6 +161,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
+    public @NotNull List<String> getOldNames()
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
     final public void initialize()
     {
         for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))
