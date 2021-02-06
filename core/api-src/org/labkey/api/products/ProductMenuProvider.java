@@ -53,6 +53,13 @@ public abstract class ProductMenuProvider
     @NotNull
     public abstract String getProductId();
 
+    @Nullable
+    public String getProductName()
+    {
+        // TODO should the products have the "LabKey" prefix?
+        return getProductId();
+    }
+
     @NotNull
     public abstract Collection<String> getSectionNames();
 
