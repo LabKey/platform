@@ -41,12 +41,14 @@ public abstract class MenuSection
     protected String _key;
     private List<MenuItem> _allItems;
     private String _productId;
+    private String _sectionKey;
 
     public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit, @Nullable String productId)
     {
         _context = context;
         _label = label;
         _key = key;
+        _sectionKey = key;
         _itemLimit = itemLimit;
         _productId = productId;
     }
@@ -159,5 +161,15 @@ public abstract class MenuSection
         if (label == null)
             label = tableInfo.getName();
         return splitCamelCase ? StringUtilsLabKey.splitCamelCase(label) : label;
+    }
+
+    public String getSectionKey()
+    {
+        return _sectionKey;
+    }
+
+    public void setSectionKey(String sectionKey)
+    {
+        _sectionKey = sectionKey;
     }
 }
