@@ -38,9 +38,14 @@ public abstract class MenuSection
     protected ViewContext _context;
     protected String _label;
     protected Integer _itemLimit;
+    /**
+     * A unique key identifying this MenuSection.
+     * This is used by the client to match client configuration to the configuration supplied from LKS.
+     */
     protected String _key;
     private List<MenuItem> _allItems;
     private String _productId;
+    /** Used by the client to determine the first part of an app-relative URL. Defaults to the same as "key". */
     private String _sectionKey;
 
     public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit, @Nullable String productId)
