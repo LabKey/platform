@@ -145,19 +145,21 @@ public abstract class AbstractDataIterator implements DataIterator
 
     protected Integer indexOfExistingRecord;
 
+    protected int findExistingRecordIndex()
+    {
+        // 1 based indexing, see DataIterator.getColumnCount()
+        // note columns is usually at the end, might as well search backwards
+        for (int i=getColumnCount() ; i>=1 ; i--)
+            if (ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME.equals(getColumnInfo(i).getName()))
+                return i;
+        return -1;
+    }
+
     @Override
     public @Nullable Map<String, Object> getExistingRecord()
     {
         if (null == indexOfExistingRecord)
-        {
-            indexOfExistingRecord = -1;
-            // 1 based indexing, see DataIterator.getColumnCount()
-            for (int i=1 ; i<=getColumnCount() ; i++)
-            {
-                if (ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME.equals(getColumnInfo(i).getName()))
-                    indexOfExistingRecord = i;
-            }
-        }
+            indexOfExistingRecord = findExistingRecordIndex();
         assert( supportsGetExistingRecord() ? indexOfExistingRecord>=1 : indexOfExistingRecord<0);
         return 0<indexOfExistingRecord ? (Map<String, Object>)get(indexOfExistingRecord) : null;
     }
