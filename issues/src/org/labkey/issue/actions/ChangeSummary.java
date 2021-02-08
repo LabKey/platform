@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.actions;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -224,7 +225,27 @@ public class ChangeSummary
                             }
                         }
 
-                        String from = oldValue != null ? oldValue instanceof Date ? DateUtil.formatDate(container, (Date) oldValue) : String.valueOf(oldValue) : "";
+                        var oldValDateInstance = false;
+                        var oldValDate = "";
+
+                        if (oldValue instanceof Date)
+                        {
+                            oldValDate = DateUtil.formatDate(container, (Date) oldValue);
+                            oldValDateInstance = true;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                oldValDate = DateUtil.formatDate(container, new Date(DateUtil.parseDateTime(container, String.valueOf(oldValue))));
+                                oldValDateInstance = true;
+                            }
+                            catch (ClassCastException | ConversionException ignored)
+                            {
+                            }
+                        }
+
+                        String from = oldValue != null ? oldValDateInstance ? oldValDate : String.valueOf(oldValue) : "";
                         String to = newValue != null ? newValue instanceof Date ? DateUtil.formatDate(container, (Date) newValue) : String.valueOf(newValue) : "";
                         _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), from, to, ccc, newIssue);
                     }
