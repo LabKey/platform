@@ -940,6 +940,12 @@ public class WrappedColumnInfo
         {
             throw new java.lang.UnsupportedOperationException();
         }
+
+        @Override
+        public void setMaterialPropertyType(String type)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
     }
 
 

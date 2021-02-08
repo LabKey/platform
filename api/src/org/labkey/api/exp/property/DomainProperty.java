@@ -133,4 +133,7 @@ public interface DomainProperty extends ImportAliasable
     void setConceptLabelColumn(String conceptLabelColumn);
     void setPrincipalConceptCode(String code);
     String getPrincipalConceptCode();
+
+    void setMaterialPropertyType(String type);
+    String getMaterialPropertyType();
 }

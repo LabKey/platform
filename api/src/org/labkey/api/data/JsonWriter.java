@@ -160,6 +160,8 @@ public class JsonWriter
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
 
+        props.put("materialPropertyType", cinfo == null ? null : cinfo.getMaterialPropertyType());
+
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
         {

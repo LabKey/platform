@@ -99,6 +99,8 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _conceptLabelColumn = null;
     protected String _principalConceptCode = null;
 
+    // exp material
+    protected String _materialPropertyType = null;
 
     abstract public void checkLocked();
     private boolean _checkLocked()
@@ -165,6 +167,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._principalConceptCode = _principalConceptCode;
         to._conceptImportColumn = _conceptImportColumn;
         to._conceptLabelColumn = _conceptLabelColumn;
+        to._materialPropertyType = _materialPropertyType;
     }
 
     @Override
@@ -900,4 +903,17 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         assert _checkLocked();
         _principalConceptCode = code;
     }
+
+    @Override
+    public String getMaterialPropertyType()
+    {
+        return _materialPropertyType;
+    }
+
+    @Override
+    public void setMaterialPropertyType(String type)
+    {
+        _materialPropertyType = type;
+    }
+
 }

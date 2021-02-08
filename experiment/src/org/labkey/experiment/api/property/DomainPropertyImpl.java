@@ -658,6 +658,18 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPrincipalConceptCode();
     }
 
+    @Override
+    public void setMaterialPropertyType(String type)
+    {
+        if (!StringUtils.equals(type, getMaterialPropertyType()))
+            edit().setMaterialPropertyType(type);
+    }
+
+    @Override
+    public String getMaterialPropertyType()
+    {
+        return _pd.getMaterialPropertyType();
+    }
 
     @Override
     public PropertyDescriptor getPropertyDescriptor()

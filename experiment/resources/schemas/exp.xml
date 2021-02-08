@@ -463,6 +463,7 @@
       <column columnName="ConceptImportColumn"/>
       <column columnName="ConceptLabelColumn"/>
       <column columnName="PrincipalConceptCode"/>
+      <column columnName="MaterialPropertyType"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">

@@ -1,0 +1,1 @@
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN MaterialPropertyType VARCHAR(20) NULL;
