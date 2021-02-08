@@ -8,6 +8,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -42,12 +43,11 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
         return support.getInputFiles().get(0);
     }
 
-//  I think this can be deleted... just rely on impl in AbstractSpecimenTask
-//    @Override
-//    SimpleStudyImportContext getImportContext(PipelineJob job)
-//    {
-//        return new StudyImportContext(job.getUser(), job.getContainer(), null, new PipelineJobLoggerGetter(job));
-//    }
+    @Override
+    SimpleStudyImportContext getImportContext(PipelineJob job)
+    {
+        return new SimpleStudyImportContext(job.getUser(), job.getContainer(), null, null, new PipelineJobLoggerGetter(job), null);
+    }
 
     @Override
     protected boolean isMerge()
