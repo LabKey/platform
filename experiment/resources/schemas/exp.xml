@@ -302,6 +302,7 @@
           <description>Contains the time this material was last updated in the search index</description>
       </column>
       <column columnName="ObjectId"/>
+      <column columnName="RootMaterialLSID"/>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>
