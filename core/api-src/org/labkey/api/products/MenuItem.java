@@ -50,6 +50,11 @@ public class MenuItem
         _hasActiveJob = hasActiveJob;
     }
 
+    public MenuItem(String label, ActionURL url, Integer id, String key, Integer orderNum, String productId)
+    {
+        this(label, url == null ? null : url.toString(), id, key, orderNum, productId, false);
+    }
+
     public MenuItem(String label, String url, Integer id, String key, Integer orderNum, String productId)
     {
         this(label, url, id, key, orderNum, productId, false);
