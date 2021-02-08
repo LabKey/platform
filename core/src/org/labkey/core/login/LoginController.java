@@ -1111,7 +1111,7 @@ public class LoginController extends SpringActionController
         // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
         String loginController = "login";
         String loginAction = "login";
-        String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomLogin());
+        String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(getContainer()).getCustomLogin());
         WebPartView view = null;
         if (null != customLogin)
         {
