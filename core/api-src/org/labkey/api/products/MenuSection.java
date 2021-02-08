@@ -38,15 +38,22 @@ public abstract class MenuSection
     protected ViewContext _context;
     protected String _label;
     protected Integer _itemLimit;
+    /**
+     * A unique key identifying this MenuSection.
+     * This is used by the client to match client configuration to the configuration supplied from LKS.
+     */
     protected String _key;
     private List<MenuItem> _allItems;
     private String _productId;
+    /** Used by the client to determine the first part of an app-relative URL. Defaults to the same as "key". */
+    private String _sectionKey;
 
     public MenuSection(@NotNull ViewContext context, @NotNull String label, @NotNull String key, @Nullable Integer itemLimit, @Nullable String productId)
     {
         _context = context;
         _label = label;
         _key = key;
+        _sectionKey = key;
         _itemLimit = itemLimit;
         _productId = productId;
     }
@@ -159,5 +166,15 @@ public abstract class MenuSection
         if (label == null)
             label = tableInfo.getName();
         return splitCamelCase ? StringUtilsLabKey.splitCamelCase(label) : label;
+    }
+
+    public String getSectionKey()
+    {
+        return _sectionKey;
+    }
+
+    public void setSectionKey(String sectionKey)
+    {
+        _sectionKey = sectionKey;
     }
 }
