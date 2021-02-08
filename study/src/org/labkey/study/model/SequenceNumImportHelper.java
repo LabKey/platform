@@ -28,6 +28,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.importer.ImportHelperService.SequenceNumTranslator;
 import org.labkey.api.util.DateUtil;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 2012-10-11
  * Time: 10:49 AM
  */
-public class SequenceNumImportHelper
+public class SequenceNumImportHelper implements SequenceNumTranslator
 {
     final TimepointType _timetype;
     final Date _startDate;
@@ -150,7 +151,7 @@ public class SequenceNumImportHelper
         return (int)((d.getTime()-epochLocal) / TimeUnit.DAYS.toMillis(1));
     }
 
-
+    @Override
     public Double translateSequenceNum(@Nullable Object seq, @Nullable Object d)
     {
         Double sequencenum = null;

@@ -21,7 +21,7 @@ import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.ParticipantMapper;
+import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.participantGroups.CategoryType;
 import org.labkey.study.xml.participantGroups.GroupType;

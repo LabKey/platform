@@ -28,10 +28,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -43,9 +45,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 import org.labkey.audit.AuditSchema;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
 
 /**
  * User: Karl Lum
@@ -55,8 +62,6 @@ public class LogManager
 {
     private static final Logger _log = org.apache.logging.log4j.LogManager.getLogger(LogManager.class);
     private static final LogManager _instance = new LogManager();
-    private static final int COMMENT_MAX = 500;
-    private static final int STRING_KEY_MAX = 1000;
 
     private LogManager(){}
     static public LogManager get()
@@ -69,39 +74,84 @@ public class LogManager
         return AuditSchema.getInstance().getSchema();
     }
 
-    public TableInfo getTinfoAuditLog()
+    public void insertEvent(User user, AuditTypeEvent event)
     {
-        return getSchema().getTable("auditlog");
+        insertEvents(user, List.of(event));
     }
 
-    public <K extends AuditTypeEvent> K _insertEvent(User user, K type)
+    /** all events must be of same event type and container, for optimized code path */
+    public <K extends AuditTypeEvent> void insertEvents(User user, List<K> events)
     {
-        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
-        auditLogger.info(type.getAuditLogMessage());
+        if (events.isEmpty())
+            return;
+
+        AuditTypeEvent type = events.get(0);
+
+        // Out of an abundance of caution and backward compatible behavior, do one-at-a-time logging if
+        // there is no transaction.  Can revisit if this is not necessary.
+        // Keep in mind that the audit schema might not be in the same scope as table that is being logged about.
+        boolean optimize = events.size() == 1 || getSchema().getScope().isTransactionActive();
+        if (optimize)
+        {
+            // make sure all events are the same type
+            final String expectedEventType = type.getEventType();
+            final String expectedContainer = type.getContainer();
+            Optional<K> problemEvent = events.stream()
+                    .filter(event -> !Objects.equals(expectedEventType, event.getEventType()) || !Objects.equals(expectedContainer, event.getContainer()))
+                    .findAny();
+            optimize = problemEvent.isEmpty();
+        }
+
+        if (!optimize)
+        {
+            // do one at a time if events are not all the same
+            for (var event : events)
+                insertEvents(user, List.of(event));
+            return;
+        }
 
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
+        if (null == provider)
+            return;
+        Container c = ContainerManager.getForId(type.getContainer());
+        UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
+        TableInfo table = null==schema ? null : schema.getTable(provider.getEventName(), false);
+        TableInfo dbTable = table instanceof DefaultAuditTypeTable ? ((DefaultAuditTypeTable) table).getRealTable() : null;
 
-        if (provider != null)
+        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+        SQLException sqlx = null;
+
+        if (null != dbTable)
         {
-            Container c = ContainerManager.getForId(type.getContainer());
-
-            UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
-
-            if (schema != null)
+            try (Connection conn = dbTable.getSchema().getScope().getConnection())
             {
-                TableInfo table = schema.getTable(provider.getEventName(), false);
-
-                if (table instanceof DefaultAuditTypeTable)
+                ParameterMapStatement stmt = StatementUtils.insertStatement(conn, dbTable, c, user, false, true);
+                for (var event : events)
                 {
-                    // consider using etl data iterator for inserts
-                    type = validateFields(provider, type);
-                    TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
-                    K ret = Table.insert(user, dbTable, type);
-                    return ret;
+                    event = validateFields(provider, event);
+                    Map<String,Object> map = ObjectFactory.Registry.getFactory((Class<K>)event.getClass()).toMap(event, null);
+                    stmt.clearParameters();
+                    stmt.putAll(map);
+                    stmt.addBatch();
                 }
+                stmt.executeBatch();
+            }
+            catch (SQLException x)
+            {
+                auditLogger.warn("Error occurred saving audit entries to database");
+                sqlx = x;
             }
         }
-        return null;
+
+        if (auditLogger.isInfoEnabled())
+        {
+            // CONSIDER log these in TX.addCommitTask()? (but then what if updates are happening in a different scope?)
+            for (var event : events)
+                auditLogger.info(event.getAuditLogMessage());
+        }
+
+        if (null != sqlx)
+            throw new RuntimeSQLException(sqlx);
     }
 
     @Nullable

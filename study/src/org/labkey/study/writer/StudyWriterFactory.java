@@ -22,11 +22,11 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 

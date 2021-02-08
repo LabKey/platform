@@ -21,15 +21,10 @@ import org.labkey.api.data.AbstractParticipantGroup;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.model.ParticipantGroup;
 
-
-/**
- * User: klum
- * Date: Jun 8, 2011
- * Time: 2:49:27 PM
- */
-
 /**
  * Represents a category of participants in related groups.
+ * User: klum
+ * Date: Jun 8, 2011
  */
 public class ParticipantCategoryImpl extends AbstractParticipantCategory<String>
 {

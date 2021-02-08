@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +30,7 @@ public class SpecimenReportWebPartFactory extends BaseWebPartFactory
         SpecimenVisitReportParameters factory = getFactory(context, part);
 
         JspView<SpecimenVisitReportParameters> reportView = new JspView<>("/org/labkey/specimen/view/specimenVisitReport.jsp", factory);
-        WebPartView configView = new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", new ReportConfigurationBean(factory, false, part.getIndex()));
+        WebPartView configView = new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", new ReportConfigurationBean(factory, false, part.getIndex()));
         ActionURL url = new ActionURL(factory.getAction(), context.getContainer());
 
         VBox outer = new VBox(configView, reportView);
@@ -69,6 +69,6 @@ public class SpecimenReportWebPartFactory extends BaseWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<>("/org/labkey/study/view/specimen/customizeSpecimenReportWebPart.jsp", webPart);
+        return new JspView<>("/org/labkey/specimen/view/customizeSpecimenReportWebPart.jsp", webPart);
     }
 }

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.pipeline;
+package org.labkey.api.specimen.pipeline;
 
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
-import org.labkey.api.specimen.pipeline.SpecimenReloadJobSupport;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -30,6 +30,7 @@ import java.io.Serializable;
 /**
  * Created by klum on 5/24/2014.
  */
+@Migrate // studyContext.xml is the only dependent
 public class SpecimenReloadJob extends SpecimenBatch implements Serializable, SpecimenReloadJobSupport
 {
     private String _transformName;

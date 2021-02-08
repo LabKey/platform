@@ -22,6 +22,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
@@ -139,5 +140,25 @@ public abstract class AbstractDataIterator implements DataIterator
     protected String getDataSource()
     {
         return _context.getDataSource();
+    }
+
+
+    protected Integer indexOfExistingRecord;
+
+    @Override
+    public @Nullable Map<String, Object> getExistingRecord()
+    {
+        if (null == indexOfExistingRecord)
+        {
+            indexOfExistingRecord = -1;
+            // 1 based indexing, see DataIterator.getColumnCount()
+            for (int i=1 ; i<=getColumnCount() ; i++)
+            {
+                if (ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME.equals(getColumnInfo(i).getName()))
+                    indexOfExistingRecord = i;
+            }
+        }
+        assert( supportsGetExistingRecord() ? indexOfExistingRecord>=1 : indexOfExistingRecord<0);
+        return 0<indexOfExistingRecord ? (Map<String, Object>)get(indexOfExistingRecord) : null;
     }
 }

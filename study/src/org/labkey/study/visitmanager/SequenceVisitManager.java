@@ -34,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.DateUtil;
@@ -269,7 +270,7 @@ public class SequenceVisitManager extends VisitManager
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
         sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.append("MIN(").append(StudyUtils.getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
         sqlInsertParticipantVisit.append("WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
         sqlInsertParticipantVisit.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").append("\n");

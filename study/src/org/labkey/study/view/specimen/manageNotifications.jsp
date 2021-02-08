@@ -23,14 +23,14 @@
 <%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings" %>
 <%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
 <%@ page import="org.labkey.api.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
+<%@ page import="org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
@@ -75,7 +75,7 @@ function setElementDisplayByCheckbox(checkbox, element)
 
 <labkey:errors/>
 
-<labkey:form action="<%=urlFor(SpecimenController.ManageNotificationsAction.class)%>" method="POST">
+<labkey:form action="<%=urlFor(ManageNotificationsAction.class)%>" method="POST">
     <table class="labkey-manage-display" width="90%">
         <tr>
             <td colspan="2" style="font-size: 14px;padding-bottom: 10px">The specimen request system sends emails as requested by the specimen administrator.
@@ -129,7 +129,7 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td colspan="2"  class="local-text-block">All specimen request emails have the same subject line format. <b>%requestId%</b> may be used
                 to insert the specimen request's study-specific ID number.  The default format for the subject line is:
-                <b><%= h(StudyManager.getInstance().getStudy(container).getLabel()) %>: [Subject Suffix]</b>
+                <b><%= h(StudyService.get().getStudy(container).getLabel()) %>: [Subject Suffix]</b>
             </td>
         </tr>
         <tr>

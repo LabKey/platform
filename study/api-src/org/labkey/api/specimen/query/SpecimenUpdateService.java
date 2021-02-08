@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.query;
+package org.labkey.api.specimen.query;
 
 import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -46,11 +45,11 @@ import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.EditableSpecimenImporter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.importer.EditableSpecimenImporter;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -67,7 +66,6 @@ import java.util.Set;
  * Date: 6/11/13
  * Time: 2:33 PM
  */
-@Migrate // Depends only on EditableSpecimenImporter
 public class SpecimenUpdateService extends AbstractQueryUpdateService
 {
     Logger _logger = null;

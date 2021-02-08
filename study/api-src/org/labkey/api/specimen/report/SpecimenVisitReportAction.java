@@ -41,7 +41,7 @@ public abstract class SpecimenVisitReportAction<FormType extends SpecimenVisitRe
             {
                 // Need unique id only in webpart case
                 ReportConfigurationBean bean = new ReportConfigurationBean(specimenVisitReportForm, false, 0);
-                return new VBox(new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", bean), reportView);
+                return new VBox(new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", bean), reportView);
             }
         }
     }

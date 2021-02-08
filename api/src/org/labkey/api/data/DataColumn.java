@@ -46,6 +46,7 @@ import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.util.element.TextArea;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -819,7 +820,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 
-    protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, String autoCompleteURLPrefix)
+    protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, @NotNull ActionURL autoCompleteURLPrefix)
             throws IOException
     {
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
@@ -829,9 +830,9 @@ public class DataColumn extends DisplayColumn
         sb.append("Ext4.onReady(function(){\n" +
                 "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
                 "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                "            completionUrl   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
+                "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
                 "            sharedStore     : true,\n" +
-                "            sharedStoreId   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
+                "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
                 "            tagConfig   : {\n" +
                 "                tag     : 'input',\n" +
                 "                type    : 'text',\n" +
@@ -847,7 +848,7 @@ public class DataColumn extends DisplayColumn
         out.write(sb.toString());
     }
 
-    protected String getAutoCompleteURLPrefix()
+    protected @Nullable ActionURL getAutoCompleteURLPrefix()
     {
         return null;
     }

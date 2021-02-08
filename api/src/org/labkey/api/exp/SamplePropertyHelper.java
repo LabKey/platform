@@ -201,7 +201,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         return result;
     }
 
-    private class SpecimenInputColumn extends DataColumn
+    private static class SpecimenInputColumn extends DataColumn
     {
         private final ActionURL _autoCompletePrefix;
 
@@ -225,9 +225,9 @@ public abstract class SamplePropertyHelper<ObjectType>
         }
 
         @Override
-        protected String getAutoCompleteURLPrefix()
+        protected ActionURL getAutoCompleteURLPrefix()
         {
-            return _autoCompletePrefix.getLocalURIString();
+            return _autoCompletePrefix;
         }
     }
 }
