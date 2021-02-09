@@ -111,13 +111,19 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     @Override
     public <K extends AuditTypeEvent> K addEvent(User user, K event)
     {
-        addEvents(user, List.of(event));
-        return event;
+        return _addEvents(user, List.of(event),true);
     }
 
     @Override
     public <K extends AuditTypeEvent> void addEvents(User user, List<K> events)
     {
+        _addEvents(user, events, false);
+    }
+
+    private <K extends AuditTypeEvent> K _addEvents(User user, List<K> events, boolean reselectEvent)
+    {
+        assert !reselectEvent || events.size() == 1;
+
         for (var event : events)
         {
             assert event.getContainer() != null : "Container cannot be null";
@@ -178,6 +184,8 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             }
             else
             {
+                if (reselectEvent && events.size()==1)
+                    return LogManager.get().insertEvent(user, events.get(0));
                 LogManager.get().insertEvents(user, events);
             }
         }
@@ -187,6 +195,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             AuditLogService.handleAuditFailure(user, e);
             throw e;
         }
+        return null;
     }
 
     @Override
