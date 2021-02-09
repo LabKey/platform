@@ -939,6 +939,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return createAuditRecord(c, comment, row, null);
     }
 
+    // move to UploadSamplesHelper?
+    private boolean isInputFieldKey(String fieldKey)
+    {
+        int slash = fieldKey.indexOf('/');
+        return  slash==ExpData.DATA_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpData.DATA_INPUT_PARENT) ||
+                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
+    }
+
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, @Nullable QueryService.AuditAction action)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
@@ -951,7 +959,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (row != null)
         {
-            Optional<String> parentFields = row.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
+            Optional<String> parentFields = row.keySet().stream().filter(this::isInputFieldKey).findAny();
             event.setLineageUpdate(parentFields.isPresent());
 
             String sampleTypeLsid = null;
