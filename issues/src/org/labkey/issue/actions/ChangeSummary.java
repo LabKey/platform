@@ -283,8 +283,8 @@ public class ChangeSummary
 
         if (!Objects.equals(from, to))
         {
-            String fromStr = from instanceof Date ? DateUtil.formatDate(container, (Date) from) : String.valueOf(from);
-            String toStr = to instanceof Date ? DateUtil.formatDate(container, (Date) to) : String.valueOf(to);
+            String fromStr = from instanceof Date ? DateUtil.formatDate(container, (Date) from) : null == from ? "" : String.valueOf(from);
+            String toStr = to instanceof Date ? DateUtil.formatDate(container, (Date) to) : null == to ? "" : String.valueOf(to);
             sbText.append(encField);
             if (newIssue)
             {
