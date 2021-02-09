@@ -146,7 +146,8 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
         return context ->
         {
             DataIterator di = dib.getDataIterator(context);
-            assert !di.supportsGetExistingRecord();
+            // BUG SampleTypeUpdateServiceDI needs to override createImportDIB(), so that we don't insert two ExistingRecordDataIterator
+            // assert !di.supportsGetExistingRecord();
             if (di.supportsGetExistingRecord())
                 return di;
             QueryUpdateService.InsertOption option = context.getInsertOption();
