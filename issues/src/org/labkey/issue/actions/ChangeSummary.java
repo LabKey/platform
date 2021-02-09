@@ -180,18 +180,18 @@ public class ChangeSummary
 
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "AssignedTo", newIssue ? null : previous.getAssignedToName(user), issue.getAssignedToName(user), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "AssignedTo", newIssue ? null : previous.getAssignedToName(user), issue.getAssignedToName(user), ccc, newIssue, container);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Notify",
                     StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
                     StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
-                    ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Type", previous.getProperty(Issue.Prop.type), issue.getProperty(Issue.Prop.type), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getProperty(Issue.Prop.area), issue.getProperty(Issue.Prop.area), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Priority", prevPriStringVal, priStringVal, ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getProperty(Issue.Prop.milestone), issue.getProperty(Issue.Prop.milestone), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Related", previous.getRelated(), issue.getRelated(), ccc, newIssue);
+                    ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Type", previous.getProperty(Issue.Prop.type), issue.getProperty(Issue.Prop.type), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getProperty(Issue.Prop.area), issue.getProperty(Issue.Prop.area), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Priority", prevPriStringVal, priStringVal, ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getProperty(Issue.Prop.milestone), issue.getProperty(Issue.Prop.milestone), ccc, newIssue, container);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Related", previous.getRelated(), issue.getRelated(), ccc, newIssue, container);
 
             Map<String, Object> oldProps = previous.getProperties();
             UserSchema schema = QueryService.get().getUserSchema(user, container, IssuesSchema.SCHEMA_NAME);
@@ -264,27 +264,27 @@ public class ChangeSummary
         }
         // Record only fields with read permissions
         if (null != cc && cc.getPermission().equals(ReadPermission.class))
-            _appendChange(sbHtml, sbText, cc.getCaption(), from, to, newIssue);
+            _appendChange(sbHtml, sbText, cc.getCaption(), from, to, newIssue, container);
     }
 
-    private static void _appendColumnChange(StringBuilder sbHTML, StringBuilder sbText, String fieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
+    private static void _appendColumnChange(StringBuilder sbHTML, StringBuilder sbText, String fieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue, Container container)
     {
         // Use custom caption if one is configured
         DomainProperty prop = ccc.getPropertyMap().get(fieldName);
         String caption = (prop != null && prop.getLabel() != null) ? prop.getLabel() : ColumnInfo.labelFromName(fieldName);
 
-        _appendChange(sbHTML, sbText, caption, from, to, newIssue);
+        _appendChange(sbHTML, sbText, caption, from, to, newIssue, container);
     }
 
-    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String caption, Object from, Object to, boolean newIssue)
+    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String caption, Object from, Object to, boolean newIssue, Container container)
     {
         // Use custom caption if one is configured
         String encField = PageFlowUtil.filter(caption);
 
         if (!Objects.equals(from, to))
         {
-            String fromStr = String.valueOf(from);
-            String toStr = String.valueOf(to);
+            String fromStr = from instanceof Date ? DateUtil.formatDate(container, (Date) from) : String.valueOf(from);
+            String toStr = to instanceof Date ? DateUtil.formatDate(container, (Date) to) : String.valueOf(to);
             sbText.append(encField);
             if (newIssue)
             {
@@ -298,8 +298,8 @@ public class ChangeSummary
             sbText.append(" to ");
             sbText.append(StringUtils.isEmpty(toStr) ? "blank" : "\"" + to + "\"");
             sbText.append("\n");
-            String encFrom = PageFlowUtil.filter(from);
-            String encTo = PageFlowUtil.filter(to);
+            String encFrom = PageFlowUtil.filter(fromStr);
+            String encTo = PageFlowUtil.filter(toStr);
             sbHTML.append("<tr><td>").append(encField).append("</td><td>").append(encFrom).append("</td><td>&raquo;</td><td>").append(encTo).append("</td></tr>\n");
         }
     }
