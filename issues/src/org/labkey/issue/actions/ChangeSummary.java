@@ -71,6 +71,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -225,29 +226,7 @@ public class ChangeSummary
                             }
                         }
 
-                        var oldValDateInstance = false;
-                        var oldValDate = "";
-
-                        if (oldValue instanceof Date)
-                        {
-                            oldValDate = DateUtil.formatDate(container, (Date) oldValue);
-                            oldValDateInstance = true;
-                        }
-                        else
-                        {
-                            try
-                            {
-                                oldValDate = DateUtil.formatDate(container, new Date(DateUtil.parseDateTime(container, String.valueOf(oldValue))));
-                                oldValDateInstance = true;
-                            }
-                            catch (ClassCastException | ConversionException ignored)
-                            {
-                            }
-                        }
-
-                        String from = oldValue != null ? oldValDateInstance ? oldValDate : String.valueOf(oldValue) : "";
-                        String to = newValue != null ? newValue instanceof Date ? DateUtil.formatDate(container, (Date) newValue) : String.valueOf(newValue) : "";
-                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), from, to, ccc, newIssue);
+                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), oldValue, newValue, ccc, newIssue, container);
                     }
                 }
             }
@@ -268,10 +247,21 @@ public class ChangeSummary
                 sbTextChanges.toString(), summary, action, issueProperties);
     }
 
-    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
+    private static void _appendCustomColumnChange(StringBuilder sbHtml, StringBuilder sbText, String internalFieldName, Object from, Object to, CustomColumnConfiguration ccc, boolean newIssue, Container container)
     {
         CustomColumn cc = ccc.getCustomColumn(internalFieldName);
 
+        // Issue 41458 : for custom date-time fields, "from" does not come as Date and "to" comes as Date, so need to convert "from" to Date before Objects.equals
+        if (to instanceof Date)
+        {
+            try
+            {
+                from =  new Date(DateUtil.parseDateTime(container, String.valueOf(from)));
+            }
+            catch (ClassCastException | ConversionException ignored)
+            {
+            }
+        }
         // Record only fields with read permissions
         if (null != cc && cc.getPermission().equals(ReadPermission.class))
             _appendChange(sbHtml, sbText, cc.getCaption(), from, to, newIssue);
@@ -286,15 +276,15 @@ public class ChangeSummary
         _appendChange(sbHTML, sbText, caption, from, to, newIssue);
     }
 
-    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String caption, String from, String to, boolean newIssue)
+    private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String caption, Object from, Object to, boolean newIssue)
     {
         // Use custom caption if one is configured
         String encField = PageFlowUtil.filter(caption);
-        from = from == null ? "" : from;
-        to = to == null ? "" : to;
 
-        if (!from.equals(to))
+        if (!Objects.equals(from, to))
         {
+            String fromStr = String.valueOf(from);
+            String toStr = String.valueOf(to);
             sbText.append(encField);
             if (newIssue)
             {
@@ -303,10 +293,10 @@ public class ChangeSummary
             else
             {
                 sbText.append(" changed from ");
-                sbText.append(StringUtils.isEmpty(from) ? "blank" : "\"" + from + "\"");
+                sbText.append(StringUtils.isEmpty(fromStr) ? "blank" : "\"" + from + "\"");
             }
             sbText.append(" to ");
-            sbText.append(StringUtils.isEmpty(to) ? "blank" : "\"" + to + "\"");
+            sbText.append(StringUtils.isEmpty(toStr) ? "blank" : "\"" + to + "\"");
             sbText.append("\n");
             String encFrom = PageFlowUtil.filter(from);
             String encTo = PageFlowUtil.filter(to);
