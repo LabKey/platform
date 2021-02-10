@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd">
+
+    <bean id="specimenPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
+        <property name="factoryImpls">
+            <list>
+                <bean class="org.labkey.api.specimen.pipeline.StandaloneSpecimenTask$Factory"/>
+                <bean class="org.labkey.api.specimen.pipeline.SpecimenReloadTask$Factory"/>
+                <bean class="org.labkey.api.specimen.pipeline.FileAnalysisSpecimenTask$Factory"/>
+            </list>
+        </property>
+
+        <property name="pipelines">
+            <list>
+                <!-- Standalone specimen import pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.api.specimen.pipeline.SpecimenBatch"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="standaloneSpecimenTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StandaloneSpecimenTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!-- Specimen reload job pipeline -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.api.specimen.pipeline.SpecimenReloadJob"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="importTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.SpecimenReloadTask</value></constructor-arg>
+                            </bean>
+                            <bean id="specimenReloadTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StandaloneSpecimenTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
+                    <constructor-arg value="specimenImportTask"/>
+                    <property name="description" value="Imports specimen data using data file"/>
+                    <property name="protocolObjectId" value="specimen.specimenImport"/>
+                    <property name="protocolName" value="Specimen Import"/>
+                    <property name="protocolFactoryName" value="specimenImport"/>
+                    <property name="defaultDisplayState" value="hidden"/>
+                    <property name="allowForTriggerConfiguration" value="true"/>
+                    <property name="initialInputExts">
+                        <list>
+                            <ref bean="zipFileType"/>
+                            <ref bean="tsvFileType"/>
+                            <ref bean="specimensFileType"/>
+                        </list>
+                    </property>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="specimenImportTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.FileAnalysisSpecimenTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                    <property name="helpText" value="The selected Pipeline task can only be initiated on .zip and .tsv files."/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="specimensFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".specimens"/>
+    </bean>
+    <bean id="tsvFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".tsv"/>
+    </bean>
+    <bean id="zipFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".zip"/>
+    </bean>
+</beans>

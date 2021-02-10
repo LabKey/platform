@@ -15,6 +15,7 @@
  */
 package org.labkey.api.specimen.pipeline;
 
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.study.SpecimenTransform;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import java.io.File;
 /**
  * Created by klum on 5/24/2014.
  */
+@Migrate
 public interface SpecimenReloadJobSupport extends SpecimenJobSupport
 {
     void setSpecimenArchive(File archiveFile);
