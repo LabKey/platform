@@ -33,7 +33,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.pipeline.StudyImportSpecimenTask;
+import org.labkey.api.specimen.pipeline.StudyImportSpecimenTask;
 import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;

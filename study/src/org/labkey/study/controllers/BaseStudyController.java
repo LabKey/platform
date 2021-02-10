@@ -63,11 +63,6 @@ public abstract class BaseStudyController extends SpringActionController
         return new ActionURL(StudyController.OverviewAction.class, c);
     }
 
-    protected ActionURL getStudyOverviewURL()
-    {
-        return getStudyOverviewURL(getContainer());
-    }
-
     protected SpecimenUtils getUtils()
     {
         return new SpecimenUtils(this);

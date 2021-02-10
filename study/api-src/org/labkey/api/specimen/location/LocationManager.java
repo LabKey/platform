@@ -5,6 +5,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -248,5 +249,68 @@ public class LocationManager
     {
         SpecimenEvent firstEvent = SpecimenEventManager.get().getFirstEvent(dateOrderedEvents);
         return firstEvent != null ? firstEvent.getLabId() : null;
+    }
+
+    private static final String EXISTS = "    EXISTS(SELECT 1 FROM ";
+
+    public static void updateLocationTableInUse(TableInfo locationTableInfo, Container container)
+    {
+        final String tableAlias = locationTableInfo.getSelectName();
+        SpecimenSchema schema = SpecimenSchema.get();
+        TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(container);
+        TableInfo vialTableInfo = schema.getTableInfoVialIfExists(container);
+        TableInfo specimenTableInfo = schema.getTableInfoSpecimenIfExists(container);
+        if (null != eventTableInfo && null != vialTableInfo && null != specimenTableInfo)
+        {
+            var inUseColumn = locationTableInfo.getColumn("InUse");
+
+            SQLFragment existsSQL = new SQLFragment();
+            existsSQL
+                .append(EXISTS)
+                .append(eventTableInfo, "se")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = se.LabId OR ")
+                .append(tableAlias)
+                .append(".RowId = se.OriginatingLocationId)) ");
+
+            existsSQL
+                .append(" OR\n")
+                .append(EXISTS)
+                .append(vialTableInfo, "v")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = v.CurrentLocation OR ")
+                .append(tableAlias)
+                .append(".RowId = v.ProcessingLocation)) ");
+
+            existsSQL
+                .append(" OR\n")
+                .append(EXISTS)
+                .append(specimenTableInfo, "s")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = s.OriginatingLocationId OR ")
+                .append(tableAlias)
+                .append(".RowId = s.ProcessingLocation)) ");
+
+            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            updateSQL
+                .append(locationTableInfo.getSelectName())
+                .append(" SET ")
+                .append(inUseColumn.getSelectName())
+                .append(" = ")
+                .append(schema.getSqlDialect().wrapExistsExpression(existsSQL));
+
+            try
+            {
+                new SqlExecutor(locationTableInfo.getSchema()).execute(updateSQL);
+            }
+            finally
+            {
+                // Not strictly required, since LocationImpl doesn't currently hold inUse
+                LocationCache.clear(container);
+            }
+        }
     }
 }

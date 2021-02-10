@@ -30,7 +30,7 @@ public class SpecimenSearchWebPart extends JspView<SpecimenSearchBean>
 
     public SpecimenSearchWebPart(boolean showVials)
     {
-        super("/org/labkey/study/view/specimen/search.jsp", new SpecimenSearchBean());
+        super("/org/labkey/specimen/view/search.jsp", new SpecimenSearchBean());
         getModelBean().init(getViewContext(), showVials, true);
         getModelBean().setWebPartId(getWebPartRowId());
         setTitle(showVials ? "Vial Search" : "Vial Group Search");

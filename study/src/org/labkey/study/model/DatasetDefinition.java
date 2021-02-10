@@ -24,8 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -43,6 +45,8 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -107,11 +111,11 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
@@ -136,6 +140,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.labkey.api.query.QueryService.AuditAction.DELETE;
+import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
 
 /**
@@ -1217,9 +1224,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             return new DataColumn(colInfo)
             {
                 @Override
-                protected String getAutoCompleteURLPrefix()
+                protected ActionURL getAutoCompleteURLPrefix()
                 {
-                    return _completionBase.getLocalURIString();
+                    return _completionBase;
                 }
             };
         }
@@ -1599,47 +1606,101 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         public AuditHandler getAuditHandler()
         {
-            return new AuditHandler()
-            {
-                @Override
-                public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
-                {
-                    QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount);
-                }
-
-                @Override
-                public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
-                {
-                    // Only add an event if Detailed audit logging is enabled
-                    if (AuditBehaviorType.DETAILED != auditType)
-                        return;
-                    Objects.requireNonNull(rows);
-
-                    if (null == existingRows && action == QueryService.AuditAction.MERGE)
-                    {
-                        for (int i=0; i < rows.size(); i++)
-                        {
-                            Map<String, Object> row = rows.get(i);
-                            String lsid = String.valueOf(row.get("lsid"));
-                            var oldRow = DatasetDefinition.this.getDatasetRow(user, lsid);
-                            // note switched order (oldRecord, newRecord)
-                            StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, oldRow, row);
-                        }
-                        return;
-                    }
-
-                    for (int i=0; i < rows.size(); i++)
-                    {
-                        Map<String, Object> row = rows.get(i);
-                        Map<String, Object> existingRow = null==existingRows ? Collections.emptyMap() : existingRows.get(i);
-                        // note switched order (oldRecord, newRecord)
-                        StudyServiceImpl.addDatasetAuditEvent(user, DatasetDefinition.this, existingRow, row);
-                    }
-                }
-            };
+            return new DatasetAuditHandler();
         }
     }
 
+    private class DatasetAuditHandler extends AbstractAuditHandler
+    {
+        @Override
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        {
+            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount);
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+        {
+            // Only add an event if Detailed audit logging is enabled
+            if (AuditBehaviorType.DETAILED != auditType)
+                return;
+            Objects.requireNonNull(rows);
+            AuditLogService auditLog = AuditLogService.get();
+
+            // Caller should provide existing rows for MERGE
+            assert action != QueryService.AuditAction.MERGE || null != existingRows;
+
+            List<DatasetAuditProvider.DatasetAuditEvent> batch = new ArrayList<>();
+            for (int i=0; i < rows.size(); i++)
+            {
+                Map<String, Object> row = rows.get(i);
+                Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
+                // note switched order (oldRecord, newRecord)
+                var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow);
+                batch.add(event);
+                if (batch.size() > 1000)
+                {
+                    auditLog.addEvents(user, batch);
+                    batch.clear();
+                }
+            }
+            if (batch.size() > 0)
+            {
+                auditLog.addEvents(user, batch);
+                batch.clear();
+            }
+        }
+
+        @Override
+        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord)
+        {
+            String auditComment = null!=userComment ? userComment :
+                    switch (action)
+                    {
+                        case INSERT -> "A new dataset record was inserted";
+                        case DELETE, TRUNCATE -> "A dataset record was deleted";
+                        case UPDATE, MERGE ->  null!=existingRecord && !existingRecord.isEmpty() ? "A dataset record was modified" : "A new dataset record was inserted";
+                        default -> "A dataset record was modified";
+                    };
+
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
+
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+            event.setDatasetId(getDatasetId());
+            event.setHasDetails(true);
+
+            String oldRecordString = null;
+            String newRecordString = null;
+            Object lsid = record.get("lsid");
+            if (existingRecord != null)
+            {
+                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(existingRecord, record, Collections.emptySet());
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+                newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+            }
+            if (action==DELETE || action==TRUNCATE)
+            {
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+            }
+            else
+            {
+                newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+            }
+            event.setLsid(lsid == null ? null : lsid.toString());
+
+            if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
+            if (newRecordString != null) event.setNewRecordMap(newRecordString);
+
+            return event;
+        }
+    }
 
     static BaseColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
     {
@@ -2171,15 +2232,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+        DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
 
-        if (context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) == AuditBehaviorType.DETAILED)
-            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(this.getTableInfo(user, false), dib, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
-
-        dib = ((UpdateableTableInfo)table).persistRows(dib, context);
-        CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
-        ((TableInsertDataIteratorBuilder)dib).setDontUpdate(dontUpdate);
-        return dib;
+        DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
+        DataIteratorBuilder persist = ((UpdateableTableInfo)table).persistRows(existing, context);
+        { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
+            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
+        }
+        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+        return LoggingDataIterator.wrap(audit);
     }
 
 
@@ -2624,8 +2686,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             resetCreatedColumnsSQL.add(oldData.get(DatasetDomainKind.CREATED_BY));
             resetCreatedColumnsSQL.add(newLSID);
             new SqlExecutor(getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
-            
-            StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, mergeData);
+
+            new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+                    List.of(mergeData), List.of(oldData));
 
             // Successfully updated
             transaction.commit();
@@ -2719,10 +2782,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
             deleteRows(lsids);
 
-            for (Map<String, Object> oldData : oldDatas)
-            {
-                StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, null);
-            }
+            new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
 
             transaction.commit();
         }

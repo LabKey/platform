@@ -16,6 +16,7 @@
 
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
@@ -35,6 +36,8 @@ import java.util.stream.Stream;
  */
 public interface DataIterator extends DataIteratorBuilder, Closeable
 {
+    String ROWNUMBER_COLUMNNAME = "_rowNumber";        // TODO change to something like DataIterator.class().getName() + "#_rowNumber"
+
     @Override
     default DataIterator getDataIterator(DataIteratorContext context)
     {
@@ -74,6 +77,17 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
         return () -> get(i);
     }
 
+    default boolean supportsGetExistingRecord()
+    {
+        return false;
+    }
+
+    @Nullable
+    default Map<String,Object> getExistingRecord()
+    {
+        return null;
+    }
+
     @Override
     void close() throws IOException;
 
@@ -86,6 +100,7 @@ public interface DataIterator extends DataIteratorBuilder, Closeable
     {
         return DataIteratorUtil.stream(this,false);
     }
+
 
     default void debugLogInfo(StringBuilder sb)
     {

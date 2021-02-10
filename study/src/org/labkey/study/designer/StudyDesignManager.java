@@ -56,7 +56,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
-import org.labkey.study.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;

@@ -93,7 +93,9 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.actions.ReportConfigurationBean;
+import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
@@ -104,6 +106,7 @@ import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
+import org.labkey.api.specimen.pipeline.SpecimenBatch;
 import org.labkey.api.specimen.query.SpecimenEventQueryView;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.query.SpecimenRequestQueryView;
@@ -127,7 +130,6 @@ import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
-import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
@@ -175,13 +177,11 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.designer.MapArrayExcelWriter;
-import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
@@ -273,6 +273,12 @@ public class SpecimenController extends BaseStudyController
                 .addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, true)
                 .addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name())
                 .addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
+        }
+
+        @Override
+        public ActionURL getManageRequestURL(Container c)
+        {
+            return new ActionURL(SpecimenController.ManageRequestAction.class, c);
         }
 
         @Override
@@ -927,7 +933,7 @@ public class SpecimenController extends BaseStudyController
                     relevantRequests = queryView;
                 }
                 else
-                    relevantRequests = new JspView("/org/labkey/study/view/specimen/relevantRequests.jsp");
+                    relevantRequests = new JspView("/org/labkey/specimen/view/relevantRequests.jsp");
                 relevantRequests.setTitle("Relevant Vial Requests");
                 vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
             }
@@ -2606,7 +2612,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/study/view/specimen/configurationRequired.jsp");
+            return new JspView("/org/labkey/specimen/view/configurationRequired.jsp");
         }
 
         @Override
@@ -3236,7 +3242,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
+            return new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
         }
 
         @Override
@@ -5260,7 +5266,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView("/org/labkey/study/view/specimen/configRequestabilityRules.jsp");
+            return new JspView("/org/labkey/specimen/view/configRequestabilityRules.jsp");
         }
 
         @Override
@@ -5663,7 +5669,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/pivot.jsp");
+            return new JspView<>("/org/labkey/specimen/view/pivot.jsp");
         }
 
         @Override

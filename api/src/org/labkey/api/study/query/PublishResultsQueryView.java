@@ -66,8 +66,8 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -713,10 +713,10 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         protected boolean _editable;
         protected String _formElementName;
-        private final String _completionBase;
+        private final ActionURL _completionBase;
         protected final ResolverHelper _resolverHelper;
 
-        public InputColumn(String caption, boolean editable, String formElementName, String completionBase, ResolverHelper resolverHelper)
+        public InputColumn(String caption, boolean editable, String formElementName, @Nullable ActionURL completionBase, ResolverHelper resolverHelper)
         {
             _editable = editable;
             _formElementName = formElementName;
@@ -733,7 +733,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 _resolverHelper.addQueryColumns(set);
         }
 
-        protected String getCompletionBase(RenderContext ctx)
+        protected @Nullable ActionURL getCompletionBase(RenderContext ctx)
         {
             return _completionBase;
         }
@@ -743,7 +743,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         {
             if (_editable)
             {
-                String completionBase = getCompletionBase(ctx);
+                ActionURL completionBase = getCompletionBase(ctx);
                 if (completionBase != null)
                 {
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
@@ -769,8 +769,8 @@ public class PublishResultsQueryView extends ResultsQueryView
                         ctx.put(RENDERED_REQUIRES_COMPLETION, true);
                     }
 
-                    String inputId = "input-tag-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-                    String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                    String inputId = "input-tag-" + UniqueID.getRequestScopedUID(ctx.getRequest());
+                    String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
                     String value = PageFlowUtil.filter(getValue(ctx));
 
                     StringBuilder sb = new StringBuilder();
@@ -818,10 +818,10 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
 
         @Override
-        protected String getCompletionBase(RenderContext ctx)
+        protected ActionURL getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.ParticipantId).getLocalURIString();
+            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.ParticipantId);
         }
 
         @Override
@@ -840,10 +840,10 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
 
         @Override
-        protected String getCompletionBase(RenderContext ctx)
+        protected ActionURL getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.VisitId).getLocalURIString();
+            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.VisitId);
         }
 
         @Override
@@ -853,11 +853,11 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
     }
 
-    private class DateDataInputColumn extends DataInputColumn
+    private static class DateDataInputColumn extends DataInputColumn
     {
         private final boolean _includeTimestamp;
 
-        public DateDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol, boolean includeTimestamp)
+        public DateDataInputColumn(@Nullable ActionURL completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol, boolean includeTimestamp)
         {
             super(AbstractAssayProvider.DATE_PROPERTY_CAPTION, "date",
                     true, completionBase, resolverHelper, dateCol);

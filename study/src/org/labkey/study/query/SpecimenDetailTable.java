@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.query.SpecimenUpdateService;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;

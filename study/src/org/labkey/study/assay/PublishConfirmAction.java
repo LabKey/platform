@@ -46,9 +46,11 @@ import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
@@ -315,6 +317,9 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
     @Override
     public ModelAndView getView(PublishConfirmForm publishConfirmForm, boolean reshow, BindException errors) throws Exception
     {
+        if (_protocol == null)
+            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>Could not resolve the source protocol.</span>"));
+
         getPageConfig().addClientDependency(ClientDependency.fromPath("study/assayPublish.js"));
 
         ViewContext context = getViewContext();
@@ -579,7 +584,9 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
     {
         getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
         root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
-        root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        root.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
+        if (_protocol != null)
+            root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+        if (_targetStudyName != null)
+            root.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
     }
 }

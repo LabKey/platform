@@ -43,6 +43,12 @@ public class EmbargoDataIterator extends AbstractDataIterator
     }
 
     @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _in.supportsGetExistingRecord();
+    }
+
+    @Override
     public int getColumnCount()
     {
         return _outputColumnCount;

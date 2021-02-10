@@ -83,6 +83,12 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     }
 
     @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _in.supportsGetExistingRecord();
+    }
+
+    @Override
     public void beforeFirst()
     {
         _currentPosition = -1;

@@ -17,6 +17,7 @@
 package org.labkey.api.specimen.pipeline;
 
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.study.importer.SimpleStudyImportContext;
 
 import java.io.File;
 
@@ -30,4 +31,5 @@ public interface SpecimenJobSupport
     /** A specimen archive as originally delivered. Might be transformed before import */
     File getSpecimenArchive() throws ImportException;
     boolean isMerge();
+    SimpleStudyImportContext getImportContext();
 }

@@ -1,9 +1,6 @@
 package org.labkey.api.specimen;
 
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -33,14 +30,12 @@ public class SpecimensPage extends FolderTab.PortalPage
     }
 
     @Override
-    @Migrate // Refactor check below after moving this to the specimen module
     public boolean isVisible(Container c, User user)
     {
         Study study = StudyService.get().getStudy(c);
         if (study != null)
         {
-            Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
-            return null != specimenModule && c.getActiveModules().contains(specimenModule);
+            return SpecimenManager.get().isSpecimenModuleActive(c);
         }
         return false;
     }
