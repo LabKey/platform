@@ -18,6 +18,7 @@ package org.labkey.api.dataiterator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.remoteapi.query.Filter;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,7 +47,7 @@ public class CopyConfig
     protected String _sourceTimestampColumnName = null;
     protected String _sourceRunColumnName = null;
     protected List<String> _sourceColumns = null;
-    protected List<SourceFilter> _sourceFilters = null;
+    protected List<Filter> _sourceFilters = null;
     protected Integer _sourceTimeout = null;
     protected boolean _useSource = true;
     protected boolean _useFilterStrategy = true;
@@ -218,12 +219,12 @@ public class CopyConfig
         _sourceContainerFilter = sourceContainerFilter;
     }
 
-    public List<SourceFilter> getSourceFilters()
+    public List<Filter> getSourceFilters()
     {
         return _sourceFilters;
     }
 
-    public void setSourceFilters(List<SourceFilter> sourceFilters)
+    public void setSourceFilters(List<Filter> sourceFilters)
     {
         _sourceFilters = sourceFilters;
     }
@@ -411,104 +412,5 @@ public class CopyConfig
     public Set<String> getAlternateKeys()
     {
         return Collections.unmodifiableSet(_alternateKeys);
-    }
-
-    /*
-        NOTE: this was created b/c the java-api SourceFilter class was failing jackson serialization. A better solution would be to make that class compatible w/ serialization,
-        and just use that whenever this is used. For ease and for the purpose of getting test going, I added this one.  The specific stack we get when using org.labkey.remoteapi.query.SourceFilter
-        is below. I believe just adding a no-arg constructor to org.labkey.remoteapi.query.SourceFilter will solve this. Again, if that's updated, we can remove this SourceFilter class and replace usages
-        with org.labkey.remoteapi.query.SourceFilter.
-
-            testSimpleEtlWithSourceFilter(org.labkey.test.tests.di.ETLTest)
-    org.labkey.remoteapi.CommandException: com.fasterxml.jackson.databind.exc.InvalidDefinitionException: Cannot construct instance of `org.labkey.remoteapi.query.SourceFilter` (no Creators, like default construct, exist): cannot deserialize from Object value (no delegate- or property-based Creator)
-     at [Source: (String)"[ "org.labkey.di.pipeline.TransformPipelineJob", {
-      "_etlDescriptor" : [ "org.labkey.di.pipeline.TransformDescriptor", {
-        "_id" : "{ETLtest}/SourceToTarget2WithFilter",
-        "_name" : "Source to target2",
-        "_description" : "append rows from source to target ",
-        "_moduleName" : "ETLtest",
-        "_loadReferencedFiles" : false,
-        "_gatedByStep" : false,
-        "_standalone" : true,
-        "_siteScope" : false,
-        "_transactSourceSchema" : null,
-        "_transactTargetSchema" : "etltest""[truncated 11302 chars]; line: 29, column: 9] (through reference chain: org.labkey.di.pipeline.TransformPipelineJob["_etlDescriptor"]->org.labkey.di.pipeline.TransformDescriptor["_stepMetaDatas"]->java.util.ArrayList[0]->org.labkey.di.steps.SimpleQueryTransformStepMeta["_sourceFilters"]->java.util.ArrayList[0])
-        at org.labkey.remoteapi.Command.throwError(Command.java:400)
-        at org.labkey.remoteapi.Command.checkThrowError(Command.java:362)
-        at org.labkey.remoteapi.Command._execute(Command.java:349)
-        at org.labkey.remoteapi.Command.execute(Command.java:210)
-        at org.labkey.test.util.di.DataIntegrationHelper.runTransform(DataIntegrationHelper.java:102)
-        at org.labkey.test.util.di.DataIntegrationHelper.runTransformAndWait(DataIntegrationHelper.java:110)
-        at org.labkey.test.tests.di.ETLHelper.runETL_API(ETLHelper.java:576)
-        at org.labkey.test.tests.di.ETLHelper.runETL_API(ETLHelper.java:605)
-        at org.labkey.test.tests.di.ETLTest.testSimpleEtlWithSourceFilter(ETLTest.java:571)
-        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-        at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
-        at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
-        at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
-        at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
-        at org.junit.internal.runners.statements.RunBefores.evaluate(RunBefores.java:26)
-        at org.labkey.junit.rules.TestWatcher$1.evaluate(TestWatcher.java:27)
-        at org.labkey.test.BaseWebDriverTest$6$1.evaluate(BaseWebDriverTest.java:684)
-        at org.labkey.junit.rules.TestWatcher$1.evaluate(TestWatcher.java:27)
-        at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:298)
-        at org.junit.internal.runners.statements.FailOnTimeout$CallableStatement.call(FailOnTimeout.java:292)
-        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
-        at java.base/java.lang.Thread.run(Thread.java:832)
-     */
-    public static class SourceFilter
-    {
-        String _columnName;
-        Object _value;
-        String _operator;
-
-        public SourceFilter(String columnName, Object value, String operator)
-        {
-            _columnName = columnName;
-            _value = value;
-            _operator = operator;
-        }
-
-        public SourceFilter()
-        {
-
-        }
-
-        public String getColumnName()
-        {
-            return _columnName;
-        }
-
-        public void setColumnName(String columnName)
-        {
-            _columnName = columnName;
-        }
-
-        public Object getValue()
-        {
-            return _value;
-        }
-
-        public void setValue(Object value)
-        {
-            _value = value;
-        }
-
-        public String getOperator()
-        {
-            return _operator;
-        }
-
-        public void setOperator(String operator)
-        {
-            _operator = operator;
-        }
-
-        public org.labkey.remoteapi.query.Filter toFilter()
-        {
-            return new org.labkey.remoteapi.query.Filter(_columnName, _value, org.labkey.remoteapi.query.Filter.Operator.getOperatorFromUrlKey(_operator));
-        }
     }
 }
