@@ -37,7 +37,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
         }
     }
 
-    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow);
+    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow);
 
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
