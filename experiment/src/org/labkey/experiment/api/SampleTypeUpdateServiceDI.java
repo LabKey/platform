@@ -100,6 +100,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         _sampleType = sampleType;
         _schema = table.getUserSchema();
         _samplesTable = sampleType.getTinfo();
+        // we do this in ExpMaterialTableImpl.persistRows() via ExpDataIterators.PersistDataIteratorBuilder
+        _enableExistingRecordsDataIterator = false;
     }
 
     UserSchema getSchema()

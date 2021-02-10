@@ -113,6 +113,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
 
+    /* AbstractQueryUpdateService is generally responsible for some shared functionality
+     *   - triggers
+     *   - coercion/validation
+     *   - detailed logging
+     *   - attachements
+     *
+     *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
+    */
+    protected boolean _enableExistingRecordsDataIterator = true;
+
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
         if (queryTable == null)
@@ -191,9 +201,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
-        DataIteratorBuilder existingRows = ExistingRecordDataIterator.createBuilder(standard, getQueryTable(), null);
-        DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(existingRows, context);
+        DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
+        if (_enableExistingRecordsDataIterator)
+        {
+            // some tables need to generate PK's, so they add this in persistRows()
+            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), null);
+        }
+        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
         return dib;
