@@ -1662,7 +1662,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         @Override
         protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord)
         {
-            String auditComment = null!=userComment ? userComment :
+            boolean userCommentIsBlank = StringUtils.trimToNull(userComment) == null;
+            String auditComment = !userCommentIsBlank ? userComment :
                     switch (action)
                     {
                         case INSERT -> "A new dataset record was inserted";
@@ -1670,13 +1671,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                         case UPDATE, MERGE ->  null!=existingRecord && !existingRecord.isEmpty() ? "A dataset record was modified" : "A new dataset record was inserted";
                         default -> "A dataset record was modified";
                     };
-
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-            event.setDatasetId(getDatasetId());
-            event.setHasDetails(true);
 
             String oldRecordString = null;
             String newRecordString = null;
@@ -1691,11 +1685,26 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet());
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
                 newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+
+                // Check if no fields changed, if so adjust messaging
+                if (rowPair.second.size() == 0 && userCommentIsBlank)
+                {
+                    auditComment = "Dataset row was processed, but no changes detected";
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                }
             }
             else
             {
                 newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
             }
+
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
+
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+            event.setDatasetId(getDatasetId());
+            event.setHasDetails(true);
+
             event.setLsid(lsid == null ? null : lsid.toString());
 
             if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
