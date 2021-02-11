@@ -1679,15 +1679,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             String oldRecordString = null;
             String newRecordString = null;
             Object lsid = record.get("lsid");
-            if (existingRecord != null)
-            {
-                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(existingRecord, record, Collections.emptySet());
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
-                newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
-            }
+
             if (action==DELETE || action==TRUNCATE)
             {
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+            }
+            else if (existingRecord != null)
+            {
+                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet());
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+                newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
             }
             else
             {
