@@ -1,95 +1,77 @@
-<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.apache.commons.lang3.mutable.MutableInt" %>
+<%@ page import="org.apache.logging.log4j.Logger" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.junit.Test" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.JunitUtil" %>
-<%@ page import="org.labkey.api.util.TestContext" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.audit.AuditLogService" %>
 <%@ page import="static org.junit.Assert.*" %>
-<%@ page import="org.labkey.api.view.ViewServlet" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.test.TestWhen" %>
-<%@ page import="org.junit.Assert" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.study.TimepointType" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.MvUtil" %>
-<%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.exp.OntologyManager" %>
+<%@ page import="org.labkey.api.data.Results" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
+<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.exp.Lsid" %>
+<%@ page import="org.labkey.api.exp.OntologyManager" %>
+<%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.exp.property.DefaultPropertyValidator" %>
-<%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
-<%@ page import="org.labkey.api.exp.property.IPropertyValidator" %>
-<%@ page import="org.labkey.api.exp.property.PropertyService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.exp.PropertyType" %>
-<%@ page import="org.labkey.api.data.DbSchema" %>
-<%@ page import="org.labkey.api.data.CoreSchema" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="org.labkey.api.data.JdbcType" %>
-<%@ page import="org.labkey.api.query.BatchValidationException" %>
-<%@ page import="org.labkey.api.query.ValidationException" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
-<%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="org.labkey.api.query.QueryUpdateService" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="java.sql.ResultSet" %>
-<%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.exp.property.IPropertyValidator" %>
+<%@ page import="org.labkey.api.exp.property.PropertyService" %>
+<%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
+<%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
 <%@ page import="org.labkey.api.qc.QCState" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
-<%@ page import="org.labkey.api.data.Results" %>
-<%@ page import="org.apache.commons.lang3.mutable.MutableInt" %>
-<%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.apache.logging.log4j.Logger" %>
-<%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.labkey.api.query.BatchValidationException" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.query.QueryUpdateService" %>
+<%@ page import="org.labkey.api.query.UserSchema" %>
+<%@ page import="org.labkey.api.query.ValidationException" %>
 <%@ page import="org.labkey.api.reader.DataLoader" %>
 <%@ page import="org.labkey.api.reader.MapLoader" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="org.labkey.study.model.VisitImpl" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
-<%@ page import="org.labkey.study.StudySchema" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.study.writer.DatasetDataWriter" %>
-<%@ page import="org.labkey.api.reports.model.ViewCategoryManager" %>
 <%@ page import="org.labkey.api.reports.model.ViewCategory" %>
-<%@ page import="java.math.BigDecimal" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.study.model.AssaySpecimenConfigImpl" %>
-<%@ page import="org.labkey.study.model.AssaySpecimenVisitImpl" %>
-<%@ page import="org.labkey.api.data.Table" %>
-<%@ page import="org.labkey.api.data.PHI" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.study.model.StudySnapshot" %>
-<%@ page import="static org.labkey.study.model.StudyManager.TEST_LOGGER" %>
-<%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
-<%@ page import="org.labkey.api.audit.AuditLogService" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="static org.labkey.study.dataset.DatasetAuditProvider.DATASET_AUDIT_EVENT" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategoryManager" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.JunitUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.dataset.DatasetAuditProvider" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.data.CompareType" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
+<%@ page import="org.labkey.study.model.DatasetDefinition" %>
+<%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.query.StudyQuerySchema" %>
+<%@ page import="org.labkey.study.writer.DatasetDataWriter" %>
+<%@ page import="java.sql.ResultSet" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="static org.labkey.study.model.StudyManager.TEST_LOGGER" %>
+<%@ page import="static org.labkey.study.dataset.DatasetAuditProvider.DATASET_AUDIT_EVENT" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 
@@ -445,222 +427,91 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
 }
 
 
-    private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
-    {
-        // first get last audit record
-        UserSchema auditSchema = AuditLogService.get().createSchema(_context.getUser(), study.getContainer());
-        TableInfo auditTable = auditSchema.getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT);
-        Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
-                .getObject(Integer.class);
-        int rowid = null==RowId ? 0 : RowId.intValue();
+private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
+{
+    // first get last audit record
+    UserSchema auditSchema = AuditLogService.get().createSchema(_context.getUser(), study.getContainer());
+    TableInfo auditTable = auditSchema.getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT);
+    Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
+            .getObject(Integer.class);
+    int rowid = null==RowId ? 0 : RowId.intValue();
 
-        StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser(), true);
-        Dataset def = createDataset(study, "DL", true);
-        TableInfo tt = ss.getTable(def.getName());
-        QueryUpdateService qus = tt.getUpdateService();
-        BatchValidationException errors = new BatchValidationException();
-        assertNotNull(qus);
+    StudyQuerySchema ss = StudyQuerySchema.createSchema(study, _context.getUser(), true);
+    Dataset def = createDataset(study, "DL", true);
+    TableInfo tt = ss.getTable(def.getName());
+    QueryUpdateService qus = tt.getUpdateService();
+    BatchValidationException errors = new BatchValidationException();
+    assertNotNull(qus);
 
-        Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
-        Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
-        List<Map<String, Object>> rows = new ArrayList<>();
+    Date Jan1 = new Date(DateUtil.parseISODateTime("2011-01-01"));
+    Date Feb1 = new Date(DateUtil.parseISODateTime("2011-02-01"));
+    List<Map<String, Object>> rows = new ArrayList<>();
 
-        Map<Enum,Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+    Map<Enum,Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
 
-        // INSERT
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Initial", "Value", 1.0));
-        List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, config, null);
-        String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
-        assertFalse(msg, errors.hasErrors());
-        Map<String,Object> firstRowMap = ret.get(0);
-        String lsidRet = (String)firstRowMap.get("lsid");
-        assertNotNull(lsidRet);
+    // INSERT
+    rows.clear(); errors.clear();
+    rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Initial", "Value", 1.0));
+    List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, config, null);
+    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    assertFalse(msg, errors.hasErrors());
+    Map<String,Object> firstRowMap = ret.get(0);
+    String lsidRet = (String)firstRowMap.get("lsid");
+    assertNotNull(lsidRet);
 
-        SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),rowid, CompareType.GT);
-        List<DatasetAuditProvider.DatasetAuditEvent> events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
-        assertFalse(events.isEmpty());
-        assertNull(events.get(0).getOldRecordMap());
-        assertNotNull(events.get(0).getNewRecordMap());
-        Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
-        assertEquals(lsidRet, newRecordMap.get("lsid"));
-        assertEquals("Initial", newRecordMap.get("Measure"));
-        assertEquals("1.0", newRecordMap.get("Value"));
+    SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),rowid, CompareType.GT);
+    List<DatasetAuditProvider.DatasetAuditEvent> events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
+    assertFalse(events.isEmpty());
+    assertNull(events.get(0).getOldRecordMap());
+    assertNotNull(events.get(0).getNewRecordMap());
+    Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertEquals(lsidRet, newRecordMap.get("lsid"));
+    assertEquals("Initial", newRecordMap.get("Measure"));
+    assertEquals("1.0", newRecordMap.get("Value"));
 
-        // UPDATE
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("LSID", lsidRet, "Measure", "Updated", "Value", 2.0));
+    // UPDATE
+    rows.clear(); errors.clear();
+    rows.add(PageFlowUtil.mapInsensitive("LSID", lsidRet, "Measure", "Updated", "Value", 2.0));
 //        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Updated", "Value", 2.0));
-        ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, null, config, null);
+    qus.updateRows(_context.getUser(), study.getContainer(), rows, null, config, null);
 
-        events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
-        assertFalse(events.isEmpty());
-        assertNotNull(events.get(0).getOldRecordMap());
-        Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
-        assertFalse(oldRecordMap.containsKey("lsid"));
-        assertEquals("Initial", newRecordMap.get("Measure"));
-        assertEquals("1.0", newRecordMap.get("Value"));
-        assertEquals(2, oldRecordMap.size());
-        assertNotNull(events.get(0).getNewRecordMap());
-        newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
-        assertFalse(newRecordMap.containsKey("lsid"));
-        assertEquals("Updated",newRecordMap.get("Measure"));
-        assertEquals("2.0", newRecordMap.get("Value"));
-        assertEquals(2, newRecordMap.size());
+    events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
+    assertFalse(events.isEmpty());
+    assertNotNull(events.get(0).getOldRecordMap());
+    Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
+    assertFalse(oldRecordMap.containsKey("lsid"));
+    assertEquals("Initial", newRecordMap.get("Measure"));
+    assertEquals("1.0", newRecordMap.get("Value"));
+    assertEquals(2, oldRecordMap.size());
+    assertNotNull(events.get(0).getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertFalse(newRecordMap.containsKey("lsid"));
+    assertEquals("Updated",newRecordMap.get("Measure"));
+    assertEquals("2.0", newRecordMap.get("Value"));
+    assertEquals(2, newRecordMap.size());
 
-        // MERGE
-        // and since merge is a different code path...
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Merged", "Value", 3.0));
-        int count = qus.mergeRows(_context.getUser(), study.getContainer(), new ListofMapsDataIterator(null,rows), errors, config, null);
-        assertEquals(1, count);
+    // MERGE
+    // and since merge is a different code path...
+    rows.clear(); errors.clear();
+    rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Merged", "Value", 3.0));
+    int count = qus.mergeRows(_context.getUser(), study.getContainer(), new ListofMapsDataIterator(null,rows), errors, config, null);
+    assertEquals(1, count);
 
-        events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
-        assertFalse(events.isEmpty());
-        assertNotNull(events.get(0).getOldRecordMap());
-        oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
-        assertFalse(oldRecordMap.containsKey("lsid"));
-        assertEquals("Updated", newRecordMap.get("Measure"));
-        assertEquals("2.0", newRecordMap.get("Value"));
-        assertEquals(2, oldRecordMap.size());
-        assertNotNull(events.get(0).getNewRecordMap());
-        newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
-        assertFalse(newRecordMap.containsKey("lsid"));
-        assertEquals("Merged",newRecordMap.get("Measure"));
-        assertEquals("3.0", newRecordMap.get("Value"));
-        assertEquals(2, newRecordMap.size());
-
-/*
-        String lsidFirstRow;
-
-        try (ResultSet rs = new TableSelector(tt).getResultSet())
-        {
-            assertTrue(rs.next());
-            lsidFirstRow = rs.getString("lsid");
-            assertEquals(lsidFirstRow, lsidRet);
-        }
-
-        // duplicate row
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test1
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("Duplicates were found"));
-
-        // different participant
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "B2", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 2.0));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-
-        // different date
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Feb1, "Measure", "Test" + (counterRow), "Value", "X"));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-
-        // different measure
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X"));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-
-        // duplicates in batch
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0));
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 1.0));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Only one row is allowed for each Subject/Visit/Measure Triple.  Duplicates were found in the database or imported data.; Duplicate: Subject = A1Date = Sat Jan 01 00:00:00 PST 2011, Measure = Test3
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("Duplicates were found in the database or imported data"));
-
-        // missing participantid
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", null, "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1.0));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: All dataset rows must include a value for SubjectID
-        msg = errors.getRowErrors().get(0).getMessage();
-        assertTrue(msg.contains("required") || msg.contains("must include"));
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("SubjectID"));
-
-        // missing date
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", null, "Measure", "Test" + (++counterRow), "Value", 1.0));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Row 1 does not contain required field date.
-        assertTrue(errors.getRowErrors().get(0).getMessage().toLowerCase().contains("date"));
-
-        // missing required property field (Measure in map)
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", null, "Value", 1.0));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Row 1 does not contain required field Measure.
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("required"));
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("Measure"));
-
-        // missing required property field (Measure not in map)
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Value", 1.0));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Row 1 does not contain required field Measure.
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("does not contain required field"));
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("Measure"));
-
-        // legal MV indicator
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "X"));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-
-        // illegal MV indicator
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "N/A"));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Could not convert 'N/A' for field Value, should be of type Double
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("should be of type Double"));
-
-        // conversion test
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "100"));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-
-
-        // validation test
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 101));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        //study:Label: Value '101.0' for field 'Number' is invalid.
-        assertTrue(errors.getRowErrors().get(0).getMessage().contains("is invalid"));
-
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (counterRow), "Value", 1, "Number", 99));
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-
-        // QCStateLabel
-        rows.clear(); errors.clear();
-        rows.add(PageFlowUtil.mapInsensitive("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
-        List<QCState> qcstates = QCStateManager.getInstance().getQCStates(study.getContainer());
-        assertEquals(0, qcstates.size());
-        qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-        assertFalse(errors.hasErrors());
-        qcstates = QCStateManager.getInstance().getQCStates(study.getContainer());
-        assertEquals(1, qcstates.size());
-        assertEquals("dirty" , qcstates.get(0).getLabel());
-
-        // let's try to update a row
-        rows.clear(); errors.clear();
-        assertTrue(firstRowMap.containsKey("Value"));
-        CaseInsensitiveHashMap<Object> row = new CaseInsensitiveHashMap<>();
-        row.putAll(firstRowMap);
-        row.put("Value", 3.14159);
-        // TODO why is Number==null OK on insert() but not update()?
-        row.put("Number", 1.0);
-        rows.add(row);
-        List<Map<String, Object>> keys = new ArrayList<>();
-        keys.add(PageFlowUtil.mapInsensitive("lsid", lsidFirstRow));
-        ret = qus.updateRows(_context.getUser(), study.getContainer(), rows, keys, null, null);
-        assert(ret.size() == 1);
- */
-    }
+    events = AuditLogService.get().getAuditEvents(study.getContainer(),_context.getUser(),DATASET_AUDIT_EVENT,f,new Sort("-RowId"));
+    assertFalse(events.isEmpty());
+    assertNotNull(events.get(0).getOldRecordMap());
+    oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
+    assertFalse(oldRecordMap.containsKey("lsid"));
+    assertEquals("Updated", newRecordMap.get("Measure"));
+    assertEquals("2.0", newRecordMap.get("Value"));
+    assertEquals(2, oldRecordMap.size());
+    assertNotNull(events.get(0).getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertFalse(newRecordMap.containsKey("lsid"));
+    assertEquals("Merged",newRecordMap.get("Measure"));
+    assertEquals("3.0", newRecordMap.get("Value"));
+    assertEquals(2, newRecordMap.size());
+}
 
 
 private void _testImportDatasetDataAllowImportGuid(Study study) throws Throwable

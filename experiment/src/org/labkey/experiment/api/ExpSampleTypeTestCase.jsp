@@ -65,6 +65,20 @@
 
 <%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
 <%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.labkey.api.audit.AuditLogService" %>
+<%@ page import="org.labkey.experiment.SampleTypeAuditProvider" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
+<%@ page import="org.labkey.api.query.QuerySchema" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
+<%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
+<%@ page import="org.labkey.api.data.JdbcType" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -885,5 +899,144 @@ public void testSampleTypeWithVocabularyProperties() throws Exception
     //Verify property inserted during update rows in inserted
     assertEquals("New Property is not inserted with update rows", sampleAge,
             OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
+}
+
+
+@Test
+public void testDetailedAuditLog() throws Exception
+{
+    User user = TestContext.get().getUser();
+
+    UserSchema auditSchema = AuditLogService.get().createSchema(user, c);
+    TableInfo auditTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
+    Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
+            .getObject(Integer.class);
+    int audit_max_rowid = null==RowId ? 0 : RowId.intValue();
+
+    List<GWTPropertyDescriptor> props = new ArrayList<>();
+    props.add(new GWTPropertyDescriptor("Name", "string"));
+    props.add(new GWTPropertyDescriptor("Measure", "string"));
+    props.add(new GWTPropertyDescriptor("Value", "float"));
+    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+    final ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
+            "SamplesDAL", null, props, Collections.emptyList(),
+            -1, -1, -1, -1, null, null);
+
+    QuerySchema samplesSchema = DefaultSchema.get(user, c, "samples");
+    assertNotNull(samplesSchema);
+    TableInfo samplesTable = samplesSchema.getTable("SamplesDAL");
+    assertNotNull(samplesTable);
+    QueryUpdateService qus = samplesTable.getUpdateService();
+    assertNotNull(qus);
+    BatchValidationException errors = new BatchValidationException();
+    Map<Enum,Object> config = Map.of(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
+
+    // insert a sample
+    List<Map<String, Object>> rows = new ArrayList<>();
+    rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Initial", "Value", 1.0));
+    List<Map<String,Object>> ret = qus.insertRows(user, c, rows, errors, config, null);
+    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    assertFalse(msg, errors.hasErrors());
+    assertEquals(1,ret.size());
+    assertNotNull(ret.get(0).get("rowid"));
+    int rowid = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
+    // check audit log
+    SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),audit_max_rowid, CompareType.GT);
+    List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
+    assertFalse(events.isEmpty());
+    assertNull(events.get(0).getOldRecordMap());
+    assertNotNull(events.get(0).getNewRecordMap());
+    Map<String,String> newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertEquals("Initial", newRecordMap.get("Measure"));
+    assertEquals("1.0", newRecordMap.get("Value"));
+
+    // UPDATE
+    rows.clear(); errors.clear();
+    rows.add(PageFlowUtil.mapInsensitive("RowId", rowid, "Measure", "Updated", "Value", 2.0));
+    qus.updateRows(user, c, rows, null, config, null);
+    // check audit log
+    events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
+    assertFalse(events.isEmpty());
+    assertNotNull(events.get(0).getOldRecordMap());
+    Map<String,String> oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
+    assertFalse(oldRecordMap.containsKey("lsid"));
+    assertEquals("Initial", newRecordMap.get("Measure"));
+    assertEquals("1.0", newRecordMap.get("Value"));
+    assertEquals(2, oldRecordMap.size());
+    assertNotNull(events.get(0).getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertFalse(newRecordMap.containsKey("lsid"));
+    assertEquals("Updated",newRecordMap.get("Measure"));
+    assertEquals("2.0", newRecordMap.get("Value"));
+    assertEquals(2, newRecordMap.size());
+
+    // MERGE
+    // and since merge is a different code path...
+    rows.clear(); errors.clear();
+    rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Merged", "Value", 3.0));
+    int count = qus.mergeRows(user, c, new ListofMapsDataIterator(null,rows), errors, config, null);
+    assertEquals(1, count);
+    // check audit log
+    events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
+    assertFalse(events.isEmpty());
+    assertNotNull(events.get(0).getOldRecordMap());
+    oldRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getOldRecordMap()));
+    assertFalse(oldRecordMap.containsKey("lsid"));
+    assertEquals("Updated", newRecordMap.get("Measure"));
+    assertEquals("2.0", newRecordMap.get("Value"));
+    //map has (measure,value,genid,rowid)
+    //assertEquals(2, oldRecordMap.size());
+    // TODO (after merge) verify rowid is NOT present
+    assertNotNull(events.get(0).getNewRecordMap());
+    newRecordMap = new CaseInsensitiveHashMap<>(PageFlowUtil.mapFromQueryString(events.get(0).getNewRecordMap()));
+    assertFalse(newRecordMap.containsKey("lsid"));
+    assertEquals("Merged",newRecordMap.get("Measure"));
+    assertEquals("3.0", newRecordMap.get("Value"));
+    //map has (measure,value,genid,rowid)
+    //assertEquals(2, newRecordMap.size());
+/*
+
+
+
+    row.put("name", "TestSample");
+    row.put(vocabularyPropertyURIs.get(helper.typePropertyName), sampleType);
+    row.put(vocabularyPropertyURIs.get(helper.colorPropertyName), sampleColor);
+    row.put(vocabularyPropertyURIs.get(helper.agePropertyName), null); // inserting a property with null value
+    List<Map<String, Object>> rows = helper.buildRows(row);
+
+    var insertedSample = helper.insertRows(c, rows ,sampleName, schema);
+
+    assertEquals("Custom Property is not inserted", sampleType,
+            OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
+
+    //Verifying property with null value is not inserted
+    assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(helper.agePropertyName)).size());
+
+    //update inserted sample
+    ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+    rowToUpdate.put("name", "TestSample");
+    rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+    rowToUpdate.put(vocabularyPropertyURIs.get(helper.typePropertyName), updatedSampleType);
+    rowToUpdate.put(vocabularyPropertyURIs.get(helper.colorPropertyName), null); // nulling out existing property
+    rowToUpdate.put(vocabularyPropertyURIs.get(helper.agePropertyName), sampleAge); //inserting a new property in update rows
+    List<Map<String, Object>> rowsToUpdate = helper.buildRows(rowToUpdate);
+
+    List<Map<String, Object>> oldKeys = new ArrayList<>();
+    ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+    oldKey.put("name", "TestSample");
+    oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+    oldKeys.add(oldKey);
+
+    var updatedSample = helper.updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+    assertEquals("Custom Property is not updated", updatedSampleType,
+            OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.typePropertyName)).getStringValue());
+
+    //Verify property updated to a null value gets deleted
+    assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(helper.colorPropertyName)).size());
+
+    //Verify property inserted during update rows in inserted
+    assertEquals("New Property is not inserted with update rows", sampleAge,
+            OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(helper.agePropertyName)).getFloatValue().intValue());
+*/
 }
 %>
