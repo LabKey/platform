@@ -981,7 +981,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (staticsRow.containsKey(LSID))
                 event.setSampleLsid(String.valueOf(staticsRow.get(LSID)));
             if (staticsRow.containsKey(ROW_ID) && staticsRow.get(ROW_ID) != null)
-                event.setSampleId((Integer) row.get(ROW_ID));
+                event.setSampleId((Integer) staticsRow.get(ROW_ID));
             if (staticsRow.containsKey(NAME))
                 event.setSampleName(String.valueOf(staticsRow.get(NAME)));
         }
