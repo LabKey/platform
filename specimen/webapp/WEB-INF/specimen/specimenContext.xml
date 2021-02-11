@@ -6,9 +6,9 @@
     <bean id="specimenPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
         <property name="factoryImpls">
             <list>
-                <bean class="org.labkey.api.specimen.pipeline.StandaloneSpecimenTask$Factory"/>
-                <bean class="org.labkey.api.specimen.pipeline.SpecimenReloadTask$Factory"/>
-                <bean class="org.labkey.api.specimen.pipeline.FileAnalysisSpecimenTask$Factory"/>
+                <bean class="org.labkey.specimen.pipeline.StandaloneSpecimenTask$Factory"/>
+                <bean class="org.labkey.specimen.pipeline.SpecimenReloadTask$Factory"/>
+                <bean class="org.labkey.specimen.pipeline.FileAnalysisSpecimenTask$Factory"/>
             </list>
         </property>
 
@@ -20,7 +20,7 @@
                     <property name="taskProgressionSpec">
                         <list>
                             <bean id="standaloneSpecimenTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StandaloneSpecimenTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.specimen.pipeline.StandaloneSpecimenTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>
@@ -28,14 +28,14 @@
 
                 <!-- Specimen reload job pipeline -->
                 <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
-                    <constructor-arg type="java.lang.Class" value="org.labkey.api.specimen.pipeline.SpecimenReloadJob"/>
+                    <constructor-arg type="java.lang.Class" value="org.labkey.specimen.pipeline.SpecimenReloadJob"/>
                     <property name="taskProgressionSpec">
                         <list>
                             <bean id="importTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.SpecimenReloadTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.specimen.pipeline.SpecimenReloadTask</value></constructor-arg>
                             </bean>
                             <bean id="specimenReloadTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StandaloneSpecimenTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.specimen.pipeline.StandaloneSpecimenTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>
@@ -59,7 +59,7 @@
                     <property name="taskProgressionSpec">
                         <list>
                             <bean id="specimenImportTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.FileAnalysisSpecimenTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.specimen.pipeline.FileAnalysisSpecimenTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>

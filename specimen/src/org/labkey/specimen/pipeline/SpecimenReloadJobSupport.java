@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
-import org.labkey.api.annotations.Migrate;
+import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.SpecimenTransform;
 
 import java.io.File;
@@ -23,7 +23,6 @@ import java.io.File;
 /**
  * Created by klum on 5/24/2014.
  */
-@Migrate
 public interface SpecimenReloadJobSupport extends SpecimenJobSupport
 {
     void setSpecimenArchive(File archiveFile);

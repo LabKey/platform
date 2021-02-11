@@ -84,7 +84,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return support.getSpecimenArchive();
     }
 
-    SimpleStudyImportContext getImportContext(PipelineJob job)
+    protected SimpleStudyImportContext getImportContext(PipelineJob job)
     {
         return job.getJobSupport(SpecimenJobSupport.class).getImportContext();
     }
