@@ -17,7 +17,11 @@ package org.labkey.api.dataiterator;
 
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.remoteapi.query.Filter;
 
 import java.util.Collections;
@@ -56,7 +60,6 @@ public class CopyConfig
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
     protected boolean _bulkLoad;
-    protected int _transactionSize;
     protected int _batchSize;
     protected String _batchColumn = null;
     protected TargetOptions _targetOptions = TargetOptions.append;
@@ -104,6 +107,27 @@ public class CopyConfig
             else _targetString = getTargetSchema().toString() + "." + getTargetQuery();
         }
         return _targetString;
+    }
+
+    public void addSourceFilters(SimpleFilter filter)
+    {
+        if (getSourceFilters() != null)
+        {
+            for (Filter sourceFilter : getSourceFilters())
+            {
+                Filter.Operator operator = sourceFilter.getOperator();
+                if (operator == null)
+                {
+                    operator = Filter.Operator.EQUAL;
+                }
+                CompareType type = CompareType.getByURLKey(operator.getUrlKey());
+                if (type == null)
+                {
+                    throw new ConfigurationException("Unsupported filter type: " + sourceFilter.getOperator());
+                }
+                filter.addCondition(FieldKey.fromString(sourceFilter.getColumnName()), sourceFilter.getValue(), type);
+            }
+        }
     }
 
     public enum TargetOptions
