@@ -40,6 +40,7 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -63,6 +64,8 @@
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 
     final NavTree optionsMenu = PopupAdminView.createNavTree(context);
+    boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
+    boolean isSMHostedOnly = !hasPremiumModule && ModuleLoader.getInstance().hasModule("SampleManagement");
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
@@ -169,6 +172,46 @@
                 }(jQuery)
             </script>
 <%
+    }
+
+    // only show the product navigation menu item if we are on a premium LK server or LKSM hosted only
+    if (hasPremiumModule || isSMHostedOnly)
+    {
+%>
+            <li class="dropdown dropdown-rollup" id="headerProductDropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-th-large"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <div id="headerProductDropdown-content">
+                        <i class="fa fa-spinner fa-pulse"></i> Loading...
+                    </div>
+                </ul>
+            </li>
+            <script type="text/javascript">
+                +function($){
+                    // wait to load the product navigation dependencies until the header icon is clicked
+                    var productNavLoaded = false;
+                    $(document).on('click', '#headerProductDropdown .dropdown-toggle', function(e) {
+                        if (!productNavLoaded) {
+                            LABKEY.requiresScript(
+                                'core/gen/productNavigation',
+                                // 'http://localhost:3001/productNavigation.js',
+                            function () {
+                                LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', {}, true);
+                            });
+
+                            productNavLoaded = true;
+                        }
+                    });
+
+                    // stop the product navigation menu from closing when click within the menu div
+                    $(document).on('click', '#headerProductDropdown-content', function (e) {
+                        e.stopPropagation();
+                    });
+                }(jQuery)
+            </script>
+            <%
     }
 
     if (optionsMenu != null && optionsMenu.hasChildren())
