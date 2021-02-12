@@ -59,6 +59,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -947,8 +948,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         _findMap = _row.getFindMap();
                         for (int i=0 ; i<_columns.length ; i++)
                         {
-                            Integer I = _findMap.get(_columns[i].getColumnName());
-                            assert null != I && I==i;
+                            String columnName = _columns[i].getColumnName();
+                            Integer I = _findMap.get(columnName);
+                            assert null != I;
+                            // the found map index I should match the columns index.
+                            // UNLESS there are duplicate column names.  Someone else 'downstream' will (hopefully) sort that out
+                            assert I == i || Arrays.stream(_columns).anyMatch(col -> columnName.equalsIgnoreCase(col.getColumnName()));
                         }
                     }
                 }
