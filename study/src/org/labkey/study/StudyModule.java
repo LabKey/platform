@@ -35,6 +35,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -58,6 +59,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -456,6 +458,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
                 HashBag<String> specimenBag = new HashBag<>();
                 MutableInt requestsEnabled = new MutableInt(0);
+                MutableInt hasLocations = new MutableInt(0);
 
                 StudyManager.getInstance().getAllStudies().stream()
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), false))
@@ -482,6 +485,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         if (settings.isEnableRequests())
                             requestsEnabled.increment();
 
+                        TableInfo locations = schema.getTable(StudyQuerySchema.LOCATION_TABLE_NAME);
+                        long locationCount = new TableSelector(locations).getRowCount();
+                        specimenBag.add("locations", (int)locationCount);
+                        specimenBag.add("locationsInUse", (int)new TableSelector(locations, new SimpleFilter(FieldKey.fromParts("In Use"), true), null).getRowCount());
+                        if (locationCount > 0)
+                        {
+                            hasLocations.increment();
+                        }
+
                         LOG.debug(specimenBag.toString());
                     });
 
@@ -489,6 +501,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 Map<String, Object> requestsMap = new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT Label, COUNT(*) FROM study.SampleRequest INNER JOIN study.SampleRequestStatus srs ON StatusId = srs.RowId GROUP BY Label")).getValueMap();
                 requestsMap.put("enabled", requestsEnabled);
                 specimensMap.put("requests", requestsMap);
+                specimensMap.put("hasLocations", hasLocations.intValue());
 
                 metric.put("specimens", specimensMap);
 
