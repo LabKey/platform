@@ -23,6 +23,7 @@ import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
