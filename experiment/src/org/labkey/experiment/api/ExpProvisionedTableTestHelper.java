@@ -28,7 +28,7 @@ import java.util.Map;
 
 public class ExpProvisionedTableTestHelper
 {
-    protected static SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
+    public static final SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
 
     final User user = TestContext.get().getUser();
     public static final String agePropertyName = "Age";

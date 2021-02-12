@@ -524,7 +524,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         return Set.of(
             DomainPropertyImpl.TestCase.class,
-            ExpDataClassDataTestCase.class,
             ExpDataTableImpl.TestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
@@ -540,6 +539,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
     {
         ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpDataClassDataTestCase.jsp"));
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
         return list;
     }
