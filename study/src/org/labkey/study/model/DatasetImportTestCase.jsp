@@ -245,16 +245,16 @@ public void test() throws Throwable
     try
     {
         createStudy();
-//        _testImportDatasetData(_studyDateBased);
-//        _testDatasetUpdateService(_studyDateBased);
+        _testImportDatasetData(_studyDateBased);
+        _testDatasetUpdateService(_studyDateBased);
         _testDatasetDetailedLogging(_studyDateBased);
-//        _testDaysSinceStartCalculation(_studyDateBased);
-//        _testImportDemographicDatasetData(_studyDateBased);
-//        _testImportDemographicDatasetData(_studyVisitBased);
-//        _testImportDatasetData(_studyVisitBased);
-//        _testImportDatasetDataAllowImportGuid(_studyDateBased);
-//        _testDatasetTransformExport(_studyDateBased);
-//        testDatasetSubcategory();
+        _testDaysSinceStartCalculation(_studyDateBased);
+        _testImportDemographicDatasetData(_studyDateBased);
+        _testImportDemographicDatasetData(_studyVisitBased);
+        _testImportDatasetData(_studyVisitBased);
+        _testImportDatasetDataAllowImportGuid(_studyDateBased);
+        _testDatasetTransformExport(_studyDateBased);
+        testDatasetSubcategory();
 // TODO VisitBased
 //        _testDatasetUpdateService(_studyVisitBased);
     }
