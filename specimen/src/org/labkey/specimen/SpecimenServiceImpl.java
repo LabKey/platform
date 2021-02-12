@@ -43,6 +43,7 @@ import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -259,7 +260,7 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
-    public ActionURL getCompletionURL(Container studyContainer, SpecimenService.CompletionType type)
+    public ActionURL getCompletionURL(Container studyContainer, CompletionType type)
     {
         if (studyContainer == null)
             return null;

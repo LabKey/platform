@@ -76,8 +76,8 @@ import org.labkey.api.specimen.model.LocationDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudySerializationRegistry;
@@ -97,7 +97,6 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UsageReportingLevel;
-import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
@@ -298,8 +297,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
-        EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
-
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
         AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
@@ -406,7 +403,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
-        SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
+        if (null != SpecimenService.get())
+            SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
         SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 

@@ -140,21 +140,6 @@ public interface SpecimenService
         HtmlString getSubmittedMessage(Container c, int requestId);
     }
 
-    interface SampleInfo
-    {
-        String getParticipantId();
-        Double getSequenceNum();
-        String getSampleId();
-    }
-
-    enum CompletionType
-    {
-        SpecimenGlobalUniqueId,
-        ParticipantId,
-        VisitId,
-        LabId
-    }
-
     @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)
     void fireSpecimensChanged(Container c, User user, Logger logger);
 }

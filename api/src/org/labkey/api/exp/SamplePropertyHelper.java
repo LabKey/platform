@@ -34,6 +34,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.InsertView;
@@ -148,11 +149,11 @@ public abstract class SamplePropertyHelper<ObjectType>
                     if (targetStudy != null && targetStudy.hasPermission(defaultValueContext.getUser(), ReadPermission.class))
                     {
                         if (sampleProperty.getName().equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME))
-                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, SpecimenService.CompletionType.ParticipantId);
+                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, CompletionType.ParticipantId);
                         else if (sampleProperty.getName().equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME))
-                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, SpecimenService.CompletionType.SpecimenGlobalUniqueId);
+                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, CompletionType.SpecimenGlobalUniqueId);
                         else if (sampleProperty.getName().equals(AbstractAssayProvider.VISITID_PROPERTY_NAME))
-                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, SpecimenService.CompletionType.VisitId);
+                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, CompletionType.VisitId);
                     }
                 }
                 var col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user, view.getViewContext().getContainer());

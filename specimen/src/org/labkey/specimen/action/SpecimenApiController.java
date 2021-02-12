@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
@@ -499,7 +498,7 @@ public class SpecimenApiController extends SpringActionController
 
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
-    @Migrate // TODO: Rename and adjust LABKEY.Specimen.AddSamplesToRequest() in labkey-api-js, then remove @ActionNames annotation
+    // labkey-js-api now calls addSpecimensToRequest.api, but older versions still call addSamplesToRequest.api
     @ActionNames("addSpecimensToRequest,addSamplesToRequest")
     public class AddSpecimensToRequestAction extends MutatingApiAction<AddSpecimensToRequestForm>
     {

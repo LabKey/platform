@@ -27,7 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.CompletionType;
 import org.labkey.api.view.AjaxCompletion;
 import org.springframework.validation.BindException;
 
@@ -48,23 +48,23 @@ public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.Aut
         String column;
         TableInfo tinfo;
         boolean hasContainerColumn = true;
-        if (SpecimenService.CompletionType.ParticipantId.name().equals(form.getType()))
+        if (CompletionType.ParticipantId.name().equals(form.getType()))
         {
             tinfo = SpecimenSchema.get().getTableInfoParticipantVisit();
             column = "ParticipantId";
         }
-        else if (SpecimenService.CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
+        else if (CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
         {
             tinfo = SpecimenSchema.get().getTableInfoVial(container);
             column = "GlobalUniqueId";
             hasContainerColumn = false;
         }
-        else if (SpecimenService.CompletionType.VisitId.name().equals(form.getType()))
+        else if (CompletionType.VisitId.name().equals(form.getType()))
         {
             tinfo = SpecimenSchema.get().getTableInfoParticipantVisit();
             column = "SequenceNum";
         }
-        else if (SpecimenService.CompletionType.LabId.name().equals(form.getType()))
+        else if (CompletionType.LabId.name().equals(form.getType()))
         {
             tinfo = SpecimenSchema.get().getTableInfoLocation(container);
             column = "Label";

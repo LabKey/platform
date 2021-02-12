@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory.DataType" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.CompletionType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -38,7 +39,7 @@
     Container c = getContainer();
     ActionURL postUrl = bean.getCustomizePostURL(ctx);
     String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
-    ActionURL ptidCompletionBase = SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.ParticipantId);
+    ActionURL ptidCompletionBase = SpecimenService.get().getCompletionURL(c, CompletionType.ParticipantId);
 
     String selectedData = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.DATA_TYPE_KEY);
     if (selectedData == null)
