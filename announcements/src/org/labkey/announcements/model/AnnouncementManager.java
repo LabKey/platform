@@ -341,7 +341,8 @@ public class AnnouncementManager
 
         if (toList.isEmpty())
         {
-            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'all' messages in this folder: " + c.getPath());
+            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
+
         }
         else
         {
