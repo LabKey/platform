@@ -1405,9 +1405,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            StudyPropertiesQueryView propView = new StudyPropertiesQueryView(getUser(), getStudyRedirectIfNull(), HttpView.currentContext(), true);
-
-            return new StudyJspView<>(getStudy(), "manageStudy.jsp", propView, errors);
+            return new StudyJspView<>(getStudy(), "manageStudy.jsp", null, errors);
         }
 
         @Override

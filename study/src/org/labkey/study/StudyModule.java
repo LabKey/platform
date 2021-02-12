@@ -68,6 +68,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
@@ -300,6 +301,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
         AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
+
+        // Register so all administrators get this permission
+        RoleManager.registerPermission(new ManageStudyPermission());
     }
 
     @Override
