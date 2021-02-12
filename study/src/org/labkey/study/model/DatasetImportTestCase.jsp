@@ -72,6 +72,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="static org.labkey.study.model.StudyManager.TEST_LOGGER" %>
 <%@ page import="static org.labkey.study.dataset.DatasetAuditProvider.DATASET_AUDIT_EVENT" %>
+<%@ page import="org.labkey.study.StudyFolderType" %>
+<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 
@@ -91,6 +93,7 @@ public void createStudy()
     {
         String name = GUID.makeHash();
         Container c = ContainerManager.createContainer(junit, name);
+        c.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), _context.getUser());
         StudyImpl s = new StudyImpl(c, "Junit Study");
         s.setTimepointType(TimepointType.DATE);
         s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
@@ -247,7 +250,6 @@ public void test() throws Throwable
         createStudy();
         _testImportDatasetData(_studyDateBased);
         _testDatasetUpdateService(_studyDateBased);
-        _testDatasetDetailedLogging(_studyDateBased);
         _testDaysSinceStartCalculation(_studyDateBased);
         _testImportDemographicDatasetData(_studyDateBased);
         _testImportDemographicDatasetData(_studyVisitBased);
@@ -257,6 +259,7 @@ public void test() throws Throwable
         testDatasetSubcategory();
 // TODO VisitBased
 //        _testDatasetUpdateService(_studyVisitBased);
+        _testDatasetDetailedLogging(_studyDateBased);
     }
     catch (BatchValidationException x)
     {
@@ -267,7 +270,7 @@ public void test() throws Throwable
     }
     finally
     {
-        tearDown();
+//        tearDown();
     }
 }
 
@@ -831,7 +834,7 @@ private void _testDaysSinceStartCalculation(Study study) throws Throwable
     }
 }
 
-private void _testDatasetTransformExport(Study study) throws Throwable
+private void  _testDatasetTransformExport(Study study) throws Throwable
 {
     // create a dataset
     StudyQuerySchema ss = StudyQuerySchema.createSchema((StudyImpl) study, _context.getUser(), false);
@@ -864,7 +867,7 @@ private void _testDatasetTransformExport(Study study) throws Throwable
 
     String alternateId = null;
 
-    try (ResultSet rs = QueryService.get().select(participantTableInfo, cols, null, null))
+    try (ResultSet rs = QueryService.get().select(participantTableInfo, cols, SimpleFilter.createContainerFilter(study.getContainer()), null))
     {
         // store the ptid date offset and alternate ID for verification later
         int dateOffset = -1;
