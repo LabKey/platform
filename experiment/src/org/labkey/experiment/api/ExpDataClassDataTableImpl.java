@@ -622,6 +622,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public DataClassDataUpdateService(ExpDataClassDataTableImpl table)
         {
             super(table, table.getRealTable());
+            // Note that this class actually overrides createImportDIB(), so currently we're not looking at this flag.
+            _enableExistingRecordsDataIterator = false;
         }
 
         @Override
@@ -844,8 +846,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
-            DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, getQueryTable(), Set.of(ExpDataTable.Column.LSID.toString()));
-            DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(existing, context);
+            DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(standard, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,
                     container, getAttachmentParentFactory(), FieldKey.fromParts(Column.LSID));
             dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);

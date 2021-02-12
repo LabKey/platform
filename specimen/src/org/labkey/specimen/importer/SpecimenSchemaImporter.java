@@ -98,7 +98,11 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
             try
             {
                 VirtualFile specimenDir = ctx.getRoot().getDir(specimens.getDir());
-                if (null != specimenDir && null != specimens.getFile())
+                // Second check fails for the publish study case, since we don't create a zipped archive inside of the
+                // MemoryVirtualFile. During specimen migration, it was convenient to move calling of this method to
+                // process(), but that meant the check started to be called (and failed) in the publish case... which
+                // meant no custom columns.
+                if (null != specimenDir) // && null != specimens.getFile())
                 {
                     XmlObject schemaXml = specimenDir.getXmlBean(SpecimenArchiveDataTypes.SCHEMA_FILENAME);
                     return (schemaXml instanceof TablesDocument);
