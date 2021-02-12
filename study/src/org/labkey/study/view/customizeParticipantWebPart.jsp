@@ -17,8 +17,9 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
+<%@ page import="org.labkey.api.study.CompletionType" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -29,7 +30,6 @@
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory.DataType" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.CompletionType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -39,7 +39,7 @@
     Container c = getContainer();
     ActionURL postUrl = bean.getCustomizePostURL(ctx);
     String participantId = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY);
-    ActionURL ptidCompletionBase = SpecimenService.get().getCompletionURL(c, CompletionType.ParticipantId);
+    ActionURL ptidCompletionBase = urlProvider(StudyUrls.class).getCompletionURL(c, CompletionType.ParticipantId);
 
     String selectedData = bean.getPropertyMap().get(SubjectDetailsWebPartFactory.DATA_TYPE_KEY);
     if (selectedData == null)

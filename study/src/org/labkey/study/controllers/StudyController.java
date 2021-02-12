@@ -141,6 +141,7 @@ import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -259,7 +260,8 @@ public class StudyController extends BaseStudyController
 
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(
         StudyController.class,
-        CreateChildStudyAction.class
+        CreateChildStudyAction.class,
+        AutoCompleteAction.class
     );
 
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
@@ -267,6 +269,18 @@ public class StudyController extends BaseStudyController
 
     public static class StudyUrlsImpl implements StudyUrls
     {
+        @Override
+        public ActionURL getCompletionURL(Container studyContainer, CompletionType type)
+        {
+            if (studyContainer == null)
+                return null;
+
+            ActionURL url = new ActionURL(AutoCompleteAction.class, studyContainer);
+            url.addParameter("type", type.name());
+            url.addParameter("prefix", "");
+            return url;
+        }
+
         @Override
         public ActionURL getCreateStudyURL(Container container)
         {

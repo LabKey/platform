@@ -66,8 +66,6 @@ public interface SpecimenService
 
     Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
 
-    ActionURL getCompletionURL(Container studyContainer, CompletionType type);
-
     Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
 
     Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;

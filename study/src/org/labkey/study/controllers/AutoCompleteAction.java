@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.actions;
+package org.labkey.study.controllers;
 
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -29,6 +29,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.view.AjaxCompletion;
+import org.labkey.study.StudySchema;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.Aut
         boolean hasContainerColumn = true;
         if (CompletionType.ParticipantId.name().equals(form.getType()))
         {
-            tinfo = SpecimenSchema.get().getTableInfoParticipantVisit();
+            tinfo = StudySchema.getInstance().getTableInfoParticipantVisit();
             column = "ParticipantId";
         }
         else if (CompletionType.SpecimenGlobalUniqueId.name().equals(form.getType()))
@@ -61,7 +62,7 @@ public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.Aut
         }
         else if (CompletionType.VisitId.name().equals(form.getType()))
         {
-            tinfo = SpecimenSchema.get().getTableInfoParticipantVisit();
+            tinfo = StudySchema.getInstance().getTableInfoParticipantVisit();
             column = "SequenceNum";
         }
         else if (CompletionType.LabId.name().equals(form.getType()))

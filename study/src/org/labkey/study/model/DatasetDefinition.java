@@ -103,15 +103,16 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -1216,7 +1217,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         public AutoCompleteDisplayColumnFactory(Container studyContainer, CompletionType type)
         {
-            _completionBase = SpecimenService.get().getCompletionURL(studyContainer, type);
+            _completionBase = PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(studyContainer, type);
         }
 
         @Override
