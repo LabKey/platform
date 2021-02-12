@@ -17,13 +17,14 @@
 package org.labkey.specimen;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
@@ -62,7 +63,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class SpecimenModule extends CodeOnlyModule
+public class SpecimenModule extends SpringModule
 {
     public static final String NAME = "Specimen";
 
@@ -82,6 +83,18 @@ public class SpecimenModule extends CodeOnlyModule
             new SpecimenWebPartFactory(),
             new SpecimenReportWebPartFactory()
         );
+    }
+
+    @Override
+    public @Nullable Double getSchemaVersion()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean hasScripts()
+    {
+        return false;
     }
 
     @Override
@@ -108,7 +121,7 @@ public class SpecimenModule extends CodeOnlyModule
     }
 
     @Override
-    public void doStartup(ModuleContext moduleContext)
+    protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(SpecimenRequestManager.get());
 
@@ -143,6 +156,12 @@ public class SpecimenModule extends CodeOnlyModule
             SpecimenWriter.TestCase.class,
             SampleMindedTransformTask.TestCase.class
         );
+    }
+
+    @Override
+    public @NotNull Collection<String> getSchemaNames()
+    {
+        return Set.of();
     }
 
     @Override

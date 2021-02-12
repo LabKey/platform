@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
+import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.SpecimenTransform;
 
 import java.io.File;
