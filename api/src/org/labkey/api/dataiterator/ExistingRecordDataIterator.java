@@ -111,8 +111,6 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
-        if (pkColumns.size() > 1)
-            throw new UnsupportedOperationException("NYI");
         currentExistingRecord = null;
         boolean ret = super.next();
         if (ret && !pkColumns.isEmpty())
