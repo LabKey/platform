@@ -1504,8 +1504,8 @@ public abstract class Method
         addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
         addJsonPassthroughMethod("strip_nulls", JdbcType.OTHER, 1, 1);
 
-        QueryService.get().registerPassthroughMethod("jsonb_set", null, JdbcType.OTHER, 3, 4);
-        QueryService.get().registerPassthroughMethod("jsonb_pretty", null, JdbcType.VARCHAR, 1, 1);
+        postgresMethods.put("jsonb_set", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_pretty", new PassthroughMethod("jsonb_pretty", JdbcType.VARCHAR, 1, 1));
     }
 
     private static void addJsonPassthroughMethod(String name, JdbcType type, int minArgs, int maxArgs)
