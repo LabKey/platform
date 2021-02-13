@@ -81,6 +81,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.AbstractDeleteQCStateAction;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
@@ -125,6 +126,7 @@ import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -7758,6 +7760,36 @@ public class StudyController extends BaseStudyController
             {
                 _params.add(new Pair<>(entry.getKey(), String.valueOf(entry.getValue())));
             }
+        }
+    }
+
+    // Hidden action that allows re-running of the specimen module enabling upgrade process. Could be useful on
+    // deployments that add the specimen module after the original upgrade runs.
+    @RequiresSiteAdmin
+    public static class EnableSpecimenModuleAction extends ConfirmAction<Object>
+    {
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors)
+        {
+            return new HtmlView(HtmlString.of("Are you sure you want to enable the specimen module in all study folders that have specimen rows?"));
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            StudyManager.getInstance().enableSpecimenModuleInStudyFolders(getUser());
+            return true;
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return urlProvider(ProjectUrls.class).getBeginURL(getContainer());
         }
     }
 }
