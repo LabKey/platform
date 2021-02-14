@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -53,6 +54,10 @@ public interface AssayPublishService
 
     String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
     String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
+
+    // auto copy to study target which defaults to the study in the folder the import occurs, using the shared folder
+    // which should be safe from collisions since we don't allow assay creation there
+    Container AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER = ContainerManager.getSharedContainer();
 
     static void setInstance(AssayPublishService serviceImpl)
     {
