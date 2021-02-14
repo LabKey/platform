@@ -23,9 +23,11 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -59,6 +61,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
+import org.springframework.util.StringUtils;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -68,6 +71,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 
 /**
  *
@@ -83,7 +90,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
 
     public enum Options {
-        SkipDerivation
+        SkipDerivation,
+        SkipAliquot
     }
 
 
@@ -218,6 +226,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         TableInfo d = getDbTable();
         TableInfo t = _sampleType.getTinfo();
 
+        //TODO ?
         SQLFragment sql = new SQLFragment()
                 .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                 .append(" FROM ").append(d, "d")
@@ -229,6 +238,28 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new SqlSelector(getDbTable().getSchema(), sql).getMap();
     }
 
+    public Set<String> getAliquotSpecificFields()
+    {
+        Domain domain = getDomain();
+        Set<String> fields = domain.getProperties().stream()
+                .filter(dp -> "AliquotOnly".equalsIgnoreCase(dp.getMaterialPropertyType()))
+                .map(ImportAliasable::getName)
+                .collect(Collectors.toSet());
+
+        return new CaseInsensitiveHashSet(fields);
+    }
+
+    public Set<String> getSampleMetaFields()
+    {
+        Domain domain = getDomain();
+        Set<String> fields = domain.getProperties().stream()
+                .filter(dp -> !"AliquotOnly".equalsIgnoreCase(dp.getMaterialPropertyType()))
+                .map(ImportAliasable::getName)
+                .collect(Collectors.toSet());
+
+        return new CaseInsensitiveHashSet(fields);
+    }
+
     @Override
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
@@ -237,20 +268,53 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (lsid == null)
             throw new ValidationException("lsid required to update row");
 
+        String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
+        boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
+        Set<String> aliquotFields = getAliquotSpecificFields();
+        Set<String> sampleMetaFields = getSampleMetaFields();
+
         // Replace attachment columns with filename and keep AttachmentFiles
         Map<String, Object> rowCopy = new CaseInsensitiveHashMap<>();
 
+        // remove aliquotedFrom from row, or error out
         rowCopy.putAll(row);
+        String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
+        if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
+            throw new ValidationException("Updating aliquotedFrom is not supported");
+
+        rowCopy.remove(AliquotedFromLSID.name());
+        rowCopy.remove(RootMaterialLSID.name());
+
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
-        // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
+        Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
+        for (String updateField : rowCopy.keySet())
+        {
+            Object updateValue = rowCopy.get(updateField);
+            boolean isAliquotField = aliquotFields.contains(updateField);
+            boolean isSampleMetaField = sampleMetaFields.contains(updateField);
+
+            if ((isAliquot && isAliquotField) || (!isAliquot && isSampleMetaField))
+            {
+                validRowCopy.put(updateField, updateValue);
+            }
+            else if (isAliquot && isSampleMetaField) //TODO check for null?
+            {
+                LOG.warn("Sample metadata update has been skipped for an aliquot");
+            }
+            else if (!isAliquot && isAliquotField)
+            {
+                LOG.warn("Aliquot specific field update has been skipped for a sample.");
+            }
+        }
+
         keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        convertTypes(c, rowCopy, t, "sampleset");
-        if (t.getColumnNameSet().stream().anyMatch(rowCopy::containsKey))
+        convertTypes(c, validRowCopy, t, "sampleset");
+        if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {
-            ret.putAll(Table.update(user, t, rowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
+            ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
         }
 
         // update comment

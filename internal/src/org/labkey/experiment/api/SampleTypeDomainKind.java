@@ -90,6 +90,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
+        RESERVED_NAMES.add("AliquotedFrom");
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate

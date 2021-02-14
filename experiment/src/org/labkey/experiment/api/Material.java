@@ -29,9 +29,32 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
  */
 public class Material extends RunItem
 {
+    private String rootMaterialLSID;
+    private String aliquotedFromLSID;
+
     public Material()
     {
         setCpasType(ExpMaterial.DEFAULT_CPAS_TYPE);
+    }
+
+    public String getRootMaterialLSID()
+    {
+        return rootMaterialLSID;
+    }
+
+    public void setRootMaterialLSID(String rootMaterialLSID)
+    {
+        this.rootMaterialLSID = rootMaterialLSID;
+    }
+
+    public String getAliquotedFromLSID()
+    {
+        return aliquotedFromLSID;
+    }
+
+    public void setAliquotedFromLSID(String aliquotedFromLSID)
+    {
+        this.aliquotedFromLSID = aliquotedFromLSID;
     }
 
     @Override

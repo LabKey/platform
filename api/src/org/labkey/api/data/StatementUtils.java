@@ -900,7 +900,7 @@ public class StatementUtils
         // ObjectProperty
         //
 
-        if (!properties.isEmpty())
+        if (!properties.isEmpty()) //TODO skip aliquot vs non aliquot fields
         {
             Set<String> skip = updatable.skipProperties();
             if (null != skip)

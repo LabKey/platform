@@ -66,6 +66,7 @@ import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Tuple3;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
@@ -75,6 +76,7 @@ import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -215,7 +217,9 @@ public abstract class UploadSamplesHelper
                               Map<ExpMaterial, String> parentMaterialMap,
                               Map<ExpMaterial, String> childMaterialMap,
                               Map<ExpData, String> parentDataMap,
-                              Map<ExpData, String> childDataMap)
+                              Map<ExpData, String> childDataMap,
+                              ExpMaterial aliquotParent,
+                              ExpMaterial aliquotChild)
     {
         if (merge)
         {
@@ -225,7 +229,12 @@ public abstract class UploadSamplesHelper
             // find existing RunRecord with the same set of parents and add output children to it
             for (UploadSampleRunRecord record : runRecords)
             {
-                if (record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
+                if (record._aliquotInput != null && record._aliquotInput.equals(aliquotParent))
+                {
+                    record._aliquotOutputs.add(aliquotChild);
+                    return;
+                }
+                else if (record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
                 {
                     if (record._outputMaterial.isEmpty())
                         record._outputMaterial = childMaterialMap;
@@ -242,7 +251,14 @@ public abstract class UploadSamplesHelper
         }
 
         // otherwise, create new run record
-        runRecords.add(new UploadSampleRunRecord(parentMaterialMap, childMaterialMap, parentDataMap, childDataMap));
+        List<ExpMaterial> aliquots = null;
+        if (aliquotChild != null)
+        {
+            aliquots = new LinkedList<>();
+            aliquots.add(aliquotChild);
+        }
+
+        runRecords.add(new UploadSampleRunRecord(parentMaterialMap, childMaterialMap, parentDataMap, childDataMap, aliquotParent, aliquots));
     }
 
     public static class UploadSampleRunRecord implements SimpleRunRecord
@@ -252,13 +268,19 @@ public abstract class UploadSamplesHelper
         Map<ExpData, String> _inputData;
         Map<ExpData, String> _outputData;
 
+        ExpMaterial _aliquotInput;
+        List<ExpMaterial> _aliquotOutputs;
+
         public UploadSampleRunRecord(Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial,
-                                     Map<ExpData, String> inputData, Map<ExpData, String> outputData)
+                                     Map<ExpData, String> inputData, Map<ExpData, String> outputData,
+                                     ExpMaterial aliquotInput, List<ExpMaterial> aliquotChildren)
         {
             _inputMaterial = inputMaterial;
             _outputMaterial = outputMaterial;
             _inputData = inputData;
             _outputData = outputData;
+            _aliquotInput = aliquotInput;
+            _aliquotOutputs = aliquotChildren;
         }
 
         @Override
@@ -284,6 +306,19 @@ public abstract class UploadSamplesHelper
         {
             return _outputData;
         }
+
+        @Override
+        public ExpMaterial getAliquotInput()
+        {
+            return _aliquotInput;
+        }
+
+        @Override
+        public List<ExpMaterial> getAliquotOutputs()
+        {
+            return _aliquotOutputs;
+        }
+
     }
 
     /**
@@ -304,7 +339,9 @@ public abstract class UploadSamplesHelper
                                                                                        Map<Integer, ExpMaterial> materialMap,
                                                                                        Map<Integer, ExpData> dataMap,
                                                                                        Map<String, ExpSampleType> sampleTypes,
-                                                                                       Map<String, ExpDataClass> dataClasses)
+                                                                                       Map<String, ExpDataClass> dataClasses,
+                                                                                       @Nullable String aliquotedFrom,
+                                                                                       String dataType /*sample type or source type name*/)
             throws ValidationException, ExperimentException
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
@@ -315,6 +352,24 @@ public abstract class UploadSamplesHelper
         Map<ExpMaterial, String> childMaterials = new HashMap<>();
         Map<ExpData, String> childData = new HashMap<>();
         boolean isMerge = runItem != null;
+
+        ExpMaterial aliquotParent = null;
+        boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
+        if (isAliquot)
+        {
+            ExpSampleType sampleType = sampleTypes.computeIfAbsent(dataType, (name) -> SampleTypeService.get().getSampleType(c, user, name));
+            if (sampleType == null)
+                throw new ValidationException("Invalid sample type: " + dataType);
+
+            aliquotParent = findMaterial(c, user, sampleType, dataType, aliquotedFrom, cache, materialMap);
+
+            if (aliquotParent == null)
+            {
+                String message = "Aliquot parent '" + aliquotedFrom + "' not found";
+                throw new ValidationException(message);
+            }
+        }
 
         for (Pair<String, String> pair : parentNames)
         {
@@ -329,6 +384,12 @@ public abstract class UploadSamplesHelper
                 {
                     if (!isEmptyParent)
                     {
+                        if (!isAliquot)
+                        {
+                            String message = "Sample derivation parent input not allowed for aliquot";
+                            throw new ValidationException(message);
+                        }
+
                         ExpMaterial sample = findMaterial(c, user, null, null, parentValue, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
@@ -351,11 +412,17 @@ public abstract class UploadSamplesHelper
 
                     if (isEmptyParent)
                     {
-                        if (isMerge)
+                        if (isMerge && !isAliquot)
                             parentSampleTypesToRemove.add(namePart);
                     }
                     else
                     {
+                        if (!isAliquot)
+                        {
+                            String message = "Sample derivation parent input not allowed for aliquot";
+                            throw new ValidationException(message);
+                        }
+
                         ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
@@ -374,7 +441,15 @@ public abstract class UploadSamplesHelper
                     {
                         ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
                         if (sample != null)
-                            childMaterials.put(sample, sampleRole(sample));
+                        {
+                            if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))
+                                childMaterials.put(sample, sampleRole(sample));
+                            else
+                            {
+                                String message = "Sample derivation output not allowed for aliquot";
+                                throw new ValidationException(message);
+                            }
+                        }
                         else
                             throw new ValidationException("Sample output '" + parentValue + "' in SampleType '" + namePart + "' not found");
                     }
@@ -441,25 +516,51 @@ public abstract class UploadSamplesHelper
             }
             if (currentParents.second != null)
             {
+                boolean isExistingAliquot = false;
+                if (runItem instanceof ExpMaterial)
+                {
+                    ExpMaterial currentMaterial = (ExpMaterial) runItem;
+                    isExistingAliquot = !StringUtils.isEmpty(currentMaterial.getAliquotedFromLSID());
+
+                    if (isExistingAliquot && !isAliquot)
+                        throw new ValidationException("TODO");
+                    else if (!isExistingAliquot && isAliquot)
+                        throw new ValidationException("TODO");
+                    else if (isExistingAliquot && !currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID()))
+                        throw new ValidationException("Aliquot parent cannot be updated");
+                }
+
                 Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
-                currentParents.second.forEach((materialParent) -> {
-                    ExpSampleType sampleType = materialParent.getSampleType();
-                    String role = sampleRole(materialParent);
-                    if (sampleType != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
-                        existingParentMaterials.put(materialParent, role);
-                });
-                parentMaterials.putAll(existingParentMaterials);
+                if (isExistingAliquot && currentParents.second.size() != 1)
+                {
+                    if (currentParents.second.size() == 0)
+                        throw new ValidationException("Unable to find aliquot parent for " + runItem.getName());
+                    else
+                        throw new ValidationException("Invalid parents for aliquot: " + runItem.getName());
+                }
+
+                if (!isAliquot)
+                {
+                    for (ExpMaterial materialParent : currentParents.second)
+                    {
+                        ExpSampleType sampleType = materialParent.getSampleType();
+                        String role = sampleRole(materialParent);
+                        if (sampleType != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
+                            existingParentMaterials.put(materialParent, role);
+                    }
+                    parentMaterials.putAll(existingParentMaterials);
+                }
             }
         }
 
         RunInputOutputBean parents = null;
 
-        if (!parentMaterials.isEmpty() || !parentData.isEmpty() || !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty())
-            parents = new RunInputOutputBean(parentMaterials, parentData, !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty());
+        if (!parentMaterials.isEmpty() || !parentData.isEmpty() || !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty() || aliquotParent != null)
+            parents = new RunInputOutputBean(parentMaterials, parentData, aliquotParent, !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty());
 
         RunInputOutputBean children = null;
         if (!childMaterials.isEmpty() || !childData.isEmpty())
-            children = new RunInputOutputBean(childMaterials, childData);
+            children = new RunInputOutputBean(childMaterials, childData, null);
 
         return Pair.of(parents, children);
     }

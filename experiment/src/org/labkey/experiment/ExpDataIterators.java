@@ -51,6 +51,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
@@ -413,6 +414,8 @@ public class ExpDataIterators
         final DataIteratorContext _context;
         final Integer _lsidCol;
         final Map<Integer, String> _parentCols;
+        final Integer _aliquotParentCol;
+        final Map<String, String> _aliquotParents;
         // Map from Data LSID to Set of (parentColName, parentName)
         final Map<String, Set<Pair<String, String>>> _parentNames;
         /** Cache sample type lookups because even though we do caching in SampleTypeService, it's still a lot of overhead to check permissions for the user */
@@ -433,9 +436,11 @@ public class ExpDataIterators
             _lsidCol = map.get("lsid");
             _parentNames = new LinkedHashMap<>();
             _parentCols = new HashMap<>();
+            _aliquotParents = new LinkedHashMap<>();
             _container = container;
             _user = user;
 
+            Integer aliquotParentCol = -1;
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
@@ -443,7 +448,13 @@ public class ExpDataIterators
                 {
                     _parentCols.put(entry.getValue(), entry.getKey());
                 }
+                else if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
+                {
+                    aliquotParentCol = entry.getValue();
+                }
             }
+
+            _aliquotParentCol = aliquotParentCol;
         }
 
         private BatchValidationException getErrors()
@@ -461,9 +472,33 @@ public class ExpDataIterators
                 return hasNext;
 
             // For each iteration, collect the parent col values
-            if (hasNext && !_parentCols.isEmpty())
+            if (hasNext && (!_parentCols.isEmpty() || _aliquotParentCol > -1))
             {
                 String lsid = (String) get(_lsidCol);
+                if (_aliquotParentCol > -1)
+                {
+                    Object o = get(_aliquotParentCol);
+                    if (o != null)
+                    {
+                        String aliquotParentName = null;
+                        if (o instanceof String)
+                        {
+                            aliquotParentName = (String) o;
+                        }
+                        else if (o instanceof Number)
+                        {
+                            aliquotParentName = o.toString();
+                        }
+                        else
+                        {
+                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, "AliquotedFrom"));
+                        }
+
+                        if (aliquotParentName != null)
+                            _aliquotParents.put(lsid, aliquotParentName);
+                    }
+                }
+
                 Set<Pair<String, String>> allParts = new HashSet<>();
                 for (Integer parentCol : _parentCols.keySet())
                 {
@@ -525,12 +560,16 @@ public class ExpDataIterators
                     Map<Integer, ExpData> dataCache = new HashMap<>();
 
                     List<UploadSamplesHelper.UploadSampleRunRecord> runRecords = new ArrayList<>();
-                    for (Map.Entry<String, Set<Pair<String, String>>> entry : _parentNames.entrySet())
+                    Set<String> lsids = new HashSet<>();
+                    lsids.addAll(_parentNames.keySet());
+                    lsids.addAll(_aliquotParents.keySet());
+                    for (String lsid : lsids)
                     {
-                        String lsid = entry.getKey();
-                        Set<Pair<String, String>> parentNames = entry.getValue();
+                        Set<Pair<String, String>> parentNames = _parentNames.containsKey(lsid) ? _parentNames.get(lsid) : Collections.emptySet();
 
                         ExpRunItem runItem;
+                        String aliquotedFrom = _aliquotParents.get(lsid);
+                        String dataType = null;
                         if (_isSample)
                         {
                             ExpMaterial m = ExperimentService.get().getExpMaterial(lsid);
@@ -539,6 +578,7 @@ public class ExpDataIterators
                                 materialCache.put(m.getRowId(), m);
                             }
                             runItem = m;
+                            dataType = m.getSampleType().getName();
                         }
                         else
                         {
@@ -552,17 +592,19 @@ public class ExpDataIterators
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
+                        // if is sample aliquot, and if input present, throw error
+
                         Pair<RunInputOutputBean, RunInputOutputBean> pair;
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses);
+                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
 
                         }
                         else
                         {
                             pair = UploadSamplesHelper.resolveInputsAndOutputs(
-                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses);
+                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache, _sampleTypes, _dataClasses, aliquotedFrom, dataType);
 
                         }
 
@@ -576,6 +618,7 @@ public class ExpDataIterators
                         }
                         else
                         {
+                            ExpMaterial currentMaterial = null;
                             Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
                             
                             Map<ExpData, String> currentDataMap = Collections.emptyMap();
@@ -590,6 +633,7 @@ public class ExpDataIterators
                                     UploadSamplesHelper.clearSampleSourceRun(_user, sample);
                                 }
                                 currentMaterialMap = new HashMap<>();
+                                currentMaterial = sample;
                                 currentMaterialMap.put(sample, UploadSamplesHelper.sampleRole(sample));
                             }
                             else
@@ -606,7 +650,7 @@ public class ExpDataIterators
 
                                 UploadSamplesHelper.record(_isSample, runRecords,
                                         parentMaterialMap, currentMaterialMap,
-                                        parentDataMap, currentDataMap);
+                                        parentDataMap, currentDataMap, pair.first.getAliquotParent(), currentMaterial);
                             }
 
                             if (pair.second != null)
@@ -617,7 +661,7 @@ public class ExpDataIterators
 
                                 UploadSamplesHelper.record(false, runRecords,
                                         currentMaterialMap, childMaterialMap,
-                                        currentDataMap, childDataMap);
+                                        currentDataMap, childDataMap, null, null);
                             }
                         }
                     }
@@ -775,7 +819,13 @@ public class ExpDataIterators
         }
     }
 
-    public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(ExpDataTable.Column.LSID.toString(), ExpDataTable.Column.Created.toString(), ExpDataTable.Column.CreatedBy.toString(), "genId");
+    public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(
+            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
+            ExpMaterialTable.Column.RootMaterialLSID.toString(),
+            ExpDataTable.Column.LSID.toString(),
+            ExpDataTable.Column.Created.toString(),
+            ExpDataTable.Column.CreatedBy.toString(),
+            "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -850,7 +900,11 @@ public class ExpDataIterators
             dontUpdate.addAll(NOT_FOR_UPDATE);
             CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
             if (isSample || !context.getInsertOption().mergeRows)
+            {
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
+                if (isSample)
+                    dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
+            }
             else
             {
                 keyColumns.add("classid");

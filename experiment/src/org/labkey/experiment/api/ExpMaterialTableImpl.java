@@ -147,6 +147,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case RootMaterialLSID:
                 return wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+            case AliquotedFromLSID:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
@@ -480,6 +482,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rootLSID.setShownInDetailsView(false);
         rootLSID.setShownInUpdateView(false);
 
+        var aliquotParentLSID = addColumn(ExpMaterialTable.Column.AliquotedFromLSID);
+        aliquotParentLSID.setHidden(true);
+        aliquotParentLSID.setReadOnly(true);
+        aliquotParentLSID.setUserEditable(false);
+        aliquotParentLSID.setShownInInsertView(false);
+        aliquotParentLSID.setShownInDetailsView(false);
+        aliquotParentLSID.setShownInUpdateView(false);
+
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
         addColumn(ExpMaterialTable.Column.Modified);
@@ -640,10 +650,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
-        // don't select lsid twice
-        if (null != provisioned)
-            dataCols.remove("lsid");
-
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT ");
         String comma = "";
@@ -656,21 +662,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
+                // don't select lsid twice
+                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                    continue;
+
                 sql.append(comma);
-                String columnName = propertyColumn.getColumnName();
                 if ("AliquotOnly".equalsIgnoreCase(propertyColumn.getMaterialPropertyType()))
                 {
-                    sql.append("self.").append(columnName);
+                    sql.append(propertyColumn.getValueSql("self"));
                 }
                 else
                 {
                     sql.append("(CASE WHEN ")
-                            .append("m.rootMaterialLsid IS NULL THEN self.")
-                            .append(columnName)
-                            .append(" ELSE root.")
-                            .append(columnName)
+                            .append("m.rootMaterialLsid IS NULL THEN ")
+                            .append(propertyColumn.getValueSql("self"))
+                            .append(" ELSE ")
+                            .append(propertyColumn.getValueSql("root"))
                             .append(" END) AS ")
-                            .append(columnName);
+                            .append(propertyColumn.getSelectName());
                 }
             }
         }

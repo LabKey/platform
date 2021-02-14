@@ -34,6 +34,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         Description,
         LSID,
         RootMaterialLSID,
+        AliquotedFromLSID,
         Flag,
         Run,
         SampleSet,
