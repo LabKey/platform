@@ -911,7 +911,7 @@ public void testDetailedAuditLog() throws Exception
     TableInfo auditTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
     Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
             .getObject(Integer.class);
-    int audit_max_rowid = null==RowId ? 0 : RowId.intValue();
+    int auditMaxRowid = null==RowId ? 0 : RowId.intValue();
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("Name", "string"));
@@ -940,7 +940,7 @@ public void testDetailedAuditLog() throws Exception
     assertNotNull(ret.get(0).get("rowid"));
     int rowid = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
     // check audit log
-    SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),audit_max_rowid, CompareType.GT);
+    SimpleFilter f = new SimpleFilter(new FieldKey(null,"RowId"),auditMaxRowid, CompareType.GT);
     List<SampleTimelineAuditEvent> events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
     assertFalse(events.isEmpty());
     assertNull(events.get(0).getOldRecordMap());
