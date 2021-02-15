@@ -71,6 +71,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -984,6 +985,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 event.setSampleId((Integer) staticsRow.get(ROW_ID));
             if (staticsRow.containsKey(NAME))
                 event.setSampleName(String.valueOf(staticsRow.get(NAME)));
+            // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
+            row.put(ROW_ID,staticsRow.get(ROW_ID));
         }
 
         if (action != null)
