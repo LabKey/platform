@@ -1505,6 +1505,7 @@ public abstract class Method
         addJsonPassthroughMethod("strip_nulls", JdbcType.OTHER, 1, 1);
 
         postgresMethods.put("jsonb_set", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
         postgresMethods.put("jsonb_pretty", new PassthroughMethod("jsonb_pretty", JdbcType.VARCHAR, 1, 1));
     }
 
