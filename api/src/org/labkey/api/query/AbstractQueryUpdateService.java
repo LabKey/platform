@@ -97,6 +97,7 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -194,6 +195,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return context;
     }
 
+    /**
+     *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
+     * Used only for generating  ExistingRecordDataIterator at the moment
+     */
+    protected Set<String> getSelectKeys()
+    {
+        return null;
+    }
 
     /*
      * construct the core DataIterator transformation pipeline for this table, may be just StandardDataIteratorBuilder.
@@ -204,8 +213,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
         if (_enableExistingRecordsDataIterator)
         {
-            // some tables need to generate PK's, so they add this in persistRows()
-            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), null);
+            // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
+            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys());
         }
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
