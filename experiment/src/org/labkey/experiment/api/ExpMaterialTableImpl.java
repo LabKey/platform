@@ -33,6 +33,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -70,9 +71,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -329,8 +328,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (filter)
                 addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
 
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
-            setImportURL(new DetailsURL(url));
+            if (canAccessPhi())
+            {
+                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
+                setImportURL(new DetailsURL(url));
+            }
         }
     }
 
@@ -514,6 +516,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rowIdCol.setURL(url);
         setDetailsURL(url);
 
+        if (!canAccessPhi())
+        {
+            setImportURL(LINK_DISABLER);
+            setInsertURL(LINK_DISABLER);
+            setUpdateURL(LINK_DISABLER);
+        }
+
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
@@ -562,6 +571,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         for (ColumnInfo dbColumn : dbTable.getColumns())
         {
+            // Don't include PHI columns in full text search index
+            // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
+            if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
+                continue;
+
             if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
 
@@ -583,7 +597,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
                     SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"));
 
-                if (idCols.contains(dp.getPropertyDescriptor()))
+                if (idCols.contains(dp))
                 {
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
@@ -692,8 +706,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (_ss != null || perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
-            return _userSchema.getContainer().hasPermission(user, perm);
+        if (_ss != null)
+            return super.hasPermission(user, perm);
 
         // don't allow insert/update on exp.Materials without a sample type
         return false;

@@ -118,6 +118,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _userSchema.getDefaultContainerFilter();
     }
 
+    /**
+     * Allow {@link TableRules} to be applied to this table.
+     */
     public boolean supportTableRules()
     {
         return false;

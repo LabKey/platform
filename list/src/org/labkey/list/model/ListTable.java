@@ -91,8 +91,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        _maxUserPhi = ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
-        _canAccessPhi = canAccessPhi();
         List<ColumnInfo> defaultColumnsCandidates = new ArrayList<>();
 
         assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
@@ -302,6 +300,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             entityId.setShownInUpdateView(false);
             addColumn(entityId);
         }
+
+        _maxUserPhi = ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
+        _canAccessPhi = canAccessPhi();
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(_userSchema.getContainer()), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
