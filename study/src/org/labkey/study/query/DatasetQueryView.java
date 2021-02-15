@@ -37,7 +37,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -546,17 +545,6 @@ public class DatasetQueryView extends StudyQueryView
     private boolean canManage(DatasetDefinition def, User user)
     {
         return user.hasRootAdminPermission() || def.getContainer().hasPermission(user, AdminPermission.class);
-    }
-
-    private PHI getMaxContainedPhi()
-    {
-        TableInfo tableInfo = getTable();
-        if (tableInfo instanceof DatasetTableImpl)
-        {
-            if (((DatasetTableImpl)tableInfo).getRealTable() instanceof DatasetDefinition.DatasetSchemaTableInfo)
-                return ((DatasetDefinition.DatasetSchemaTableInfo)((DatasetTableImpl)tableInfo).getRealTable()).getMaxContainedPhi();
-        }
-        return PHI.NotPHI;
     }
 
     private boolean hasSourceLsids()
