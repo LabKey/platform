@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.PipeRoot;
@@ -36,7 +35,6 @@ import java.util.List;
 /**
  * Created by klum on 5/24/2014.
  */
-@Migrate // studyContext.xml is the only dependent
 public class SpecimenReloadTask extends PipelineJob.Task<SpecimenReloadTask.Factory>
 {
     private SpecimenReloadTask(Factory factory, PipelineJob job)
