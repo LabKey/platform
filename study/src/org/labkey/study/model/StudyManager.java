@@ -153,6 +153,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
@@ -4040,14 +4041,14 @@ public class StudyManager
     {
         StudyImpl study = getStudy(container);
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
-            return new BaseStudyController.StudyJspView<>(study, "participantData.jsp", config, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/participantData.jsp", config, errors);
         else
-            return new BaseStudyController.StudyJspView<>(study, "participantAll.jsp", config, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/participantAll.jsp", config, errors);
     }
 
     public WebPartView<ParticipantViewConfig> getParticipantDemographicsView(Container container, ParticipantViewConfig config, BindException errors)
     {
-        return new BaseStudyController.StudyJspView<>(getStudy(container), "participantCharacteristics.jsp", config, errors);
+        return new StudyJspView<>(getStudy(container), "/org/labkey/study/view/participantCharacteristics.jsp", config, errors);
     }
 
     /**

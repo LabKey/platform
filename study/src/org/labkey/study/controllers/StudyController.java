@@ -506,7 +506,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("Invalid Dataset ID");
             }
             return  new StudyJspView<>(StudyManager.getInstance().getStudy(getContainer()),
-                    "datasetDetails.jsp", _def, errors);
+                    "/org/labkey/study/view/datasetDetails.jsp", _def, errors);
         }
 
         @Override
@@ -604,7 +604,7 @@ public class StudyController extends BaseStudyController
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
             bean.visitMapSummary = visitManager.getVisitSummary(getUser(), bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
 
-            return new StudyJspView<>(_study, "overview.jsp", bean, errors);
+            return new StudyJspView<>(_study, "/org/labkey/study/view/overview.jsp", bean, errors);
         }
 
         @Override
@@ -1236,7 +1236,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudyThrowIfNull();
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
-            return new StudyJspView<>(getStudyRedirectIfNull(), "importVisitMap.jsp", null, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/importVisitMap.jsp", null, errors);
         }
 
         @Override
@@ -1306,7 +1306,7 @@ public class StudyController extends BaseStudyController
                 form.setStartDate(sharedStudy.getStartDate());
                 form.setDefaultTimepointDuration(sharedStudy.getDefaultTimepointDuration());
             }
-            return new StudyJspView<>(null, "createStudy.jsp", form, errors);
+            return new StudyJspView<>(null, "/org/labkey/study/view/createStudy.jsp", form, errors);
         }
 
         @Override
@@ -1394,7 +1394,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new StudyJspView<>(getStudy(), "manageStudy.jsp", null, errors);
+            return new StudyJspView<>(getStudy(), "/org/labkey/study/view/manageStudy.jsp", null, errors);
         }
 
         @Override
@@ -1418,7 +1418,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(DeleteStudyForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "confirmDeleteStudy.jsp", null, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/confirmDeleteStudy.jsp", null, errors);
         }
 
         @Override
@@ -1513,7 +1513,7 @@ public class StudyController extends BaseStudyController
             Study study = getStudy();
             if (null == study)
                 throw new RedirectException(new ActionURL(CreateStudyAction.class, getContainer()));
-            return new StudyJspView<>(getStudy(), "manageStudyPropertiesExt.jsp", study, null);
+            return new StudyJspView<>(getStudy(), "/org/labkey/study/view/manageStudyPropertiesExt.jsp", study, null);
         }
 
         @Override
@@ -1623,7 +1623,7 @@ public class StudyController extends BaseStudyController
         private String _jspName(Study study)
         {
             assert study.getTimepointType() != TimepointType.CONTINUOUS;
-            return study.getTimepointType() == TimepointType.DATE ? "manageTimepoints.jsp" : "manageVisits.jsp";
+            return study.getTimepointType() == TimepointType.DATE ? "/org/labkey/study/view/manageTimepoints.jsp" : "/org/labkey/study/view/manageVisits.jsp";
         }
     }
 
@@ -1633,7 +1633,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "manageTypes.jsp", this, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/manageTypes.jsp", this, errors);
         }
 
         @Override
@@ -1651,7 +1651,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "manageFilewatchers.jsp", this, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/manageFilewatchers.jsp", this, errors);
         }
 
         @Override
@@ -1947,7 +1947,7 @@ public class StudyController extends BaseStudyController
             VisitSummaryBean visitSummary = new VisitSummaryBean();
             visitSummary.setVisit(_v);
 
-            return new StudyJspView<>(study, "editVisit.jsp", visitSummary, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/editVisit.jsp", visitSummary, errors);
         }
 
         @Override
@@ -2211,7 +2211,7 @@ public class StudyController extends BaseStudyController
             if (_timepointType == TimepointType.CONTINUOUS)
                 return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study.</span>");
 
-            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkVisitDelete.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/bulkVisitDelete.jsp", form, errors);
         }
 
         @Override
@@ -2305,7 +2305,7 @@ public class StudyController extends BaseStudyController
             if (null == _visit)
                 throw new NotFoundException();
 
-            return new StudyJspView<>(study, "confirmDeleteVisit.jsp", _visit, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/confirmDeleteVisit.jsp", _visit, errors);
         }
 
         @Override
@@ -2354,7 +2354,7 @@ public class StudyController extends BaseStudyController
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             form.setReshow(reshow);
-            return new StudyJspView<>(study, "createVisit.jsp", form, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/createVisit.jsp", form, errors);
         }
 
         @Override
@@ -2584,7 +2584,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(BulkImportTypesForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkImportDataTypes.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/bulkImportDataTypes.jsp", form, errors);
         }
 
         @Override
@@ -3758,7 +3758,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "manageUndefinedTypes.jsp", o, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/manageUndefinedTypes.jsp", o, errors);
         }
 
         @Override
@@ -3814,7 +3814,7 @@ public class StudyController extends BaseStudyController
             {
                 List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
                 ViewPrefsBean bean = new ViewPrefsBean(views, _def);
-                return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
+                return new StudyJspView<>(_study, "/org/labkey/study/view/viewPreferences.jsp", bean, errors);
             }
             throw new NotFoundException("Invalid dataset ID");
         }
@@ -3897,7 +3897,7 @@ public class StudyController extends BaseStudyController
             }
 
             return new StudyJspView<>(
-                    getStudyRedirectIfNull(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
+                    getStudyRedirectIfNull(), "/org/labkey/study/view/importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
         }
 
         @Override
@@ -3991,7 +3991,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new StudyJspView<StudyImpl>(getStudyRedirectIfNull(), "typeNotFound.jsp", null, errors);
+            return new StudyJspView<StudyImpl>(getStudyRedirectIfNull(), "/org/labkey/study/view/typeNotFound.jsp", null, errors);
         }
 
         @Override
@@ -4056,7 +4056,7 @@ public class StudyController extends BaseStudyController
             StudyImpl study = getStudyRedirectIfNull();
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            return new StudyJspView<Object>(study, "visitOrder.jsp", reorderForm, errors);
+            return new StudyJspView<Object>(study, "/org/labkey/study/view/visitOrder.jsp", reorderForm, errors);
         }
 
         @Override
@@ -4157,7 +4157,7 @@ public class StudyController extends BaseStudyController
             StudyImpl study = getStudyRedirectIfNull();
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            return new StudyJspView<Object>(study, "visitVisibility.jsp", visitPropertyForm, errors);
+            return new StudyJspView<Object>(study, "/org/labkey/study/view/visitVisibility.jsp", visitPropertyForm, errors);
         }
 
         @Override
@@ -4263,7 +4263,7 @@ public class StudyController extends BaseStudyController
             }
 
             return new StudyJspView<>(
-                    getStudyRedirectIfNull(), "datasetVisibility.jsp", bean, errors);
+                    getStudyRedirectIfNull(), "/org/labkey/study/view/datasetVisibility.jsp", bean, errors);
         }
 
         @Override
@@ -4429,7 +4429,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(DatasetReorderForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<Object>(getStudyRedirectIfNull(), "datasetDisplayOrder.jsp", form, errors);
+            return new StudyJspView<Object>(getStudyRedirectIfNull(), "/org/labkey/study/view/datasetDisplayOrder.jsp", form, errors);
         }
 
         @Override
@@ -5034,7 +5034,7 @@ public class StudyController extends BaseStudyController
     {
         public RequirePipelineView(StudyImpl study, boolean showGoBack, BindException errors)
         {
-            super(study, "requirePipeline.jsp", showGoBack, errors);
+            super(study, "/org/labkey/study/view/requirePipeline.jsp", showGoBack, errors);
         }
     }
 
@@ -6063,7 +6063,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "manageExternalReload.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/manageExternalReload.jsp", form, errors);
         }
 
         @Override

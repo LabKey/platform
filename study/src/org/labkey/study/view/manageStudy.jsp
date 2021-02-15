@@ -38,7 +38,7 @@
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
@@ -66,6 +66,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.view.specimen.ManageSpecimenView" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -323,7 +324,7 @@
     } // admin permission
 
     if (SpecimenManager.get().isSpecimenModuleActive(c))
-        include(new BaseStudyController.StudyJspView<>(getStudy(), "manageSpecimens.jsp", null, null), out);
+        include(new ManageSpecimenView(), out);
 
     if (study.allowExport(getUser()))
     {

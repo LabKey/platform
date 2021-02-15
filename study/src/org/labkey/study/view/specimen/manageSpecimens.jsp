@@ -40,11 +40,12 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    StudyImpl study = getStudy();
     Container c = getContainer();
+    StudyImpl study = StudyManager.getInstance().getStudy(c);
     User user = getUser();
 
     if (c.hasPermission(user, AdminPermission.class))

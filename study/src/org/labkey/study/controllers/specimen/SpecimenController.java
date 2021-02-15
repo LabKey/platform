@@ -4980,7 +4980,7 @@ public class SpecimenController extends BaseStudyController
                     form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
                 }
             }
-            StudyJspView<Object> view = new StudyJspView<>(study, "manageComments.jsp", form, errors);
+            StudyJspView<Object> view = new StudyJspView<>(study, "/org/labkey/study/view/manageComments.jsp", form, errors);
             view.setTitle("Comment Configuration");
 
             return view;
