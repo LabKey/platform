@@ -121,7 +121,7 @@ public void setUp()
 @After
 public void tearDown()
 {
-    //ContainerManager.deleteAll(c, TestContext.get().getUser());
+    ContainerManager.deleteAll(c, TestContext.get().getUser());
 }
 
 
