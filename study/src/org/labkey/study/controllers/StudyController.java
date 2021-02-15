@@ -140,8 +140,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -214,7 +212,6 @@ import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.PublishedRecordQueryView;
-import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
@@ -1337,7 +1334,6 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(StudyPropertiesForm form, BindException errors)
         {
             createStudy(getStudy(), getContainer(), getUser(), form);
-            updateRepositorySettings(getContainer(), form.isSimpleRepository());
             return true;
         }
 
@@ -1390,15 +1386,6 @@ public class StudyController extends BaseStudyController
             RequestabilityManager.getInstance().setDefaultRules(c, user);
         }
         return study;
-    }
-
-    private static void updateRepositorySettings(Container c, boolean simple)
-    {
-        RepositorySettings reposSettings = SettingsManager.get().getRepositorySettings(c);
-        reposSettings.setSimple(simple);
-        reposSettings.setEnableRequests(!simple);
-        reposSettings.setSpecimenDataEditable(false);
-        SettingsManager.get().saveRepositorySettings(c, reposSettings);
     }
 
     @RequiresPermission(ManageStudyPermission.class)
@@ -5330,7 +5317,6 @@ public class StudyController extends BaseStudyController
         private TimepointType _timepointType;
         private Date _startDate;
         private Date _endDate;
-        private boolean _simpleRepository = true;
         private SecurityType _securityType;
         private String _subjectNounSingular = "Participant";
         private String _subjectNounPlural = "Participants";
@@ -5379,16 +5365,6 @@ public class StudyController extends BaseStudyController
         public void setStartDate(Date startDate)
         {
             _startDate = startDate;
-        }
-
-        public boolean isSimpleRepository()
-        {
-            return _simpleRepository;
-        }
-
-        public void setSimpleRepository(boolean simpleRepository)
-        {
-            _simpleRepository = simpleRepository;
         }
 
         public void setSecurityString(String security)
