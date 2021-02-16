@@ -56,7 +56,6 @@ public abstract class ProductMenuProvider
     @Nullable
     public String getProductName()
     {
-        // TODO should the products have the "LabKey" prefix?
         return getProductId();
     }
 
