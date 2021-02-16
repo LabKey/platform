@@ -232,7 +232,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
     }
 
-    protected TableInfo getTinfo()
+    public TableInfo getTinfo()
     {
         Domain d = getDomain();
         return StorageProvisioner.createTableInfo(d);

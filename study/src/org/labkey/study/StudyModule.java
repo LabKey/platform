@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
@@ -94,6 +95,7 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UsageReportingLevel;
@@ -192,6 +194,7 @@ import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -714,13 +717,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             ParticipantGroupManager.ParticipantGroupTestCase.class,
             StudyImpl.ProtocolDocumentTestCase.class,
             StudyManager.AssayScheduleTestCase.class,
-            StudyManager.DatasetImportTestCase.class,
             StudyManager.StudySnapshotTestCase.class,
             StudyManager.VisitCreationTestCase.class,
             StudyModule.TestCase.class,
             TreatmentManager.TreatmentDataTestCase.class,
             VisitImpl.TestCase.class
         );
+    }
+
+    @Override
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    {
+        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/study/model/DatasetImportTestCase.jsp"));
+        return list;
     }
 
     @Override
