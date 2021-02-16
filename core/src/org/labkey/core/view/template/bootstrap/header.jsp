@@ -201,11 +201,10 @@
                         } else {
                             loadProductNav();
                         }
-
                     });
 
                     var loadProductNav = function() {
-                        LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', {show: true}, true);
+                        LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', { show: true });
                         $(document).on('click', addProductNavClickHandler);
                     };
 
@@ -217,7 +216,7 @@
                     // on click outside of the open menu, remove click handler and hide menu (which will force it to reset on next open)
                     var addProductNavClickHandler = function (e) {
                         if ($(e.target).closest('#headerProductDropdown-content').length === 0) {
-                            LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', {show: false}, true);
+                            LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', { show: false });
                             $(document).off('click', addProductNavClickHandler);
                         }
                     };
