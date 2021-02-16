@@ -53,11 +53,11 @@ public abstract class StudyManualTest extends StudyTest
         initializeFolder();
 
         clickButton("Create Study");
-        click(Locator.radioButtonByNameAndValue("simpleRepository", "false"));
         setFormElement(Locator.name("subjectNounSingular"), "Mouse");
         setFormElement(Locator.name("subjectNounPlural"), "Mice");
         setFormElement(Locator.name("subjectColumnName"), "MouseId");
         clickButton("Create Study");
+        setupRepositoryType(true, true, false);
 
         // change study label
         clickAndWait(Locator.linkWithText("Change Study Properties"));
