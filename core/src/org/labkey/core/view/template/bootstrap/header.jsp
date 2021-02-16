@@ -181,7 +181,7 @@
 %>
             <li class="dropdown dropdown-rollup" id="headerProductDropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-th-large"></i>
+                    <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
                     <div id="headerProductDropdown-content">
@@ -195,7 +195,6 @@
                     var productNavLoaded = false;
                     $(document).on('click', '#headerProductDropdown .dropdown-toggle', function(e) {
                         if (!productNavLoaded) {
-
                             LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
                             // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
                             productNavLoaded = true;
