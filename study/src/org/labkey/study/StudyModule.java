@@ -73,8 +73,14 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
+import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
+import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
+import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.ParticipantCategory;
@@ -280,8 +286,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
 
         // specimen-related domain kinds
+        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
+        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
+        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
+        PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind()); // TODO: Move to specimen module?
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
