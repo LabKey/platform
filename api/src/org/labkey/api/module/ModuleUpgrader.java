@@ -17,13 +17,9 @@ package org.labkey.api.module;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 
 /**
  * Handles running the upgrade scripts for modules, both those that are performed synchronously before
@@ -94,7 +90,6 @@ public class ModuleUpgrader
             Module module = iter.previous();
             ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
             module.beforeUpdate(ctx);
-            renameModule(module);
         }
 
         for (Module module : _modules)
@@ -121,23 +116,5 @@ public class ModuleUpgrader
                 _log.error("Failure during module upgrade", t);
             }
         });
-    }
-
-
-    private void renameModule(Module module)
-    {
-        for (String oldName : module.getOldNames())
-        {
-            if (module.getName().equals(oldName))
-            {
-                continue;
-            }
-            // Update core.sqlscripts
-            TableInfo sqlScripts = CoreSchema.getInstance().getTableInfoSqlScripts();
-            Table.update(null, sqlScripts, Map.of("modulename", module.getName()), Map.of("modulename", oldName));
-            // Update core.modules (do this elsewhere)
-            TableInfo modules = CoreSchema.getInstance().getTableInfoModules();
-            Table.update(null, modules, Map.of("name", module.getName()), oldName);
-        }
     }
 }

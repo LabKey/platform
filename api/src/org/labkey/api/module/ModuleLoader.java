@@ -500,6 +500,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         synchronized (_modulesLock)
         {
+            checkForRenamedModules();
             // use _modules here because this List<> needs to be modifiable
             initializeModules(_modules);
         }
@@ -609,6 +610,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+    }
+
+    private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
+
+    private void checkForRenamedModules()
+    {
+        getModules().stream()
+            .filter(module -> _moduleRenames.containsKey(module.getName())).findAny()
+            .ifPresent(module -> {
+                String msg = String.format("Invalid LabKey deployment. The '%s' module has been renamed, %s", module.getName(),
+                    AppProps.getInstance().getProjectRoot() == null
+                        ? " please deploy an updated distribution and restart LabKey." // Likely production environment
+                        : " please update your enlistment." // Likely dev environment
+                );
+
+                throw new IllegalStateException(msg);
+            });
     }
 
     // If in production mode then make sure this isn't a development build, #21567

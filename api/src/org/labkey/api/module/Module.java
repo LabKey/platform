@@ -96,11 +96,6 @@ public interface Module extends Comparable<Module>
     String getName();
 
     /**
-     * Old names of this module if it has been renamed at some point.
-     */
-    List<String> getOldNames();
-
-    /**
      * Can this module be enabled in this container?
      */
     default boolean canBeEnabled(Container c)
