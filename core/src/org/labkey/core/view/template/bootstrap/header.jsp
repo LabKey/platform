@@ -185,15 +185,15 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
                     <div id="headerProductDropdown-content">
-                        <i class="fa fa-spinner fa-pulse"></i> Loading...
+                        <div style="padding: 10px;"><i class="fa fa-spinner fa-pulse"></i> Loading...</div>
                     </div>
                 </ul>
             </li>
             <script type="text/javascript">
                 +function($){
-                    // wait to load the product navigation dependencies until the header icon is clicked
+                    // wait to load the product navigation dependencies until the hover over the header icon
                     var productNavLoaded = false;
-                    $(document).on('click', '#headerProductDropdown .dropdown-toggle', function(e) {
+                    $(document).on('mouseenter', '#headerProductDropdown .dropdown-toggle', function(e) {
                         if (!productNavLoaded) {
                             LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
                             // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
