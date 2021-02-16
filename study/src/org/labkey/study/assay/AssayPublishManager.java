@@ -45,8 +45,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.dataiterator.DataIteratorBuilder;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -985,6 +983,12 @@ public class AssayPublishManager implements AssayPublishService
     {
         if (targetStudyContainer != null)
         {
+            if (targetStudyContainer.equals(AssayPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER))
+            {
+                // this configuration translates to the current folder
+                targetStudyContainer = container;
+            }
+
             final StudyImpl study = StudyManager.getInstance().getStudy(targetStudyContainer);
             if (study != null)
             {
@@ -1001,6 +1005,7 @@ public class AssayPublishManager implements AssayPublishService
                 if (!hasPermission)
                 {
                     // We don't have permission to create or add to
+                    log.error("Insufficient permission to copy assay data to study in folder : " + targetStudyContainer.getPath());
                     return null;
                 }
 
@@ -1038,6 +1043,7 @@ public class AssayPublishManager implements AssayPublishService
 
                 SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
+                Container targetContainer = targetStudyContainer;
                 new SqlSelector(resultTable.getSchema(), sql).forEach(rs -> {
                     // Be careful to not assume that we have participant or visit columns in our data domain
                     Object ptidObject = ptidColumn == null ? null : ptidColumn.getValue(rs);
@@ -1052,13 +1058,13 @@ public class AssayPublishManager implements AssayPublishService
                         if (study.getTimepointType().isVisitBased())
                         {
                             float visitId = Float.parseFloat(visit.toString());
-                            key = new AssayPublishKey(targetStudyContainer, ptid, visitId, objectId);
+                            key = new AssayPublishKey(targetContainer, ptid, visitId, objectId);
                             log.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                         }
                         else
                         {
                             Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
-                            key = new AssayPublishKey(targetStudyContainer, ptid, date, objectId);
+                            key = new AssayPublishKey(targetContainer, ptid, date, objectId);
                             log.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                         }
                         keys.put(objectId, key);
@@ -1072,6 +1078,8 @@ public class AssayPublishManager implements AssayPublishService
                 log.debug("Identified " + keys + " rows with sufficient data to copy to " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
                 return provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, errors);
             }
+            else
+                log.info("Unable to copy the assay data, there is no study in the folder: " + targetStudyContainer.getPath());
         }
         return null;
     }

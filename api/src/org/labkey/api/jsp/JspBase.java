@@ -280,6 +280,27 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.encode(str);
     }
 
+    /**
+     * Creates a JavaScript URL object for the passed in ActionURL.
+     * Returns the JavaScript fragment:<br>
+     * <br>
+     * <code>new URL(url.getURLString());</code><br>
+     * <br>
+     * Using the browser native URL object is preferred over manually constructing a url string to avoid
+     * URL encoding issues. Example usage:<br>
+     * <br>
+     * <code>
+     *     // in a script block of a JSP<br>
+     *     let url = <%=jsURL(new ActionURL(...))>;<br>
+     *     url.searchParams.set('icecream?', 'salt &amp; straw');<br>
+     *     window.location.href = url;
+     * </code>
+     */
+    public JavaScriptFragment jsURL(@NotNull URLHelper url)
+    {
+        return JavaScriptFragment.unsafe("new URL(" + q(url.getURIString()) + ")");
+    }
+
 
     private static final HtmlString CHECKED = HtmlString.of(" checked");
 
