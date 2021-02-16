@@ -6,12 +6,11 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -20,6 +19,7 @@ import org.labkey.api.query.QueryUpdateService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -31,15 +31,16 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + ExistingRecordDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
 
-    Map<String,Object> currentExistingRecord = null;
-
     final TableInfo target;
     final ArrayList<ColumnInfo> pkColumns = new ArrayList<>();
     final ArrayList<Supplier<Object>> pkSuppliers = new ArrayList<>();
-
     final int existingColIndex;
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys)
+    // prefetch of existing records
+    int lastPrefetchRowNumber = -1;
+    final HashMap<Integer,Map<String,Object>> existingRecords = new HashMap<>();
+
+    ExistingRecordDataIterator(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
     {
         super(in);
         this.target = target;
@@ -81,7 +82,7 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
     {
         if (i<existingColIndex)
             return _delegate.getSupplier(i);
-        return () -> currentExistingRecord;
+        return () -> get(i);
     }
 
     @Override
@@ -89,7 +90,10 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
     {
         if (i<existingColIndex)
             return _delegate.get(i);
-        return currentExistingRecord;
+        Integer rowNumber = (Integer)_delegate.get(0);
+        Map<String,Object> existingRow = existingRecords.get(rowNumber);
+        assert null != existingRow;
+        return existingRow;
     }
 
     @Override
@@ -108,19 +112,76 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
         return null;
     }
 
+    private SQLFragment getSelectExistingSql(int rows) throws BatchValidationException
+    {
+        SQLFragment sqlf = new SQLFragment("WITH _key_columns_ AS (\nSELECT * FROM (VALUES \n");
+        String comma = "";
+        do
+        {
+            lastPrefetchRowNumber = (Integer) _delegate.get(0);
+            sqlf.append(comma).append("(").append(lastPrefetchRowNumber);
+            comma = "\n,";
+            for (int p = 0; p < pkColumns.size(); p++)
+            {
+                sqlf.append(",?");
+                sqlf.add(pkSuppliers.get(p).get());
+            }
+            sqlf.append(")");
+            rows--;
+        }
+        while (--rows > 0 && _delegate.next());
+
+        sqlf.append("\n) AS _values_ (_row_number_");
+        for (int p = 0; p < pkColumns.size(); p++)
+            sqlf.append(",").append("key").append(p);
+        sqlf.append("))\n");
+
+        sqlf.append("SELECT _key_columns_._row_number_, _target_.* FROM ");
+        sqlf.append("_key_columns_ INNER JOIN ");
+        sqlf.append(target.getFromSQL("_target_ "));
+        sqlf.append(" ON ");
+        String and = "";
+        for (int p = 0; p < pkColumns.size(); p++)
+        {
+            sqlf.append(and);
+            sqlf.append("(_key_columns_.key").append(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
+            and = " AND ";
+        }
+        return sqlf;
+    }
+
+    private void prefetchExisting() throws BatchValidationException
+    {
+        Integer rowNumber = (Integer)_delegate.get(0);
+        if (rowNumber <= lastPrefetchRowNumber)
+            return;
+
+        // fetch N new rows into the existingRecords map
+        SQLFragment select = getSelectExistingSql(50);
+        var list = new SqlSelector(target.getSchema(), select).getArrayList(Map.class);
+        existingRecords.clear();
+        for (int r=rowNumber ; r<=lastPrefetchRowNumber ;r++)
+            existingRecords.put(r,Map.of());
+        list.forEach(map -> {
+            int r = (Integer)map.get("_row_number_");
+            map.remove("_row_number_");
+            map.remove("_row"); // I think CachedResultSet adds "_row"
+            existingRecords.put(r,(Map<String,Object>)map);
+        });
+        // backup to where we started so caller can iterate through them one at a time
+        ((CachingDataIterator)_delegate).reset();
+        _delegate.next();
+    }
+
+
     @Override
     public boolean next() throws BatchValidationException
     {
-        currentExistingRecord = null;
+        // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
+        ((CachingDataIterator)_delegate).mark();
         boolean ret = super.next();
         if (ret && !pkColumns.isEmpty())
-        {
-            SimpleFilter filter = new SimpleFilter();
-            for (int i=0 ; i<pkColumns.size() ; i++)
-                filter.addClause(new CompareType.EqualsCompareClause(pkColumns.get(i).getFieldKey(), CompareType.EQUAL, pkSuppliers.get(i).get()));
-            Map<String,Object> record = new TableSelector(target, TableSelector.ALL_COLUMNS, filter, null).getMap();
-            currentExistingRecord = null==record ? Map.of() : record;
-        }
+            prefetchExisting();
         return ret;
     }
 
@@ -135,7 +196,7 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
     @Override
     public Map<String, Object> getExistingRecord()
     {
-        return currentExistingRecord;
+        return (Map<String,Object>)get(existingColIndex);
     }
 
 
@@ -154,7 +215,10 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
                 if (target.supportsAuditTracking())
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 if (auditType == DETAILED)
-                    return new ExistingRecordDataIterator(di, target, keys);
+                {
+                    CachingDataIterator cache = new CachingDataIterator(di);
+                    return new ExistingRecordDataIterator(cache, target, keys);
+                }
             }
             return di;
         };
@@ -173,7 +237,7 @@ public class ExistingRecordDataIterator extends WrapperDataIterator
 
             DataIterator di = new ListofMapsDataIterator(Set.of("Name"), namesArrayList);
             assertFalse(di.supportsGetExistingRecord());
-            DataIterator existing = new ExistingRecordDataIterator(di, CoreSchema.getInstance().getTableInfoModules(), null);
+            DataIterator existing = new ExistingRecordDataIterator(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }
