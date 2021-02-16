@@ -195,21 +195,33 @@
                     var productNavLoaded = false;
                     $(document).on('click', '#headerProductDropdown .dropdown-toggle', function(e) {
                         if (!productNavLoaded) {
-                            LABKEY.requiresScript(
-                                'core/gen/productNavigation',
-                                // 'http://localhost:3001/productNavigation.js',
-                            function () {
-                                LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', {}, true);
-                            });
 
+                            LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
+                            // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
                             productNavLoaded = true;
+                        } else {
+                            loadProductNav();
                         }
+
                     });
+
+                    var loadProductNav = function() {
+                        LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', {show: true}, true);
+                        $(document).on('click', addProductNavClickHandler);
+                    };
 
                     // stop the product navigation menu from closing when click within the menu div
                     $(document).on('click', '#headerProductDropdown-content', function (e) {
                         e.stopPropagation();
                     });
+
+                    // on click outside of the open menu, remove click handler and hide menu (which will force it to reset on next open)
+                    var addProductNavClickHandler = function (e) {
+                        if ($(e.target).closest('#headerProductDropdown-content').length === 0) {
+                            LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', {show: false}, true);
+                            $(document).off('click', addProductNavClickHandler);
+                        }
+                    };
                 }(jQuery)
             </script>
             <%

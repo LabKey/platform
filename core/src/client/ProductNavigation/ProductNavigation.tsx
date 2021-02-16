@@ -3,14 +3,18 @@ import { ProductNavigationMenu } from '@labkey/components';
 
 import './productNavigation.scss';
 
-export interface AppContext {}
+export interface AppContext {
+    show: boolean;
+}
 
 interface Props {
     context: AppContext;
 }
 
 export const ProductNavigation: FC<Props> = memo(props => {
-    return (
-        <ProductNavigationMenu/>
-    );
+    if (props.context.show) {
+        return <ProductNavigationMenu/>;
+    } else {
+        return null;
+    }
 });
