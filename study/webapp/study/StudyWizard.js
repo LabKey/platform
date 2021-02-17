@@ -203,7 +203,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             specimens: {
                 panelType: 'specimens',
-                active: this.mode == 'publish'
+                active: this.mode == 'publish' && LABKEY.container.activeModules.includes('Specimen')
             },
             studyProps: {
                 panelType: 'studyProps',
@@ -246,7 +246,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     var allWriters = Ext.decode(response.responseText).writers;
 
                     var folderWritersToExclude = ['Grid Views', 'Lists', 'Notification Settings', 'Queries', 'Reports and Charts', 'Study', 'Experiments, Protocols, and Runs'];
-                    var studyWritersToExclude = ['Assay Datasets', 'Categories', 'CRF Datasets', 'Dataset Data', 'Participant Groups', 'QC State Settings', 'Specimens', 'Visit Map'];
+                    var studyWritersToExclude = ['Assay Datasets', 'Categories', 'CRF Datasets', 'Dataset Data', 'Participant Groups', 'QC State Settings', 'Specimens', 'Specimen Settings', 'Visit Map'];
                     this.studyWriters = [];
                     this.folderWriters = [];
 
@@ -2231,8 +2231,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             if (this.selectedPublishOptions)
                 for (var i = 0; i < this.selectedPublishOptions.length; i++)
                     params[this.selectedPublishOptions[i].get('option')] = true;
-            params.includeSpecimens = this.includeSpecimensCheckBox.getValue();
-            params.specimenRefresh = eval(this.specimenRefreshRadioGroup.getValue().inputValue);
+            params.includeSpecimens = this.pageOptions.specimens.active && this.includeSpecimensCheckBox.getValue();
+            params.specimenRefresh = this.pageOptions.specimens.active && eval(this.specimenRefreshRadioGroup.getValue().inputValue);
             params.exportPhiLevel = this.publishPhiRadioGroup ? this.publishPhiRadioGroup.getValue().inputValue : 'NotPHI';
         }
 

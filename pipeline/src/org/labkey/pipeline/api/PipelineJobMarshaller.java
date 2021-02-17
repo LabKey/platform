@@ -58,7 +58,7 @@ import java.util.Map;
  * and restoring it from XML.
  *
  * todo: probably want to have 2 different interfaces here, rather than implementing
- *          JobStore, an throwing UnsupportedOperationException on most of its
+ *          JobStore and throwing UnsupportedOperationException on most of its
  *          methods.
  */
 public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
@@ -149,7 +149,6 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     @Override
     public Object deserializeFromJSON(String json, Class<?> cls)
     {
-
         ObjectMapper mapper = PipelineJob.createObjectMapper();
 
         try
@@ -162,7 +161,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         }
     }
 
-    private static Logger LOG = LogManager.getLogger(PipelineJobMarshaller.class);
+    private static final Logger LOG = LogManager.getLogger(PipelineJobMarshaller.class);
 
     public static class TestCase extends PipelineJob.TestSerialization
     {
