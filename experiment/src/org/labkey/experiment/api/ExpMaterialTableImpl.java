@@ -71,7 +71,9 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -104,6 +106,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId")));
         setName(ExpSchema.TableType.Materials.name());
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
+        addAllowablePermission(InsertPermission.class);
+        addAllowablePermission(UpdatePermission.class);
     }
 
     @Override
