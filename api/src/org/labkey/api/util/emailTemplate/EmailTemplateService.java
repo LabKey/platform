@@ -21,6 +21,10 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertySchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
@@ -38,7 +42,7 @@ import java.util.Set;
  */
 public class EmailTemplateService
 {
-    static Logger _log = LogManager.getLogger(EmailTemplateService.class);
+    private static final Logger _log = LogManager.getLogger(EmailTemplateService.class);
 
     private static final String EMAIL_TEMPLATE_PROPERTIES_MAP_NAME = "emailTemplateProperties";
     private static final String MESSAGE_SUBJECT_PART = "subject";
@@ -226,14 +230,10 @@ public class EmailTemplateService
         PropertyManager.PropertyMap map = getProperties(c, true);
 
         final String className = template.getClass().getName();
-        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART,
-                template.getSubject());
-        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART,
-                template.getBody());
-        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART,
-                template.getSenderName());
-        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_REPLY_TO_PART,
-                template.getReplyToEmail());
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART, template.getSubject());
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART, template.getBody());
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART, template.getSenderName());
+        map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_REPLY_TO_PART, template.getReplyToEmail());
         map.save();
     }
 
@@ -247,5 +247,22 @@ public class EmailTemplateService
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_FROM_PART);
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_REPLY_TO_PART);
         map.save();
+    }
+
+    /**
+     * Moves all properties associated with an email template to a new package+class. Useful when moving and/or renaming
+     * an email template class. Expected to be called from upgrade code, hence no cache clearing.
+     * @param oldClassName Previous full package and class name
+     * @param templateClass New template class
+     */
+    public void relocateEmailTemplateProperties(String oldClassName, Class<? extends EmailTemplate> templateClass)
+    {
+        TableInfo tinfo = PropertySchema.getInstance().getTableInfoProperties();
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo).append(" SET Name = REPLACE(Name, ?, ?) WHERE Name LIKE ?");
+        sql.add(oldClassName);
+        sql.add(templateClass.getName());
+        sql.add(oldClassName + "%");
+
+        new SqlExecutor(tinfo.getSchema()).execute(sql);
     }
 }

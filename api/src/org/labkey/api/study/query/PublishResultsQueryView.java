@@ -51,10 +51,12 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
@@ -821,7 +823,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         protected ActionURL getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.ParticipantId);
+            return PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(c, CompletionType.ParticipantId);
         }
 
         @Override
@@ -843,7 +845,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         protected ActionURL getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURL(c, SpecimenService.CompletionType.VisitId);
+            return PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(c, CompletionType.VisitId);
         }
 
         @Override

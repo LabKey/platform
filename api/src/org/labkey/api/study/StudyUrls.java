@@ -27,6 +27,7 @@ import org.springframework.web.servlet.mvc.Controller;
  */
 public interface StudyUrls extends UrlProvider
 {
+    ActionURL getCompletionURL(Container studyContainer, CompletionType type);
     ActionURL getCreateStudyURL(Container container);
     ActionURL getManageStudyURL(Container container);
     Class<? extends Controller> getManageStudyClass();

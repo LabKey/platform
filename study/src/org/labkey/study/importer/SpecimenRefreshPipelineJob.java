@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.User;
 import org.labkey.api.study.model.ParticipantMapper;
+import org.labkey.api.study.pipeline.AbstractStudyPipelineJob;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;

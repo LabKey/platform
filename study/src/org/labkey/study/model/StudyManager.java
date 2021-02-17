@@ -80,6 +80,7 @@ import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
@@ -117,8 +118,10 @@ import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
+import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
@@ -140,6 +143,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -149,6 +153,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
@@ -4036,14 +4041,14 @@ public class StudyManager
     {
         StudyImpl study = getStudy(container);
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
-            return new BaseStudyController.StudyJspView<>(study, "participantData.jsp", config, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/participantData.jsp", config, errors);
         else
-            return new BaseStudyController.StudyJspView<>(study, "participantAll.jsp", config, errors);
+            return new StudyJspView<>(study, "/org/labkey/study/view/participantAll.jsp", config, errors);
     }
 
     public WebPartView<ParticipantViewConfig> getParticipantDemographicsView(Container container, ParticipantViewConfig config, BindException errors)
     {
-        return new BaseStudyController.StudyJspView<>(getStudy(container), "participantCharacteristics.jsp", config, errors);
+        return new StudyJspView<>(getStudy(container), "/org/labkey/study/view/participantCharacteristics.jsp", config, errors);
     }
 
     /**
@@ -4657,8 +4662,50 @@ public class StudyManager
                     sp.ensureBaseProperties(d);
             }
         }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void upgradeForSpecimenModule(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                // SpecimenRequestNotificationEmailTemplate was moved to the specimen module in 21.3; move its template properties to the new location
+                EmailTemplateService.get().relocateEmailTemplateProperties("org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate", SpecimenRequestNotificationEmailTemplate.class);
+                StudyManager.getInstance().enableSpecimenModuleInStudyFolders(context.getUpgradeUser());
+            }
+        }
     }
 
+    // Enable the specimen module (if it exists) in all studies that have specimen rows
+    public void enableSpecimenModuleInStudyFolders(User user)
+    {
+        Module specimenModule = ModuleLoader.getInstance().getModule("Specimen");
+
+        if (null != specimenModule)
+        {
+            StudyManager.getInstance().getAllStudies().forEach(study->{
+                // Best effort... don't fail upgrade if something goes wrong here
+                try
+                {
+                    Container c = study.getContainer();
+                    if (!SpecimenManagerNew.get().isSpecimensEmpty(c, user))
+                    {
+                        Set<Module> set = new HashSet<>(c.getActiveModules());
+
+                        // Always true in upgrade case, but this check optimizes any repeat calls
+                        if (!set.contains(specimenModule))
+                        {
+                            set.add(specimenModule);
+                            c.setActiveModules(set);
+                        }
+                    }
+                }
+                catch (Throwable t)
+                {
+                    _log.warn("Enabling specimen module failed", t);
+                }
+            });
+        }
+    }
 
     /****
      *
