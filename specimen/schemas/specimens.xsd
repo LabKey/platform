@@ -191,4 +191,11 @@
         <xs:attribute name="actor" type="xs:string"/>
     </xs:complexType>
 
+    <xs:simpleType name="specimenRepositoryType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STANDARD"/>
+            <xs:enumeration value="ADVANCED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
 </xs:schema>
