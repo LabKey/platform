@@ -36,7 +36,7 @@ import java.lang.reflect.Constructor;
  *      view(ViewContext, FORM, BindException)
  *      view(ViewContext, FORM)
  * then
- *      view(ViewContext partentContext)
+ *      view(ViewContext parentContext)
  *
  *  if _formClass != null, the bind and set
  */
