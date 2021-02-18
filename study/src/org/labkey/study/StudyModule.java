@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
@@ -68,16 +69,23 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
+import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
+import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
 import org.labkey.api.specimen.model.LocationDomainKind;
+import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudySerializationRegistry;
@@ -94,10 +102,10 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UsageReportingLevel;
-import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DefaultWebPartFactory;
@@ -192,6 +200,7 @@ import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -233,7 +242,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 21.001;
+        return 21.002;
     }
 
     @Override
@@ -280,8 +289,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
 
         // specimen-related domain kinds
+        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
+        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
+        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
+        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
+        PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind()); // TODO: Move to specimen module?
+        PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
         // study design domains
         PropertyService.get().registerDomainKind(new StudyProductDomainKind());
@@ -298,11 +313,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
-        EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
-
         NotificationService.get().registerNotificationType(ParticipantCategory.SEND_PARTICIPANT_GROUP_TYPE, "Study", "fa-users");
 
         AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
+
+        // Register so all administrators get this permission
+        RoleManager.registerPermission(new ManageStudyPermission());
     }
 
     @Override
@@ -406,7 +422,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
-        SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
+        if (null != SpecimenService.get())
+            SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
         SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 
@@ -714,13 +731,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             ParticipantGroupManager.ParticipantGroupTestCase.class,
             StudyImpl.ProtocolDocumentTestCase.class,
             StudyManager.AssayScheduleTestCase.class,
-            StudyManager.DatasetImportTestCase.class,
             StudyManager.StudySnapshotTestCase.class,
             StudyManager.VisitCreationTestCase.class,
             StudyModule.TestCase.class,
             TreatmentManager.TreatmentDataTestCase.class,
             VisitImpl.TestCase.class
         );
+    }
+
+    @Override
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    {
+        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/study/model/DatasetImportTestCase.jsp"));
+        return list;
     }
 
     @Override
