@@ -275,13 +275,16 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         @Override
         protected void prefetchExisting() throws BatchValidationException
         {
+            /* NOTE: this implementation doesn't fetch ahead because getRows() is row at a time anyway.
+             * If we speed up getRows() then it would make sense to copy the ExistingDataIteratorsTableInfo pattern
+             */
             try
             {
                 existingRecords.clear();
                 Map<String,Object> keys = CaseInsensitiveHashMap.of();
                 for (int p=0 ; p<pkColumns.size() ; p++)
                     keys.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
-                List<Map<String, Object>> list = qus.getRows(user, c, List.of(keys));
+                List<Map<String, Object>> list = qus.getExistingRows(user, c, List.of(keys));
                 Map<String,Object> existing = list.isEmpty() ? Map.of() : list.get(0);
                 existingRecords.put((Integer)_delegate.get(0), existing);
             }

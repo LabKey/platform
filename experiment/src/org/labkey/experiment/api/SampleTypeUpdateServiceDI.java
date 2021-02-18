@@ -451,6 +451,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
     }
 
+    @Override
+    public List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
+            throws QueryUpdateServiceException
+    {
+        return getRows(user, container, keys, true /* this is for detailed audit logging */);
+    }
+
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
             throws QueryUpdateServiceException
     {
