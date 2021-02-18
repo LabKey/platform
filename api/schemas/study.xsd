@@ -5,7 +5,7 @@
            elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:annotation>
 		<xs:documentation xml:lang="en">
-            Describes a file-based study. This is the top-level file in a study archive.  It defines the top-level study
+            Describes a file-based study. This is the top-level file in a study archive. It defines the top-level study
             settings and points to the other files in the archive.
         </xs:documentation>
 	</xs:annotation>
@@ -193,31 +193,27 @@
                         </xs:documentation>
                     </xs:annotation>
 					<xs:complexType>
-                        <xs:complexContent>
-                            <xs:extension base="legacySpecimenSettingsType">
-                                <xs:attribute name="file" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Names the directory that contains the file that contains specimen information.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="dir" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Names the file that stores specimen information.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="settings" type="xs:string">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Names the file that stores specimen settings information.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:extension>
-                        </xs:complexContent>
+                        <xs:attribute name="dir" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the directory that contains the specimen data and settings.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the file that stores specimen data.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="settings" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the file that stores specimen settings information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
                     </xs:complexType>
 				</xs:element>
                 <xs:element name="studyViews" minOccurs="0">
@@ -356,21 +352,21 @@
 			<xs:attribute name="subjectNounSingular" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The singular noun used to identify subjects.  Examples include "Participant", "Mouse", or "Yeast".
+                        The singular noun used to identify subjects. Examples include "Participant", "Mouse", or "Yeast".
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 			<xs:attribute name="subjectNounPlural" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The plural noun used to identify subjects.  Examples include "Participants", "Mice", or "Yeasts".
+                        The plural noun used to identify subjects. Examples include "Participants", "Mice", or "Yeasts".
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
 			<xs:attribute name="subjectColumnName" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The column header for subject IDs.  Examples include "ParticipantId", "MouseId", or "YeastId".
+                        The column header for subject IDs. Examples include "ParticipantId", "MouseId", or "YeastId".
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
@@ -501,72 +497,6 @@
             <xs:enumeration value="SIMPLE"/>
         </xs:restriction>
     </xs:simpleType>
-
-    <xs:complexType name="legacySpecimenSettingsType">
-        <xs:annotation>
-            <xs:documentation>
-                Legacy specimen settings in study.xml are superseded by specimen_settings.xml (&gt;= version 13.2).
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="specimenWebPartGroupings" minOccurs="0">
-                <xs:complexType>
-                    <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                        <xs:element name="grouping">
-                            <xs:complexType>
-                                <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                                    <xs:element name="groupBy" type="xs:string"/>
-                                </xs:sequence>
-                            </xs:complexType>
-                        </xs:element>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="repositoryType" type="specimenRepositoryType">
-            <xs:annotation>
-                <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
-                    Indicates the type of repository.
-                    See <a href="https://www.labkey.org/Documentation/wiki-page.view?name=manageSpecimens" target="_top">Manage Specimens</a>.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allowReqLocRepository" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates whether Repository locations are allowed to be Requesting Locations.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allowReqLocClinic" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates whether Clinic locations are allowed to be Requesting Locations.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allowReqLocSal" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates whether Site Affiliated Lab locations are allowed to be Requesting Locations.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allowReqLocEndpoint" type="xs:boolean">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates whether Endpoint Lab locations are allowed to be Requesting Locations.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-	<xs:simpleType name="specimenRepositoryType">
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="STANDARD"/>
-			<xs:enumeration value="ADVANCED"/>
-		</xs:restriction>
-	</xs:simpleType>
 
     <xs:complexType name="exportDirType">
         <xs:attribute name="dir" type="xs:string">

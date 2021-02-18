@@ -47,6 +47,7 @@ import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.model.ParticipantMapper;
+import org.labkey.api.study.pipeline.AbstractStudyPipelineJob;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;

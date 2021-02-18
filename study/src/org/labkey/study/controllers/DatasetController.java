@@ -26,15 +26,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableViewForm;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -195,7 +191,7 @@ public class DatasetController extends BaseStudyController
         @Override
         public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkDatasetDelete.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/bulkDatasetDelete.jsp", form, errors);
         }
 
         @Override
