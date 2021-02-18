@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Date;
 
+// Registered by the specimen module (specimenContext.xml), so specimen module is always present when this code is invoked.
 public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisSpecimenTask.Factory>
 {
     public static final String MERGE_SPECIMEN = "mergeSpecimen";
