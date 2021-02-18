@@ -179,9 +179,12 @@ public class StudyTest extends StudyBaseTest
                 waitForSpecimenImport();
                 verifySpecimens();
                 verifyParticipantComments();
-                verifyPermissionsRestrictions();
             }
             verifyParticipantReports(27);
+            if (_studyHelper.isSpecimenModulePresent())
+            {
+                verifyPermissionsRestrictions();
+            }
             verifyDeleteUnusedVisits();
         }
     }
