@@ -213,7 +213,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
         public UpdateService(TableInfo queryTable)
         {
-            super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
+            super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), ExpQCFlagTableImpl.this._columnMapping);
         }
 
         @Override

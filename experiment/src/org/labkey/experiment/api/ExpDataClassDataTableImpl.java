@@ -23,6 +23,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -668,9 +669,47 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return results;
         }
 
+
+        /* This class overrides getRow() in order to suppport getRow() using "rowid" or "lsid" */
+        @Override
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
+                throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        {
+            aliasColumns(_columnMapping, keys);
+
+            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get("rowid"));
+            String lsid = (String)JdbcType.VARCHAR.convert(keys.get("lsid"));
+            if (null==rowid && null==lsid)
+            {
+                throw new InvalidKeyException("Value must be supplised for key field 'rowid' or 'lsid'", keys);
+            }
+
+            Map<String,Object> row = _select(container, rowid, lsid);
+
+            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
+            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
+            if (null != row)
+            {
+                if (row instanceof ArrayListMap)
+                    ((ArrayListMap)row).getFindMap().remove("_row");
+                else
+                    row.remove("_row");
+            }
+
+            return row;
+        }
+
         @Override
         protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
         {
+            throw new IllegalStateException();
+        }
+
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid) throws ConversionException
+        {
+            if (null == rowid && null == lsid)
+                return null;
+
             TableInfo d = getDbTable();
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
 
@@ -679,8 +718,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
                     .append(" ON d.lsid = t.lsid")
-                    .append(" WHERE d.Container=?").add(container.getEntityId())
-                    .append(" AND d.rowid=?").add(keys[0]);
+                    .append(" WHERE d.Container=?").add(container.getEntityId());
+            if (null != rowid)
+                sql.append(" AND d.rowid=?").add(rowid);
+            else
+                sql.append(" AND d.lsid=?").add(lsid);
 
             return new SqlSelector(getDbTable().getSchema(), sql).getMap();
         }
@@ -716,7 +758,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
-            keys = new Object[] {lsid};
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
             if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
             {
