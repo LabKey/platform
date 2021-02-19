@@ -48,8 +48,6 @@
     LABKEY.requiresScript('core/gen/errorHandler', function() {
     // LABKEY.requiresScript('http://localhost:3001/errorHandler.js', function() {
 
-        LABKEY.App.__app__.isDOMContentLoaded = true;
-
         LABKEY.App.loadApp('errorHandler', <%=q(appId)%>, {
             errorDetails : {
                 message: <%=q(model.getHeading())%>,

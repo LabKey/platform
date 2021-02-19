@@ -40,6 +40,8 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -63,6 +65,8 @@
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 
     final NavTree optionsMenu = PopupAdminView.createNavTree(context);
+    boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
+    boolean isSMHostedOnly = !hasPremiumModule && ModuleLoader.getInstance().hasModule("SampleManagement");
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
@@ -169,6 +173,56 @@
                 }(jQuery)
             </script>
 <%
+    }
+
+    // only show the product navigation menu item if we are on a premium LK server or LKSM hosted only
+    if (isRealUser && c.hasPermission(user, ReadPermission.class) && (hasPremiumModule || isSMHostedOnly))
+    {
+%>
+            <li class="dropdown dropdown-rollup" id="headerProductDropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <div id="headerProductDropdown-content">
+                        <div style="padding: 10px;"><i class="fa fa-spinner fa-pulse"></i> Loading...</div>
+                    </div>
+                </ul>
+            </li>
+            <script type="text/javascript">
+                +function($){
+                    // wait to load the product navigation dependencies until the hover over the header icon
+                    var productNavLoaded = false;
+                    $(document).on('mouseenter', '#headerProductDropdown .dropdown-toggle', function(e) {
+                        if (!productNavLoaded) {
+                            LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
+                            // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
+                            productNavLoaded = true;
+                        } else {
+                            loadProductNav();
+                        }
+                    });
+
+                    var loadProductNav = function() {
+                        LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', { show: true });
+                        $(document).on('click', addProductNavClickHandler);
+                    };
+
+                    // stop the product navigation menu from closing when click within the menu div
+                    $(document).on('click', '#headerProductDropdown-content', function (e) {
+                        e.stopPropagation();
+                    });
+
+                    // on click outside of the open menu, remove click handler and hide menu (which will force it to reset on next open)
+                    var addProductNavClickHandler = function (e) {
+                        if ($(e.target).closest('#headerProductDropdown-content').length === 0) {
+                            LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', { show: false });
+                            $(document).off('click', addProductNavClickHandler);
+                        }
+                    };
+                }(jQuery)
+            </script>
+            <%
     }
 
     if (optionsMenu != null && optionsMenu.hasChildren())

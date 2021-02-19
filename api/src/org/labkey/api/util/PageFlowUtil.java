@@ -2173,6 +2173,7 @@ public class PageFlowUtil
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
+            projectProps.put("title", project.getTitle());
             projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }
