@@ -108,6 +108,7 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     protected void reset()
     {
         _currentPosition = _markPosition-1;
+        _currentRowArray = null;
     }
 
     @Override
