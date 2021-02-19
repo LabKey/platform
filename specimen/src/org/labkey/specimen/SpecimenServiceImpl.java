@@ -39,7 +39,6 @@ import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
@@ -256,18 +255,6 @@ public class SpecimenServiceImpl implements SpecimenService
             }
         }
         return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
-    }
-
-    @Override
-    public ActionURL getCompletionURL(Container studyContainer, SpecimenService.CompletionType type)
-    {
-        if (studyContainer == null)
-            return null;
-
-        ActionURL url = new ActionURL(AutoCompleteAction.class, studyContainer);
-        url.addParameter("type", type.name());
-        url.addParameter("prefix", "");
-        return url;
     }
 
     @Override

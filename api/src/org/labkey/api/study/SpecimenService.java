@@ -66,8 +66,6 @@ public interface SpecimenService
 
     Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
 
-    ActionURL getCompletionURL(Container studyContainer, CompletionType type);
-
     Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
 
     Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
@@ -138,21 +136,6 @@ public interface SpecimenService
 
         /** @return a message to show the user after a request has been submitted */
         HtmlString getSubmittedMessage(Container c, int requestId);
-    }
-
-    interface SampleInfo
-    {
-        String getParticipantId();
-        Double getSequenceNum();
-        String getSampleId();
-    }
-
-    enum CompletionType
-    {
-        SpecimenGlobalUniqueId,
-        ParticipantId,
-        VisitId,
-        LabId
     }
 
     @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)

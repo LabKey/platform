@@ -22,24 +22,19 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
-import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
-import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
-import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
-import org.labkey.api.specimen.model.SpecimenDomainKind;
-import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
-import org.labkey.api.specimen.model.VialDomainKind;
+import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.action.SpecimenApiController;
@@ -100,13 +95,6 @@ public class SpecimenModule extends SpringModule
     @Override
     protected void init()
     {
-        PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
-        PropertyService.get().registerDomainKind(new DerivativeTypeDomainKind());
-        PropertyService.get().registerDomainKind(new PrimaryTypeDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenDomainKind());
-        PropertyService.get().registerDomainKind(new SpecimenEventDomainKind());
-        PropertyService.get().registerDomainKind(new VialDomainKind());
-
         // Register early so these roles are available to Java code at upgrade time
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
@@ -118,6 +106,7 @@ public class SpecimenModule extends SpringModule
         // Register early -- some modules don't declare a runtime dependency on specimen module, but will use the
         // service if it's available
         SpecimenService.setInstance(new SpecimenServiceImpl());
+        EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
     }
 
     @Override

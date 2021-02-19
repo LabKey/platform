@@ -249,9 +249,9 @@ public abstract class BaseStudyController extends SpringActionController
 
     public static class StudyJspView<T> extends JspView<T>
     {
-        public StudyJspView(StudyImpl study, String name, T bean, BindException errors)
+        public StudyJspView(StudyImpl study, String jspPath, T bean, BindException errors)
         {
-            super("/org/labkey/study/view/" + name, bean, errors);
+            super(jspPath, bean, errors);
             if (getPage() instanceof BaseStudyPage)
                 ((BaseStudyPage)getPage()).init(study);
         }

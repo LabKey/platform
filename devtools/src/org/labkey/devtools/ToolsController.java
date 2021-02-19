@@ -425,18 +425,8 @@ public class ToolsController extends SpringActionController
                                         public boolean string(int beginIndex, int endIndex)
                                         {
                                             String s = code.substring(beginIndex + 1, endIndex - 1);
-                                            if (s.length() > 4 && s.endsWith(".jsp"))
-                                            {
-                                                if (!s.startsWith("/org/labkey"))
-                                                {
-                                                    // Temp hack... assume that unqualified JSPs references from study are in /org/labkey/study/view/
-                                                    if (filePath.contains("study"))
-                                                        s = "/org/labkey/study/view/" + s;
-                                                }
-
-                                                if (shouldInclude(s))
-                                                    ret.add(s);
-                                            }
+                                            if (s.length() > 4 && s.endsWith(".jsp") && shouldInclude(s))
+                                                ret.add(s);
                                             return true;
                                         }
                                     });
