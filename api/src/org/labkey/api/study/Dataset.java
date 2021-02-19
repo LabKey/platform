@@ -128,9 +128,14 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
     public boolean canRead(UserPrincipal user);
 
     /**
-     * @return whether the user has permission to write to the dataset
+     * @return whether the user has permission to update the dataset
      */
-    public boolean canWrite(UserPrincipal user);
+    public boolean canEdit(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to insert rows into the dataset
+     */
+    public boolean canInsert(UserPrincipal user);
 
     /**
      * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete

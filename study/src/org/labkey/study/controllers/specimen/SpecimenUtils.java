@@ -266,7 +266,7 @@ public class SpecimenUtils
                 if (study.getParticipantCommentDatasetId() != null && study.getParticipantCommentDatasetId() != -1)
                 {
                     DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
-                    if (def != null && def.canWrite(getUser()))
+                    if (def != null && def.canEdit(getUser()))
                     {
                         if (addSep)
                         {
@@ -282,7 +282,7 @@ public class SpecimenUtils
                 if (study.getParticipantVisitCommentDatasetId() != null && study.getParticipantVisitCommentDatasetId() != -1)
                 {
                     DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
-                    if (def != null && def.canWrite(getUser()))
+                    if (def != null && def.canEdit(getUser()))
                     {
                         if (addSep)
                         {

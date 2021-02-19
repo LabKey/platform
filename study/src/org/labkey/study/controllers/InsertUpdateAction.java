@@ -114,6 +114,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
     {
         StudyImpl study = getStudy();
+
         _ds = StudyManager.getInstance().getDatasetDefinition(getStudy(), form.getDatasetId());
         if (null == _ds)
         {
@@ -124,7 +125,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             throw new UnauthorizedException("User does not have permission to view this dataset");
         }
-        if (!_ds.canWrite(getUser()))
+        if (isInsert() && !_ds.canInsert(getUser()))
+        {
+            throw new UnauthorizedException("User does not have permission to insert into this dataset");
+        }
+        if (!_ds.canEdit(getUser()))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
@@ -284,7 +289,12 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         final Container c = getContainer();
         final User user = getUser();
-        if (!_ds.canWrite(user))
+        boolean isInsert = isInsert();
+        if (isInsert && !_ds.canInsert(user))
+        {
+            throw new UnauthorizedException("User does not have permission to insert into this dataset");
+        }
+        else if (!isInsert && !_ds.canEdit(user))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }

@@ -921,6 +921,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
+                else if (getStudy().getContainer().hasPermission(user, InsertPermission.class))
+                {
+                    result.add(InsertPermission.class);
+                }
                 else if (getStudy().getContainer().hasPermission(user, UpdatePermission.class))
                 {
                     // Basic write access grants insert/update/delete for datasets to everyone who has update permission
@@ -942,6 +946,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     {
                         result.add(UpdatePermission.class);
                         result.add(DeletePermission.class);
+                        result.add(InsertPermission.class);
+                    }
+                    else if (studyPolicy.hasPermission(user, InsertPermission.class))
+                    {
                         result.add(InsertPermission.class);
                     }
                     // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
@@ -975,7 +983,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
 
     @Override
-    public boolean canWrite(UserPrincipal user)
+    public boolean canEdit(UserPrincipal user)
     {
         if (getStudy().isDataspaceStudy())
             return false;
@@ -984,6 +992,18 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;
         return getPermissions(user).contains(UpdatePermission.class);
+    }
+
+    @Override
+    public boolean canInsert(UserPrincipal user)
+    {
+        if (getStudy().isDataspaceStudy())
+            return false;
+        if (user instanceof User && !canAccessPhi((User)user))
+            return false;
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            return true;
+        return getPermissions(user).contains(InsertPermission.class);
     }
 
 

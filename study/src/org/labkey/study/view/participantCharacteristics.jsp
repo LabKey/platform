@@ -141,7 +141,7 @@
             datasetRow = dataset.getDatasetRow(user, lsid);
         }
 
-        boolean editAccess = dataset.canWrite(user);
+        boolean editAccess = dataset.canEdit(user);
         if (datasetRow == null)
         {
             if (editAccess)

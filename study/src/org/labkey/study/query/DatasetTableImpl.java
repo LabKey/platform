@@ -1111,7 +1111,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.hasRootAdminPermission() && !def.canWrite(user))
+        if (!user.hasRootAdminPermission() && !def.canInsert(user))
             return null;
         return new DatasetUpdateService(this);
     }
@@ -1123,8 +1123,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         Dataset def = getDatasetDefinition();
         if (ReadPermission.class.isAssignableFrom(perm))
             return def.canRead(user);
-        if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
-            return def.canWrite(user);
+        if (InsertPermission.class.isAssignableFrom(perm))
+            return def.canInsert(user);
+        if (UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
+            return def.canEdit(user);
         return def.getPolicy().hasPermission(user, perm);
     }
 

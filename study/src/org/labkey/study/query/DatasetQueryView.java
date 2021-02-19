@@ -140,7 +140,7 @@ public class DatasetQueryView extends StudyQueryView
         _showSourceLinks = settings.isShowSourceLinks();
 
         // Only show link to edit if permission allows it
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canEdit(getUser()));
 
         if (form.getVisitRowId() != 0)
         {
@@ -380,7 +380,8 @@ public class DatasetQueryView extends StudyQueryView
         bar.add(createExportButton(recordSelectorColumns));
 
         User user = getUser();
-        boolean canWrite = canWrite(_dataset, user);
+        boolean canEdit = canEdit(_dataset, user);
+        boolean canInsert = canInsert(_dataset, user);
         boolean canManage = canManage(_dataset, user);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         boolean isAssayDataset = _dataset.isAssayData();
@@ -397,7 +398,7 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (!isAssayDataset) // admins always get the import and manage buttons
             {
-                if (canWrite)
+                if (canInsert)
                 {
                     // insert menu button contain Insert New and Bulk import, or button for either option
                     ActionButton insertButton = createInsertMenuButton();
@@ -408,7 +409,7 @@ public class DatasetQueryView extends StudyQueryView
                     }
                 }
 
-                if (canWrite && _study instanceof StudyImpl)
+                if (canEdit && _study instanceof StudyImpl)
                 {
                     ActionURL deleteRowsURL = urlFor(QueryAction.deleteQueryRows);
                     if (deleteRowsURL != null)
@@ -438,7 +439,7 @@ public class DatasetQueryView extends StudyQueryView
             {
                 bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
-                if (user.hasRootAdminPermission() || canWrite)
+                if (user.hasRootAdminPermission() || canEdit)
                 {
                     ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
                     deleteRowsURL.addParameter("protocolId", protocol.getRowId());
@@ -538,9 +539,14 @@ public class DatasetQueryView extends StudyQueryView
         return button;
     }
 
-    private boolean canWrite(DatasetDefinition def, User user)
+    private boolean canEdit(DatasetDefinition def, User user)
     {
-        return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
+        return def.canEdit(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
+    }
+
+    private boolean canInsert(DatasetDefinition def, User user)
+    {
+        return def.canInsert(user) && def.getContainer().hasPermission(user, InsertPermission.class);
     }
 
     private boolean canManage(DatasetDefinition def, User user)
