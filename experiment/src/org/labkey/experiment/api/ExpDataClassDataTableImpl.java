@@ -758,6 +758,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowStripped, oldRow, keys));
 
             // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
+            keys = new Object[] {lsid};
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
             if (t.getColumnNameSet().stream().anyMatch(rowStripped::containsKey))
             {
