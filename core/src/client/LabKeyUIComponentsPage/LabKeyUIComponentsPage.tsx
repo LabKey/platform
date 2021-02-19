@@ -368,7 +368,7 @@ export class App extends React.Component<any, State> {
                 }
                 {selected === 'OntologyBrowser' &&
                     this.renderPanel('OntologyBrowser',
-                        <OntologyBrowserPanel ontologyId={ 7 } />
+                        <OntologyBrowserPanel ontologyId={"NCIT"} />  //Test with the ontology loaded by existing tests
                     )
                 }
                 {selected === 'NavigationBar' &&
