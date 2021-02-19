@@ -1101,9 +1101,10 @@ public class FileContentServiceImpl implements FileContentService
                 _log.info("rename failed, attempting to copy");
 
                 //listFiles can return null, which could cause a NPE
-                if (prev.listFiles() != null)
+                File[] children = prev.listFiles();
+                if (children != null)
                 {
-                    for (File file : prev.listFiles())
+                    for (File file : children)
                         FileUtil.copyBranch(file, dest);
                 }
                 FileUtil.deleteDir(prev);
