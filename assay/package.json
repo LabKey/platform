@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "2.1.0-fb-lksProductNav.0"
+    "@labkey/components": "2.1.0-fb-lksProductNav.1"
   },
   "devDependencies": {
     "@labkey/build": "1.1.2"
