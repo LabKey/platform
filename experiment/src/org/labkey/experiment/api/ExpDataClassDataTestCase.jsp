@@ -834,6 +834,11 @@ public void testLargeUnique() throws Exception
     }
 }
 
+private ArrayListMap<String, Object> newArrayListMap()
+{
+    return new ArrayListMap<>(new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>()));
+}
+
 @Test
 public void testDataClassWithVocabularyProperties() throws Exception
 {
@@ -857,7 +862,7 @@ public void testDataClassWithVocabularyProperties() throws Exception
     assertNotNull(dataClass);
 
     // insert a data class
-    ArrayListMap<String, Object> rowToInsert = new ArrayListMap<>();
+    ArrayListMap<String, Object> rowToInsert = newArrayListMap();
     rowToInsert.put("OtherProp", "OtherValue");
     // inserting a property with null value
     rowToInsert.put(colorPropertyURI, null);
@@ -880,7 +885,7 @@ public void testDataClassWithVocabularyProperties() throws Exception
     // Verifying property with null value is not inserted
     assertFalse("Property with null value is present.", insertedProps.containsKey(colorPropertyURI));
 
-    ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+    ArrayListMap<String, Object> rowToUpdate = newArrayListMap();
     rowToUpdate.put("RowId", insertedRowId);
     rowToUpdate.put(typePropertyURI, null);
     // updating existing property with null value
@@ -890,7 +895,7 @@ public void testDataClassWithVocabularyProperties() throws Exception
     List<Map<String, Object>> rowsToUpdate = helper.buildRows(rowToUpdate);
 
     List<Map<String, Object>> oldKeys = new ArrayList<>();
-    ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+    ArrayListMap<String, Object> oldKey = newArrayListMap();
     oldKey.put("RowId", insertedRowId);
     oldKeys.add(oldKey);
 
@@ -925,7 +930,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
 
     // Insert a sample into sample type
-    ArrayListMap<String, Object> row = new ArrayListMap<>();
+    ArrayListMap<String, Object> row = newArrayListMap();
     row.put("name", sampleOneLocation);
 
     List<Map<String, Object>> rows = helper.buildRows(row);
@@ -967,7 +972,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     UserSchema userSchema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
 
     // insert a data class with vocab look up prop using row id of inserted sample
-    ArrayListMap<String, Object> rowToInsert = new ArrayListMap<>();
+    ArrayListMap<String, Object> rowToInsert = newArrayListMap();
     rowToInsert.put("Name", carName1);
     rowToInsert.put("OtherProp", "OtherValue");
     rowToInsert.put(locationPropertyURI, insertedSampleRowId);

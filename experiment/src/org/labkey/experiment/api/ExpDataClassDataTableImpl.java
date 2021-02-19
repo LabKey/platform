@@ -677,11 +677,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             aliasColumns(_columnMapping, keys);
 
-            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get("rowid"));
-            String lsid = (String)JdbcType.VARCHAR.convert(keys.get("lsid"));
+            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(ExpDataTable.Column.RowId.name()));
+            String lsid = (String)JdbcType.VARCHAR.convert(keys.get(ExpDataTable.Column.LSID.name()));
             if (null==rowid && null==lsid)
             {
-                throw new InvalidKeyException("Value must be supplised for key field 'rowid' or 'lsid'", keys);
+                throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid'", keys);
             }
 
             Map<String,Object> row = _select(container, rowid, lsid);
