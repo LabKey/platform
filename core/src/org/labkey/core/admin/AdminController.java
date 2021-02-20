@@ -9007,6 +9007,28 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public static class GetFolderTabsAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object form, BindException errors) throws Exception
+        {
+            return getContainer().getFolderType().getAppBar(getViewContext(), getPageConfig()).getButtons()
+                    .stream().map(this::getProperties)
+                    .collect(Collectors.toList());
+        }
+
+        private Map<String, Object> getProperties(NavTree navTree)
+        {
+            Map<String, Object> props = new HashMap<>();
+            props.put("id", navTree.getId());
+            props.put("text", navTree.getText());
+            props.put("href", navTree.getHref());
+            props.put("disabled", navTree.isDisabled());
+            return props;
+        }
+    }
+
     @SuppressWarnings("unused")
     public static class ShortURLForm
     {
@@ -10236,6 +10258,7 @@ public class AdminController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
                     new GetModulesAction(),
+                    new GetFolderTabsAction(),
                     controller.new ClearDeletedTabFoldersAction()
             );
 

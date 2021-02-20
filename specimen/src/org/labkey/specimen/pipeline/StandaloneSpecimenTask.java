@@ -27,6 +27,7 @@ import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 */
 
 // This task is used to import specimen archives directly via the pipeline ui. SpecimenBatch is the associated pipeline job.
+// Registered by the specimen module (specimenContext.xml), so specimen module is always present when this code is invoked.
 public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpecimenTask.Factory>
 {
     private StandaloneSpecimenTask(Factory factory, PipelineJob job)
