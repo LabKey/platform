@@ -80,7 +80,6 @@ public class SampleMindedImportTest extends BaseWebDriverTest
         _containerHelper.enableModule("Specimen");
         clickButton("Create Study");
         setFormElement(Locator.name("startDate"), "2011-01-01");
-        click(Locator.radioButtonByNameAndValue("simpleRepository", "true"));
         clickButton("Create Study");
 
         clickAndWait(Locator.linkWithText("manage visits"));

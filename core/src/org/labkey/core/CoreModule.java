@@ -395,7 +395,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
-    }
+   }
 
     private void registerHealthChecks()
     {

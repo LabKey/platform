@@ -53,6 +53,12 @@ public abstract class ProductMenuProvider
     @NotNull
     public abstract String getProductId();
 
+    @Nullable
+    public String getProductName()
+    {
+        return getProductId();
+    }
+
     @NotNull
     public abstract Collection<String> getSectionNames();
 

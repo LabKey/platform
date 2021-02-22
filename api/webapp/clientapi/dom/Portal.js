@@ -575,7 +575,7 @@
                                 errorMsg = jsonResp.errors[0].message;
                             else
                                 errorMsg = 'An unknown error occurred. Please contact your administrator.';
-                            Ext4.Msg.alert(errorMsg);
+                            Ext4.Msg.alert('Error', errorMsg);
                         }
                     });
                 };
@@ -651,7 +651,7 @@
                                     errorMsg = jsonResp.errors[0].message;
                                 else
                                     errorMsg = 'An unknown error occurred. Please contact your administrator.';
-                                Ext4.Msg.alert('Oops', errorMsg);
+                                Ext4.Msg.alert('Error', errorMsg);
                             }
                         });
                     };

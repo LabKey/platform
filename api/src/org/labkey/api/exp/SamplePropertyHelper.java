@@ -34,7 +34,9 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.CompletionType;
+import org.labkey.api.study.StudyUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.ViewServlet;
@@ -147,12 +149,17 @@ public abstract class SamplePropertyHelper<ObjectType>
                         targetStudy = ContainerManager.getForId(defaultValueContext.getTargetStudy());
                     if (targetStudy != null && targetStudy.hasPermission(defaultValueContext.getUser(), ReadPermission.class))
                     {
-                        if (sampleProperty.getName().equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME))
-                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, SpecimenService.CompletionType.ParticipantId);
-                        else if (sampleProperty.getName().equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME))
-                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, SpecimenService.CompletionType.SpecimenGlobalUniqueId);
-                        else if (sampleProperty.getName().equals(AbstractAssayProvider.VISITID_PROPERTY_NAME))
-                            autoCompletePrefix = SpecimenService.get().getCompletionURL(targetStudy, SpecimenService.CompletionType.VisitId);
+                        CompletionType type = null;
+
+                        switch (sampleProperty.getName())
+                        {
+                            case AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME -> type = CompletionType.ParticipantId;
+                            case AbstractAssayProvider.SPECIMENID_PROPERTY_NAME -> type = CompletionType.SpecimenGlobalUniqueId;
+                            case AbstractAssayProvider.VISITID_PROPERTY_NAME -> type = CompletionType.VisitId;
+                        }
+
+                        if (null != type)
+                            autoCompletePrefix = PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(targetStudy, type);
                     }
                 }
                 var col = sampleProperty.getPropertyDescriptor().createColumnInfo(OntologyManager.getTinfoObject(), "ObjectURI", user, view.getViewContext().getContainer());

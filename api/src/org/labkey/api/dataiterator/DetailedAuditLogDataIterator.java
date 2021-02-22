@@ -129,7 +129,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             if (auditType == DETAILED)
             {
                 DataIterator it = builder.getDataIterator(context);
-                DataIterator in = DataIteratorUtil.wrapMap(it, false);
+                DataIterator in = DataIteratorUtil.wrapMap(it, true);
                 return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
             }
             // Nothing to do, so just return input DataIterator

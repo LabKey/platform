@@ -1993,7 +1993,6 @@ core/src/org/labkey/core/LabKeyDbSchema.java -text
 core/src/org/labkey/core/login/DbLoginAuthenticationProvider.java -text
 core/src/org/labkey/core/login/DbLoginManager.java -text
 core/src/org/labkey/core/login/finishResetPassword.jsp -text
-core/src/org/labkey/core/login/PasswordRule.java -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/login/termsOfUse.jsp -text
@@ -3192,7 +3191,6 @@ study/src/org/labkey/study/designer/StudySchedule.java -text
 study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
 study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/XMLSerializer.java -text
-study/src/org/labkey/study/importer/AbstractStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/AssayScheduleImporter.java -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
 study/src/org/labkey/study/importer/CreateChildStudyPipelineJob.java -text
@@ -3209,8 +3207,6 @@ study/src/org/labkey/study/importer/ProtocolDocumentImporter.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
 study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
-study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
-study/src/org/labkey/study/importer/SpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenRefreshPipelineJob.java -text
 study/src/org/labkey/study/importer/StudyImportContext.java -text
 study/src/org/labkey/study/importer/StudyImporter.java -text
@@ -3279,7 +3275,6 @@ study/src/org/labkey/study/model/VisitMapKey.java -text
 study/src/org/labkey/study/MultipleCohortFilter.java -text
 study/src/org/labkey/study/pipeline/AbstractDatasetImportTask.java -text
 study/src/org/labkey/study/pipeline/AbstractDatasetImportTaskFactory.java -text
-study/src/org/labkey/study/pipeline/AbstractSpecimenTask.java -text
 study/src/org/labkey/study/pipeline/DatasetBatch.java -text
 study/src/org/labkey/study/pipeline/DatasetFileReader.java -text
 study/src/org/labkey/study/pipeline/DatasetImportRunnable.java -text
@@ -3288,14 +3283,8 @@ study/src/org/labkey/study/pipeline/DatasetJobSupport.java -text
 study/src/org/labkey/study/pipeline/FileAnalysisDatasetTask.java -text
 study/src/org/labkey/study/pipeline/MasterPatientIndexUpdateTask.java -text
 study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
-study/src/org/labkey/study/pipeline/SampleMindedTransform.java -text
-study/src/org/labkey/study/pipeline/SampleMindedTransformTask.java -text
-study/src/org/labkey/study/pipeline/SpecimenBatch.java -text
 study/src/org/labkey/study/pipeline/StandaloneDatasetTask.java -text
-study/src/org/labkey/study/pipeline/StandaloneSpecimenTask.java -text
-study/src/org/labkey/study/pipeline/StudyBatch.java -text
 study/src/org/labkey/study/pipeline/StudyImportDatasetTask.java -text
-study/src/org/labkey/study/pipeline/StudyImportSpecimenTask.java -text
 study/src/org/labkey/study/pipeline/StudyPipeline.java -text
 study/src/org/labkey/study/pipeline/StudyReloadSourceJob.java -text
 study/src/org/labkey/study/pipeline/StudyReloadSourceJobSupport.java -text
@@ -3392,7 +3381,6 @@ study/src/org/labkey/study/security/permissions/StudyPermissionExporter.java -te
 study/src/org/labkey/study/security/study.jsp -text
 study/src/org/labkey/study/security/studySecurity.jsp -text
 study/src/org/labkey/study/SingleCohortFilter.java -text
-study/src/org/labkey/study/SpecimenServiceImpl.java -text
 study/src/org/labkey/study/StudyContainerListener.java -text
 study/src/org/labkey/study/StudyFolderType.java -text
 study/src/org/labkey/study/StudyMacroProvider.java -text
@@ -3451,10 +3439,6 @@ study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
 study/src/org/labkey/study/view/sendParticipantGroup.jsp -text
 study/src/org/labkey/study/view/snapshotSettings.jsp -text
-study/src/org/labkey/study/view/specimen/autoReportList.jsp -text
-study/src/org/labkey/study/view/specimen/configRequestabilityRules.jsp -text
-study/src/org/labkey/study/view/specimen/configurationRequired.jsp -text
-study/src/org/labkey/study/view/specimen/customizeSpecimenReportWebPart.jsp -text
 study/src/org/labkey/study/view/specimen/groupMembers.jsp -text
 study/src/org/labkey/study/view/specimen/importSpecimens.jsp -text
 study/src/org/labkey/study/view/specimen/labSpecimenLists.jsp -text
@@ -3470,11 +3454,7 @@ study/src/org/labkey/study/view/specimen/manageRequestStatus.jsp -text
 study/src/org/labkey/study/view/specimen/manageRequirement.jsp -text
 study/src/org/labkey/study/view/specimen/manageStatuses.jsp -text
 study/src/org/labkey/study/view/specimen/manageStatusOrder.jsp -text
-study/src/org/labkey/study/view/specimen/notification.txt -text
-study/src/org/labkey/study/view/specimen/relevantRequests.jsp -text
-study/src/org/labkey/study/view/specimen/search.jsp -text
 study/src/org/labkey/study/view/specimen/selectSpecimenProvider.jsp -text
-study/src/org/labkey/study/view/specimen/SpecimenRequestNotificationEmailTemplate.java -text
 study/src/org/labkey/study/view/specimen/updateComments.jsp -text
 study/src/org/labkey/study/view/specimen/viewRequestsHeader.jsp -text
 study/src/org/labkey/study/view/specimen/webPart.jsp -text

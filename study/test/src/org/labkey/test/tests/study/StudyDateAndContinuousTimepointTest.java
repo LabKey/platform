@@ -83,7 +83,6 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         setFormElement(Locator.name("quf_date"), VISIT_DATE);
         setFormElement(Locator.name("quf_TestDate"), VISIT_DATE);
         clickButton("Submit");
-
     }
 
     @Test
@@ -120,7 +119,6 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         table = new DataRegionTable("Dataset", getDriver());
         checker().verifyEquals("Visit field is not blank when study is changed to date", Arrays.asList("Day 0"),
                 table.getColumnDataAsText("ParticipantVisit/Visit"));
-
     }
 
     @Test
@@ -159,12 +157,14 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
             waitForElement(Locator.css(".studyWizardVisitList"));
             _extHelper.selectExtGridItem("Label", "Day 0", -1, "studyWizardVisitList", true);
             clickButton("Next", 0);
-
         }
 
-        //specimens
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
-        clickButton("Next", 0);
+        //specimens, if present
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
+            clickButton("Next", 0);
+        }
 
         //Study object
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
