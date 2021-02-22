@@ -264,8 +264,11 @@ public class SharedStudyTest extends BaseWebDriverTest
         click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens
-        clickButton("Next", 0);
+        // Wizard page 5 : Specimens, if present
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            clickButton("Next", 0);
+        }
 
         // Wizard Page 6 : Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));

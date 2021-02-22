@@ -236,12 +236,6 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         return m.matches();
     }
 
-    @Override
-    protected void verifySpecimens()
-    {
-        verifySpecimens();
-    }
-
     Locator getDatasetLocator(String datasetName)
     {
         return Locator.linkWithText(datasetName);
