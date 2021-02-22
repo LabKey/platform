@@ -228,14 +228,23 @@ public class JunitUtil
                     {
                         Map<String, File> map = new CaseInsensitiveHashMap<>();
 
-                        java.nio.file.Path path = Paths.get("server", "modules");
-                        Files.walk(Paths.get(projectRoot).resolve(path), 2)
-                            .filter(Files::isDirectory)
-                            .map(p -> p.resolve(SAMPLE_DATA_PATH))
-                            .filter(p -> Files.isDirectory(p))
-                            .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
+                        java.nio.file.Path modulesDir = Paths.get("server", "modules");
+                        java.nio.file.Path path = Paths.get(projectRoot).resolve(modulesDir);
+                        if (path.toFile().exists())
+                        {
+                            Files.walk(path, 2)
+                                .filter(Files::isDirectory)
+                                .map(p -> p.resolve(SAMPLE_DATA_PATH))
+                                .filter(Files::isDirectory)
+                                .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
 
-                        _sampleDataDirectories = Collections.unmodifiableMap(map);
+                            _sampleDataDirectories = Collections.unmodifiableMap(map);
+                        }
+                        else
+                        {
+                            // No 'server/modules' directory
+                            _sampleDataDirectories = Collections.emptyMap();
+                        }
                     }
 
                     sampleDataDir = _sampleDataDirectories.get(name);
