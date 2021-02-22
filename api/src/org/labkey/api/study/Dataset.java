@@ -130,7 +130,12 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
     /**
      * @return whether the user has permission to update the dataset
      */
-    public boolean canEdit(UserPrincipal user);
+    public boolean canUpdate(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to delete from the dataset
+     */
+    public boolean canDelete(UserPrincipal user);
 
     /**
      * @return whether the user has permission to insert rows into the dataset

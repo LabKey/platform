@@ -121,7 +121,7 @@ if (permissions.contains(AdminPermission.class))
             .href(deleteDatasetURL)
             .usePost("Are you sure you want to delete this dataset? All related data and visitmap entries will also be deleted."));
     }
-    if (user.hasRootAdminPermission() || dataset.canEdit(user))
+    if (user.hasRootAdminPermission() || dataset.canDelete(user))
     {
         buttons.add(button("Delete All Rows").onClick("truncateTable();"));
     }

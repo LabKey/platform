@@ -1126,7 +1126,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         if (InsertPermission.class.isAssignableFrom(perm))
             return def.canInsert(user);
         if (UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
-            return def.canEdit(user);
+            return def.canUpdate(user);
         return def.getPolicy().hasPermission(user, perm);
     }
 

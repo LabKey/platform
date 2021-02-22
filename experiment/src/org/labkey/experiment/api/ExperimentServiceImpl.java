@@ -3724,7 +3724,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                             for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
-                                if (!dataset.canEdit(user))
+                                if (!dataset.canDelete(user))
                                 {
                                     throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                                 }

@@ -2880,7 +2880,7 @@ public class ExperimentController extends SpringActionController
                 for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
                 {
                     ActionURL url = urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
-                    if (dataset.canEdit(getUser()))
+                    if (dataset.canDelete(getUser()))
                     {
                         permissionDatasetRows.add(new Pair<>(dataset, url));
                     }

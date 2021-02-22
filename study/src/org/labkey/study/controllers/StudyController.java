@@ -738,7 +738,7 @@ public class StudyController extends BaseStudyController
 
     private static boolean canWrite(DatasetDefinition def, User user)
     {
-        return def.canEdit(user) && def.getContainer().hasPermission(user, ReadPermission.class);
+        return def.canInsert(user) && def.getContainer().hasPermission(user, ReadPermission.class);
     }
 
 
@@ -2951,7 +2951,7 @@ public class StudyController extends BaseStudyController
             if (null == dataset)
                 throw new NotFoundException();
 
-            if (!dataset.canEdit(getUser()))
+            if (!dataset.canUpdate(getUser()))
                 throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing

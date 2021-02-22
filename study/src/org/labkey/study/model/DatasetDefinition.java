@@ -921,11 +921,12 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
-                else if (getStudy().getContainer().hasPermission(user, InsertPermission.class))
-                {
+                Container studyContainer = getStudy().getContainer();
+                if (studyContainer.hasPermission(user, InsertPermission.class))
                     result.add(InsertPermission.class);
-                }
-                else if (getStudy().getContainer().hasPermission(user, UpdatePermission.class))
+                if (studyContainer.hasPermission(user, DeletePermission.class))
+                    result.add(DeletePermission.class);
+                if (studyContainer.hasPermission(user, UpdatePermission.class))
                 {
                     // Basic write access grants insert/update/delete for datasets to everyone who has update permission
                     // in the folder
@@ -948,9 +949,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                         result.add(DeletePermission.class);
                         result.add(InsertPermission.class);
                     }
-                    else if (studyPolicy.hasPermission(user, InsertPermission.class))
+                    if (studyPolicy.hasPermission(user, InsertPermission.class))
                     {
                         result.add(InsertPermission.class);
+                    }
+                    if (studyPolicy.hasPermission(user, DeletePermission.class))
+                    {
+                        result.add(DeletePermission.class);
                     }
                     // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
                     // so check for a custom security policy even if they have UpdatePermission on the study's policy
@@ -981,13 +986,15 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return getPermissions(user).contains(ReadPermission.class);
     }
 
+    private boolean isEditProhibited(UserPrincipal user)
+    {
+        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user));
+    }
 
     @Override
-    public boolean canEdit(UserPrincipal user)
+    public boolean canUpdate(UserPrincipal user)
     {
-        if (getStudy().isDataspaceStudy())
-            return false;
-        if (user instanceof User && !canAccessPhi((User)user))
+        if (isEditProhibited(user))
             return false;
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;
@@ -995,11 +1002,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Override
+    public boolean canDelete(UserPrincipal user)
+    {
+        if (isEditProhibited(user))
+            return false;
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            return true;
+        return getPermissions(user).contains(UpdatePermission.class);
+    }
+
+
+    @Override
     public boolean canInsert(UserPrincipal user)
     {
-        if (getStudy().isDataspaceStudy())
-            return false;
-        if (user instanceof User && !canAccessPhi((User)user))
+        if (isEditProhibited(user))
             return false;
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;

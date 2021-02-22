@@ -140,7 +140,7 @@ public class DatasetQueryView extends StudyQueryView
         _showSourceLinks = settings.isShowSourceLinks();
 
         // Only show link to edit if permission allows it
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canEdit(getUser()));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canUpdate(getUser()));
 
         if (form.getVisitRowId() != 0)
         {
@@ -541,7 +541,7 @@ public class DatasetQueryView extends StudyQueryView
 
     private boolean canEdit(DatasetDefinition def, User user)
     {
-        return def.canEdit(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
+        return def.canUpdate(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
     }
 
     private boolean canInsert(DatasetDefinition def, User user)
