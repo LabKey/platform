@@ -95,9 +95,17 @@ public class StudyDataspaceTest extends StudyBaseTest
     protected void initializeFolder()
     {
         _containerHelper.createProject(getProjectName(), "Dataspace");
+        if (_studyHelper.isSpecimenModulePresent())
+            _containerHelper.enableModule("Specimen");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_STUDY1, "Study", null, true);
+        if (_studyHelper.isSpecimenModulePresent())
+            _containerHelper.enableModule("Specimen");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_STUDY2, "Study", null, true);
+        if (_studyHelper.isSpecimenModulePresent())
+            _containerHelper.enableModule("Specimen");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_STUDY5, "Study", null, true);
+        if (_studyHelper.isSpecimenModulePresent())
+            _containerHelper.enableModule("Specimen");
     }
 
     @Override
@@ -261,6 +269,9 @@ public class StudyDataspaceTest extends StudyBaseTest
 
     private void verifyStudyAssayScheduleTableInfo(boolean canInsert, int expectedRowCount, List<String> expectedValues, String folderName)
     {
+        if (!_studyHelper.isSpecimenModulePresent())
+            return;
+
         goToModule("Query");
         viewQueryData("study", "AssaySpecimen");
         DataRegionTable assaySpecimenTable = new DataRegionTable("query", this);
