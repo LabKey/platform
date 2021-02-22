@@ -230,7 +230,7 @@ public class JunitUtil
 
                         java.nio.file.Path modulesDir = Paths.get("server", "modules");
                         java.nio.file.Path path = Paths.get(projectRoot).resolve(modulesDir);
-                        if (path.toFile().exists())
+                        if (Files.exists(path))
                         {
                             Files.walk(path, 2)
                                 .filter(Files::isDirectory)
