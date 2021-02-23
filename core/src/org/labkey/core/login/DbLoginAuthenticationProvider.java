@@ -24,6 +24,7 @@ import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationPro
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;

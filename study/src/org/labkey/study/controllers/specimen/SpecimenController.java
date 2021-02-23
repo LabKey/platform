@@ -90,7 +90,6 @@ import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.actions.ReportConfigurationBean;
 import org.labkey.api.specimen.actions.SpecimenReportActions;
@@ -230,7 +229,6 @@ public class SpecimenController extends BaseStudyController
         ShowUploadSpecimensAction.ImportCompleteAction.class,
         ShowGroupMembersAction.class,
         ShowSearchAction.class,
-        AutoCompleteAction.class,
         ParticipantCommentAction.SpecimenCommentInsertAction.class,
         ParticipantCommentAction.SpecimenCommentUpdateAction.class,
 
@@ -4982,7 +4980,7 @@ public class SpecimenController extends BaseStudyController
                     form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
                 }
             }
-            StudyJspView<Object> view = new StudyJspView<>(study, "manageComments.jsp", form, errors);
+            StudyJspView<Object> view = new StudyJspView<>(study, "/org/labkey/study/view/manageComments.jsp", form, errors);
             view.setTitle("Comment Configuration");
 
             return view;

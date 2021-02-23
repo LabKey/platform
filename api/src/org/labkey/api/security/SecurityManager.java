@@ -2448,7 +2448,7 @@ public class SecurityManager
                     try
                     {
                         addMember(newGroup, groupA);
-                        fail("Should have thrown error when attempting to create circular group.  Chain is lenght: " + count);
+                        fail("Should have thrown error when attempting to create circular group. Chain is length: " + count);
                     }
                     catch (InvalidGroupMembershipException e)
                     {
@@ -2520,7 +2520,7 @@ public class SecurityManager
 
                 SecurityManager.setVerification(email, null);
 
-                String password = generateStrongPassword();
+                String password = generateStrongPassword(user);
                 SecurityManager.setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
@@ -2533,9 +2533,20 @@ public class SecurityManager
             }
         }
 
-        private String generateStrongPassword()
+        private String generateStrongPassword(User user)
         {
-            return createTempPassword() + "Az9!";
+            String password;
+
+            // Check and loop until password is valid for this user. These randomly generated passwords will often
+            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
+            // rules disallow.
+            do
+            {
+                password = createTempPassword() + "Az9!";
+            }
+            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
+
+            return password;
         }
 
         @Test

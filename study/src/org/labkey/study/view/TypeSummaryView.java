@@ -9,6 +9,6 @@ public class TypeSummaryView extends BaseStudyController.StudyJspView<DatasetDef
 {
     public TypeSummaryView(StudyImpl study, DatasetDefinition dataset, BindException errors)
     {
-        super(study, "typeSummary.jsp", dataset, errors);
+        super(study, "/org/labkey/study/view/typeSummary.jsp", dataset, errors);
     }
 }

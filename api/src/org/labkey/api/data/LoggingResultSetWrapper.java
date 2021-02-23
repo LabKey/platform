@@ -53,19 +53,25 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     @Override
     public void close() throws SQLException
     {
-        if (!_queryLogging.isEmpty() && _queryLogging.isShouldAudit())
+        try
         {
-            SelectQueryAuditEvent selectQueryAuditEvent = _queryLogging.getSelectQueryAuditEvent();
-            SelectQueryAuditProvider selectQueryAuditProvider = _queryLogging.getSelectQueryAuditProvider();
-            boolean logEmpty = selectQueryAuditEvent.isLogEmptyResults()
-                    && (selectQueryAuditProvider == null || selectQueryAuditProvider.isLogEmptyResults());
-            if (!_dataLoggingValues.isEmpty() || logEmpty)
+            if (!_queryLogging.isEmpty() && _queryLogging.isShouldAudit())
             {
-                selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
-                AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);
+                SelectQueryAuditEvent selectQueryAuditEvent = _queryLogging.getSelectQueryAuditEvent();
+                SelectQueryAuditProvider selectQueryAuditProvider = _queryLogging.getSelectQueryAuditProvider();
+                boolean logEmpty = selectQueryAuditEvent.isLogEmptyResults()
+                        && (selectQueryAuditProvider == null || selectQueryAuditProvider.isLogEmptyResults());
+                if (!_dataLoggingValues.isEmpty() || logEmpty)
+                {
+                    selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
+                    AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);
+                }
             }
         }
-        super.close();
+        finally
+        {
+            super.close();
+        }
     }
 
 

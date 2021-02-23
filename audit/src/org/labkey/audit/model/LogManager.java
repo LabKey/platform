@@ -34,6 +34,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -74,9 +75,35 @@ public class LogManager
         return AuditSchema.getInstance().getSchema();
     }
 
-    public void insertEvent(User user, AuditTypeEvent event)
+    /** There are a few places that depend on the reselect behavior. e.g. to get the rowid of the event */
+    public <K extends AuditTypeEvent> K insertEvent(User user, K type)
     {
-        insertEvents(user, List.of(event));
+        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+        auditLogger.info(type.getAuditLogMessage());
+
+        AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
+
+        if (provider != null)
+        {
+            Container c = ContainerManager.getForId(type.getContainer());
+
+            UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
+
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(provider.getEventName(), false);
+
+                if (table instanceof DefaultAuditTypeTable)
+                {
+                    // consider using etl data iterator for inserts
+                    type = validateFields(provider, type);
+                    TableInfo dbTable = ((DefaultAuditTypeTable)table).getRealTable();
+                    K ret = Table.insert(user, dbTable, type);
+                    return ret;
+                }
+            }
+        }
+        return null;
     }
 
     /** all events must be of same event type and container, for optimized code path */
@@ -106,11 +133,13 @@ public class LogManager
         {
             // do one at a time if events are not all the same
             for (var event : events)
-                insertEvents(user, List.of(event));
+                insertEvent(user, event);
             return;
         }
 
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
+        if (null == provider)
+            return;
         Container c = ContainerManager.getForId(type.getContainer());
         UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
         TableInfo table = null==schema ? null : schema.getTable(provider.getEventName(), false);

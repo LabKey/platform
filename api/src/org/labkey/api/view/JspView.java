@@ -91,10 +91,10 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
-    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
-    public JspView(@NotNull String page, @Nullable ModelClass model, @Nullable BindException errors)
+    /** @param jspPath path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
+    public JspView(@NotNull String jspPath, @Nullable ModelClass model, @Nullable BindException errors)
     {
-        this(page, model);
+        this(jspPath, model);
         _errors = errors;
     }
 

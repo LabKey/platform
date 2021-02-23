@@ -25,12 +25,18 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.query.AbstractMethodInfo;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
@@ -119,9 +125,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     @Override
-    public Collection<? extends Class> getJUnitTests()
+    public Collection<? extends Class<?>> getJUnitTests()
     {
-        return Arrays.<Class>asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
+        return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
     }
 
     @Override

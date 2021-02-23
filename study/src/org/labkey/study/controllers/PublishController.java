@@ -30,8 +30,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -239,51 +237,34 @@ public class PublishController extends SpringActionController
                 if (_targetStudyContainer != null)
                 {
                     info("Starting copy of data to study in folder: " + _targetStudyContainer.getPath());
-                    boolean hasPermission = false;
-                    for (Study publishTarget : AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class))
-                    {
-                        if (publishTarget.getContainer().equals(_targetStudyContainer))
+
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
+                    _runIds.forEach((runId) -> {
+
+                        info("Starting copy for run : " + runId);
+                        ExpRun run = ExperimentService.get().getExpRun(runId);
+                        if (run != null)
                         {
-                            hasPermission = true;
-                            break;
+                            List<String> errors = new ArrayList<>();
+                            _statusUrl = AssayPublishManager.getInstance().autoCopyResults(
+                                    protocol,
+                                    provider,
+                                    run,
+                                    getUser(),
+                                    getContainer(),
+                                    _targetStudyContainer,
+                                    errors,
+                                    getLogger());
+
+                            errors.forEach(this::error);
                         }
-                    }
-
-                    if (!hasPermission)
-                    {
-                        error("Insufficient permission to copy assay data to study in folder : " + _targetStudyContainer.getPath());
-                    }
-                    else
-                    {
-                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
-                        AssayProvider provider = AssayService.get().getProvider(protocol);
-                        _runIds.forEach((runId) -> {
-
-                            info("Starting copy for run : " + runId);
-                            ExpRun run = ExperimentService.get().getExpRun(runId);
-                            if (run != null)
-                            {
-                                List<String> errors = new ArrayList<>();
-                                _statusUrl = AssayPublishManager.getInstance().autoCopyResults(
-                                        protocol,
-                                        provider,
-                                        run,
-                                        getUser(),
-                                        getContainer(),
-                                        _targetStudyContainer,
-                                        errors,
-                                        getLogger());
-
-                                errors.forEach(this::error);
-                            }
-                            else
-                                error("Unable to locate run : " + runId);
-                        });
-                    }
+                        else
+                            error("Unable to locate run : " + runId);
+                    });
                 }
                 else
                     error("Invalid target study folder");
-
             }
             catch (Throwable t)
             {

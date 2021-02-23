@@ -372,6 +372,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
+        sql.append(" ORDER BY ER.RowId ");
         return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 

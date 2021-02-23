@@ -39,11 +39,9 @@ import org.labkey.api.specimen.SpecimenColumns;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.AutoCompleteAction;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.importer.SpecimenColumn;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.pipeline.SpecimenReloadJob;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -55,6 +53,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.specimen.pipeline.SpecimenReloadJob;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -256,18 +255,6 @@ public class SpecimenServiceImpl implements SpecimenService
             }
         }
         return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
-    }
-
-    @Override
-    public ActionURL getCompletionURL(Container studyContainer, SpecimenService.CompletionType type)
-    {
-        if (studyContainer == null)
-            return null;
-
-        ActionURL url = new ActionURL(AutoCompleteAction.class, studyContainer);
-        url.addParameter("type", type.name());
-        url.addParameter("prefix", "");
-        return url;
     }
 
     @Override

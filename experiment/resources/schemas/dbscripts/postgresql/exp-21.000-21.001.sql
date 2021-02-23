@@ -1,3 +1,2 @@
-ALTER TABLE exp.PropertyDescriptor ADD COLUMN MaterialPropertyType VARCHAR(20) NULL;
-ALTER TABLE exp.Material ADD COLUMN RootMaterialLSID LSIDtype NULL;
-ALTER TABLE exp.Material ADD COLUMN AliquotedFromLSID LSIDtype NULL;
+-- Most major file systems cap file lengths at 255 characters. Let's do the same
+ALTER TABLE exp.data ALTER COLUMN Name TYPE VARCHAR(255);

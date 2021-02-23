@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,6 +68,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -138,7 +140,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.001;
+        return 21.002;
     }
 
     @Nullable
@@ -525,9 +527,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         return Set.of(
             DomainPropertyImpl.TestCase.class,
-            ExpDataClassDataTestCase.class,
             ExpDataTableImpl.TestCase.class,
-            ExpSampleTypeTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
@@ -537,6 +537,16 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             UniqueValueCounterTestCase.class
         );
     }
+
+    @Override
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    {
+        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpDataClassDataTestCase.jsp"));
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
+        return list;
+    }
+
 
     @NotNull
     @Override
