@@ -394,12 +394,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
         Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
-
-        if (!addInputs)
+        if (null == sampleRow || !addInputs)
             return sampleRow;
 
         ExperimentService experimentService = ExperimentService.get();
         ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
+        if (null == seed)
+            return sampleRow;
         Set<ExpMaterial> parentSamples = experimentService.getParentMaterials(container, user, seed);
         if (!parentSamples.isEmpty())
             addParentFields(sampleRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
@@ -449,6 +450,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throws QueryUpdateServiceException
     {
         return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
+    }
+
+    @Override
+    public List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
+            throws QueryUpdateServiceException
+    {
+        return getRows(user, container, keys, true /* this is for detailed audit logging */);
     }
 
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)

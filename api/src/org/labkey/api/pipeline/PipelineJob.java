@@ -1809,6 +1809,11 @@ abstract public class PipelineJob extends Job implements Serializable
         return null;
     }
 
+    protected String getNotificationType(PipelineJob.TaskStatus status)
+    {
+        return status.getNotificationType();
+    }
+
     public static String serializeJob(PipelineJob job)
     {
         return serializeJob(job, true);

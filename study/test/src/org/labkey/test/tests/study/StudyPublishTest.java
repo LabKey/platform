@@ -839,14 +839,17 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardVisitList, "Screening", "Grp1:F/U/Grp2:V#2", "G1: V#2/G2: V#3");
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
-        Assert.assertTrue(Locator.checkboxByName("includeSpecimens").findElement(getDriver()).isSelected());
-        clickButton("Next", 0);
+        // Wizard page 5 : Specimens, if present & active
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
+            Assert.assertTrue(Locator.checkboxByName("includeSpecimens").findElement(getDriver()).isSelected());
+            clickButton("Next", 0);
+        }
 
         // Wizard Page 6 : Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Specimen Settings", "Treatment Data");
+        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Treatment Data");
         clickButton("Next", 0);
 
         // Wizard page 7 : Lists

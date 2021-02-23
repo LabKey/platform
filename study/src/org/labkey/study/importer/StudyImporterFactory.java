@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -134,9 +135,12 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 StudyImpl study = StudyManager.getInstance().getStudy(c);
                 List<DatasetDefinition> datasets = StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, studyImportContext, study, false);
 
-                // specimen import task
-                File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
-                StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false, false);
+                // import specimens, if the module is present
+                if (null != SpecimenService.get())
+                {
+                    File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
+                    StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false, false);
+                }
 
                 ctx.getLogger().info("Updating study-wide subject/visit information...");
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, datasets, null, null, true, ctx.getLogger());

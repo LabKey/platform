@@ -169,6 +169,7 @@ public class RReportJob extends PipelineJob implements Serializable
         try
         {
             createPipelineTask(this, report, params).run();
+            setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
         }
         catch (PipelineJobException x)
         {
@@ -257,7 +258,6 @@ public class RReportJob extends PipelineJob implements Serializable
                 }
 
                 processOutputs(_report, outputSubst);
-                getJob().setStatus(TaskStatus.complete, "Job finished at: " + DateUtil.nowISO());
             }
             catch (Exception e)
             {
