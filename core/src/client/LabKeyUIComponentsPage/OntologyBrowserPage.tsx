@@ -10,10 +10,12 @@ export const OntologyBrowserPage: FC = () => {
 
     return (
         <>
-            <div style={{paddingBottom: '20px'}}>
-                Ontology: <input type="text" name="ontologyField" onChange={onOntologyChange}/>
-                <span className="labkey-button" onClick={onGo}>Go</span>
-            </div>
+            {!ontology && (
+                <div style={{paddingBottom: '20px'}}>
+                    Ontology: <input type="text" name="ontologyField" onChange={onOntologyChange}/>
+                    <span className="labkey-button" onClick={onGo}>Go</span>
+                </div>
+            )}
             {ontology && <OntologyBrowserPanel ontologyId={ontology} />}
         </>
     )
