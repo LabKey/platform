@@ -84,7 +84,6 @@ public class StudyPHIExportTest extends StudyExportTest
 
         waitForText("No matching Mice");
 
-
         _ext4Helper.clickParticipantFilterGridRowText("Group 1", 0);
         waitForText("Found 10 mice of 25");
         assertElementPresent(Locator.xpath("//a[contains(@href, 'participant.view')]"), 10);
@@ -185,7 +184,7 @@ public class StudyPHIExportTest extends StudyExportTest
         clickAndWait(Locator.linkContainingText("datasets"));
     }
 
-    protected  void verifyMaskedClinics(int clinicCount)
+    protected void verifyMaskedClinics(int clinicCount)
     {
         List<String> nonClinics = new ArrayList<>();
 

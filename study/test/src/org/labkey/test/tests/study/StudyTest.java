@@ -140,9 +140,10 @@ public class StudyTest extends StudyBaseTest
         enableEmailRecorder();
 
         importStudy();
-        startSpecimenImport(2);
+        if (_studyHelper.isSpecimenModulePresent())
+            startSpecimenImport(2);
 
-        waitForPipelineJobsToComplete(2, "study import", false);
+        waitForPipelineJobsToComplete(_studyHelper.isSpecimenModulePresent() ? 2 : 1, "study import", false);
     }
 
     @Override
@@ -173,11 +174,17 @@ public class StudyTest extends StudyBaseTest
 
         if (!isQuickTest())
         {
-            waitForSpecimenImport();
-            verifySpecimens();
-            verifyParticipantComments();
+            if (_studyHelper.isSpecimenModulePresent())
+            {
+                waitForSpecimenImport();
+                verifySpecimens();
+                verifyParticipantComments();
+            }
             verifyParticipantReports(27);
-            verifyPermissionsRestrictions();
+            if (_studyHelper.isSpecimenModulePresent())
+            {
+                verifyPermissionsRestrictions();
+            }
             verifyDeleteUnusedVisits();
         }
     }
