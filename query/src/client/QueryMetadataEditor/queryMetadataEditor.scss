@@ -4,3 +4,8 @@
   min-width: 75px;
   margin-right: 5px;
 }
+
+// the domain form summary mode has a very wide table so override the default lk-body display to not "flex" and grow with the content
+.lk-body-ct .content-row {
+  display: block;
+}

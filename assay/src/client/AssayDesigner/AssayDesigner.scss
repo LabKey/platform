@@ -1,1 +1,6 @@
 @import "~@labkey/components/dist/assets/scss/theme";
+
+// the domain form summary mode has a very wide table so override the default lk-body display to not "flex" and grow with the content
+.lk-body-ct .content-row {
+  display: block;
+}
