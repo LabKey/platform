@@ -21,12 +21,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
@@ -41,6 +43,7 @@ import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataRunInput;
@@ -55,10 +58,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -66,7 +66,6 @@ import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Tuple3;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
@@ -86,6 +85,9 @@ public abstract class UploadSamplesHelper
 {
     private static final Logger _log = LogManager.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
+
+    private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot specific property [%1$s] value has been ignored for a non-aliquot sample.";
+    private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
 
     private static boolean isNameHeader(String name)
@@ -174,6 +176,10 @@ public abstract class UploadSamplesHelper
             return;
 
         ExpProtocol protocol = existingDerivationRun.getProtocol();
+
+        if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
+            return;
+
         if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
         {
             throw new ValidationException(
@@ -523,11 +529,16 @@ public abstract class UploadSamplesHelper
                     isExistingAliquot = !StringUtils.isEmpty(currentMaterial.getAliquotedFromLSID());
 
                     if (isExistingAliquot && !isAliquot)
-                        throw new ValidationException("TODO");
+                        throw new ValidationException("AliquotedFrom is absent for aliquot: " + currentMaterial.getName());
                     else if (!isExistingAliquot && isAliquot)
-                        throw new ValidationException("TODO");
-                    else if (isExistingAliquot && !currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID()))
-                        throw new ValidationException("Aliquot parent cannot be updated");
+                        throw new ValidationException("Unable to change sample to aliquot: " + currentMaterial.getName());
+                    else if (isExistingAliquot)
+                    {
+                        if (!currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID()))
+                            throw new ValidationException("Aliquot parent cannot be updated");
+                        else
+                            aliquotParent = null; // already exist, not need to recreate
+                    }
                 }
 
                 Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
@@ -703,7 +714,7 @@ public abstract class UploadSamplesHelper
 
 //            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-            DataIterator c = LoggingDataIterator.wrap(new CoerceDataIterator(source, context, sampletype.getTinfo(), false));
+            DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampletype));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);
@@ -747,7 +758,7 @@ public abstract class UploadSamplesHelper
             nameState = nameGen.createState(true);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
-            skip.addAll("name","lsid");
+            skip.addAll("name","lsid", "rootmateriallsid");
             selectAll(skip);
 
             addColumn(new BaseColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
@@ -803,6 +814,126 @@ public abstract class UploadSamplesHelper
             super.close();
             if (null != nameState)
                 nameState.close();
+        }
+    }
+
+    static class _SamplesCoerceDataIterator extends SimpleTranslator
+    {
+        private final ExpSampleTypeImpl _sampleType;
+        public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType)
+        {
+            super(source, context);
+            _sampleType = sampleType;
+            setDebugName("Coerce before trigger script - samples");
+            init(sampleType.getTinfo(), context.getInsertOption().useImportAliases);
+        }
+
+        void init(TableInfo target, boolean useImportAliases)
+        {
+            Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
+            Set<String> seen = new CaseInsensitiveHashSet();
+            DataIterator di = getInput();
+            int count = di.getColumnCount();
+
+            Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : _sampleType.getDomain().getProperties())
+            {
+                propertyFields.put(dp.getName(), "AliquotOnly".equalsIgnoreCase(dp.getMaterialPropertyType()));
+            }
+
+            int derivationDataColInd = -1;
+            for (int i=1 ; i<=count ; i++)
+            {
+                ColumnInfo from = di.getColumnInfo(i);
+                if (from != null)
+                {
+                    if ("AliquotedFrom".equalsIgnoreCase(from.getName()))
+                    {
+                        derivationDataColInd = i;
+                        break;
+                    }
+                }
+            }
+            for (int i=1 ; i<=count ; i++)
+            {
+                ColumnInfo from = di.getColumnInfo(i);
+                ColumnInfo to = targetMap.get(from.getName());
+
+                if (null != to)
+                {
+                    String name = to.getName();
+                    boolean isPropertyField = propertyFields.containsKey(name);
+                    seen.add(to.getName());
+
+                    String ignoredAliquotPropValue = String.format(INVALID_ALIQUOT_PROPERTY, name);
+                    String ignoredMetaPropValue = String.format(INVALID_NONALIQUOT_PROPERTY, name);
+                    if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
+                    {
+                        if (isPropertyField)
+                        {
+                            ColumnInfo clone = new BaseColumnInfo(to);
+                            addColumn(clone, new DerivationScopedColumn(i, derivationDataColInd, propertyFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                        }
+                        else
+                            addColumn(to, i);
+                    }
+                    else if (to.getFk() instanceof MultiValuedForeignKey)
+                    {
+                        // pass-through multi-value columns -- converting will stringify a collection
+                        if (isPropertyField)
+                        {
+                            var col = new BaseColumnInfo(getInput().getColumnInfo(i));
+                            col.setName(name);
+                            addColumn(col, new DerivationScopedColumn(i, derivationDataColInd, propertyFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                        }
+                        else
+                            addColumn(to.getName(), i);
+                    }
+                    else
+                    {
+                        if (isPropertyField)
+                        {
+                            _addConvertColumn(name, i, to.getJdbcType(), derivationDataColInd, propertyFields.get(name));
+                        }
+                        else
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), false);
+                    }
+                }
+                else
+                {
+                    addColumn(i);
+                }
+            }
+        }
+
+        private void _addConvertColumn(String name, int fromIndex, JdbcType toType, int derivationDataColInd, boolean isAliquotField)
+        {
+            var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
+            col.setName(name);
+            col.setJdbcType(toType);
+
+            SimpleConvertColumn c = getConvertColumn(col, fromIndex, false);
+            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, name), String.format(INVALID_NONALIQUOT_PROPERTY, name));
+
+            addColumn(col, c);
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            return super.next();
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return super.get(i);
+        }
+
+        @Override
+        protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
+        {
+            return value;
         }
     }
 }

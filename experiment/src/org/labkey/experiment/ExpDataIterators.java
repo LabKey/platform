@@ -24,11 +24,14 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -54,6 +57,7 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -63,7 +67,9 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
+import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -86,6 +92,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.data.CompareType.IN;
 
 
 public class ExpDataIterators
@@ -409,6 +416,13 @@ public class ExpDataIterators
         }
     }
 
+    static List<ExpMaterialImpl> getAliquots(List<String> lsids)
+    {
+        SimpleFilter f = new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN);
+        f.addCondition(FieldKey.fromParts("AliquotedFromLSID"), null, CompareType.NONBLANK);
+        return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).getArrayList(Material.class));
+    }
+
     static class DerivationDataIterator extends WrapperDataIterator
     {
         final DataIteratorContext _context;
@@ -426,6 +440,8 @@ public class ExpDataIterators
         final User _user;
         final boolean _isSample;
 
+        final List<String> _aliquotLsids; // check if lsid is aliquot with absent "AliquotedFrom", for merge
+
         protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isSample)
         {
             super(di);
@@ -437,6 +453,7 @@ public class ExpDataIterators
             _parentNames = new LinkedHashMap<>();
             _parentCols = new HashMap<>();
             _aliquotParents = new LinkedHashMap<>();
+            _aliquotLsids = new ArrayList<>();
             _container = container;
             _user = user;
 
@@ -472,7 +489,7 @@ public class ExpDataIterators
                 return hasNext;
 
             // For each iteration, collect the parent col values
-            if (hasNext && (!_parentCols.isEmpty() || _aliquotParentCol > -1))
+            if (hasNext)
             {
                 String lsid = (String) get(_lsidCol);
                 if (_aliquotParentCol > -1)
@@ -497,6 +514,10 @@ public class ExpDataIterators
                         if (aliquotParentName != null)
                             _aliquotParents.put(lsid, aliquotParentName);
                     }
+                }
+                else
+                {
+                    _aliquotLsids.add(lsid);
                 }
 
                 Set<Pair<String, String>> allParts = new HashSet<>();
@@ -558,6 +579,17 @@ public class ExpDataIterators
                     RemapCache cache = new RemapCache(true);
                     Map<Integer, ExpMaterial> materialCache = new HashMap<>();
                     Map<Integer, ExpData> dataCache = new HashMap<>();
+
+                    if (_isSample && _context.getInsertOption().mergeRows && _aliquotParentCol == -1)
+                    {
+                        if (!_aliquotLsids.isEmpty())
+                        {
+                            if (!getAliquots(_aliquotLsids).isEmpty())
+                            {
+                                throw new ValidationException("Aliquots are present but 'AliquotedFrom' column is missing.");
+                            }
+                        }
+                    }
 
                     List<UploadSamplesHelper.UploadSampleRunRecord> runRecords = new ArrayList<>();
                     Set<String> lsids = new HashSet<>();
@@ -820,8 +852,6 @@ public class ExpDataIterators
     }
 
     public static final Set<String> NOT_FOR_UPDATE = Sets.newCaseInsensitiveHashSet(
-            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
-            ExpMaterialTable.Column.RootMaterialLSID.toString(),
             ExpDataTable.Column.LSID.toString(),
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),

@@ -6330,7 +6330,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
                         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
-                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ? WHERE RowId = ?");
+                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
                         String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
                         if (StringUtils.isEmpty(rootMaterial))
@@ -6339,7 +6339,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         if (!isParentRootMaterial)
                             _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache
 
-                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, outputAliquot.getRowId());
+                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
                         
                         new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
                     }
@@ -6580,6 +6580,14 @@ public class ExperimentServiceImpl implements ExperimentService
             return false;
 
         return SAMPLE_DERIVATION_PROTOCOL_LSID.equals(protocol.getLSID());
+    }
+
+    public boolean isSampleAliquot(ExpProtocol protocol)
+    {
+        if (protocol == null)
+            return false;
+
+        return SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
     }
 
     @Override

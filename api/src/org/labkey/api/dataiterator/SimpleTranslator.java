@@ -417,6 +417,85 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    // For fields that use "Derivation Data Scope", such as sample type property fields,
+    // which can be either aliquot-specific or sample metadata, use a custom get to discard/retain field values based on field property.
+    protected class DerivationScopedConvertColumn extends SimpleConvertColumn
+    {
+        final int derivationDataColInd;
+        final int index;
+        final boolean isDerivation;
+        final String presentDerivationWarning;
+        final String presentNonDerivationWarning;
+
+        final SimpleConvertColumn _convertCol;
+
+        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        {
+            super(convertCol.fieldName, convertCol.index, convertCol.type);
+            _convertCol = convertCol;
+            this.index = index;
+            this.derivationDataColInd = derivationDataColInd;
+            this.isDerivation = isDerivation;
+            this.presentDerivationWarning = presentDerivationWarning;
+            this.presentNonDerivationWarning = presentNonDerivationWarning;
+        }
+
+        @Override
+        protected Object convert(Object o)
+        {
+            Object thisValue =  _convertCol.convert(o);
+
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+
+        }
+    }
+
+    // For fields that use "Derivation Data Scope", such as sample type property fields,
+    // which can be either aliquot-specific or sample metadata, use a custom get to discard/retain field values based on field property.
+    protected class DerivationScopedColumn implements Supplier
+    {
+        final int derivationDataColInd;
+        final int index;
+        final boolean isDerivation;
+
+        final String presentDerivationWarning;
+        final String presentNonDerivationWarning;
+
+        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        {
+            this.index = index;
+            this.derivationDataColInd = derivationDataColInd;
+            this.isDerivation = isDerivation;
+            this.presentDerivationWarning = presentDerivationWarning;
+            this.presentNonDerivationWarning = presentNonDerivationWarning;
+        }
+
+        @Override
+        public Object get()
+        {
+            Object thisValue =  _data.get(index);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+        }
+    }
+
+    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+    {
+        Object derivationData = derivationDataColInd < 0 ? null : _data.get(derivationDataColInd);
+        if ((isDerivationField && derivationData != null)
+                || (!isDerivationField && derivationData == null))
+            return thisValue;
+
+        if (thisValue != null)
+        {
+            if (isDerivationField && presentDerivationWarning != null)
+                LOG.warn(presentDerivationWarning);
+            else if (!isDerivationField && presentNonDerivationWarning != null)
+                LOG.warn(presentNonDerivationWarning);
+        }
+
+        return null;
+    }
+
 
     protected class AliasColumn extends SimpleConvertColumn
     {
@@ -470,7 +549,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
 
 
-    private class SimpleConvertColumn implements Supplier<Object>
+    protected class SimpleConvertColumn implements Supplier<Object>
     {
         final int index;
         final JdbcType type;
@@ -1046,6 +1125,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addConvertColumn(ColumnInfo col, int fromIndex, boolean mv)
     {
+        SimpleConvertColumn c = getConvertColumn(col, fromIndex, mv);
+
+        return addColumn(col, c);
+    }
+
+    public SimpleConvertColumn getConvertColumn(ColumnInfo col, int fromIndex, boolean mv)
+    {
         SimpleConvertColumn c;
         if (mv)
             c = new MissingValueConvertColumn(col.getName(), fromIndex, col.getJdbcType());
@@ -1066,7 +1152,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             c = new MultiValueConvertColumn(c);
         }
 
-        return addColumn(col, c);
+        return c;
     }
 
     public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, boolean mv)
