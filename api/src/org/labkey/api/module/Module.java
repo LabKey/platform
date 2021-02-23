@@ -95,7 +95,6 @@ public interface Module extends Comparable<Module>
      */
     String getName();
 
-
     /**
      * Can this module be enabled in this container?
      */
