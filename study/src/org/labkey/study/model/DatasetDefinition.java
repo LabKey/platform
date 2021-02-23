@@ -1684,13 +1684,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet());
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
-                newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
 
                 // Check if no fields changed, if so adjust messaging
-                if (rowPair.second.size() == 0 && userCommentIsBlank)
+                if (rowPair.second.size() == 0 )
                 {
-                    auditComment = "Dataset row was processed, but no changes detected";
+                    auditComment = userCommentIsBlank ? "Dataset row was processed, but no changes detected" : userComment;
+                    // Record values that were processed
                     newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                }
+                else
+                {
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
                 }
             }
             else
