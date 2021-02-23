@@ -838,7 +838,7 @@ public abstract class UploadSamplesHelper
             Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
             for (DomainProperty dp : _sampleType.getDomain().getProperties())
             {
-                propertyFields.put(dp.getName(), "AliquotOnly".equalsIgnoreCase(dp.getMaterialPropertyType()));
+                propertyFields.put(dp.getName(), "ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
             int derivationDataColInd = -1;

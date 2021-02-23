@@ -667,7 +667,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     continue;
 
                 sql.append(comma);
-                if ("AliquotOnly".equalsIgnoreCase(propertyColumn.getMaterialPropertyType()))
+                if ("ChildOnly".equalsIgnoreCase(propertyColumn.getDerivationDataScope()))
                 {
                     sql.append(propertyColumn.getValueSql("self"));
                 }

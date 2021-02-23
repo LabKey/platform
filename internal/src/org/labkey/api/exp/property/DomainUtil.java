@@ -335,7 +335,7 @@ public class DomainUtil
         gwtProp.setSourceOntology(prop.getSourceOntology());
         gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
         gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
-        gwtProp.setMaterialPropertyType(prop.getMaterialPropertyType());
+        gwtProp.setDerivationDataScope(prop.getDerivationDataScope());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())

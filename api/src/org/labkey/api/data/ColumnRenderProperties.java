@@ -209,7 +209,7 @@ public interface ColumnRenderProperties extends ImportAliasable
         return null;
     }
 
-    default String getMaterialPropertyType()
+    default String getDerivationDataScope()
     {
         return null;
     }

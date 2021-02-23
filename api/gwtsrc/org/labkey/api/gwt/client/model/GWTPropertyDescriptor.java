@@ -77,7 +77,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty conceptLabelColumn = new StringProperty();
     private StringProperty principalConceptCode = new StringProperty();
     private StringProperty redactedText = new StringProperty();
-    private StringProperty materialPropertyType = new StringProperty();
+    private StringProperty derivationDataScope = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
     private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
 
@@ -142,7 +142,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setSourceOntology(s.getSourceOntology());
         setConceptImportColumn(s.getConceptImportColumn());
         setConceptLabelColumn(s.getConceptLabelColumn());
-        setMaterialPropertyType(s.getMaterialPropertyType());
+        setDerivationDataScope(s.getDerivationDataScope());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -540,14 +540,14 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.redactedText.set(redactedText);
     }
 
-    public String getMaterialPropertyType()
+    public String getDerivationDataScope()
     {
-        return materialPropertyType.getString();
+        return derivationDataScope.getString();
     }
 
-    public void setMaterialPropertyType(String materialPropertyType)
+    public void setDerivationDataScope(String derivationDataScope)
     {
-        this.materialPropertyType.set(materialPropertyType);
+        this.derivationDataScope.set(derivationDataScope);
     }
 
     public boolean getIsPrimaryKey()
@@ -639,7 +639,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (!equals(getConceptImportColumn(),that.getConceptImportColumn())) return false;
         if (!equals(getConceptLabelColumn(),that.getConceptLabelColumn())) return false;
         if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
-        if (!equals(getMaterialPropertyType(),that.getMaterialPropertyType())) return false;
+        if (!equals(getDerivationDataScope(),that.getDerivationDataScope())) return false;
 
         if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
 
@@ -685,7 +685,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + conceptLabelColumn.hashCode();
         result = 31 * result + principalConceptCode.hashCode();
         result = 31 * result + redactedText.hashCode();
-        result = 31 * result + materialPropertyType.hashCode();
+        result = 31 * result + derivationDataScope.hashCode();
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {

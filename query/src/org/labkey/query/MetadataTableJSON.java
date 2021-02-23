@@ -618,7 +618,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setConceptImportColumn(columnInfo.getConceptImportColumn());
             metadataColumnJSON.setConceptLabelColumn(columnInfo.getConceptLabelColumn());
 
-            metadataColumnJSON.setMaterialPropertyType(columnInfo.getMaterialPropertyType());
+            metadataColumnJSON.setDerivationDataScope(columnInfo.getDerivationDataScope());
         }
 
         List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);

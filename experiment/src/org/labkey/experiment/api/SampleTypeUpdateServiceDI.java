@@ -244,7 +244,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> "AliquotOnly".equalsIgnoreCase(dp.getMaterialPropertyType()))
+                .filter(dp -> "ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()))
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
@@ -255,7 +255,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> !"AliquotOnly".equalsIgnoreCase(dp.getMaterialPropertyType()))
+                .filter(dp -> !"ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()))
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 

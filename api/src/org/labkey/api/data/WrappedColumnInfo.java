@@ -942,7 +942,7 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setMaterialPropertyType(String type)
+        public void setDerivationDataScope(String scope)
         {
             throw new java.lang.UnsupportedOperationException();
         }

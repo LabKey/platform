@@ -134,6 +134,6 @@ public interface DomainProperty extends ImportAliasable
     void setPrincipalConceptCode(String code);
     String getPrincipalConceptCode();
 
-    void setMaterialPropertyType(String type);
-    String getMaterialPropertyType();
+    void setDerivationDataScope(String type);
+    String getDerivationDataScope();
 }

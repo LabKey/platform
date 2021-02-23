@@ -400,7 +400,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
 
-        setMaterialPropertyType(col.getMaterialPropertyType());
+        setDerivationDataScope(col.getDerivationDataScope());
     }
 
     /*
@@ -479,7 +479,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
 
-        setMaterialPropertyType(col.getMaterialPropertyType());
+        setDerivationDataScope(col.getDerivationDataScope());
     }
 
 

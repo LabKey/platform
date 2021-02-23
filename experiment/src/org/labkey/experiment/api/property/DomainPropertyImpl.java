@@ -659,16 +659,16 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public void setMaterialPropertyType(String type)
+    public void setDerivationDataScope(String scope)
     {
-        if (!StringUtils.equals(type, getMaterialPropertyType()))
-            edit().setMaterialPropertyType(type);
+        if (!StringUtils.equals(scope, getDerivationDataScope()))
+            edit().setDerivationDataScope(scope);
     }
 
     @Override
-    public String getMaterialPropertyType()
+    public String getDerivationDataScope()
     {
-        return _pd.getMaterialPropertyType();
+        return _pd.getDerivationDataScope();
     }
 
     @Override
