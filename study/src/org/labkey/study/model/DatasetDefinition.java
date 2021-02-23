@@ -1659,12 +1659,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * NOTE: userComment field is not supported for this domain and will be ignored
+         */
         @Override
         protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord)
         {
-            boolean userCommentIsBlank = StringUtils.trimToNull(userComment) == null;
-            String auditComment = !userCommentIsBlank ? userComment :
-                    switch (action)
+            String auditComment = switch (action)
                     {
                         case INSERT -> "A new dataset record was inserted";
                         case DELETE, TRUNCATE -> "A dataset record was deleted";
@@ -1688,7 +1689,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 // Check if no fields changed, if so adjust messaging
                 if (rowPair.second.size() == 0 )
                 {
-                    auditComment = userCommentIsBlank ? "Dataset row was processed, but no changes detected" : userComment;
+                    auditComment = "Dataset row was processed, but no changes detected";
                     // Record values that were processed
                     newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
                 }
