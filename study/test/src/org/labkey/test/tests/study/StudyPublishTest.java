@@ -839,8 +839,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardVisitList, "Screening", "Grp1:F/U/Grp2:V#2", "G1: V#2/G2: V#3");
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens, if present
-        if (_studyHelper.isSpecimenModulePresent())
+        // Wizard page 5 : Specimens, if present & active
+        if (_studyHelper.isSpecimenModuleActive())
         {
             waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
             Assert.assertTrue(Locator.checkboxByName("includeSpecimens").findElement(getDriver()).isSelected());
