@@ -101,7 +101,7 @@ public class SpecimenModule extends SpringModule
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
 
-        addController("specimen-api", SpecimenApiController.class, "study-samples-api");
+        addController("specimen-api", SpecimenApiController.class, "study-samples-api", "specimens-api");
 
         // Register early -- some modules don't declare a runtime dependency on specimen module, but will use the
         // service if it's available

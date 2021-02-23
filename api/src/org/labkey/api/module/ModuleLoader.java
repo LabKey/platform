@@ -2206,11 +2206,17 @@ public class ModuleLoader implements Filter, MemTrackerListener
             File newinstall = new File(propsDir, "newinstall");
             if (newinstall.isFile())
             {
+                _log.debug("'newinstall' file detected: " + newinstall.getAbsolutePath());
+
                 _newInstall = true;
                 if (newinstall.canWrite())
                     newinstall.delete();
                 else
                     throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
+            }
+            else
+            {
+                _log.debug("no 'newinstall' file detected");
             }
 
             File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
@@ -2223,6 +2229,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
                 for (File propFile : sortedPropFiles)
                 {
+                    _log.debug("loading propsFile: " + propFile.getAbsolutePath());
+
                     try (FileInputStream in = new FileInputStream(propFile))
                     {
                         Properties props = new Properties();
@@ -2232,6 +2240,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         {
                             if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                             {
+                                _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
+
                                 ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
                                 if (_configPropertyMap.containsMapping(config.getScope(), config))
                                     _configPropertyMap.removeMapping(config.getScope(), config);
@@ -2245,6 +2255,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     }
                 }
             }
+            else
+            {
+                _log.debug("no propFiles to load");
+            }
+        }
+        else
+        {
+            _log.debug("propsDir non-existant or not a directory: " + propsDir.getAbsolutePath());
         }
 
         // load any system properties with the labkey prop prefix
