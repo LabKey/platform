@@ -1680,7 +1680,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
             }
-            else if (existingRecord != null)
+            else if (existingRecord != null && existingRecord.size() > 0)
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet());
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
