@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.8",
-    "@labkey/components": "2.2.0-fb-summaryview-8049.5",
+    "@labkey/components": "2.2.0-fb-summaryview-8049.6",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },
