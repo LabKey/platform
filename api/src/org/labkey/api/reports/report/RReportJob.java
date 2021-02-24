@@ -261,9 +261,6 @@ public class RReportJob extends PipelineJob implements Serializable
             }
             catch (Exception e)
             {
-                _log.error("Error occurred running the report background job", e);
-                getJob().error("Error occurred running the report background job", e);
-                getJob().setStatus(TaskStatus.error, "Job failed at: " + DateUtil.nowISO());
                 throw new PipelineJobException(e);
             }
         }
