@@ -366,7 +366,7 @@ public class PageFlowUtil
         return PageFlowUtil.jsString(PageFlowUtil.filter(s));
     }
 
-    static public String jsString(CharSequence cs)
+    public static String jsString(CharSequence cs)
     {
         if (cs == null)
             return "''";
@@ -375,12 +375,17 @@ public class PageFlowUtil
     }
 
     @Deprecated // usages look wrong to me -- they should just use q()?
-    static public HtmlString jsString(HtmlString hs)
+    public static HtmlString jsString(HtmlString hs)
     {
         return HtmlString.unsafe(jsString(hs.toString()));
     }
 
-    static public String jsString(String s)
+    public static String jsString(ActionURL url)
+    {
+        return jsString(url.getLocalURIString());
+    }
+
+    public static String jsString(String s)
     {
         if (s == null)
             return "''";
@@ -2168,6 +2173,7 @@ public class PageFlowUtil
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
+            projectProps.put("title", project.getTitle());
             projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }

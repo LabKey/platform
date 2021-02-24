@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * User: matthewb
@@ -106,6 +107,24 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
     public Object getConstantValue(int i)
     {
         return _delegate.getConstantValue(i);
+    }
+
+    @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _delegate.supportsGetExistingRecord();
+    }
+
+
+    /* if !supportsGetExistingRecord() then this method should return null
+     * if supportsGetExistingRecord() this method should return a map, an empty map means no existing record found
+     */
+    @Override
+    public Map<String, Object> getExistingRecord()
+    {
+        var ret = _delegate.getExistingRecord();
+        assert supportsGetExistingRecord() == (null != ret);
+        return ret;
     }
 
     @Override

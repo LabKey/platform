@@ -145,7 +145,7 @@ public class CohortController extends BaseStudyController
 
             VBox vbox = new VBox();
             StudyImpl study = getStudyRedirectIfNull();
-            StudyJspView<Object> top = new StudyJspView<>(study, "manageCohortsTop.jsp", null, errors);
+            StudyJspView<Object> top = new StudyJspView<>(study, "/org/labkey/study/view/manageCohortsTop.jsp", null, errors);
             top.setTitle("Cohort Assignment");
             vbox.addView(top);
 
@@ -154,7 +154,7 @@ public class CohortController extends BaseStudyController
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             vbox.addView(queryView);
             
-            StudyJspView<Object> bottom = new StudyJspView<>(study, "manageCohortsBottom.jsp", null, errors);
+            StudyJspView<Object> bottom = new StudyJspView<>(study, "/org/labkey/study/view/manageCohortsBottom.jsp", null, errors);
             bottom.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + "-Cohort Assignments");
             vbox.addView(bottom);
 

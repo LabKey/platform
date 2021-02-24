@@ -77,7 +77,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     private TableInfo _dbTable = null;
     private DomainUpdateHelper _helper = null;
     /** Map from DbTable column names to QueryTable column names, if they have been aliased */
-    private Map<String, String> _columnMapping = Collections.emptyMap();
+    protected Map<String, String> _columnMapping = Collections.emptyMap();
     private ValidatorContext _validatorContext;
 
     public DefaultQueryUpdateService(@NotNull TableInfo queryTable, TableInfo dbTable)

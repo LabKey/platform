@@ -39,6 +39,11 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -299,18 +304,33 @@ public class StudyQuerySchema extends UserSchema
                     names.add(VISIT_ALIASES);
                 }
 
-                names.add(SPECIMEN_EVENT_TABLE_NAME);
-                names.add(SPECIMEN_DETAIL_TABLE_NAME);
-                names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-                names.add("SpecimenVialCount");
-                names.add(SIMPLE_SPECIMEN_TABLE_NAME);
-                names.add("SpecimenRequest");
-                names.add("SpecimenRequestStatus");
-                names.add("VialRequest");
-                names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
-                names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
-                names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
-                names.add("SpecimenComment");
+                if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
+                {
+                    names.add(SPECIMEN_EVENT_TABLE_NAME);
+                    names.add(SPECIMEN_DETAIL_TABLE_NAME);
+                    names.add(SPECIMEN_SUMMARY_TABLE_NAME);
+                    names.add("SpecimenVialCount");
+                    names.add(SIMPLE_SPECIMEN_TABLE_NAME);
+                    names.add("SpecimenRequest");
+                    names.add("SpecimenRequestStatus");
+                    names.add("VialRequest");
+                    names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
+                    names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
+                    names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
+                    names.add("SpecimenComment");
+
+                    // specimen report pivots
+                    names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
+                    names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+                    names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+
+                    names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
+
+                    // assay schedule tables
+                    names.add(ASSAY_SPECIMEN_TABLE_NAME);
+                    names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+                }
+
                 names.add(VISIT_MAP_TABLE_NAME);
 
                 names.add("DataSets");
@@ -325,17 +345,6 @@ public class StudyQuerySchema extends UserSchema
                 names.add(studyService.getSubjectGroupTableName(getContainer()));
                 names.add(studyService.getSubjectGroupMapTableName(getContainer()));
                 names.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
-
-                // specimen report pivots
-                names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
-                names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
-                names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
-
-                names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
-
-                // assay schedule tables
-                names.add(ASSAY_SPECIMEN_TABLE_NAME);
-                names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
                 // Add only datasets that the user can read
                 User user = getUser();
@@ -742,15 +751,15 @@ public class StudyQuerySchema extends UserSchema
         }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByPrimaryType(this, cf);
+            return new SpecimenPivotByPrimaryType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByDerivativeType(this, cf);
+            return new SpecimenPivotByDerivativeType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByRequestingLocation(this, cf);
+            return new SpecimenPivotByRequestingLocation(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {

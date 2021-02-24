@@ -1,6 +1,8 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -15,7 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-// Utility methods that are shared between study and specimen
+// Simple utility methods that are shared between study and specimen
 public class StudyUtils
 {
     // Shared because, for some reason, SpecimenQueryView checks for this type
@@ -92,5 +94,15 @@ public class StudyUtils
         else if (value instanceof Boolean)
             return ((Boolean) value).booleanValue();
         return false;
+    }
+
+    public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
+    {
+        SqlDialect dialect = schema.getSqlDialect();
+        String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
+
+        //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
+
+        return "(" + dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")") + ")";
     }
 }

@@ -21,6 +21,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 
 /**
  * User: adam
@@ -28,33 +29,24 @@ import org.labkey.api.view.ActionURL;
  */
 public interface SpecimenUrls extends UrlProvider
 {
-    ActionURL getSpecimensURL(Container c);
-
-    ActionURL getSpecimensURL(Container c, boolean showVials);
-
-    ActionURL getCommentURL(Container c, String globalUniqueId);
-
-    ActionURL getManageRequestStatusURL(Container c, int requestId);
-
-    ActionURL getShowCreateSpecimenRequestURL(Container c);
-
-    ActionURL getRequestDetailsURL(Container c, int requestId);
-
-    ActionURL getRequestDetailsURL(Container c, String requestId);
-
-    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
-
-    ActionURL getShowSearchURL(Container c);
-
     ActionURL getAutoReportListURL(Container c);
-
+    ActionURL getCommentURL(Container c, String globalUniqueId);
+    ActionURL getCompleteSpecimenURL(Container c, String type);
+    ActionURL getDeleteRequestURL(Container c, String id);
+    ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+    ActionURL getManageRequestURL(Container c);
+    ActionURL getManageRequestStatusURL(Container c, int requestId);
+    ActionURL getRequestDetailsURL(Container c, String requestId);
+    ActionURL getRequestDetailsURL(Container c, int requestId);
+    ActionURL getShowCreateSpecimenRequestURL(Container c);
+    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
+    ActionURL getShowSearchURL(Container c);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL);
-
+    ActionURL getSpecimensURL(Container c);
+    ActionURL getSpecimensURL(Container c, boolean showVials);
+    ActionURL getSubmitRequestURL(Container c, String id);
+    ActionURL getTypeParticipantReportURL(Container c);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
 
-    ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-
-    ActionURL getSubmitRequestURL(Container c, String id);
-
-    ActionURL getDeleteRequestURL(Container c, String id);
+    void addSpecimenNavTrail(NavTree root, String childTitle, Container c);
 }

@@ -201,8 +201,6 @@ public interface StudyService
 
     boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
-    DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
-
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 
     TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
@@ -275,4 +273,10 @@ public interface StudyService
     void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad);
 
     List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort);
+
+    void saveLocationSettings(Study study, User user, @Nullable Boolean allowReqLocRepository, @Nullable Boolean allowReqLocClinic, @Nullable Boolean allowReqLocSal, @Nullable Boolean allowReqLocEndpoint);
+
+    Collection<String> getParticipantIds(Study study, User user);
+
+    boolean participantExists(Study study, String participantId);
 }

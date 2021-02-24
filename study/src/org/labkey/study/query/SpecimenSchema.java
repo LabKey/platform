@@ -2,6 +2,9 @@ package org.labkey.study.query;
 
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.study.StudyService;
 
 import java.util.Collections;

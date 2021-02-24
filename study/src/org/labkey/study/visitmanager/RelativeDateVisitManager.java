@@ -32,6 +32,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.QCStateSet;
@@ -164,7 +165,7 @@ public class RelativeDateVisitManager extends VisitManager
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.append("SELECT ? as Container, ParticipantId, SequenceNum, MIN(_VisitDate), \n");
         sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.append("MIN(").append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.append("FROM ").append(tableStudyData.getFromSQL("SD")).append("\n");
         sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
         sqlInsertParticipantVisit.append(tableParticipantVisit, "pv").append("\n");
@@ -179,7 +180,7 @@ public class RelativeDateVisitManager extends VisitManager
         sqlInsertParticipantVisit2.append("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, ");
         sqlInsertParticipantVisit2.add(container);
         sqlInsertParticipantVisit2.append("MIN(").append(schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp")).append(") AS VisitDate, \n");
-        sqlInsertParticipantVisit2.append("MIN(").append(getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit2.append("MIN(").append(StudyUtils.getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
         sqlInsertParticipantVisit2.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
         sqlInsertParticipantVisit2.append("WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (\n");
         sqlInsertParticipantVisit2.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit.getFromSQL("pv")).append("\n");
@@ -226,7 +227,7 @@ public class RelativeDateVisitManager extends VisitManager
 //            }
 
         StringBuilder participantSequenceNum = new StringBuilder("(");
-        participantSequenceNum.append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum"));
+        participantSequenceNum.append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum"));
         participantSequenceNum.append(")");
 
         String sqlUpdateParticipantSeqNum = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceNum = " +

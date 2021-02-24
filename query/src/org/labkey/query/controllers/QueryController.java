@@ -700,7 +700,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            requireNonNull(urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration ", null);
+            requireNonNull(urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration", getClass(), getContainer());
         }
     }
 

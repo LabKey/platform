@@ -55,6 +55,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
@@ -96,6 +97,7 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,6 +113,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
+
+    /* AbstractQueryUpdateService is generally responsible for some shared functionality
+     *   - triggers
+     *   - coercion/validation
+     *   - detailed logging
+     *   - attachements
+     *
+     *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
+    */
+    protected boolean _enableExistingRecordsDataIterator = true;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -183,6 +195,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return context;
     }
 
+    /**
+     *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
+     * Used only for generating  ExistingRecordDataIterator at the moment
+     */
+    protected Set<String> getSelectKeys()
+    {
+        return null;
+    }
 
     /*
      * construct the core DataIterator transformation pipeline for this table, may be just StandardDataIteratorBuilder.
@@ -190,12 +210,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
-
-        DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
+        DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
+        if (_enableExistingRecordsDataIterator)
+        {
+            // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
+            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys());
+        }
+        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
-
         return dib;
     }
 
@@ -633,7 +656,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, oldRows, result);
+        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows);
 
         return result;
     }

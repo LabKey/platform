@@ -19,21 +19,21 @@
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager"%>
 <%@ page import="org.labkey.api.specimen.settings.StatusSettings"%>
-<%@ page import="org.labkey.api.study.StudyUrls"%>
+<%@ page import="org.labkey.api.study.Study"%>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
-    StudyImpl study = me.getModelBean();
+    JspView<Study> me = (JspView<Study>) HttpView.currentView();
+    Study study = me.getModelBean();
     List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
     Set<Integer> inUseStatuses = SpecimenRequestManager.get().getRequestStatusIdsInUse(study.getContainer());
     StatusSettings settings = SettingsManager.get().getStatusSettings(study.getContainer());

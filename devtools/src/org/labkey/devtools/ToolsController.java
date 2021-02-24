@@ -3,6 +3,7 @@ package org.labkey.devtools;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -12,22 +13,28 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.BaseScanner.Handler;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.FileVisitResult;
@@ -45,6 +52,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -116,49 +124,28 @@ public class ToolsController extends SpringActionController
             {
                 out.println("<pre>");
 
-                Module module = ModuleLoader.getInstance().getModule(_moduleName);
-
-                if (null == module)
+                String errorMessage = new GitAttributesParser().parse(_moduleName, new GitAttributesHandler()
                 {
-                    out.println("Module " + _moduleName + " not running");
-                }
-                else
-                {
-                    String sourcePath = module.getSourcePath();
-
-                    if (null == sourcePath)
+                    @Override
+                    public void handle(Path gaPath, Stream<String> stream)
                     {
-                        out.println(module.getName() + " module source path not found");
-                    }
-                    else
-                    {
-                        Path gaPath = Path.of(sourcePath).getParent().resolve(".gitattributes");
-
-                        if (!gaPath.toFile().exists())
+                        out.println("Files listed in " + gaPath + " that don't exist:\n");
+                        List<String> missing = getMissingFiles(gaPath, stream);
+                        missing.forEach(filename->out.println(filter(filename)));
+                        if (!missing.isEmpty())
                         {
-                            out.println("File " + gaPath + " not found");
-                        }
-                        else
-                        {
-                            File gaDirFile = gaPath.getParent().toFile();
-                            out.println("Files listed in " + gaPath + " that don't exist:\n");
-
-                            try (BufferedReader reader = Files.newBufferedReader(gaPath, StringUtilsLabKey.DEFAULT_CHARSET))
-                            {
-                                reader.lines()
-                                    .filter(line -> !line.isEmpty() && !line.startsWith("*") && !line.startsWith("#"))
-                                    .forEach(line -> {
-                                        int idx = line.indexOf(' ');
-                                        String filename = line.substring(0, idx);
-                                        File file = new File(gaDirFile, filename);
-
-                                        if (!file.exists())
-                                            out.println(filter(filename));
-                                    });
-                            }
+                            out.println();
+                            out.println(
+                                new Button.ButtonBuilder("Delete All " + missing.size() + " File Paths from .gitattributes")
+                                    .href(new ActionURL(DeleteMissingFilesAction.class, getContainer()).addParameter("module", _moduleName))
+                                    .usePost()
+                            );
                         }
                     }
-                }
+                });
+
+                if (null != errorMessage)
+                    out.println(errorMessage);
 
                 out.println("</pre>");
             }
@@ -172,6 +159,151 @@ public class ToolsController extends SpringActionController
         }
     }
 
+    private static abstract class GitAttributesHandler
+    {
+        abstract void handle(Path gaPath, Stream<String> stream);
+
+        // Called after the stream is closed. Optional post handling.
+        void postHandle(Path gaPath)
+        {
+        }
+    }
+
+    private static class GitAttributesParser
+    {
+        public String parse(String moduleName, GitAttributesHandler handler) throws IOException
+        {
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+
+            if (null == module)
+                return "Module " + moduleName + " not running";
+
+            String sourcePath = module.getSourcePath();
+
+            if (null == sourcePath)
+                return module.getName() + " module source path not found";
+
+            Path gaPath = Path.of(sourcePath).getParent().resolve(".gitattributes");
+
+            if (!gaPath.toFile().exists())
+                return "File " + gaPath + " not found";
+
+            try (BufferedReader reader = Files.newBufferedReader(gaPath, StringUtilsLabKey.DEFAULT_CHARSET))
+            {
+                handler.handle(gaPath, reader.lines());
+            }
+
+            handler.postHandle(gaPath);
+
+            return null;
+        }
+    }
+
+    private List<String> getMissingFiles(Path gaPath, Stream<String> filepaths)
+    {
+        File gaDirFile = gaPath.getParent().toFile();
+
+        return filepaths
+            .filter(line -> !line.isEmpty() && !line.startsWith("*") && !line.startsWith("#"))
+            .filter(line -> {
+                int idx = line.indexOf(' ');
+                String filename = line.substring(0, idx);
+                File file = new File(gaDirFile, filename);
+
+                return !file.exists();
+            })
+            .collect(Collectors.toList());
+    }
+
+    public static class DeleteMissingFilesForm
+    {
+        private String _module;
+
+        public String getModule()
+        {
+            return _module;
+        }
+
+        @SuppressWarnings("unused")
+        public void setModule(String module)
+        {
+            _module = module;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    @SuppressWarnings("unused")
+    public class DeleteMissingFilesAction extends FormHandlerAction<DeleteMissingFilesForm>
+    {
+        @Override
+        public void validateCommand(DeleteMissingFilesForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(DeleteMissingFilesForm form, BindException errors) throws Exception
+        {
+            Set<String> missingFiles = new HashSet<>();
+
+            String errorMessage = new GitAttributesParser().parse(form.getModule(), new GitAttributesHandler()
+            {
+                @Override
+                public void handle(Path gaPath, Stream<String> stream)
+                {
+                    missingFiles.addAll(getMissingFiles(gaPath, stream));
+                }
+            });
+
+            if (null != errorMessage)
+                throw new NotFoundException(errorMessage);
+
+            if (!missingFiles.isEmpty())
+            {
+                errorMessage = new GitAttributesParser().parse(form.getModule(), new GitAttributesHandler()
+                {
+                    @Override
+                    public void handle(Path gaPath, Stream<String> stream)
+                    {
+                        try (PrintWriter output = PrintWriters.getPrintWriter(new File(gaPath.getParent().toFile(), "gitattributes.temp")))
+                        {
+                            stream
+                                .filter(o -> !missingFiles.contains(o))
+                                .forEach(output::println);
+                        }
+                        catch (FileNotFoundException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    @Override
+                    void postHandle(Path gaPath)
+                    {
+                        try
+                        {
+                            Files.delete(gaPath);
+                            Files.move(gaPath.getParent().resolve("gitattributes.temp"), gaPath);
+                        }
+                        catch (IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            }
+
+            if (null != errorMessage)
+                throw new NotFoundException(errorMessage);
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(DeleteMissingFilesForm form)
+        {
+            return new ActionURL(GitAttributesAction.class, getContainer());
+        }
+    }
 
     @RequiresPermission(AdminPermission.class)
     @SuppressWarnings("unused")
@@ -293,18 +425,8 @@ public class ToolsController extends SpringActionController
                                         public boolean string(int beginIndex, int endIndex)
                                         {
                                             String s = code.substring(beginIndex + 1, endIndex - 1);
-                                            if (s.length() > 4 && s.endsWith(".jsp"))
-                                            {
-                                                if (!s.startsWith("/org/labkey"))
-                                                {
-                                                    // Temp hack... assume that unqualified JSPs references from study are in /org/labkey/study/view/
-                                                    if (filePath.contains("study"))
-                                                        s = "/org/labkey/study/view/" + s;
-                                                }
-
-                                                if (shouldInclude(s))
-                                                    ret.add(s);
-                                            }
+                                            if (s.length() > 4 && s.endsWith(".jsp") && shouldInclude(s))
+                                                ret.add(s);
                                             return true;
                                         }
                                     });

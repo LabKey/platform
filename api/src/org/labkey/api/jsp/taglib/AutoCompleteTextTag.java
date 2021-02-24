@@ -49,29 +49,30 @@ public class AutoCompleteTextTag extends AutoCompleteTag
     // TODO: HtmlString
 
     @Override
-    protected String getTagConfig()
+    protected String getTagConfig(String padding)
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder()
+            .append(padding).append("tagConfig: {\n")
+            .append(padding).append("    tag          : 'input',\n")
+            .append(padding).append("    type         : 'text',\n");
 
-        sb.append("      tagConfig   : {\n" +
-            "                tag     : 'input',\n" +
-            "                type    : 'text',\n");
-        addOptionalAttrs(sb);
-        sb.append(
-            "                name    : " + PageFlowUtil.jsString(getName()) + ",\n" +
-            "                size    : " + getSize() + ",\n" +
-            "                autocomplete : 'off'\n" +
-            "            }\n");
+        addOptionalAttrs(sb, padding);
+
+        sb
+            .append(padding).append("    name         : ").append(PageFlowUtil.jsString(getName())).append(",\n")
+            .append(padding).append("    size         : ").append(getSize()).append(",\n")
+            .append(padding).append("    autocomplete : 'off'\n")
+            .append(padding).append("}\n");
 
         return sb.toString();
     }
 
     @Override
-    protected void addOptionalAttrs(StringBuilder sb)
+    protected void addOptionalAttrs(StringBuilder sb, String padding)
     {
-        super.addOptionalAttrs(sb);
+        super.addOptionalAttrs(sb, padding);
 
         if (getValue() != null)
-            sb.append("                value : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
+            sb.append(padding).append("    value        : ").append(PageFlowUtil.jsString(getValue())).append(",\n");
     }
 }

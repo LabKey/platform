@@ -326,13 +326,23 @@ public class AnnouncementManager
     {
         String name = AnnouncementManager.getMessageBoardSettings(c).getConversationName();
         BulkEmailer emailer = new BulkEmailer(user);
-        List<String> toList = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class)).stream()
+
+        // Only admins should be part of the moderator review process, but we will still respect their email subscription
+        // preferences for this container
+        IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
+        Set<User> subscribers = sel.getNotificationUsers(ann);
+
+        List<User> admins = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class));
+        admins.retainAll(subscribers);
+
+        List<String> toList = admins.stream()
             .map(User::getEmail)
             .collect(Collectors.toList());
 
         if (toList.isEmpty())
         {
-            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
+            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
+
         }
         else
         {

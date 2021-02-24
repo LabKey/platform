@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayDetailRedirectAction;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -35,7 +36,7 @@ public class RunDataLinkDisplayColumn extends DataInputColumn
     private final ColumnInfo _runIdCol;
     private final ColumnInfo _objectIdCol;
 
-    public RunDataLinkDisplayColumn(String completionBase, PublishResultsQueryView.ResolverHelper resolverHelper, ColumnInfo runIdCol, ColumnInfo objectIdCol)
+    public RunDataLinkDisplayColumn(@Nullable ActionURL completionBase, PublishResultsQueryView.ResolverHelper resolverHelper, ColumnInfo runIdCol, ColumnInfo objectIdCol)
     {
         super("Originating Run", "objectId", false, completionBase, resolverHelper, objectIdCol);
         _runIdCol = runIdCol;

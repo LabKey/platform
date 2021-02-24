@@ -32,6 +32,7 @@ public class SignedSnapshot
     private Date _signed;
     private String _entityId;
     private String _hash;
+    private String _ownerEntityId;
 
     public SignedSnapshot()
     {
@@ -178,6 +179,16 @@ public class SignedSnapshot
         _hash = hash;
     }
 
+    public String getOwnerEntityId()
+    {
+        return _ownerEntityId;
+    }
+
+    public void setOwnerEntityId(String ownerEntityId)
+    {
+        _ownerEntityId = ownerEntityId;
+    }
+
     public Map<String, Object> toMap()
     {
         Map<String, Object> props = new HashMap<>();
@@ -193,6 +204,7 @@ public class SignedSnapshot
         props.put("EntityId", getEntityId());
         props.put("Container", getContainer());
         props.put("Hash", getHash());
+        props.put("OwnerEntityId", getOwnerEntityId());
         return props;
     }
 }

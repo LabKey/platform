@@ -19,10 +19,10 @@ import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
-import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.model.ParticipantMapper;
+import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
 
@@ -41,9 +41,6 @@ public class StudyExportContext extends SimpleStudyExportContext
 {
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
-    private final PHI _phiLevel;
-    private final boolean _maskClinic;
-    private final ParticipantMapper _participantMapper;
 
     private Consumer<StudyDocument.Study> _studyXmlModifier = study -> {};  // By default, make no changes to exported study XML
 
@@ -60,10 +57,7 @@ public class StudyExportContext extends SimpleStudyExportContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
     {
-        super(user, c, getStudyDocument(), dataTypes, logger, null);
-        _phiLevel = phiLevel;
-        _participantMapper = participantMapper;
-        _maskClinic = maskClinic;
+        super(user, c, getStudyDocument(), dataTypes, phiLevel, participantMapper, maskClinic, logger, null);
 
         if (_datasets.size() == 0)
             initializeDatasets(study);
@@ -80,30 +74,6 @@ public class StudyExportContext extends SimpleStudyExportContext
         StudyDocument doc = StudyDocument.Factory.newInstance();
         doc.addNewStudy();
         return doc;
-    }
-
-    @Override
-    public PHI getPhiLevel()
-    {
-        return _phiLevel;
-    }
-
-    @Override
-    public boolean isShiftDates()
-    {
-        return getParticipantMapper().isShiftDates();
-    }
-
-    @Override
-    public boolean isAlternateIds()
-    {
-        return getParticipantMapper().isAlternateIds();
-    }
-
-    @Override
-    public boolean isMaskClinic()
-    {
-        return _maskClinic;
     }
 
     private void initializeDatasets(StudyImpl study)
@@ -146,11 +116,6 @@ public class StudyExportContext extends SimpleStudyExportContext
             _datasets.add(dataset);
             _datasetIds.add(dataset.getDatasetId());
         }
-    }
-
-    public ParticipantMapper getParticipantMapper()
-    {
-        return _participantMapper;
     }
 
     public Consumer<StudyDocument.Study> getStudyXmlModifier()

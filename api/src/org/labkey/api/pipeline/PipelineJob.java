@@ -51,6 +51,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.remoteapi.query.Filter;
 import org.quartz.CronExpression;
 
 import java.io.BufferedReader;
@@ -288,6 +289,7 @@ abstract public class PipelineJob extends Job implements Serializable
         _jobGUID = GUID.makeGUID();
         _activeTaskStatus = TaskStatus.waiting;
 
+
         _pipeRoot = root;
 
         _actionSet = new RecordedActionSet();
@@ -441,7 +443,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public File getLogFile()
     {
-        Path logFilePath =  getLogFilePath();
+        Path logFilePath = getLogFilePath();
         if (null != logFilePath && !FileUtil.hasCloudScheme(logFilePath))
             return logFilePath.toFile();
         return null;
@@ -1807,6 +1809,11 @@ abstract public class PipelineJob extends Job implements Serializable
         return null;
     }
 
+    protected String getNotificationType(PipelineJob.TaskStatus status)
+    {
+        return status.getNotificationType();
+    }
+
     public static String serializeJob(PipelineJob job)
     {
         return serializeJob(job, true);
@@ -1873,6 +1880,7 @@ abstract public class PipelineJob extends Job implements Serializable
         module.addDeserializer(URI.class, new URISerialization.Deserializer());
         module.addSerializer(File.class, new FileSerialization.Serializer());
         module.addDeserializer(File.class, new FileSerialization.Deserializer());
+        module.addDeserializer(Filter.class, new FilterDeserializer());
 
         mapper.registerModule(module);
         return mapper;

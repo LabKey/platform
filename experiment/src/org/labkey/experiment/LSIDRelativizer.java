@@ -56,7 +56,8 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             if (o instanceof ExpData)
             {
                 ExpData data = (ExpData)o;
-                if (data.getDataFileUrl() == null)
+                // Most DataClass data don't have a dataFileUrl, but some do -- like NucSequence imported from a genbank file
+                if (data.getDataFileUrl() == null || data.getDataClass() != null)
                 {
                     // If we don't have a URL for this data object, we can't use AutoFileLSID. Instead,
                     // try the next best option
@@ -86,6 +87,9 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Data".equals(prefix))
             {
+                // UNDONE: Now that "Data" prefix is used for DataClass, the AutoFileLSID is not a good default.
+                // UNDONE: Can we be more restrictive about which LSIDs this is applied to?  Maybe only if the objectId part of the LSID includes a "/" (%2F) or something?
+                // UNDONE: Maybe there is a better way to detect when we should use ${AutoFileLSID}?
                 return AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION;
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())

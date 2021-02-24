@@ -23,21 +23,28 @@ import org.labkey.api.util.Path;
 import org.labkey.api.writer.ContainerUser;
 
 /*
-* User: Dave
-* Date: Dec 11, 2008
-* Time: 3:42:39 PM
-*/
+ * User: Dave
+ * Date: Dec 11, 2008
+ * Time: 3:42:39 PM
+ */
 public class ModuleReportIdentifier extends AbstractReportIdentifier
 {
     protected static final String PREFIX = "module:";
 
-    private final Module _module;
+    private final String _moduleName;
     private final Path _reportPath;
+
+    // for JacksonSerialization
+    public ModuleReportIdentifier()
+    {
+        _moduleName = null;
+        _reportPath = null;
+    }
 
     public ModuleReportIdentifier(Module module, Path reportPath)
     {
         assert null != module && null != reportPath;
-        _module = module;
+        _moduleName = module.getName();
         _reportPath = reportPath;
     }
 
@@ -50,17 +57,21 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         if (moduleAndPath.size() < 2)
             throw new IllegalArgumentException("No / character after prefix");
 
-        _module = ModuleLoader.getInstance().getModule(moduleAndPath.get(0));
+        var moduleName= moduleAndPath.get(0);
+        var module = ModuleLoader.getInstance().getModule(moduleName);
+        if (null != module)
+            moduleName = module.getName();
+        _moduleName = moduleName;
         _reportPath = moduleAndPath.subpath(1, moduleAndPath.size());
     }
 
     @Override
     public String toString()
     {
-        if(null == _module || null == _reportPath)
+        if (null == _moduleName || null == _reportPath)
             return "Invalid Identifier!";
         else
-            return PREFIX + getModule().getName() + "/" + getReportPath();
+            return PREFIX + _moduleName + "/" + getReportPath();
     }
 
     @Override
@@ -71,7 +82,7 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
 
         ModuleReportIdentifier that = (ModuleReportIdentifier) o;
 
-        if (!_module.getName().equals(that._module.getName())) return false;
+        if (!_moduleName.equals(that._moduleName)) return false;
         if (!_reportPath.equals(that._reportPath)) return false;
 
         return true;
@@ -80,14 +91,14 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
     @Override
     public int hashCode()
     {
-        int result = _module.getName().hashCode();
+        int result = _moduleName.hashCode();
         result = 31 * result + _reportPath.hashCode();
         return result;
     }
 
     public Module getModule()
     {
-        return _module;
+        return ModuleLoader.getInstance().getModule(_moduleName);
     }
 
     public Path getReportPath()

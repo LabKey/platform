@@ -1547,6 +1547,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
     @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord() && 1 <= findExistingRecordIndex();
+    }
+
+    @Override
     public boolean next() throws BatchValidationException
     {
         _rowError = null;

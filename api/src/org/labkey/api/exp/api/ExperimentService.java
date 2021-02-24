@@ -118,6 +118,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getExpRun(String lsid);
 
+    /** @return a list of ExpRuns ordered by the RowId */
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
@@ -386,6 +387,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
+
+    /**
+     * Find the ExpData objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start);
+
+    /**
+     * Find the ExpMaterial objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start);
 
     /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,

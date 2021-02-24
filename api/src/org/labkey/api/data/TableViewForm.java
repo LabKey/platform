@@ -318,7 +318,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public void setPkVals(String s)
     {
-        setPkVals(s.split(","));
+        //Issue 42042: Lists with text primary key don't handle commas in key value when viewing row details
+        if (getPkNamesList().size() == 1)
+            set(getPkNamesList().get(0), s);
+        else
+            setPkVals(s.split(","));
     }
 
     public void setPkVals(String[] s)

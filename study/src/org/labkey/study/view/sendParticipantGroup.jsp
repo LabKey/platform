@@ -37,7 +37,7 @@
     String subjectNounPlural = s.getSubjectNounPlural();
 
     ActionURL returnUrl = bean.getReturnActionURL(bean.getDefaultUrl(container));
-    String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(container);
+    ActionURL completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURL(container);
     ActionURL sendGroupUrl = bean.getSendGroupUrl(container);
 
     String messageSubject = bean.getMessageSubject() != null ? bean.getMessageSubject()

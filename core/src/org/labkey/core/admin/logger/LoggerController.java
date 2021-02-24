@@ -316,7 +316,7 @@ public class LoggerController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Manage Log4J Loggers", new ActionURL(getClass(), getContainer()));
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Manage Log4J Loggers", getClass(), getContainer());
         }
     }
 

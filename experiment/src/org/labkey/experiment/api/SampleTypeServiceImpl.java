@@ -25,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
@@ -71,6 +71,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -116,7 +117,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
     public static SampleTypeServiceImpl get()
     {
@@ -907,10 +908,10 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
         // not doing anything with userComment at the moment
-        return createAuditRecord(c, getCommentDetailed(action, !updatedRow.isEmpty()), row, updatedRow, action);
+        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), action, row, existingRow);
     }
 
     @Override
@@ -936,10 +937,18 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, row, null, null);
+        return createAuditRecord(c, comment, null, row, null);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
+    // move to UploadSamplesHelper?
+    private boolean isInputFieldKey(String fieldKey)
+    {
+        int slash = fieldKey.indexOf('/');
+        return  slash==ExpData.DATA_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpData.DATA_INPUT_PARENT) ||
+                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
+    }
+
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
         var tx = getExpSchema().getScope().getCurrentTransaction();
@@ -949,20 +958,18 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
 
-        if (updatedRow != null)
-        {
-            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
-            event.setLineageUpdate(parentFields.isPresent());
-        }
-
+        var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
         {
+            Optional<String> parentFields = row.keySet().stream().filter(this::isInputFieldKey).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+
             String sampleTypeLsid = null;
-            if (row.containsKey(CPAS_TYPE))
-                sampleTypeLsid =  String.valueOf(row.get(CPAS_TYPE));
+            if (staticsRow.containsKey(CPAS_TYPE))
+                sampleTypeLsid =  String.valueOf(staticsRow.get(CPAS_TYPE));
             // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
-            if (sampleTypeLsid == null && row.containsKey("sampleset"))
-                sampleTypeLsid = String.valueOf(row.get("sampleset"));
+            if (sampleTypeLsid == null && staticsRow.containsKey("sampleset"))
+                sampleTypeLsid = String.valueOf(staticsRow.get("sampleset"));
             if (sampleTypeLsid != null)
             {
                 ExpSampleType sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
@@ -972,12 +979,14 @@ public class SampleTypeServiceImpl extends AuditHandler.AbstractAuditHandler imp
                     event.setSampleTypeId(sampleType.getRowId());
                 }
             }
-            if (row.containsKey(LSID))
-                event.setSampleLsid(String.valueOf(row.get(LSID)));
-            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
-                event.setSampleId((Integer) row.get(ROW_ID));
-            if (row.containsKey(NAME))
-                event.setSampleName(String.valueOf(row.get(NAME)));
+            if (staticsRow.containsKey(LSID))
+                event.setSampleLsid(String.valueOf(staticsRow.get(LSID)));
+            if (staticsRow.containsKey(ROW_ID) && staticsRow.get(ROW_ID) != null)
+                event.setSampleId((Integer) staticsRow.get(ROW_ID));
+            if (staticsRow.containsKey(NAME))
+                event.setSampleName(String.valueOf(staticsRow.get(NAME)));
+            // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
+            row.put(ROW_ID,staticsRow.get(ROW_ID));
         }
 
         if (action != null)

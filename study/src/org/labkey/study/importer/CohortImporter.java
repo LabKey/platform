@@ -63,7 +63,7 @@ public class CohortImporter implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            StudyImpl study = ctx.getStudy();
+            StudyImpl study = ctx.getStudyImpl();
             StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
 
             ctx.getLogger().info("Loading " + getDescription());

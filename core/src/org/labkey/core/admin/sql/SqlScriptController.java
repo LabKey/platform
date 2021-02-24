@@ -316,12 +316,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "SQL Scripts", getURL());
-        }
-
-        public ActionURL getURL()
-        {
-            return new ActionURL(SqlScriptController.ScriptsAction.class, ContainerManager.getRoot());
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "SQL Scripts", getClass(), ContainerManager.getRoot());
         }
     }
 

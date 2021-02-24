@@ -17,18 +17,23 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
@@ -52,6 +57,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 /*
 * User: Dave
@@ -164,14 +171,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
+        if (!isBulkLoad())
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
+
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+
         if (null != result && result.size() > 0)
         {
             for (Map<String, Object> row : result)
             {
-                if (!isBulkLoad())
-                    StudyServiceImpl.addDatasetAuditEvent(user, _dataset, null, row);
-
                 try
                 {
                     String participantID = getParticipant(row, user, container);

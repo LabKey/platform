@@ -2183,7 +2183,7 @@ public class CoreController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Views and Scripting Configuration", new ActionURL(this.getClass(), getContainer()));
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Views and Scripting Configuration", getClass(), getContainer());
         }
     }
 
