@@ -1659,24 +1659,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * NOTE: userComment field is not supported for this domain and will be ignored
+         */
         @Override
         protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord)
         {
-            String auditComment = null!=userComment ? userComment :
-                    switch (action)
+            String auditComment = switch (action)
                     {
                         case INSERT -> "A new dataset record was inserted";
                         case DELETE, TRUNCATE -> "A dataset record was deleted";
                         case UPDATE, MERGE ->  null!=existingRecord && !existingRecord.isEmpty() ? "A dataset record was modified" : "A new dataset record was inserted";
                         default -> "A dataset record was modified";
                     };
-
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-            event.setDatasetId(getDatasetId());
-            event.setHasDetails(true);
 
             String oldRecordString = null;
             String newRecordString = null;
@@ -1686,16 +1681,35 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
             }
-            else if (existingRecord != null)
+            else if (existingRecord != null && existingRecord.size() > 0)
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet());
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
-                newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+
+                // Check if no fields changed, if so adjust messaging
+                if (rowPair.second.size() == 0 )
+                {
+                    auditComment = "Dataset row was processed, but no changes detected";
+                    // Record values that were processed
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                }
+                else
+                {
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+                }
             }
             else
             {
                 newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
             }
+
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
+
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+            event.setDatasetId(getDatasetId());
+            event.setHasDetails(true);
+
             event.setLsid(lsid == null ? null : lsid.toString());
 
             if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
