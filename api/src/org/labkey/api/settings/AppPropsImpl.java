@@ -657,7 +657,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                     case X_FRAME_OPTIONS -> writeable.setXFrameOptions(prop.getValue());
                     case EXTERNAL_REDIRECT_HOSTS -> writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(prop.getValue(), EXTERNAL_REDIRECT_HOST_DELIMITER)));
 
-                    default -> throw new IllegalArgumentException("Unsupported site settings property: " + prop.getName());
+                    default -> LOG.debug("Property '" + prop.getName() + "' does not map to an AppProp entry");
                 }
             }
             catch (URISyntaxException e)
