@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,6 +76,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @NotNull protected SchemaType _userSchema;
 
     private final @NotNull TableRules _rules;
+    private Set<FieldKey> _rulesOmittedColumns = null;
+    private Set<FieldKey> _rulesTransformedColumns = null;
 
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
     {
@@ -522,9 +525,37 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
             getAliasManager().ensureAlias(column);
             ret = super.addColumn((MutableColumnInfo)transformed);
+            if (column != transformed)
+            {
+                if (_rulesTransformedColumns == null)
+                    _rulesTransformedColumns = new HashSet<>();
+                _rulesTransformedColumns.add(column.getFieldKey());
+            }
+        }
+        else
+        {
+            if (_rulesOmittedColumns == null)
+                _rulesOmittedColumns = new HashSet<>();
+            _rulesOmittedColumns.add(column.getFieldKey());
         }
 
         return ret;
+    }
+
+    /**
+     * Returns true if at least one of the columns on the table has been omitted by the table rules.
+     */
+    public final boolean hasRulesTransformedColumns()
+    {
+        return _rulesTransformedColumns == null || !_rulesTransformedColumns.isEmpty();
+    }
+
+    /**
+     * Returns true if at least one of the columns on the table has been omitted by the table rules.
+     */
+    public final boolean hasRulesOmittedColumns()
+    {
+        return _rulesOmittedColumns == null || !_rulesOmittedColumns.isEmpty();
     }
 
     @Override
