@@ -17,6 +17,8 @@ package org.labkey.api.settings;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -96,13 +98,15 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String API_KEY_EXPIRATION_SECONDS = "apiKeyExpirationSeconds";
     static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
     static final String X_FRAME_OPTIONS = "XFrameOption";
-    static String EXTERNAL_REDIRECT_HOSTS = "externalRedirectHostURLs"; //configured redirect host urls (delimited by newline) will be saved under this property.
-    static String EXTERNAL_REDIRECT_HOST_DELIMITER = "\n";
+    static final String EXTERNAL_REDIRECT_HOSTS = "externalRedirectHostURLs"; //configured redirect host urls (delimited by newline) will be saved under this property.
+    static final String EXTERNAL_REDIRECT_HOST_DELIMITER = "\n";
 
     private static final String SERVER_GUID = "serverGUID";
     private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
     private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
+
+    private static final Logger LOG = LogManager.getLogger(AppPropsImpl.class);
 
     @Override
     protected String getType()
@@ -615,8 +619,52 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         if (startupProps.isEmpty())
             return;
         WriteableAppProps writeable = AppProps.getWriteableInstance();
-        startupProps
-            .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
+        for (ConfigProperty prop : startupProps)
+        {
+            try
+            {
+                LOG.debug("Setting site settings config property '" + prop.getName() + "' to '" + prop.getValue() + "'");
+                switch (prop.getName())
+                {
+                    case DEFAULT_DOMAIN_PROP -> writeable.setDefaultDomain(prop.getValue());
+                    case BASE_SERVER_URL_PROP -> writeable.setBaseServerUrl(prop.getValue());
+                    case PIPELINE_TOOLS_DIR_PROP -> writeable.setPipelineToolsDir(prop.getValue());
+                    case SSL_REQUIRED -> writeable.setSSLRequired(Boolean.parseBoolean(prop.getValue()));
+                    case SSL_PORT -> writeable.setSSLPort(Integer.parseInt(prop.getValue()));
+                    case USER_REQUESTED_ADMIN_ONLY_MODE -> writeable.setUserRequestedAdminOnlyMode(Boolean.parseBoolean(prop.getValue()));
+                    case ADMIN_ONLY_MESSAGE -> writeable.setAdminOnlyMessage(prop.getValue());
+                    case SHOW_RIBBON_MESSAGE -> writeable.setShowRibbonMessage(Boolean.parseBoolean(prop.getValue()));
+                    case RIBBON_MESSAGE -> writeable.setRibbonMessageHtml(prop.getValue());
+                    case EXCEPTION_REPORTING_LEVEL -> writeable.setExceptionReportingLevel(ExceptionReportingLevel.valueOf(prop.getValue()));
+                    case USAGE_REPORTING_LEVEL -> writeable.setUsageReportingLevel(UsageReportingLevel.valueOf(prop.getValue()));
+                    case ADMINISTRATOR_CONTACT_EMAIL -> writeable.setAdministratorContactEmail(prop.getValue());
+                    case BLAST_SERVER_BASE_URL_PROP -> writeable.setBLASTServerBaseURL(prop.getValue());
+                    case MEMORY_USAGE_DUMP_INTERVAL -> writeable.setMemoryUsageDumpInterval(Integer.parseInt(prop.getValue()));
+                    case MAIL_RECORDER_ENABLED -> writeable.setMailRecorderEnabled(Boolean.parseBoolean(prop.getValue()));
+                    case WEB_ROOT -> writeable.setFileSystemRoot(prop.getValue());
+                    case USER_FILE_ROOT -> writeable.setUserFilesRoot(prop.getValue());
+                    case WEBFILES_ROOT_ENABLED -> writeable.setWebfilesEnabled(Boolean.parseBoolean(prop.getValue()));
+                    case FILE_UPLOAD_DISABLED -> writeable.setFileUploadDisabled(Boolean.parseBoolean(prop.getValue()));
+                    case MAX_BLOB_SIZE -> writeable.setMaxBLOBSize(Integer.parseInt(prop.getValue()));
+                    case EXT3_REQUIRED -> writeable.setExt3Required(Boolean.parseBoolean(prop.getValue()));
+                    case EXT3API_REQUIRED -> writeable.setExt3APIRequired(Boolean.parseBoolean(prop.getValue()));
+                    case NAV_ACCESS_OPEN -> writeable.setNavAccessOpen(Boolean.parseBoolean(prop.getValue()));
+                    case SELF_REPORT_EXCEPTIONS -> writeable.setSelfReportExceptions(Boolean.parseBoolean(prop.getValue()));
+                    case USE_CONTAINER_RELATIVE_URL -> writeable.setUseContainerRelativeURL(Boolean.parseBoolean(prop.getValue()));
+                    case ALLOW_API_KEYS -> writeable.setAllowApiKeys(Boolean.parseBoolean(prop.getValue()));
+                    case API_KEY_EXPIRATION_SECONDS -> writeable.setApiKeyExpirationSeconds(Integer.parseInt(prop.getValue()));
+                    case ALLOW_SESSION_KEYS -> writeable.setAllowSessionKeys(Boolean.parseBoolean(prop.getValue()));
+                    case X_FRAME_OPTIONS -> writeable.setXFrameOptions(prop.getValue());
+                    case EXTERNAL_REDIRECT_HOSTS -> writeable.setExternalRedirectHosts(Arrays.asList(StringUtils.split(prop.getValue(), EXTERNAL_REDIRECT_HOST_DELIMITER)));
+
+                    default -> throw new IllegalArgumentException("Unsupported site settings property: " + prop.getName());
+                }
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalArgumentException("Invalid URI for property " + prop.getName() + ": " + prop.getValue(), e);
+            }
+        }
         writeable.save(null);
     }
 
