@@ -211,7 +211,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         /* setup mini dataiterator pipeline to process lineage */
         DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.derive(user, container, di, true);
+        ExpDataIterators.derive(user, container, di, true, true);
 
         if (ret.size() > 0)
         {
@@ -300,7 +300,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 validRowCopy.put(updateField, updateValue);
             }
-            else if (isAliquot && isSampleMetaField) //TODO check for null?
+            else if (isAliquot && isSampleMetaField)
             {
                 LOG.warn("Sample metadata update has been skipped for an aliquot");
             }

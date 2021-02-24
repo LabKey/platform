@@ -534,6 +534,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rowIdCol.setURL(url);
         setDetailsURL(url);
 
+        ActionURL updateActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getUpdateMaterialQueryRowAction(getContainer(), this);
+        setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
+
+        ActionURL insertActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getInsertMaterialQueryRowAction(getContainer(), this);
+        setInsertURL(new DetailsURL(insertActionURL));
+
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);

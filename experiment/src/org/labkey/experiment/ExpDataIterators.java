@@ -378,9 +378,9 @@ public class ExpDataIterators
     }
 
     /* setup mini dataiterator pipeline to process lineage */
-    public static void derive(User user, Container container, DataIterator di, boolean isSample) throws BatchValidationException
+    public static void derive(User user, Container container, DataIterator di, boolean isSample, boolean skipAliquot) throws BatchValidationException
     {
-        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, isSample);
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, isSample, skipAliquot);
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         DataIterator derive = ddib.getDataIterator(context);
@@ -395,13 +395,15 @@ public class ExpDataIterators
         final Container _container;
         final User _user;
         final boolean _isSample;
+        final boolean _skipAliquot;
 
-        public DerivationDataIteratorBuilder(DataIteratorBuilder pre, Container container, User user, boolean isSample)
+        public DerivationDataIteratorBuilder(DataIteratorBuilder pre, Container container, User user, boolean isSample, boolean skipAliquot)
         {
             _pre = pre;
             _container = container;
             _user = user;
             _isSample = isSample;
+            _skipAliquot = skipAliquot;
         }
 
         @Override
@@ -412,7 +414,7 @@ public class ExpDataIterators
             {
                 return pre;
             }
-            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _isSample));
+            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _isSample, _skipAliquot));
         }
     }
 
@@ -439,14 +441,16 @@ public class ExpDataIterators
         final Container _container;
         final User _user;
         final boolean _isSample;
+        final boolean _skipAliquot; // skip aliquot validation, used for update/updates cases
 
         final List<String> _aliquotLsids; // check if lsid is aliquot with absent "AliquotedFrom", for merge
 
-        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isSample)
+        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isSample, boolean skipAliquot)
         {
             super(di);
             _context = context;
             _isSample = isSample;
+            _skipAliquot = skipAliquot;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidCol = map.get("lsid");
@@ -515,7 +519,7 @@ public class ExpDataIterators
                             _aliquotParents.put(lsid, aliquotParentName);
                     }
                 }
-                else
+                else if (!_skipAliquot)
                 {
                     _aliquotLsids.add(lsid);
                 }
@@ -967,7 +971,7 @@ public class ExpDataIterators
             }
 
             // Wire up derived parent/child data and materials
-            DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample));
+            DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, false));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step6 = step5;
