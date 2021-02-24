@@ -16,7 +16,7 @@ export const OntologyBrowserPage: FC = () => {
                     <span className="labkey-button" onClick={onGo}>Go</span>
                 </div>
             )}
-            {ontology && <OntologyBrowserPanel ontologyId={ontology} />}
+            {ontology && <OntologyBrowserPanel initOntologyId={ontology} />}
         </>
     )
 };
