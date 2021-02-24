@@ -184,9 +184,7 @@
                     <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-right">
-                    <div id="headerProductDropdown-content">
-                        <div style="padding: 10px;"><i class="fa fa-spinner fa-pulse"></i> Loading...</div>
-                    </div>
+                    <div id="headerProductDropdown-content"></div>
                 </ul>
             </li>
             <script type="text/javascript">
@@ -195,6 +193,8 @@
                     var productNavLoaded = false;
                     $(document).on('mouseenter', '#headerProductDropdown .dropdown-toggle', function(e) {
                         if (!productNavLoaded) {
+                            $("#headerProductDropdown-content").html("<div style=\"padding: 10px;\"><i class=\"fa fa-spinner fa-pulse\"></i> Loading...</div>");
+
                             LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
                             // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
                             productNavLoaded = true;
