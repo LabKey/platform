@@ -74,7 +74,9 @@ public class AutoCopyToStudyTest extends BaseWebDriverTest
 
         log("Verifying data is auto imported in study");
         clickTab("Clinical and Assay Data");
-        checker().verifyTrue("New dataset is not created in Study from Assay import", isElementPresent(Locator.linkWithText(ASSAY_NAME)));
+        waitAndClickAndWait(Locator.linkWithText(ASSAY_NAME));
+        DataRegionTable table = new DataRegionTable("Dataset", getDriver());
+        checker().verifyEquals("New dataset is not created in Study from Assay import", 6, table.getDataRowCount());
     }
 
 }

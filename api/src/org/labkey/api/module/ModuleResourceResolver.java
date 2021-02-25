@@ -72,7 +72,11 @@ public class ModuleResourceResolver implements Resolver
     static
     {
         // Need to clear resource caches when modules change. See #40250
-        ContextListener.addModuleChangeListener(m -> m.getModuleResolver().clear());
+        ContextListener.addModuleChangeListener(m ->
+        {
+            if (null != m)
+                m.getModuleResolver().clear();
+        });
     }
 
     ModuleResourceResolver(Module module, File dir)
