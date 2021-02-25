@@ -1105,11 +1105,28 @@ public class UserController extends SpringActionController
         }
     }
 
+    private static class UpdateUserDetailsForm extends UserQueryForm
+    {
+        // Specifying "merge" as true allows for passing sparse row data and assumes the original row
+        // values that are not explicitly specified should be left unchanged.
+        private boolean _merge;
+
+        public boolean isMerge()
+        {
+            return _merge;
+        }
+
+        public void setMerge(boolean merge)
+        {
+            _merge = merge;
+        }
+    }
+
     @RequiresLogin // permission check will happen with form.mustCheckPermissions
-    public class UpdateUserDetailsAction extends MutatingApiAction<UserQueryForm>
+    public class UpdateUserDetailsAction extends MutatingApiAction<UpdateUserDetailsForm>
     {
         @Override
-        public void validateForm(UserQueryForm form, Errors errors)
+        public void validateForm(UpdateUserDetailsForm form, Errors errors)
         {
             if (form.getUserId() <= 0)
             {
@@ -1122,7 +1139,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public Object execute(UserQueryForm form, BindException errors) throws Exception
+        public Object execute(UpdateUserDetailsForm form, BindException errors) throws Exception
         {
             Container root = ContainerManager.getRoot();
             UserSchema schema = form.getSchema();
@@ -1135,6 +1152,32 @@ public class UserController extends SpringActionController
                 QueryUpdateForm queryUpdateForm = new QueryUpdateForm(table, getViewContext(), true);
                 queryUpdateForm.bindParameters(form.getInitParameters());
                 Map<String, Object> row = queryUpdateForm.getTypedColumns();
+
+                // TODO: Update this to use our normal strategy for updating (assume null values are not being touched)
+                if (form.isMerge())
+                {
+                    Map<String, Object> props = getUserProps(form);
+
+                    // Remove properties that are not to be updated
+                    props.remove("userid");
+                    props.remove("haspassword");
+                    props.remove("lastlogin");
+                    props.remove("expirationdate");
+                    props.remove("active");
+                    props.remove("_row");
+                    props.remove("_ts");
+                    props.remove("groups");
+                    props.remove("owner");
+                    props.remove("avatar");
+                    props.remove("created");
+                    props.remove("createdby");
+                    props.remove("modified");
+                    props.remove("modifiedby");
+                    props.remove("entityid");
+
+                    props.putAll(row);
+                    row = props;
+                }
 
                 // handle file attachment for avatar file
                 Map<String, MultipartFile> fileMap = getFileMap();
@@ -1328,6 +1371,19 @@ public class UserController extends SpringActionController
         }
     }
 
+    private Map<String, Object> getUserProps(UserQueryForm form) throws NotFoundException
+    {
+        UserSchema schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException("Schema not found");
+
+        TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
+        if (table == null)
+            throw new NotFoundException("Query not found");
+
+        return new TableSelector(table).getMap(form.getUserId());
+    }
+
     @RequiresLogin
     public class GetUserPropsAction extends ReadOnlyApiAction<UserQueryForm>
     {
@@ -1335,20 +1391,14 @@ public class UserController extends SpringActionController
         public ApiResponse execute(UserQueryForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            UserSchema schema = form.getSchema();
-            if (schema == null)
-                throw new NotFoundException("Schema not found");
+            Map<String, Object> props = getUserProps(form);
 
-            TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
-            if (table == null)
-                throw new NotFoundException("Query not found");
-
-            Map<String, Object> props = new TableSelector(table).getMap(form.getUserId());
             if (props != null)
             {
                 response.put("success", true);
                 response.put("props", props);
             }
+
             return response;
         }
     }

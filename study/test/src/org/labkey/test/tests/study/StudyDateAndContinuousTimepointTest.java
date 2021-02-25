@@ -159,8 +159,8 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
             clickButton("Next", 0);
         }
 
-        //specimens, if present
-        if (_studyHelper.isSpecimenModulePresent())
+        //specimens, if present & active
+        if (_studyHelper.isSpecimenModuleActive())
         {
             waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
             clickButton("Next", 0);
