@@ -27,6 +27,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.springframework.validation.BindException;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -44,6 +45,8 @@ public interface VisualizationService
         ServiceRegistry.get().registerService(VisualizationService.class, impl);
     }
 
+    void renderSvgAsPdf(String svgSource, String filename, HttpServletResponse response) throws IOException;
+
     class SQLResponse
     {
         public SchemaKey schemaKey;
@@ -59,4 +62,6 @@ public interface VisualizationService
     Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(Container c, User u, MeasureSetRequest measureRequest);
 
     List<Map<String, Object>> toJSON(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimMeasureCols);
+
+
 }
