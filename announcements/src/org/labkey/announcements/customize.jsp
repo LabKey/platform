@@ -75,15 +75,15 @@
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="secure1" value="secureOff"<%=checked(settings.isSecureOff())%>></td>
+                    <td valign="top"><input type="radio" name="secure" value="secureOff"<%=checked(settings.isSecureOff())%>></td>
                     <td><b>Off</b> - Conversations are visible to anyone with read permissions, content can be modified after posting, content will be sent via email</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="secure1" value="secureWithEmail"<%=checked(settings.isSecureWithEmailOn())%>></td>
+                    <td valign="top"><input type="radio" name="secure" value="secureWithEmail"<%=checked(settings.isSecureWithEmailOn())%>></td>
                     <td><b>On with email</b> - Only editors and those on the notify list can view conversations, content can't be modified after posting, content is sent via email</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="secure1" value="secureWithoutEmail"<%=checked(settings.isSecureWithoutEmailOn())%>></td>
+                    <td valign="top"><input type="radio" name="secure" value="secureWithoutEmail"<%=checked(settings.isSecureWithoutEmailOn())%>></td>
                     <td><b>On without email</b> - Identical to behavior described above, with the exception that content is never sent via email</td>
                 </tr>
             </table>
