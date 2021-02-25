@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -9,10 +9,11 @@ import org.apache.tika.mime.MediaType;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.FileSystemFile;
@@ -23,7 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Date;
 
-@Migrate // studyContext.xml is the only dependent
+// Registered by the specimen module (specimenContext.xml), so specimen module is always present when this code is invoked.
 public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisSpecimenTask.Factory>
 {
     public static final String MERGE_SPECIMEN = "mergeSpecimen";
@@ -44,7 +45,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
     }
 
     @Override
-    SimpleStudyImportContext getImportContext(PipelineJob job)
+    protected SimpleStudyImportContext getImportContext(PipelineJob job)
     {
         return new SimpleStudyImportContext(job.getUser(), job.getContainer(), null, null, new PipelineJobLoggerGetter(job), null);
     }

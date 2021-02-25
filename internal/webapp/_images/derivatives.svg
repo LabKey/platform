@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Derivatives_blue_svg</title>
+    <g id="Derivatives_blue" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g>
+            <rect id="Rectangle" x="0" y="0" width="64" height="64"></rect>
+            <g id="Branches" transform="translate(30.000000, 14.000000)" stroke="#0067C5" stroke-width="2">
+                <line x1="0" y1="7" x2="7" y2="0" id="Path-2"></line>
+                <line x1="5" y1="18" x2="15" y2="18" id="Path-3"></line>
+                <line x1="0" y1="36" x2="7" y2="29" id="Path-2" transform="translate(3.500000, 32.500000) scale(1, -1) translate(-3.500000, -32.500000) "></line>
+            </g>
+            <circle id="Main-Sample" stroke="#99C9E8" stroke-width="2" fill="#99C9E8" cx="19" cy="32" r="16"></circle>
+            <circle id="Sub-3" stroke="#99C9E8" stroke-width="2" fill="#0067C5" cx="42" cy="55" r="7"></circle>
+            <circle id="Sub-2" stroke="#99C9E8" stroke-width="2" fill="#0067C5" cx="52" cy="32" r="7"></circle>
+            <circle id="Sub-1" stroke="#99C9E8" stroke-width="2" fill="#0067C5" cx="42" cy="9" r="7"></circle>
+        </g>
+    </g>
+</svg>

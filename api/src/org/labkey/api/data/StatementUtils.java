@@ -366,13 +366,6 @@ public class StatementUtils
     }
 
 
-    private SQLFragment appendParameterOrVariable(SQLFragment f, ColumnInfo col)
-    {
-        ParameterHolder p = createParameter(col);
-        return appendParameterOrVariable(f, p);
-    }
-
-
     private SQLFragment appendPropertyValue(SQLFragment f, DomainProperty dp, ParameterHolder p)
     {
         if (dp.getJdbcType() == JdbcType.BOOLEAN)
@@ -1124,6 +1117,7 @@ public class StatementUtils
 
     private String variableDeclaration(SQLFragment sqlfDeclare, ParameterHolder ph)
     {
+        assert(_dialect.isSqlServer());
         String variable = ph.variableName;
         sqlfDeclare.append(variable);
         sqlfDeclare.append(" ");
@@ -1131,22 +1125,22 @@ public class StatementUtils
         assert null != jdbcType;
         String type = _dialect.getSqlTypeName(jdbcType);
         assert null != type;
+
         // Workaround - SQLServer doesn't support TEXT, NTEXT, or IMAGE as local variables in statements, but is OK with NVARCHAR(MAX)
-        if (("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type)) && _dialect.isSqlServer())
+        if (jdbcType.isText())
         {
-            type = "NVARCHAR(MAX)";
+            if ("NTEXT".equalsIgnoreCase(type) || "TEXT".equalsIgnoreCase(type) || ph.length>4000)
+                type = "NVARCHAR(MAX)";
+            else
+                type = "NVARCHAR(4000)";
         }
         // Add scale and precision for decimal values specifying scale
-        if (jdbcType.isDecimal() && ph.p.getScale() > 0)
+        else if (jdbcType.isDecimal() && ph.p.getScale() > 0)
         {
             type = type + "(" + ph.p.getPrecision() + "," + ph.p.getScale() + ")";
         }
+
         sqlfDeclare.append(type);
-        if (jdbcType.isText() && jdbcType != JdbcType.LONGVARCHAR && jdbcType != JdbcType.GUID)
-        {
-            int length = ph.length > 0 ? ph.length : 4000;
-            sqlfDeclare.append("(").append(length).append(")");
-        }
         return variable;
     }
 

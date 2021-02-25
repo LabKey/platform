@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -258,7 +259,7 @@ public class ExternalSchema extends SimpleUserSchema
         for (String sourceTableName : sourceTableNames)
             sourceNameMap.put(sourceTableName, sourceTableName);
 
-        Set<String> available = new HashSet<>(requested.size());
+        Set<String> available = new CaseInsensitiveTreeSet();
         for (String requestedName : requested)
         {
             String sourceTableName = sourceNameMap.get(requestedName);

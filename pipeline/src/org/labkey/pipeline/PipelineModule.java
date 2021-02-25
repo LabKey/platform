@@ -72,6 +72,7 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.ScriptTaskFactory;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.cluster.ClusterStartup;
+import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
@@ -133,6 +134,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.complete.getNotificationType(), "Pipeline", "fa-check-circle");
         NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.cancelled.getNotificationType(), "Pipeline", "fa-ban");
         NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.error.getNotificationType(), "Pipeline", "fa-exclamation-triangle");
+        NotificationService.get().registerNotificationType(FolderImportJob.IMPORT_COMPLETED_NOTIFICATION, "Folder Import", "fa-check-circle");
+        NotificationService.get().registerNotificationType(FolderImportJob.IMPORT_CANCELLED_NOTIFICATION, "Folder Import", "fa-ban");
+        NotificationService.get().registerNotificationType(FolderImportJob.IMPORT_ERROR_NOTIFICATION, "Folder Import", "fa-exclamation-triangle");
 
         PipelineQuerySchema.register(this);
 

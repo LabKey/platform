@@ -500,6 +500,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         synchronized (_modulesLock)
         {
+            checkForRenamedModules();
             // use _modules here because this List<> needs to be modifiable
             initializeModules(_modules);
         }
@@ -609,6 +610,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+    }
+
+    private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
+
+    private void checkForRenamedModules()
+    {
+        getModules().stream()
+            .filter(module -> _moduleRenames.containsKey(module.getName())).findAny()
+            .ifPresent(module -> {
+                String msg = String.format("Invalid LabKey deployment. The '%s' module has been renamed, %s", module.getName(),
+                    AppProps.getInstance().getProjectRoot() == null
+                        ? " please deploy an updated distribution and restart LabKey." // Likely production environment
+                        : " please update your enlistment." // Likely dev environment
+                );
+
+                throw new IllegalStateException(msg);
+            });
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -1238,6 +1256,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         if (null == _startupFailure)
             _startupFailure = t;
+
+        if (Boolean.valueOf(System.getProperty("terminateOnStartupFailure")))
+        {
+            // Issue 40038: Ride-or-die Mode
+            _log.fatal("Startup failure, terminating", t);
+            System.exit(1);
+        }
     }
 
     public void addModuleFailure(String moduleName, Throwable t)
@@ -2188,11 +2213,17 @@ public class ModuleLoader implements Filter, MemTrackerListener
             File newinstall = new File(propsDir, "newinstall");
             if (newinstall.isFile())
             {
+                _log.debug("'newinstall' file detected: " + newinstall.getAbsolutePath());
+
                 _newInstall = true;
                 if (newinstall.canWrite())
                     newinstall.delete();
                 else
                     throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
+            }
+            else
+            {
+                _log.debug("no 'newinstall' file detected");
             }
 
             File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
@@ -2205,6 +2236,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
                 for (File propFile : sortedPropFiles)
                 {
+                    _log.debug("loading propsFile: " + propFile.getAbsolutePath());
+
                     try (FileInputStream in = new FileInputStream(propFile))
                     {
                         Properties props = new Properties();
@@ -2214,6 +2247,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         {
                             if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                             {
+                                _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
+
                                 ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
                                 if (_configPropertyMap.containsMapping(config.getScope(), config))
                                     _configPropertyMap.removeMapping(config.getScope(), config);
@@ -2227,6 +2262,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     }
                 }
             }
+            else
+            {
+                _log.debug("no propFiles to load");
+            }
+        }
+        else
+        {
+            _log.debug("propsDir non-existant or not a directory: " + propsDir.getAbsolutePath());
         }
 
         // load any system properties with the labkey prop prefix

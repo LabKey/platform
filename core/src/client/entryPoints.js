@@ -19,5 +19,10 @@ module.exports = {
         title: 'Error Handler',
         path: './src/client/ErrorHandler',
         generateLib: true // used in errorView.jsp
+    },{
+        name: 'productNavigation',
+        title: 'Product Navigation',
+        path: './src/client/ProductNavigation',
+        generateLib: true // used in header.jsp
     }]
 };

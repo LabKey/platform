@@ -229,8 +229,11 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
         /**
-         * Do the work of the task.
+         * Do the work of the task. The task should not set the status of the job to complete - this will be handled
+         * by the caller.
          * @return the files used as inputs and generated as outputs, and the steps that operated on them
+         * @throws PipelineJobException if something went wrong during the exception of the job. The caller will
+         * handle setting the job's status to ERROR
          */
         @NotNull
         public abstract RecordedActionSet run() throws PipelineJobException;
@@ -1035,6 +1038,10 @@ abstract public class PipelineJob extends Job implements Serializable
         return false;
     }
 
+    /**
+     * Subclasses that override this method instead of defining a task pipeline are responsible for setting the job's
+     * status at the end of their execution to either COMPLETE or ERROR
+     */
     @Override
     public void run()
     {
@@ -1807,6 +1814,11 @@ abstract public class PipelineJob extends Job implements Serializable
     protected String getJobNotificationProvider()
     {
         return null;
+    }
+
+    protected String getNotificationType(PipelineJob.TaskStatus status)
+    {
+        return status.getNotificationType();
     }
 
     public static String serializeJob(PipelineJob job)

@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -194,6 +195,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return context;
     }
 
+    /**
+     *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
+     * Used only for generating  ExistingRecordDataIterator at the moment
+     */
+    protected Set<String> getSelectKeys()
+    {
+        return null;
+    }
 
     /*
      * construct the core DataIterator transformation pipeline for this table, may be just StandardDataIteratorBuilder.
@@ -204,8 +213,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
         if (_enableExistingRecordsDataIterator)
         {
-            // some tables need to generate PK's, so they add this in persistRows()
-            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), null);
+            // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
+            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys());
         }
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
@@ -1041,7 +1050,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             var mergeRows = new ArrayList<Map<String,Object>>();
             mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
             mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
-            BatchValidationException errors = new BatchValidationException();
+            BatchValidationException errors = new BatchValidationException()
+            {
+                @Override
+                public void addRowError(ValidationException vex)
+                {
+                    Logger.getLogger(AbstractQueryUpdateService.class).error("test error", vex);
+                    fail(vex.getMessage());
+                }
+            };
             int count=0;
             try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
             {

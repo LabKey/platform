@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTaskFactory;
 
 /*
 * User: adam
@@ -26,7 +27,7 @@ import org.labkey.api.pipeline.PipelineJob;
 */
 
 // This task is used to import specimen archives directly via the pipeline ui. SpecimenBatch is the associated pipeline job.
-@Migrate // studyContext.xml is the only dependent
+// Registered by the specimen module (specimenContext.xml), so specimen module is always present when this code is invoked.
 public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpecimenTask.Factory>
 {
     private StandaloneSpecimenTask(Factory factory, PipelineJob job)

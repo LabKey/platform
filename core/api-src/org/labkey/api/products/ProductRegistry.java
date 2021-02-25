@@ -164,6 +164,11 @@ public class ProductRegistry
         return items;
     }
 
+    public List<ProductMenuProvider> getRegisteredProducts()
+    {
+        return _productMap.values().stream().filter(product -> product.getProductName() != null).collect(Collectors.toList());
+    }
+
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
