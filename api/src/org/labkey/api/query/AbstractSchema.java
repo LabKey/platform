@@ -159,12 +159,12 @@ abstract public class AbstractSchema implements QuerySchema
         return _container;
     }
 
-    protected void afterConstruct(TableInfo info)
+    protected void afterConstruct(TableInfo info, boolean forSchemaTree)
     {
         if (info instanceof AbstractTableInfo)
         {
             AbstractTableInfo t = ((AbstractTableInfo)info);
-            t.afterConstruct();
+            t.afterConstruct(forSchemaTree);
         }
     }
 

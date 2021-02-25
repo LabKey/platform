@@ -160,25 +160,37 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     final public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
-        return getTable(name, null, includeExtraMetadata, false);
+        return getTable(name, null, includeExtraMetadata, false, false);
     }
+
+    @Nullable
+    final public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean forSchemaTree)
+    {
+        return getTable(name, cf, true, false, forSchemaTree);
+    }
+
 
     @Override
     @Nullable
     final public TableInfo getTable(String name, @Nullable ContainerFilter cf)
     {
-        return getTable(name, cf, true, false);
+        return getTable(name, cf, true, false, false);
     }
 
+    @Nullable
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
+    {
+        return getTable(name, cf, includeExtraMetadata, forWrite, false);
+    }
     /**
      * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is no ContainerFilter
      * @param forWrite true means do not return a cached version
      */
     @Nullable
-    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, boolean forSchemaTree)
     {
         TableInfo table = null;
-        String cacheKey = cacheKey(name,cf,includeExtraMetadata,forWrite);
+        String cacheKey = cacheKey(name, cf, includeExtraMetadata, forWrite);
 
         // NOTE: _getTableOrQuery() does not cache TableInfo for QueryDefinition, so check here before calling
         if (null != cacheKey)
@@ -187,7 +199,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             return table;
 
         ArrayList<QueryException> errors = new ArrayList<>();
-        Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
+        Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors, forSchemaTree);
         if (o instanceof TableInfo)
         {
             table = (TableInfo)o;
@@ -247,13 +259,16 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return getClass().getSimpleName() + "/" + name.toUpperCase() + "/" + cfKey;
     }
 
-
+    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
+    {
+        return _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors, false);
+    }
     /*
      * NOTE: there are two code paths that look somewhat redundant.  The Query parser uses this method, and still wants
      * to benefit from caching of calls to UserSchema.createTable().  Everyone else uses getTable() and want to benefit
      * from caching of UserSchema.createTable() AND QueryDefinition)o).getTable().  So both methods check the table cache
      */
-    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
+    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors, boolean forSchemaTree)
     {
         if (name == null)
             return null;
@@ -280,7 +295,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             {
                 table.overlayMetadata(name, this, errors);
             }
-            afterConstruct(table);
+            afterConstruct(table, forSchemaTree);
             if (!forWrite)
                 table.setLocked(true);
             fireAfterConstruct(table);
@@ -312,9 +327,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     public final TableInfo getTable(String name)
     {
-        return getTable(name, null, true, false);
+        return getTable(name, null, true, false, false);
     }
-
 
     @Deprecated // TODO ContainerFilter - remove. Schemas that still override or call this method have not been converted yet.
     public final @Nullable TableInfo createTable(String name)

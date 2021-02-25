@@ -50,6 +50,11 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
         return getTable(name, null);
     }
 
+    default TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean isSchemaTreeAction)
+    {
+        return getTable(name, null);
+    }
+
     /** Consider using getTableWithFactory(String, ContainerFilter.Factory) instead */
     TableInfo getTable(String name, @Nullable ContainerFilter cf);
 

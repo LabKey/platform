@@ -240,6 +240,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
+    public void afterConstruct(boolean forSchemaTree)
+    {
+        afterConstruct();
+    }
 
     protected Map<String, ColumnInfo> constructColumnMap()
     {

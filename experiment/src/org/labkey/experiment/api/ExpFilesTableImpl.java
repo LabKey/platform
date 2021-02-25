@@ -52,7 +52,15 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
     {
         super(name, schema, null);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
-        _svc.ensureFileData(this);
+    }
+
+    @Override
+    public void afterConstruct(boolean forSchemaTree)
+    {
+        super.afterConstruct();
+
+        if (!forSchemaTree)
+            _svc.ensureFileData(this);
     }
 
     @Override

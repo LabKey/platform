@@ -148,7 +148,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                         try
                         {
                             // Try to get the TableInfo so we can send back its description
-                            tinfo = uschema.getTable(qname);
+                            tinfo = uschema.getTable(qname, null, true);
                         }
                         catch (QueryException ignored)
                         {
