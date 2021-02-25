@@ -3977,7 +3977,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) //will check below
+    @RequiresNoPermission //will check below
     @ApiVersion(8.3)
     public static class InsertRowsAction extends BaseSaveRowsAction
     {
