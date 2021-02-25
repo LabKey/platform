@@ -49,6 +49,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
+        dependencies.add("core/ProductNavigationHeader.js");
     }
 %>
 <%
@@ -187,42 +188,7 @@
                     <div id="headerProductDropdown-content"></div>
                 </ul>
             </li>
-            <script type="text/javascript">
-                +function($){
-                    // wait to load the product navigation dependencies until the hover over the header icon
-                    var productNavLoaded = false;
-                    $(document).on('mouseenter', '#headerProductDropdown .dropdown-toggle', function(e) {
-                        if (!productNavLoaded) {
-                            $("#headerProductDropdown-content").html("<div style=\"padding: 10px;\"><i class=\"fa fa-spinner fa-pulse\"></i> Loading...</div>");
-
-                            LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
-                            // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
-                            productNavLoaded = true;
-                        } else {
-                            loadProductNav();
-                        }
-                    });
-
-                    var loadProductNav = function() {
-                        LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', { show: true });
-                        $(document).on('click', addProductNavClickHandler);
-                    };
-
-                    // stop the product navigation menu from closing when click within the menu div
-                    $(document).on('click', '#headerProductDropdown-content', function (e) {
-                        e.stopPropagation();
-                    });
-
-                    // on click outside of the open menu, remove click handler and hide menu (which will force it to reset on next open)
-                    var addProductNavClickHandler = function (e) {
-                        if ($(e.target).closest('#headerProductDropdown-content').length === 0) {
-                            LABKEY.App.loadApp('productNavigation', 'headerProductDropdown-content', { show: false });
-                            $(document).off('click', addProductNavClickHandler);
-                        }
-                    };
-                }(jQuery)
-            </script>
-            <%
+<%
     }
 
     if (optionsMenu != null && optionsMenu.hasChildren())
