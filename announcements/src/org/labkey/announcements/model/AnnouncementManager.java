@@ -756,7 +756,7 @@ public class AnnouncementManager
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());
-        props.put("secure", String.valueOf(settings.isSecure()));
+        props.put("secure1", String.valueOf(settings.getSecure1()));
         props.put("status", String.valueOf(settings.hasStatus()));
         props.put("expires", String.valueOf(settings.hasExpires()));
         props.put("assignedTo", String.valueOf(settings.hasAssignedTo()));
@@ -1354,7 +1354,7 @@ public class AnnouncementManager
             this.reason = reason;
             this.includeGroups = perm.includeGroups();
             this.bodyText = a.getBody();
-            if (!settings.isSecure())
+            if (settings.isSecureWithEmailOn() || settings.isSecureOff())
             {
                 WikiRenderingService renderingService = WikiRenderingService.get();
                 this.body = renderingService.getFormattedHtml(currentRendererType, a.getBody());

@@ -127,7 +127,7 @@ public interface DiscussionService
     {
         String _boardName = "Messages";
         String _conversationName = "Message";
-        boolean _secure = false;
+        String _secure1 = "secureOff";
         boolean _status = false;
         boolean _expires = false;
         boolean _assignedTo = false;
@@ -214,14 +214,30 @@ public interface DiscussionService
             _conversationName = itemName;
         }
 
-        public boolean isSecure()
+        public String getSecure1()
         {
-            return _secure;
+            return _secure1;
         }
 
-        public void setSecure(boolean secure)
+        public void setSecure1(String secure1)
         {
-            _secure = secure;
+            _secure1 = secure1;
+        }
+
+        public boolean isSecureOff() {
+            return ("secureOff").equals(_secure1);
+        }
+
+        public boolean isSecure() {
+            return ("secureWithoutEmail").equals(_secure1) || ("secureWithEmail").equals(_secure1);
+        }
+
+        public boolean isSecureWithoutEmailOn() {
+            return ("secureWithoutEmail").equals(_secure1);
+        }
+
+        public boolean isSecureWithEmailOn() {
+            return ("secureWithEmail").equals(_secure1);
         }
 
         public boolean hasExpires()
