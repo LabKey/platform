@@ -10334,8 +10334,6 @@ public class AdminController extends SpringActionController
                     controller.new ShortURLAdminAction(),
                     controller.new CustomizeSiteAction(),
                     controller.new CachesAction(),
-                    controller.new EnvironmentVariablesAction(),
-                    controller.new SystemPropertiesAction(),
                     controller.new ConfigureSystemMaintenanceAction(),
                     controller.new ModulesAction()
             );
@@ -10353,7 +10351,9 @@ public class AdminController extends SpringActionController
                     controller.new SystemMaintenanceAction(),
                     new ModuleStatusAction(),
                     new NewInstallSiteSettingsAction(),
-                    new InstallCompleteAction()
+                    new InstallCompleteAction(),
+                    controller.new EnvironmentVariablesAction(),
+                    controller.new SystemPropertiesAction()
             );
         }
     }
