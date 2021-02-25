@@ -93,6 +93,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresAllOf;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -3626,7 +3627,16 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                return qus.getRows(user, container, insertedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    return qus.getRows(user, container, insertedRows);
+                }
+                else
+                {
+                    return insertedRows;
+                }
             }
         },
         insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
@@ -3650,7 +3660,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                updatedRows = qus.getRows(user, container, updatedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    updatedRows = qus.getRows(user, container, updatedRows);
+                }
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
@@ -3977,7 +3992,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission //will check below
+    @RequiresAnyOf({ReadPermission.class, InsertPermission.class}) //will check below
     @ApiVersion(8.3)
     public static class InsertRowsAction extends BaseSaveRowsAction
     {
