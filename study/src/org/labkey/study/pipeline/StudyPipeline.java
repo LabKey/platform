@@ -56,7 +56,7 @@ public class StudyPipeline extends PipelineProvider
             return;
 
         if (context.getContainer().isDataspace())
-            return;         // Cannot import specimens into Dataspace container
+            return;
 
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
 
