@@ -228,7 +228,7 @@ public interface DiscussionService
             return ("secureOff").equals(_secure);
         }
 
-        public boolean isSecure() {
+        public boolean isSecureOn() {
             return ("secureWithoutEmail").equals(_secure) || ("secureWithEmail").equals(_secure);
         }
 

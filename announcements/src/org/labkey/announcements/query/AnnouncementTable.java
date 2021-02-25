@@ -128,7 +128,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     {
         if (_secure == null)
         {
-            _secure = DiscussionService.get().getSettings(_userSchema.getContainer()).isSecure();
+            _secure = DiscussionService.get().getSettings(_userSchema.getContainer()).isSecureOn();
         }
         return _secure;
     }
