@@ -683,6 +683,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             tooltip.append(getDescription());
         }
+
         if (null != getColumnInfo())
         {
             if (!getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
