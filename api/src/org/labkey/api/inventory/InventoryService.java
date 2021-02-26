@@ -52,6 +52,8 @@ public interface InventoryService
             "EnteredStorage"
     );
 
+    String EXPERIMENTAL_FM_BIOLOGICS = "experimental-freezermanager-biologics";
+
     static void setInstance(InventoryService impl)
     {
         ServiceRegistry.get().registerService(InventoryService.class, impl);
