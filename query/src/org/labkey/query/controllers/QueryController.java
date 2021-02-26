@@ -1375,6 +1375,8 @@ public class QueryController extends SpringActionController
             QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
+            if (null == ti)
+                throw new NotFoundException();
 
             DbScope scope = ti.getSchema().getScope();
 
@@ -3211,6 +3213,8 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
             TableInfo table = form.getQueryView().getTable();
+            if (null == table)
+                throw new NotFoundException();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
