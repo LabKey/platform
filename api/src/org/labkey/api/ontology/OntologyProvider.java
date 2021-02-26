@@ -42,8 +42,6 @@ public interface OntologyProvider
     Concept getConcept(String code);
     Collection<Concept> findConcepts(String text);
 
-    Collection<? extends Concept> getConcepts(Collection<String> codes);
-
     // to enable lookup and hierarchy queries core ontology tables must be populated
     void populateConcept(Concept c, boolean includeChildren);
 
@@ -54,6 +52,4 @@ public interface OntologyProvider
      * @return the concept count, or null if value isn't available/implemented
      */
     @Nullable Integer getOntologyConceptCount(Ontology ontology);
-
-    Collection<? extends Concept> getChildConcepts(Concept concept);
 }

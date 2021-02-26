@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-@JsonSerialize(using = ConceptPath.ConceptPathSerializer.class)
 public interface ConceptPath
 {
     @JsonIgnore
@@ -29,22 +28,7 @@ public interface ConceptPath
     @JsonIgnore
     Concept getConcept();
 
-    class ConceptPathSerializer extends JsonSerializer<ConceptPath>
-    {
-        @Override
-        public void serialize(ConceptPath value, JsonGenerator gen, SerializerProvider serializers) throws IOException
-        {
-            gen.writeStartObject();
-            gen.writeStringField("path", value.getPath().toString());
-            gen.writeStringField("code", value.getCode());
+    boolean hasChildren();
 
-            Concept concept = value.getConcept();
-            if (concept != null)
-            {
-                gen.writeStringField("label", concept.getLabel());
-                gen.writeBooleanField("hasChildren", concept.hasChildren());
-            }
-            gen.writeEndObject();
-        }
-    }
+    String getLabel();
 }

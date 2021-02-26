@@ -20,7 +20,4 @@ public interface Concept
     @Nullable String getDescription();
 
     @Nullable URLHelper getURL();
-
-    @JsonProperty
-    boolean hasChildren();
 }
