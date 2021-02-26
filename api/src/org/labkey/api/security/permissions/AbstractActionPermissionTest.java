@@ -184,6 +184,10 @@ public abstract class AbstractActionPermissionTest extends Assert
                         _users.get(SUBMITTER_EMAIL)
                 );
             }
+            else
+            {
+                assertPermission(_c, action, _users.get(SUBMITTER_EMAIL));
+            }
         }
     }
 
