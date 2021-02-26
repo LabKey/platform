@@ -478,6 +478,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    /**
+     * @param thisValue the original field value
+     * @param derivationDataColInd the col index for the field used to determine if a record is child or parent
+     * @param isDerivationField if this field is a child only field
+     * @param presentDerivationWarning the warning msg to log if a child field is present for a parent record
+     * @param presentNonDerivationWarning the warning msg to log if a parent field is present for a child record
+     * @return
+     */
     private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
     {
         Object derivationData = derivationDataColInd < 0 ? null : _data.get(derivationDataColInd);

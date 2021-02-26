@@ -228,7 +228,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         TableInfo d = getDbTable();
         TableInfo t = _sampleType.getTinfo();
 
-        //TODO ?
         SQLFragment sql = new SQLFragment()
                 .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                 .append(" FROM ").append(d, "d")

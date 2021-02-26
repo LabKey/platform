@@ -99,7 +99,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _conceptLabelColumn = null;
     protected String _principalConceptCode = null;
 
-    // exp material
+    // used by exp material to distinguish aliquot vs meta fields
     protected String _derivationDataScope = null;
 
     abstract public void checkLocked();

@@ -6301,25 +6301,6 @@ public class ExperimentServiceImpl implements ExperimentService
             }
         }
 
-        private void saveExpMaterialXXX(List<Pair<Integer, String>> aliquotRoots)
-        {
-            for (Pair<Integer, String> aliquotRoot : aliquotRoots)
-            {
-//                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE) //?? right step?
-//                {
-//                    for (ExpMaterial outputMaterial : rec._runRecord.getOutputMaterialMap().keySet())
-//                    {
-//                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
-//                                append(" SET SourceApplicationId = ?, RunId = ? WHERE RowId = ?");
-//
-//                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), outputMaterial.getRowId());
-//
-//                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
-//                    }
-//                }
-            }
-        }
-
         private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
         {
             for (ProtocolAppRecord rec : protAppRecords)
