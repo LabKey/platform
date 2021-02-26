@@ -79,7 +79,7 @@ public class AnnouncementSchema extends UserSchema
             {
                 // Schema is always available unless marked as secure.
                 // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
-                return !AnnouncementsController.getSettings(schema.getContainer()).isSecure();
+                return !AnnouncementsController.getSettings(schema.getContainer()).isSecureOn();
             }
 
             @Override

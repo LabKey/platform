@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -97,7 +98,6 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1050,7 +1050,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             var mergeRows = new ArrayList<Map<String,Object>>();
             mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
             mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
-            BatchValidationException errors = new BatchValidationException();
+            BatchValidationException errors = new BatchValidationException()
+            {
+                @Override
+                public void addRowError(ValidationException vex)
+                {
+                    Logger.getLogger(AbstractQueryUpdateService.class).error("test error", vex);
+                    fail(vex.getMessage());
+                }
+            };
             int count=0;
             try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
             {

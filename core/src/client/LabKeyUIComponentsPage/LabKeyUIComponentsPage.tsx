@@ -34,7 +34,7 @@ import {
     SearchResultsPanel,
     ChangePasswordModal,
     UserDetailHeader,
-    SelectInput
+    SelectInput,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -50,6 +50,7 @@ import { UserProfilePage } from "./UserProfilePage";
 import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
+import {OntologyBrowserPage} from "./OntologyBrowserPage";
 
 import "./LabKeyUIComponentsPage.scss"
 
@@ -73,6 +74,7 @@ const COMPONENT_NAMES = List<string>([
     {value: 'LoadingModal'},
     {value: 'LoadingSpinner'},
     {value: 'NavigationBar'},
+    {value: 'OntologyBrowser'},
     {value: 'PageDetailHeader'},
     {value: 'PermissionAssignments'},
     {value: 'Progress'},
@@ -364,6 +366,12 @@ export class App extends React.Component<any, State> {
                         <LoadingSpinner msg={'Loading message goes here...'}/>
                     )
                 }
+                {/*TODO remove this once we use the OntologyBrowserPanel on ontology-browse page*/}
+                {selected === 'OntologyBrowser' &&
+                    this.renderPanel('OntologyBrowser',
+                        <OntologyBrowserPage/>
+                    )
+                }
                 {selected === 'NavigationBar' &&
                     this.renderPanel('NavigationBar',
                         <NavigationBarPage/>
@@ -488,4 +496,3 @@ export class App extends React.Component<any, State> {
         )
     }
 }
-

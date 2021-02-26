@@ -37,6 +37,17 @@ public abstract class AbstractAuditHandler implements AuditHandler
         }
     }
 
+    /**
+     * Create a detailed audit record object so it can be recorded in the audit tables
+     * @param user making change
+     * @param c container containing auditable data
+     * @param tInfo Auditable tableInfo containing auditable record
+     * @param action being performed
+     * @param userComment Comment provided by the user explaining reason for change. NOTE: This value is generally not currently supported by many audit logging domains, and may be ignored.
+     * @param row map of new data values
+     * @param existingRow map of data values
+     * @return DetailedAuditTypeEvent object describing audit record (NOTE: not committed to DB yet)
+     */
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow);
 
     /**
