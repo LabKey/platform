@@ -38,9 +38,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.assay.PublishConfirmAction;
-import org.labkey.study.assay.PublishStartAction;
+import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -53,8 +53,8 @@ import java.util.List;
 public class PublishController extends SpringActionController
 {
     private static final ActionResolver _resolver = new DefaultActionResolver(PublishController.class,
-        PublishStartAction.class,
-        PublishConfirmAction.class
+        AssayPublishStartAction.class,
+        AssayPublishConfirmAction.class
     );
 
     public PublishController()

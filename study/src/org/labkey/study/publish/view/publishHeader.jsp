@@ -18,12 +18,12 @@
 <%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.assay.PublishConfirmAction" %>
+<%@ page import="org.labkey.study.publish.AbstractPublishConfirmAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<PublishConfirmAction.PublishConfirmBean> me = (JspView<PublishConfirmAction.PublishConfirmBean>) HttpView.currentView();
-    PublishConfirmAction.PublishConfirmBean bean = me.getModelBean();
+    JspView<AbstractPublishConfirmAction.PublishConfirmBean> me = (JspView<AbstractPublishConfirmAction.PublishConfirmBean>) HttpView.currentView();
+    AbstractPublishConfirmAction.PublishConfirmBean bean = me.getModelBean();
 
     String dateOrVisit;
     if (bean.getTimepointType() == TimepointType.VISIT)
