@@ -942,6 +942,8 @@
       <column columnName="Container"/>
       <column columnName="LastIndexed"/>
       <column columnName="ObjectId"/>
+      <column columnName="RootMaterialLSID"/>
+      <column columnName="AliquotedFromLSID"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">
