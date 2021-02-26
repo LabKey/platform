@@ -22,6 +22,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Serves up a static .html file that's part of a module's ./resources/views as a webpart (by virtue of having
@@ -124,7 +125,11 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         }
         catch (Exception x)
         {
-            if (x instanceof RuntimeException)
+            // Avoids rendering BadRequestException in the browser when bad parameters are used. For example, crawler
+            // passing a bogus enrollmentTokenBatches.containerFilterName parameter.
+            if (x instanceof InvocationTargetException && x.getCause() instanceof RuntimeException)
+                throw (RuntimeException)x.getCause();
+            else if (x instanceof RuntimeException)
                 throw (RuntimeException)x;
             else
                  throw new RuntimeException(x);
