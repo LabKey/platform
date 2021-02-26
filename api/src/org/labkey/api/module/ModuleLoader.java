@@ -1256,6 +1256,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         if (null == _startupFailure)
             _startupFailure = t;
+
+        if (Boolean.valueOf(System.getProperty("terminateOnStartupFailure")))
+        {
+            // Issue 40038: Ride-or-die Mode
+            _log.fatal("Startup failure, terminating", t);
+            System.exit(1);
+        }
     }
 
     public void addModuleFailure(String moduleName, Throwable t)

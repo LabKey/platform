@@ -286,7 +286,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
                         sb.append("s");
                 }
 
-                if (!dailyDigestBean.settings.isSecure())
+                if (dailyDigestBean.settings.isSecureOff() || dailyDigestBean.settings.isSecureWithEmailOn())
                 {
                     HtmlString body = ann.getFormattedHtml();
                     sb.append("<tr><td style=\"padding-left:35px;\">");

@@ -16,7 +16,6 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,7 +76,7 @@ public class StatementDataIterator extends AbstractDataIterator
     private boolean _useAsynchronousExecute = false;
     SwapQueue<ParameterMapStatement> _queue = new SwapQueue<>();
     final Thread _foregroundThread;
-    Thread _asyncThread = null;
+    volatile Thread _asyncThread = null;
     AtomicReference<Exception> _backgroundException = new AtomicReference<>();
 
     protected DataIterator _data;
@@ -321,17 +320,25 @@ public class StatementDataIterator extends AbstractDataIterator
 
     void joinBackgroundThread()
     {
+        log("<close() on _queue>");
         _queue.close();
         log("</close() on _queue>");
-        if (null != _asyncThread)
+        log("<join() on _asyncThread>");
+        Thread bgThread;
+        while (null != (bgThread = _asyncThread))
         {
-            log("<join() on _asyncThread>");
-            try {_asyncThread.join();} catch (InterruptedException x) {
+            try
+            {
+                Thread.interrupted(); // clear interrupted status
+                bgThread.join();
+                break;
+            }
+            catch (InterruptedException x)
+            {
                 log("join() was interrupted!", x);
             }
-            _asyncThread = null;
-            log("</join() on _asyncThread>");
         }
+        log("</join() on _asyncThread>");
     }
 
     private boolean _next() throws BatchValidationException
@@ -482,7 +489,7 @@ public class StatementDataIterator extends AbstractDataIterator
     private void log(String message)
     {
         if (null != _log)
-            _log.trace(message);
+            _log.debug(message);
     }
 
     private void log(String message, Exception e)
@@ -564,6 +571,10 @@ public class StatementDataIterator extends AbstractDataIterator
                 _backgroundException.set(x);
                 _foregroundThread.interrupt();
             }
+            finally
+            {
+                _asyncThread = null;
+            }
         }
 
         private void executeStatementsInBackground() throws BatchValidationException, InterruptedException
@@ -589,6 +600,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 }
             }
             assert _queue.isClosed();
+            log("exit background thread");
         }
     }
 
