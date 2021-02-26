@@ -162,7 +162,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         return users;
     }
 
-    public void assertForReadPermission(User user, PermissionCheckableAction... actions)
+    public void assertForReadPermission(User user, boolean skipNoPermissionCheck, PermissionCheckableAction... actions)
     {
         for (PermissionCheckableAction action : actions)
         {
@@ -178,9 +178,12 @@ public abstract class AbstractActionPermissionTest extends Assert
                     _users.get(APPLICATION_ADMIN_EMAIL), _users.get(SITE_ADMIN_EMAIL)
             );
 
-            assertNoPermission(_c, action,
-                    _users.get(SUBMITTER_EMAIL)
-            );
+            if (!skipNoPermissionCheck)
+            {
+                assertNoPermission(_c, action,
+                        _users.get(SUBMITTER_EMAIL)
+                );
+            }
         }
     }
 

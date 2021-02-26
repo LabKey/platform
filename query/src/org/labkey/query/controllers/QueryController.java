@@ -35,35 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.Action;
-import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExportException;
-import org.labkey.api.action.ExtendedApiQueryResponse;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasBindParameters;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReportingApiQueryResponse;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.TransactionAuditProvider;
@@ -98,6 +70,7 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -7014,7 +6987,7 @@ public class QueryController extends SpringActionController
             QueryController controller = new QueryController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 new BrowseAction(),
                 new BeginAction(),
                 controller.new SchemaAction(),
@@ -7037,7 +7010,6 @@ public class QueryController extends SpringActionController
                 controller.new ImportAction(),
                 new ExportSqlAction(),
                 new UpdateRowsAction(),
-                new InsertRowsAction(),
                 new ImportRowsAction(),
                 new DeleteRowsAction(),
                 new TableInfoAction(),
@@ -7053,6 +7025,8 @@ public class QueryController extends SpringActionController
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction()
             );
+
+            assertForReadPermission(user, true, new InsertRowsAction());
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,

@@ -10256,7 +10256,7 @@ public class AdminController extends SpringActionController
             AdminController controller = new AdminController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                     new GetModulesAction(),
                     new GetFolderTabsAction(),
                     controller.new ClearDeletedTabFoldersAction()
