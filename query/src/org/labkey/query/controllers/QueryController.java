@@ -7026,6 +7026,8 @@ public class QueryController extends SpringActionController
                 new DeleteNamedSetAction()
             );
 
+
+            // submitter should be allowed for InsertRows
             assertForReadPermission(user, true, new InsertRowsAction());
 
             // @RequiresPermission(DeletePermission.class)
