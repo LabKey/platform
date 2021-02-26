@@ -57,10 +57,10 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 
     @NotNull
     @Override
-    public SQLFragment getFromSQL(String alias)
+    public SQLFragment getFromSQL(String alias, boolean skipTransform)
     {
         _svc.ensureFileData(this);
-        return super.getFromSQL(alias);
+        return super.getFromSQL(alias, skipTransform);
     }
 
     @Override
