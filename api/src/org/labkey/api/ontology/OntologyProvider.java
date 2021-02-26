@@ -46,4 +46,10 @@ public interface OntologyProvider
     void populateConcept(Concept c, boolean includeChildren);
 
     void delete(Ontology ont);
+
+    /**
+     * The number of concepts included within the Ontology
+     * @return the concept count, or null if value isn't available/implemented
+     */
+    @Nullable Integer getOntologyConceptCount(Ontology ontology);
 }

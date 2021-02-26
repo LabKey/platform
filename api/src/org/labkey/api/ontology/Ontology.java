@@ -2,7 +2,9 @@ package org.labkey.api.ontology;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.Path;
 
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 public interface Ontology // extends Entity
@@ -36,4 +38,6 @@ public interface Ontology // extends Entity
     OntologyProvider getProvider();
 
     String getProviderConfiguration();
+
+    @NotNull ConceptPath getConceptPath();
 }
