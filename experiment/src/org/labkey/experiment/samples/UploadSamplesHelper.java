@@ -390,7 +390,7 @@ public abstract class UploadSamplesHelper
                 {
                     if (!isEmptyParent)
                     {
-                        if (!isAliquot)
+                        if (isAliquot)
                         {
                             String message = "Sample derivation parent input not allowed for aliquot";
                             throw new ValidationException(message);
@@ -423,7 +423,7 @@ public abstract class UploadSamplesHelper
                     }
                     else
                     {
-                        if (!isAliquot)
+                        if (isAliquot)
                         {
                             String message = "Sample derivation parent input not allowed for aliquot";
                             throw new ValidationException(message);
