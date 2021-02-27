@@ -69,13 +69,20 @@ public class StudyExportTest extends StudyManualTest
     @Override
     protected void doCreateSteps()
     {
-        // manually create a study and load a specimen archive
+        int jobCount = 0; // Increment as pipeline jobs finish
+
+        // manually create a study
         log("Creating study manually");
         createStudyManually();
+        jobCount++;
 
-        // import the specimens and wait for both datasets & specimens to load
-        SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), StudyHelper.SPECIMEN_ARCHIVE_A, ARCHIVE_TEMP_DIR, getFolderName(), 2);
-        specimenImporter.importAndWaitForComplete();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // import the specimens and wait for both datasets & specimens to load
+            SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()),
+                StudyHelper.SPECIMEN_ARCHIVE_A, ARCHIVE_TEMP_DIR, getFolderName(), ++jobCount);
+            specimenImporter.importAndWaitForComplete();
+        }
 
         // TODO: Call afterManualCreate()?
         setDemographicsDescription();
@@ -111,8 +118,8 @@ public class StudyExportTest extends StudyManualTest
         waitForText("Import Study from Pipeline");
         clickButton("Start Import");
 
-        // wait for study & specimen load
-        waitForPipelineJobsToComplete(3, "study and specimen archive import", false);
+        // wait for study & specimen (maybe) load
+        waitForPipelineJobsToComplete(++jobCount, "study and specimen archive import", false);
     }
 
     @Override
