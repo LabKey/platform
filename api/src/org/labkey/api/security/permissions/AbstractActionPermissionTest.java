@@ -162,6 +162,11 @@ public abstract class AbstractActionPermissionTest extends Assert
         return users;
     }
 
+    public void assertForReadPermission(User user, PermissionCheckableAction... actions)
+    {
+        assertForReadPermission(user, false, actions);
+    }
+
     public void assertForReadPermission(User user, boolean submitterAllowed, PermissionCheckableAction... actions)
     {
         for (PermissionCheckableAction action : actions)
