@@ -3,3 +3,5 @@ StudyExportTest
 JUnitTest
 AncillaryStudyTest
 StudyDemoModeTest
+StudyProtocolDesignerTest
+StudyPublishTest

@@ -184,10 +184,13 @@ public class StudyPublishTest extends StudyPHIExportTest
         RReportHelper _rReportHelper = new RReportHelper(this);
         _rReportHelper.ensureRConfig();
 
-        _pipelineJobs += 2;
+        _pipelineJobs += 1;
         importStudy();
-        startSpecimenImport(_pipelineJobs);
-        waitForPipelineJobsToComplete(_pipelineJobs, "study import", false);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            startSpecimenImport(++_pipelineJobs);
+        }
+        waitForPipelineJobsToComplete(++_pipelineJobs, "study import", false);
 
         setParticipantIdPreface(ID_PREFIX, ID_DIGITS);
         setStudyProperties(STUDY_LABEL, STUDY_INVESTIGATOR, STUDY_GRANT, STUDY_DESCRIPTION);
@@ -216,8 +219,11 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Create some lists
         _listHelper.importListArchive(getFolderName(), LIST_ARCHIVE);
 
-        // Set some specimen fields as PHI-protected to test exclusion with snapshot and refresh
-        setSpecimenFieldsPhi(SPECIMEN_PHI_FIELDS);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // Set some specimen fields as PHI-protected to test exclusion with snapshot and refresh
+            setSpecimenFieldsPhi(SPECIMEN_PHI_FIELDS);
+        }
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
@@ -235,8 +241,11 @@ public class StudyPublishTest extends StudyPHIExportTest
         publishStudy(PUB2_NAME, PUB2_DESCRIPTION, PublishLocation.root, PUB2_GROUPS, PUB2_DATASETS, PUB2_VISITS, PUB2_VIEWS, PUB2_REPORTS, PUB2_LISTS, false, false);
         publishStudy(PUB3_NAME, PUB3_DESCRIPTION, PublishLocation.project, PUB3_GROUPS, PUB3_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, false, true, false, true);
 
-        // load specimen set B to test the specimen refresh for the published studies
-        startSpecimenImport(++_pipelineJobs, StudyHelper.SPECIMEN_ARCHIVE_B);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // load specimen set B to test the specimen refresh for the published studies
+            startSpecimenImport(++_pipelineJobs, StudyHelper.SPECIMEN_ARCHIVE_B);
+        }
     }
 
     @Override
@@ -253,7 +262,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         group2and3ptids.addAll(Arrays.asList(GROUP3_PTIDS));
         verifyPublishedStudy(PUB3_NAME, getProjectName(), group2and3ptids.toArray(new String[group2and3ptids.size()]), PUB3_DATASETS, PUB3_DEPENDENT_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, PUB3_EXPECTED_SPECIMENS, false, true, false, true);
 
-        verifySpecimenRefresh();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            verifySpecimenRefresh();
+        }
         setupForStudySnapshotTable();
         verifyStudySnapshotTable();
 
