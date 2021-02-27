@@ -2,3 +2,4 @@ StudyPHIExportTest
 StudyExportTest
 JUnitTest
 AncillaryStudyTest
+StudyDemoModeTest
