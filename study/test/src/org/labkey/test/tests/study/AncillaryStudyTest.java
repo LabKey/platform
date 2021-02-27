@@ -345,7 +345,7 @@ public class AncillaryStudyTest extends StudyBaseTest
 
     private void verifySpecimens(int specimenCount, int vialCount)
     {
-        if (_studyHelper.isSpecimenModulePresent())
+        if (!_studyHelper.isSpecimenModulePresent())
         {
             return;
         }
