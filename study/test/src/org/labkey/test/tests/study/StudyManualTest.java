@@ -57,7 +57,10 @@ public abstract class StudyManualTest extends StudyTest
         setFormElement(Locator.name("subjectNounPlural"), "Mice");
         setFormElement(Locator.name("subjectColumnName"), "MouseId");
         clickButton("Create Study");
-        _studyHelper.setupAdvancedRepositoryType();
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            _studyHelper.setupAdvancedRepositoryType();
+        }
 
         // change study label
         clickAndWait(Locator.linkWithText("Change Study Properties"));

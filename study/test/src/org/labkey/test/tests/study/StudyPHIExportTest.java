@@ -161,21 +161,24 @@ public class StudyPHIExportTest extends StudyExportTest
         importAlteredStudy();
         waitForPipelineJobsToComplete(3, "Study reimport", false);
 
-        Map reimportedFirstMouseStats = getFirstMouseStats();
+        Map<String, String> reimportedFirstMouseStats = getFirstMouseStats();
         verifyStatsMatch(alteredFirstMouseStats, reimportedFirstMouseStats);
 
         log("Verify second export and clinic masking");
 
-        startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
-        waitForPipelineJobsToComplete(4, "Specimen import", false);
-        exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
+            waitForSpecimenImport();
+            exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
 
-        clickFolder(getFolderName());
-        deleteStudy();
-        importAlteredStudy();
-        waitForPipelineJobsToComplete(5, "Study reimport with specimens", false);
+            clickFolder(getFolderName());
+            deleteStudy();
+            importAlteredStudy();
+            waitForPipelineJobsToComplete(5, "Study reimport with specimens", false);
 
-        verifyMaskedClinics(8);
+            verifyMaskedClinics(8);
+        }
     }
 
     private void goToDatasets()
