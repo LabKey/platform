@@ -81,11 +81,18 @@ public class AncillaryStudyTest extends StudyBaseTest
     public void doCreateSteps()
     {
         importStudy();
-        startSpecimenImport(2);
-        waitForPipelineJobsToComplete(2, "study import", false);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            _containerHelper.enableModule(PROJECT_NAME, "Specimen");
+            startSpecimenImport(2);
+            waitForSpecimenImport();
+        }
+        else
+        {
+            waitForPipelineJobsToComplete(1, "study import", false);
+        }
         _studyHelper.createCustomParticipantGroup(PROJECT_NAME, getFolderName(), PARTICIPANT_GROUP, "Mouse", true, PTIDS);
         _studyHelper.createCustomParticipantGroup(PROJECT_NAME, getFolderName(), PARTICIPANT_GROUP_BAD, "Mouse", true, PTIDS_BAD);
-        _containerHelper.enableModule(PROJECT_NAME, "Specimen");
         createAncillaryStudy();
     }
 
@@ -338,6 +345,10 @@ public class AncillaryStudyTest extends StudyBaseTest
 
     private void verifySpecimens(int specimenCount, int vialCount)
     {
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            return;
+        }
         log("Verify copied specimens");
         clickFolder(STUDY_NAME);
         waitAndClickAndWait(Locator.linkWithText("Specimen Data"));
