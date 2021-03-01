@@ -168,6 +168,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    public String getLabel()
+    {
+        return "Standard";
+    }
+
+    @Override
     public AssaySaveHandler getSaveHandler()
     {
         AssaySaveHandler saveHandler = new TsvAssaySaveHandler();
