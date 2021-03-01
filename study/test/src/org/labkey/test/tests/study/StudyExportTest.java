@@ -125,7 +125,7 @@ public class StudyExportTest extends StudyManualTest
     @Override
     protected int getVisitCount()
     {
-        return 67;
+        return super.getVisitCount() + 1;
     }
 
     protected void doCohortCreateSteps()
