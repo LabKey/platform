@@ -6316,7 +6316,11 @@ public class ExperimentServiceImpl implements ExperimentService
 
                         String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
                         if (StringUtils.isEmpty(rootMaterial))
-                            throw new ValidationException("Unable to find aliquot parent");
+                        {
+                            rootMaterial = parent.getRootMaterialLSID();
+                            if (StringUtils.isEmpty(rootMaterial))
+                                throw new ValidationException("Unable to find aliquot parent");
+                        }
 
                         if (!isParentRootMaterial)
                             _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache

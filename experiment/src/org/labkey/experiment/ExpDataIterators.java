@@ -499,9 +499,9 @@ public class ExpDataIterators
                 if (_aliquotParentCol > -1)
                 {
                     Object o = get(_aliquotParentCol);
+                    String aliquotParentName = null;
                     if (o != null)
                     {
-                        String aliquotParentName = null;
                         if (o instanceof String)
                         {
                             aliquotParentName = (String) o;
@@ -518,8 +518,12 @@ public class ExpDataIterators
                         if (aliquotParentName != null)
                             _aliquotParents.put(lsid, aliquotParentName);
                     }
+
+                    if (aliquotParentName == null && _context.getInsertOption().mergeRows)
+                        _aliquotLsids.add(lsid);
+
                 }
-                else if (!_skipAliquot)
+                else if (!_skipAliquot && _context.getInsertOption().mergeRows)
                 {
                     _aliquotLsids.add(lsid);
                 }
@@ -584,7 +588,7 @@ public class ExpDataIterators
                     Map<Integer, ExpMaterial> materialCache = new HashMap<>();
                     Map<Integer, ExpData> dataCache = new HashMap<>();
 
-                    if (_isSample && _context.getInsertOption().mergeRows && _aliquotParentCol == -1)
+                    if (_isSample && _context.getInsertOption().mergeRows)
                     {
                         if (!_aliquotLsids.isEmpty())
                         {
