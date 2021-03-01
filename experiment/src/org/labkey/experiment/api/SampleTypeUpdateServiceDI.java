@@ -295,17 +295,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean isAliquotField = aliquotFields.contains(updateField);
             boolean isSampleMetaField = sampleMetaFields.contains(updateField);
 
-            if ((isAliquot && isAliquotField) || (!isAliquot && isSampleMetaField))
-            {
-                validRowCopy.put(updateField, updateValue);
-            }
-            else if (isAliquot && isSampleMetaField)
+            if (isAliquot && isSampleMetaField)
             {
                 LOG.warn("Sample metadata update has been skipped for an aliquot");
             }
             else if (!isAliquot && isAliquotField)
             {
                 LOG.warn("Aliquot specific field update has been skipped for a sample.");
+            }
+            else
+            {
+                validRowCopy.put(updateField, updateValue);
             }
         }
 
