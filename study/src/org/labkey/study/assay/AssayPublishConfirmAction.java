@@ -95,6 +95,59 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         }
     }
 
+    public enum DefaultValueSource
+    {
+        Assay
+                {
+                    @Override
+                    public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+                    {
+                        return tableMetadata.getParticipantIDFieldKey();
+                    }
+                    @Override
+                    public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+                    {
+                        return tableMetadata.getVisitIDFieldKey(type);
+                    }
+                },
+        Specimen
+                {
+                    @Override
+                    public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+                    {
+                        return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
+                    }
+                    @Override
+                    public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+                    {
+                        if (type == TimepointType.VISIT)
+                        {
+                            return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "Visit");
+                        }
+                        else
+                        {
+                            return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "DrawTimestamp");
+                        }
+                    }
+                },
+        UserSpecified
+                {
+                    @Override
+                    public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+                    {
+                        return null;
+                    }
+                    @Override
+                    public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+                    {
+                        return null;
+                    }
+                };
+
+        public abstract FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata);
+        public abstract FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type);
+    }
+
     @Override
     public void validateCommand(AssayPublishConfirmForm form, Errors errors)
     {
@@ -146,7 +199,8 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     {
         Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
-        PublishResultsQueryView.DefaultValueSource defaultValueSource = form.getDefaultValueSourceEnum();
+        String valueSource = form.getDefaultValueSource();
+        DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
 
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);

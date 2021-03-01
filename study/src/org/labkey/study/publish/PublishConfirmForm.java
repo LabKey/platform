@@ -4,9 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
-import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.view.ViewForm;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -18,6 +16,13 @@ import java.util.stream.Collectors;
 
 public class PublishConfirmForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm, HasBindParameters
 {
+    public enum DefaultValueSource
+    {
+        Assay,
+        Specimen,
+        UserSpecified,
+    }
+
     private void convertStringArrayParam(PropertyValue pv)
     {
         if (null != pv && pv.getValue() instanceof String)
@@ -52,7 +57,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     private boolean _includeTimestamp;
     private String _dataRegionSelectionKey;
     private String _containerFilterName;
-    private PublishResultsQueryView.DefaultValueSource _defaultValueSource = PublishResultsQueryView.DefaultValueSource.Assay;
+    private String _defaultValueSource = DefaultValueSource.Assay.name();
 
     @Override
     public String getDataRegionSelectionKey()
@@ -164,18 +169,13 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
         _containerFilterName = containerFilterName;
     }
 
-    public void setDefaultValueSource(String defaultValueSource)
-    {
-        _defaultValueSource = PublishResultsQueryView.DefaultValueSource.valueOf(defaultValueSource);
-    }
-
     public String getDefaultValueSource()
     {
-        return _defaultValueSource.toString();
+        return _defaultValueSource;
     }
 
-    public PublishResultsQueryView.DefaultValueSource getDefaultValueSourceEnum()
+    public void setDefaultValueSource(String defaultValueSource)
     {
-        return _defaultValueSource;
+        _defaultValueSource = defaultValueSource;
     }
 }

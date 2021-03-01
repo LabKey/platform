@@ -124,60 +124,6 @@ public class PublishResultsQueryView extends QueryView
         TargetStudy             // for assays the run level target study value
     }
 
-    // TODO : consider moving into the assay specific code
-    public enum DefaultValueSource
-    {
-        Assay
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-            {
-                return tableMetadata.getParticipantIDFieldKey();
-            }
-            @Override
-            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-            {
-                return tableMetadata.getVisitIDFieldKey(type);
-            }
-        },
-        Specimen
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-            {
-                return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
-            }
-            @Override
-            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-            {
-                if (type == TimepointType.VISIT)
-                {
-                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "Visit");
-                }
-                else
-                {
-                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "DrawTimestamp");
-                }
-            }
-        },
-        UserSpecified
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-            {
-                return null;
-            }
-            @Override
-            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-            {
-                return null;
-            }
-        };
-
-        public abstract FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata);
-        public abstract FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type);
-    }
-
     public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
                                    FieldKey objectIdFieldKey,
                                    List<Integer> objectIds,

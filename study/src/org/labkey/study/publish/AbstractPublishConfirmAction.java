@@ -34,8 +34,8 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -132,7 +132,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     @Override
     public boolean handlePost(FORM form, BindException errors) throws Exception
     {
-        if (form.isAttemptPublish() && form.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
+        if (form.isAttemptPublish() && form.getDefaultValueSource().equals(PublishConfirmForm.DefaultValueSource.UserSpecified.name()))
         {
             _postedVisits = new HashMap<>();
             _postedDates = new HashMap<>();
@@ -221,7 +221,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         ActionURL publishURL = getPublishHandlerURL(form);
 
-        publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.UserSpecified.toString());
+        publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
         ActionButton publishButton = new ActionButton(publishURL, "Copy to Study");
         publishButton.setScript("return assayPublish_onCopyToStudy(this)", true);
@@ -238,7 +238,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
         {
-            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Assay.toString());
             publishURL.replaceParameter("includeTimestamp", "true");
             ActionButton includeTimeButton = new ActionButton(publishURL, "Display DateTime");
             includeTimeButton.setScript("return assayPublish_onCopyToStudy(this)", true);
@@ -248,11 +248,11 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         if (mismatched)
         {
             publishURL.deleteParameter("validate");
-            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Assay.toString());
             ActionButton fromAssayButton = new ActionButton(publishURL, "Reset with Assay Data");
             buttons.add(fromAssayButton);
 
-            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Specimen.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Specimen.toString());
             ActionButton fromSpecimenButton = new ActionButton(publishURL, "Reset with Specimen Data");
             buttons.add(fromSpecimenButton);
         }
