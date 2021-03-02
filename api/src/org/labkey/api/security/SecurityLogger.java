@@ -163,10 +163,22 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     }
 
     @Override
+    public void debug(String message)
+    {
+        debug((Object)message);
+    }
+
+    @Override
     public void debug(Object message, Throwable t)
     {
         if (_log.isDebugEnabled())
             _log.debug(indentMsg(message), t);
+    }
+
+    @Override
+    public void error(String message)
+    {
+        _log.error(indentMsg(message));
     }
 
     @Override
@@ -182,6 +194,12 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     }
 
     @Override
+    public void fatal(String message)
+    {
+        _log.fatal(indentMsg(message));
+    }
+
+    @Override
     public void fatal(Object message)
     {
         _log.fatal(indentMsg(message));
@@ -191,6 +209,12 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     public void fatal(Object message, Throwable t)
     {
         _log.fatal(indentMsg(message), t);
+    }
+
+    @Override
+    public void info(String message)
+    {
+        _log.info(indentMsg(message));
     }
 
     @Override
@@ -209,6 +233,12 @@ public class SecurityLogger extends org.apache.logging.log4j.core.Logger
     public boolean isDebugEnabled()
     {
         return _log.isDebugEnabled();
+    }
+
+    @Override
+    public void warn(String message)
+    {
+        _log.warn(indentMsg(message));
     }
 
     @Override
