@@ -6322,8 +6322,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                 throw new ValidationException("Unable to find aliquot parent");
                         }
 
-                        if (!isParentRootMaterial)
-                            _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache
+                        _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
                         

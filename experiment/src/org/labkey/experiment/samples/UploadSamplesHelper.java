@@ -241,7 +241,7 @@ public abstract class UploadSamplesHelper
                     record._aliquotOutputs.add(aliquotChild);
                     return;
                 }
-                else if (record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
+                else if ((!record.getInputMaterialMap().isEmpty() || !record.getInputDataMap().isEmpty()) && record.getInputMaterialMap().keySet().equals(parentMaterials) && record.getInputDataMap().keySet().equals(parentDatas))
                 {
                     if (record._outputMaterial.isEmpty())
                         record._outputMaterial = childMaterialMap;
