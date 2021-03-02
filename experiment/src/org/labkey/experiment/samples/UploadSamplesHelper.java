@@ -534,21 +534,17 @@ public abstract class UploadSamplesHelper
                         throw new ValidationException("Unable to change sample to aliquot: " + currentMaterial.getName());
                     else if (isExistingAliquot)
                     {
-                        if (!currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID()))
+                        if (!currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID())
+                            && !currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getName())) // for insert using merge, parent name is temporarily stored as lsid
                             throw new ValidationException("Aliquot parent cannot be updated");
-                        else
+                        else if (currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID())) // when AliquotedFromLSID is lsid, aliquot is already processed
                             aliquotParent = null; // already exist, not need to recreate
                     }
                 }
 
                 Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
-                if (isExistingAliquot && currentParents.second.size() != 1)
-                {
-                    if (currentParents.second.size() == 0)
-                        throw new ValidationException("Unable to find aliquot parent for " + runItem.getName());
-                    else
-                        throw new ValidationException("Invalid parents for aliquot: " + runItem.getName());
-                }
+                if (isExistingAliquot && currentParents.second.size() > 1)
+                    throw new ValidationException("Invalid parents for aliquot: " + runItem.getName());
 
                 if (!isAliquot)
                 {
@@ -901,6 +897,11 @@ public abstract class UploadSamplesHelper
                 }
                 else
                 {
+                    if (derivationDataColInd == i && _context.getInsertOption().mergeRows)
+                    {
+                        addColumn("AliquotedFromLSID", i); // temporarily populate sample name as lsid for merge, used to differentiate insert vs update for merge
+                    }
+
                     addColumn(i);
                 }
             }

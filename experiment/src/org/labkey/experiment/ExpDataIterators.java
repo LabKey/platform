@@ -944,7 +944,10 @@ public class ExpDataIterators
             {
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
                 if (isSample)
+                {
                     dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
+                    dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
+                }
             }
             else
             {
