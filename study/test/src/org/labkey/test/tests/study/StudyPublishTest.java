@@ -184,7 +184,6 @@ public class StudyPublishTest extends StudyPHIExportTest
         RReportHelper _rReportHelper = new RReportHelper(this);
         _rReportHelper.ensureRConfig();
 
-        _pipelineJobs += 1;
         importStudy();
         if (_studyHelper.isSpecimenModulePresent())
         {
