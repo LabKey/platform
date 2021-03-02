@@ -3010,7 +3010,7 @@ public class UserController extends SpringActionController
             UserController controller = new UserController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user, false,
+            assertForReadPermission(user,
                 controller.new BeginAction(),
                 controller.new GetUsersAction(),
                 controller.new GetUsersWithPermissionsAction()

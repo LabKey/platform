@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -42,7 +41,7 @@ import java.util.Map;
  * User: Dave
  * Date: Jun 9, 2008
  */
-public interface QueryUpdateService extends HasPermission
+public interface QueryUpdateService
 {
     enum InsertOption
     {

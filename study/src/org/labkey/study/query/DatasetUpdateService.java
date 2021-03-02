@@ -38,7 +38,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
@@ -111,7 +110,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
+    protected boolean hasPermission(User user, Class<? extends Permission> acl)
     {
         if (StudySecurityEscalator.isEscalated()) {
             return true;

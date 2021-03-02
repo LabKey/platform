@@ -20,8 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -121,11 +119,5 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     public boolean isBulkLoad()
     {
         return _service.isBulkLoad();
-    }
-
-    @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> acl)
-    {
-        return _service.hasPermission(user, acl);
     }
 }

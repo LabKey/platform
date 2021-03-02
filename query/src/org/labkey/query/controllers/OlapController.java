@@ -1592,7 +1592,7 @@ public class OlapController extends SpringActionController
             OlapController controller = new OlapController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user, false,
+            assertForReadPermission(user,
                 controller.new GetCubeDefinitionAction(),
                 new TestMdxAction(),
                 new TestJsonAction(),

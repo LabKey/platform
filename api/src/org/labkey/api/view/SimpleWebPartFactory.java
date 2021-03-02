@@ -124,8 +124,10 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         }
         catch (Exception x)
         {
-            UnexpectedException.rethrow(x);
-            return null;
+            if (x instanceof RuntimeException)
+                throw (RuntimeException)x;
+            else
+                 throw new RuntimeException(x);
         }
     }
 

@@ -2402,7 +2402,7 @@ public class CoreController extends SpringActionController
             CoreController controller = new CoreController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user, false,
+            assertForReadPermission(user,
                 controller.new ProjectsAction(),
                 controller.new DownloadFileLinkAction(),
                 controller.new GetExtContainerTreeAction(),

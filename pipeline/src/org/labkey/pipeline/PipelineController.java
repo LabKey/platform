@@ -1861,7 +1861,7 @@ public class PipelineController extends SpringActionController
             PipelineController controller = new PipelineController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user, false,
+            assertForReadPermission(user,
                 controller.new BeginAction(),
                 controller.new BrowseAction(),
                 controller.new ActionsAction(),

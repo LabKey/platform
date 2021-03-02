@@ -1197,7 +1197,7 @@ public class StatusController extends SpringActionController
             StatusController controller = new StatusController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user, false,
+            assertForReadPermission(user,
                 controller.new BeginAction(),
                 controller.new ShowListAction(),
                 controller.new ShowListRegionAction(),
