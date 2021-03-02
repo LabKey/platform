@@ -5719,7 +5719,7 @@ public class ExperimentServiceImpl implements ExperimentService
             List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
             if (actions.size() != 3)
             {
-                throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+                throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol; it should have three.");
             }
             ExpProtocolActionImpl action1 = actions.get(0);
             assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
@@ -5913,7 +5913,7 @@ public class ExperimentServiceImpl implements ExperimentService
         List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
         if (actions.size() != 3)
         {
-            throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+            throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol; it should have three.");
         }
         ExpProtocolActionImpl action1 = actions.get(0);
         assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;

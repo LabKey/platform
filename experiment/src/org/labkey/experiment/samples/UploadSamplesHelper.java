@@ -60,6 +60,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryKey;
@@ -86,7 +87,7 @@ public abstract class UploadSamplesHelper
     private static final Logger _log = LogManager.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 
-    private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot specific property [%1$s] value has been ignored for a non-aliquot sample.";
+    private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot-specific property [%1$s] value has been ignored for a non-aliquot sample.";
     private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
 
@@ -372,7 +373,7 @@ public abstract class UploadSamplesHelper
 
             if (aliquotParent == null)
             {
-                String message = "Aliquot parent '" + aliquotedFrom + "' not found";
+                String message = "Aliquot parent '" + aliquotedFrom + "' not found.";
                 throw new ValidationException(message);
             }
         }
@@ -392,7 +393,7 @@ public abstract class UploadSamplesHelper
                     {
                         if (isAliquot)
                         {
-                            String message = "Sample derivation parent input not allowed for aliquot";
+                            String message = "Sample derivation parent input is not allowed for aliquots.";
                             throw new ValidationException(message);
                         }
 
@@ -425,7 +426,7 @@ public abstract class UploadSamplesHelper
                     {
                         if (isAliquot)
                         {
-                            String message = "Sample derivation parent input not allowed for aliquot";
+                            String message = "Sample derivation parent input is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
 
@@ -452,7 +453,7 @@ public abstract class UploadSamplesHelper
                                 childMaterials.put(sample, sampleRole(sample));
                             else
                             {
-                                String message = "Sample derivation output not allowed for aliquot";
+                                String message = "Sample derivation output is not allowed for aliquots.";
                                 throw new ValidationException(message);
                             }
                         }
@@ -529,14 +530,14 @@ public abstract class UploadSamplesHelper
                     isExistingAliquot = !StringUtils.isEmpty(currentMaterial.getAliquotedFromLSID());
 
                     if (isExistingAliquot && !isAliquot)
-                        throw new ValidationException("AliquotedFrom is absent for aliquot: " + currentMaterial.getName());
+                        throw new ValidationException("AliquotedFrom is absent for aliquot " + currentMaterial.getName() + ".");
                     else if (!isExistingAliquot && isAliquot)
-                        throw new ValidationException("Unable to change sample to aliquot: " + currentMaterial.getName());
+                        throw new ValidationException("Unable to change sample to aliquot " + currentMaterial.getName() + ".");
                     else if (isExistingAliquot)
                     {
                         if (!currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID())
                             && !currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getName())) // for insert using merge, parent name is temporarily stored as lsid
-                            throw new ValidationException("Aliquot parent cannot be updated");
+                            throw new ValidationException("Aliquot parents cannot be updated for sample " + currentMaterial.getName() + ".");
                         else if (currentMaterial.getAliquotedFromLSID().equals(aliquotParent.getLSID())) // when AliquotedFromLSID is lsid, aliquot is already processed
                             aliquotParent = null; // already exist, not need to recreate
                     }
@@ -544,7 +545,7 @@ public abstract class UploadSamplesHelper
 
                 Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
                 if (isExistingAliquot && currentParents.second.size() > 1)
-                    throw new ValidationException("Invalid parents for aliquot: " + runItem.getName());
+                    throw new ValidationException("Invalid parents for aliquot " + runItem.getName() + ".");
 
                 if (!isAliquot)
                 {
@@ -834,7 +835,7 @@ public abstract class UploadSamplesHelper
             Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
             for (DomainProperty dp : _sampleType.getDomain().getProperties())
             {
-                propertyFields.put(dp.getName(), "ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()));
+                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
             int derivationDataColInd = -1;

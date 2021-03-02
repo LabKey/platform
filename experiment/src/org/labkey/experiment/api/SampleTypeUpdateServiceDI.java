@@ -46,6 +46,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -243,7 +244,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> "ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()))
+                .filter(dp -> ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
@@ -254,7 +255,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> !"ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()))
+                .filter(dp -> !ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
                 .map(ImportAliasable::getName)
                 .collect(Collectors.toSet());
 
@@ -301,7 +302,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
             else if (!isAliquot && isAliquotField)
             {
-                LOG.warn("Aliquot specific field update has been skipped for a sample.");
+                LOG.warn("Aliquot-specific field update has been skipped for a sample.");
             }
             else
             {

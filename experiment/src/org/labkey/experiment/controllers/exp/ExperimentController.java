@@ -6503,7 +6503,7 @@ public class ExperimentController extends SpringActionController
             Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
             for (DomainProperty dp : tableInfo.getDomain().getProperties())
             {
-                propertyFields.put(dp.getName(), "ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()));
+                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
             for (var column : tableInfo.getColumns())
@@ -6549,7 +6549,7 @@ public class ExperimentController extends SpringActionController
             Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
             for (DomainProperty dp : tableInfo.getDomain().getProperties())
             {
-                propertyFields.put(dp.getName(), "ChildOnly".equalsIgnoreCase(dp.getDerivationDataScope()));
+                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
             }
 
             for (var column : tableInfo.getColumns())
