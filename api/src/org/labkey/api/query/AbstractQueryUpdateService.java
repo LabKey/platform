@@ -77,6 +77,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -136,7 +137,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return _queryTable;
     }
 
-    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
         return getQueryTable().hasPermission(user, acl);
     }
