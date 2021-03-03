@@ -2228,7 +2228,7 @@ public class SecurityApiActions
             assertTrue(user.hasSiteAdminPermission());
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 new GetUserPermsAction(),
                 new GetGroupsForCurrentUserAction(),
                 new GetRolesAction(),

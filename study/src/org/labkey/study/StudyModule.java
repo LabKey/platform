@@ -164,6 +164,7 @@ import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.pipeline.SpecimenPipeline;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -375,6 +376,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
+        // TODO: Move to specimen module
+        PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
 
         // This is in the First group because when a container is deleted,

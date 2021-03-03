@@ -1586,7 +1586,7 @@ public class FileContentController extends SpringActionController
             FileContentController controller = new FileContentController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new SendFileAction(),
                 controller.new FrameAction(),
                 controller.new BeginAction(),
