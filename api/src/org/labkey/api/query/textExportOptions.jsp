@@ -141,6 +141,9 @@
                     url.searchParams.set('headerType', headerEl.val());
                 }
 
+                // 42605: Drop "base URL" and apply path relative to current location
+                url = [url.pathname, url.search].join('');
+
                 if (!isSign) {
                     dr.addMessage({
                         html: '<div class=\"labkey-message\"><strong>Text export started.</strong></div>',
