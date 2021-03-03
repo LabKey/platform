@@ -61,6 +61,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.TimepointType;
@@ -457,12 +458,15 @@ public class DatasetQueryView extends StudyQueryView
         if (QCStateManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
-        ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
-        ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
-        viewSpecimens.setRequiresSelection(true);
-        viewSpecimens.setActionType(ActionButton.Action.POST);
-        viewSpecimens.setDisplayPermission(ReadPermission.class);
-        bar.add(viewSpecimens);
+        if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
+        {
+            ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
+            ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
+            viewSpecimens.setRequiresSelection(true);
+            viewSpecimens.setActionType(ActionButton.Action.POST);
+            viewSpecimens.setDisplayPermission(ReadPermission.class);
+            bar.add(viewSpecimens);
+        }
 
         if (isAssayDataset)
         {
