@@ -592,6 +592,7 @@ public class StudyController extends BaseStudyController
             bean.canManage = getContainer().hasPermission(getUser(), ManageStudyPermission.class);
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
             bean.stats = form.getVisitStatistics();
+            bean.showSpecimens = SpecimenService.get() != null;
 
             if (QCStateManager.getInstance().showQCStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
@@ -2999,6 +3000,7 @@ public class StudyController extends BaseStudyController
         public boolean showCohorts;
         public QCStateSet qcStates;
         public Set<VisitStatistic> stats;
+        public boolean showSpecimens;
     }
 
     /**
