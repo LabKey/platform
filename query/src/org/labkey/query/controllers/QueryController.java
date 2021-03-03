@@ -35,35 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.Action;
-import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExportException;
-import org.labkey.api.action.ExtendedApiQueryResponse;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasBindParameters;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReportingApiQueryResponse;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.TransactionAuditProvider;
@@ -93,10 +65,12 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresAllOf;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -1375,6 +1349,8 @@ public class QueryController extends SpringActionController
             QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
+            if (null == ti)
+                throw new NotFoundException();
 
             DbScope scope = ti.getSchema().getScope();
 
@@ -3211,6 +3187,8 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
             TableInfo table = form.getQueryView().getTable();
+            if (null == table)
+                throw new NotFoundException();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
@@ -3626,7 +3604,16 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                return qus.getRows(user, container, insertedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    return qus.getRows(user, container, insertedRows);
+                }
+                else
+                {
+                    return insertedRows;
+                }
             }
         },
         insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
@@ -3650,7 +3637,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                updatedRows = qus.getRows(user, container, updatedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    updatedRows = qus.getRows(user, container, updatedRows);
+                }
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
@@ -3977,7 +3969,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) //will check below
+    @RequiresAnyOf({ReadPermission.class, InsertPermission.class}) //will check below
     @ApiVersion(8.3)
     public static class InsertRowsAction extends BaseSaveRowsAction
     {
@@ -6999,7 +6991,7 @@ public class QueryController extends SpringActionController
             QueryController controller = new QueryController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 new BrowseAction(),
                 new BeginAction(),
                 controller.new SchemaAction(),
@@ -7022,7 +7014,6 @@ public class QueryController extends SpringActionController
                 controller.new ImportAction(),
                 new ExportSqlAction(),
                 new UpdateRowsAction(),
-                new InsertRowsAction(),
                 new ImportRowsAction(),
                 new DeleteRowsAction(),
                 new TableInfoAction(),
@@ -7038,6 +7029,10 @@ public class QueryController extends SpringActionController
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction()
             );
+
+
+            // submitter should be allowed for InsertRows
+            assertForReadPermission(user, true, new InsertRowsAction());
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,

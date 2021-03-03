@@ -16,7 +16,7 @@ import java.util.List;
 public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
 {
     public static final String BLANK_PLATE = "blank";
-    public static final String TYPE = "GPAT (General)";
+    public static final String TYPE = "Standard";
 
     @Override
     public String getAssayType()

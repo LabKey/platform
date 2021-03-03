@@ -1,7 +1,7 @@
 # LabKey Assay Module
 
 Provides services and other APIs that assay modules call to implement custom assay types. 
-Also includes implementation of the General Purpose Assay Type (GPAT).
+Also includes implementation of the Standard Assay Type.
 
 ### LabKey React pages
 
