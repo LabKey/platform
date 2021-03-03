@@ -127,9 +127,7 @@
 
             var doTsvExport = function(isSign) {
                 var exportRegionName = <%=q(exportRegionName)%>;
-                var url = isSign ?
-                        new URL(<%=q(model.getSignTsvURL().getURIString())%>) :
-                        new URL(<%=q(model.getTsvURL().getURIString())%>);
+                var url = isSign ? <%=jsURL(model.getSignTsvURL())%> : <%=jsURL(model.getTsvURL())%>;
                 if (exportSelectedEl.is(':checked')) {
                     url.searchParams.set(exportRegionName + '.showRows', "SELECTED");
                     url.searchParams.set(exportRegionName + '.selectionKey', dr.selectionKey);
@@ -140,9 +138,6 @@
                 if (headerEl && headerEl.val()) {
                     url.searchParams.set('headerType', headerEl.val());
                 }
-
-                // 42605: Drop "base URL" and apply path relative to current location
-                url = [url.pathname, url.search].join('');
 
                 if (!isSign) {
                     dr.addMessage({
