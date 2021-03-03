@@ -17,6 +17,7 @@
 package org.labkey.experiment.controllers.exp;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 
@@ -30,17 +31,20 @@ public class RunInputOutputBean
 {
     private final Map<ExpMaterial, String> _materials;
     private final Map<ExpData, String> _datas;
+
+    private final ExpMaterial _aliquotParent;
     private final boolean _doUpdate;
 
-    public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas)
+    public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas, @Nullable ExpMaterial aliquotParent)
     {
-        this(materials, datas, false);
+        this(materials, datas, aliquotParent, false);
     }
 
-    public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas, boolean doUpdate)
+    public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas, @Nullable ExpMaterial aliquotParent, boolean doUpdate)
     {
         _materials = materials;
         _datas = datas;
+        _aliquotParent = aliquotParent;
         _doUpdate = doUpdate;
     }
 
@@ -60,4 +64,10 @@ public class RunInputOutputBean
     {
         return _materials.isEmpty() && _datas.isEmpty() && _doUpdate;
     }
+
+    public ExpMaterial getAliquotParent()
+    {
+        return _aliquotParent;
+    }
+
 }

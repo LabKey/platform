@@ -40,4 +40,8 @@ public interface ExpMaterial extends ExpRunItem
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    String getRootMaterialLSID();
+
+    String getAliquotedFromLSID();
 }

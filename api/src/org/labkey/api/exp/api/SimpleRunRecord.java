@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,4 +28,7 @@ public interface SimpleRunRecord
     Map<ExpMaterial, String> getOutputMaterialMap();
     Map<ExpData, String> getInputDataMap();
     Map<ExpData, String> getOutputDataMap();
+
+    ExpMaterial getAliquotInput();
+    List<ExpMaterial> getAliquotOutputs();
 }

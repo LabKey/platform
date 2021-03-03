@@ -658,6 +658,18 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPrincipalConceptCode();
     }
 
+    @Override
+    public void setDerivationDataScope(String scope)
+    {
+        if (!StringUtils.equals(scope, getDerivationDataScope()))
+            edit().setDerivationDataScope(scope);
+    }
+
+    @Override
+    public String getDerivationDataScope()
+    {
+        return _pd.getDerivationDataScope();
+    }
 
     @Override
     public PropertyDescriptor getPropertyDescriptor()
