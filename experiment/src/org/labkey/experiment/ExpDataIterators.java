@@ -636,8 +636,6 @@ public class ExpDataIterators
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
-                        // if is sample aliquot, and if input present, throw error
-
                         Pair<RunInputOutputBean, RunInputOutputBean> pair;
                         if (_isSample && _context.getInsertOption().mergeRows)
                         {
