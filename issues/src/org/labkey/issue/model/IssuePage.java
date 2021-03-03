@@ -510,6 +510,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public static boolean shouldDisplay(DomainProperty prop, Container container, User user)
     {
+        // treat anything higher than NotPHI as needing special permission
         return container.hasPermission(user, InsertPermission.class) ||
                 prop.getPHI().isExportLevelAllowed(PHI.NotPHI) && container.hasPermission(user, ReadPermission.class);
     }
