@@ -161,7 +161,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         checkCheckbox(Locator.radioButtonByNameAndValue("refreshType", "Manual"));
         clickButton("Finish");
 
-        waitForPipelineJobsToComplete(3, "Create Ancillary Study", false);
+        waitForPipelineJobsToComplete(_studyHelper.isSpecimenModuleActive() ? 3 : 2, "Create Ancillary Study", false);
         clickAndWait(Locator.linkWithText("Create Ancillary Study"));
     }
 
