@@ -291,6 +291,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowFileLinkProperties() { return false; }
     public boolean allowAttachmentProperties() { return false; }
     public boolean allowFlagProperties() { return true; }
+    public boolean allowTimepointProperties() { return true; }
     public boolean showDefaultValueSettings() { return false; }
 
     public DefaultValueType[] getDefaultValueOptions(Domain domain)

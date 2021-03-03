@@ -275,6 +275,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
@@ -288,6 +289,7 @@ public class DomainUtil
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+        gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
