@@ -510,9 +510,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public static boolean shouldDisplay(DomainProperty prop, Container container, User user)
     {
+        // Issue 42519 : this change in approach to check for InsertPermission before is for submitter role
         // treat anything higher than NotPHI as needing special permission
-        Class<? extends Permission> permission = prop.getPHI().isExportLevelAllowed(PHI.NotPHI) ? ReadPermission.class : InsertPermission.class;
-        return container.hasPermission(user, permission);
+        return container.hasPermission(user, InsertPermission.class) ||
+                prop.getPHI().isExportLevelAllowed(PHI.NotPHI) && container.hasPermission(user, ReadPermission.class);
     }
 
     public HtmlString writeInput(String field, String value, int tabIndex)

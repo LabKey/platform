@@ -34,7 +34,7 @@ import {
     SearchResultsPanel,
     ChangePasswordModal,
     UserDetailHeader,
-    SelectInput
+    SelectInput,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -488,4 +488,3 @@ export class App extends React.Component<any, State> {
         )
     }
 }
-

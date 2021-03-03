@@ -180,7 +180,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected boolean hasPermission(User user, Class<? extends Permission> acl)
+        public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
         {
             return getQueryTable().hasPermission(user, acl);
         }

@@ -130,6 +130,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     String getName();
 
+    /** A user-facing short name for the assay provider. Typically matches the official name, but handy for renames */
+    default String getLabel()
+    {
+        return getName();
+    }
+
     /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter
      * or omit special characters. */
     String getResourceName();
