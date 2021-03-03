@@ -4,11 +4,11 @@
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/dev.config.js --progress --profile --colors",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/prod.config.js --progress --profile --colors",
+    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/dev.config.js --progress --profile",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/prod.config.js --progress --profile",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/views/authenticationConfiguration.* && rimraf resources/views/components.*",
     "copy-distributions": "npm run clean && node copy-distributions.js",
-    "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack-dev-server --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
     "teamcity": "cross-env NODE_ENV=test jest --testResultsProcessor=jest-teamcity-reporter",
@@ -49,12 +49,12 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.8",
-    "@labkey/components": "2.10.0",
+    "@labkey/components": "2.7.1-fb-fix-hmr.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },
   "devDependencies": {
-    "@labkey/build": "1.1.1",
+    "@labkey/build": "2.0.0-fb-fix-hmr.2",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.5",
     "@types/enzyme-adapter-react-16": "1.0.6",
