@@ -1775,6 +1775,9 @@ public class OntologyManager
                         ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson)
                 .append("WHERE NOT EXISTS (SELECT * FROM "  + getTinfoDomainDescriptor().getSelectName() + " x WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
+                // belt and suspenders approach to avoiding constraint violation exception
+                if (expSchema.getSqlDialect().isPostgreSQL())
+                    insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING;");
                 int count;
                 try (var tx = expSchema.getScope().ensureTransaction())
                 {
