@@ -64,7 +64,7 @@ public interface InventoryService
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
-    List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
+    List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container, User user);
 
     DataIteratorBuilder getPersistStorageItemDataIteratorBuilder(DataIteratorBuilder data, Container container, User user, String metricUnit);
 
