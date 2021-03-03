@@ -598,7 +598,10 @@ public class ExpDataIterators
                                 // AliquotedFrom is used to determine if aliquot/meta field value should be retained or discarded
                                 // In the case of merge, one can argue AliquotedFrom can be queried for existing data, instead of making it a required field.
                                 // But that would be too expensive. For performance reasons, merge will error out if any aliquots are present but 'AliquotedFrom' column is missing.
-                                throw new ValidationException("Aliquots are present but 'AliquotedFrom' column is missing.");
+                                if (_aliquotParentCol == -1)
+                                    throw new ValidationException("Aliquots are present but 'AliquotedFrom' column is missing.");
+                                else
+                                    throw new ValidationException("'AliquotedFrom' cannot be blank for existing aliquots.");
                             }
                         }
                     }
