@@ -1,0 +1,4 @@
+GpatAssayTest
+GpatPlateTemplateTest
+TargetStudyTest
+CopyAssayToStudyTest
