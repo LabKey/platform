@@ -328,7 +328,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         //Assert webparts/wikis are present
         waitForElement(Locator.xpath("//div[@name='webpart']"));
-        List<String> expectedWebParts = Arrays.asList(
+        List<String> expectedWebParts = new ArrayList<>(Arrays.asList(
                 "Study Overview",
                 "Data Pipeline",
                 "Datasets",
@@ -337,7 +337,11 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Test Wiki Title",
                 "Lists",
                 "snapshot"
-        );
+        ));
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            expectedWebParts.remove("Specimens");
+        }
         List<String> webPartTitles = (new PortalHelper(this)).getWebPartTitles();
         Assert.assertEquals("Wrong webparts", expectedWebParts, webPartTitles);
 
@@ -747,7 +751,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        if (!_studyHelper.isSpecimenModulePresent())
+        if (_studyHelper.isSpecimenModulePresent())
         {
             // Wizard page 5 : Specimens
             waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
