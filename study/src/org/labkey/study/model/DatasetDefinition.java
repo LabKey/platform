@@ -86,6 +86,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -921,19 +922,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
-                Container studyContainer = getStudy().getContainer();
-                if (studyContainer.hasPermission(user, InsertPermission.class))
-                    result.add(InsertPermission.class);
-                if (studyContainer.hasPermission(user, DeletePermission.class))
-                    result.add(DeletePermission.class);
-                if (studyContainer.hasPermission(user, UpdatePermission.class))
-                {
-                    // Basic write access grants insert/update/delete for datasets to everyone who has update permission
-                    // in the folder
-                    result.add(UpdatePermission.class);
-                    result.add(DeletePermission.class);
-                    result.add(InsertPermission.class);
-                }
+                copyEditPerms(getStudy().getContainer(), user, result);
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
@@ -943,20 +932,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 }
                 else
                 {
-                    if (studyPolicy.hasPermission(user, UpdatePermission.class))
-                    {
-                        result.add(UpdatePermission.class);
-                        result.add(DeletePermission.class);
-                        result.add(InsertPermission.class);
-                    }
-                    if (studyPolicy.hasPermission(user, InsertPermission.class))
-                    {
-                        result.add(InsertPermission.class);
-                    }
-                    if (studyPolicy.hasPermission(user, DeletePermission.class))
-                    {
-                        result.add(DeletePermission.class);
-                    }
+                    copyEditPerms(studyPolicy, user, result);
                     // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
                     // so check for a custom security policy even if they have UpdatePermission on the study's policy
                     if (studyPolicy.hasPermission(user, ReadSomePermission.class))
@@ -977,13 +953,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return result;
     }
 
+    private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
+
+    private void copyEditPerms(HasPermission resource, UserPrincipal user, Set<Class<? extends Permission>> result)
+    {
+        EDIT_PERMS.stream().filter(perm->resource.hasPermission(user, perm)).forEach(result::add);
+    }
 
     @Override
-    public boolean canRead(UserPrincipal user)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        if (perm != ReadPermission.class && isEditProhibited(user))
+            return false;
         if (getContainer().hasPermission(user, AdminPermission.class))
             return true;
-        return getPermissions(user).contains(ReadPermission.class);
+        return getPermissions(user).contains(perm);
     }
 
     private boolean isEditProhibited(UserPrincipal user)
@@ -992,36 +976,28 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Override
+    public boolean canRead(UserPrincipal user)
+    {
+        return hasPermission(user, ReadPermission.class);
+    }
+
+    @Override
     public boolean canUpdate(UserPrincipal user)
     {
-        if (isEditProhibited(user))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(UpdatePermission.class);
+        return hasPermission(user, UpdatePermission.class);
     }
 
     @Override
     public boolean canDelete(UserPrincipal user)
     {
-        if (isEditProhibited(user))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(UpdatePermission.class);
+        return hasPermission(user, DeletePermission.class);
     }
-
 
     @Override
     public boolean canInsert(UserPrincipal user)
     {
-        if (isEditProhibited(user))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(InsertPermission.class);
+        return hasPermission(user, InsertPermission.class);
     }
-
 
     @Override
     public boolean canDeleteDefinition(UserPrincipal user)

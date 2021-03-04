@@ -122,6 +122,8 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     void save(User user) throws SQLException;
 
+    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
+
     /**
      * @return whether the user has permission to read rows from this dataset
      */

@@ -289,12 +289,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         final Container c = getContainer();
         final User user = getUser();
-        boolean isInsert = isInsert();
-        if (isInsert && !_ds.canInsert(user))
+        if (isInsert() && !_ds.canInsert(user))
         {
             throw new UnauthorizedException("User does not have permission to insert into this dataset");
         }
-        else if (!isInsert && !_ds.canUpdate(user))
+        if (!isInsert() && !_ds.canUpdate(user))
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
