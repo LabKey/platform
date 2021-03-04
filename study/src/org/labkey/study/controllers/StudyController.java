@@ -736,12 +736,6 @@ public class StudyController extends BaseStudyController
         return newUrl.addParameters(context.getActionURL().getParameters());
     }
 
-    private static boolean canWrite(DatasetDefinition def, User user)
-    {
-        return def.canInsert(user) && def.getContainer().hasPermission(user, ReadPermission.class);
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
@@ -2493,7 +2487,7 @@ public class StudyController extends BaseStudyController
         @Override
         protected void validatePermission(User user, BindException errors)
         {
-            if (canWrite(_def, user))
+            if (_def.canInsert(user))
                 return;
             throw new UnauthorizedException("Can't update dataset: " + _def.getName());
         }
