@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
@@ -231,7 +232,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        Set<String> properties = new LinkedHashSet<>();
+        Set<String> properties = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec pss : BASE_PROPERTIES)
         {
             properties.add(pss.getName());
