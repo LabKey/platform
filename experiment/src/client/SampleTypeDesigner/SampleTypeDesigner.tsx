@@ -27,7 +27,6 @@ import {
     SampleTypeDesigner,
     SampleTypeModel
 } from "@labkey/components"
-import { List } from "immutable";
 
 import "./SampleTypeDesigner.scss"
 
@@ -76,10 +75,8 @@ export class App extends React.PureComponent<any, State> {
 
                     // Then query for actual domain design
                     getSampleTypeDetails(undefined, domainId)
-                        .then((sampleDomainDetails: DomainDetails) => {
-                            this.setState(()=> ({sampleType: sampleDomainDetails.merge ({
-                                    domainDesign: sampleDomainDetails.domainDesign.merge({ reservedFieldNames: List<string>(["SampleId"]) })
-                                }) as DomainDetails, isLoading: false}));
+                        .then((sampleType: DomainDetails) => {
+                            this.setState(()=> ({sampleType, isLoading: false}));
                         }).catch(error => {
                             this.setState(() => ({message: 'Sample type does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
                         }
