@@ -250,6 +250,7 @@ public class DomainUtil
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
         d.setQueryName(domainKind.getMetaDataTableName());
+        d.setDomainKindName(domainKind.getKindName());
         if (null != domain.getTemplateInfo())
         {
             TemplateInfo t = domain.getTemplateInfo();
