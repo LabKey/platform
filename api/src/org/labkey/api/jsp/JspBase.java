@@ -298,8 +298,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public JavaScriptFragment jsURL(@NotNull URLHelper url)
     {
-        // 42605: Apply path relative to current location
-        return JavaScriptFragment.unsafe("new URL(" + q(url.getLocalURIString()) + ", window.location.origin)");
+        // Issue 42605: Apply path relative to current location
+        return JavaScriptFragment.unsafe("new URL(" + q(url) + ", window.location.origin)");
     }
 
 
