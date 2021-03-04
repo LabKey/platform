@@ -251,8 +251,11 @@ public class StudyPublishTest extends StudyPHIExportTest
     protected void doVerifySteps()
     {
         verifyPipelineJobLinks(PUB3_NAME, PUB2_NAME, PUB1_NAME);
-        // published with specimens
-        verifyPublishedStudy(PUB1_NAME, getProjectName(), GROUP1_PTIDS, PUB1_DATASETS, PUB1_DEPENDENT_DATASETS, PUB1_VISITS, PUB1_VIEWS, PUB1_REPORTS, PUB1_LISTS, true, true, PUB1_EXPECTED_SPECIMENS);
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            // published with specimens
+            verifyPublishedStudy(PUB1_NAME, getProjectName(), GROUP1_PTIDS, PUB1_DATASETS, PUB1_DEPENDENT_DATASETS, PUB1_VISITS, PUB1_VIEWS, PUB1_REPORTS, PUB1_LISTS, true, true, PUB1_EXPECTED_SPECIMENS);
+        }
         // publish without specimens
         verifyPublishedStudy(PUB2_NAME, PUB2_NAME, PTIDS_WITHOUT_SPECIMENS, PUB2_DATASETS, PUB2_DEPENDENT_DATASETS, PUB2_VISITS, PUB2_VIEWS, PUB2_REPORTS, PUB2_LISTS, false, false, PUB2_EXPECTED_SPECIMENS);
         // concat group 2 and group 3 ptids for the last published study ptid list
@@ -744,11 +747,14 @@ public class StudyPublishTest extends StudyPHIExportTest
             click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
-        if (!includeSpecimens) uncheckCheckbox(Locator.name("includeSpecimens"));
-        if (refreshSpecimens) checkCheckbox(Locator.radioButtonByNameAndValue("specimenRefresh", "true"));
-        clickButton("Next", 0);
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            // Wizard page 5 : Specimens
+            waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
+            if (!includeSpecimens) uncheckCheckbox(Locator.name("includeSpecimens"));
+            if (refreshSpecimens) checkCheckbox(Locator.radioButtonByNameAndValue("specimenRefresh", "true"));
+            clickButton("Next", 0);
+        }
 
         // Wizard Page 6 : Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
