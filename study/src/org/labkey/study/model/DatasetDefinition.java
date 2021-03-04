@@ -99,8 +99,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -895,6 +893,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    // Determines the user's permissions on this dataset based on the current dataset security rules. Returns only the
+    // subset of permissions handled by dataset security: read, insert, update, delete
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
@@ -918,28 +918,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
-                if (user instanceof User && ((User)user).hasSiteAdminPermission())
-                {
-                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
-                }
+                // Basic write grants dataset edit perms (insert/update/delete) based on user's folder perms
                 copyEditPerms(getStudy().getContainer(), user, result);
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
-                if (user instanceof User && ((User)user).hasSiteAdminPermission())
+                // Advanced write grants dataset edit perms (insert/update/delete) based on study or dataset policy perms
+                copyEditPerms(studyPolicy, user, result);
+                // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
+                // so check for a custom security policy even if they have UpdatePermission on the study's policy
+                if (studyPolicy.hasPermission(user, ReadSomePermission.class))
                 {
-                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
-                }
-                else
-                {
-                    copyEditPerms(studyPolicy, user, result);
-                    // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
-                    // so check for a custom security policy even if they have UpdatePermission on the study's policy
-                    if (studyPolicy.hasPermission(user, ReadSomePermission.class))
-                    {
-                        // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                        result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
-                    }
+                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
                 }
             }
         }
