@@ -930,7 +930,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 if (studyPolicy.hasPermission(user, ReadSomePermission.class))
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    copyEditPerms(SecurityPolicyManager.getPolicy(this), user, result);
                 }
             }
         }
