@@ -2934,7 +2934,8 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    // Dataset.canDelete() permissions check is below. This accommodates dataset security, where user might not have delete permission in the folder.
+    @RequiresPermission(ReadPermission.class)
     public class DeleteDatasetRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         @Override
@@ -2951,7 +2952,7 @@ public class StudyController extends BaseStudyController
             if (null == dataset)
                 throw new NotFoundException();
 
-            if (!dataset.canUpdate(getUser()))
+            if (!dataset.canDelete(getUser()))
                 throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing

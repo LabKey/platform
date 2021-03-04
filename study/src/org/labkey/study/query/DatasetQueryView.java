@@ -381,9 +381,9 @@ public class DatasetQueryView extends StudyQueryView
         bar.add(createExportButton(recordSelectorColumns));
 
         User user = getUser();
-        boolean canEdit = canEdit(_dataset, user);
-        boolean canInsert = canInsert(_dataset, user);
-        boolean canManage = canManage(_dataset, user);
+        boolean canInsert = _dataset.canInsert(user);
+        boolean canDelete = _dataset.canDelete(user);
+        boolean canManage = user.hasRootAdminPermission() || _dataset.getContainer().hasPermission(user, AdminPermission.class);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         boolean isAssayDataset = _dataset.isAssayData();
         ExpProtocol protocol = null;
@@ -405,12 +405,14 @@ public class DatasetQueryView extends StudyQueryView
                     ActionButton insertButton = createInsertMenuButton();
                     if (insertButton != null)
                     {
-                        insertButton.setDisplayPermission(InsertPermission.class);
+                        // Dataset permissions mean user might not have insert permissions in the folder. We checked for
+                        // insert permissions above so just require read (which we know user must have in the folder)
+                        insertButton.setDisplayPermission(ReadPermission.class);
                         bar.add(insertButton);
                     }
                 }
 
-                if (canEdit && _study instanceof StudyImpl)
+                if (canDelete && _study instanceof StudyImpl)
                 {
                     ActionURL deleteRowsURL = urlFor(QueryAction.deleteQueryRows);
                     if (deleteRowsURL != null)
@@ -422,7 +424,9 @@ public class DatasetQueryView extends StudyQueryView
                         else
                             deleteRows.setRequiresSelection(true, "Delete selected shared row from this dataset?  This operation may affect other studies in this project.", "Delete selected shared rows from this dataset?  This operation may affect other studies in this project.");
                         deleteRows.setActionType(ActionButton.Action.POST);
-                        deleteRows.setDisplayPermission(DeletePermission.class);
+                        // Dataset permissions mean user might not have delete permissions in the folder. We checked for
+                        // delete permissions above so just require read (which we know user must have in the folder)
+                        deleteRows.setDisplayPermission(ReadPermission.class);
                         bar.add(deleteRows);
                     }
                 }
@@ -440,14 +444,16 @@ public class DatasetQueryView extends StudyQueryView
             {
                 bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
-                if (user.hasRootAdminPermission() || canEdit)
+                if (user.hasRootAdminPermission() || canDelete)
                 {
                     ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
                     deleteRowsURL.addParameter("protocolId", protocol.getRowId());
                     ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
                     deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                     deleteRows.setActionType(ActionButton.Action.POST);
-                    deleteRows.setDisplayPermission(DeletePermission.class);
+                    // Dataset permissions mean user might not have delete permissions in the folder. We checked for
+                    // delete permissions above so just require read (which we know user must have in the folder)
+                    deleteRows.setDisplayPermission(ReadPermission.class);
                     bar.add(deleteRows);
                 }
             }
@@ -541,21 +547,6 @@ public class DatasetQueryView extends StudyQueryView
                     getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
-    }
-
-    private boolean canEdit(DatasetDefinition def, User user)
-    {
-        return def.canUpdate(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
-    }
-
-    private boolean canInsert(DatasetDefinition def, User user)
-    {
-        return def.canInsert(user) && def.getContainer().hasPermission(user, InsertPermission.class);
-    }
-
-    private boolean canManage(DatasetDefinition def, User user)
-    {
-        return user.hasRootAdminPermission() || def.getContainer().hasPermission(user, AdminPermission.class);
     }
 
     private PHI getMaxContainedPhi()
