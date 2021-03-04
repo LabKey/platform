@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/issues/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "2.10.0"
+    "@labkey/components": "2.8.1-fb-fix-hmr.0"
   },
   "devDependencies": {
     "@labkey/build": "2.0.0-fb-fix-hmr.1"
