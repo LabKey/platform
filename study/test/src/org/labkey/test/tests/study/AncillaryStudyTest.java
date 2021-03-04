@@ -385,6 +385,11 @@ public class AncillaryStudyTest extends StudyBaseTest
      */
     public void verifyContainerPathFilter()
     {
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            // this doesn't cover a specimen-specific regression but the original failure was on a specimen-base query
+            return;
+        }
         clickFolder(getFolderName());
         goToModule("Wiki");
         WikiHelper wh = new WikiHelper(this);
