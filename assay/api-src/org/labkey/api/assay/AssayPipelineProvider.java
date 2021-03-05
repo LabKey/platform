@@ -99,7 +99,7 @@ public class AssayPipelineProvider extends PipelineProvider
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(context.getContainer(), _assayProvider.getName(),
                         directory.getRelativePath(), new File[0]);
 
-                NavTree child = new NavTree("Create New " + _assayProvider.getName() + " Assay Design", url);
+                NavTree child = new NavTree("Create New " + _assayProvider.getLabel() + " Assay Design", url);
                 child.setId(id + ":Create Assay Definition");
                 root.addChild(child);
             }
