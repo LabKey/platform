@@ -940,6 +940,12 @@ public class WrappedColumnInfo
         {
             throw new java.lang.UnsupportedOperationException();
         }
+
+        @Override
+        public void setDerivationDataScope(String scope)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
     }
 
 

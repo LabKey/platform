@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.util.URLHelper;
@@ -102,4 +103,9 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getUploadXARURL(Container container);
 
     ActionURL getRepairTypeURL(Container container);
+
+    ActionURL getUpdateMaterialQueryRowAction(Container c, TableInfo table);
+
+    ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table);
+
 }

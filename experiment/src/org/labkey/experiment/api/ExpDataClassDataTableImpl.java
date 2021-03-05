@@ -805,7 +805,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             /* setup mini dataiterator pipeline to process lineage */
             DataIterator di = _toDataIterator("updateRows.lineage", ret);
-            ExpDataIterators.derive(user, container, di, false);
+            ExpDataIterators.derive(user, container, di, false, true);
 
             return ret;
         }
