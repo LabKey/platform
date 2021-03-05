@@ -893,8 +893,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    // Determines the user's permissions on this dataset based on the current dataset security rules. Returns only the
-    // subset of permissions handled by dataset security: read, insert, update, delete
+    // Determines the user's permissions on this dataset based on the current dataset security rules. Primarily interested
+    // in read, insert, update, and delete permissions... except for ADVANCED_WRITE which needs to return all perms.
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
@@ -915,6 +915,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         {
             result.add(ReadPermission.class);
 
+            // a dataspace study always has read-only datasets, you cannot edit no matter who you are
+            if (_study.isDataspaceStudy())
+                return result;
+
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
@@ -930,15 +934,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 if (studyPolicy.hasPermission(user, ReadSomePermission.class))
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                    copyEditPerms(SecurityPolicyManager.getPolicy(this), user, result);
+                    // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
+                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
                 }
             }
-        }
-
-        // a dataspace study always has read-only datasets, you cannot insert no matter who you are
-        if (_study.isDataspaceStudy())
-        {
-            result.remove(InsertPermission.class);
         }
 
         return result;
