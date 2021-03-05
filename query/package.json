@@ -15,6 +15,6 @@
     "@labkey/components": "2.10.1"
   },
   "devDependencies": {
-    "@labkey/build": "2.0.0"
+    "@labkey/build": "2.0.1"
   }
 }
