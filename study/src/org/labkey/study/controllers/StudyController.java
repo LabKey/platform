@@ -190,9 +190,9 @@ import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
+import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.assay.PublishConfirmAction;
-import org.labkey.study.assay.PublishStartAction;
+import org.labkey.study.publish.AbstractPublishConfirmAction;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -207,6 +207,7 @@ import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
@@ -361,13 +362,13 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
         {
-            return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishStartAction.class);
+            return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishStartAction.class);
         }
 
         @Override
         public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
         {
-            return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishConfirmAction.class);
+            return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishConfirmAction.class);
         }
     }
 

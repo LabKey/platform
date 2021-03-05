@@ -168,6 +168,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public boolean allowTimepointProperties()
+    {
+        return true;
+    }
+
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleType st = getSampleType(domain);
