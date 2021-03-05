@@ -351,18 +351,25 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
+    /* can be used for simple book keeping tasks, per row processing belongs in a data iterator */
+    protected void afterInsertUpdate(int count, BatchValidationException errors)
+    {}
 
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        return _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        afterInsertUpdate(count, context.getErrors());
+        return count;
     }
 
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        return _importRowsUsingInsertRows(user, container, rows.getDataIterator(context), errors, extraScriptContext);
+        int count = _importRowsUsingInsertRows(user, container, rows.getDataIterator(context), errors, extraScriptContext);
+        afterInsertUpdate(count, errors);
+        return count;
     }
 
     @Override
@@ -394,6 +401,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
+        afterInsertUpdate(count, context.getErrors());
 
         if (context.getErrors().hasErrors())
             return null;
@@ -544,6 +552,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         try
         {
             List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, extraScriptContext);
+            afterInsertUpdate(null==ret?0:ret.size(), errors);
             if (errors.hasErrors())
                 return null;
             return ret;
@@ -655,6 +664,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+        afterInsertUpdate(null==result?0:result.size(), errors);
+
         if (errors.hasErrors())
             throw errors;
 
