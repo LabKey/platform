@@ -216,6 +216,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         URLHelper returnURL = form.getReturnURLHelper();
         if (null == returnURL)
         {
+            // consider deleting in the future unless we can find legitimate cases where the return URL is not provided in the form bean
 //            returnURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
         }
 

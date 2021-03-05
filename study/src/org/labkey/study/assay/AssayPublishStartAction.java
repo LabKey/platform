@@ -28,7 +28,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -50,14 +49,14 @@ import java.util.Set;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 @RequiresPermission(InsertPermission.class)
-public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPublishStartAction.AssayPublishForm>
+public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPublishStartAction.AssayPublishStartForm>
 {
     private ExpProtocol _protocol;
     private AssayProvider _provider;
     private List<Integer> _ids = new ArrayList<>();
     private List<Integer> _runIds = new ArrayList<>();
 
-    public static class AssayPublishForm extends ProtocolIdForm implements PublishStartForm
+    public static class AssayPublishStartForm extends ProtocolIdForm implements PublishStartForm
     {
         private String _dataRegionSelectionKey;
         private String _containerFilterName;
@@ -105,7 +104,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     }
 
     @Override
-    public ModelAndView getView(AssayPublishForm form, BindException errors)
+    public ModelAndView getView(AssayPublishStartForm form, BindException errors)
     {
         // initialize the result row ids
         List<Integer> ids = getDataIDs(form);
@@ -143,13 +142,13 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     }
 
     @Override
-    protected ActionURL getSuccessUrl(AssayPublishForm form)
+    protected ActionURL getSuccessUrl(AssayPublishStartForm form)
     {
         return urlProvider(StudyUrls.class).getCopyToStudyConfirmURL(getContainer(), _protocol );
     }
 
     @Override
-    protected List<Integer> getDataIDs(AssayPublishForm form)
+    protected List<Integer> getDataIDs(AssayPublishStartForm form)
     {
         if (_ids.isEmpty())
         {
@@ -188,7 +187,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     }
 
     @Override
-    protected Set<Container> getAssociatedStudyContainers(AssayPublishForm form)
+    protected Set<Container> getAssociatedStudyContainers(AssayPublishStartForm form)
     {
         return _provider.getAssociatedStudyContainers(_protocol, _ids);
     }

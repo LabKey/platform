@@ -201,8 +201,6 @@ public class PublishResultsQueryView extends QueryView
     protected DataRegion createDataRegion()
     {
         DataRegion dr = new DataRegion();
-
-        //initializeDataRegion(dr);
         configureDataRegion(dr);
 
         dr.setShowFilters(false);
@@ -248,6 +246,8 @@ public class PublishResultsQueryView extends QueryView
     protected Set<String> getHiddenColumnCaptions()
     {
         HashSet<String> hidden = new HashSet<>(Collections.singleton("Assay Match"));
+        // unclear why this conditional logic exists, it seems to imply that we may not want to hide this column
+        // if the user had added a column in the result domain with the same caption
         //if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
             hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
         return hidden;
