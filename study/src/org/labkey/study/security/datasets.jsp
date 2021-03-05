@@ -173,20 +173,28 @@ else
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
     }
 
-    java.util.List<Role> possibleRoles = new ArrayList<>();
+    List<Role> possibleRoles = new ArrayList<>();
     List<DatasetDefinition> datasets = new ArrayList<>(study.getDatasets());
     datasets.sort(Comparator.comparing(DatasetDefinition::getLabel, String.CASE_INSENSITIVE_ORDER));
 
     if (!datasets.isEmpty())
     {
-        DatasetDefinition ds = datasets.get(0);
-        SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
-        for (Role role : RoleManager.getAllRoles())
+        if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
         {
-            if (role.isApplicable(dsPolicy, ds) && role.getClass() != ReaderRole.class && role.getClass() != EditorRole.class)
+            DatasetDefinition ds = datasets.get(0);
+            SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
+            for (Role role : RoleManager.getAllRoles())
             {
-                possibleRoles.add(role);
+                if (role.isApplicable(dsPolicy, ds))
+                {
+                    possibleRoles.add(role);
+                }
             }
+            possibleRoles.sort(RoleManager.ROLE_COMPARATOR);
+        }
+        else
+        {
+            possibleRoles.add(RoleManager.getRole(ReaderRole.class));
         }
     }
 
@@ -197,21 +205,16 @@ else
         %><td class="dataset-permission" data-toggle="tooltip" title='Set all values in column'><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
             <option value="" selected>&lt;set all to...&gt;</option>
             <option value="None">None</option>
-            <option value="Read">Read</option><%
-            if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
-            {
-            %>
-                <option value="Edit">Edit</option>
-            <%
-            }
+        <%
             for (Role role : possibleRoles)
             {
                 // Filter out roles that can't be assigned to this user/group
                 if (!role.getExcludedPrincipals().contains(g))
-                {%>
-                    <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option>
-                <% }
-            }%>
+                {
+        %>            <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option><%
+                }
+            }
+        %>
         </select></td><%
     }
     %></tr><%
@@ -224,7 +227,7 @@ else
 
         for (Group g : restrictedGroups)
         {
-            java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
+            List<Role> roles = dsPolicy.getAssignedRoles(g);
             Role assignedRole = roles.isEmpty() ? null : roles.get(0);
 
             boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
@@ -238,18 +241,12 @@ else
             %><td style="text-align: left;" data-toggle="tooltip" title='<%=h(getTooltip(ds, g))%>'>
                 <select name="<%=h(inputName)%>">
                     <option value="<%=id%>_NONE"<%=selected(noPerm)%>>None</option>
-                    <option value="<%=id%>_<%= h(ReaderRole.class.getName()) %>"<%=selected(readPerm)%>>Read</option><%
-                    if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+                    <% for (Role possibleRole : possibleRoles)
                     {
-                        %>
-                        <option value="<%=id%>_<%= h(EditorRole.class.getName()) %>"<%=selected(writePerm)%>>Edit</option>
-                        <% for (Role possibleRole : possibleRoles)
+                        // Filter out roles that can't be assigned to this user/group
+                        if (!possibleRole.getExcludedPrincipals().contains(g))
                         {
-                            // Filter out roles that can't be assigned to this user/group
-                            if (!possibleRole.getExcludedPrincipals().contains(g))
-                            { %>
-                                <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>"<%=selected(possibleRole == assignedRole)%>><%=h(possibleRole.getName()) %></option><%
-                            }
+        %>                    <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>"<%=selected(possibleRole == assignedRole)%>><%=h(possibleRole.getName()) %></option><%
                         }
                     }
                     %>
@@ -263,11 +260,11 @@ else
     <table>
         <tr>
             <td><%= button("Save").submit(true) %></td>
-            <td><%= button("Set all to Read").href("#").onClick("return setAllSelections('Read');") %></td><%
+            <td><%= button("Set all to Reader").href("#").onClick("return setAllSelections('Reader');") %></td><%
             if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
             {
             %>
-                <td><%= button("Set all to Edit").href("#").onClick("return setAllSelections('Edit');") %></td><%
+                <td><%= button("Set all to Editor").href("#").onClick("return setAllSelections('Editor');") %></td><%
             }
             %>
             <td><%= button("Clear All").href("#").onClick("return setAllSelections('None');") %></td>
