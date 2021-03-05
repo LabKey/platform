@@ -127,7 +127,7 @@
                                 <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(true);">
                             Use a <%=text(getContainer().getContainerNoun())%>-level file root
-                            <input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
+                            <input type="text" id="folderRootPath" name="folderRootPath" size="64" onchange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                     <% if (cloud != null) { %>
                     <tr style="height: 1.75em">
@@ -292,6 +292,42 @@
                     var isNewCloudRootManaged = false;  // TODO: must we prevent moving when switching *TO* unmanaged cloud root?
                     if ((optionCloudRoot && optionCloudRoot.checked && isNewCloudRootManaged) ||
                             <%=!isCurrentFileRootManaged%>)
+                    {
+                        migrateMoveOption.setAttribute('hidden', '');
+                    }
+                    else
+                    {
+                        migrateMoveOption.removeAttribute('hidden');
+                    }
+                }
+            }
+            else
+            {
+                migrateFiles.style.display = 'none';
+                if (notifyAboutPipeline)
+                    notifyAboutPipeline.style.display = 'none';
+            }
+        }
+    }
+
+    function onRootChange()
+    {
+
+        var value = document.getElementById('folderRootPath').value;
+        var isChangeFromExisting = value != '<%=h(bean.getFolderRootPath())%>';
+
+        var optionCloudRoot = document.getElementById('optionCloudRoot');
+        var migrateFiles = document.getElementById('migrateFilesRow');
+        if (migrateFiles)
+        {
+            if (isChangeFromExisting)
+            {
+                migrateFiles.style.display = '';
+                var migrateMoveOption = document.getElementById('migrateMoveOption');
+                if (migrateMoveOption)
+                {
+                    var isNewCloudRootManaged = false;  // TODO: must we prevent moving when switching *TO* unmanaged cloud root?
+                    if ((optionCloudRoot && optionCloudRoot.checked && isNewCloudRootManaged) || <%=!isCurrentFileRootManaged%>)
                     {
                         migrateMoveOption.setAttribute('hidden', '');
                     }
