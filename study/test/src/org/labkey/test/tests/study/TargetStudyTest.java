@@ -81,7 +81,10 @@ public class TargetStudyTest extends AbstractAssayTest
     {
         log("** Setup");
         setupEnvironment();
-        setupSpecimens();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            setupSpecimens();
+        }
         setupLabels();
         setupAssay();
 

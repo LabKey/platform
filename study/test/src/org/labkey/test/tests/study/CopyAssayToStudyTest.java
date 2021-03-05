@@ -74,10 +74,13 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
     {
         setupEnvironment();
         setupPipeline(getProjectName());
-        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
-                StudyHelper.SPECIMEN_ARCHIVE_A,
-                new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
-        importer.importAndWaitForComplete();
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
+                    StudyHelper.SPECIMEN_ARCHIVE_A,
+                    new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+            importer.importAndWaitForComplete();
+        }
         defineAssay();
 
         uploadRuns(TEST_ASSAY_FLDR_LAB1, TEST_ASSAY_USR_TECH1);
