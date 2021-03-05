@@ -23,14 +23,14 @@ package org.labkey.study.model;
 public enum SecurityType
 {
     /**
-     * Basic security: only admins can add dataset data.
+     * Basic security: only admins can add, edit, and delete dataset data
      */
     BASIC_READ("Basic security with read-only datasets",
             "Uses the security settings of the containing folder for dataset security. " +
-            "Only administrators can import or delete dataset data.", false),
+            "Only administrators can import, edit, and delete dataset data.", false),
 
     /**
-     * Anyone with update permissions can add and update dataset data
+     * Anyone with update permissions can add, edit, and delete dataset data
      */
     BASIC_WRITE("Basic security with editable datasets",
             "Uses the security settings of the containing folder for dataset security, allowing " +
@@ -41,7 +41,7 @@ public enum SecurityType
      */
     ADVANCED_READ("Custom security with read-only datasets",
             "Allows the configuration of security on individual datasets. " +
-            "Only administrators can import, edit, or delete dataset data. Not supported in shared studies.", true),
+            "Only administrators can import, edit, and delete dataset data. Not supported in shared studies.", true),
 
     /**
      * Per-dataset security, read and write
