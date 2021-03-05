@@ -44,7 +44,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageAlternateIdsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageExternalReloadAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageParticipantCategoriesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageQCStatesAction" %>
@@ -221,12 +220,6 @@
                         <td class="lk-study-prop-desc">This study references <%= getLocations().size() %> locations (labs/sites/repositories)</td>
                         <td><%= link("Manage Locations", ManageLocationsAction.class) %></td>
                     </tr>
-                    <tr>
-                        <td class="lk-study-prop-label">Location Types</td>
-                        <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
-                        <td><%= link("Manage Location Types", ManageLocationTypesAction.class) %></td>
-                    </tr>
-
                     <tr>
                         <td class="lk-study-prop-label">Cohorts</td>
                         <td class="lk-study-prop-desc">This study defines <%= getCohorts(getUser()).size() %> cohorts</td>
