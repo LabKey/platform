@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/issues/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "2.9.0-fb-automationsummaryview.0"
+    "@labkey/components": "2.10.2-fb-automationsummaryview.0"
   },
   "devDependencies": {
     "@labkey/build": "1.1.1"
