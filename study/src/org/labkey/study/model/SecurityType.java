@@ -33,22 +33,22 @@ public enum SecurityType
      * Anyone with update permissions can add and update dataset data
      */
     BASIC_WRITE("Basic security with editable datasets",
-            "Identical to Basic Read-Only Security, except that individuals with UPDATE permission " +
-            "can edit, update, and delete data from datasets.", false),
+            "Uses the security settings of the containing folder for dataset security, allowing " +
+            "non-administrators to import, edit, and delete dataset data based on their folder-assigned roles.", false),
 
     /**
      * Per-dataset security, read-only
      */
     ADVANCED_READ("Custom security with read-only datasets",
             "Allows the configuration of security on individual datasets. " +
-            "Only administrators can import or delete dataset data.  Not supported in shared studies.", true),
+            "Only administrators can import, edit, or delete dataset data. Not supported in shared studies.", true),
 
     /**
      * Per-dataset security, read and write
      */
     ADVANCED_WRITE("Custom security with editable datasets",
-            "Identical to Advanced Read-Only Security, except that datasets can be individually " +
-            "set to allow updates as well.  Not supported in shared studies.", true);
+            "Allows the configuration of security on individual datasets, including the ability for " +
+            "non-administrators to import, edit, and delete dataset data. Not supported in shared studies.", true);
 
     private final String label;
 
