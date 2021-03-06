@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ConfigureRequestabilityRulesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
@@ -39,8 +40,8 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -156,6 +157,11 @@
     %>
             <labkey:panel title="Specimen Request Settings">
                 <table class="lk-fields-table">
+                    <tr>
+                        <td class="lk-study-prop-label">Location Types</td>
+                        <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
+                        <td><%= link("Manage Location Types", ManageLocationTypesAction.class) %></td>
+                    </tr>
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser()).size() %> specimen request
