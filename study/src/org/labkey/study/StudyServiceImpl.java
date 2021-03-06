@@ -24,7 +24,6 @@ import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -81,11 +80,10 @@ import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
@@ -184,7 +182,7 @@ public class StudyServiceImpl implements StudyService
         if (study == null)
             throw new IllegalStateException("Study required");
 
-        return AssayPublishManager.getInstance().createDataset(user, study, name, datasetId, isDemographic);
+        return StudyPublishManager.getInstance().createDataset(user, study, name, datasetId, isDemographic);
     }
 
 

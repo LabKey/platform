@@ -20,7 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
@@ -47,6 +50,29 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
         NONE,
         ALL,
         PTID
+    }
+
+    /**
+     * Provides information about the published source for a dataset
+     */
+    enum PublishSource {
+        Assay
+                {
+                    @Override
+                    public ExpObject resolvePublishSource(Integer publishSourceId)
+                    {
+                        return ExperimentService.get().getExpProtocol(publishSourceId);
+                    }
+                },
+        SampleType
+                {
+                    @Override
+                    public ExpObject resolvePublishSource(Integer publishSourceId)
+                    {
+                        return SampleTypeService.get().getSampleType(publishSourceId);
+                    }
+                };
+        public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
     }
 
     Set<String> getDefaultFieldNames();
@@ -95,6 +121,17 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * to contain assay data but isn't linked to an assay provider in the server (ie., when importing a study archive), this method will return false.
      */
     boolean isAssayData();
+
+    /**
+     * @return true if this dataset is backed by published data (assay, sample type etc).
+     */
+    boolean isPublishedData();
+
+    @Nullable
+    PublishSource getPublishSource();
+
+    @Nullable
+    Integer getPublishSourceId();
 
     ExpProtocol getAssayProtocol();
 

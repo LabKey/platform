@@ -265,7 +265,7 @@ public class DatasetQueryView extends StudyQueryView
 
     private boolean hasUsefulDetailsPage()
     {
-        if (!_dataset.isAssayData())
+        if (!_dataset.isPublishedData())
             return true; // we don't have a protocol at all, so we don't know if we have useful details
 
         if (_protocol == null)

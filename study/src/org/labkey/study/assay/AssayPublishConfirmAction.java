@@ -20,7 +20,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -179,7 +179,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     {
         if (_protocolSchema == null)
             getUserSchema(form);
-        return AssayPublishService.get().hasMismatchedInfo(_allObjects, _protocolSchema);
+        return StudyPublishService.get().hasMismatchedInfo(_allObjects, _protocolSchema);
     }
 
     @Override

@@ -19,7 +19,6 @@ package org.labkey.api.study.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -58,7 +57,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitImpl;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
@@ -141,7 +140,7 @@ public class PublishResultsQueryView extends QueryView
         _targetStudyContainer = targetStudyContainer;
         _mismatched = mismatched;
         if (_targetStudyContainer != null)
-            _timepointType = AssayPublishService.get().getTimepointType(_targetStudyContainer);
+            _timepointType = StudyPublishService.get().getTimepointType(_targetStudyContainer);
         else
             _timepointType = null;
         _filter = new SimpleFilter();

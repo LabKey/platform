@@ -153,7 +153,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ContainerContext;
@@ -191,8 +191,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
-import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.publish.AbstractPublishConfirmAction;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -853,7 +852,7 @@ public class StudyController extends BaseStudyController
             }
 
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getName()) &&
-                !def.isAssayData();
+                !def.isPublishedData();
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             DatasetQuerySettings settings = (DatasetQuerySettings)schema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
@@ -2539,7 +2538,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
@@ -2723,7 +2722,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            UploadLog ul = AssayPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
+            UploadLog ul = StudyPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
             PageFlowUtil.streamFile(getViewContext().getResponse(), new File(ul.getFilePath()), true);
 
             return null;
@@ -2896,7 +2895,7 @@ public class StudyController extends BaseStudyController
             {
                 ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
                 if (expRun != null && expRun.getContainer() != null)
-                    throw new RedirectException(AssayPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
+                    throw new RedirectException(StudyPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
             }
             return true;
         }
@@ -3317,7 +3316,7 @@ public class StudyController extends BaseStudyController
     public static class ManageQCStatesForm extends AbstractManageQCStatesForm
     {
         private Integer _defaultPipelineQCState;
-        private Integer _defaultAssayQCState;
+        private Integer _defaultPublishDataQCState;
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
 
@@ -3331,14 +3330,14 @@ public class StudyController extends BaseStudyController
             _defaultPipelineQCState = defaultPipelineQCState;
         }
 
-        public Integer getDefaultAssayQCState()
+        public Integer getDefaultPublishDataQCState()
         {
-            return _defaultAssayQCState;
+            return _defaultPublishDataQCState;
         }
 
-        public void setDefaultAssayQCState(Integer defaultAssayQCState)
+        public void setDefaultPublishDataQCState(Integer defaultPublishDataQCState)
         {
-            _defaultAssayQCState = defaultAssayQCState;
+            _defaultPublishDataQCState = defaultPublishDataQCState;
         }
 
         public Integer getDefaultDirectEntryQCState()
@@ -3419,8 +3418,8 @@ public class StudyController extends BaseStudyController
             panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPipelineQCState", _study.getDefaultPipelineQCState()));
             panelHtml.append("      </tr>");
             panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Assay data copied to this study:</th>");
-            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultAssayQCState", _study.getDefaultAssayQCState()));
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Data linked to this study:</th>");
+            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPublishDataQCState", _study.getDefaultPublishDataQCState()));
             panelHtml.append("      </tr>");
             panelHtml.append("      <tr>");
             panelHtml.append("          <th align=\"right\" width=\"300px\">Directly inserted/updated dataset data:</th>");
@@ -4832,7 +4831,7 @@ public class StudyController extends BaseStudyController
                         }
                     }
                 }
-                DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(getUser(),
+                DatasetDefinition def = StudyPublishManager.getInstance().createAssayDataset(getUser(),
                         study, form.getSnapshotName(), additionalKey, null, isDemographicData, null, useTimeKeyField);
 
                 if (def != null)
@@ -6889,7 +6888,7 @@ public class StudyController extends BaseStudyController
                 switch (form.getType())
                 {
                     case defineManually:
-                        def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
+                        def = StudyPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
                                 null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
 
                         if (def != null)
@@ -6901,7 +6900,7 @@ public class StudyController extends BaseStudyController
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
-                        def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
+                        def = StudyPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
                                 null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
                         if (def != null)
                         {

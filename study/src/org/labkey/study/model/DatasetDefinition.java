@@ -60,10 +60,12 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -108,7 +110,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -179,6 +181,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private boolean _demographicData; //demographic information, sequenceNum
     private Integer _cohortId;
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
+
+    private Integer _publishSourceId;   // the identifier of the published data source
+    private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
+
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
     private String _tag;
     private String _type = Dataset.TYPE_STANDARD;
@@ -840,6 +846,20 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _protocolId != null;
     }
 
+    @Override
+    public boolean isPublishedData()
+    {
+        return _publishSourceId != null;
+    }
+
+    @Override
+    public PublishSource getPublishSource()
+    {
+        if (_publishSourceType != null)
+            return PublishSource.valueOf(_publishSourceType);
+        return null;
+    }
+
     public void setDemographicData(boolean demographicData)
     {
         verifyMutability();
@@ -1057,7 +1077,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (other == null)
             return false;
 
-        if (isAssayData() || other.isAssayData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
+        if (isPublishedData() || other.isPublishedData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
             return false;
 
         Domain thisDomain = getDomain();
@@ -1935,17 +1955,40 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
+    public Integer getPublishSourceId()
+    {
+        return _publishSourceId;
+    }
+
+    public void setPublishSourceId(Integer publishSourceId)
+    {
+        _publishSourceId = publishSourceId;
+    }
+
+    public String getPublishSourceType()
+    {
+        return _publishSourceType;
+    }
+
+    public void setPublishSourceType(String publishSourceType)
+    {
+        _publishSourceType = publishSourceType;
+    }
+
+    @Deprecated
     public Integer getProtocolId()
     {
         return _protocolId;
     }
 
     @Override
+    @Deprecated
     public ExpProtocol getAssayProtocol()
     {
         return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
     }
 
+    @Deprecated
     public void setProtocolId(Integer protocolId)
     {
         _protocolId = protocolId;
@@ -2765,7 +2808,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         for (ExpRun run : runs)
         {
             boolean syncNeeded = true;
-            if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
+            if (run.getProtocol().getLSID().equals(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
             {
                 // get all the input and output LSIDs that remain for the selected runs
                 Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getRowId()));
@@ -2831,6 +2874,73 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
+    public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
+    {
+        /*
+                newDataset.setShowByDefault(showByDefault);
+                newDataset.setType(type);
+                newDataset.setDemographicData(isDemographicData);
+                newDataset.setUseTimeKeyField(useTimeKeyField);
+                newDataset.setKeyManagementType(managementType);
+                newDataset.setDescription(description);
+                newDataset.setCohortId(cohortId);
+                newDataset.setTag(tag);
+                newDataset.setVisitDatePropertyName(visitDatePropertyName);
+
+                if (label != null)
+                    newDataset.setLabel(label);
+                if (categoryId != null)
+                    newDataset.setCategoryId(categoryId);
+                if (keyPropertyName != null)
+                    newDataset.setKeyPropertyName(keyPropertyName);
+                if (protocol != null)
+                    newDataset.setProtocolId(protocol.getRowId());
+                if (dataSharing != null)
+                    newDataset.setDataSharing(dataSharing);
+         */
+
+        private String _name;
+        private Container _definitionContainer;
+        private Boolean _isShared;
+        private StudyImpl _study;
+        private int _datasetId;
+        private String _typeURI;
+        private String _category;
+        private Integer _categoryId;
+        private String _visitDatePropertyName;
+        private String _keyPropertyName;
+        private @NotNull KeyManagementType _keyManagementType = KeyManagementType.None;
+        private String _description;
+        private boolean _demographicData; //demographic information, sequenceNum
+        private Integer _cohortId;
+        private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
+
+        private Integer _publishSourceId;   // the identifier of the published data source
+        private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
+
+        private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
+        private String _tag;
+        private String _type = Dataset.TYPE_STANDARD;
+        private DataSharing _datasharing = DataSharing.NONE;
+        private boolean _useTimeKeyField = false;
+
+        Builder(String name)
+        {
+            _name = name;
+        }
+
+        Builder setShared(Boolean shared)
+        {
+            _isShared = shared;
+            return this;
+        }
+
+        @Override
+        public DatasetDefinition build()
+        {
+            return null;
+        }
+    }
 
     public static class TestCleanupOrphanedDatasetDomains extends Assert
     {

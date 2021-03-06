@@ -48,13 +48,14 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.CohortImpl;
@@ -441,13 +442,13 @@ public class StudyDesignManager
         }
         List<String> errors = new ArrayList<>();
 
-        Dataset subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
+        Dataset subjectDataset = StudyPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
         study = study.createMutable();
         study.setParticipantCohortDatasetId(subjectDataset.getDatasetId());
         study.setParticipantCohortProperty("Cohort");
         StudyManager.getInstance().updateStudy(user, study);
 
-        AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset, nameMap, errors);
+        StudyPublishService.get().publishData(user, parent, studyFolder, "Subjects", Pair.of(Dataset.PublishSource.Assay, null), participantDataset, nameMap, errors);
         if (errors.size() > 0) //We were supposed to check these coming in
             throw new RuntimeException(StringUtils.join(errors, '\n'));
 

@@ -92,7 +92,7 @@ import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.ParticipantGroupService;
@@ -119,7 +119,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.ExperimentListenerImpl;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
@@ -384,7 +384,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         // the Experiment listener needs to be called after the Study listener,
         // because Study needs the metadata held by Experiment to delete properly.
         ContainerManager.addContainerListener(new StudyContainerListener(), ContainerManager.ContainerListener.Order.First);
-        AssayPublishService.setInstance(new AssayPublishManager());
+        StudyPublishService.setInstance(new StudyPublishManager());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
         WikiRenderingService wikiService = WikiRenderingService.get();

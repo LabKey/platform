@@ -30,7 +30,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.study.model.QCStateSet;
 
 import java.io.IOException;
@@ -130,10 +130,10 @@ public class PublishedRecordQueryView extends DatasetQueryView
                     c = expRun.getContainer();
                 ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                 if (_count == 0)
-                    out.write(String.format(MISSING_ROWS_MSG, "All", AssayPublishService.get().getPublishHistory(c, protocol)));
+                    out.write(String.format(MISSING_ROWS_MSG, "All", StudyPublishService.get().getPublishHistory(c, protocol)));
                 else
 
-                    out.write(String.format(MISSING_ROWS_MSG, _recordCount - _count, AssayPublishService.get().getPublishHistory(c, protocol)));
+                    out.write(String.format(MISSING_ROWS_MSG, _recordCount - _count, StudyPublishService.get().getPublishHistory(c, protocol)));
             }
         }
    }
