@@ -514,97 +514,100 @@ public class StudyPublishTest extends StudyPHIExportTest
             }
         }
 
-        // Verify published specimens
-        clickTab("Specimen Data");
-        if (includeSpecimens)
+        if (_studyHelper.isSpecimenModulePresent())
         {
-            waitForText("By Vial Group");
-            sleep(2000); // the link moves while the specimen search form finishes layout
-            waitAndClickAndWait(Locator.linkWithText("By Individual Vial"));
-            waitForElement(Locator.paginationText(expectedSpecimenCount));
-
-            // verify that the alternate IDs are used
-            if (alternateIDs)
-                assertTextPresent("PUBLISHED-", 2*expectedSpecimenCount); // once for mouse ID link and once for mouse ID display
-
-            //TODO: verify date shifting
-
-            // verify PHI-protected specimen fields were removed
-            DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
-            for (String field : SPECIMEN_PHI_FIELDS)
-            {
-                Filter.Operator filterOperator = removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK;
-                SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
-                command.setFilters(Arrays.asList(new Filter(field, null, filterOperator)));
-                Connection connection = createDefaultConnection();
-                SelectRowsResponse response;
-
-                try
-                {
-                    response = command.execute(connection, getCurrentContainerPath());
-                }
-                catch (IOException | CommandException e)
-                {
-                    throw new RuntimeException(e);
-                }
-
-                if ((removePhiColumns && (response.getRowCount().intValue() != 0))
-                        || (!removePhiColumns && (response.getRowCount().intValue() != 10)))
-                {
-                    // Fail with a useful screenshot
-                    t1.ensureColumnPresent(field);
-                    t1.setFilter(field, filterOperator.getDisplayValue(), null);
-                    assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount().intValue(), t1.getDataRowCount());
-                    fail("PHI column was not exported as expected: " + (removePhiColumns ? "PHI not removed" : "PHI removed") + " for " + field);
-                }
-            }
-
-            // verify that the vials are filtered by the correct ptids and visits
-            _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.showHiddenItems();
-            _customizeViewsHelper.addColumn("SequenceNum");
-            _customizeViewsHelper.applyCustomView();
-            DataRegionTable t2 = new DataRegionTable("SpecimenDetail", this);
-            if (!alternateIDs) // we only know the IDs if they are not alternateIDs
-            {
-                t2.setFilter("MouseId", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(ptids));
-                assertTextPresent("No data to show.");
-                t2.clearFilter("MouseId");
-            }
-            t2.setFilter("SequenceNum", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(visits));
-            assertTextPresent("No data to show.");
-            t2.clearFilter("SequenceNum");
-
-            // verify that the request related specimen reports are hidden
+            // Verify published specimens
             clickTab("Specimen Data");
-            sleep(2000); // the link moves while the specimen search form finishes layout
-            waitAndClick(Locator.tagContainingText("span", "Specimen Reports")); // expand
-            waitAndClickAndWait(Locator.linkWithText("View Available Reports"));
-            assertTextNotPresent("Requested Vials by Type and Timepoint");
-            assertElementPresent(Locator.linkWithText("show options"), 6);
-        }
-        else
-        {
-            waitForText(WAIT_FOR_JAVASCRIPT, "No specimens found.");
-        }
-        // verify that the specimen request options are hidden from the manage study page
-        goToManageStudy();
-        assertTextNotPresent("Specimen Repository Settings", "Repository Type", "Display and Behavior", "Specimen Request Settings");
-        assertTextPresent("Note: specimen repository and request settings are not available for published studies.");
-        // verify that the additive, derivative, etc. tables were populated correctly
-        goToQueryView("study", "SpecimenAdditive", false);
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 42, 42) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
-        beginAt(getCurrentRelativeURL().replace("SpecimenAdditive", "SpecimenDerivative"));
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 99, 99) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
-        beginAt(getCurrentRelativeURL().replace("SpecimenDerivative", "SpecimenPrimaryType"));
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 59, 59) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
-        beginAt(getCurrentRelativeURL().replace("SpecimenPrimaryType", "Location"));
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 24, 24) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            if (includeSpecimens)
+            {
+                waitForText("By Vial Group");
+                sleep(2000); // the link moves while the specimen search form finishes layout
+                waitAndClickAndWait(Locator.linkWithText("By Individual Vial"));
+                waitForElement(Locator.paginationText(expectedSpecimenCount));
 
-        // verify masked clinic information
-        if (maskClinicNames)
-        {
-            verifyMaskedClinics(8);
+                // verify that the alternate IDs are used
+                if (alternateIDs)
+                    assertTextPresent("PUBLISHED-", 2 * expectedSpecimenCount); // once for mouse ID link and once for mouse ID display
+
+                //TODO: verify date shifting
+
+                // verify PHI-protected specimen fields were removed
+                DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
+                for (String field : SPECIMEN_PHI_FIELDS)
+                {
+                    Filter.Operator filterOperator = removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK;
+                    SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
+                    command.setFilters(Arrays.asList(new Filter(field, null, filterOperator)));
+                    Connection connection = createDefaultConnection();
+                    SelectRowsResponse response;
+
+                    try
+                    {
+                        response = command.execute(connection, getCurrentContainerPath());
+                    }
+                    catch (IOException | CommandException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+
+                    if ((removePhiColumns && (response.getRowCount().intValue() != 0))
+                            || (!removePhiColumns && (response.getRowCount().intValue() != 10)))
+                    {
+                        // Fail with a useful screenshot
+                        t1.ensureColumnPresent(field);
+                        t1.setFilter(field, filterOperator.getDisplayValue(), null);
+                        assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount().intValue(), t1.getDataRowCount());
+                        fail("PHI column was not exported as expected: " + (removePhiColumns ? "PHI not removed" : "PHI removed") + " for " + field);
+                    }
+                }
+
+                // verify that the vials are filtered by the correct ptids and visits
+                _customizeViewsHelper.openCustomizeViewPanel();
+                _customizeViewsHelper.showHiddenItems();
+                _customizeViewsHelper.addColumn("SequenceNum");
+                _customizeViewsHelper.applyCustomView();
+                DataRegionTable t2 = new DataRegionTable("SpecimenDetail", this);
+                if (!alternateIDs) // we only know the IDs if they are not alternateIDs
+                {
+                    t2.setFilter("MouseId", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(ptids));
+                    assertTextPresent("No data to show.");
+                    t2.clearFilter("MouseId");
+                }
+                t2.setFilter("SequenceNum", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(visits));
+                assertTextPresent("No data to show.");
+                t2.clearFilter("SequenceNum");
+
+                // verify that the request related specimen reports are hidden
+                clickTab("Specimen Data");
+                sleep(2000); // the link moves while the specimen search form finishes layout
+                waitAndClick(Locator.tagContainingText("span", "Specimen Reports")); // expand
+                waitAndClickAndWait(Locator.linkWithText("View Available Reports"));
+                assertTextNotPresent("Requested Vials by Type and Timepoint");
+                assertElementPresent(Locator.linkWithText("show options"), 6);
+            }
+            else
+            {
+                waitForText(WAIT_FOR_JAVASCRIPT, "No specimens found.");
+            }
+            // verify that the specimen request options are hidden from the manage study page
+            goToManageStudy();
+            assertTextNotPresent("Specimen Repository Settings", "Repository Type", "Display and Behavior", "Specimen Request Settings");
+            assertTextPresent("Note: specimen repository and request settings are not available for published studies.");
+            // verify that the additive, derivative, etc. tables were populated correctly
+            goToQueryView("study", "SpecimenAdditive", false);
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 42, 42) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            beginAt(getCurrentRelativeURL().replace("SpecimenAdditive", "SpecimenDerivative"));
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 99, 99) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            beginAt(getCurrentRelativeURL().replace("SpecimenDerivative", "SpecimenPrimaryType"));
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 59, 59) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            beginAt(getCurrentRelativeURL().replace("SpecimenPrimaryType", "Location"));
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 24, 24) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+
+            // verify masked clinic information
+            if (maskClinicNames)
+            {
+                verifyMaskedClinics(8);
+            }
         }
         goToProjectHome();
     }
