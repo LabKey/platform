@@ -202,8 +202,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         waitForText("Available Fields");
         tableCustomizeView.addColumn(new String[]{"ParticipantVisit", "Visit"});
         tableCustomizeView.saveDefaultView();
-        // TODO: Issue 39822: Visit calculations are not as expected in the published child Date study
-        checker().verifyEquals("Visit field is not blank when study is changed to date", Arrays.asList(VISIT_DATE.replace("-", "") + ".0000"),
+        checker().verifyEquals("Visit field is not Day 0 when study is changed to date", Arrays.asList("Day 0"),
                 table.getColumnDataAsText("ParticipantVisit/Visit")); //Needs to be updated when related bug is fixed.
     }
 
