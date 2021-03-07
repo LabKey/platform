@@ -77,7 +77,7 @@ import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishKey;
+import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
@@ -1038,7 +1038,7 @@ public class AssayPublishManager implements AssayPublishService
                 final ColumnInfo ptidColumn = cols.get(ptidFK);
                 final ColumnInfo visitColumn = cols.get(visitFK);
                 final ColumnInfo objectIdColumn = cols.get(objectIdFK);
-                final Map<Integer, AssayPublishKey> keys = new HashMap<>();
+                final Map<Integer, PublishKey> keys = new HashMap<>();
                 assert cols.get(runFK) != null : "Could not find object id column: " + objectIdFK;
 
                 SQLFragment sql = QueryService.get().getSelectSQL(resultTable, cols.values(), new SimpleFilter(runFK, run.getRowId()), null, Table.ALL_ROWS, Table.NO_OFFSET, false);
@@ -1053,18 +1053,18 @@ public class AssayPublishManager implements AssayPublishService
                     // Only copy rows that have a participant and a visit/date
                     if (ptid != null && visit != null)
                     {
-                        AssayPublishKey key;
+                        PublishKey key;
                         // 13647: Conversion exception in assay auto copy-to-study
                         if (study.getTimepointType().isVisitBased())
                         {
                             float visitId = Float.parseFloat(visit.toString());
-                            key = new AssayPublishKey(targetContainer, ptid, visitId, objectId);
+                            key = new PublishKey(targetContainer, ptid, visitId, objectId);
                             log.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                         }
                         else
                         {
                             Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
-                            key = new AssayPublishKey(targetContainer, ptid, date, objectId);
+                            key = new PublishKey(targetContainer, ptid, date, objectId);
                             log.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                         }
                         keys.put(objectId, key);

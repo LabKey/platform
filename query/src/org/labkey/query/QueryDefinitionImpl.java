@@ -418,10 +418,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             getTable(queryExceptions, true);
             for (QueryException e : queryExceptions)
             {
-                if (e instanceof MetadataParseWarning)
-                    warnings.add((MetadataParseWarning)e);
-                else
+                if (!(e instanceof MetadataParseWarning))
                     errors.add(wrapParseException(e, true));
+                else if  (null != warnings)
+                    warnings.add((MetadataParseWarning) e);
             }
         }
         return errors.isEmpty();
