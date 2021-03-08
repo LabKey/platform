@@ -17,23 +17,14 @@ package org.labkey.core.dialect;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Test;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PostgreSql91Dialect;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.core.admin.sql.ScriptReorderer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
