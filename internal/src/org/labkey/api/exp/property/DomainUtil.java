@@ -97,7 +97,7 @@ public class DomainUtil
 
     public static String getFormattedDefaultValue(User user, DomainProperty property, Object defaultValue, boolean validateOnly)
     {
-        if (defaultValue == null)
+        if (defaultValue == null || (defaultValue instanceof String && StringUtils.isBlank((String)defaultValue)))
             return "[none]";
         if (defaultValue instanceof Date)
         {

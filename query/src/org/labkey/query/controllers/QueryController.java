@@ -1349,6 +1349,8 @@ public class QueryController extends SpringActionController
             QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
+            if (null == ti)
+                throw new NotFoundException();
 
             DbScope scope = ti.getSchema().getScope();
 
@@ -2300,6 +2302,8 @@ public class QueryController extends SpringActionController
                     return false;
                 }
 
+                // Issue 40895: update queryName in xml metadata
+                updateXmlMetadata(queryDef);
 				queryDef.setName(form.rename);
 				// update form so getSuccessURL() works
 				_form = new PropertiesForm(form.getSchemaName(), form.rename);
@@ -2312,6 +2316,30 @@ public class QueryController extends SpringActionController
             queryDef.setIsHidden(form.hidden);
             queryDef.save(getUser(), getContainer());
             return true;
+        }
+
+        private void updateXmlMetadata(QueryDefinition queryDef) throws XmlException
+        {
+            if (null != queryDef.getMetadataXml())
+            {
+                TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetadataXml());
+                if (null != doc)
+                {
+                    for (TableType tableType : doc.getTables().getTableArray())
+                    {
+                        if (tableType.getTableName().equalsIgnoreCase(queryDef.getName()))
+                        {
+                            // update tableName in xml
+                            tableType.setTableName(_form.rename);
+                        }
+                    }
+                    XmlOptions xmlOptions = new XmlOptions();
+                    xmlOptions.setSavePrettyPrint();
+                    // Don't use an explicit namespace, making the XML much more readable
+                    xmlOptions.setUseDefaultNamespace();
+                    queryDef.setMetadataXml(doc.xmlText(xmlOptions));
+                }
+            }
         }
 
         @Override
@@ -3185,6 +3213,8 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
             TableInfo table = form.getQueryView().getTable();
+            if (null == table)
+                throw new NotFoundException();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
