@@ -359,7 +359,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         beginAt(WebTestHelper.buildURL("dataset", getProjectName(), "insert", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
 
-        assertEquals("403: Error Page -- User does not have permission to edit this dataset", getDriver().getTitle());
+        assertEquals("403: Error Page -- User does not have permission to insert into this dataset", getDriver().getTitle());
         assertElementNotPresent(Locator.css("table.labkey-data-region"));
     }
 
