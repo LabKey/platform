@@ -380,6 +380,12 @@ public class DatasetQueryView extends StudyQueryView
         List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
         bar.add(createExportButton(recordSelectorColumns));
 
+        // Duplicates logic from super.populateButtonBar(), but we need selectors
+        if ((recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) || (getTable() != null && !getTable().getPkColumns().isEmpty()))
+        {
+            bar.setAlwaysShowRecordSelectors(true);
+        }
+
         User user = getUser();
         boolean canInsert = _dataset.canInsert(user);
         boolean canDelete = _dataset.canDelete(user);
