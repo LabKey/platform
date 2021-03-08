@@ -95,7 +95,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishKey;
+import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
@@ -210,7 +210,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
+    public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         try
         {
@@ -237,7 +237,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 while (rs.next())
                 {
-                    AssayPublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
+                    PublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
 
                     Container targetStudyContainer = study;
                     if (publishKey.getTargetStudy() != null)

@@ -127,9 +127,7 @@
 
             var doTsvExport = function(isSign) {
                 var exportRegionName = <%=q(exportRegionName)%>;
-                var url = isSign ?
-                        new URL(<%=q(model.getSignTsvURL().getURIString())%>) :
-                        new URL(<%=q(model.getTsvURL().getURIString())%>);
+                var url = isSign ? <%=jsURL(model.getSignTsvURL())%> : <%=jsURL(model.getTsvURL())%>;
                 if (exportSelectedEl.is(':checked')) {
                     url.searchParams.set(exportRegionName + '.showRows', "SELECTED");
                     url.searchParams.set(exportRegionName + '.selectionKey', dr.selectionKey);

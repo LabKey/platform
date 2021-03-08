@@ -98,7 +98,7 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    const _urlTemplate = new URL(<%= q(subjectUrl.getURIString())%>);
+    const _urlTemplate = <%=jsURL(subjectUrl)%>;
     const _singularNoun = <%= q(singularNoun) %>;
     const _pluralNoun = <%= q(pluralNoun) %>;
     const _divId = <%= q(divId) %>;

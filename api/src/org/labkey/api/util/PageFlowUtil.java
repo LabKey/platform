@@ -2115,6 +2115,7 @@ public class PageFlowUtil
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
+        experimental.put(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
