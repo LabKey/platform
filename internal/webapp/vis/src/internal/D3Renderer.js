@@ -655,6 +655,12 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     // position log gutter data relative to x or y axis
     var logGutterPointsOffset = 15;
 
+    // Constants for position settings
+    var position = {
+        jitter: 'jitter',
+        sequential: 'sequential'
+    };
+
     var initLabelElements = function() {
         labelElements = {}; labelBkgds = {};
         var fontFamily = plot.fontFamily ? plot.fontFamily : 'Roboto, arial, helvetica, sans-serif';
@@ -1939,17 +1945,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // For sequential jitters, keep track of the current count for a given x value
         var jitters = {};
 
-        if (geom.xScale.scaleType === 'discrete' && (geom.position === 'jitter' || geom.position === 'sequential')) {
+        if (geom.xScale.scaleType === 'discrete' && (geom.position === position.jitter || geom.position === position.sequential)) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
                 var value = geom.getX(row);
                 if (value == null) {return null;}
-                if (geom.position === 'jitter') {
+                if (geom.position === position.jitter) {
                     // don't jitter the first data point for the given X (i.e. if we only have one it shouldn't be jittered)
                     value = jitterIndex[x] ? value - (xBinWidth / 2) + (Math.random() * xBinWidth) : value;
                     jitterIndex[x] = true;
-                } else if (geom.position === 'sequential') {
+                } else if (geom.position === position.sequential) {
 
                     if (!jitterIndex[x]) {
                         // Count how many points we have to distribute across the grouping, and reset the current
@@ -1980,7 +1986,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             };
         }
 
-        if (geom.yScale.scaleType == 'discrete' && geom.position == 'jitter') {
+        if (geom.yScale.scaleType == 'discrete' && geom.position === position.jitter) {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
             yAcc = function(row) {
                 var value = geom.getY(row);
@@ -2300,14 +2306,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return circle(geom.outlierSize);
         };
 
-        if (geom.xScale.scaleType === 'discrete' && (geom.position === 'jitter' || geom.position === 'sequential')) {
+        if (geom.xScale.scaleType === 'discrete' && (geom.position === position.jitter || geom.position === position.sequential)) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {return geom.getX(row) - (xBinWidth / 2) + (Math.random() * xBinWidth);};
         } else {
             xAcc = function(row) {return geom.getX(row);};
         }
 
-        if (geom.yScale.scaleType == 'discrete' && geom.position == 'jitter') {
+        if (geom.yScale.scaleType == 'discrete' && geom.position === position.jitter) {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
             yAcc = function(row) {return (geom.getY(row) - (yBinWidth / 2) + (Math.random() * yBinWidth));}
         } else {
