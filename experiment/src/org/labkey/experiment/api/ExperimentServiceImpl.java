@@ -107,7 +107,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -3725,7 +3724,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                             for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
-                                if (!dataset.canWrite(user))
+                                if (!dataset.canDelete(user))
                                 {
                                     throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                                 }

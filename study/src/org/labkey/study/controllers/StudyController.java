@@ -736,12 +736,6 @@ public class StudyController extends BaseStudyController
         return newUrl.addParameters(context.getActionURL().getParameters());
     }
 
-    private static boolean canWrite(DatasetDefinition def, User user)
-    {
-        return def.canWrite(user) && def.getContainer().hasPermission(user, ReadPermission.class);
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class DatasetAction extends QueryViewAction<DatasetFilterForm, QueryView>
     {
@@ -2493,7 +2487,7 @@ public class StudyController extends BaseStudyController
         @Override
         protected void validatePermission(User user, BindException errors)
         {
-            if (canWrite(_def, user))
+            if (_def.canInsert(user))
                 return;
             throw new UnauthorizedException("Can't update dataset: " + _def.getName());
         }
@@ -2934,7 +2928,8 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    // Dataset.canDelete() permissions check is below. This accommodates dataset security, where user might not have delete permission in the folder.
+    @RequiresPermission(ReadPermission.class)
     public class DeleteDatasetRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         @Override
@@ -2951,7 +2946,7 @@ public class StudyController extends BaseStudyController
             if (null == dataset)
                 throw new NotFoundException();
 
-            if (!dataset.canWrite(getUser()))
+            if (!dataset.canDelete(getUser()))
                 throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             // Operate on each individually for audit logging purposes, but transact the whole thing

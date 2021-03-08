@@ -38,7 +38,6 @@ import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
-import org.labkey.api.study.query.BaseStudyQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -53,7 +52,7 @@ import java.util.Set;
  * Date: Apr 20, 2007
  * Time: 2:49:42 PM
  */
-public class SpecimenRequestQueryView extends BaseStudyQueryView
+public class SpecimenRequestQueryView extends BaseSpecimenQueryView
 {
     private NavTree[] _extraLinks;
     private boolean _allowSortAndFilter = true;

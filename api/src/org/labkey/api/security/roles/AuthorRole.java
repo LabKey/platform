@@ -22,27 +22,28 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
+import org.labkey.api.study.Dataset;
 
 /*
-* User: Dave
-* Date: Apr 27, 2009
-* Time: 1:22:12 PM
-*/
+ * User: Dave
+ * Date: Apr 27, 2009
+ */
 public class AuthorRole extends AbstractRole
 {
     public AuthorRole()
     {
         super("Author", "Authors may read and add information in some cases, but may update and delete only information they added. Supported for only " +
                         "Message Boards. See the online documentation for details.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                InsertPermission.class,
-                ShareReportPermission.class);
+            ReadPermission.class,
+            ReadSomePermission.class,
+            InsertPermission.class,
+            ShareReportPermission.class
+        );
     }
 
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return super.isApplicable(policy,resource) || resource instanceof PipeRoot;
+        return super.isApplicable(policy,resource) || resource instanceof PipeRoot || resource instanceof Dataset;
     }
 }
