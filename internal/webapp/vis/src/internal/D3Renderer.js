@@ -1936,15 +1936,37 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 colorAcc, sizeAcc, shapeAcc, hoverTextAcc, jitterIndex = {};
         layer = getLayer.call(this, geom);
 
-        if (geom.xScale.scaleType == 'discrete' && geom.position == 'jitter') {
+        // For sequential jitters, keep track of the current count for a given x value
+        var jitters = {};
+
+        if (geom.xScale.scaleType === 'discrete' && (geom.position === 'jitter' || geom.position === 'sequential')) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
                 var value = geom.getX(row);
                 if (value == null) {return null;}
-                // don't jitter the first data point for the given X (i.e. if we only have one it shouldn't be jittered)
-                value = jitterIndex[x] ? value - (xBinWidth / 2) + (Math.random() * xBinWidth) : value;
-                jitterIndex[x] = true;
+                if (geom.position === 'jitter') {
+                    // don't jitter the first data point for the given X (i.e. if we only have one it shouldn't be jittered)
+                    value = jitterIndex[x] ? value - (xBinWidth / 2) + (Math.random() * xBinWidth) : value;
+                    jitterIndex[x] = true;
+                } else if (geom.position === 'sequential') {
+
+                    if (!jitterIndex[x]) {
+                        // Count how many points we have to distribute across the grouping, and reset the current
+                        // indices for the groupings
+                        jitters = {};
+                        for (var i = 0; i < data.length; i++) {
+                            var x2 = geom.xAes.getValue(data[i]);
+                            var count = jitterIndex[x2] || 0;
+                            jitterIndex[x2] = count + 1;
+                        }
+                    }
+
+                    // Calculate the offset for the current point within the full count for the grouping
+                    var index = jitters[x] || 0;
+                    value = value - (xBinWidth / 2) + (xBinWidth / jitterIndex[x]) * (index + 0.5);
+                    jitters[x] = index + 1;
+                }
                 return value;
             };
         } else {
@@ -2036,6 +2058,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('transform', translateAcc);
 
         if (geom.pointClickFnAes) {
+            // Improve discoverability of the click handler
+            anchorSel.attr('cursor', 'pointer');
+
             pointsSel.on('click', function(data) {
                 geom.pointClickFnAes.value(d3.event, data, layer);
             });
@@ -2230,6 +2255,15 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         boxWrappers.enter().append('a').attr('class', 'box');
         boxWrappers.append('title').text(hoverFn);
 
+        if (geom.clickFn) {
+            // Improve discoverability of the click handler
+            boxWrappers.attr('cursor', 'pointer');
+
+            boxWrappers.on('click', function(data) {
+                geom.clickFn(d3.event, data, layer);
+            });
+        }
+
         // Add and style the whiskers
         whiskers = boxWrappers.selectAll('path.box-whisker').data(function(d){return [d];});
         whiskers.exit().remove();
@@ -2266,7 +2300,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return circle(geom.outlierSize);
         };
 
-        if (geom.xScale.scaleType == 'discrete' && geom.position == 'jitter') {
+        if (geom.xScale.scaleType === 'discrete' && (geom.position === 'jitter' || geom.position === 'sequential')) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {return geom.getX(row) - (xBinWidth / 2) + (Math.random() * xBinWidth);};
         } else {
@@ -2304,7 +2338,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         if (geom.pointClickFnAes) {
             pathSel.on('click', function(data) {
-               geom.pointClickFnAes.value(d3.event, data);
+                geom.pointClickFnAes.value(d3.event, data);
             });
         }
     };
