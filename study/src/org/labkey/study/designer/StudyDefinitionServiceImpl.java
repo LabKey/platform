@@ -185,12 +185,12 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getAssayName());
             if (dsId == -1)
             {
-                DatasetDefinition datasetDefinition = StudyPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
-                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
-                if (datasetDefinition != null)
-                {
-                    datasetDefinition.provisionTable();
-                }
+                DatasetDefinition datasetDefinition = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(assayDefinition.getAssayName())
+                        .setStudy(study)
+                        .setDemographicData(false)
+                        .setType(Dataset.TYPE_PLACEHOLDER)
+                        .setCategoryId(categoryId));
+                datasetDefinition.provisionTable();
             }
         }
 

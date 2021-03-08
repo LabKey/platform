@@ -72,7 +72,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
@@ -281,14 +280,14 @@ public class StudyPublishManager implements StudyPublishService
         {
             Container targetStudy = entry.getKey();
             List<Map<String, Object>> maps = entry.getValue();
-            url = _publishAssayData(user, sourceContainer, targetStudy, assayName, publishSource, maps, columns, keyPropertyName, errors);
+            url = _publishData(user, sourceContainer, targetStudy, assayName, publishSource, maps, columns, keyPropertyName, errors);
         }
         return url;
     }
 
-    private ActionURL _publishAssayData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName,
-                                        Pair<Dataset.PublishSource, Integer> publishSource,
-                                        List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
+    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName,
+                                   Pair<Dataset.PublishSource, Integer> publishSource,
+                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
         if (dataMaps.isEmpty())
         {
@@ -335,7 +334,13 @@ public class StudyPublishManager implements StudyPublishService
                 }
             }
             if (dataset == null)
-                dataset = createAssayDataset(user, targetStudy, createUniqueDatasetName(targetStudy, assayName), keyPropertyName, null, false, protocol);
+            {
+                dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, assayName))
+                        .setStudy(targetStudy)
+                        .setKeyPropertyName(keyPropertyName)
+                        .setPublishSourceId(publishSource.second)
+                        .setPublishSource(publishSource.first));
+            }
             else if (publishSource.second != null)
             {
                 Integer datasetPublishSourceId = dataset.getPublishSourceId();
@@ -739,70 +744,27 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @NotNull
-    public DatasetDefinition createDataset(User user, StudyImpl study, String name, @Nullable Integer datasetId, boolean isDemographicData)
-    {
-        return createAssayDataset(user, study, name, null, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, null, false, KeyManagementType.None);
-    }
-
-    @NotNull
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, @Nullable ExpProtocol protocol)
-    {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false, KeyManagementType.None);
-    }
-
-    @NotNull
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
-    {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField, KeyManagementType.None);
-    }
-
-    @NotNull
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
-    {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null, null);
-    }
-
-    @NotNull
-    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType,
-                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId,
-                                                @Nullable String tag, String visitDatePropertyName, @Nullable String dataSharing)
+    public DatasetDefinition createDataset(User user, @NotNull DatasetDefinition.Builder builder)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
-        if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
-            throw new IllegalStateException("UseTimeKeyField not compatible with iDemographic or other key field.");
         try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
         {
-            if (null == datasetId)
-                datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
-            DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
-            newDataset.setShowByDefault(showByDefault);
-            newDataset.setType(type);
-            newDataset.setDemographicData(isDemographicData);
-            newDataset.setUseTimeKeyField(useTimeKeyField);
-            newDataset.setKeyManagementType(managementType);
-            newDataset.setDescription(description);
-            newDataset.setCohortId(cohortId);
-            newDataset.setTag(tag);
-            newDataset.setVisitDatePropertyName(visitDatePropertyName);
+            StudyImpl study = builder.getStudy();
+            if (study == null)
+                throw new IllegalStateException("A study must be set on the DatasetDefinition.Builder");
 
-            if (label != null)
-                newDataset.setLabel(label);
-            if (categoryId != null)
-                newDataset.setCategoryId(categoryId);
-            if (keyPropertyName != null)
-                newDataset.setKeyPropertyName(keyPropertyName);
-            if (protocol != null)
-                newDataset.setProtocolId(protocol.getRowId());
-            if (dataSharing != null)
-                newDataset.setDataSharing(dataSharing);
+            // auto generate a dataset ID
+            if (null == builder.getDatasetId())
+                builder.setDatasetId(new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class));
 
-            StudyManager.getInstance().createDatasetDefinition(user, newDataset);
+            DatasetDefinition dsd = builder.build();
+            if (dsd.getUseTimeKeyField() && (dsd.isDemographicData() || dsd.getKeyPropertyName() != null))
+                throw new IllegalStateException("UseTimeKeyField not compatible with iDemographic or other key field.");
+
+            StudyManager.getInstance().createDatasetDefinition(user, dsd);
 
             transaction.commit();
-            return newDataset;
+            return dsd;
         }
     }
 

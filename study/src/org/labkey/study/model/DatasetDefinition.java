@@ -60,12 +60,10 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -2876,69 +2874,169 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
     {
-        /*
-                newDataset.setShowByDefault(showByDefault);
-                newDataset.setType(type);
-                newDataset.setDemographicData(isDemographicData);
-                newDataset.setUseTimeKeyField(useTimeKeyField);
-                newDataset.setKeyManagementType(managementType);
-                newDataset.setDescription(description);
-                newDataset.setCohortId(cohortId);
-                newDataset.setTag(tag);
-                newDataset.setVisitDatePropertyName(visitDatePropertyName);
-
-                if (label != null)
-                    newDataset.setLabel(label);
-                if (categoryId != null)
-                    newDataset.setCategoryId(categoryId);
-                if (keyPropertyName != null)
-                    newDataset.setKeyPropertyName(keyPropertyName);
-                if (protocol != null)
-                    newDataset.setProtocolId(protocol.getRowId());
-                if (dataSharing != null)
-                    newDataset.setDataSharing(dataSharing);
-         */
-
-        private String _name;
-        private Container _definitionContainer;
-        private Boolean _isShared;
-        private StudyImpl _study;
-        private int _datasetId;
-        private String _typeURI;
-        private String _category;
+        private final String _name;
+        private String _label;
+        private Boolean _isShowByDefault = true;
         private Integer _categoryId;
         private String _visitDatePropertyName;
         private String _keyPropertyName;
-        private @NotNull KeyManagementType _keyManagementType = KeyManagementType.None;
+        private KeyManagementType _keyManagementType = KeyManagementType.None;
         private String _description;
-        private boolean _demographicData; //demographic information, sequenceNum
+        private Boolean _demographicData = false;   //demographic information, sequenceNum
         private Integer _cohortId;
-        private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
-
-        private Integer _publishSourceId;   // the identifier of the published data source
-        private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
-
-        private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
+        private Integer _publishSourceId;           // the identifier of the published data source
+        private PublishSource _publishSource;       // the type of published data source (assay, sample type, ...)
         private String _tag;
         private String _type = Dataset.TYPE_STANDARD;
-        private DataSharing _datasharing = DataSharing.NONE;
-        private boolean _useTimeKeyField = false;
+        private String _datasharing;
+        private Boolean _useTimeKeyField = false;
+        private Integer _datasetId;
+        private StudyImpl _study;
 
-        Builder(String name)
+        public Builder(String name)
         {
             _name = name;
         }
 
-        Builder setShared(Boolean shared)
+        public Builder setDescription(String description)
         {
-            _isShared = shared;
+            _description = description;
             return this;
+        }
+
+        public Builder setShowByDefault(Boolean isShowByDefault)
+        {
+            _isShowByDefault = isShowByDefault;
+            return this;
+        }
+
+        public Builder setType(String type)
+        {
+            _type = type;
+            return this;
+        }
+
+        public Builder setDemographicData(Boolean demographicData)
+        {
+            _demographicData = demographicData;
+            return this;
+        }
+
+        public Builder setUseTimeKeyField(Boolean useTimeKeyField)
+        {
+            _useTimeKeyField = useTimeKeyField;
+            return this;
+        }
+
+        public Builder setKeyManagementType(KeyManagementType keyManagementType)
+        {
+            _keyManagementType = keyManagementType;
+            return this;
+        }
+
+        public Builder setCohortId(Integer cohortId)
+        {
+            _cohortId = cohortId;
+            return this;
+        }
+
+        public Builder setTag(String tag)
+        {
+            _tag = tag;
+            return this;
+        }
+
+        public Builder setLabel(String label)
+        {
+            _label = label;
+            return this;
+        }
+
+        public Builder setVisitDatePropertyName(String visitDatePropertyName)
+        {
+            _visitDatePropertyName = visitDatePropertyName;
+            return this;
+        }
+
+        public Builder setCategoryId(Integer categoryId)
+        {
+            _categoryId = categoryId;
+            return this;
+        }
+
+        public Builder setKeyPropertyName(String keyPropertyName)
+        {
+            _keyPropertyName = keyPropertyName;
+            return this;
+        }
+
+        public Builder setPublishSourceId(Integer publishSourceId)
+        {
+            _publishSourceId = publishSourceId;
+            return this;
+        }
+
+        public Builder setPublishSource(PublishSource publishSource)
+        {
+            _publishSource = publishSource;
+            return this;
+        }
+
+        public Builder setDataSharing(String dataSharing)
+        {
+            _datasharing = dataSharing;
+            return this;
+        }
+
+        public Builder setDatasetId(Integer datasetId)
+        {
+            _datasetId = datasetId;
+            return this;
+        }
+
+        public Builder setStudy(StudyImpl study)
+        {
+            _study = study;
+            return this;
+        }
+
+        public Integer getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public StudyImpl getStudy()
+        {
+            return _study;
         }
 
         @Override
         public DatasetDefinition build()
         {
-            return null;
+            DatasetDefinition dsd = new DatasetDefinition(_study, _datasetId, _name, _label != null ? _label : _name, null, null, null);
+            dsd.setShowByDefault(_isShowByDefault);
+            dsd.setType(_type);
+            dsd.setDemographicData(_demographicData);
+            dsd.setUseTimeKeyField(_useTimeKeyField);
+            dsd.setKeyManagementType(_keyManagementType);
+            dsd.setDescription(_description);
+            dsd.setCohortId(_cohortId);
+            dsd.setTag(_tag);
+            dsd.setVisitDatePropertyName(_visitDatePropertyName);
+            if (_categoryId != null)
+                dsd.setCategoryId(_categoryId);
+            if (_keyPropertyName != null)
+                dsd.setKeyPropertyName(_keyPropertyName);
+            if (_publishSourceId != null)
+            {
+                dsd.setPublishSourceId(_publishSourceId);
+                assert _publishSource != null : "PublishSource must be set if a publish source ID is specified";
+                dsd.setPublishSourceType(_publishSource.name());
+            }
+            if (_datasharing != null)
+                dsd.setDataSharing(_datasharing);
+
+            return dsd;
         }
     }
 

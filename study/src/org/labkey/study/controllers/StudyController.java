@@ -4831,42 +4831,42 @@ public class StudyController extends BaseStudyController
                         }
                     }
                 }
-                DatasetDefinition def = StudyPublishManager.getInstance().createAssayDataset(getUser(),
-                        study, form.getSnapshotName(), additionalKey, null, isDemographicData, null, useTimeKeyField);
-
-                if (def != null)
+                DatasetDefinition def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getSnapshotName())
+                        .setStudy(study)
+                        .setKeyPropertyName(additionalKey)
+                        .setDatasetId(datasetId)
+                        .setDemographicData(isDemographicData)
+                        .setUseTimeKeyField(useTimeKeyField));
+                form.setSnapshotDatasetId(def.getDatasetId());
+                if (keyManagementType != KeyManagementType.None)
                 {
-                    form.setSnapshotDatasetId(def.getDatasetId());
-                    if (keyManagementType != KeyManagementType.None)
-                    {
-                        def = def.createMutable();
-                        def.setKeyManagementType(keyManagementType);
+                    def = def.createMutable();
+                    def.setKeyManagementType(keyManagementType);
 
-                        StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
-                    }
-
-                    // NOTE getDisplayColumns() indirectly causes a query of the datasets,
-                    // Do this before provisionTable() so we don't query the dataset we are about to create
-                    // causes a problem on postgres (bug 11153)
-                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
-                    {
-                        ColumnInfo col = dc.getColumnInfo();
-                        if (col != null && !DatasetDefinition.isDefaultFieldName(col.getName(), study))
-                            columnsToProvision.add(col);
-                    }
-
-                    // def may not be provisioned yet, create before we start adding properties
-                    def.provisionTable();
-                    Domain d = def.getDomain();
-
-                    for (ColumnInfo col : columnsToProvision)
-                    {
-                        DatasetSnapshotProvider.addAsDomainProperty(d, col);
-                    }
-                    d.save(getUser());
-
-                    return def;
+                    StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
                 }
+
+                // NOTE getDisplayColumns() indirectly causes a query of the datasets,
+                // Do this before provisionTable() so we don't query the dataset we are about to create
+                // causes a problem on postgres (bug 11153)
+                for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
+                {
+                    ColumnInfo col = dc.getColumnInfo();
+                    if (col != null && !DatasetDefinition.isDefaultFieldName(col.getName(), study))
+                        columnsToProvision.add(col);
+                }
+
+                // def may not be provisioned yet, create before we start adding properties
+                def.provisionTable();
+                Domain d = def.getDomain();
+
+                for (ColumnInfo col : columnsToProvision)
+                {
+                    DatasetSnapshotProvider.addAsDomainProperty(d, col);
+                }
+                d.save(getUser());
+
+                return def;
             }
 
             return dsDef;
@@ -6888,24 +6888,22 @@ public class StudyController extends BaseStudyController
                 switch (form.getType())
                 {
                     case defineManually:
-                        def = StudyPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
-
-                        if (def != null)
-                        {
-                            def.provisionTable();
-                        }
+                        def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getName())
+                                .setStudy(_study)
+                                .setDemographicData(false)
+                                .setCategoryId(categoryId));
+                        def.provisionTable();
 
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
-                        def = StudyPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
-                        if (def != null)
-                        {
-                            def.provisionTable();
-                        }
+                        def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getName())
+                                .setStudy(_study)
+                                .setDemographicData(false)
+                                .setType(Dataset.TYPE_PLACEHOLDER)
+                                .setCategoryId(categoryId));
+                        def.provisionTable();
                         response.put("datasetId", def.getDatasetId());
                         break;
 

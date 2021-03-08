@@ -59,6 +59,7 @@ import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -442,7 +443,10 @@ public class StudyDesignManager
         }
         List<String> errors = new ArrayList<>();
 
-        Dataset subjectDataset = StudyPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
+        Dataset subjectDataset = StudyPublishManager.getInstance().createDataset(user, new DatasetDefinition.Builder("Subjects")
+                .setStudy(study)
+                .setDemographicData(true));
+
         study = study.createMutable();
         study.setParticipantCohortDatasetId(subjectDataset.getDatasetId());
         study.setParticipantCohortProperty("Cohort");

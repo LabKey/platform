@@ -182,9 +182,11 @@ public class StudyServiceImpl implements StudyService
         if (study == null)
             throw new IllegalStateException("Study required");
 
-        return StudyPublishManager.getInstance().createDataset(user, study, name, datasetId, isDemographic);
+        return StudyPublishManager.getInstance().createDataset(user, new DatasetDefinition.Builder(name)
+                .setStudy(study)
+                .setDatasetId(datasetId)
+                .setDemographicData(isDemographic));
     }
-
 
     @Override
     public DatasetDefinition getDataset(Container c, int datasetId)
