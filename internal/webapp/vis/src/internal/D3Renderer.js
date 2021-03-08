@@ -655,10 +655,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     // position log gutter data relative to x or y axis
     var logGutterPointsOffset = 15;
 
-    // Constants for position settings
+    // Constants for position and scaleType settings
     var position = {
         jitter: 'jitter',
         sequential: 'sequential'
+    };
+    var scaleType = {
+        discrete: 'discrete',
+        continuous: 'continuous'
     };
 
     var initLabelElements = function() {
@@ -1275,7 +1279,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 xAxis = plot.scales.x;
             }
 
-            if (xAxis.scaleType == 'continuous' && xAxis.trans == 'linear')
+            if (xAxis.scaleType === scaleType.continuous && xAxis.trans === 'linear')
             {
                 // We need to add some padding to the scale in order for us to actually be able to select all of the points.
                 // If we don't, any points that lie exactly at the edge of the chart will be unselectable.
@@ -1298,7 +1302,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 yAxis = plot.scales.yRight;
             }
 
-            if (yAxis.scaleType == 'continuous' && yAxis.trans == 'linear')
+            if (yAxis.scaleType === scaleType.continuous && yAxis.trans == 'linear')
             {
                 // See the note above.
                 yScale = yAxis.scale.copy();
@@ -1945,7 +1949,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // For sequential jitters, keep track of the current count for a given x value
         var jitters = {};
 
-        if (geom.xScale.scaleType === 'discrete' && (geom.position === position.jitter || geom.position === position.sequential)) {
+        if (geom.xScale.scaleType === scaleType.discrete && (geom.position === position.jitter || geom.position === position.sequential)) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
@@ -1986,7 +1990,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             };
         }
 
-        if (geom.yScale.scaleType == 'discrete' && geom.position === position.jitter) {
+        if (geom.yScale.scaleType == scaleType.discrete && geom.position === position.jitter) {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
             yAcc = function(row) {
                 var value = geom.getY(row);
@@ -2306,14 +2310,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return circle(geom.outlierSize);
         };
 
-        if (geom.xScale.scaleType === 'discrete' && (geom.position === position.jitter || geom.position === position.sequential)) {
+        if (geom.xScale.scaleType === scaleType.discrete && (geom.position === position.jitter || geom.position === position.sequential)) {
             xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             xAcc = function(row) {return geom.getX(row) - (xBinWidth / 2) + (Math.random() * xBinWidth);};
         } else {
             xAcc = function(row) {return geom.getX(row);};
         }
 
-        if (geom.yScale.scaleType == 'discrete' && geom.position === position.jitter) {
+        if (geom.yScale.scaleType === scaleType.discrete && geom.position === position.jitter) {
             yBinWidth = ((plot.grid.topEdge - plot.grid.bottomEdge) / (geom.yScale.scale.domain().length)) / 2;
             yAcc = function(row) {return (geom.getY(row) - (yBinWidth / 2) + (Math.random() * yBinWidth));}
         } else {
@@ -2406,7 +2410,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     var renderBoxPlotGeom = function(data, geom) {
         var layer = getLayer.call(this, geom), summaries = [];
 
-        if (geom.xScale.scaleType == 'continuous') {
+        if (geom.xScale.scaleType === scaleType.continuous) {
             console.error('Box Plots not supported for continuous data yet.');
             return;
         }
@@ -2851,7 +2855,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderDataspaceBoxPlotGeom = function(data, geom) {
         var layer = getLayer.call(this, geom), summaries;
-        if (geom.xScale.scaleType == 'continuous') {
+        if (geom.xScale.scaleType === scaleType.continuous) {
             console.error('Box Plots not supported for continuous data yet.');
             return;
         }
@@ -2927,7 +2931,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 binWidth, barWidth, numXCategories, numXSubCategories, offsetWidth,
                 rects, hoverFn, heightFn, xAcc, colorAcc, yAcc, yZero;
 
-        if (geom.xScale.scaleType == 'continuous') {
+        if (geom.xScale.scaleType === scaleType.continuous) {
             console.error('Bar Plots not supported for continuous data yet.');
             return;
         }
