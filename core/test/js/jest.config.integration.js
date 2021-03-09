@@ -18,16 +18,11 @@ module.exports = {
     "moduleDirectories": [
         "node_modules"
     ],
-    "setupFiles": [
-        "@labkey/test/dist/config/integration.setup.js"
-    ],
     "setupFilesAfterEnv": [
-        "./test/js/setup.ts",
-        "@labkey/test/dist/config/integration.setup.afterenv.js"
+        "./test/js/setup.ts"
     ],
     "testPathIgnorePatterns": [
-        "/node_modules/",
-        "packages/freezermanager"
+        "/node_modules/"
     ],
     "testRegex": "(\\.ispec)\\.(ts|tsx)$",
     "preset": "ts-jest",
