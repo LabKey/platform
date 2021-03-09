@@ -58,7 +58,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.model.ParticipantDataset;
-import org.labkey.api.study.query.BaseStudyQueryView;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -85,7 +84,7 @@ import static java.util.Objects.requireNonNull;
  * Date: Aug 23, 2006
  * Time: 3:38:44 PM
  */
-public class SpecimenQueryView extends BaseStudyQueryView
+public class SpecimenQueryView extends BaseSpecimenQueryView
 {
     public enum Mode
     {
