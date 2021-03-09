@@ -11,10 +11,44 @@
     "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
-    "teamcity": "cross-env NODE_ENV=test jest -c test/js/jest.config.integration.js",
+    "teamcity": "cross-env NODE_ENV=test jest --testResultsProcessor=jest-teamcity-reporter",
     "lint": "eslint --ext '*.ts,*.tsx'",
     "lint-all": "eslint --ext '*.ts,*.tsx' src/client/**/*",
     "lint-fix": "eslint --fix --ext '*.ts,*.tsx'"
+  },
+  "jest": {
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json"
+      },
+      "LABKEY": {
+        "container": {
+          "formats": {
+            "dateFormat": "yyyy-MM-dd"
+          }
+        },
+        "user": {
+          "id": 1004
+        },
+        "project": {},
+        "moduleContext": {}
+      }
+    },
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/js/setup.ts"
+    ],
+    "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "\\.(css|scss)$": "<rootDir>/test/js/styleMock.ts"
+    }
   },
   "dependencies": {
     "@labkey/api": "1.1.8",
@@ -46,45 +80,5 @@
     "prettier": "2.0.5",
     "react-test-renderer": "16.13.1",
     "ts-jest": "26.5.3"
-  },
-  "jest": {
-    "globals": {
-      "ts-jest": {
-        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json"
-      },
-      "LABKEY": {
-        "container": {
-          "formats": {
-            "dateFormat": "yyyy-MM-dd"
-          }
-        },
-        "user": {
-          "id": 1004
-        },
-        "project": {},
-        "moduleContext": {}
-      }
-    },
-    "moduleFileExtensions": [
-      "js",
-      "ts",
-      "tsx"
-    ],
-    "moduleDirectories": [
-      "node_modules"
-    ],
-    "setupFilesAfterEnv": [
-      "./test/js/setup.ts"
-    ],
-    "snapshotSerializers": [
-      "enzyme-to-json/serializer"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-    "preset": "ts-jest",
-    "testMatch": null,
-    "testResultsProcessor": "jest-teamcity-reporter"
   }
 }
