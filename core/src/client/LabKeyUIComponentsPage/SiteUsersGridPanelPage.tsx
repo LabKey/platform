@@ -103,5 +103,5 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<Props, State> {
     }
 }
 
-export const SiteUsersGridPanelPage = PermissionsPageContextProvider<Props>(SiteUsersGridPanelPageImpl);
+export const SiteUsersGridPanelPage = PermissionsPageContextProvider(SiteUsersGridPanelPageImpl);
 

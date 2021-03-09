@@ -11,13 +11,47 @@
     "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
-    "teamcity": "cross-env NODE_ENV=test jest --testResultsProcessor=jest-teamcity-reporter",
+    "test-integration": "cross-env NODE_ENV=test jest -c test/js/jest.config.integration.js",
     "lint": "eslint --ext '*.ts,*.tsx'",
     "lint-all": "eslint --ext '*.ts,*.tsx' src/client/**/*",
     "lint-fix": "eslint --fix --ext '*.ts,*.tsx'"
   },
+  "dependencies": {
+    "@labkey/api": "1.1.8",
+    "@labkey/components": "2.11.0-fb-webpackAliasFromSrc.0",
+    "@labkey/eslint-config-react": "0.0.8",
+    "@labkey/themes": "1.0.2"
+  },
+  "devDependencies": {
+    "@labkey/build": "2.0.1-fb-webpackAliasFromSrc.2",
+    "@labkey/eslint-config-base": "0.0.8",
+    "@types/enzyme": "3.10.5",
+    "@types/enzyme-adapter-react-16": "1.0.6",
+    "@types/jest": "26.0.20",
+    "@typescript-eslint/eslint-plugin": "3.8.0",
+    "@typescript-eslint/parser": "3.8.0",
+    "enzyme": "3.11.0",
+    "enzyme-adapter-react-16": "1.15.2",
+    "enzyme-to-json": "3.5.0",
+    "eslint": "7.6.0",
+    "eslint-config-prettier": "6.11.0",
+    "eslint-plugin-import": "2.22.0",
+    "eslint-plugin-jest": "23.20.0",
+    "eslint-plugin-prettier": "3.1.4",
+    "eslint-plugin-react": "7.20.5",
+    "fs-extra": "9.0.1",
+    "jest": "26.6.3",
+    "jest-teamcity-reporter": "0.9.0",
+    "mixin-deep": "2.0.1",
+    "prettier": "2.0.5",
+    "react-test-renderer": "16.13.1",
+    "ts-jest": "26.5.3"
+  },
   "jest": {
     "globals": {
+      "ts-jest": {
+        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json"
+      },
       "LABKEY": {
         "container": {
           "formats": {
@@ -36,46 +70,21 @@
       "ts",
       "tsx"
     ],
+    "moduleDirectories": [
+      "node_modules"
+    ],
     "setupFilesAfterEnv": [
-      "<rootDir>/test/jest.setup.ts"
+      "./test/js/setup.ts"
+    ],
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/"
     ],
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "moduleNameMapper": {
-      "\\.(css|scss)$": "<rootDir>/test/styleMock.ts"
-    }
-  },
-  "dependencies": {
-    "@labkey/api": "1.1.8",
-    "@labkey/components": "2.11.1",
-    "@labkey/eslint-config-react": "0.0.8",
-    "@labkey/themes": "1.0.2"
-  },
-  "devDependencies": {
-    "@labkey/build": "2.0.1",
-    "@labkey/eslint-config-base": "0.0.8",
-    "@types/enzyme": "3.10.5",
-    "@types/enzyme-adapter-react-16": "1.0.6",
-    "@types/jest": "26.0.8",
-    "@typescript-eslint/eslint-plugin": "3.8.0",
-    "@typescript-eslint/parser": "3.8.0",
-    "enzyme": "3.11.0",
-    "enzyme-adapter-react-16": "1.15.2",
-    "enzyme-to-json": "3.5.0",
-    "eslint": "7.6.0",
-    "eslint-config-prettier": "6.11.0",
-    "eslint-plugin-import": "2.22.0",
-    "eslint-plugin-jest": "23.20.0",
-    "eslint-plugin-prettier": "3.1.4",
-    "eslint-plugin-react": "7.20.5",
-    "fs-extra": "9.0.1",
-    "jest": "26.2.2",
-    "jest-teamcity-reporter": "0.9.0",
-    "mixin-deep": "2.0.1",
-    "prettier": "2.0.5",
-    "react-test-renderer": "16.13.1",
-    "ts-jest": "26.1.4"
+    "preset": "ts-jest",
+    "testMatch": null,
+    "testResultsProcessor": "jest-teamcity-reporter"
   }
 }

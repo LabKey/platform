@@ -51,8 +51,6 @@ import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
 
-import "./LabKeyUIComponentsPage.scss"
-
 const COMPONENT_NAMES = List<string>([
     {value: 'Alert'},
     {value: 'AssayImportPanels'},
@@ -389,7 +387,14 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'PermissionAssignments' &&
-                    <PermissionAssignmentsPage/>
+                    <PermissionAssignmentsPage
+                        roles={undefined}
+                        rolesByUniqueName={undefined}
+                        principals={undefined}
+                        principalsById={undefined}
+                        inactiveUsersById={undefined}
+                        error={undefined}
+                    />
                 }
                 {selected === 'Progress' &&
                     this.renderPanel('Progress',
@@ -430,7 +435,14 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'SiteUsersGridPanel' &&
-                    <SiteUsersGridPanelPage/>
+                    <SiteUsersGridPanelPage
+                        roles={undefined}
+                        rolesByUniqueName={undefined}
+                        principals={undefined}
+                        principalsById={undefined}
+                        inactiveUsersById={undefined}
+                        error={undefined}
+                    />
                 }
                 {selected === 'Tip' &&
                     this.renderPanel('Tip',
