@@ -3,10 +3,8 @@ package org.labkey.api.dataiterator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -27,8 +25,6 @@ import java.util.function.Supplier;
 
 public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
 {
-    public static final String EXISTING_RECORD_COLUMN_NAME = "_" + GenerateUniqueDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
-
     final TableInfo target;
     final ColumnInfo column;
     final Class<V> clazz;
@@ -67,7 +63,7 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
     {
         if (i < existingColCount)
             return _delegate.getColumnInfo(i);
-        return new BaseColumnInfo(EXISTING_RECORD_COLUMN_NAME, JdbcType.OTHER);
+        return column;
     }
 
     @Override
