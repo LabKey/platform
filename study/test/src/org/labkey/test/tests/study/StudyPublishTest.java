@@ -1157,7 +1157,10 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         Map<String, String[]> colsToCheck = new HashMap<>();
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon"});
-        colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1165,7 +1168,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         DataRegionTable dt = new DataRegionTable("query", getDriver());
         dt.setContainerFilter(DataRegionTable.ContainerFilterType.CURRENT_AND_SUBFOLDERS);
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon", "PublishedSubStudy"});
-        colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1177,7 +1183,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickAndWait(Locator.linkContainingText("view data"));
 
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
-        colsToCheck.put("Refresh", new String[]{"false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1200,7 +1209,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickAndWait(Locator.linkContainingText("view data"));
 
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon"});
-        colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1224,12 +1236,18 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickAndWait(Locator.linkContainingText("view data"));
 
         colsToCheck.put("Destination", new String[0]);
-        colsToCheck.put("Refresh", new String[0]);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[0]);
+        }
         verifyDataRegion(colsToCheck);
 
         dt.goToView("Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
-        colsToCheck.put("Refresh", new String[]{"false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"false"});
+        }
         verifyDataRegion(colsToCheck);
 
         stopImpersonating();
