@@ -122,7 +122,7 @@ export class App extends React.PureComponent<any, State> {
             ? ActionURL.buildURL('experiment', 'showSampleType', getServerContext().container.path, {rowId: rowId})
             : ActionURL.buildURL('experiment', 'listSampleTypes', getServerContext().container.path);
 
-        // this.navigate(url);
+        this.navigate(url);
     };
 
     onCancel = () => {
@@ -132,9 +132,8 @@ export class App extends React.PureComponent<any, State> {
     navigate(defaultUrl: string) {
         this._dirty = false;
 
-        console.log("don't");
-        // const returnUrl = ActionURL.getReturnUrl();
-        // window.location.href = returnUrl || defaultUrl;
+        const returnUrl = ActionURL.getReturnUrl();
+        window.location.href = returnUrl || defaultUrl;
     }
 
     render() {
