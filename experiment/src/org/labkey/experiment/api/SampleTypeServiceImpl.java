@@ -873,6 +873,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             st.setLabelColor(options.getLabelColor());
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
+            st.setAutoLinkTargetContainerId(options.getAutoLinkTargetContainerId());
         }
 
         ValidationException errors;

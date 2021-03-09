@@ -47,6 +47,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _nameExpression;
     private String _labelColor;
     private String _metricUnit;
+    private String _autoLinkTargetContainerId;
 
     private String _materialParentImportAliasMap;
 
@@ -146,6 +147,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public void setMetricUnit(String metricUnit)
     {
         _metricUnit = metricUnit;
+    }
+
+    public String getAutoLinkTargetContainerId()
+    {
+        return _autoLinkTargetContainerId;
+    }
+
+    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
+    {
+        _autoLinkTargetContainerId = autoLinkTargetContainerId;
     }
 
     public String getMaterialParentImportAliasMap()
