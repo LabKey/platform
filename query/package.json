@@ -12,9 +12,11 @@
     "clean": "rimraf resources/web/query/gen && rimraf resources/views/gen  && rimraf resources/views/queryMetadataEditor*"
   },
   "dependencies": {
-    "@labkey/components": "2.11.1"
+    "@labkey/components": "2.11.0-fb-webpackAliasFromSrc.0"
   },
   "devDependencies": {
-    "@labkey/build": "2.0.1"
+    "@labkey/build": "2.0.1-fb-webpackAliasFromSrc.3",
+    "@types/jest": "26.0.20",
+    "jest": "26.6.3"
   }
 }
