@@ -17,19 +17,19 @@ import java.util.Arrays;
  */
 public class PostgreSqlInClauseTest extends Assert
 {
-    private PostgreSql95Dialect getDialect()
+    private PostgreSql96Dialect getDialect()
     {
         DbSchema core = CoreSchema.getInstance().getSchema();
         SqlDialect d = core.getSqlDialect();
-        if (d instanceof PostgreSql95Dialect)
-            return (PostgreSql95Dialect) d;
+        if (d instanceof PostgreSql96Dialect)
+            return (PostgreSql96Dialect) d;
         return null;
     }
 
     @Test
     public void testInClause()
     {
-        PostgreSql95Dialect d = getDialect();
+        PostgreSql96Dialect d = getDialect();
         if (null == d)
             return;
         DbSchema core = CoreSchema.getInstance().getSchema();
