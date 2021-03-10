@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "2.12.0-reservedDomainFields.6"
+    "@labkey/components": "2.12.0-reservedDomainFields.8"
   },
   "devDependencies": {
     "@labkey/build": "2.0.1"
