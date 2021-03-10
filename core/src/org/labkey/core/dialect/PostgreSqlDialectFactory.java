@@ -25,18 +25,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
-import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.TestUpgradeCode;
-import org.labkey.api.query.AbstractMethodInfo;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
@@ -65,7 +59,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql95Dialect() : null;
+        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql96Dialect() : null;
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
@@ -105,7 +99,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
             throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
 
-        PostgreSql95Dialect dialect = psv.getDialect();
+        PostgreSql96Dialect dialect = psv.getDialect();
 
         if (logWarnings)
         {
@@ -133,10 +127,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // PostgreSQL dialects are nearly identical, so just test 9.5
+        // PostgreSQL dialects are nearly identical, so just test 9.6
         return PageFlowUtil.set(
-            new PostgreSql95Dialect(true),
-            new PostgreSql95Dialect(false)
+            new PostgreSql96Dialect(true),
+            new PostgreSql96Dialect(false)
         );
     }
 
@@ -147,14 +141,13 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 9.4 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 9.4, null, connectionUrl);
+            // < 9.6 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 9.6, null, connectionUrl);
 
             // 9.7, 9.8, and 9.9 are bad as well - these versions never existed
             badVersion("PostgreSQL", 9.7, 10.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 9.5, 9.6, "", connectionUrl, null, PostgreSql95Dialect.class);
             good("PostgreSQL", 9.6, 9.7, "", connectionUrl, null, PostgreSql96Dialect.class);
             good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
@@ -187,7 +180,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                     "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                     "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql95Dialect();
+            SqlDialect dialect = new PostgreSql96Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(5, good.getCounter());
@@ -208,7 +201,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql95Dialect();
+                    return new PostgreSql96Dialect();
                 }
 
                 @NotNull
