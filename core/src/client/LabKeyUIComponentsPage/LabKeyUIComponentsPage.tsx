@@ -387,14 +387,7 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'PermissionAssignments' &&
-                    <PermissionAssignmentsPage
-                        roles={undefined}
-                        rolesByUniqueName={undefined}
-                        principals={undefined}
-                        principalsById={undefined}
-                        inactiveUsersById={undefined}
-                        error={undefined}
-                    />
+                    <PermissionAssignmentsPage/>
                 }
                 {selected === 'Progress' &&
                     this.renderPanel('Progress',
@@ -435,14 +428,7 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'SiteUsersGridPanel' &&
-                    <SiteUsersGridPanelPage
-                        roles={undefined}
-                        rolesByUniqueName={undefined}
-                        principals={undefined}
-                        principalsById={undefined}
-                        inactiveUsersById={undefined}
-                        error={undefined}
-                    />
+                    <SiteUsersGridPanelPage/>
                 }
                 {selected === 'Tip' &&
                     this.renderPanel('Tip',
