@@ -849,8 +849,7 @@ public class PropertyController extends SpringActionController
             }
 
             response.put("fields", fields);
-            if (!reservedFields.isEmpty())
-                response.put("reservedFields", reservedFields);
+            response.put("reservedFields", reservedFields);
             return response;
         }
     }
