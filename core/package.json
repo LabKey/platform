@@ -52,12 +52,12 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.8",
-    "@labkey/components": "2.12.0-fb-webpackAliasFromSrc.4",
+    "@labkey/components": "2.13.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },
   "devDependencies": {
-    "@labkey/build": "2.0.1-fb-webpackAliasFromSrc.3",
+    "@labkey/build": "2.1.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.5",
     "@types/enzyme-adapter-react-16": "1.0.6",
