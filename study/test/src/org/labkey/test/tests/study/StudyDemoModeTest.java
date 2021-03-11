@@ -50,10 +50,16 @@ public class StudyDemoModeTest extends StudyBaseTest
     protected void doCreateSteps()
     {
         importStudy();
-        startSpecimenImport(2);
-
-        // wait for study and specimens to finish loading
-        waitForPipelineJobsToComplete(2, "study import and specimens", false);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            startSpecimenImport(2);
+            waitForSpecimenImport();
+        }
+        else
+        {
+            // wait for study and specimens to finish loading
+            waitForPipelineJobsToComplete(1, "study import", false);
+        }
     }
 
     @Override
@@ -152,5 +158,7 @@ public class StudyDemoModeTest extends StudyBaseTest
             for (String ptid : Arrays.asList("999320", "999321", "618005775"))
                 assertFalse("Found visible ptid during demo mode", bodyText.contains(ptid));
         }
+
+
     }
 }
