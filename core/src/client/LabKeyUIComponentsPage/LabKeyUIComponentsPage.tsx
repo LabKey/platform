@@ -51,8 +51,6 @@ import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
 
-import "./LabKeyUIComponentsPage.scss"
-
 const COMPONENT_NAMES = List<string>([
     {value: 'Alert'},
     {value: 'AssayImportPanels'},
