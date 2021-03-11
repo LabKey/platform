@@ -16,8 +16,6 @@ import {
     SCHEMAS
 } from "@labkey/components";
 
-type Props = PermissionsProviderProps;
-
 interface State {
     policy: SecurityPolicy
     loading: boolean
@@ -25,9 +23,9 @@ interface State {
     message: string
 }
 
-class SiteUsersGridPanelPageImpl extends React.PureComponent<Props, State> {
+class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProviderProps, State> {
 
-    constructor(props: Props) {
+    constructor(props: PermissionsProviderProps) {
         super(props);
 
         this.state = {
@@ -103,5 +101,5 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<Props, State> {
     }
 }
 
-export const SiteUsersGridPanelPage = PermissionsPageContextProvider<Props>(SiteUsersGridPanelPageImpl);
+export const SiteUsersGridPanelPage = PermissionsPageContextProvider(SiteUsersGridPanelPageImpl);
 
