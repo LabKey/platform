@@ -5121,7 +5121,8 @@ public class AdminController extends SpringActionController
 
     /**
      * This standalone file root management action can be used on folder types that do not support
-     * the normal 'Manage Folder' UI.
+     * the normal 'Manage Folder' UI. Not currently linked in the UI, but available for direct URL
+     * navigation when a workbook needs it.
      */
     @RequiresPermission(AdminPermission.class)
     public class ManageFileRootAction extends FormViewAction<FileRootsForm>
