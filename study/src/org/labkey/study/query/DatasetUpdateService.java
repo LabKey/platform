@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -237,7 +238,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                     {
                         // Inject a column with a new GUID
                         ColumnInfo key = getQueryTable().getColumn(_dataset.getKeyPropertyName());
-                        result.addColumn(key, new SimpleTranslator.GuidColumn());
+                        result.addColumn(new BaseColumnInfo(key), new SimpleTranslator.GuidColumn());
                     }
 
                     return result;
