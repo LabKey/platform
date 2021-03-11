@@ -106,18 +106,22 @@ public class DatasetDataWriter implements InternalStudyWriter
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
             SimpleFilter filter = new SimpleFilter();
-            if (def.isAssayData())
+            if (def.isPublishedData())
             {
-                // Try to find the protocol and provider
-                ExpProtocol protocol = def.getAssayProtocol();
-                if (protocol != null)
+                Dataset.PublishSource publishSource = def.getPublishSource();
+                if (publishSource == Dataset.PublishSource.Assay)
                 {
-                    AssayProvider provider = AssayService.get().getProvider(protocol);
-                    if (provider != null)
+                    // Try to find the protocol and provider
+                    ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
+                    if (protocol != null)
                     {
-                        // Assuming they're still around, filter out rows where the source assay run has been deleted,
-                        // thus orphaning the dataset row and pulling out all of its real data
-                        filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), null, CompareType.NONBLANK);
+                        AssayProvider provider = AssayService.get().getProvider(protocol);
+                        if (provider != null)
+                        {
+                            // Assuming they're still around, filter out rows where the source assay run has been deleted,
+                            // thus orphaning the dataset row and pulling out all of its real data
+                            filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), null, CompareType.NONBLANK);
+                        }
                     }
                 }
             }

@@ -107,7 +107,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -3881,7 +3880,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 StudyService studyService = StudyService.get();
                 if (studyService != null)
                 {
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
                         dataset.delete(user);
                     }

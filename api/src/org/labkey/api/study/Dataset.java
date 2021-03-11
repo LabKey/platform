@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
@@ -59,20 +60,40 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
         Assay
                 {
                     @Override
-                    public ExpObject resolvePublishSource(Integer publishSourceId)
+                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
                     {
                         return ExperimentService.get().getExpProtocol(publishSourceId);
+                    }
+
+                    @Override
+                    public String getLabel(Integer publishSourceId)
+                    {
+                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
+                        if (protocol != null)
+                            return protocol.getName();
+                        return "";
                     }
                 },
         SampleType
                 {
                     @Override
-                    public ExpObject resolvePublishSource(Integer publishSourceId)
+                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
                     {
                         return SampleTypeService.get().getSampleType(publishSourceId);
                     }
+
+                    @Override
+                    public String getLabel(Integer publishSourceId)
+                    {
+                        ExpSampleType sampleType =  SampleTypeService.get().getSampleType(publishSourceId);
+                        if (sampleType != null)
+                            return sampleType.getName();
+                        return "";
+                    }
                 };
+
         public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
+        public abstract String getLabel(Integer publishSourceId);
     }
 
     Set<String> getDefaultFieldNames();
@@ -129,6 +150,9 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     @Nullable
     PublishSource getPublishSource();
+
+    @Nullable
+    ExpObject resolvePublishSource();
 
     @Nullable
     Integer getPublishSourceId();

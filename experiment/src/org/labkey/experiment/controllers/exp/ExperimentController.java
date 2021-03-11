@@ -36,7 +36,6 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -3114,7 +3113,7 @@ public class ExperimentController extends SpringActionController
                     {
                         noun = "Protocol";
                     }
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
                         Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))

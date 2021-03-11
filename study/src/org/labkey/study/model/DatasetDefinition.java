@@ -60,6 +60,7 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -839,6 +840,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Override
+    @Deprecated
     public boolean isAssayData()
     {
         return _protocolId != null;
@@ -855,6 +857,17 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         if (_publishSourceType != null)
             return PublishSource.valueOf(_publishSourceType);
+        return null;
+    }
+
+    @Override
+    public @Nullable ExpObject resolvePublishSource()
+    {
+        PublishSource publishSource = getPublishSource();
+        if (publishSource != null)
+        {
+            return publishSource.resolvePublishSource(getPublishSourceId());
+        }
         return null;
     }
 
@@ -1826,7 +1839,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    public DomainKind getDomainKind()
+    public DomainKind<DatasetDomainKindProperties> getDomainKind()
     {
         switch (getStudy().getTimepointType())
         {
@@ -1973,23 +1986,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _publishSourceType = publishSourceType;
     }
 
-    @Deprecated
-    public Integer getProtocolId()
-    {
-        return _protocolId;
-    }
-
     @Override
     @Deprecated
     public ExpProtocol getAssayProtocol()
     {
         return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
-    }
-
-    @Deprecated
-    public void setProtocolId(Integer protocolId)
-    {
-        _protocolId = protocolId;
     }
 
     @Override

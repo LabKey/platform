@@ -402,10 +402,12 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public Set<DatasetDefinition> getDatasetsForAssayProtocol(ExpProtocol protocol)
+    public Set<DatasetDefinition> getDatasetsForPublishSource(Integer publishSourceId, Dataset.PublishSource publishSource)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolid"), protocol.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("publishSourceId"), publishSourceId);
+        filter.addCondition(FieldKey.fromParts("publishSourceType"), publishSource.name());
+
         Set<DatasetDefinition> result = new HashSet<>();
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
         for (Map<String, Object> row : rows)
@@ -415,16 +417,6 @@ public class StudyServiceImpl implements StudyService
             Container container = ContainerManager.getForId(containerId);
             result.add(getDataset(container, datasetId));
         }
-        return result;
-    }
-
-    @Override
-    public Map<DatasetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
-    {
-        Set<DatasetDefinition> datasets = getDatasetsForAssayProtocol(protocol);
-        Map<DatasetDefinition, String> result = new HashMap<>();
-        for (DatasetDefinition dataset : datasets)
-            result.put(dataset, dataset.getStorageTableInfo().getSelectName());
         return result;
     }
 
@@ -443,7 +435,7 @@ public class StudyServiceImpl implements StudyService
             Set<DatasetDefinition> datasets = protocolDatasets.get(protocol);
             if (datasets == null)
             {
-                datasets = getDatasetsForAssayProtocol(protocol);
+                datasets = getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay);
                 protocolDatasets.put(protocol, datasets);
             }
             List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
