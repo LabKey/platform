@@ -38,6 +38,6 @@ public class RestrictedReaderRole extends AbstractRole
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return super.isApplicable(policy,resource) || resource instanceof Study || resource instanceof Dataset;
+        return super.isApplicable(policy,resource) || resource instanceof Study;
     }
 }

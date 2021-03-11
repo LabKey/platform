@@ -122,30 +122,42 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     void save(User user) throws SQLException;
 
+    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
+
     /**
      * @return whether the user has permission to read rows from this dataset
      */
-    public boolean canRead(UserPrincipal user);
+    boolean canRead(UserPrincipal user);
 
     /**
-     * @return whether the user has permission to write to the dataset
+     * @return whether the user has permission to update the dataset
      */
-    public boolean canWrite(UserPrincipal user);
+    boolean canUpdate(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to delete from the dataset
+     */
+    boolean canDelete(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to insert rows into the dataset
+     */
+    boolean canInsert(UserPrincipal user);
 
     /**
      * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete
      * rows from the dataset.
      */
-    public boolean canDeleteDefinition(UserPrincipal user);
+    boolean canDeleteDefinition(UserPrincipal user);
 
     /**
      * Does the user have admin permissions for this dataset
      * @param user
      * @return
      */
-    public boolean canUpdateDefinition(User user);
+    boolean canUpdateDefinition(User user);
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
+    Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
 
@@ -188,7 +200,7 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @param lsid The row LSID
      * @return A map of the dataset row columns, null if no record found
      */
-    public Map<String, Object> getDatasetRow(User u, String lsid);
+    Map<String, Object> getDatasetRow(User u, String lsid);
 
     /**
      * Fetches a set of rows from a dataset given a collection of LSIDs
@@ -196,19 +208,18 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @param lsids The row LSIDs
      * @return An array of maps of the dataset row columns
      */
-    @NotNull
-    public List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids);
+    @NotNull List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids);
 
     /**
      * Deletes the specified rows from the dataset.
      * @param u user performing the delete
      * @param lsids keys of the dataset rows
      */
-    public void deleteDatasetRows(User u, Collection<String> lsids);
+    void deleteDatasetRows(User u, Collection<String> lsids);
 
     // constants for dataset types
-    public static final String TYPE_STANDARD = "Standard";
-    public static final String TYPE_PLACEHOLDER = "Placeholder";
+    String TYPE_STANDARD = "Standard";
+    String TYPE_PLACEHOLDER = "Placeholder";
 
     enum KeyType
     {
@@ -233,10 +244,10 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
         // Don't rename enums without updating the values in the database too
         None(""), RowId("rowid", "true"), GUID("entityid", "guid");
 
-        private String _serializationName;
-        private String[] _serializationAliases;
+        private final String _serializationName;
+        private final String[] _serializationAliases;
 
-        private KeyManagementType(String serializationName, String... serializationAliases)
+        KeyManagementType(String serializationName, String... serializationAliases)
         {
             _serializationName = serializationName;
             _serializationAliases = serializationAliases;

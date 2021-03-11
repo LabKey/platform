@@ -86,6 +86,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -98,8 +99,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
@@ -894,6 +893,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    // Determines the user's permissions on this dataset based on the current dataset security rules. Primarily interested
+    // in read, insert, update, and delete permissions... except for ADVANCED_WRITE which needs to return all perms.
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
@@ -914,78 +915,79 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         {
             result.add(ReadPermission.class);
 
+            // a dataspace study always has read-only datasets, you cannot edit no matter who you are
+            if (_study.isDataspaceStudy())
+                return result;
+
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
-                if (user instanceof User && ((User)user).hasSiteAdminPermission())
-                {
-                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
-                }
-                else if (getStudy().getContainer().hasPermission(user, UpdatePermission.class))
-                {
-                    // Basic write access grants insert/update/delete for datasets to everyone who has update permission
-                    // in the folder
-                    result.add(UpdatePermission.class);
-                    result.add(DeletePermission.class);
-                    result.add(InsertPermission.class);
-                }
+                // Basic write grants dataset edit perms (insert/update/delete) based on user's folder perms
+                copyEditPerms(getStudy().getContainer(), user, result);
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
-                if (user instanceof User && ((User)user).hasSiteAdminPermission())
+                // Advanced write grants dataset edit perms (insert/update/delete) based on study or dataset policy perms
+                copyEditPerms(studyPolicy, user, result);
+                // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
+                // so check for a custom security policy even if they have UpdatePermission on the study's policy
+                if (studyPolicy.hasPermission(user, ReadSomePermission.class))
                 {
-                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
-                }
-                else
-                {
-                    if (studyPolicy.hasPermission(user, UpdatePermission.class))
-                    {
-                        result.add(UpdatePermission.class);
-                        result.add(DeletePermission.class);
-                        result.add(InsertPermission.class);
-                    }
-                    // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
-                    // so check for a custom security policy even if they have UpdatePermission on the study's policy
-                    if (studyPolicy.hasPermission(user, ReadSomePermission.class))
-                    {
-                        // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                        result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
-                    }
+                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                    // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
+                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
                 }
             }
-        }
-
-        // a dataspace study always has read-only datasets, you cannot insert no matter who you are
-        if (_study.isDataspaceStudy())
-        {
-            result.remove(InsertPermission.class);
         }
 
         return result;
     }
 
+    private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
+
+    private void copyEditPerms(HasPermission resource, UserPrincipal user, Set<Class<? extends Permission>> result)
+    {
+        EDIT_PERMS.stream().filter(perm->resource.hasPermission(user, perm)).forEach(result::add);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (perm != ReadPermission.class && isEditProhibited(user))
+            return false;
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            return true;
+        return getPermissions(user).contains(perm);
+    }
+
+    private boolean isEditProhibited(UserPrincipal user)
+    {
+        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user));
+    }
 
     @Override
     public boolean canRead(UserPrincipal user)
     {
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(ReadPermission.class);
+        return hasPermission(user, ReadPermission.class);
     }
-
 
     @Override
-    public boolean canWrite(UserPrincipal user)
+    public boolean canUpdate(UserPrincipal user)
     {
-        if (getStudy().isDataspaceStudy())
-            return false;
-        if (user instanceof User && !canAccessPhi((User)user))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(UpdatePermission.class);
+        return hasPermission(user, UpdatePermission.class);
     }
 
+    @Override
+    public boolean canDelete(UserPrincipal user)
+    {
+        return hasPermission(user, DeletePermission.class);
+    }
+
+    @Override
+    public boolean canInsert(UserPrincipal user)
+    {
+        return hasPermission(user, InsertPermission.class);
+    }
 
     @Override
     public boolean canDeleteDefinition(UserPrincipal user)
