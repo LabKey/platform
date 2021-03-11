@@ -119,7 +119,8 @@
         var _success = LABKEY.Utils.getOnSuccess(config);
         var _containerPath = config.containerPath;
         var _scope = config.scope || this;
-        var _suppressRenderErrors = config.supressRenderErrors;
+        // Issue 42666 - backwards compatibility with originally supported, typo'd property name
+        var _suppressRenderErrors = config.suppressRenderErrors === undefined ? config.supressRenderErrors || config.suppressRenderErrors;
         var _partUrl = config.partUrl || LABKEY.ActionURL.buildURL('project', 'getWebPart', _containerPath);
 
         //validate config
