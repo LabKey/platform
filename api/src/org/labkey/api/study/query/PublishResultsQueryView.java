@@ -108,6 +108,7 @@ public class PublishResultsQueryView extends QueryView
     private List<ActionButton> _buttons = null;
     private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
     private Map<String, Object> _hiddenFormFields;
+    private Set<String> _hiddenColumnCaptions;
 
     public enum ExtraColFieldKeys
     {
@@ -135,7 +136,8 @@ public class PublishResultsQueryView extends QueryView
                                    boolean mismatched,
                                    boolean includeTimestamp,
                                    Map<ExtraColFieldKeys, FieldKey> additionalColumns,
-                                   Map<String, Object> hiddenFormFields)
+                                   Map<String, Object> hiddenFormFields,
+                                   Set<String> hiddenColumnCaptions)
     {
         super(schema, settings, errors);
         _targetStudyContainer = targetStudyContainer;
@@ -153,6 +155,7 @@ public class PublishResultsQueryView extends QueryView
         _includeTimestamp = includeTimestamp;
         _additionalColumns = additionalColumns;
         _hiddenFormFields = hiddenFormFields;
+        _hiddenColumnCaptions = hiddenColumnCaptions;
 
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
         getSettings().setMaxRows(Table.ALL_ROWS);
@@ -222,11 +225,10 @@ public class PublishResultsQueryView extends QueryView
                 dr.removeColumns(captionMatchColName);
             dr.addDisplayColumn(idx++, extra);
         }
-        Set<String> hiddenColNames = getHiddenColumnCaptions();
         for (Iterator<DisplayColumn> it = dr.getDisplayColumns().iterator(); it.hasNext();)
         {
             DisplayColumn current = it.next();
-            for (String hiddenColName : hiddenColNames)
+            for (String hiddenColName : _hiddenColumnCaptions)
             {
                 if (current.getCaption().endsWith(hiddenColName))
                 {
@@ -241,16 +243,6 @@ public class PublishResultsQueryView extends QueryView
         dr.setShowRecordSelectors(true);
         dr.setShowSelectMessage(false);
         return dr;
-    }
-
-    protected Set<String> getHiddenColumnCaptions()
-    {
-        HashSet<String> hidden = new HashSet<>(Collections.singleton("Assay Match"));
-        // unclear why this conditional logic exists, it seems to imply that we may not want to hide this column
-        // if the user had added a column in the result domain with the same caption
-        //if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
-            hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
-        return hidden;
     }
 
     private static Date convertObjectToDate(Container container, Object dateObject)
