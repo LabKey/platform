@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.8",
-    "@labkey/components": "2.13.0-reservedDomainFields.10",
+    "@labkey/components": "2.14.0-reservedDomainFields.11",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },
