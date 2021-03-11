@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -106,8 +107,12 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         waitForPipelineJobsToComplete(1, false);
         clickAndWait(Locator.linkWithText("Automatic copying of assay data to study"));
         DataRegionTable dataSet = new DataRegionTable("Dataset", this);
-        List<String> specimenIds = Arrays.asList("AAA07XMC-02", "AAA07XMC-04", "AAA07XK5-05", "AAA07XSF-02",
-                "AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1");
+        List<String> specimenIds = new ArrayList<>(Arrays.asList("AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // From specimen archive
+            specimenIds.addAll(0, Arrays.asList("AAA07XMC-02", "AAA07XMC-04", "AAA07XK5-05", "AAA07XSF-02"));
+        }
 
         assertEquals("expected copied rows should be for ", specimenIds, dataSet.getColumnDataAsText("Specimen ID"));
     }
