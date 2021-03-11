@@ -904,8 +904,6 @@ public class PublishResultsQueryView extends QueryView
         }
     }
 
-    Pair<ExpProtocol.AssayDomainTypes, DomainProperty> _targetStudyDomainProperty = null;
-
     protected List<DisplayColumn> getExtraColumns(Collection<ColumnInfo> selectColumns)
     {
         List<DisplayColumn> columns = new ArrayList<>();
