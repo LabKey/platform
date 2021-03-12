@@ -18,12 +18,15 @@ package org.labkey.pipeline.mule;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.AbstractPipelineQueue;
@@ -49,8 +52,11 @@ import javax.jms.TextMessage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Enterprise pipeline queue uses Mule to place jobs on a JMS message queue.
@@ -333,42 +339,28 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     }
 
     @Override
-    public Integer getQueuePosition(PipelineStatusFile statusFile)
+    @NotNull
+    public Map<Integer, Integer> getQueuePositions()
     {
-        if (statusFile.getJobStore() != null)
-        {
-            try
-            {
-                // Deserialize so we can figure out the location of the current task
-                PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
-                if (job != null && job.getActiveTaskFactory() != null)
-                {
-                    String location = job.getActiveTaskFactory().getExecutionLocation();
-                    if (location == null)
-                    {
-                        // Default queue if not set
-                        location = TaskFactory.WEBSERVER;
-                    }
+        Map<Integer, Integer> result = new HashMap<>();
 
-                    // Jobs come back in queued order
-                    List<PipelineStatusFileImpl> queuedJobs = PipelineStatusManager.getStatusFilesForLocation(location, true);
-                    int position = 0;
-                    for (PipelineStatusFileImpl sf : queuedJobs)
-                    {
-                        position++;
-                        if (sf.getRowId() == statusFile.getRowId())
-                        {
-                            return position;
-                        }
-                    }
-                }
-            }
-            catch (RuntimeException e)
+        Set<String> locations = new TreeSet<>();
+        TaskPipelineRegistry registry = PipelineJobService.get();
+        for (TaskFactory<?> taskFactory : registry.getTaskFactories(null))
+        {
+            locations.add(taskFactory.getExecutionLocation());
+        }
+
+        for (String location : locations)
+        {
+            // Jobs come back in queued order
+            List<PipelineStatusFileImpl> queuedJobs = PipelineStatusManager.getStatusFilesForLocation(location, true);
+            int position = 0;
+            for (PipelineStatusFileImpl sf : queuedJobs)
             {
-                // Non-fatal - probably an old serialized job that doesn't match the current Java code
-                _log.debug("Failed to deserialize job to determine position in queue", e);
+                result.put(sf.getRowId(), ++position);
             }
         }
-        return null;
+        return result;
     }
 }

@@ -16,11 +16,12 @@
 
 package org.labkey.api.pipeline;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * PipelineQueues accept submissions of jobs and some of their basic management. Implementations might run all work in
@@ -101,7 +102,7 @@ public interface PipelineQueue
     @Deprecated
     PipelineJobData getJobDataInMemory(Container c);
 
-    /** @return the position of this job in the queue if it's waiting, if available */
-    @Nullable
-    Integer getQueuePosition(PipelineStatusFile statusFile);
+    /** @return the position of each job in the queue, keyed by the RowId of the status file */
+    @NotNull
+    Map<Integer, Integer> getQueuePositions();
 }

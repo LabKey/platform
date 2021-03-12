@@ -161,7 +161,7 @@ public class StatusDetailsBean
                     .collect(toList());
         }
 
-        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount, PipelineService.get().getPipelineQueue().getQueuePosition(psf));
+        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount, PipelineService.get().getPipelineQueue().getQueuePositions().get(psf.getRowId()));
     }
 
     // Copy the file content from Path to the PrintWriter,
