@@ -41,7 +41,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.HtmlString;
-import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
@@ -114,7 +113,7 @@ public class PipelineQuerySchema extends UserSchema
                 table.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             }
 
-            MutableColumnInfo positionCol = table.addWrapColumn("QueuePosition", table.getRealTable().getColumn("RowId"));
+            MutableColumnInfo positionCol = table.addWrapColumn("QueuePosition", table.getRealTable().getColumn("Job"));
             positionCol.setDisplayColumnFactory(QueuePositionDisplayColumn::new);
 
             table.getMutableColumn("RowId").setURL(DetailsURL.fromString(urlExp));
@@ -175,10 +174,7 @@ public class PipelineQuerySchema extends UserSchema
                 defaultCols.add(FieldKey.fromParts("Description"));
             }
             defaultCols.add(FieldKey.fromParts("Info"));
-            if (PipelineService.get().isEnterprisePipeline())
-            {
-                defaultCols.add(positionCol.getFieldKey());
-            }
+            defaultCols.add(positionCol.getFieldKey());
             table.setDefaultVisibleColumns(defaultCols);
             table.setTitleColumn("Description");
             return table;
@@ -213,7 +209,7 @@ public class PipelineQuerySchema extends UserSchema
     /** Show the position in the job queue (only available when using the JMS queue-based pipeline) */
     private static class QueuePositionDisplayColumn extends DataColumn
     {
-        private final Map<Integer, Integer> _positions;
+        private final Map<String, Integer> _positions;
 
         public QueuePositionDisplayColumn(ColumnInfo col)
         {
@@ -237,11 +233,8 @@ public class PipelineQuerySchema extends UserSchema
         public Object getValue(RenderContext ctx)
         {
             Object value = super.getValue(ctx);
-            if (value instanceof Number)
-            {
-                return _positions.get(((Number) value).intValue());
-            }
-            return null;
+            //noinspection SuspiciousMethodCalls
+            return _positions.get(value);
         }
 
         @Override

@@ -39,6 +39,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -262,9 +263,25 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
     @Override
     @NotNull
-    public Map<Integer, Integer> getQueuePositions()
+    public Map<String, Integer> getQueuePositions()
     {
-        return Collections.emptyMap();
+        Map<String, Integer> result = new HashMap<>();
+        synchronized (_running)
+        {
+            for (PipelineJob pipelineJob : _running)
+            {
+                result.put(pipelineJob.getJobGUID(), 1);
+            }
+        }
+        int position = _running.isEmpty() ? 0 : 1;
+        synchronized (_pending)
+        {
+            for (PipelineJob pipelineJob : _pending)
+            {
+                result.put(pipelineJob.getJobGUID(), ++position);
+            }
+        }
+        return result;
     }
 
     //

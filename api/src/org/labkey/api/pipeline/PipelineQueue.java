@@ -102,7 +102,7 @@ public interface PipelineQueue
     @Deprecated
     PipelineJobData getJobDataInMemory(Container c);
 
-    /** @return the position of each job in the queue, keyed by the RowId of the status file */
+    /** @return the position of each job in the queue, keyed by the job's GUID of the status file */
     @NotNull
-    Map<Integer, Integer> getQueuePositions();
+    Map<String, Integer> getQueuePositions();
 }

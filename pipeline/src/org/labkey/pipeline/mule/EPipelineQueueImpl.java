@@ -340,9 +340,9 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
 
     @Override
     @NotNull
-    public Map<Integer, Integer> getQueuePositions()
+    public Map<String, Integer> getQueuePositions()
     {
-        Map<Integer, Integer> result = new HashMap<>();
+        Map<String, Integer> result = new HashMap<>();
 
         Set<String> locations = new TreeSet<>();
         TaskPipelineRegistry registry = PipelineJobService.get();
@@ -358,7 +358,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             int position = 0;
             for (PipelineStatusFileImpl sf : queuedJobs)
             {
-                result.put(sf.getRowId(), ++position);
+                result.put(sf.getJobId(), ++position);
             }
         }
         return result;

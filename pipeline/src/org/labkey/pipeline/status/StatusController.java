@@ -524,7 +524,7 @@ public class StatusController extends SpringActionController
 
             bean.modified = _statusFile.getModified();
             bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0, 0);
-            bean.queuePosition = PipelineService.get().getPipelineQueue().getQueuePositions().get(_statusFile.getRowId());
+            bean.queuePosition = PipelineService.get().getPipelineQueue().getQueuePositions().get(_statusFile.getJobId());
 
             return new JspView<>("/org/labkey/pipeline/status/details.jsp", bean, errors);
         }
