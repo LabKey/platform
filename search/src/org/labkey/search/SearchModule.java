@@ -164,25 +164,28 @@ public class SearchModule extends DefaultModule
     @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
-        // After every upgrade, delete the index and clear the last indexed time on all documents to rebuild the entire index, #35674
-        final StartupListener l = new StartupListener()
+        // After every search module upgrade, delete the index and clear the last indexed time on all documents
+        // to rebuild the entire index, #35674 & #42617
+        if (!moduleContext.isNewInstall() && moduleContext.needsUpgrade(getSchemaVersion()))
         {
-            @Override
-            public String getName()
+            ContextListener.addStartupListener(new StartupListener()
             {
-                return "Search Service: delete index";
-            }
+                @Override
+                public String getName()
+                {
+                    return "Search Service: delete index";
+                }
 
-            @Override
-            public void moduleStartupComplete(ServletContext servletContext)
-            {
-                SearchService ss = SearchService.get();
+                @Override
+                public void moduleStartupComplete(ServletContext servletContext)
+                {
+                    SearchService ss = SearchService.get();
 
-                if (null != ss)
-                    ss.deleteIndex();
-            }
-        };
-        ContextListener.addStartupListener(l);
+                    if (null != ss)
+                        ss.deleteIndex();
+                }
+            });
+        }
     }
 
     @NotNull

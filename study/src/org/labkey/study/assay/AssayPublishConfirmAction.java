@@ -40,6 +40,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RequiresPermission(InsertPermission.class)
 public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<AssayPublishConfirmAction.AssayPublishConfirmForm>
@@ -242,6 +243,24 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         fields.put(ActionURL.Param.returnUrl.name(), returnURL);
 
         return fields;
+    }
+
+    /**
+     * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
+     * @return
+     */
+    @Override
+    protected Set<String> getHiddenPublishResultsCaptions(AssayPublishConfirmForm form)
+    {
+        Set<String> hidden = super.getHiddenPublishResultsCaptions(form);
+
+        // unclear why this conditional logic exists, it seems to imply that we may not want to hide this column
+        // if the user had added a column in the result domain with the same caption
+        Pair<ExpProtocol.AssayDomainTypes, DomainProperty> targetStudyDomainProperty = form.getProvider().findTargetStudyProperty(_protocol);
+        if (targetStudyDomainProperty != null && targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
+            hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
+
+        return hidden;
     }
 
     @Override

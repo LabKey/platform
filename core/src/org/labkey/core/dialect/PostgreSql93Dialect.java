@@ -29,11 +29,11 @@ import java.util.Set;
  */
 abstract class PostgreSql93Dialect extends PostgreSql92Dialect
 {
-    public PostgreSql93Dialect()
+    protected PostgreSql93Dialect()
     {
     }
 
-    public PostgreSql93Dialect(boolean standardConformingStrings)
+    protected PostgreSql93Dialect(boolean standardConformingStrings)
     {
         super(standardConformingStrings);
     }

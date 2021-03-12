@@ -191,6 +191,15 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
      */
     protected abstract ActionURL copyToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
 
+    /**
+     * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
+     * @return
+     */
+    protected Set<String> getHiddenPublishResultsCaptions(FORM form)
+    {
+        return new HashSet<>(Collections.singleton("Assay Match"));
+    }
+
     @Override
     public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
     {
@@ -210,7 +219,8 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                 mismatched,
                 form.isIncludeTimestamp(),
                 getAdditionalColumns(form),
-                getHiddenFormFields(form));
+                getHiddenFormFields(form),
+                getHiddenPublishResultsCaptions(form));
 
         List<ActionButton> buttons = new ArrayList<>();
         URLHelper returnURL = form.getReturnURLHelper();

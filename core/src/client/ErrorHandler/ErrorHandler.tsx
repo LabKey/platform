@@ -4,8 +4,6 @@ import { ActionURL } from '@labkey/api';
 import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
 import { ErrorDetails } from './model';
 
-import './errorHandler.scss';
-
 export interface AppContext {
     errorDetails: ErrorDetails;
 }
