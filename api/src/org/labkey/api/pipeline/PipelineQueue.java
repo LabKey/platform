@@ -16,6 +16,7 @@
 
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -99,4 +100,8 @@ public interface PipelineQueue
      */
     @Deprecated
     PipelineJobData getJobDataInMemory(Container c);
+
+    /** @return the position of this job in the queue if it's waiting, if available */
+    @Nullable
+    Integer getQueuePosition(PipelineStatusFile statusFile);
 }

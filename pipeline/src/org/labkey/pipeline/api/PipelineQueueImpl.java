@@ -257,6 +257,12 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return ret;
     }
 
+    @Override
+    public Integer getQueuePosition(PipelineStatusFile statusFile)
+    {
+        return null;
+    }
+
     //
     // JUNIT
     //

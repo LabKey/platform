@@ -478,6 +478,7 @@ public class StatusController extends SpringActionController
         public ActionURL dataUrl;
         public Date modified;
         public StatusDetailsBean status;
+        public Integer queuePosition;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -523,6 +524,7 @@ public class StatusController extends SpringActionController
 
             bean.modified = _statusFile.getModified();
             bean.status = StatusDetailsBean.create(getContainer(), _statusFile, 0, 0);
+            bean.queuePosition = PipelineService.get().getPipelineQueue().getQueuePosition(_statusFile);
 
             return new JspView<DetailsBean>("/org/labkey/pipeline/status/details.jsp", bean, errors);
         }

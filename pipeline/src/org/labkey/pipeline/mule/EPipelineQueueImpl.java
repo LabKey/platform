@@ -28,6 +28,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.AbstractPipelineQueue;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.mule.filters.JobIdJmsSelectorFilter;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.MuleManager;
@@ -328,5 +330,45 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     public void done(PipelineJob job)
     {
         // No-op
+    }
+
+    @Override
+    public Integer getQueuePosition(PipelineStatusFile statusFile)
+    {
+        if (statusFile.getJobStore() != null)
+        {
+            try
+            {
+                // Deserialize so we can figure out the location of the current task
+                PipelineJob job = PipelineJob.deserializeJob(statusFile.getJobStore());
+                if (job != null && job.getActiveTaskFactory() != null)
+                {
+                    String location = job.getActiveTaskFactory().getExecutionLocation();
+                    if (location == null)
+                    {
+                        // Default queue if not set
+                        location = TaskFactory.WEBSERVER;
+                    }
+
+                    // Jobs come back in queued order
+                    List<PipelineStatusFileImpl> queuedJobs = PipelineStatusManager.getStatusFilesForLocation(location, true);
+                    int position = 0;
+                    for (PipelineStatusFileImpl sf : queuedJobs)
+                    {
+                        position++;
+                        if (sf.getRowId() == statusFile.getRowId())
+                        {
+                            return position;
+                        }
+                    }
+                }
+            }
+            catch (RuntimeException e)
+            {
+                // Non-fatal - probably an old serialized job that doesn't match the current Java code
+                _log.debug("Failed to deserialize job to determine position in queue", e);
+            }
+        }
+        return null;
     }
 }
