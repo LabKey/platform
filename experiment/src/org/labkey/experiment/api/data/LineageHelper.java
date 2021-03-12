@@ -1,5 +1,6 @@
 package org.labkey.experiment.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpRunItem;
@@ -25,15 +26,15 @@ public class LineageHelper
         return start;
     }
 
-    static SQLFragment createExperimentTreeSQLLsidSeeds(ExpRunItem start, ExpLineageOptions options)
+    static @Nullable SQLFragment createExperimentTreeSQLLsidSeeds(ExpRunItem start, ExpLineageOptions options)
     {
         if (start == null)
-            return new SQLFragment("(1 = 2)");
+            return null;
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         List<String> runsToInvestigate = svc.collectRunsToInvestigate(start, options);
         if (runsToInvestigate.isEmpty())
-            return new SQLFragment("(1 = 2)");
+            return null;
 
         return svc.generateExperimentTreeSQLLsidSeeds(runsToInvestigate, options);
     }
@@ -79,6 +80,9 @@ public class LineageHelper
 
         ExpRunItem start = getStart(lsidStr);
         SQLFragment tree = createExperimentTreeSQLLsidSeeds(start, options);
+
+        if (tree == null)
+            return new SQLFragment("(1 = 2)");
 
         SQLFragment sql = new SQLFragment();
         sql.append("(").append(fieldKeyFrag).append(") IN (");

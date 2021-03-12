@@ -73,6 +73,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -94,6 +95,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.settings.AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -149,6 +151,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
             case AliquotedFromLSID:
                 return wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+            case IsAliquot:
+            {
+                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
+                        "(CASE WHEN RootMaterialLSID IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                columnInfo.setLabel("Is Aliquot");
+                columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                columnInfo.setHidden(!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAMPLE_ALIQUOT));
+                return columnInfo;
+            }
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
@@ -490,6 +503,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInDetailsView(false);
         aliquotParentLSID.setShownInUpdateView(false);
 
+        addColumn(Column.IsAliquot);
+
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
         addColumn(ExpMaterialTable.Column.Modified);
@@ -511,6 +526,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             addSampleTypeColumns(st, defaultCols);
             if (InventoryService.get() != null)
                 defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAMPLE_ALIQUOT))
+                defaultCols.add(FieldKey.fromParts(Column.IsAliquot));
+
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
