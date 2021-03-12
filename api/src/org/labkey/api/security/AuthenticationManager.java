@@ -324,9 +324,9 @@ public class AuthenticationManager
             if (!configuration.isAutoRedirect())
             {
                 LinkFactory factory = configuration.getLinkFactory();
-                html.append(HtmlString.unsafe("<li>"));
+                html.startTag("li");
                 html.append(factory.getLink(currentURL, logoType));
-                html.append(HtmlString.unsafe("</li>"));
+                html.endTag("li");
             }
         }
 

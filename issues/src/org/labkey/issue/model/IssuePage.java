@@ -413,13 +413,15 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 var col = table.getColumn(FieldKey.fromParts(prop.getName()));
                 if (col != null)
                 {
-                    HtmlStringBuilder builder = HtmlStringBuilder.of(HtmlString.unsafe("<tr>"))
-                        .append(renderLabel(prop, context));
+                    HtmlStringBuilder builder = HtmlStringBuilder.of();
+
+                    builder.startTag("tr");
+                    builder.append(renderLabel(prop, context));
 
                     if (visible)
                         builder.append(renderInput(prop, context, readOnly));
 
-                    builder.append(HtmlString.unsafe("</tr>"));
+                    builder.endTag("tr");
 
                     return builder.getHtmlString();
                 }
@@ -647,7 +649,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             {
                 Issue issue = comment.getIssue();
                 ActionURL download = IssuesController.getDownloadURL(issue, comment, a);
-                builder.append(HtmlString.unsafe("<tr><td>"));
+                builder.startTag("tr").startTag("td");
 
                 HtmlStringBuilder icon = HtmlStringBuilder.of(HtmlString.unsafe("<img src=\""))
                     .append(context.getRequest().getContextPath())
@@ -656,9 +658,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     .append(a.getName());
 
                 builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank").clearClasses());
-                builder.append(HtmlString.unsafe("</td></tr>"));
+                builder.endTag("td").endTag("tr");
             }
-            builder.append(HtmlString.unsafe("</table>"));
+            builder.endTag("table");
         }
         return builder.getHtmlString();
     }

@@ -124,10 +124,10 @@ public class ModuleHtmlView extends HtmlView
     }
 
 
-    public HtmlString replaceTokensForView(String html, ViewContext context, @Nullable WebPart webpart)
+    public HtmlString replaceTokensForView(HtmlString html, ViewContext context, @Nullable WebPart webpart)
     {
-        if (null == html)
-            return null;
+        if (HtmlString.isBlank(html))
+            return html;
 
         String wrapperDivId = "ModuleHtmlView_" + UniqueID.getServerSessionScopedUID();
         int id = null == webpart ? DEFAULT_WEB_PART_ID : webpart.getRowId();
@@ -145,7 +145,7 @@ public class ModuleHtmlView extends HtmlView
 
         String webpartContext = config.toString();
 
-        String ret = replaceTokens(html, context);
+        String ret = replaceTokens(html.toString(), context);
         ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", Matcher.quoteReplacement(webpartContext));
         return HtmlString.unsafe("<div id=\"" + wrapperDivId + "\">" + ret + "</div>");
     }
