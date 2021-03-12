@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
-    "@labkey/components": "2.6.3-fb-ontologySearchPart1.3"
+    "@labkey/components": "2.6.3-fb-ontologySearchPart1.4"
   },
   "devDependencies": {
     "@labkey/build": "1.1.1"
