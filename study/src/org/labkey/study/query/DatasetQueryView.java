@@ -24,9 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -44,6 +42,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
@@ -62,6 +61,7 @@ import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
@@ -113,8 +113,6 @@ public class DatasetQueryView extends StudyQueryView
     private boolean _showSourceLinks;
     public static final String DATAREGION = "Dataset";
     private QCStateSet _qcStateSet;
-    private ExpProtocol _protocol;
-    private AssayProvider _provider;
     protected static Logger _systemLog = LogManager.getLogger(DatasetQueryView.class);
 
     public DatasetQueryView(UserSchema schema, DatasetQuerySettings settings, BindException errors)
@@ -151,10 +149,6 @@ public class DatasetQueryView extends StudyQueryView
         }
         if (context.getActionURL() != null)
             _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DATAREGION);
-
-        _protocol = _dataset.getAssayProtocol();
-        if (_protocol != null)
-            _provider = AssayService.get().getProvider(_protocol);
 
         setViewItemFilter(StudyReportUIProvider.getItemFilter());
         // Issue 23076: hide container filter option in dataset view menu even if dataset is shared
@@ -251,7 +245,7 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (sourceLsidDisplayCol != null)
                 sourceLsidDisplayCol.setVisible(false);
-            if (_showSourceLinks && hasUsefulDetailsPage() && null != _dataset.getAssayProtocol())
+            if (_showSourceLinks && hasUsefulDetailsPage())
             {
                 view.getDataRegion().addDisplayColumn(0, new DatasetDetailsColumn(sourceLsidCol, getUser()));
             }
@@ -268,12 +262,10 @@ public class DatasetQueryView extends StudyQueryView
         if (!_dataset.isPublishedData())
             return true; // we don't have a protocol at all, so we don't know if we have useful details
 
-        if (_protocol == null)
-            return false; // We have a protocol, but it's been deleted
+        if (_dataset.isPublishedData())
+            return _dataset.getPublishSource().hasUsefulDetailsPage(_dataset.getPublishSourceId());
 
-        if (_provider == null)
-            return false; // Unlikely, but possible -- provider no longer available
-        return _provider.hasUsefulDetailsPage();
+        return false;
     }
 
     private class DatasetDetailsColumn extends SimpleDisplayColumn
@@ -362,7 +354,9 @@ public class DatasetQueryView extends StudyQueryView
 
     private boolean usesAssayButtons()
     {
-        return _dataset.isAssayData() && !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
+        return _dataset.isPublishedData() &&
+                _dataset.getPublishSource() == Dataset.PublishSource.Assay &&
+                !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
     }
 
     @Override
@@ -383,19 +377,12 @@ public class DatasetQueryView extends StudyQueryView
         boolean canWrite = canWrite(_dataset, user);
         boolean canManage = canManage(_dataset, user);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
-        boolean isAssayDataset = _dataset.isAssayData();
-        ExpProtocol protocol = null;
-
-        if (isAssayDataset)
-        {
-            protocol = _dataset.getAssayProtocol();
-            if (protocol == null)
-                isAssayDataset = false;
-        }
+        ExpObject publishSource = _dataset.resolvePublishSource();
+        boolean isPublishedDataset = _dataset.isPublishedData() && publishSource != null;
 
         if (!isSnapshot)
         {
-            if (!isAssayDataset) // admins always get the import and manage buttons
+            if (!isPublishedDataset) // admins always get the import and manage buttons
             {
                 if (canWrite)
                 {
@@ -436,17 +423,22 @@ public class DatasetQueryView extends StudyQueryView
             }
             else
             {
-                bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
-
-                if (user.hasRootAdminPermission() || canWrite)
+                // TODO support sample types
+                if (publishSource instanceof ExpProtocol)
                 {
-                    ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
-                    deleteRowsURL.addParameter("protocolId", protocol.getRowId());
-                    ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
-                    deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
-                    deleteRows.setActionType(ActionButton.Action.POST);
-                    deleteRows.setDisplayPermission(DeletePermission.class);
-                    bar.add(deleteRows);
+                    ExpProtocol protocol = (ExpProtocol)publishSource;
+                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
+
+                    if (user.hasRootAdminPermission() || canWrite)
+                    {
+                        ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
+                        deleteRowsURL.addParameter("protocolId", protocol.getRowId());
+                        ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
+                        deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
+                        deleteRows.setActionType(ActionButton.Action.POST);
+                        deleteRows.setDisplayPermission(DeletePermission.class);
+                        bar.add(deleteRows);
+                    }
                 }
             }
         }
@@ -463,18 +455,16 @@ public class DatasetQueryView extends StudyQueryView
         viewSpecimens.setDisplayPermission(ReadPermission.class);
         bar.add(viewSpecimens);
 
-        if (isAssayDataset)
+        if (isPublishedDataset)
         {
-            // provide a link to the source assay
-            Container c = protocol.getContainer();
+            // provide a link to the publish source
+            Container c = publishSource.getContainer();
             if (c.hasPermission(getUser(), ReadPermission.class))
             {
-                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
-                        c,
-                        protocol,
+                ActionButton btn = _dataset.getPublishSource().getSourceButton(_dataset.getPublishSourceId(),
                         ContainerFilter.Type.CurrentAndSubfolders.create(getSchema()));
-                ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
-                bar.add(viewAssayButton);
+                if (btn != null)
+                    bar.add(btn);
             }
         }
     }
