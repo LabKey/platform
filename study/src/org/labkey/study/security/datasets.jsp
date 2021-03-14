@@ -62,15 +62,16 @@
     // Used to highlight special datasets in per-dataset permissions
     @Nullable String getTooltip(StudyImpl study, Integer datasetId)
     {
+        String participant = study.getSubjectNounSingular().toLowerCase();
         List<String> messages = new LinkedList<>();
         if (datasetId.equals(study.getParticipantCohortDatasetId()))
-            messages.add("This is the participant/cohort dataset");
+            messages.add("This is the " + participant + "/cohort dataset");
         if (datasetId.equals(study.getParticipantAliasDatasetId()))
-            messages.add("This is the participant alias dataset");
+            messages.add("This is the " + participant + " alias dataset");
         if (datasetId.equals(study.getParticipantCommentDatasetId()))
-            messages.add("This is the participant comment dataset");
+            messages.add("This is the " + participant + " comment dataset");
         if (datasetId.equals(study.getParticipantVisitCommentDatasetId()))
-            messages.add("This is the participant/visit comment dataset");
+            messages.add("This is the " + participant + "/visit comment dataset");
         return messages.isEmpty() ? null : String.join("&#013;", messages);
     }
 %>
@@ -174,7 +175,7 @@ else
     {
 %>
 <br><br>The dataset<%=h(specialDatasetCount > 1 ? "s" : "")%> highlighted in <b>bold</b> below may warrant special attention.
-For example, permissions set on the participant/cohort dataset dictate who can view and<br>filter on cohorts. Read permissions
+For example, permissions set on the <%=h(study.getSubjectNounSingular().toLowerCase())%>/cohort dataset dictate who can view and<br>filter on cohorts. Read permissions
 set on the alternate ID dataset will affect who can edit other datasets. Hover over the highlighted dataset labels for details.
 <%
     }
