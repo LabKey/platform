@@ -518,7 +518,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         private boolean isValidPtidVisit(Container container, String participantId, Double visit) throws SQLException
         {
-            if (container == null)
+            if (container == null || SpecimenService.get() == null)
                 return false;
 
             if (_validPtidVisits == null)
@@ -539,7 +539,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         private boolean isValidPtidDate(Container container, String participantId, Date drawDate) throws SQLException
         {
-            if (container == null)
+            if (container == null || SpecimenService.get() == null)
                 return false;
 
             if (_validPtidDates == null)
