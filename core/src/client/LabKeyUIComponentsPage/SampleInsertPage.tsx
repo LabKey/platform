@@ -3,7 +3,7 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react'
-import { Alert, EntityInsertPanel, initQueryGridState, SampleTypeDataType } from "@labkey/components";
+import {Alert, EntityInsertPanel, helpLinkNode, initQueryGridState, SampleTypeDataType} from "@labkey/components";
 
 interface State {
     message: string
@@ -37,6 +37,7 @@ export class SampleInsertPage extends React.Component<any, State> {
                     nounPlural={'samples'}
                     entityDataType={SampleTypeDataType}
                     afterEntityCreation={this.afterSampleCreation}
+                    importHelpLinkNode={helpLinkNode('help', 'help text')}
                 />
             </>
         )
