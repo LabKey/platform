@@ -55,7 +55,6 @@
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController.EditStudyDefinitionAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController.ManageStudyProductsAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -249,11 +248,6 @@
                         <td class="lk-study-prop-label">Quality Control States</td>
                         <td class="lk-study-prop-desc">Manage QC states for datasets in this study</td>
                         <td><%=link("Manage Dataset QC States", ManageQCStatesAction.class) %></td>
-                    </tr>
-                    <tr>
-                        <td class="lk-study-prop-label">Comments</td>
-                        <td class="lk-study-prop-desc">Manage <%= h(subjectNounSingle.toLowerCase()) %> and  <%= h(subjectNounSingle.toLowerCase()) %>/visit comments</td>
-                        <td><%= link("Manage Comments", ManageSpecimenCommentsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Study Products</td>
