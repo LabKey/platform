@@ -695,6 +695,11 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
+            ActionURL linkToStudyHistoryURL = new ActionURL(); // Rosaline: TODO
+            ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
+            linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
+            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
+
             return new VBox(detailsView, queryView);
         }
 
