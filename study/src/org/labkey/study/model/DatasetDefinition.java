@@ -1683,7 +1683,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             }
             else if (existingRecord != null && existingRecord.size() > 0)
             {
-                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo.getExcludedDetailedUpdateAuditFields());
+                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields());
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
