@@ -17,23 +17,22 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.qc.QCState;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
@@ -42,7 +41,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -199,7 +197,57 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return result;
     }
 
+    protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
+    {
+        // If we're using a managed GUID as a key, wire it up here so that it's available to trigger scripts
+        if (_dataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER &&
+                _dataset.getKeyManagementType() == Dataset.KeyManagementType.GUID &&
+                _dataset.getKeyPropertyName() != null)
+        {
+            return new DataIteratorBuilder()
+            {
+                @Override
+                public DataIterator getDataIterator(DataIteratorContext context)
+                {
+                    DataIterator input = in.getDataIterator(context);
+                    if (null == input)
+                        return null;           // Can happen if context has errors
 
+                    final SimpleTranslator result = new SimpleTranslator(input, context);
+
+                    boolean foundKeyCol = false;
+                    for (int c = 1; c <= input.getColumnCount(); c++)
+                    {
+                        ColumnInfo col = input.getColumnInfo(c);
+
+                        // Incoming data has a matching field
+                        if (col.getName().equalsIgnoreCase(_dataset.getKeyPropertyName()))
+                        {
+                            // make sure guid is not null (12884)
+                            result.addCoaleseColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
+                            foundKeyCol = true;
+                        }
+                        else
+                        {
+                            // Pass it through as-is
+                            result.addColumn(c);
+                        }
+                    }
+
+                    if (!foundKeyCol)
+                    {
+                        // Inject a column with a new GUID
+                        ColumnInfo key = getQueryTable().getColumn(_dataset.getKeyPropertyName());
+                        result.addColumn(new BaseColumnInfo(key), new SimpleTranslator.GuidColumn());
+                    }
+
+                    return result;
+                }
+            };
+        }
+        return in;
+    }
+    
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {

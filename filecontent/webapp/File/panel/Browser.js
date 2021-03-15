@@ -3301,7 +3301,8 @@ Ext4.define('File.panel.Browser', {
             extraColumns: this.getExtraColumns(),
             fileRecords: options.fileRecords,
             winId: 'editFilePropsWin',
-            fileProps: this.fileProps
+            fileProps: this.fileProps,
+            containerPath: this.containerPath
         });
 
         Ext4.create('Ext.Window', {
