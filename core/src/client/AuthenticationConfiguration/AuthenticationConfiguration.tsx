@@ -8,8 +8,6 @@ import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
 
-import './authenticationConfiguration.scss';
-
 interface State {
     error: string;
     initError: string;

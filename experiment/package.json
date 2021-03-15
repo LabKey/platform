@@ -15,6 +15,6 @@
     "@labkey/components": "2.11.1-fb-copytostudy-8591.0"
   },
   "devDependencies": {
-    "@labkey/build": "2.0.1"
+    "@labkey/build": "2.1.0"
   }
 }

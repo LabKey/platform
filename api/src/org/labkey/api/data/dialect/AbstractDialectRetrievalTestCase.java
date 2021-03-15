@@ -51,7 +51,10 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
         int begin = (int)Math.round(beginVersion * 10);
         int end = (int)Math.round(endVersion * 10);
 
-        for (int i = begin; i < end; i++)
+        // For performance, skip by 10 when testing a large range, otherwise skip by 1
+        int increment = (end - begin > 10 ? 10 : 1);
+
+        for (int i = begin; i < end; i += increment)
         {
             int majorVersion = i / 10;
             int minorVersion = i % 10;

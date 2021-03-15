@@ -816,14 +816,16 @@ public class PropertyController extends SpringActionController
                 throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
             }
 
-            return getInferDomainResponse(loader, form.getNumLinesToInclude());
+            return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.getDomainKindName());
         }
 
-        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude) throws IOException
+        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude, String domainKindName) throws IOException
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
+            List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
+            Set reservedNames = domainKindName == null ? Collections.emptySet() : PropertyService.get().getDomainKindByName(domainKindName).getReservedPropertyNames(null);
 
             if (loader != null)
             {
@@ -833,8 +835,11 @@ public class PropertyController extends SpringActionController
                     GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
                     prop.setContainer(getContainer().getId());
                     prop.setMvEnabled(col.isMvEnabled());
+                    if (reservedNames.contains(col.getColumnName()))
+                        reservedFields.add(prop);
+                    else
+                        fields.add(prop);
 
-                    fields.add(prop);
                 }
 
                 if (numLinesToInclude != null)
@@ -844,6 +849,7 @@ public class PropertyController extends SpringActionController
             }
 
             response.put("fields", fields);
+            response.put("reservedFields", reservedFields);
             return response;
         }
     }
@@ -853,6 +859,7 @@ public class PropertyController extends SpringActionController
         // TODO should -1 allow you to get all data?
         private Integer _numLinesToInclude;
         private Object _file;
+        private String _domainKindName;
 
         public Integer getNumLinesToInclude()
         {
@@ -872,6 +879,16 @@ public class PropertyController extends SpringActionController
         public void setFile(Object file)
         {
             _file = file;
+        }
+
+        public String getDomainKindName()
+        {
+            return _domainKindName;
+        }
+
+        public void setDomainKindName(String domainKindName)
+        {
+            _domainKindName = domainKindName;
         }
     }
 
