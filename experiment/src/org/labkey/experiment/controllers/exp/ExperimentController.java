@@ -193,6 +193,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -6499,10 +6500,39 @@ public class ExperimentController extends SpringActionController
     public static class UpdateMaterialQueryRowAction extends UserSchemaAction
     {
         @Override
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            BindException bind = super.bindParameters(m);
+
+            QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
+
+            int sampleId;
+            try
+            {
+                sampleId = Integer.parseInt((String) tableForm.getPkVal());
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
+            }
+
+            ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
+            if (material == null)
+                throw new NotFoundException("Invalid material: " + tableForm.getPkVal());
+
+            return bind;
+        }
+
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
-            ExpMaterial material = ExperimentService.get().getExpMaterial(Integer.valueOf((String) tableForm.getPkVal()));
-            boolean isAliquot = material != null && !StringUtils.isEmpty(material.getAliquotedFromLSID());
+            int sampleId = Integer.parseInt((String) tableForm.getPkVal());
+
+            ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
+            if (material == null)
+                throw new NotFoundException("Invalid material: " + tableForm.getPkVal());
+
+            boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
 
             TableInfo tableInfo = tableForm.getTable();
             Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
