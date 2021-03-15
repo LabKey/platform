@@ -75,7 +75,7 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
     {
         setupEnvironment();
         setupPipeline(getProjectName());
-        if (_studyHelper.isSpecimenModuleActive())
+        if (_studyHelper.isSpecimenModulePresent())
         {
             SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
                     StudyHelper.SPECIMEN_ARCHIVE_A,
