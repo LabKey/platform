@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option.OptionBuilder;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -54,19 +55,19 @@ public class Select extends Input
     }
 
     @Override
-    protected void doInput(StringBuilder sb)
+    protected void doInput(Appendable sb) throws IOException
     {
         sb.append("<select")
-                .append(" name=\"").append(getName()).append("\"");
+                .append(" name=\"").append(h(getName())).append("\"");
 
         if (StringUtils.isNotEmpty(getId()))
-            sb.append(" id=\"").append(getId()).append("\"");
+            sb.append(" id=\"").append(h(getId())).append("\"");
         if (StringUtils.isNotEmpty(getClassName()))
-            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
+            sb.append(" class=\"").append(h(getClassName())).append("\"");
         if (StringUtils.isNotEmpty(getPlaceholder()))
-            sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
+            sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
         if (getSize() != null)
-            sb.append(" size=\"").append(getSize()).append("\"");
+            sb.append(" size=\"").append(h(getSize())).append("\"");
         if (isMultiple())
             sb.append(" multiple");
 
@@ -84,14 +85,14 @@ public class Select extends Input
         sb.append("</select>");
     }
 
-    private void doOptions(StringBuilder sb)
+    private void doOptions(Appendable sb) throws IOException
     {
         for (Option o : getOptions())
         {
             if (o != null)
             {
                 boolean forceSelected = null != _selected && _selected.equals(o.getValue());
-                sb.append(o.render(forceSelected));
+                sb.append(h(o.render(forceSelected)));
             }
         }
     }

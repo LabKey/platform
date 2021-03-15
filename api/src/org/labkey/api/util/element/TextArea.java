@@ -16,7 +16,10 @@
 package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+
+import java.io.IOException;
 
 public class TextArea extends Input
 {
@@ -41,21 +44,21 @@ public class TextArea extends Input
     }
 
     @Override
-    protected void doInput(StringBuilder sb)
+    protected void doInput(Appendable sb) throws IOException
     {
-        sb.append("<textarea name=\"").append(getName()).append("\"");
+        sb.append("<textarea name=\"").append(h(getName())).append("\"");
 
         if (getColumns() != -1)
-            sb.append(" cols=\"").append(getColumns()).append("\"");
+            sb.append(" cols=\"").append(h(getColumns())).append("\"");
         if (getRows() != -1)
-            sb.append(" rows=\"").append(getRows()).append("\"");
+            sb.append(" rows=\"").append(h(getRows())).append("\"");
 
         if (StringUtils.isNotEmpty(getId()))
-            sb.append(" id=\"").append(getId()).append("\"");
+            sb.append(" id=\"").append(h(getId())).append("\"");
         if (StringUtils.isNotEmpty(getClassName()))
-            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName())).append("\"");
+            sb.append(" class=\"").append(h(getClassName())).append("\"");
         if (StringUtils.isNotEmpty(getPlaceholder()))
-            sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
+            sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
 
         doInputEvents(sb);
 
@@ -64,7 +67,8 @@ public class TextArea extends Input
 
         sb.append(">");
 
-        renderValueIfNonEmpty(sb::append);
+        if (!HtmlString.isEmpty(getValue()))
+            sb.append(h(getValue()));
 
         sb.append("</textarea>");
     }

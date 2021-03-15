@@ -52,7 +52,7 @@
 <p>If you want to set permissions on individual datasets within the study, you must select one of the custom study security options below.</p>
 
 <labkey:form action="<%=urlFor(StudySecurityAction.class)%>" method="post" name="studySecurityForm">
-    <p>Study Security Type<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true, 400)%>:
+    <p>Study Security Type<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), 400)%>:
     <select name="securityString" onchange="document.getElementById('securityTypeWarning').style.display = 'block';">
         <%
             for (SecurityType securityType : SecurityType.values())
