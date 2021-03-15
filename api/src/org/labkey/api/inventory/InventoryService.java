@@ -40,7 +40,7 @@ public interface InventoryService
 {
     String PRODUCT_ID = "freezerManager";
 
-    public static Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
+    Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
             "FreezeThawCount",
             "CheckedOutBy",
             "CheckedOut",
@@ -48,8 +48,12 @@ public interface InventoryService
             "StorageRow",
             "StorageCol",
             "StorageLocation",
+            "EnteredStorage",
+            "StorageStatus",
+            "StoredAmountDisplay",
             "StoredAmount",
-            "EnteredStorage"
+            "Units",
+            "StorageComment"
     );
 
     String EXPERIMENTAL_FM_BIOLOGICS = "experimental-freezermanager-biologics";
