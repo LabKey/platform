@@ -653,8 +653,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (metricUnit != null && metricUnit.length() > metricUnitMax)
             throw new ExperimentException("Metric unit may not exceed " + metricUnitMax + " characters.");
 
-        // Rosaline: Check whether autoLinkTargetContainerId is valid for container?
-
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();

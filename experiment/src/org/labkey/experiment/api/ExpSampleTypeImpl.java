@@ -320,7 +320,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getMetricUnit();
     }
 
-    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)  // Rosaline: Should this not be in interface too?
+    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
     {
         _object.setAutoLinkTargetContainerId(autoLinkTargetContainerId);
     }

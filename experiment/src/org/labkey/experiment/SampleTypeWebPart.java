@@ -113,7 +113,7 @@ public class SampleTypeWebPart extends QueryView
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
 
-        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO
+        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         bar.add(linkToStudyButton);

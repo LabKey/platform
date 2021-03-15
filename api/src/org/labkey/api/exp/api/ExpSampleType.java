@@ -107,7 +107,7 @@ public interface ExpSampleType extends ExpObject
     @Nullable
     String getMetricUnit();
 
-    /** @return Auto copy target container if set. */
+    /** @return Auto link target container if set. */
     @Nullable
     String getAutoLinkTargetContainerId();
 

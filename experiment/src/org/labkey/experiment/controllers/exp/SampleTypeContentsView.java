@@ -54,7 +54,7 @@ public class SampleTypeContentsView extends QueryView
 
     public static ActionButton getLinkToStudyButton()
     {
-        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO
+        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         linkToStudyButton.setRequiresSelection(true);
