@@ -15,6 +15,10 @@
  */
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.regex.Pattern;
+
 public class HtmlStringBuilder implements HasHtmlString, SafeToRender
 {
     private final StringBuilder _sb = new StringBuilder();
@@ -50,6 +54,12 @@ public class HtmlStringBuilder implements HasHtmlString, SafeToRender
         return this;
     }
 
+    public HtmlStringBuilder append(char c)
+    {
+        _sb.append(h(String.valueOf(c)));
+        return this;
+    }
+
     public HtmlStringBuilder append(int i)
     {
         return append(Integer.toString(i));
@@ -71,6 +81,26 @@ public class HtmlStringBuilder implements HasHtmlString, SafeToRender
         _sb.append(hhs.getHtmlString());
         return this;
     }
+
+    /**
+     * startTag() and endTag() help reduce the usages of HtmlString.unsafe()
+     * If you are using these a lot consider using org.labkey.api.util.DOM instead
+     */
+    private final static Pattern tagPattern = Pattern.compile("[a-zA-Z]+");
+
+    public HtmlStringBuilder startTag(@NotNull String tag)
+    {
+        assert(tagPattern.matcher(tag).matches());
+        _sb.append("<").append(tag).append(">");
+        return this;
+    }
+    public HtmlStringBuilder endTag(@NotNull String tag)
+    {
+        assert(tagPattern.matcher(tag).matches());
+        _sb.append("</").append(tag).append(">");
+        return this;
+    }
+
 
     public int length()
     {

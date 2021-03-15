@@ -1147,7 +1147,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                         {
                             sb.append(br);
                             sb.append(errStr);
-                            br = HtmlString.unsafe("<br>");
+                            br = HtmlString.BR;
                         }
                         msgBox.append(errStr);
                         msgBox.append("<br>");
