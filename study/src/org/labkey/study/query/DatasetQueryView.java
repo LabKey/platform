@@ -423,16 +423,16 @@ public class DatasetQueryView extends StudyQueryView
             }
             else
             {
-                // TODO support sample types
-                if (publishSource instanceof ExpProtocol)
+                if (publishSource != null)
                 {
                     ExpProtocol protocol = (ExpProtocol)publishSource;
-                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
+//                  do we ever add the assay import buttons to the dataset query view?
+//                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
                     if (user.hasRootAdminPermission() || canWrite)
                     {
                         ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
-                        deleteRowsURL.addParameter("protocolId", protocol.getRowId());
+                        deleteRowsURL.addParameter("publishSourceId", _dataset.getPublishSourceId());
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
                         deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);

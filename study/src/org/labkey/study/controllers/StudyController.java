@@ -2780,12 +2780,12 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String protocolId = (String)getViewContext().get("protocolId");
+                    String publishSourceId = (String)getViewContext().get("publishSourceId");
                     String sourceLsid = (String)getViewContext().get("sourceLsid");
                     String recordCount = (String)getViewContext().get("recordCount");
 
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteURL.addParameter("protocolId", protocolId);
+                    deleteURL.addParameter("publishSourceId", publishSourceId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
                     final ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
@@ -2794,7 +2794,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
                     PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid,
-                            NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount)) {
+                            NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
 
                         @Override
                         protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -2849,7 +2849,6 @@ public class StudyController extends BaseStudyController
                 allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
             }
 
-            String protocolId = (String)getViewContext().get("protocolId");
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
             // Need to handle this by groups of source lsids -- each assay container needs logging
@@ -2873,7 +2872,8 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            if (protocolId != null)
+            Dataset.PublishSource publishSource = def.getPublishSource();
+            if (form.getPublishSourceId() != null && publishSource != null)
             {
                 for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
                 {
@@ -2885,12 +2885,14 @@ public class StudyController extends BaseStudyController
                     else
                         continue; // No logging if we can't find a matching run
 
-                    StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
+                    publishSource.addRecallAuditEvent(form.getPublishSourceId(), def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);
 
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
+            // if the recall was initiated from the assay copy to study history view, redirect back to the same view
+            // will need to generalize this to support samples
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getPublishSourceId());
             if (protocol != null && originalSourceLsid != null)
             {
                 ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
@@ -2912,6 +2914,7 @@ public class StudyController extends BaseStudyController
     {
         private int datasetId;
         private boolean deleteAllData;
+        private Integer _publishSourceId;
 
         public int getDatasetId()
         {
@@ -2931,6 +2934,16 @@ public class StudyController extends BaseStudyController
         public void setDeleteAllData(boolean deleteAllData)
         {
             this.deleteAllData = deleteAllData;
+        }
+
+        public Integer getPublishSourceId()
+        {
+            return _publishSourceId;
+        }
+
+        public void setPublishSourceId(Integer publishSourceId)
+        {
+            _publishSourceId = publishSourceId;
         }
     }
 

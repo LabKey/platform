@@ -281,7 +281,7 @@ public class StudyServiceImpl implements StudyService
     public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
     {
         String assayName = def.getLabel();
-        ExpProtocol protocol = def.getAssayProtocol();
+        ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
         if (protocol != null)
             assayName = protocol.getName();
 

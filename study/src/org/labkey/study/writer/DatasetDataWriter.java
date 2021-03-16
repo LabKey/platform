@@ -244,7 +244,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         ColumnInfo sequenceColumn = null; String sequenceURI = DatasetDefinition.getSequenceNumURI();
         ColumnInfo qcStateColumn = null; String qcStateURI = DatasetDefinition.getQCStateURI();
 
-        if (def.isAssayData())
+        if (def.isPublishedData())
         {
             inColumns = new ArrayList<>(QueryService.get().getColumns(tinfo, tinfo.getDefaultVisibleColumns(), inColumns).values());
         }
@@ -318,7 +318,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                     // For assay datasets only, include both the display value and raw value for FKs if they differ
                     // Don't do this for the Participant and SequenceNum columns, since we know that their lookup targets
                     // will be available. See issue 15141
-                    if (def.isAssayData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
+                    if (def.isPublishedData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
                     {
                         boolean foundMatch = false;
                         for (ColumnInfo existingColumns : inColumns)

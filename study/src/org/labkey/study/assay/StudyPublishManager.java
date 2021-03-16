@@ -29,6 +29,7 @@ import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -89,6 +90,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
+import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.PublishController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -409,27 +411,28 @@ public class StudyPublishManager implements StudyPublishService
             throw new UnexpectedException(e);
         }
 
-
-        // TODO : figure out auditing
-/*
-        if (lsids.size() > 0 && protocol != null)
+        // TODO : consider pushing this into PublishSource
+        if (lsids.size() > 0 &&  publishSource.first == Dataset.PublishSource.Assay)
         {
-            for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
+            ExpProtocol protocol = (ExpProtocol)publishSource.first.resolvePublishSource(publishSource.second);
+            if (protocol != null)
             {
-                // CONSIDER: add reference to the provenance run?
-                AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(),
-                        entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
+                for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
+                {
+                    // CONSIDER: add reference to the provenance run?
+                    AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(),
+                            entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
 
-                event.setProtocol(protocol.getRowId());
-                event.setTargetStudy(targetContainer.getId());
-                event.setDatasetId(dataset.getDatasetId());
-                event.setSourceLsid(entry.getKey());
-                event.setRecordCount(entry.getValue()[0]);
+                    event.setProtocol(protocol.getRowId());
+                    event.setTargetStudy(targetContainer.getId());
+                    event.setDatasetId(dataset.getDatasetId());
+                    event.setSourceLsid(entry.getKey());
+                    event.setRecordCount(entry.getValue()[0]);
 
-                AuditLogService.get().addEvent(user, event);
+                    AuditLogService.get().addEvent(user, event);
+                }
             }
         }
-*/
 
         //Make sure that the study is updated with the correct timepoints.
         StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
@@ -525,6 +528,10 @@ public class StudyPublishManager implements StudyPublishService
         ExperimentService.get().syncRunEdges(run);
     }
 
+    /**
+     * To help generate the assay audit record, compute the map of source runs and number of rows
+     * published
+     */
     private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
     {
         Map<String, int[]> lsidMap = new HashMap<>();

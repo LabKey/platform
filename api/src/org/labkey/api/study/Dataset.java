@@ -22,6 +22,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
@@ -108,6 +109,12 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
                         }
                         return false;
                     }
+
+                    @Override
+                    public void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user)
+                    {
+                        StudyService.get().addAssayRecallAuditEvent(def, rowCount, sourceContainer, user);
+                    }
                 },
         SampleType
                 {
@@ -137,12 +144,18 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
                     {
                         return false;
                     }
+
+                    @Override
+                    public void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user)
+                    {
+                    }
                 };
 
         public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
         public abstract String getLabel(Integer publishSourceId);
         public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
+        public abstract void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user);
     }
 
     Set<String> getDefaultFieldNames();
@@ -187,13 +200,8 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
     Date getModified();
 
     /**
-     * @return true if this dataset is backed by assay data within LabKey Server. Note that if a dataset happens
-     * to contain assay data but isn't linked to an assay provider in the server (ie., when importing a study archive), this method will return false.
-     */
-    boolean isAssayData();
-
-    /**
-     * @return true if this dataset is backed by published data (assay, sample type etc).
+     * @return true if this dataset is backed by published data (assay, sample type etc). Note that if a dataset happens
+     * to contain publised data but isn't linked to the publish source in the server (ie., when importing a study archive), this method will return false.
      */
     boolean isPublishedData();
 
@@ -205,8 +213,6 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     @Nullable
     Integer getPublishSourceId();
-
-    ExpProtocol getAssayProtocol();
 
     Study getStudy();
 

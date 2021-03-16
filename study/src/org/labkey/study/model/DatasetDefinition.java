@@ -179,8 +179,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
     private Integer _cohortId;
-    private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
-
     private Integer _publishSourceId;   // the identifier of the published data source
     private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
 
@@ -837,13 +835,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         Integer id = _study.getParticipantAliasDatasetId();
         return null != id && id.equals(getDatasetId());
-    }
-
-    @Override
-    @Deprecated
-    public boolean isAssayData()
-    {
-        return _protocolId != null;
     }
 
     @Override
@@ -1984,13 +1975,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public void setPublishSourceType(String publishSourceType)
     {
         _publishSourceType = publishSourceType;
-    }
-
-    @Override
-    @Deprecated
-    public ExpProtocol getAssayProtocol()
-    {
-        return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
     }
 
     @Override
