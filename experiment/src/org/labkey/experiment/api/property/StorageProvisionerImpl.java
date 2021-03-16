@@ -58,6 +58,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -80,6 +81,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +105,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
     private StorageProvisionerImpl()
     {
     }
+
+    private static final Map<String, StackTraceElement[]> CREATED_TABLES = new ConcurrentHashMap<>();
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain)
     {
@@ -166,7 +170,21 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             change.setForeignKeys(domain.getPropertyForeignKeys());
 
-            change.execute();
+            try
+            {
+                log.info("Attempting to create " + tableName);
+                change.execute();
+                assert null == CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
+            }
+            catch (RuntimeException re)
+            {
+                StackTraceElement[] previousCreationStack = CREATED_TABLES.get(tableName);
+
+                if (null != previousCreationStack)
+                    log.info(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
+
+                throw re;
+            }
 
             DomainDescriptor editDD = dd.edit()
                     .setStorageTableName(tableName)
