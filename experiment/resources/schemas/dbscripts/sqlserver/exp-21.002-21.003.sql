@@ -1,2 +1,1 @@
-ALTER TABLE exp.MaterialSource ADD COLUMN AutoLinkTargetContainerId NVARCHAR(10) NULL;
-
+ALTER TABLE exp.MaterialSource ADD AutoLinkTargetContainerId NVARCHAR(50) NULL;
