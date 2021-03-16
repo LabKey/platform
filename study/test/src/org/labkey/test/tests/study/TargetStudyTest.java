@@ -81,7 +81,10 @@ public class TargetStudyTest extends AbstractAssayTest
     {
         log("** Setup");
         setupEnvironment();
-        setupSpecimens();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            setupSpecimens();
+        }
         setupLabels();
         setupAssay();
 
@@ -202,13 +205,16 @@ public class TargetStudyTest extends AbstractAssayTest
         assertEquals(_study2Label, table.getDataAsText(4, "Target Study"));
         assertEquals(_study3Label, table.getDataAsText(5, "Target Study"));
 
-        log("** Check SpecimenID resolved the PTID in the study");
-        assertEquals("999320812", table.getDataAsText(0, "Participant ID"));
-        assertEquals("999320396", table.getDataAsText(1, "Participant ID"));
-        assertEquals("999320396", table.getDataAsText(2, "Participant ID"));
-        assertEquals(" ", table.getDataAsText(3, "Participant ID"));
-        assertEquals("999320706", table.getDataAsText(4, "Participant ID"));
-        assertEquals(" ", table.getDataAsText(5, "Participant ID"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            log("** Check SpecimenID resolved the PTID in the study");
+            assertEquals("999320812", table.getDataAsText(0, "Participant ID"));
+            assertEquals("999320396", table.getDataAsText(1, "Participant ID"));
+            assertEquals("999320396", table.getDataAsText(2, "Participant ID"));
+            assertEquals(" ", table.getDataAsText(3, "Participant ID"));
+            assertEquals("999320706", table.getDataAsText(4, "Participant ID"));
+            assertEquals(" ", table.getDataAsText(5, "Participant ID"));
+        }
     }
 
     protected void copyToStudy()

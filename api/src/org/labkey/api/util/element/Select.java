@@ -185,6 +185,11 @@ public class Select extends Input
             return this;
         }
 
+        /**
+         * Add multiple options from a map
+         * @param options A Map&lt;option value, option label>
+         * @return The SelectBuilder
+         */
         public SelectBuilder addOptions(Map<?, String> options)
         {
             return addOptions(
