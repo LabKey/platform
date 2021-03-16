@@ -174,7 +174,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 log.info("Attempting to create " + tableName);
                 change.execute();
-                assert null == CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
+                CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
             }
             catch (RuntimeException re)
             {
