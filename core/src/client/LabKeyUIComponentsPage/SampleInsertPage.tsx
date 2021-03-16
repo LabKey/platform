@@ -2,45 +2,33 @@
  * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-import React from 'react'
-import {Alert, EntityInsertPanel, helpLinkNode, initQueryGridState, SampleTypeDataType} from "@labkey/components";
+import React, { FC, memo, useCallback, useEffect, useState } from 'react';
+import { Alert, EntityInsertPanel, initQueryGridState, SampleTypeDataType } from '@labkey/components';
 
-interface State {
-    message: string
-}
+export const SampleInsertPage: FC = memo(() => {
+    const [message, setMessage] = useState<string>(undefined);
 
-export class SampleInsertPage extends React.Component<any, State> {
-
-    constructor(props: any) {
-        super(props);
-
+    useEffect(() => {
         initQueryGridState();
+    }, []);
 
-        this.state = {
-            message: undefined
-        }
-    }
+    const afterSampleCreation = useCallback((sampleSetName: string, filter: any, sampleCount: number) => {
+        setMessage(`Created ${sampleCount} samples in sample type '${sampleSetName}'.`);
+    }, []);
 
-    afterSampleCreation = (sampleSetName: string, filter: any, sampleCount: number) => {
-        this.setState(() => ({message: "Created " + sampleCount + " samples in sample type '" + sampleSetName + "'."}));
-    };
-
-    render() {
-        const { message } = this.state;
-
-        return (
-            <>
-                <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually insert samples into the selected target sample type.</Alert>
-                {message && <Alert bsStyle={'success'}>{message}</Alert>}
-                <EntityInsertPanel
-                    nounSingular={'sample'}
-                    nounPlural={'samples'}
-                    entityDataType={SampleTypeDataType}
-                    afterEntityCreation={this.afterSampleCreation}
-                    importHelpLinkNode={helpLinkNode('help', 'help text')}
-                />
-            </>
-        )
-    }
-}
-
+    return (
+        <>
+            <Alert bsStyle="info">
+                NOTE: if you have the proper permissions, this will actually insert samples into the selected target sample type.
+            </Alert>
+            <Alert bsStyle="success">{message}</Alert>
+            <EntityInsertPanel
+                afterEntityCreation={afterSampleCreation}
+                entityDataType={SampleTypeDataType}
+                importHelpLinkNode={<>Get help with your samples</>}
+                nounPlural="samples"
+                nounSingular="sample"
+            />
+        </>
+    );
+});
