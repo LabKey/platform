@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenWebPartAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
@@ -48,6 +49,7 @@
     Container c = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     User user = getUser();
+    String subjectNounSingle = study.getSubjectNounSingular().toLowerCase();
 
     if (c.hasPermission(user, AdminPermission.class))
     {
@@ -111,6 +113,11 @@
                         <td class="lk-study-prop-label">Display and Behavior</td>
                         <td class="lk-study-prop-desc">Manage warnings, comments, and workflow</td>
                         <td><%= link("Manage Display and Behavior", ManageDisplaySettingsAction.class) %></td>
+                    </tr>
+                    <tr>
+                        <td class="lk-study-prop-label">Comments</td>
+                        <td class="lk-study-prop-desc">Manage <%=h(subjectNounSingle)%> and <%=h(subjectNounSingle)%>/visit comments</td>
+                        <td><%= link("Manage Comments", ManageSpecimenCommentsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
