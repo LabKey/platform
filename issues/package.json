@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/issues/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "2.14.1-fb-copytostudy-8591.1"
+    "@labkey/components": "2.14.1-fb-copytostudy-8591.2"
   },
   "devDependencies": {
     "@labkey/build": "2.1.0"
