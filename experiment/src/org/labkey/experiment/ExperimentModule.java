@@ -60,6 +60,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
@@ -470,7 +471,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("legacyLineage", AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE));
 
                 results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
-                results.put("ontologySourceOntologyCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE sourceontology IS NOT NULL").getObject(Long.class));
+                results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
                 results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
                 results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 
