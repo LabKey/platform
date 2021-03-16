@@ -4322,6 +4322,13 @@ public class ExperimentServiceImpl implements ExperimentService
             SimpleFilter rowIdFilter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), selectedDataIds);
             List<Data> datas = new TableSelector(getTinfoData(), rowIdFilter, null).getArrayList(Data.class);
 
+            if (datas.isEmpty())
+            {
+                // Nothing to do - already deleted. Bail out. See issue 41715
+                transaction.commit();
+                return;
+            }
+
             List<String> allLsids = new ArrayList<>(datas.size());
             Map<Integer, List<String>> lsidsByClass = new LinkedHashMap<>();
 
