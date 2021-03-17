@@ -331,5 +331,10 @@ abstract public class DomainKind<T>  implements Handler<String>
 
         if (isUpdate && !canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain");
+
+        //Case insensitive match
+        if (updatedDomainDesign.getFieldByName("Container") != null)
+            throw new IllegalArgumentException("Property name 'Container' is a reserved name.");
+
     }
 }
