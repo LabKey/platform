@@ -24,7 +24,7 @@ import {
     fetchIssuesListDefDesign,
 } from "@labkey/components";
 
-import './IssuesListDesigner.scss';
+import '../DomainDesigner.scss';
 
 type State = {
     isLoadingModel: boolean,
