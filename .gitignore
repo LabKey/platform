@@ -9,10 +9,6 @@ node_modules
 core/node_modules
 experiment/node_modules
 assay/node_modules
-list/node_modules
-query/node_modules
-study/node_modules
-issues/node_modules
 
 # These files are copied to this location
 core/resources/scripts/Ext.js
@@ -29,18 +25,6 @@ experiment/resources/views/gen
 
 assay/resources/web/assay/gen
 assay/resources/views/gen
-
-query/resources/web/query/gen
-query/resources/views/gen
-
-study/resources/web/study/gen
-study/resources/views/gen
-
-list/resources/web/list/gen
-list/resources/views/gen
-
-issues/resources/web/issues/gen
-issues/resources/views/gen
 
 # Gradle
 core/.gradle

@@ -1973,7 +1973,7 @@ public class IssuesController extends SpringActionController
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), ModuleHtmlView.getGeneratedViewPath("designer"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("issuesListDesigner"));
         }
 
         @Override
