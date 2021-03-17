@@ -19,7 +19,6 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -122,6 +121,8 @@ public class StudyQuerySchema extends UserSchema
     public static final String STUDY_TABLE_NAME = "Study";
     public static final String PROPERTIES_TABLE_NAME = "StudyProperties";
     public static final String STUDY_SNAPSHOT_TABLE_NAME = "StudySnapshot";
+
+    // study design tables that appear in study folders
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
     public static final String VISIT_TABLE_NAME = "Visit";
@@ -133,7 +134,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
-    // extensible study data tables
+    // extensible study design tables
     public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
     public static final String PRODUCT_TABLE_NAME = "Product";
     public static final String PRODUCT_ANTIGEN_TABLE_NAME = "ProductAntigen";
@@ -141,7 +142,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String TREATMENT_PRODUCT_MAP_TABLE_NAME = "TreatmentProductMap";
     public static final String TREATMENT_VISIT_MAP_TABLE_NAME = "TreatmentVisitMap";
 
-    // study design tables
+    // study design tables that appear in all folders (?)
     public static final String STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME = "StudyDesignImmunogenTypes";
     public static final String STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME = "StudyDesignChallengeTypes";
     public static final String STUDY_DESIGN_GENES_TABLE_NAME = "StudyDesignGenes";
@@ -362,11 +363,11 @@ public class StudyQuerySchema extends UserSchema
                 names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
                 names.add(TREATMENT_TABLE_NAME);
                 names.add(TREATMENT_VISIT_MAP_TABLE_NAME);
-
                 names.add(OBJECTIVE_TABLE_NAME);
                 names.add(PERSONNEL_TABLE_NAME);
                 names.add(VISIT_TAG_TABLE_NAME);
                 names.add(VISIT_TAG_MAP_TABLE_NAME);
+
                 names.add(STUDY_SNAPSHOT_TABLE_NAME);
             }
             _tableNames = Collections.unmodifiableSet(names);
@@ -717,31 +718,28 @@ public class StudyQuerySchema extends UserSchema
         if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
-            Domain domain;
-            try (var ignore= SpringActionController.ignoreSqlUpdates())
-            {
-                domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
-            }
+            Domain domain = domainKind.getDomain(getContainer(), PRODUCT_TABLE_NAME);
+
             return StudyProductTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), PRODUCT_ANTIGEN_TABLE_NAME);
 
             return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
             return StudyTreatmentProductTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), TREATMENT_TABLE_NAME);
 
             return StudyTreatmentTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
@@ -768,7 +766,7 @@ public class StudyQuerySchema extends UserSchema
         if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), PERSONNEL_TABLE_NAME);
 
             // TODO ContainerFilter
             return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : null);
