@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -74,10 +75,13 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
     {
         setupEnvironment();
         setupPipeline(getProjectName());
-        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
-                StudyHelper.SPECIMEN_ARCHIVE_A,
-                new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
-        importer.importAndWaitForComplete();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
+                    StudyHelper.SPECIMEN_ARCHIVE_A,
+                    new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+            importer.importAndWaitForComplete();
+        }
         defineAssay();
 
         uploadRuns(TEST_ASSAY_FLDR_LAB1, TEST_ASSAY_USR_TECH1);
@@ -103,8 +107,12 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         waitForPipelineJobsToComplete(1, false);
         clickAndWait(Locator.linkWithText("Automatic copying of assay data to study"));
         DataRegionTable dataSet = new DataRegionTable("Dataset", this);
-        List<String> specimenIds = Arrays.asList("AAA07XMC-02", "AAA07XMC-04", "AAA07XK5-05", "AAA07XSF-02",
-                "AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1");
+        List<String> specimenIds = new ArrayList<>(Arrays.asList("AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // From specimen archive
+            specimenIds.addAll(0, Arrays.asList("AAA07XMC-02", "AAA07XMC-04", "AAA07XK5-05", "AAA07XSF-02"));
+        }
 
         assertEquals("expected copied rows should be for ", specimenIds, dataSet.getColumnDataAsText("Specimen ID"));
     }
@@ -245,61 +253,64 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
                 TEST_ASSAY_SET_PROPERTIES[3]);
         clickAndWait(Locator.linkWithText(TEST_RUN1));
         assertElementNotPresent(Locator.tagWithText("td", "7.0"));
-        // Make sure that our specimen IDs resolved correctly
-        assertTextPresent(
-                "AAA07XSF-02",
-                "999320885",
-                "301",
-                "AAA07XK5-05",
-                "999320812",
-                "601",
-                TEST_ASSAY_DATA_PROP_NAME + "4",
-                TEST_ASSAY_DATA_PROP_NAME + "5",
-                TEST_ASSAY_DATA_PROP_NAME + "6",
-                "2000-06-06",
-                "0.0",
-                "f",
-                ALIASED_DATA);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // Make sure that our specimen IDs resolved correctly
+            assertTextPresent(
+                    "AAA07XSF-02",
+                    "999320885",
+                    "301",
+                    "AAA07XK5-05",
+                    "999320812",
+                    "601",
+                    TEST_ASSAY_DATA_PROP_NAME + "4",
+                    TEST_ASSAY_DATA_PROP_NAME + "5",
+                    TEST_ASSAY_DATA_PROP_NAME + "6",
+                    "2000-06-06",
+                    "0.0",
+                    "f",
+                    ALIASED_DATA);
 
-        _customizeViewsHelper.openCustomizeViewPanel();
-        _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
-        _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
-        _customizeViewsHelper.addColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
-        _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
-        _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
-        _customizeViewsHelper.removeColumn("testAssayDataProp4");
-        _customizeViewsHelper.applyCustomView();
+            _customizeViewsHelper.openCustomizeViewPanel();
+            _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
+            _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
+            _customizeViewsHelper.addColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
+            _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
+            _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
+            _customizeViewsHelper.removeColumn("testAssayDataProp4");
+            _customizeViewsHelper.applyCustomView();
 
-        assertTextPresent("Blood (Whole)", 4);
+            assertTextPresent("Blood (Whole)", 4);
 
-        Locator.XPathLocator trueLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'true']");
-        int totalTrues = getElementCount(trueLocator);
-        assertEquals(4, totalTrues);
+            Locator.XPathLocator trueLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'true']");
+            int totalTrues = getElementCount(trueLocator);
+            assertEquals(4, totalTrues);
 
-        DataRegionTable region = new DataRegionTable("Data", this);
-        region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
+            DataRegionTable region = new DataRegionTable("Data", this);
+            region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
 
-        // verify that there are no trues showing for the assay match column that were filtered out
-        totalTrues = getElementCount(trueLocator);
-        assertEquals(0, totalTrues);
+            // verify that there are no trues showing for the assay match column that were filtered out
+            totalTrues = getElementCount(trueLocator);
+            assertEquals(0, totalTrues);
 
-        log("Check out the data for all of the runs");
-        clickAndWait(Locator.linkWithText("view results"));
-        region.clearAllFilters("SpecimenID");
-        assertElementPresent(Locator.tagWithText("td", "7.0"));
-        assertElementPresent(Locator.tagWithText("td", "18"));
+            log("Check out the data for all of the runs");
+            clickAndWait(Locator.linkWithText("view results"));
+            region.clearAllFilters("SpecimenID");
+            assertElementPresent(Locator.tagWithText("td", "7.0"));
+            assertElementPresent(Locator.tagWithText("td", "18"));
 
-        assertTextPresent("Blood (Whole)", 7);
+            assertTextPresent("Blood (Whole)", 7);
 
-        Locator.XPathLocator falseLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'false']");
-        int totalFalses = getElementCount(falseLocator);
-        assertEquals(3, totalFalses);
+            Locator.XPathLocator falseLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'false']");
+            int totalFalses = getElementCount(falseLocator);
+            assertEquals(3, totalFalses);
 
-        region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
+            region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
 
-        // verify the falses have been filtered out
-        totalFalses = getElementCount(falseLocator);
-        assertEquals(0, totalFalses);
+            // verify the falses have been filtered out
+            totalFalses = getElementCount(falseLocator);
+            assertEquals(0, totalFalses);
+        }
 
         stopImpersonating();
     }

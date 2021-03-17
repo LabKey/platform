@@ -67,11 +67,7 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -1111,7 +1107,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.hasRootAdminPermission() && !def.canWrite(user))
+        if (!user.hasRootAdminPermission() && !def.canInsert(user))
             return null;
         return new DatasetUpdateService(this);
     }
@@ -1120,12 +1116,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // OK to edit these in Dataspace project and in any folder
-        Dataset def = getDatasetDefinition();
-        if (ReadPermission.class.isAssignableFrom(perm))
-            return def.canRead(user);
-        if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
-            return def.canWrite(user);
-        return def.getPolicy().hasPermission(user, perm);
+        return getDatasetDefinition().hasPermission(user, perm);
     }
 
     @Override

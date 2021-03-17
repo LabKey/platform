@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study.query;
+package org.labkey.api.specimen.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ButtonBar;
@@ -36,14 +36,14 @@ import java.util.List;
  * Date: Jan 26, 2007
  * Time: 10:03:34 AM
  */
-public abstract class BaseStudyQueryView extends QueryView
+public abstract class BaseSpecimenQueryView extends QueryView
 {
     protected final SimpleFilter _filter;
     protected final Sort _sort;
     protected @Nullable CohortFilter _cohortFilter;
     private List<DisplayElement> _buttons;
 
-    public BaseStudyQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
+    public BaseSpecimenQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
     {
         super(schema, settings);
         _filter = filter;
