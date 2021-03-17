@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment.api.property;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,7 +83,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -106,7 +108,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
     }
 
-    private static final Map<String, StackTraceElement[]> CREATED_TABLES = new ConcurrentHashMap<>();
+    // #42641: Track recently created tables in a cache to limit size and duration
+    private static final Cache<String, StackTraceElement[]> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
+        .maximumSize(10000)
+        .expireAfterWrite(1, TimeUnit.DAYS)
+        .build();
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain)
     {
@@ -174,14 +180,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 log.info("Attempting to create " + tableName);
                 change.execute();
-                CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
+                RECENTLY_CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
             }
             catch (RuntimeException re)
             {
-                StackTraceElement[] previousCreationStack = CREATED_TABLES.get(tableName);
+                StackTraceElement[] previousCreationStack = RECENTLY_CREATED_TABLES.getIfPresent(tableName);
 
                 if (null != previousCreationStack)
-                    log.info(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
+                    log.error(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
 
                 throw re;
             }
