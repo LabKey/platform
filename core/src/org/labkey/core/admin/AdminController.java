@@ -140,6 +140,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -328,7 +329,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
         AdminConsole.addLink(Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
-        AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
+        AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
@@ -337,7 +338,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(SiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class,root));
-        AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root));
+        AdminConsole.addLink(Diagnostics, "system properties", new ActionURL(SystemPropertiesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "test email configuration", new ActionURL(EmailTestAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "view all site errors since reset", new ActionURL(ShowErrorsSinceMarkAction.class, root));
         AdminConsole.addLink(Diagnostics, "view all site errors", new ActionURL(ShowAllErrorsAction.class, root));
@@ -2872,7 +2873,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresSiteAdmin
     public class EnvironmentVariablesAction extends SimpleViewAction
     {
         @Override
@@ -2888,7 +2889,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresSiteAdmin
     public class SystemPropertiesAction extends SimpleViewAction
     {
         @Override
@@ -5109,6 +5110,53 @@ public class AdminController extends SpringActionController
                 url.addParameter("rootSet", form.getMigrateFilesOption());
             if (form.isEnabledCloudStoresChanged())
                 url.addParameter("cloudChanged", true);
+            return url;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+    /**
+     * This standalone file root management action can be used on folder types that do not support
+     * the normal 'Manage Folder' UI. Not currently linked in the UI, but available for direct URL
+     * navigation when a workbook needs it.
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class ManageFileRootAction extends FormViewAction<FileRootsForm>
+    {
+        @Override
+        public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
+        {
+            JspView view = getFileRootsView(form, errors, getReshow());
+            getPageConfig().setTitle("Manage File Root");
+            return view;
+        }
+
+        @Override
+        public void validateCommand(FileRootsForm form, Errors errors)
+        {
+            validateCloudFileRoot(form, getContainer(), errors);
+        }
+
+        @Override
+        public boolean handlePost(FileRootsForm form, BindException errors) throws Exception
+        {
+            return handleFileRootsPost(form, errors);
+        }
+
+        @Override
+        public ActionURL getSuccessURL(FileRootsForm form)
+        {
+            ActionURL url = getContainer().getStartURL(getUser());
+
+            if (getViewContext().getActionURL().getReturnURL() != null)
+            {
+                url.addReturnURL(getViewContext().getActionURL().getReturnURL());
+            }
+
             return url;
         }
 
@@ -10256,7 +10304,7 @@ public class AdminController extends SpringActionController
             AdminController controller = new AdminController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                     new GetModulesAction(),
                     new GetFolderTabsAction(),
                     controller.new ClearDeletedTabFoldersAction()
@@ -10333,8 +10381,6 @@ public class AdminController extends SpringActionController
                     controller.new ShortURLAdminAction(),
                     controller.new CustomizeSiteAction(),
                     controller.new CachesAction(),
-                    controller.new EnvironmentVariablesAction(),
-                    controller.new SystemPropertiesAction(),
                     controller.new ConfigureSystemMaintenanceAction(),
                     controller.new ModulesAction()
             );
@@ -10352,7 +10398,9 @@ public class AdminController extends SpringActionController
                     controller.new SystemMaintenanceAction(),
                     new ModuleStatusAction(),
                     new NewInstallSiteSettingsAction(),
-                    new InstallCompleteAction()
+                    new InstallCompleteAction(),
+                    controller.new EnvironmentVariablesAction(),
+                    controller.new SystemPropertiesAction()
             );
         }
     }

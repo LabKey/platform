@@ -16,13 +16,12 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
@@ -183,7 +182,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             badProductName("SQL Server", 1.0, 14.0, "", null);
             badProductName("sqlserver", 1.0, 14.0, "", null);
 
-            // < 10.5 should result in bad version error
+            // < 10.0 should result in bad version error
             badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
 
             String driverName = "jTDS Type 4 JDBC Driver for MS SQL Server and Sybase";

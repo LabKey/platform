@@ -49,6 +49,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -90,6 +91,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
+        RESERVED_NAMES.add("AliquotedFrom");
+        RESERVED_NAMES.add("AliquotedFromLSID");
+        RESERVED_NAMES.add("RootMaterialLSID");
+        RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate
@@ -160,6 +166,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
     @Override
     public boolean allowFileLinkProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowTimepointProperties()
     {
         return true;
     }

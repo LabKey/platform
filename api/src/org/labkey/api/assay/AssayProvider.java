@@ -23,16 +23,13 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -44,7 +41,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayPublishKey;
+import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -59,11 +56,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * An AssayProvider is the main implementation point for participating in the overall assay framework. It provides
@@ -130,6 +125,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     String getName();
 
+    /** A user-facing short name for the assay provider. Typically matches the official name, but handy for renames */
+    default String getLabel()
+    {
+        return getName();
+    }
+
     /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter
      * or omit special characters. */
     String getResourceName();
@@ -160,7 +161,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
+    ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 

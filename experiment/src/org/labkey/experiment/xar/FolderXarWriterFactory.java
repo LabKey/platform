@@ -83,7 +83,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         {
             // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
             return ExperimentService.get().getExpRuns(c, null, null).stream()
-                    .filter(run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
+                    .filter(run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
+                    && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
                     .collect(Collectors.toList());
         }
 
@@ -91,7 +92,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         {
             // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
             return ExperimentService.get().getExpProtocols(c).stream()
-                    .filter(protocol -> !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME))
+                    .filter(protocol -> !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME)
+                    && !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME))
                     .map(ExpObject::getRowId)
                     .collect(Collectors.toList());
         }

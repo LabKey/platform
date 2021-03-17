@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 public enum PostgreSqlVersion
 {
     POSTGRESQL_UNSUPPORTED(-1, true, false, null),
-    POSTGRESQL_95(95, true, true, PostgreSql95Dialect::new),
     POSTGRESQL_96(96, false, true, PostgreSql96Dialect::new),
     POSTGRESQL_10(100, false, true, PostgreSql_10_Dialect::new),
     POSTGRESQL_11(110, false, true, PostgreSql_11_Dialect::new),
@@ -27,9 +26,9 @@ public enum PostgreSqlVersion
     private final int _version;
     private final boolean _deprecated;
     private final boolean _tested;
-    private final Supplier<? extends PostgreSql95Dialect> _dialectFactory;
+    private final Supplier<? extends PostgreSql96Dialect> _dialectFactory;
 
-    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql95Dialect> dialectFactory)
+    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql96Dialect> dialectFactory)
     {
         _version = version;
         _deprecated = deprecated;
@@ -48,7 +47,7 @@ public enum PostgreSqlVersion
         return _tested;
     }
 
-    public PostgreSql95Dialect getDialect()
+    public PostgreSql96Dialect getDialect()
     {
         return _dialectFactory.get();
     }
@@ -83,7 +82,6 @@ public enum PostgreSqlVersion
         public void test()
         {
             // Good
-            test(95, POSTGRESQL_95);
             test(96, POSTGRESQL_96);
             test(100, POSTGRESQL_10);
             test(110, POSTGRESQL_11);
@@ -104,6 +102,7 @@ public enum PostgreSqlVersion
             test(92, POSTGRESQL_UNSUPPORTED);
             test(93, POSTGRESQL_UNSUPPORTED);
             test(94, POSTGRESQL_UNSUPPORTED);
+            test(95, POSTGRESQL_UNSUPPORTED);
             test(97, POSTGRESQL_UNSUPPORTED);
             test(98, POSTGRESQL_UNSUPPORTED);
         }

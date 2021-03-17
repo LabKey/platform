@@ -1268,12 +1268,13 @@ public class FileContentController extends SpringActionController
                             ColumnInfo displayColumn = column.getDisplayField();
 
                             Map<String, Object> map = new HashMap<>();
-                            map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
+                            if (displayColumn != null)
+                                map.put("displayValue", data.get(displayColumn.getAlias()));
+                            map.put("value", data.get(column.getAlias()));
                             StringExpression url = column.getEffectiveURL();
                             if (null != url)
                                 map.put("url", url.eval(data));
 
-                            // Display value for a lookup has already been handled by Exp.Data
                             row.put(property, map);
                         }
                     }
@@ -1585,7 +1586,7 @@ public class FileContentController extends SpringActionController
             FileContentController controller = new FileContentController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new SendFileAction(),
                 controller.new FrameAction(),
                 controller.new BeginAction(),

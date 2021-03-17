@@ -148,6 +148,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case RootMaterialLSID:
+                return wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+            case AliquotedFromLSID:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
@@ -476,6 +480,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         colLSID.setShownInDetailsView(false);
         colLSID.setShownInUpdateView(false);
 
+        var rootLSID = addColumn(ExpMaterialTable.Column.RootMaterialLSID);
+        rootLSID.setHidden(true);
+        rootLSID.setReadOnly(true);
+        rootLSID.setUserEditable(false);
+        rootLSID.setShownInInsertView(false);
+        rootLSID.setShownInDetailsView(false);
+        rootLSID.setShownInUpdateView(false);
+
+        var aliquotParentLSID = addColumn(ExpMaterialTable.Column.AliquotedFromLSID);
+        aliquotParentLSID.setHidden(true);
+        aliquotParentLSID.setReadOnly(true);
+        aliquotParentLSID.setUserEditable(false);
+        aliquotParentLSID.setShownInInsertView(false);
+        aliquotParentLSID.setShownInDetailsView(false);
+        aliquotParentLSID.setShownInUpdateView(false);
+
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
         addColumn(ExpMaterialTable.Column.Modified);
@@ -496,7 +516,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
             if (InventoryService.get() != null)
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer()));
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
@@ -520,7 +540,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rowIdCol.setURL(url);
         setDetailsURL(url);
 
-        if (!canAccessPhi())
+        if (canAccessPhi())
+        {
+            ActionURL updateActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getUpdateMaterialQueryRowAction(getContainer(), this);
+            setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
+
+            ActionURL insertActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getInsertMaterialQueryRowAction(getContainer(), this);
+            setInsertURL(new DetailsURL(insertActionURL));
+        }
+        else
         {
             setImportURL(LINK_DISABLER);
             setInsertURL(LINK_DISABLER);
@@ -648,10 +676,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
-        // don't select lsid twice
-        if (null != provisioned)
-            dataCols.remove("lsid");
-
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT ");
         String comma = "";
@@ -661,11 +685,37 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             comma = ", ";
         }
         if (null != provisioned)
-            sql.append(comma).append("ss.*");
+        {
+            for (ColumnInfo propertyColumn : provisioned.getColumns())
+            {
+                // don't select lsid twice
+                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                    continue;
+
+                sql.append(comma);
+                if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope()))
+                {
+                    sql.append(propertyColumn.getValueSql("self"));
+                }
+                else
+                {
+                    sql.append("(CASE WHEN ")
+                            .append("m.rootMaterialLsid IS NULL THEN ")
+                            .append(propertyColumn.getValueSql("self"))
+                            .append(" ELSE ")
+                            .append(propertyColumn.getValueSql("root"))
+                            .append(" END) AS ")
+                            .append(propertyColumn.getSelectName());
+                }
+            }
+        }
         sql.append(" FROM ");
         sql.append(_rootTable, "m");
         if (null != provisioned)
-            sql.append(" INNER JOIN ").append(provisioned, "ss").append(" ON m.lsid = ss.lsid");
+        {
+            sql.append(" INNER JOIN ").append(provisioned, "self").append(" ON m.lsid = self.lsid")
+                    .append(" LEFT JOIN ").append(provisioned, "root").append(" ON m.rootMaterialLsid = root.lsid");
+        }
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
@@ -673,8 +723,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         return sql;
     }
-
-
 
     private class IdColumnRendererFactory implements DisplayColumnFactory
     {

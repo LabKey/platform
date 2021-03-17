@@ -857,7 +857,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             {
                 builder.append(br);
                 builder.append(errStr);
-                br = HtmlString.unsafe("<br>");
+                br = HtmlString.BR;
             }
             uniqueErrorStrs.add(errStr);
         }

@@ -109,6 +109,11 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
     public static void doImport(@Nullable File inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                 boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
     {
+        if (SpecimenService.get() == null)
+        {
+            return;
+        }
+
         // do nothing if we've specified data types and specimen is not one of them
         if (!ctx.isDataTypeSelected(StudyImportSpecimenTask.getType()))
             return;

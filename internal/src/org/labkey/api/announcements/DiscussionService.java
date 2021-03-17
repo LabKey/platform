@@ -125,9 +125,13 @@ public interface DiscussionService
 
     class Settings extends ReturnUrlForm
     {
+        public static final String SECURE_OFF = "secureOff";
+        public static final String SECURE_WITHOUT_EMAIL = "secureWithoutEmail";
+        public static final String SECURE_WITH_EMAIL = "secureWithEmail";
+
         String _boardName = "Messages";
         String _conversationName = "Message";
-        boolean _secure = false;
+        String _secure = SECURE_OFF;
         boolean _status = false;
         boolean _expires = false;
         boolean _assignedTo = false;
@@ -214,14 +218,30 @@ public interface DiscussionService
             _conversationName = itemName;
         }
 
-        public boolean isSecure()
+        public String getSecure()
         {
             return _secure;
         }
 
-        public void setSecure(boolean secure)
+        public void setSecure(String secure)
         {
             _secure = secure;
+        }
+
+        public boolean isSecureOff() {
+            return (SECURE_OFF).equals(_secure);
+        }
+
+        public boolean isSecureOn() {
+            return (SECURE_WITHOUT_EMAIL).equals(_secure) || (SECURE_WITH_EMAIL).equals(_secure);
+        }
+
+        public boolean isSecureWithoutEmailOn() {
+            return (SECURE_WITHOUT_EMAIL).equals(_secure);
+        }
+
+        public boolean isSecureWithEmailOn() {
+            return (SECURE_WITH_EMAIL).equals(_secure);
         }
 
         public boolean hasExpires()

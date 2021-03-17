@@ -40,15 +40,13 @@ LABKEY.Utils.onReady(function () {
     var plateMetadataExampleEl = document.getElementById('plateMetadataExample');
 
     if (plateTemplateEl) {
-        var plateUrl = new URL(<%=q(plateUrl)%>, LABKEY.ActionURL.getBaseURL());
+        var plateUrl = <%=jsURL(plateUrl)%>;
         plateTemplateEl.addEventListener('change', function () {
             var templateLsid = plateTemplateEl.value;
             if (templateLsid)
                 plateUrl.searchParams.set('template', templateLsid);
             else
                 plateUrl.searchParams.delete('template');
-
-            console.log('updating url: ' + plateUrl.toString());
             plateMetadataExampleEl.href = plateUrl.toString();
         });
     }

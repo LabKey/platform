@@ -43,6 +43,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
     private boolean allowFlagProperties;
+    private boolean allowTimepointProperties;
     private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
@@ -84,6 +85,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.allowFlagProperties = src.allowFlagProperties;
+        this.allowTimepointProperties = src.allowTimepointProperties;
         this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
@@ -295,6 +297,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowFlagProperties(boolean allowFlagProperties)
     {
         this.allowFlagProperties = allowFlagProperties;
+    }
+
+    public boolean isAllowTimepointProperties()
+    {
+        return allowTimepointProperties;
+    }
+
+    public void setAllowTimepointProperties(boolean allowTimepointProperties)
+    {
+        this.allowTimepointProperties = allowTimepointProperties;
     }
 
     /**

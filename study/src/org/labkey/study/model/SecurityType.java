@@ -15,6 +15,9 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
+
 /**
  * User: jgarms
  * Date: Jul 10, 2008
@@ -78,19 +81,19 @@ public enum SecurityType
         return supportsPerDatasetPermissions;
     }
 
-    public static String getHTMLDescription()
+    public static HtmlString getHTMLDescription()
     {
         StringBuilder sb = new StringBuilder("<table class=\"labkey-pad-cells\">");
         for (SecurityType securityType : values())
         {
             sb.append("<tr><td valign=\"top\"><b>");
-            sb.append(securityType.getLabel());
+            sb.append(PageFlowUtil.filter(securityType.getLabel()));
             sb.append("</b></td><td>");
-            sb.append(securityType.getDescription());
+            sb.append(PageFlowUtil.filter(securityType.getDescription()));
             sb.append("</td></tr>");
         }
         sb.append("</table>");
 
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
     }
 }

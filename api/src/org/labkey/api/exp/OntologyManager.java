@@ -1571,7 +1571,7 @@ public class OntologyManager
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, " +
+                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, derivationdatascope, " +
                 "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode)\n");
         sql.append("SELECT " +
                 "? as propertyuri, " +
@@ -1609,6 +1609,7 @@ public class OntologyManager
                 "? as redactedText, " +
                 "? as excludefromshifting, " +
                 "? as mvindicatorstoragecolumnname, " +
+                "? as derivationdatascope," +
                 "? as sourceontology," +
                 "? as conceptimportcolumn," +
                 "? as conceptlabelcolumn," +
@@ -1650,6 +1651,7 @@ public class OntologyManager
         sql.add(pd.getRedactedText());
         sql.add(pd.isExcludeFromShifting());
         sql.add(pd.getMvIndicatorStorageColumnName());
+        sql.add(pd.getDerivationDataScope());
         // ontology metadata
         sql.add(pd.getSourceOntology());
         sql.add(pd.getConceptImportColumn());
@@ -1714,6 +1716,9 @@ public class OntologyManager
         if (!Objects.equals(pdIn.getLookupQuery(), pd.getLookupQuery()))
             colDiffs.add("LookupQuery");
 
+        if (!Objects.equals(pdIn.getDerivationDataScope(), pd.getDerivationDataScope()))
+            colDiffs.add("DerivationDataScope");
+
         if (!Objects.equals(pdIn.getSourceOntology(), pd.getSourceOntology()))
             colDiffs.add("SourceOntology");
 
@@ -1762,10 +1767,11 @@ public class OntologyManager
         {
             try
             {
+                DbSchema expSchema = getExpSchema();
                 // ensureDomainDescriptor() shouldn't fail if there is a race condition, however Table.insert() will throw if row exists, so can't use that
                 // also a constraint violation will kill any current transaction
                 // CONSIDER to generalize add an option to check for existing row to Table.insert(ColumnInfo[] keyCols, Object[] keyValues)
-                String timestamp = getExpSchema().getSqlDialect().getSqlTypeName(JdbcType.TIMESTAMP);
+                String timestamp = expSchema.getSqlDialect().getSqlTypeName(JdbcType.TIMESTAMP);
                 String templateJson = null==ddIn.getTemplateInfo() ? null : ddIn.getTemplateInfo().toJSON();
                 SQLFragment insert = new SQLFragment(
                         "INSERT INTO " + getTinfoDomainDescriptor().getSelectName() +
@@ -1774,7 +1780,15 @@ public class OntologyManager
                         ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson)
                 .append("WHERE NOT EXISTS (SELECT * FROM "  + getTinfoDomainDescriptor().getSelectName() + " x WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
-                int count = new SqlExecutor(getExpSchema().getScope()).execute(insert);
+                // belt and suspenders approach to avoiding constraint violation exception
+                if (expSchema.getSqlDialect().isPostgreSQL())
+                    insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING;");
+                int count;
+                try (var tx = expSchema.getScope().ensureTransaction())
+                {
+                    count = new SqlExecutor(expSchema.getScope()).execute(insert);
+                    tx.commit();
+                }
 
                 // alternately we could reselect rowid and then we wouldn't need this separate round trip
                 dd = fetchDomainDescriptorFromDB(ddIn.getDomainURI(), ddIn.getContainer());
@@ -2342,14 +2356,14 @@ public class OntologyManager
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
             "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
             "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode," +
-            "recommendedvariable";
+            "recommendedvariable, derivationdatascope";
     static final String[] parametersArray = parameters.split(",");
     static final String insertSql;
     static final String updateSql;
 
     static
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
         String comma = " ";
         for (String p : parametersArray)
@@ -2590,7 +2604,7 @@ public class OntologyManager
             assertNotNull(getTinfoPropertyDescriptor());
             assertNotNull(ExperimentService.get().getTinfoSampleType());
 
-            assertEquals(9, getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,SourceOntology,ConceptImportColumn,ConceptLabelColumn,PrincipalConceptCode").size());
+            assertEquals(10, getTinfoPropertyDescriptor().getColumns("PropertyId,PropertyURI,RangeURI,Name,Description,DerivationDataScope,SourceOntology,ConceptImportColumn,ConceptLabelColumn,PrincipalConceptCode").size());
             assertEquals(4, getTinfoObject().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId").size());
             assertEquals(11, getTinfoObjectPropertiesView().getColumns("ObjectId,ObjectURI,Container,OwnerObjectId,Name,PropertyURI,RangeURI,TypeTag,StringValue,DateTimeValue,FloatValue").size());
             assertEquals(10, ExperimentService.get().getTinfoSampleType().getColumns("RowId,Name,LSID,MaterialLSIDPrefix,Description,Created,CreatedBy,Modified,ModifiedBy,Container").size());

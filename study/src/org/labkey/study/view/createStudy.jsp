@@ -96,7 +96,7 @@
         <labkey:panel title="Security">
             <table class="lk-fields-table">
                 <tr>
-                    <td class="lk-study-property">Security Mode<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%></td>
+                    <td class="lk-study-property">Security Mode<%=helpPopup("Study Security", SecurityType.getHTMLDescription())%></td>
                     <td align="left">
                         <select name="securityString">
                             <%

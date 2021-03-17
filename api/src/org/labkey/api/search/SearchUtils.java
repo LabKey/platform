@@ -18,6 +18,8 @@ package org.labkey.api.search;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.jsp.JspWriter;
@@ -25,6 +27,8 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * User: adam
@@ -114,11 +118,11 @@ public class SearchUtils
 
     public static String getHighlightStyle()
     {
-        return HIGHLIGHT_STYLE;
+        return HIGHLIGHT_STYLE.toString();
     }
 
 
-    private static final String HIGHLIGHT_STYLE = "style=\"color: #126495;\"";  // "new blue" from kim... change to "highlight" style once we have one?
+    private static final HtmlString HIGHLIGHT_STYLE = HtmlString.unsafe("style=\"color: #126495;\"");  // "new blue" from kim... change to "highlight" style once we have one?
     public static final String SPECIAL_SYMBOLS = "+ - && || ! ( ) { } [ ] ^ \" ~ * ? : \\";
     public static final Set<String> SPECIAL_SYMBOLS_SET = PageFlowUtil.set(SPECIAL_SYMBOLS.split(" "));
 
@@ -129,39 +133,39 @@ public class SearchUtils
         private final boolean _includesBooleanOperator;
 
         // htmlMessage is HTML (e.g., all text is property filtered); query string is NOT HTML filtered
-        public HtmlParseException(String htmlMessage, String queryString, int problemLocation)
+        public HtmlParseException(HtmlString htmlMessage, String queryString, int problemLocation)
         {
-            super(getHtml(htmlMessage, queryString, problemLocation));
+            super(getHtml(htmlMessage, queryString, problemLocation).toString());
             _includesSpecialSymbol = has(queryString, SPECIAL_SYMBOLS_SET, false);
             _includesBooleanOperator = has(queryString, PageFlowUtil.set("AND", "NOT", "OR"), true);
         }
 
-        private static String getHtml(String htmlMessage, String queryString, int problemLocation)
+        private static HtmlString getHtml(HtmlString htmlMessage, String queryString, int problemLocation)
         {
             if (-1 == problemLocation)
             {
-                return PageFlowUtil.filter(getStandardPrefix(queryString)) + htmlMessage;
+                return HtmlStringBuilder.of(getStandardPrefix(queryString)).append(htmlMessage).getHtmlString();
             }
             else
             {
-                StringBuilder sb = new StringBuilder();
-                sb.append(PageFlowUtil.filter("Can't parse '"));
+                HtmlStringBuilder html = HtmlStringBuilder.of();
+                html.append("Can't parse '");
 
                 for (int i = 0; i < queryString.length(); i++)
                 {
                     if (problemLocation == i)
-                        sb.append("<span ").append(HIGHLIGHT_STYLE).append(">");
+                        html.append(unsafe("<span ")).append(HIGHLIGHT_STYLE).append(unsafe(">"));
 
-                    sb.append(PageFlowUtil.filter(queryString.charAt(i)));
+                    html.append(queryString.charAt(i));
 
                     if (problemLocation == i)
-                        sb.append("</span>");
+                        html.append(unsafe("</span>"));
                 }
 
-                sb.append(PageFlowUtil.filter("': "));
-                sb.append(htmlMessage);
+                html.append("': ");
+                html.append(htmlMessage);
 
-                return sb.toString();
+                return html.getHtmlString();
             }
         }
 

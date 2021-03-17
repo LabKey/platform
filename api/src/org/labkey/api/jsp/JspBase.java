@@ -298,7 +298,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public JavaScriptFragment jsURL(@NotNull URLHelper url)
     {
-        return JavaScriptFragment.unsafe("new URL(" + q(url.getURIString()) + ")");
+        // Issue 42605: Apply path relative to current location
+        return JavaScriptFragment.unsafe("new URL(" + q(url) + ", window.location.origin)");
     }
 
 
@@ -494,9 +495,19 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
     }
 
+    public HtmlString helpPopup(String title, HtmlString helpText)
+    {
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true));
+    }
+
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+    }
+
+    public HtmlString helpPopup(String title, HtmlString helpText, int width)
+    {
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true, width));
     }
 
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)

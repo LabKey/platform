@@ -141,9 +141,10 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             exportTypes = true;
         }
 
-        // add any sample derivation runs
+        // add any sample derivation or aliquot runs
         List<ExpRun> runs = ExperimentService.get().getExpRuns(ctx.getContainer(), null, null).stream()
-                .filter(run -> run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID))
+                .filter(run -> run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
+                || run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
                 .collect(Collectors.toList());
 
         Set<ExpRun> exportedRuns = new HashSet<>();

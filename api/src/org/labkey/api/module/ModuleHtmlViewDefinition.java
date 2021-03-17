@@ -25,6 +25,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -67,7 +68,7 @@ public class ModuleHtmlViewDefinition
     private final List<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedList<>();
     private final Set<Class<? extends Permission>> _requiredPermissionClasses = new HashSet<>();
 
-    private String _html;
+    private HtmlString _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
     private ViewType _viewDef = null;
@@ -80,10 +81,11 @@ public class ModuleHtmlViewDefinition
         {
             if (is != null)
             {
-                _html = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
-                char ch = _html.length() > 0 ? _html.charAt(0) : 0;
+                String html = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
+                char ch = html.length() > 0 ? html.charAt(0) : 0;
                 if (ch == 0xfffe || ch == 0xfeff)
-                    _html = _html.substring(1);
+                    html = html.substring(1);
+                _html = HtmlString.unsafe(html);
             }
         }
         catch (IOException e)
@@ -136,9 +138,9 @@ public class ModuleHtmlViewDefinition
             catch(Exception e)
             {
                 _log.error("Error trying to read and parse the metadata XML content from " + r.getPath(), e);
-                _html = "<p class='labkey-error'>The following exception occurred while attempting to load view metadata from "
+                _html = HtmlString.unsafe("<p class='labkey-error'>The following exception occurred while attempting to load view metadata from "
                          + PageFlowUtil.filter(r.getPath()) + ": "
-                         + e.getMessage() + "</p>";
+                         + e.getMessage() + "</p>");
             }
         }
     }
@@ -214,7 +216,7 @@ public class ModuleHtmlViewDefinition
         return _name;
     }
 
-    public String getHtml()
+    public HtmlString getHtml()
     {
         return _html;
     }

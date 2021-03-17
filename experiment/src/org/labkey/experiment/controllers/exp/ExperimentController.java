@@ -55,25 +55,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -120,6 +102,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
@@ -128,6 +111,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -177,6 +161,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -208,6 +193,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -6331,6 +6317,26 @@ public class ExperimentController extends SpringActionController
         {
             return new ActionURL(TypesController.RepairAction.class, container);
         }
+
+        @Override
+        public ActionURL getUpdateMaterialQueryRowAction(Container c, TableInfo table)
+        {
+            ActionURL url = new ActionURL(UpdateMaterialQueryRowAction.class, c);
+            url.addParameter("schemaName", "samples");
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table)
+        {
+            ActionURL url = new ActionURL(InsertMaterialQueryRowAction.class, c);
+            url.addParameter("schemaName", "samples");
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+            return url;
+        }
     }
 
     private static abstract class BaseResolveLsidApiAction<F extends ResolveLsidsForm> extends ReadOnlyApiAction<F>
@@ -6484,4 +6490,127 @@ public class ExperimentController extends SpringActionController
             return ret;
         }
     }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class UpdateMaterialQueryRowAction extends UserSchemaAction
+    {
+        @Override
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            BindException bind = super.bindParameters(m);
+
+            QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
+
+            int sampleId;
+            try
+            {
+                sampleId = Integer.parseInt((String) tableForm.getPkVal());
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
+            }
+
+            ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
+            if (material == null)
+                throw new NotFoundException("Invalid material: " + tableForm.getPkVal());
+
+            return bind;
+        }
+
+        @Override
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
+        {
+            int sampleId = Integer.parseInt((String) tableForm.getPkVal());
+
+            ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
+            if (material == null)
+                throw new NotFoundException("Invalid material: " + tableForm.getPkVal());
+
+            boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
+
+            TableInfo tableInfo = tableForm.getTable();
+            Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : tableInfo.getDomain().getProperties())
+            {
+                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
+            }
+
+            for (var column : tableInfo.getColumns())
+            {
+                String columnName = column.getName();
+                if (propertyFields.containsKey(columnName))
+                {
+                    boolean isAliquotField = propertyFields.get(columnName);
+                    boolean show = (isAliquot && isAliquotField) || (!isAliquot && !isAliquotField);
+                    ((BaseColumnInfo)column).setUserEditable(show);
+                    ((BaseColumnInfo)column).setHidden(!show);
+                }
+            }
+
+            ButtonBar bb = createSubmitCancelButtonBar(tableForm);
+            UpdateView view = new UpdateView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
+        {
+            doInsertUpdate(tableForm, errors, false);
+            return 0 == errors.getErrorCount();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            super.addNavTrail(root);
+            root.addChild("Edit " + _form.getQueryName());
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public static class InsertMaterialQueryRowAction extends UserSchemaAction
+    {
+        @Override
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
+        {
+            TableInfo tableInfo = tableForm.getTable();
+            Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : tableInfo.getDomain().getProperties())
+            {
+                propertyFields.put(dp.getName(), ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()));
+            }
+
+            for (var column : tableInfo.getColumns())
+            {
+                String columnName = column.getName();
+                if (propertyFields.containsKey(columnName))
+                {
+                    boolean isAliquotField = propertyFields.get(columnName);
+                    ((BaseColumnInfo)column).setUserEditable(!isAliquotField);
+                    ((BaseColumnInfo)column).setHidden(isAliquotField);
+                }
+            }
+
+            InsertView view = new InsertView(tableForm, errors);
+            view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
+        {
+            doInsertUpdate(tableForm, errors, true);
+            return 0 == errors.getErrorCount();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            super.addNavTrail(root);
+            root.addChild("Insert " + _form.getQueryName());
+        }
+    }
+
 }
