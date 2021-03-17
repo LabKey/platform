@@ -326,10 +326,6 @@ public class StudyQuerySchema extends UserSchema
                     names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
 
                     names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
-
-                    // assay schedule tables
-                    names.add(ASSAY_SPECIMEN_TABLE_NAME);
-                    names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
                 }
 
                 names.add(VISIT_MAP_TABLE_NAME);
@@ -357,7 +353,7 @@ public class StudyQuerySchema extends UserSchema
                     names.add(dsd.getName());
                 }
 
-                // study designs
+                // study design tables
                 names.add(PRODUCT_TABLE_NAME);
                 names.add(PRODUCT_ANTIGEN_TABLE_NAME);
                 names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
@@ -367,6 +363,8 @@ public class StudyQuerySchema extends UserSchema
                 names.add(PERSONNEL_TABLE_NAME);
                 names.add(VISIT_TAG_TABLE_NAME);
                 names.add(VISIT_TAG_MAP_TABLE_NAME);
+                names.add(ASSAY_SPECIMEN_TABLE_NAME);
+                names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
                 names.add(STUDY_SNAPSHOT_TABLE_NAME);
             }
