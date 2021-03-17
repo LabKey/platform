@@ -4847,7 +4847,6 @@ public class StudyController extends BaseStudyController
                 DatasetDefinition def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getSnapshotName())
                         .setStudy(study)
                         .setKeyPropertyName(additionalKey)
-                        .setDatasetId(datasetId)
                         .setDemographicData(isDemographicData)
                         .setUseTimeKeyField(useTimeKeyField));
                 form.setSnapshotDatasetId(def.getDatasetId());
