@@ -17,8 +17,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -47,7 +46,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _nameExpression;
     private String _labelColor;
     private String _metricUnit;
-    private String _autoLinkTargetContainerId;
+    private Container _autoLinkTargetContainerId;
 
     private String _materialParentImportAliasMap;
 
@@ -149,12 +148,12 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         _metricUnit = metricUnit;
     }
 
-    public String getAutoLinkTargetContainerId()
+    public Container getAutoLinkTargetContainerId()
     {
         return _autoLinkTargetContainerId;
     }
 
-    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
+    public void setAutoLinkTargetContainerId(Container autoLinkTargetContainerId)
     {
         _autoLinkTargetContainerId = autoLinkTargetContainerId;
     }

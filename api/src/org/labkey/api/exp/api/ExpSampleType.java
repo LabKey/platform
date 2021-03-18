@@ -109,7 +109,7 @@ public interface ExpSampleType extends ExpObject
 
     /** @return Auto link target container if set. */
     @Nullable
-    String getAutoLinkTargetContainerId();
+    Container getAutoLinkTargetContainer();
 
     /**
      * Generate sample names for each row map in <code>maps</code> sample group.

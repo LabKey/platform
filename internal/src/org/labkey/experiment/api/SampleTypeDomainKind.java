@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -425,7 +426,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         String nameExpression = null;
         String labelColor = null;
         String metricUnit = null;
-        String autoLinkTargetContainer = null;
+        Container autoLinkTargetContainer = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -440,7 +441,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
-            autoLinkTargetContainer = StringUtils.trimToNull(arguments.getAutoLinkTargetContainerId());
+            autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;

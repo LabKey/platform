@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.1.8",
-    "@labkey/components": "2.14.1-fb-copytostudy-8591.2",
+    "@labkey/components": "2.15.0-fb-copytostudy-8591.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
             this.lsid = st.getLSID();
             this.description = st.getDescription();
             this.idCols = Collections.emptyList();
-            this.autoLinkTargetContainerId = st.getAutoLinkTargetContainerId();
+            this.autoLinkTargetContainerId = null != st.getAutoLinkTargetContainer() ? st.getAutoLinkTargetContainer().getId() : "";
             if (st.hasIdColumns())
             {
                 this.idCols = st.getIdCols().stream().map(col -> col.getPropertyId()).collect(Collectors.toList());

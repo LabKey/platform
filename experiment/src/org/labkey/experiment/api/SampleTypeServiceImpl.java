@@ -604,7 +604,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable String autoLinkTargetContainerId)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable Container autoLinkTargetContainer)
         throws ExperimentException
     {
         if (name == null)
@@ -713,7 +713,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             source.setNameExpression(nameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
-        source.setAutoLinkTargetContainerId(autoLinkTargetContainerId);
+        source.setAutoLinkTargetContainerId(autoLinkTargetContainer);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -873,7 +873,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             st.setLabelColor(options.getLabelColor());
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
-            st.setAutoLinkTargetContainerId(options.getAutoLinkTargetContainerId());
+            st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
         }
 
         ValidationException errors;

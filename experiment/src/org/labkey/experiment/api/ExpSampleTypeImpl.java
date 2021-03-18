@@ -320,13 +320,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return _object.getMetricUnit();
     }
 
-    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
+    public void setAutoLinkTargetContainer(Container autoLinkTargetContainerId)
     {
         _object.setAutoLinkTargetContainerId(autoLinkTargetContainerId);
     }
 
     @Override
-    public @Nullable String getAutoLinkTargetContainerId()
+    public @Nullable Container getAutoLinkTargetContainer()
     {
         return _object.getAutoLinkTargetContainerId();
     }
