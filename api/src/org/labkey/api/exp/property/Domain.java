@@ -74,7 +74,7 @@ public interface Domain extends IPropertyType
      * This can be called at the beginning of a transaction to help reduce the chance of a dead-lock.
      * This pattern effectively forces all callers who are trying to manipulate this domain to queue up.
      */
-    public Lock getDatabaseLock();
+    Lock getDatabaseLock();
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;

@@ -68,6 +68,8 @@ public class PurgeParticipantsTask extends TimerTask
                     potentiallyDeletedParticipants = entry.getValue();
                 }
 
+                _logger.info("Attempting to purge participants in " + container.getPath());
+
                 // Now, outside the synchronization, do the actual purge
                 // TODO: Seems like this code block should be moved into VisitManager and called by PurgeParticipantsMaintenanceTask as well (it has no exception handling and doesn't call updateParticipantVisitTable()
                 StudyImpl study = StudyManager.getInstance().getStudy(container);
