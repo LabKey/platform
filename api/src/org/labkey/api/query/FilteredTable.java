@@ -547,7 +547,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
      */
     public final boolean hasRulesTransformedColumns()
     {
-        return _rulesTransformedColumns == null || !_rulesTransformedColumns.isEmpty();
+        return _rulesTransformedColumns != null && !_rulesTransformedColumns.isEmpty();
     }
 
     /**
@@ -555,7 +555,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
      */
     public final boolean hasRulesOmittedColumns()
     {
-        return _rulesOmittedColumns == null || !_rulesOmittedColumns.isEmpty();
+        return _rulesOmittedColumns != null && !_rulesOmittedColumns.isEmpty();
     }
 
     @Override
