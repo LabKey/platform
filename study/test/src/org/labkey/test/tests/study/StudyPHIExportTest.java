@@ -169,7 +169,7 @@ public class StudyPHIExportTest extends StudyExportTest
         if (_studyHelper.isSpecimenModuleActive())
         {
             startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
-            waitForSpecimenImport();
+            waitForPipelineJobsToComplete(4, "Specimen import", false);
             exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
 
             clickFolder(getFolderName());

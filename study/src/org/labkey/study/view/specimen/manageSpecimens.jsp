@@ -29,24 +29,27 @@
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ConfigureRequestabilityRulesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenWebPartAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Container c = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     User user = getUser();
+    String subjectNounSingle = study.getSubjectNounSingular().toLowerCase();
 
     if (c.hasPermission(user, AdminPermission.class))
     {
@@ -112,6 +115,11 @@
                         <td><%= link("Manage Display and Behavior", ManageDisplaySettingsAction.class) %></td>
                     </tr>
                     <tr>
+                        <td class="lk-study-prop-label">Comments</td>
+                        <td class="lk-study-prop-desc">Manage <%=h(subjectNounSingle)%> and <%=h(subjectNounSingle)%>/visit comments</td>
+                        <td><%= link("Manage Comments", ManageSpecimenCommentsAction.class) %></td>
+                    </tr>
+                    <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
                         <td class="lk-study-prop-desc">Configure the specimen groupings in the specimen web part</td>
                         <td><%= link("Configure Specimen Groupings", ManageSpecimenWebPartAction.class) %></td>
@@ -156,6 +164,11 @@
     %>
             <labkey:panel title="Specimen Request Settings">
                 <table class="lk-fields-table">
+                    <tr>
+                        <td class="lk-study-prop-label">Location Types</td>
+                        <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
+                        <td><%= link("Manage Location Types", ManageLocationTypesAction.class) %></td>
+                    </tr>
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser()).size() %> specimen request

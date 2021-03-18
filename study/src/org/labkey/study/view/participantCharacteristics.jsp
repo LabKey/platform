@@ -141,10 +141,9 @@
             datasetRow = dataset.getDatasetRow(user, lsid);
         }
 
-        boolean editAccess = dataset.canWrite(user);
         if (datasetRow == null)
         {
-            if (editAccess)
+            if (dataset.canInsert(user))
             {
                 ActionURL addAction = new ActionURL(DatasetController.InsertAction.class, getContainer());
                 addAction.addParameter("datasetId", datasetId);
@@ -159,7 +158,7 @@
             continue;
         }
 
-        if (editAccess)
+        if (dataset.canUpdate(user))
         {
     %>
     <tr class="labkey-alternate-row" style="<%=text(expanded ? "" : "display:none")%>">

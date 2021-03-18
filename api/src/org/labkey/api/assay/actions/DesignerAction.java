@@ -81,7 +81,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.current(getViewContext().getContainer())));
         }
 
-        result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), ModuleHtmlView.getGeneratedViewPath("assayDesigner")));
+        result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("assayDesigner")));
         return result;
     }
 

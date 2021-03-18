@@ -116,6 +116,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
     protected Set<String> getDistinctValues()
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_filterColumn), _filterValue, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("Container"), getContainer().getEntityId().toString());
         TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_valueColumn), filter, null);
         String[] existing = ts.getArray(String.class);
 
