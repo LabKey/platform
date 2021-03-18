@@ -28,7 +28,7 @@ public class InputTag extends SimpleTagBase
 {
     private String autoComplete; // "on" / "off"
     private Boolean checked;
-    private String contextContent;
+    private HtmlString contextContent;
     private String className;
     private String dirName;
     private Boolean forceSmallContext;
@@ -169,12 +169,12 @@ public class InputTag extends SimpleTagBase
 
     public void setContextContent(HtmlString contextContent)
     {
-        this.contextContent = contextContent.toString();
+        this.contextContent = contextContent;
     }
 
     public void setContextContent(String contextContent)
     {
-        this.contextContent = contextContent;
+        this.contextContent = HtmlString.of(contextContent);
     }
 
     public void setForceSmallContext(Boolean forceSmallContext)

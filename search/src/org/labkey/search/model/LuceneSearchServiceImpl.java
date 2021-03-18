@@ -90,6 +90,7 @@ import org.labkey.api.util.FileStream.FileFileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.MultiPhaseCPUTimer;
@@ -1434,25 +1435,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 if (mp.isParseable())
                 {
-                    String message;
+                    HtmlString message;
                     int problemLocation;
 
                     if ("<EOF>".equals(mp.getEncountered()))
                     {
-                        message = PageFlowUtil.filter("Query string is incomplete");
+                        message = HtmlString.of("Query string is incomplete");
                         problemLocation = queryString.length();
                     }
                     else
                     {
                         if (1 == mp.getLine())
                         {
-                            message = "Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>";
+                            message = HtmlString.unsafe("Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>");
                             problemLocation = mp.getColumn();
                         }
                         else
                         {
                             // Multiline query?!?  Don't try to highlight, just report the location (1-based)
-                            message = PageFlowUtil.filter("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
+                            message = HtmlString.of("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
                             problemLocation = -1;
                         }
                     }

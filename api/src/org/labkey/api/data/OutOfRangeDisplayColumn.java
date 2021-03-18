@@ -22,8 +22,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
@@ -116,12 +114,6 @@ public class OutOfRangeDisplayColumn extends DataColumn
     public Object getDisplayValue(RenderContext ctx)
     {
         return getOORPrefix(ctx) + super.getDisplayValue(ctx);
-    }
-
-    @Override
-    public String getTsvFormattedValue(RenderContext ctx)
-    {
-        return getOORPrefix(ctx) + super.getTsvFormattedValue(ctx);
     }
 
     @Override

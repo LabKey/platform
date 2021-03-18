@@ -345,8 +345,9 @@ public class ParticipantGroupManager
                     item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
                     button.addMenuItem(item);
 
-                    NavTree fromSeletion = item.addChild("From Selected " + study.getSubjectNounPlural());
-                    fromSeletion.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
+                    NavTree fromSelection = item.addChild("From Selected " + study.getSubjectNounPlural());
+                    fromSelection.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
+                    // TODO: Ideally, we'd do something like "fromSelection.setRequiresSelection(true)" here, like we can with buttons, but that's not an option
 
                     NavTree fromGrid = item.addChild("From All " + study.getSubjectNounPlural());
                     fromGrid.setScript(createNewParticipantGroupScript(context, dataRegionName, false));

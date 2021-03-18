@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.SaveStudyPermissionsAction" %>
 <%@ page import="org.labkey.study.model.GroupSecurityType" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
@@ -38,8 +39,8 @@
     ActionURL returnUrl = pair.second;
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
-Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
-    <labkey:form id="groupUpdateForm" action="<%=urlFor(SaveStudyPermissionsAction.class)%>" method="post">
+Any user with READ access to this folder may view some summary data. However, access to detail data must be explicitly granted.
+    <labkey:form id="groupUpdateForm" action="<%=urlFor(SaveStudyPermissionsAction.class)%>" onsubmit="LABKEY.setSubmit(true);" method="post">
 <%
     if (returnUrl != null)
         out.print(generateReturnUrlFormField(returnUrl));
@@ -80,15 +81,16 @@ Any user with READ access to this folder may view some summary data.  However, a
         %><tr><td><%=h(name)%></td><%
         if (includeEditOption)
         {
-        %><th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>"<%=checked(GroupSecurityType.UPDATE_ALL == gt)%>></th><%
+        %><th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>"<%=checked(GroupSecurityType.UPDATE_ALL == gt)%> onchange="LABKEY.setDirty(true);"></th><%
         }
         %>
-        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%>></th>
-        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%>></th>
-        <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%>></th><%
+        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%> onchange="LABKEY.setDirty(true);"></th>
+        <th><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%> onchange="LABKEY.setDirty(true);"></th>
+        <th><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%> onchange="LABKEY.setDirty(true);"></th><%
         %><td id="<%=h(inputName)%>$WARN" style="display:<%=h(!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)?"inline":"none")%>;"><img src="<%=getWebappURL("_images/exclaim.gif")%>" alt="group does not have folder read permissions" title="group does not have folder read permissions"></td><%
         %></tr><%
     }
     %></table>
-    <%= button("Update").submit(true).id("groupUpdateButton") %>
+    <%=button("Update").submit(true).id("groupUpdateButton")%>
+    <%=button("Cancel").href(urlFor(ManageStudyAction.class)).onClick("LABKEY.setSubmit(true);")%>
     </labkey:form>

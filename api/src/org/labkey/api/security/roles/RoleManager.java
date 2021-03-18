@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -32,6 +33,7 @@ import org.labkey.api.view.ViewContext;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +65,33 @@ public class RoleManager
         BasicPermissions.add(UpdatePermission.class);
         BasicPermissions.add(DeletePermission.class);
     }
+
+    // A simple Comparator that orders Roles by approximate permission level (lowest to highest) and then alphabetically
+    // within each level. This could be extended to consider other permissions.
+    public static final Comparator<Role> ROLE_COMPARATOR = new Comparator<>()
+    {
+        @Override
+        public int compare(Role o1, Role o2)
+        {
+            int levelCompare = getPermLevel(o1).compareTo(getPermLevel(o2));
+
+            if (0 == levelCompare)
+                return o1.getDisplayName().compareTo(o2.getDisplayName());
+
+            return levelCompare;
+        }
+
+        private Integer getPermLevel(Role r)
+        {
+            Set<Class<? extends Permission>> set = r.getPermissions();
+            return
+                (set.contains(ReadPermission.class) ? 1 : 0) +
+                (set.contains(InsertPermission.class) ? 2 : 0) +
+                (set.contains(UpdatePermission.class) ? 4 : 0) +
+                (set.contains(DeletePermission.class) ? 8 : 0) +
+                (set.contains(AdminPermission.class) ? 16 : 0);
+        }
+    };
 
     //global map from role name to Role instance
     private static final Map<String, Role> _nameToRoleMap = new ConcurrentHashMap<>();

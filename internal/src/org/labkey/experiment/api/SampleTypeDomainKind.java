@@ -49,6 +49,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -94,6 +95,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");
         RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate

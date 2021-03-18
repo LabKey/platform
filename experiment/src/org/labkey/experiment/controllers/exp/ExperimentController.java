@@ -36,7 +36,6 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -193,6 +192,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -1114,7 +1114,7 @@ public class ExperimentController extends SpringActionController
             if (!create)
                 _dataClass = form.getDataClass(getContainer());
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("dataClassDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("dataClassDesigner"));
         }
 
         @Override
@@ -2866,7 +2866,7 @@ public class ExperimentController extends SpringActionController
                 for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
                 {
                     ActionURL url = urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
-                    if (dataset.canWrite(getUser()))
+                    if (dataset.canDelete(getUser()))
                     {
                         permissionDatasetRows.add(new Pair<>(dataset, url));
                     }
@@ -3554,7 +3554,7 @@ public class ExperimentController extends SpringActionController
             if (!create)
                 _sampleType = form.getSampleType(getContainer());
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("sampleTypeDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("sampleTypeDesigner"));
         }
 
         @Override
@@ -6494,10 +6494,39 @@ public class ExperimentController extends SpringActionController
     public static class UpdateMaterialQueryRowAction extends UserSchemaAction
     {
         @Override
+        public BindException bindParameters(PropertyValues m) throws Exception
+        {
+            BindException bind = super.bindParameters(m);
+
+            QueryUpdateForm tableForm = (QueryUpdateForm)bind.getTarget();
+
+            int sampleId;
+            try
+            {
+                sampleId = Integer.parseInt((String) tableForm.getPkVal());
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("Invalid RowId: " + tableForm.getPkVal());
+            }
+
+            ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
+            if (material == null)
+                throw new NotFoundException("Invalid material: " + tableForm.getPkVal());
+
+            return bind;
+        }
+
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
-            ExpMaterial material = ExperimentService.get().getExpMaterial(Integer.valueOf((String) tableForm.getPkVal()));
-            boolean isAliquot = material != null && !StringUtils.isEmpty(material.getAliquotedFromLSID());
+            int sampleId = Integer.parseInt((String) tableForm.getPkVal());
+
+            ExpMaterial material = ExperimentService.get().getExpMaterial(sampleId);
+            if (material == null)
+                throw new NotFoundException("Invalid material: " + tableForm.getPkVal());
+
+            boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
 
             TableInfo tableInfo = tableForm.getTable();
             Map<String, Boolean> propertyFields = new CaseInsensitiveHashMap<>();

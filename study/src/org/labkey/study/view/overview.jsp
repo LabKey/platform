@@ -96,7 +96,7 @@
 
 %><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
 &nbsp;<%= link("Views", new ActionURL(BeginAction.class, container))%>&nbsp;
-&nbsp;<%= link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
+ <%= bean.showSpecimens ? link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container)) : HtmlString.EMPTY_STRING%>
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.size() && !hasHiddenData; i++)

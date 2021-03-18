@@ -31,7 +31,15 @@ public class ParameterMarkerInClauseGenerator implements InClauseGenerator
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         sql.append(" IN (");
-        sql.append(StringUtils.repeat("?", ", ", params.size()));
+        if (params.isEmpty())
+        {
+            // Not a common scenario, but don't generate an empty in clause that's not legal SQL
+            sql.append("NULL");
+        }
+        else
+        {
+            sql.append(StringUtils.repeat("?", ", ", params.size()));
+        }
         sql.append(")");
 
         sql.addAll(params);
