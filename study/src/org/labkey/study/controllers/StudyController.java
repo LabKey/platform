@@ -421,7 +421,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getStudyRedirectIfNull();
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), ModuleHtmlView.getGeneratedViewPath("datasetDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("datasetDesigner"));
         }
 
         @Override
@@ -480,7 +480,7 @@ public class StudyController extends BaseStudyController
                 def.setTypeURI(domainURI);
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), ModuleHtmlView.getGeneratedViewPath("datasetDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("datasetDesigner"));
         }
 
         @Override
