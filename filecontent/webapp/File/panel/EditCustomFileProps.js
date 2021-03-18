@@ -236,7 +236,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
         }
 
         Ext4.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('filecontent', 'updateFileProps.api'),
+            url: LABKEY.ActionURL.buildURL('filecontent', 'updateFileProps.api', this.containerPath),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             jsonData: { files: files },
