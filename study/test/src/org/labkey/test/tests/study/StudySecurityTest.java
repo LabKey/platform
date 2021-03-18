@@ -28,7 +28,6 @@ import org.labkey.test.pages.study.StudySecurityPage;
 import org.labkey.test.pages.study.StudySecurityPage.GroupSecuritySetting;
 import org.labkey.test.pages.study.StudySecurityPage.DatasetRoles;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.PortalHelper;
 import org.openqa.selenium.WebElement;
 
 import java.util.Arrays;
@@ -40,25 +39,29 @@ import java.util.Map;
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudySecurityTest extends BaseWebDriverTest
 {
-    // This must be the folder name because of the test data "studies/StudySecurityProject.folder.zip".
+    // This must be the folder name because of the imported study from test data.
     private static final String FOLDER_NAME = "My Study";
 
+    // These specific user account names are needed because of the imported study from test data.
     private static final String READER = "dsreader@studysecurity.test";
     private static final String EDITOR = "dseditor@studysecurity.test";
     private static final String LIMITED = "dslimited@studysecurity.test";
     private static final String NONE = "dsnone@studysecurity.test";
 
-    private static final String GROUP_DEVELOPER = "Developers";
-    private static final String GROUP_GUESTS = "Guests";
-    private static final String GROUP_ALL_USERS = "All site users";
-    private static final String GROUP_USERS = "Users";
-
+    // These user groups are created with the imported study from test data.
+    // These groups are already populated with the users listed above.
     private static final String GROUP_READERS = "Readers";
     private static final String GROUP_EDITORS = "Editors";
     private static final String GROUP_LIMITED = "The Limited";
     private static final String GROUP_NONE = "No Access";
 
-    // This study has about 50 datasets, won't check them all, limit to a few we are interested in.
+    // General system groups.
+    private static final String GROUP_DEVELOPER = "Developers";
+    private static final String GROUP_GUESTS = "Guests";
+    private static final String GROUP_ALL_USERS = "All site users";
+    private static final String GROUP_USERS = "Users";
+
+    // This study has about 50 datasets, not going to use them all. Test is limited to a few we are interested in.
     private static final String DS_ALT_ID = "Alt ID mapping";
     private static final String DS_COHORT = "EVC-1: Enrollment Vaccination";
     private static final String DS_DEMO = "DEM-1: Demographics";
@@ -71,29 +74,10 @@ public class StudySecurityTest extends BaseWebDriverTest
     public static void doSetup()
     {
 
-        // Migrated this test from StudyBaseTest to BaseWebDriverTest, and much of the setup code below came from StudyBaseTest.
-
         StudySecurityTest initTest = (StudySecurityTest)getCurrentTest();
 
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest._containerHelper.createSubfolder(initTest.getProjectName(), FOLDER_NAME, "Study");
-
-        initTest._containerHelper.enableModule("Specimen");
-
-        initTest.goToFolderManagement();
-        initTest.clickAndWait(Locator.linkWithText("Folder Type"));
-
-        // Activate specimen module to enable specimen UI/webparts
-        initTest.checkCheckbox(Locator.checkboxByTitle("Specimen"));
-
-        initTest.clickButton("Update Folder");
-
-        new PortalHelper(initTest.getDriver()).doInAdminMode(portalHelper -> {
-            portalHelper.addWebPart("Data Pipeline");
-            portalHelper.addWebPart("Datasets");
-            portalHelper.addWebPart("Specimens");
-            portalHelper.addWebPart("Views");
-        });
 
         initTest.clickFolder(FOLDER_NAME);
 
@@ -105,11 +89,13 @@ public class StudySecurityTest extends BaseWebDriverTest
         initTest.log("Import new study with alt-ID");
         initTest.importFolderFromZip(TestFileUtils.getSampleData("studies/AltIdStudy.folder.zip"));
 
+        // This study file contains the groups that are used in this tests.
         initTest.clickProject(initTest.getProjectName());
         initTest.importFolderFromZip(TestFileUtils.getSampleData("studies/StudySecurityProject.folder.zip"));
 
     }
 
+    // Not really sure this test is useful, but carrying it over from the previous version of the StudySecurityTest.
     @Test
     public void testHappyPath()
     {
@@ -117,14 +103,14 @@ public class StudySecurityTest extends BaseWebDriverTest
         Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.EDITOR,
                                                                 DS_DEMO, DatasetRoles.EDITOR,
                                                                 DS_TYPES, DatasetRoles.EDITOR);
-        verifyPermissions(expectedDatasetRoles, true);
+        verifyPermissions(expectedDatasetRoles);
 
         log(String.format("Group '%s' should be able to see all datasets, but not edit anything and not do anything with the pipeline.", GROUP_READERS));
         expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.READER,
                                     DS_DEMO, DatasetRoles.READER,
                                     DS_TYPES, DatasetRoles.READER);
         impersonate(READER);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
         log(String.format("Group '%s' should be able to see all datasets and edit them and import new data via the pipeline, but not set the pipeline path.", GROUP_EDITORS));
@@ -132,7 +118,7 @@ public class StudySecurityTest extends BaseWebDriverTest
                                     DS_DEMO, DatasetRoles.EDITOR,
                                     DS_TYPES, DatasetRoles.EDITOR);
         impersonate(EDITOR);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
         log(String.format("Group '%s' should be able to see only the few datasets we granted them and not do anything with the pipeline.", GROUP_LIMITED));
@@ -140,7 +126,7 @@ public class StudySecurityTest extends BaseWebDriverTest
                                     DS_TYPES, DatasetRoles.READER,
                                     DS_FOLLOW_UP, DatasetRoles.NONE);
         impersonate(LIMITED);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
         log(String.format("Group '%s' should not be able to see any datasets nor the pipeline.", GROUP_NONE));
@@ -148,11 +134,12 @@ public class StudySecurityTest extends BaseWebDriverTest
                                     DS_DEMO, DatasetRoles.NONE,
                                     DS_TYPES, DatasetRoles.NONE);
         impersonate(NONE);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
     }
 
+    // Not really sure this test is useful, but carrying it over from the previous version of the StudySecurityTest.
     @Test
     public void testChangePermissions()
     {
@@ -163,7 +150,7 @@ public class StudySecurityTest extends BaseWebDriverTest
                                                                 DS_DEMO, DatasetRoles.NONE,
                                                                 DS_TYPES, DatasetRoles.NONE);
         impersonate(LIMITED);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
         log(String.format("Reinstate read permission to %s to verify that per-dataset settings were preserved.", GROUP_LIMITED));
@@ -172,7 +159,7 @@ public class StudySecurityTest extends BaseWebDriverTest
                                     DS_DEMO, DatasetRoles.READER,
                                     DS_TYPES, DatasetRoles.READER);
         impersonate(LIMITED);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
         log(String.format("Move %s to per-dataset and grant edit only to dataset %s.", GROUP_EDITORS, DS_TYPES));
@@ -184,7 +171,7 @@ public class StudySecurityTest extends BaseWebDriverTest
                 DS_DEMO, DatasetRoles.NONE,
                 DS_TYPES, DatasetRoles.EDITOR);
         impersonate(EDITOR);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
 
         log(String.format("Reset %s to general edit.", GROUP_EDITORS));
@@ -193,7 +180,7 @@ public class StudySecurityTest extends BaseWebDriverTest
                 DS_DEMO, DatasetRoles.EDITOR,
                 DS_TYPES, DatasetRoles.EDITOR);
         impersonate(EDITOR);
-        verifyPermissions(expectedDatasetRoles, false);
+        verifyPermissions(expectedDatasetRoles);
         stopImpersonating();
     }
 
@@ -219,12 +206,10 @@ public class StudySecurityTest extends BaseWebDriverTest
         clickFolder(FOLDER_NAME);
     }
 
-    private void verifyPermissions(Map<String, DatasetRoles> expectedDatasetRoles, boolean canSetupPipeline)
+    private void verifyPermissions(Map<String, DatasetRoles> expectedDatasetRoles)
     {
 
         navigateToFolder(getProjectName(), FOLDER_NAME);
-
-        verifyPipelinePermissions(canSetupPipeline);
 
         for(Map.Entry<String, DatasetRoles> entry : expectedDatasetRoles.entrySet())
         {
@@ -280,6 +265,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
     }
 
+    // TODO maybe add one test to verify that only admins can set the pipeline.
     private void verifyPipelinePermissions(boolean canSetupPipeline)
     {
         WebElement dataPipelinePanel = Locator.tagWithClassContaining("div", "panel-body").findElements(getDriver()).get(1);
@@ -294,6 +280,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         if(datasetRole.equals(DatasetRoles.READER))
         {
+            log("Validate the the 'reader' role does not have permission to update or insert.");
             checker()
                     .verifyFalse(
                             String.format("The user should only have read permissions to dataset '%s' but the 'insert button' is present.",
@@ -302,7 +289,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
             checker()
                     .verifyEquals(
-                            String.format("User should not be able to edit rows in '%s' but update link is present.",
+                            String.format("User should not be able to edit rows in '%s' but update link(s) is/are present.",
                                     datasetName),
                             0, updateLinks.size());
 
@@ -320,7 +307,7 @@ public class StudySecurityTest extends BaseWebDriverTest
             }
             else
             {
-                log("For the 'reader' or 'author' roles none of the entries in the dataset should be editable.");
+                log("For the 'author' roles none of the entries in the dataset should be editable.");
                 checker().verifyEquals("Entries in the dataset appear to be editable.", 0, updateLinks.size());
             }
 
