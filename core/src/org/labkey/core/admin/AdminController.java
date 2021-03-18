@@ -5119,6 +5119,53 @@ public class AdminController extends SpringActionController
         }
     }
 
+    /**
+     * This standalone file root management action can be used on folder types that do not support
+     * the normal 'Manage Folder' UI. Not currently linked in the UI, but available for direct URL
+     * navigation when a workbook needs it.
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class ManageFileRootAction extends FormViewAction<FileRootsForm>
+    {
+        @Override
+        public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
+        {
+            JspView view = getFileRootsView(form, errors, getReshow());
+            getPageConfig().setTitle("Manage File Root");
+            return view;
+        }
+
+        @Override
+        public void validateCommand(FileRootsForm form, Errors errors)
+        {
+            validateCloudFileRoot(form, getContainer(), errors);
+        }
+
+        @Override
+        public boolean handlePost(FileRootsForm form, BindException errors) throws Exception
+        {
+            return handleFileRootsPost(form, errors);
+        }
+
+        @Override
+        public ActionURL getSuccessURL(FileRootsForm form)
+        {
+            ActionURL url = getContainer().getStartURL(getUser());
+
+            if (getViewContext().getActionURL().getReturnURL() != null)
+            {
+                url.addReturnURL(getViewContext().getActionURL().getReturnURL());
+            }
+
+            return url;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
     {

@@ -2894,7 +2894,7 @@ public class SecurityManager
         }
         catch (ConfigurationException e)
         {
-            message.append(HtmlString.unsafe("<br>"));
+            message.append(HtmlString.BR);
             message.append(email.getEmailAddress());
             message.append(HtmlString.unsafe(" was added successfully, but could not be emailed due to a failure:<br><pre>"));
             message.append(e.getMessage());
@@ -2988,7 +2988,7 @@ public class SecurityManager
             builder.append(HtmlString.unsafe("</p>"));
             builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
             builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
-            builder.append(HtmlString.unsafe(".<br>"));
+            builder.append(".").append(HtmlString.BR);
         }
         else
         {

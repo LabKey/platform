@@ -81,11 +81,21 @@ public class AncillaryStudyTest extends StudyBaseTest
     public void doCreateSteps()
     {
         importStudy();
-        startSpecimenImport(2);
-        waitForPipelineJobsToComplete(2, "study import", false);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            _containerHelper.enableModule(PROJECT_NAME, "Specimen");
+            startSpecimenImport(2);
+            waitForSpecimenImport();
+        }
+        else
+        {
+            waitForPipelineJobsToComplete(1, "study import", false);
+        }
         _studyHelper.createCustomParticipantGroup(PROJECT_NAME, getFolderName(), PARTICIPANT_GROUP, "Mouse", true, PTIDS);
-        _studyHelper.createCustomParticipantGroup(PROJECT_NAME, getFolderName(), PARTICIPANT_GROUP_BAD, "Mouse", true, PTIDS_BAD);
-        _containerHelper.enableModule(PROJECT_NAME, "Specimen");
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            _studyHelper.createCustomParticipantGroup(PROJECT_NAME, getFolderName(), PARTICIPANT_GROUP_BAD, "Mouse", true, PTIDS_BAD);
+        }
         createAncillaryStudy();
     }
 
@@ -151,7 +161,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         checkCheckbox(Locator.radioButtonByNameAndValue("refreshType", "Manual"));
         clickButton("Finish");
 
-        waitForPipelineJobsToComplete(3, "Create Ancillary Study", false);
+        waitForPipelineJobsToComplete(_studyHelper.isSpecimenModuleActive() ? 3 : 2, "Create Ancillary Study", false);
         clickAndWait(Locator.linkWithText("Create Ancillary Study"));
     }
 
@@ -338,6 +348,10 @@ public class AncillaryStudyTest extends StudyBaseTest
 
     private void verifySpecimens(int specimenCount, int vialCount)
     {
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            return;
+        }
         log("Verify copied specimens");
         clickFolder(STUDY_NAME);
         waitAndClickAndWait(Locator.linkWithText("Specimen Data"));
@@ -371,6 +385,11 @@ public class AncillaryStudyTest extends StudyBaseTest
      */
     public void verifyContainerPathFilter()
     {
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            // this doesn't cover a specimen-specific regression but the original failure was on a specimen-base query
+            return;
+        }
         clickFolder(getFolderName());
         goToModule("Wiki");
         WikiHelper wh = new WikiHelper(this);

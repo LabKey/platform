@@ -147,9 +147,10 @@ LABKEY.vis.Geom.XY.prototype.getParentY = function(row){
  *      plotted. If true null or undefined values will be plotted just outside the axis with data. For example if a
  *      row of data looks like {x: 50, y: null} the point would appear at 50 on the x-axis, and just below the x axis.
  *      If both x and y values are null the point will be drawn to the bottom left of the origin. Defaults to false.
- * @param {String} [config.position] (Optional) String with possible value "jitter". If config.position is "jitter" and the
- *      x or y scale is discrete it will be moved just before or after the position on the grid by a random amount.
- *      Useful if there is overlapping data. Defaults to undefined.
+ * @param {String} [config.position] (Optional) String with possible value "jitter", or for x-axes, "sequential". If
+ *      config.position is "jitter" and the x or y scale is discrete it will be moved just before or after the position
+ *      on the grid by a random amount. "sequential" orders the x-axis points deterministically based on their ordering
+ *      in the incoming data. Useful if there is overlapping data. Defaults to undefined.
  */
 LABKEY.vis.Geom.Point = function(config){
     this.type = "Point";
@@ -373,6 +374,7 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(renderer, grid, scales, dat
  * @param {Object} config An object with the following properties:
  * @param {String} [config.color] (Optional) A string value used for the line colors in the box plot. Defaults to black
  *      (#000000)
+ * @param {Function} [config.clickFn] (Optional) A click function
  * @param {String} [config.fill] (Optional) A string value used for the fill color in the box plot. Defaults to white
  *      (#ffffff)
  * @param {Number} [config.lineWidth] (Optional) A used to set the width of the lines used in the box plot. Defaults to 1.
@@ -403,6 +405,7 @@ LABKEY.vis.Geom.Boxplot = function(config){
     this.outlierFill = ('outlierFill' in config && config.outlierFill != null && config.outlierFill != undefined) ? config.outlierFill : '#000000';
     this.outlierOpacity = ('outlierOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
     this.outlierSize = ('outlierSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
+    this.clickFn = ('clickFn' in config && config.clickFn != null && config.clickFn != undefined) ? config.clickFn : null;
 
     return this;
 };

@@ -116,6 +116,12 @@
             <td class="lk-form-label">Info:</td>
             <td id="info"><%=h(status.info)%></td>
         </tr>
+        <% if (bean.queuePosition != null) { %>
+            <tr>
+                <td class="lk-form-label">Queue Position:</td>
+                <td id="queuePosition"><%=h(bean.queuePosition)%></td>
+            </tr>
+        <% } %>
         <tr>
             <td class="lk-form-label">Description:</td>
             <td id="description"><%=h(status.description)%></td>
@@ -258,6 +264,7 @@
     let infoEl = document.getElementById('info');
     let descriptionEl = document.getElementById('description');
     let filePathEl = document.getElementById('file-path');
+    let queuePosition = document.getElementById('queuePosition');
 
     let filesListEl = document.getElementById('files-list');
     let runsListEl = document.getElementById('runs-list');
@@ -362,7 +369,7 @@ ended very recently. --%>
         const MAX_UNCHANGED_COUNT = 3;
 
         function updateField(el, text) {
-            if (text !== null && text !== undefined)
+            if (text !== null && text !== undefined && el)
                 el.innerText = text;
         }
 
@@ -679,6 +686,7 @@ ended very recently. --%>
                         updateField(emailEl, status.email);
                         updateField(infoEl, status.info);
                         updateField(descriptionEl, status.description);
+                        updateField(queuePosition, status.queuePosition);
                         updateStatus(active, status.status, status.hadError);
                         updateRuns(status.runs);
                         updateFiles(status.files);

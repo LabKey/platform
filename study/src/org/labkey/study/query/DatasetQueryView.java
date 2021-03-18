@@ -60,6 +60,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -138,7 +139,7 @@ public class DatasetQueryView extends StudyQueryView
         _showSourceLinks = settings.isShowSourceLinks();
 
         // Only show link to edit if permission allows it
-        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()));
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canUpdate(getUser()));
 
         if (form.getVisitRowId() != 0)
         {
@@ -373,9 +374,16 @@ public class DatasetQueryView extends StudyQueryView
         List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
         bar.add(createExportButton(recordSelectorColumns));
 
+        // Duplicates logic from super.populateButtonBar(), but we need selectors
+        if ((recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) || (getTable() != null && !getTable().getPkColumns().isEmpty()))
+        {
+            bar.setAlwaysShowRecordSelectors(true);
+        }
+
         User user = getUser();
-        boolean canWrite = canWrite(_dataset, user);
-        boolean canManage = canManage(_dataset, user);
+        boolean canInsert = _dataset.canInsert(user);
+        boolean canDelete = _dataset.canDelete(user);
+        boolean canManage = user.hasRootAdminPermission() || _dataset.getContainer().hasPermission(user, AdminPermission.class);
         boolean isSnapshot = QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), _dataset.getName());
         ExpObject publishSource = _dataset.resolvePublishSource();
         boolean isPublishedDataset = _dataset.isPublishedData() && publishSource != null;
@@ -384,18 +392,20 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (!isPublishedDataset) // admins always get the import and manage buttons
             {
-                if (canWrite)
+                if (canInsert)
                 {
                     // insert menu button contain Insert New and Bulk import, or button for either option
                     ActionButton insertButton = createInsertMenuButton();
                     if (insertButton != null)
                     {
-                        insertButton.setDisplayPermission(InsertPermission.class);
+                        // Dataset permissions mean user might not have insert permissions in the folder. We checked for
+                        // insert permissions above so just require read (which we know user must have in the folder)
+                        insertButton.setDisplayPermission(ReadPermission.class);
                         bar.add(insertButton);
                     }
                 }
 
-                if (canWrite && _study instanceof StudyImpl)
+                if (canDelete && _study instanceof StudyImpl)
                 {
                     ActionURL deleteRowsURL = urlFor(QueryAction.deleteQueryRows);
                     if (deleteRowsURL != null)
@@ -407,7 +417,9 @@ public class DatasetQueryView extends StudyQueryView
                         else
                             deleteRows.setRequiresSelection(true, "Delete selected shared row from this dataset?  This operation may affect other studies in this project.", "Delete selected shared rows from this dataset?  This operation may affect other studies in this project.");
                         deleteRows.setActionType(ActionButton.Action.POST);
-                        deleteRows.setDisplayPermission(DeletePermission.class);
+                        // Dataset permissions mean user might not have delete permissions in the folder. We checked for
+                        // delete permissions above so just require read (which we know user must have in the folder)
+                        deleteRows.setDisplayPermission(ReadPermission.class);
                         bar.add(deleteRows);
                     }
                 }
@@ -429,14 +441,16 @@ public class DatasetQueryView extends StudyQueryView
 //                  do we ever add the assay import buttons to the dataset query view?
 //                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
-                    if (user.hasRootAdminPermission() || canWrite)
+                    if (user.hasRootAdminPermission() || canDelete)
                     {
                         ActionURL deleteRowsURL = new ActionURL(StudyController.DeletePublishedRowsAction.class, getContainer());
                         deleteRowsURL.addParameter("publishSourceId", _dataset.getPublishSourceId());
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Recall");
                         deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
-                        deleteRows.setDisplayPermission(DeletePermission.class);
+                        // Dataset permissions mean user might not have delete permissions in the folder. We checked for
+                    // delete permissions above so just require read (which we know user must have in the folder)
+                    deleteRows.setDisplayPermission(ReadPermission.class);
                         bar.add(deleteRows);
                     }
                 }
@@ -448,12 +462,15 @@ public class DatasetQueryView extends StudyQueryView
         if (QCStateManager.getInstance().showQCStates(getContainer()))
             bar.add(createQCStateButton(_qcStateSet));
 
-        ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
-        ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
-        viewSpecimens.setRequiresSelection(true);
-        viewSpecimens.setActionType(ActionButton.Action.POST);
-        viewSpecimens.setDisplayPermission(ReadPermission.class);
-        bar.add(viewSpecimens);
+        if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
+        {
+            ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
+            ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
+            viewSpecimens.setRequiresSelection(true);
+            viewSpecimens.setActionType(ActionButton.Action.POST);
+            viewSpecimens.setDisplayPermission(ReadPermission.class);
+            bar.add(viewSpecimens);
+        }
 
         if (isPublishedDataset)
         {
@@ -526,16 +543,6 @@ public class DatasetQueryView extends StudyQueryView
                     getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
-    }
-
-    private boolean canWrite(DatasetDefinition def, User user)
-    {
-        return def.canWrite(user) && def.getContainer().hasPermission(user, UpdatePermission.class);
-    }
-
-    private boolean canManage(DatasetDefinition def, User user)
-    {
-        return user.hasRootAdminPermission() || def.getContainer().hasPermission(user, AdminPermission.class);
     }
 
     private PHI getMaxContainedPhi()

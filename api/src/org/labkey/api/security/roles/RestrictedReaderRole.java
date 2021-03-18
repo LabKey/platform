@@ -18,26 +18,26 @@ package org.labkey.api.security.roles;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadSomePermission;
-import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 
-/*
-* User: Dave
-* Date: Apr 30, 2009
-* Time: 6:09:41 PM
-*/
+/**
+ * Used exclusively in dataset security, as a marker in the study policy to indicate a group has per-dataset permissions.
+ * As a result, we don't directly surface this role anywhere in the product. See #42682.
+ *
+ * User: Dave
+ * Date: Apr 30, 2009
+ */
 public class RestrictedReaderRole extends AbstractRole
 {
     public RestrictedReaderRole()
     {
         super("Restricted Reader", "Restricted Readers may read some information, but not all.",
                 ReadSomePermission.class);
-        excludeGuests();
     }
 
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return super.isApplicable(policy,resource) || resource instanceof Study || resource instanceof Dataset;
+        return resource instanceof Study;
     }
 }

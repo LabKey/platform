@@ -75,12 +75,17 @@ public class QueryWriter extends BaseFolderWriter
 
             for (QueryDefinition query : queries)
             {
+                // sql is only present for custom queries -- metadata xml overrides of built-in tables will not have sql
+                String sql = query.getSql();
+                boolean metadata = StringUtils.isEmpty(sql);
+
+                if (metadata && !query.getSchema().getTableNames().contains(query.getName()))
+                    continue;
+
                 // issue 20662: handle query name collisions across schemas
                 String queryExportName = fileNameUniquifier.uniquify(query.getName());
 
-                // sql is only present for custom queries -- metadata xml overrides of built-in tables will not have sql
-                String sql = query.getSql();
-                if (StringUtils.isNotEmpty(sql))
+                if (!metadata)
                 {
                     try (PrintWriter pw = queriesDir.getPrintWriter(queryExportName + FILE_EXTENSION))
                     {

@@ -25,7 +25,6 @@ import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.query.BaseStudyQueryView;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -33,7 +32,7 @@ import org.labkey.api.view.ViewContext;
  * Date: Jan 26, 2007
  * Time: 10:13:50 AM
  */
-public class SpecimenEventQueryView extends BaseStudyQueryView
+public class SpecimenEventQueryView extends BaseSpecimenQueryView
 {
     protected SpecimenEventQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
     {
