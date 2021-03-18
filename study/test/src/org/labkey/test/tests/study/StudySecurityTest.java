@@ -60,8 +60,8 @@ public class StudySecurityTest extends StudyBaseTest
 
     protected enum PerDatasetPerm
     {
-        Read,
-        Edit
+        Reader,
+        Editor
     }
 
     @Override
@@ -123,7 +123,7 @@ public class StudySecurityTest extends StudyBaseTest
         //move editors to per-dataset and grant edit only one of the datasets
         String[] edit = new String[]{"Types"};
         String[] noEdit = new String[]{"DEM-1: Demographics"};
-        adjustGroupDatasetPerms(GROUP_EDITORS, GroupSetting.perDataset, edit, PerDatasetPerm.Edit);
+        adjustGroupDatasetPerms(GROUP_EDITORS, GroupSetting.perDataset, edit, PerDatasetPerm.Editor);
         verifyPerms(EDITOR, edit, noEdit, edit, noEdit, false);
 
         //reset to general edit
@@ -231,8 +231,8 @@ public class StudySecurityTest extends StudyBaseTest
         clickButton("Update");
 
         //grant limited rights to read a couple of datasets
-        selectOptionByText(Locator.name("dataset.1"), "Read");
-        selectOptionByText(Locator.name("dataset.2"), "Read");
+        selectOptionByText(Locator.name("dataset.1"), "Reader");
+        selectOptionByText(Locator.name("dataset.2"), "Reader");
         clickButton("Save");
 
         clickFolder(getFolderName());

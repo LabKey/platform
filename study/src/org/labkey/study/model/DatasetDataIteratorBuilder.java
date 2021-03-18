@@ -219,11 +219,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     // usually we let DataIterator handle convert, but we need to convert for consistent _key/lsid generation
                     out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
                 }
-                else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID)
-                {
-                    // make sure guid is not null (12884)
-                    out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
-                }
                 else if (match.getPropertyType() == PropertyType.FILE_LINK)
                 {
                     out = it.addFileColumn(match.getName(), in);
