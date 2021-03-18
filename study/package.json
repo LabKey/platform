@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/study/gen && rimraf resources/views/gen && rimraf resources/views/datasetDesigner*"
   },
   "dependencies": {
-    "@labkey/components": "2.14.0"
+    "@labkey/components": "2.15.0-fb-merge-213-SNAPSHOT-v2.0"
   },
   "devDependencies": {
     "@labkey/build": "2.1.0"
