@@ -152,7 +152,9 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     {
         return _autoLinkTargetContainerId;
     }
-
+    
+    // Would've preferred to name these 'set/getAutoLinkTargetContainer' rather than 'set/getAutoLinkTargetContainerId'
+    // as we are using Containers, but alignment with SampleTypeDomainKindProperties bean necessitates current nomenclature
     public void setAutoLinkTargetContainerId(Container autoLinkTargetContainerId)
     {
         _autoLinkTargetContainerId = autoLinkTargetContainerId;
