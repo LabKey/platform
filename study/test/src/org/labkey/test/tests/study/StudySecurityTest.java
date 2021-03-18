@@ -212,7 +212,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         if (null != datasetRolesMap)
         {
-            studySecurityPage.setDatasetPermissionsAndSave(datasetRolesMap);
+            studySecurityPage.setDatasetPermissionsAndSave(groupName, datasetRolesMap);
             studySecurityPage.saveDatasetPermissions();
         }
 
@@ -361,7 +361,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         StudySecurityPage studySecurityPage = goToStudySecurityPage();
 
-        studySecurityPage.setSecurityType(StudySecurityPage.StudySecurityType.ADVANCED_WRITE);
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.ADVANCED_WRITE);
 
         Map<String, GroupSecuritySetting> groupSettings = Map.of(GROUP_READERS, GroupSecuritySetting.READ_ALL,
                 GROUP_EDITORS, GroupSecuritySetting.EDIT_ALL,
@@ -381,7 +381,7 @@ public class StudySecurityTest extends BaseWebDriverTest
         Map<String, DatasetRoles> permissions = Map.of(DS_DEMO, DatasetRoles.READER,
                                                 DS_TYPES, DatasetRoles.READER);
 
-        studySecurityPage.setDatasetPermissionsAndSave(permissions);
+        studySecurityPage.setDatasetPermissionsAndSave(GROUP_LIMITED, permissions);
 
     }
 
