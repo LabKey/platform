@@ -281,7 +281,7 @@ public abstract class VisitManager
     {
         synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
         {
-            POTENTIALLY_DELETED_PARTICIPANTS.remove(c);
+            POTENTIALLY_DELETED_PARTICIPANTS.remove(c.getId());
         }
     }
 
@@ -563,10 +563,10 @@ public abstract class VisitManager
                 // that are queued
                 mergedPTIDs = null;
             }
-            else if (POTENTIALLY_DELETED_PARTICIPANTS.containsKey(container))
+            else if (POTENTIALLY_DELETED_PARTICIPANTS.containsKey(container.getId()))
             {
                 // We already have a set of participants queued to be potentially purged
-                Set<String> existingPTIDs = POTENTIALLY_DELETED_PARTICIPANTS.get(container);
+                Set<String> existingPTIDs = POTENTIALLY_DELETED_PARTICIPANTS.get(container.getId());
                 if (existingPTIDs == null)
                 {
                     // The existing request is for all participants, so respect that
@@ -584,13 +584,13 @@ public abstract class VisitManager
                 // This is the only request for this study in the queue, so copy the set of participants
                 mergedPTIDs = new HashSet<>(potentiallyDeletedParticipants);
             }
-            POTENTIALLY_DELETED_PARTICIPANTS.put(container, mergedPTIDs);
+            POTENTIALLY_DELETED_PARTICIPANTS.put(container.getId(), mergedPTIDs);
 
             if (TIMER == null)
             {
                 // This is the first request, so start the timer
                 TIMER = new Timer("Participant purge", true);
-                TimerTask task = new PurgeParticipantsTask(POTENTIALLY_DELETED_PARTICIPANTS);
+                TimerTask task = new PurgeParticipantsTask();
                 TIMER.scheduleAtFixedRate(task, PURGE_PARTICIPANT_INTERVAL, PURGE_PARTICIPANT_INTERVAL);
                 ShutdownListener listener = new ParticipantPurgeContextListener();
                 // Add a shutdown listener to stop the worker thread if the webapp is shut down
@@ -600,7 +600,7 @@ public abstract class VisitManager
     }
 
     /** Study container -> set of participants that may no longer be referenced. Set is null if we don't know specific PTIDs. */
-    private static final Map<Container, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
+    static final Map<String, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
     private static Timer TIMER;
     /** Number of milliseconds to wait between batches of participant purges */
     private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;

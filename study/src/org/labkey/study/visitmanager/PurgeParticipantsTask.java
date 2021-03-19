@@ -19,15 +19,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exceptions.TableNotFoundException;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 import java.util.TimerTask;
 
 /**
@@ -36,99 +34,45 @@ import java.util.TimerTask;
  */
 public class PurgeParticipantsTask extends TimerTask
 {
-    private final Map<Container, Set<String>> _potentiallyDeletedParticipants;
-    private static final Logger _logger = LogManager.getLogger(PurgeParticipantsTask.class);
+    private static final Logger LOG = LogManager.getLogger(PurgeParticipantsTask.class);
 
-    public PurgeParticipantsTask(Map<Container, Set<String>> potentiallyDeletedParticipants)
+    public static volatile boolean JOB_QUEUED = false;
+
+    public PurgeParticipantsTask()
     {
-        _potentiallyDeletedParticipants = potentiallyDeletedParticipants;
     }
 
     @Override
     public void run()
     {
+        // Don't bother queueing a job if map is empty or job is already in the queue
+        synchronized (VisitManager.POTENTIALLY_DELETED_PARTICIPANTS)
+        {
+            if (VisitManager.POTENTIALLY_DELETED_PARTICIPANTS.isEmpty() || JOB_QUEUED)
+                return;
+        }
+
+        Container c = ContainerManager.getRoot();
+        ViewBackgroundInfo vbi = new ViewBackgroundInfo(c, null, null);
+        PipeRoot root = PipelineService.get().findPipelineRoot(c);
+
+        if (null == root)
+            throw new ConfigurationException("Invalid pipeline configuration at the root container");
+
+        if (!root.isValid())
+            throw new ConfigurationException("Invalid pipeline configuration at the root container: " + root.getRootPath().getPath());
+
         try
         {
-            while (true)
-            {
-                Container container;
-                Set<String> potentiallyDeletedParticipants;
-
-                synchronized (_potentiallyDeletedParticipants)
-                {
-                    if (_potentiallyDeletedParticipants.isEmpty())
-                    {
-                        return;
-                    }
-                    // Grab the first study to be purged, and exit the synchronized block quickly
-                    Iterator<Map.Entry<Container, Set<String>>> i = _potentiallyDeletedParticipants.entrySet().iterator();
-                    Map.Entry<Container, Set<String>> entry = i.next();
-                    i.remove();
-                    container = entry.getKey();
-                    potentiallyDeletedParticipants = entry.getValue();
-                }
-
-                _logger.info("Attempting to purge participants in " + container.getPath());
-
-                // Now, outside the synchronization, do the actual purge
-                // TODO: Seems like this code block should be moved into VisitManager and called by PurgeParticipantsMaintenanceTask as well (it has no exception handling and doesn't call updateParticipantVisitTable()
-                StudyImpl study = StudyManager.getInstance().getStudy(container);
-                if (study != null)
-                {
-                    boolean retry = false;
-                    try
-                    {
-                        int deleted = VisitManager.performParticipantPurge(study, potentiallyDeletedParticipants);
-                        if (deleted > 0)
-                        {
-                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null, null);
-                        }
-                    }
-                    catch (TableNotFoundException tnfe)
-                    {
-                        // Just move on if container went away
-                        if (ContainerManager.exists(container))
-                        {
-                            // A dataset or specimen table might have been deleted out from under us, so retry
-                            _logger.info(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
-                            retry = true;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        if (ContainerManager.exists(container))
-                        {
-                            if (SqlDialect.isObjectNotFoundException(e))
-                            {
-                                _logger.info("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
-                                retry = true;
-                            }
-                            else if (SqlDialect.isTransactionException(e))
-                            {
-                                _logger.info("Transaction or deadlock exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
-                                retry = true;
-                            }
-                            else
-                            {
-                                // Unexpected problem... log it and continue on
-                                _logger.error("Failed to purge participants for " + container.getPath(), e);
-                            }
-                        }
-                    }
-
-                    if (retry)
-                    {
-                        // throw them back on the queue
-                        VisitManager vm = StudyManager.getInstance().getVisitManager(study);
-                        vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
-                    }
-                }
-            }
+            // Queue a pipeline job to prevent participant purge from running in parallel with study import, #42641
+            PipelineJob job = new PurgeParticipantsJob(vbi, root);
+            LOG.debug("Queuing PurgeParticipantsJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
+            PipelineService.get().queueJob(job);
+            JOB_QUEUED = true;
         }
-        catch (Exception e)
+        catch (PipelineValidationException e)
         {
-            _logger.error("Failed to purge participants", e);
-            ExceptionUtil.logExceptionToMothership(null, e);
+            throw new RuntimeException(e);
         }
     }
 }
