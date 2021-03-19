@@ -261,7 +261,7 @@ public class DatasetQueryView extends StudyQueryView
     private boolean hasUsefulDetailsPage()
     {
         if (!_dataset.isPublishedData())
-            return true; // we don't have a protocol at all, so we don't know if we have useful details
+            return false;
 
         if (_dataset.isPublishedData())
             return _dataset.getPublishSource().hasUsefulDetailsPage(_dataset.getPublishSourceId());
