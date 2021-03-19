@@ -322,13 +322,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public void setAutoLinkTargetContainer(Container autoLinkTargetContainerId)
     {
-        _object.setAutoLinkTargetContainerId(autoLinkTargetContainerId);
+        _object.setAutoLinkTargetContainer(autoLinkTargetContainerId);
     }
 
     @Override
     public @Nullable Container getAutoLinkTargetContainer()
     {
-        return _object.getAutoLinkTargetContainerId();
+        return _object.getAutoLinkTargetContainer();
     }
 
     @Nullable

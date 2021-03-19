@@ -713,7 +713,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             source.setNameExpression(nameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
-        source.setAutoLinkTargetContainerId(autoLinkTargetContainer);
+        source.setAutoLinkTargetContainer(autoLinkTargetContainer);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 

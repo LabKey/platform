@@ -46,7 +46,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _nameExpression;
     private String _labelColor;
     private String _metricUnit;
-    private Container _autoLinkTargetContainerId;
+    private Container _autoLinkTargetContainer;
 
     private String _materialParentImportAliasMap;
 
@@ -148,16 +148,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         _metricUnit = metricUnit;
     }
 
-    public Container getAutoLinkTargetContainerId()
+    public Container getAutoLinkTargetContainer()
     {
-        return _autoLinkTargetContainerId;
+        return _autoLinkTargetContainer;
     }
     
     // Would've preferred to name these 'set/getAutoLinkTargetContainer' rather than 'set/getAutoLinkTargetContainerId'
     // as we are using Containers, but alignment with SampleTypeDomainKindProperties bean necessitates current nomenclature
-    public void setAutoLinkTargetContainerId(Container autoLinkTargetContainerId)
+    public void setAutoLinkTargetContainer(Container autoLinkTargetContainer)
     {
-        _autoLinkTargetContainerId = autoLinkTargetContainerId;
+        _autoLinkTargetContainer = autoLinkTargetContainer;
     }
 
     public String getMaterialParentImportAliasMap()
