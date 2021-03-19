@@ -129,7 +129,7 @@ public class PurgeParticipantsJob extends PipelineJob
                 }
                 catch (TableNotFoundException tnfe)
                 {
-                    // Just move on if container went away
+                    // Log and retry if container still exists
                     if (ContainerManager.exists(_container))
                     {
                         // A dataset or specimen table might have been deleted out from under us, so retry
