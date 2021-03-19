@@ -240,6 +240,8 @@ public class MothershipSchema extends UserSchema
 
         result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
 
+        result.setTitleColumn("ServerHostName");
+
         SQLFragment firstPingSQL = new SQLFragment("(SELECT MIN(EarliestKnownTime) FROM ");
         firstPingSQL.append(MothershipManager.get().getTableInfoServerSession(), "ss");
         firstPingSQL.append(" WHERE ss.ServerInstallationId = ");
