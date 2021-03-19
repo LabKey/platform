@@ -1,0 +1,9 @@
+<tables xmlns="http://labkey.org/data/xml">
+    <table tableName="recentJsonMetricValues" tableDbType="NOT_IN_DB">
+        <columns>
+            <column columnName="JsonKey">
+                <isKeyField>true</isKeyField>
+            </column>
+        </columns>
+    </table>
+</tables>
