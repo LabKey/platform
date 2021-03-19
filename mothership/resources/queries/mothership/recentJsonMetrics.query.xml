@@ -4,6 +4,13 @@
             <column columnName="JsonKey">
                 <isKeyField>true</isKeyField>
             </column>
+            <column columnName="Info" wrappedColumnName="JsonKey">
+                <isUnselectable>true</isUnselectable>
+                <fk>
+                    <fkDbSchema>lists</fkDbSchema>
+                    <fkTable>JsonMetricMetadata</fkTable>
+                </fk>
+            </column>
         </columns>
     </table>
 </tables>
