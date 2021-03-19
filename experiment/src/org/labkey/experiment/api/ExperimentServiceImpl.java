@@ -3880,7 +3880,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 StudyService studyService = StudyService.get();
                 if (studyService != null)
                 {
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
                         dataset.delete(user);
                     }

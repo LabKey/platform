@@ -152,7 +152,7 @@
         <td class="labkey-column-header">Shown</td>
         <td class="labkey-column-header">Demographic</td>
         <td class="labkey-column-header">Keys</td>
-        <td class="labkey-column-header">Source Assay</td>
+        <td class="labkey-column-header">Publish Source</td>
     </tr>
     <%
 
@@ -174,7 +174,7 @@
         <td><%=text(def.isShowByDefault() ? "" : "hidden")%></td>
         <td><%=text(def.isDemographicData() ? "demographic" : "")%></td>
         <td><%=h(def.getKeyTypeDescription())%></td>
-        <td><%=h(def.getAssayProtocol() != null ? def.getAssayProtocol().getName() : "")%></td>
+        <td><%=h(def.getPublishSource() != null ? def.getPublishSource().getLabel(def.getPublishSourceId()) : "")%></td>
     </tr><%
     }
 %></table>

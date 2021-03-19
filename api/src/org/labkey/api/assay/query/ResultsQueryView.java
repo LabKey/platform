@@ -41,7 +41,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -141,7 +141,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         {
             super.populateButtonBar(view, bar);
 
-            if (null != AssayPublishService.get() && !AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
+            if (null != StudyPublishService.get() && !StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             {
                 ActionURL publishURL = PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(getContainer(), _protocol);
                 for (Pair<String, String> param : publishURL.getParameters())
