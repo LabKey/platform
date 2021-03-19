@@ -36,7 +36,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -85,7 +84,7 @@ public class MothershipSchema extends UserSchema
     public static final String EXCEPTION_STACK_TRACE_TABLE_NAME = "ExceptionStackTrace";
     public static final String SOFTWARE_RELEASE_TABLE_NAME = "SoftwareRelease";
 
-    private static Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<>(
+    private static final Set<String> TABLE_NAMES = Collections.unmodifiableSet(new LinkedHashSet<>(
         Arrays.asList(
             SERVER_INSTALLATION_TABLE_NAME,
             SERVER_SESSION_TABLE_NAME,
@@ -150,9 +149,9 @@ public class MothershipSchema extends UserSchema
         return null;
     }
 
-    public FilteredTable createSoftwareReleasesTable(ContainerFilter cf)
+    public FilteredTable<MothershipSchema> createSoftwareReleasesTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
+        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
         result.wrapAllColumns(true);
 
         result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
@@ -185,35 +184,16 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createServerSessionTable(ContainerFilter cf)
+    public FilteredTable<MothershipSchema> createServerSessionTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf);
+        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoServerSession(), this, cf);
         result.wrapAllColumns(true);
         result.setTitleColumn("RowId");
 
         result.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
         result.getMutableColumn("SoftwareReleaseId").setFk(new QueryForeignKey.Builder(this, cf).table(SOFTWARE_RELEASE_TABLE_NAME));
 
-        result.getMutableColumn("ServerInstallationId").setFk(new LookupForeignKey("ServerInstallationId")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return createServerInstallationTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return SERVER_INSTALLATION_TABLE_NAME;
-            }
-        });
+        result.getMutableColumn("ServerInstallationId").setFk(new QueryForeignKey.Builder(this, cf).table(SERVER_INSTALLATION_TABLE_NAME));
         result.getMutableColumn("ServerInstallationId").setLabel("Server");
 
         var earliestCol = result.getColumn("EarliestKnownTime");
@@ -329,7 +309,7 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionStackTraceTable(ContainerFilter cf)
+    public FilteredTable<MothershipSchema> createExceptionStackTraceTable(ContainerFilter cf)
     {
         FilteredTable<MothershipSchema> result = new MothershipTable(MothershipManager.get().getTableInfoExceptionStackTrace(), this, cf);
         result.setUpdateURL(AbstractTableInfo.LINK_DISABLER);
@@ -370,9 +350,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionReportTableWithStack(ContainerFilter cf)
+    public FilteredTable<MothershipSchema> createExceptionReportTableWithStack(ContainerFilter cf)
     {
-        FilteredTable result = createExceptionReportTable(cf);
+        FilteredTable<MothershipSchema> result = createExceptionReportTable(cf);
         List<FieldKey> defaultCols = new ArrayList<>(result.getDefaultVisibleColumns());
         defaultCols.removeIf(fieldKey -> fieldKey.getParts().get(0).equals("ServerSessionId"));
         defaultCols.add(0, FieldKey.fromParts("ExceptionStackTraceId"));
@@ -382,9 +362,9 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    public FilteredTable createExceptionReportTable(ContainerFilter cf)
+    public FilteredTable<MothershipSchema> createExceptionReportTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this);
+        FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this, cf);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
         result.getMutableColumn("URL").setDisplayColumnFactory(colInfo ->
@@ -447,7 +427,7 @@ public class MothershipSchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, @Nullable BindException errors)
+    public @NotNull QueryView createView(ViewContext context, @NotNull QuerySettings settings, @Nullable BindException errors)
     {
         if (EXCEPTION_STACK_TRACE_TABLE_NAME.equals(settings.getQueryName()))
         {
