@@ -338,21 +338,21 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     static class PurgeParticipantCommitTask implements Runnable
     {
-        public Container _container;
-        public Set<String> _potentiallyDeletedParticipants = new HashSet<>();
+        public final Container _container;
+        public final Set<String> _potentiallyDeletedParticipants;
 
-        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants) {
+        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants)
+        {
             _container = container;
-            Set<String> copySet = new HashSet<>(potentiallyDeletedParticipants);
-            _potentiallyDeletedParticipants = copySet;
+            _potentiallyDeletedParticipants = new HashSet<>(potentiallyDeletedParticipants);
         }
 
         @Override
         public void run()
         {
-            HashMap<Container, Set<String>> potentiallyDeletedParticipantsMap = new HashMap<>();
-            potentiallyDeletedParticipantsMap.put(_container, _potentiallyDeletedParticipants);
-            PurgeParticipantsTask purgeParticipantsTask = new PurgeParticipantsTask(potentiallyDeletedParticipantsMap );
+            HashMap<String, Set<String>> potentiallyDeletedParticipantsMap = new HashMap<>();
+            potentiallyDeletedParticipantsMap.put(_container.getId(), _potentiallyDeletedParticipants);
+            PurgeParticipantsTask purgeParticipantsTask = new PurgeParticipantsTask(potentiallyDeletedParticipantsMap);
             purgeParticipantsTask.run();
         }
 

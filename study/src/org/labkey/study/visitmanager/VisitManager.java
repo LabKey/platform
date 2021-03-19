@@ -584,7 +584,7 @@ public abstract class VisitManager
                 // This is the only request for this study in the queue, so copy the set of participants
                 mergedPTIDs = new HashSet<>(potentiallyDeletedParticipants);
             }
-            POTENTIALLY_DELETED_PARTICIPANTS.put(container, mergedPTIDs);
+            POTENTIALLY_DELETED_PARTICIPANTS.put(container.getId(), mergedPTIDs);
 
             if (TIMER == null)
             {
@@ -600,7 +600,7 @@ public abstract class VisitManager
     }
 
     /** Study container -> set of participants that may no longer be referenced. Set is null if we don't know specific PTIDs. */
-    private static final Map<Container, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
+    private static final Map<String, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
     private static Timer TIMER;
     /** Number of milliseconds to wait between batches of participant purges */
     private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;
