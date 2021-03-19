@@ -1,7 +1,5 @@
 package org.labkey.study.visitmanager;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -18,22 +16,19 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class PurgeParticipantsJob extends PipelineJob
 {
-    private final Map<String, Set<String>> _potentiallyDeletedParticipants;
-
-    @SuppressWarnings("unused")
-    @JsonCreator
-    public PurgeParticipantsJob(@JsonProperty("_potentiallyDeletedParticipants") Map<String, Set<String>> potentiallyDeletedParticipants)
+    @SuppressWarnings("unused") // For deserialization
+    public PurgeParticipantsJob()
     {
-        _potentiallyDeletedParticipants = potentiallyDeletedParticipants;
     }
 
-    PurgeParticipantsJob(ViewBackgroundInfo info, PipeRoot pipeRoot, Map<String, Set<String>> potentiallyDeletedParticipants)
+    PurgeParticipantsJob(ViewBackgroundInfo info, PipeRoot pipeRoot)
     {
         super(null, info, pipeRoot);
-        _potentiallyDeletedParticipants = potentiallyDeletedParticipants;
         setLogFile(new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp("purge_participants", "log")));
     }
 
@@ -61,14 +56,14 @@ public class PurgeParticipantsJob extends PipelineJob
                 String containerId;
                 Set<String> potentiallyDeletedParticipants;
 
-                synchronized (_potentiallyDeletedParticipants)
+                synchronized (VisitManager.POTENTIALLY_DELETED_PARTICIPANTS)
                 {
-                    if (_potentiallyDeletedParticipants.isEmpty())
+                    if (VisitManager.POTENTIALLY_DELETED_PARTICIPANTS.isEmpty())
                     {
                         break; // Exit while() and set status
                     }
                     // Grab the first study to be purged, and exit the synchronized block quickly
-                    Iterator<Map.Entry<String, Set<String>>> i = _potentiallyDeletedParticipants.entrySet().iterator();
+                    Iterator<Map.Entry<String, Set<String>>> i = VisitManager.POTENTIALLY_DELETED_PARTICIPANTS.entrySet().iterator();
                     Map.Entry<String, Set<String>> entry = i.next();
                     i.remove();
                     containerId = entry.getKey();
@@ -83,62 +78,8 @@ public class PurgeParticipantsJob extends PipelineJob
                     continue;
                 }
 
-                info("Starting to purge participants in " + container.getPath());
-
                 // Now, outside the synchronization, do the actual purge
-                // TODO: Seems like this code block should be moved into VisitManager and called by PurgeParticipantsMaintenanceTask as well (it has no exception handling and doesn't call updateParticipantVisitTable()
-                StudyImpl study = StudyManager.getInstance().getStudy(container);
-                if (study != null)
-                {
-                    boolean retry = false;
-                    try
-                    {
-                        int deleted = VisitManager.performParticipantPurge(study, potentiallyDeletedParticipants);
-                        if (deleted > 0)
-                        {
-                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null, null);
-                        }
-                        info("Finished purging participants in " + container.getPath());
-                    }
-                    catch (TableNotFoundException tnfe)
-                    {
-                        // Just move on if container went away
-                        if (ContainerManager.exists(container))
-                        {
-                            // A dataset or specimen table might have been deleted out from under us, so retry
-                            info(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
-                            retry = true;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        if (ContainerManager.exists(container))
-                        {
-                            if (SqlDialect.isObjectNotFoundException(e))
-                            {
-                                info("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
-                                retry = true;
-                            }
-                            else if (SqlDialect.isTransactionException(e))
-                            {
-                                info("Transaction or deadlock exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
-                                retry = true;
-                            }
-                            else
-                            {
-                                // Unexpected problem... log it and continue on
-                                error("Failed to purge participants for " + container.getPath(), e);
-                            }
-                        }
-                    }
-
-                    if (retry)
-                    {
-                        // throw them back on the queue
-                        VisitManager vm = StudyManager.getInstance().getVisitManager(study);
-                        vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
-                    }
-                }
+                new ParticipantPurger(container, potentiallyDeletedParticipants, this::info, this::error).purgeParticipants();
             }
         }
         catch (Exception e)
@@ -146,7 +87,85 @@ public class PurgeParticipantsJob extends PipelineJob
             error("Failed to purge participants", e);
             finalStatus = TaskStatus.error;
         }
+        finally
+        {
+            PurgeParticipantsTask.JOB_QUEUED = false;
+        }
 
         setStatus(finalStatus);
+    }
+
+    public static class ParticipantPurger
+    {
+        private final Container _container;
+        private final Set<String> _potentiallyDeletedParticipants;
+        private final Consumer<String> _info;
+        private final BiConsumer<String, Throwable> _error;
+
+        public ParticipantPurger(Container container, Set<String> potentiallyDeletedParticipants, Consumer<String> info, BiConsumer<String, Throwable> error)
+        {
+            _container = container;
+            _potentiallyDeletedParticipants = potentiallyDeletedParticipants;
+            _info = info;
+            _error = error;
+        }
+
+        public void purgeParticipants()
+        {
+            // TODO: Seems like this code block should be moved into VisitManager and called by PurgeParticipantsMaintenanceTask as well (it has no exception handling and doesn't call updateParticipantVisitTable()
+            StudyImpl study = StudyManager.getInstance().getStudy(_container);
+            if (study != null)
+            {
+                boolean retry = false;
+                try
+                {
+                    _info.accept("Starting to purge participants in " + _container.getPath());
+                    int deleted = VisitManager.performParticipantPurge(study, _potentiallyDeletedParticipants);
+                    if (deleted > 0)
+                    {
+                        StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null, null);
+                    }
+                    _info.accept("Finished purging participants in " + _container.getPath());
+                }
+                catch (TableNotFoundException tnfe)
+                {
+                    // Just move on if container went away
+                    if (ContainerManager.exists(_container))
+                    {
+                        // A dataset or specimen table might have been deleted out from under us, so retry
+                        _info.accept(tnfe.getFullName() + " no longer exists. Requeuing another participant purge attempt.");
+                        retry = true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (ContainerManager.exists(_container))
+                    {
+                        if (SqlDialect.isObjectNotFoundException(e))
+                        {
+                            _info.accept("Object not found exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
+                            retry = true;
+                        }
+                        else if (SqlDialect.isTransactionException(e))
+                        {
+                            _info.accept("Transaction or deadlock exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
+                            retry = true;
+                        }
+                        else
+                        {
+                            // Unexpected problem... log it and continue on
+                            _error.accept("Failed to purge participants for " + _container.getPath(), e);
+                        }
+                    }
+                }
+
+                if (retry)
+                {
+                    // throw them back on the queue
+                    VisitManager vm = StudyManager.getInstance().getVisitManager(study);
+                    vm.scheduleParticipantPurge(_potentiallyDeletedParticipants);
+                }
+            }
+        }
     }
 }

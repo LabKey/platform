@@ -15,6 +15,8 @@
  */
 package org.labkey.study.query;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -44,13 +46,12 @@ import org.labkey.api.study.security.StudySecurityEscalator;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.visitmanager.PurgeParticipantsTask;
+import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // see StudyImportContext.getTableIdMapMap()
         StudyImportMaps       // expected: Map<String,Map<Object,Object>>
     }
+
+    private static final Logger LOG = LogManager.getLogger(DatasetUpdateService.class);
 
     private final DatasetDefinition _dataset;
     private final Set<String> _potentiallyNewParticipants = new HashSet<>();
@@ -338,8 +341,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     static class PurgeParticipantCommitTask implements Runnable
     {
-        public final Container _container;
-        public final Set<String> _potentiallyDeletedParticipants;
+        private final Container _container;
+        private final Set<String> _potentiallyDeletedParticipants;
 
         PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants)
         {
@@ -350,10 +353,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         @Override
         public void run()
         {
-            HashMap<String, Set<String>> potentiallyDeletedParticipantsMap = new HashMap<>();
-            potentiallyDeletedParticipantsMap.put(_container.getId(), _potentiallyDeletedParticipants);
-            PurgeParticipantsTask purgeParticipantsTask = new PurgeParticipantsTask(potentiallyDeletedParticipantsMap);
-            purgeParticipantsTask.run();
+            new ParticipantPurger(_container, _potentiallyDeletedParticipants, LOG::info, LOG::error).purgeParticipants();
         }
 
         @Override

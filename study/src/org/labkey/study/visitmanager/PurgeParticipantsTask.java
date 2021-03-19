@@ -26,8 +26,6 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.TimerTask;
 
 /**
@@ -38,19 +36,21 @@ public class PurgeParticipantsTask extends TimerTask
 {
     private static final Logger LOG = LogManager.getLogger(PurgeParticipantsTask.class);
 
-    private final Map<String, Set<String>> _potentiallyDeletedParticipants;
+    public static volatile boolean JOB_QUEUED = false;
 
-    public PurgeParticipantsTask(Map<String, Set<String>> potentiallyDeletedParticipants)
+    public PurgeParticipantsTask()
     {
-        _potentiallyDeletedParticipants = potentiallyDeletedParticipants;
     }
 
     @Override
     public void run()
     {
-        // Don't bother queueing a job if map is empty
-        if (_potentiallyDeletedParticipants.isEmpty())
-            return;
+        // Don't bother queueing a job if map is empty or job is already in the queue
+        synchronized (VisitManager.POTENTIALLY_DELETED_PARTICIPANTS)
+        {
+            if (VisitManager.POTENTIALLY_DELETED_PARTICIPANTS.isEmpty() || JOB_QUEUED)
+                return;
+        }
 
         Container c = ContainerManager.getRoot();
         ViewBackgroundInfo vbi = new ViewBackgroundInfo(c, null, null);
@@ -64,9 +64,11 @@ public class PurgeParticipantsTask extends TimerTask
 
         try
         {
-            PipelineJob job = new PurgeParticipantsJob(vbi, root, _potentiallyDeletedParticipants);
-            LOG.info("Queuing PurgeParticipantsJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
+            // Queue a pipeline job to prevent participant purge from running in parallel with study import, #42641
+            PipelineJob job = new PurgeParticipantsJob(vbi, root);
+            LOG.debug("Queuing PurgeParticipantsJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
             PipelineService.get().queueJob(job);
+            JOB_QUEUED = true;
         }
         catch (PipelineValidationException e)
         {
