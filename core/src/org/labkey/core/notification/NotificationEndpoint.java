@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * WebSocket endpoint for simple browser notification/alerting
@@ -54,6 +55,14 @@ public class NotificationEndpoint extends Endpoint
     private Session session;
     private int userId;
     private boolean errored;
+
+    static
+    {
+        // Issue 42452: Suppress overly verbose logging from Tomcat about WebSocket connections not closing in the ideal pattern
+        // https://bz.apache.org/bugzilla/show_bug.cgi?id=59062
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger("org.apache.tomcat.websocket.server.WsRemoteEndpointImplServer");
+        logger.setLevel(Level.WARNING);
+    }
 
     public NotificationEndpoint()
     {
