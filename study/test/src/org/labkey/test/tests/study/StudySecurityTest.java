@@ -27,9 +27,9 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.study.StudySecurityPage;
 import org.labkey.test.pages.study.StudySecurityPage.GroupSecuritySetting;
 import org.labkey.test.pages.study.StudySecurityPage.DatasetRoles;
+import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.openqa.selenium.WebElement;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,15 +43,18 @@ public class StudySecurityTest extends BaseWebDriverTest
     private static final String FOLDER_NAME = "My Study";
 
     // These specific user account names are needed because of the imported study from test data.
-    private static final String READER = "dsreader@studysecurity.test";
-    private static final String EDITOR = "dseditor@studysecurity.test";
-    private static final String LIMITED = "dslimited@studysecurity.test";
-    private static final String NONE = "dsnone@studysecurity.test";
+    private static String USER_ADMIN;
+    private static final String USER_READER = "dsreader@studysecurity.test";
+    private static final String USER_EDITOR = "dseditor@studysecurity.test";
+    private static final String USER_AUTHOR = "dsauthor@studysecurity.test";
+    private static final String USER_LIMITED = "dslimited@studysecurity.test";
+    private static final String USER_NONE = "dsnone@studysecurity.test";
 
     // These user groups are created with the imported study from test data.
     // These groups are already populated with the users listed above.
     private static final String GROUP_READERS = "Readers";
     private static final String GROUP_EDITORS = "Editors";
+    private static final String GROUP_AUTHORS = "Authors";
     private static final String GROUP_LIMITED = "The Limited";
     private static final String GROUP_NONE = "No Access";
 
@@ -65,14 +68,23 @@ public class StudySecurityTest extends BaseWebDriverTest
     private static final String DS_ALT_ID = "Alt ID mapping";
     private static final String DS_COHORT = "EVC-1: Enrollment Vaccination";
     private static final String DS_DEMO = "DEM-1: Demographics";
+    private static final String DS_ENROLL = "ENR-1: Enrollment";
     private static final String DS_FOLLOW_UP = "CPF-1: Follow-up Chemistry Panel";
+    private static final String DS_MISSED = "MV-1: Missed Visit";
     private static final String DS_TYPES = "Types";
 
+    // User not part of the imported study, but used in one of the tests.
+    private static final String USER_IN_TWO = "dsintwo@studysecurity.test";
+
     private static final String INSERT_BUTTON_TEXT = "Insert data";
+
+    private static boolean initConditionsValid;
 
     @BeforeClass
     public static void doSetup()
     {
+
+        USER_ADMIN = getCurrentTest().getCurrentUser();
 
         StudySecurityTest initTest = (StudySecurityTest)getCurrentTest();
 
@@ -81,107 +93,339 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         initTest.clickFolder(FOLDER_NAME);
 
-        initTest._userHelper.createUser(READER);
-        initTest._userHelper.createUser(EDITOR);
-        initTest._userHelper.createUser(LIMITED);
-        initTest._userHelper.createUser(NONE);
+        initTest._userHelper.createUser(USER_READER);
+        initTest._userHelper.createUser(USER_EDITOR);
+        initTest._userHelper.createUser(USER_AUTHOR);
+        initTest._userHelper.createUser(USER_LIMITED);
+        initTest._userHelper.createUser(USER_NONE);
+        initTest._userHelper.createUser(USER_IN_TWO);
 
-        initTest.log("Import new study with alt-ID");
-        initTest.importFolderFromZip(TestFileUtils.getSampleData("studies/AltIdStudy.folder.zip"));
-
-        // This study file contains the groups that are used in this tests.
+        // This study file contains the subfolder and groups that are used in this tests.
         initTest.clickProject(initTest.getProjectName());
         initTest.importFolderFromZip(TestFileUtils.getSampleData("studies/StudySecurityProject.folder.zip"));
 
+        initTest.log("Validate that the default settings are as expected.");
+        initConditionsValid = initTest.verifyDefaultSettings();
     }
 
-    // Not really sure this test is useful, but carrying it over from the previous version of the StudySecurityTest.
-    @Test
-    public void testHappyPath()
+    // Not really sure how else to verify this. This simply validates the default setting of 'Study Security Type', so
+    // it needs to be run before any other tests. Unfortunately I cannot just assert here because it looks like if it
+    // fails it will stop all other tests from running.
+    public boolean verifyDefaultSettings()
     {
-        log("Verify system admins (current user) should be able to edit everything and setup the pipeline.");
-        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.EDITOR,
-                                                                DS_DEMO, DatasetRoles.EDITOR,
-                                                                DS_TYPES, DatasetRoles.EDITOR);
-        verifyPermissions(expectedDatasetRoles);
+        goToStudyFolder();
+        StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
+        return StudySecurityPage.StudySecurityType.BASIC_READ.equals(studySecurityPage.getSecurityType());
+    }
 
-        log(String.format("Group '%s' should be able to see all datasets, but not edit anything and not do anything with the pipeline.", GROUP_READERS));
-        expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.READER,
-                                    DS_DEMO, DatasetRoles.READER,
-                                    DS_TYPES, DatasetRoles.READER);
-        impersonate(READER);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
+    /**
+     * Validate that the Study Security Type is set to 'basic read-only' by default.
+     */
+    @Test
+    public void testDefaultSettings()
+    {
+        checker().verifyTrue("The default/initial setting for the 'Study Security Type' should be basic read-only, they were not.",
+                initConditionsValid);
+    }
 
-        log(String.format("Group '%s' should be able to see all datasets and edit them and import new data via the pipeline, but not set the pipeline path.", GROUP_EDITORS));
-        expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.EDITOR,
-                                    DS_DEMO, DatasetRoles.EDITOR,
-                                    DS_TYPES, DatasetRoles.EDITOR);
-        impersonate(EDITOR);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
+    /**
+     * Validate that the various parts of the Study Security page as shown and hidden as expected.
+     */
+    @Test
+    public void testUI()
+    {
+        goToStudyFolder();
+        StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
 
-        log(String.format("Group '%s' should be able to see only the few datasets we granted them and not do anything with the pipeline.", GROUP_LIMITED));
-        expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.READER,
-                                    DS_TYPES, DatasetRoles.READER,
-                                    DS_FOLLOW_UP, DatasetRoles.NONE);
-        impersonate(LIMITED);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
+        log("Verify that the various 'Study Security Type' settings update the UI appropriately.");
 
-        log(String.format("Group '%s' should not be able to see any datasets nor the pipeline.", GROUP_NONE));
-        expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.NONE,
-                                    DS_DEMO, DatasetRoles.NONE,
-                                    DS_TYPES, DatasetRoles.NONE);
-        impersonate(NONE);
-        verifyPermissions(expectedDatasetRoles);
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.BASIC_READ);
+        checker().verifyFalse("'Study Security' panel should not be visible with basic read-only security type.",
+                studySecurityPage.isGroupStudySecurityVisible());
+        checker().verifyFalse("'Per Dataset Permissions' panel should not be visible with basic read-only security type.",
+                studySecurityPage.isDatasetPermissionPanelVisible());
+        checker().screenShotIfNewError("testUI_Basic_Read-Only_Panels");
+
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.BASIC_WRITE);
+        checker().verifyFalse("'Study Security' panel should not be visible with basic write security type.",
+                studySecurityPage.isGroupStudySecurityVisible());
+        checker().verifyFalse("'Per Dataset Permissions' panel should not be visible with basic write security type.",
+                studySecurityPage.isDatasetPermissionPanelVisible());
+        checker().screenShotIfNewError("testUI_Basic_Write_Panels");
+
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.ADVANCED_READ);
+        checker().verifyTrue("'Study Security' panel should be visible with custom read-only security type, it is not.",
+                studySecurityPage.isGroupStudySecurityVisible());
+        checker().verifyTrue("'Per Dataset Permissions' panel should be visible with custom read-only security type, it is not.",
+                studySecurityPage.isDatasetPermissionPanelVisible());
+        checker().screenShotIfNewError("testUI_Custom_Read-Only_Panels");
+
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.ADVANCED_WRITE);
+        checker().verifyTrue("'Study Security' panel should be visible with custom write security type, it is not.",
+                studySecurityPage.isGroupStudySecurityVisible());
+        checker().verifyTrue("'Per Dataset Permissions' panel should be visible with custom write security type, it is not.",
+                studySecurityPage.isDatasetPermissionPanelVisible());
+        checker().screenShotIfNewError("testUI_Custom_Write_Panels");
+
+        log("Verify that setting 'Study Security Type' to custom read-only does not show any update permissions.");
+
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.ADVANCED_READ);
+
+        // Need to make sure that one of the groups is set to Per Dataset.
+        studySecurityPage.setGroupStudySecurityAndUpdate(Map.of(GROUP_LIMITED, GroupSecuritySetting.PER_DATASET));
+
+        checker().verifyFalse("With custom read-only permissions edit all should not be a 'Study Security' option.",
+                studySecurityPage.getAllowedGroupRoles().contains(GroupSecuritySetting.EDIT_ALL));
+
+        List<DatasetRoles> expectedPermissions = Arrays.asList(DatasetRoles.NONE, DatasetRoles.READER);
+        List<DatasetRoles> actualPermissions = studySecurityPage.getAllowedDatasetPermissions(GROUP_LIMITED);
+
+        Collections.sort(expectedPermissions);
+        Collections.sort(actualPermissions);
+        checker().verifyEquals("The 'Per Dataset Permissions options not as expected for read-only.",
+                expectedPermissions, actualPermissions);
+
+        log("Verify that setting 'Study Security Type' to custom edit shows everything.");
+
+        studySecurityPage.setSecurityTypeAndUpdate(StudySecurityPage.StudySecurityType.ADVANCED_WRITE);
+
+        checker().verifyTrue("With custom edit permissions edit all should be a 'Study Security' option.",
+                studySecurityPage.getAllowedGroupRoles().contains(GroupSecuritySetting.EDIT_ALL));
+
+        log("Check that if no group is 'Per Dataset' the list of datasets is not shown.");
+        Map<String, GroupSecuritySetting> clearAll = Map.of(GROUP_AUTHORS, GroupSecuritySetting.EDIT_ALL,
+                                                            GROUP_EDITORS, GroupSecuritySetting.EDIT_ALL,
+                                                            GROUP_NONE, GroupSecuritySetting.EDIT_ALL,
+                                                            GROUP_READERS, GroupSecuritySetting.EDIT_ALL,
+                                                            GROUP_LIMITED, GroupSecuritySetting.EDIT_ALL);
+        studySecurityPage.setGroupStudySecurityAndUpdate(clearAll);
+        checker().verifyFalse("The list of dataset in the 'Per Dataset Permissions' panel should not be visible if no group is Per Dataset.",
+                studySecurityPage.isDatasetPermissionPanelVisible());
+
+        log("Add a group to the 'Per Dataset' and validate that the options in the dropdown are as expected.");
+        studySecurityPage.setGroupStudySecurityAndUpdate(Map.of(GROUP_AUTHORS, GroupSecuritySetting.PER_DATASET));
+
+        expectedPermissions = Arrays.asList(DatasetRoles.NONE, DatasetRoles.READER, DatasetRoles.AUTHOR, DatasetRoles.EDITOR);
+        actualPermissions = studySecurityPage.getAllowedDatasetPermissions(GROUP_AUTHORS);
+
+        Collections.sort(expectedPermissions);
+        Collections.sort(actualPermissions);
+        checker().verifyEquals("The 'Per Dataset Permissions options not as expected for write.",
+                expectedPermissions, actualPermissions);
+
+        log("Verify that the highlights are appropriate for the datasets.");
+        checker().verifyTrue(String.format("The dataset '%s' has alternative ID and should be highlighted, it is not.", DS_ALT_ID),
+                studySecurityPage.isDatasetHighlighted(DS_ALT_ID));
+        checker().verifyTrue(String.format("The dataset '%s' has cohorts to the study and should be highlighted, it is not.", DS_COHORT),
+                studySecurityPage.isDatasetHighlighted(DS_COHORT));
+        checker().verifyFalse(String.format("The dataset '%s' is not special and should not be highlighted.", DS_TYPES),
+                studySecurityPage.isDatasetHighlighted(DS_TYPES));
+
+        log("UI looks correct.");
+    }
+
+    /**
+     * This is from the original version of this test (may not be needed?). Validate that only admins can set the pipeline for a study.
+     */
+    @Test
+    public void testPipelinePermissions()
+    {
+        log("Verify that only an admin can set the pipeline on a study.");
+
+        goToStudyFolder();
+
+        WebElement dataPipelinePanel = Locator.tagWithClassContaining("div", "panel-body").findElements(getDriver()).get(1);
+        WebElement setupButton = Locator.lkButton("Setup").findWhenNeeded(dataPipelinePanel);
+        checker().verifyTrue("Pipeline 'Setup' button is not visible to an admin.", setupButton.isDisplayed());
+
+        impersonate(USER_EDITOR);
+        checker().verifyFalse("Pipeline 'Setup' button is visible to a non-admin user, it should not be.", setupButton.isDisplayed());
         stopImpersonating();
+    }
+
+    /**
+     * Verify that Per Dataset Permissions take precedence over folder permissions. This is a user found issue
+     * (<a href="https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=41202">
+     *     Secure Issue 41202: Combination of Submitter and Reader Role does not see the "Insert Rows" icon</a>)
+     */
+    @Test
+    public void testFolderVsPerDatasetPermissions()
+    {
+
+        log(String.format("Move the read-only folder group '%s' to be an editor on a dataset '%s'", GROUP_READERS, DS_DEMO));
+        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.EDITOR);
+        adjustGroupDatasetPerms(GROUP_READERS, GroupSecuritySetting.PER_DATASET, expectedDatasetRoles);
+
+        log(String.format("Impersonate user '%s' and validate that they have editor permissions.", USER_READER));
+        verifyPermissions(USER_READER, expectedDatasetRoles);
+
+        log(String.format("Move the editor folder group '%s' to have no (NONE) permissions.", GROUP_EDITORS));
+        adjustGroupDatasetPerms(GROUP_EDITORS, GroupSecuritySetting.NONE, null);
+
+        log(String.format("Impersonate user '%s' and validate that they have no permissions.", USER_EDITOR));
+        verifyNoDatasetPermissions(USER_EDITOR);
 
     }
 
-    // Not really sure this test is useful, but carrying it over from the previous version of the StudySecurityTest.
+    /**
+     * Test the group permissions that are not per dataset specific.
+     */
     @Test
-    public void testChangePermissions()
+    public void testBulkPermissionsGroup()
     {
+        // Only going to check a few of the datasets per user/group.
 
-        log(String.format("Revoke %s permissions to none.", GROUP_LIMITED));
-        adjustGroupDatasetPerms(GROUP_LIMITED, GroupSecuritySetting.NONE);
-        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.NONE,
-                                                                DS_DEMO, DatasetRoles.NONE,
-                                                                DS_TYPES, DatasetRoles.NONE);
-        impersonate(LIMITED);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
+        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_ALT_ID, DatasetRoles.EDITOR,
+                                                                DS_DEMO, DatasetRoles.EDITOR);
 
-        log(String.format("Reinstate read permission to %s to verify that per-dataset settings were preserved.", GROUP_LIMITED));
-        adjustGroupDatasetPerms(GROUP_LIMITED, GroupSecuritySetting.PER_DATASET);
-        expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.NONE,
-                                    DS_DEMO, DatasetRoles.READER,
-                                    DS_TYPES, DatasetRoles.READER);
-        impersonate(LIMITED);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
+        log("Verify system admins (current user) should be able to edit everything.");
+        verifyPermissions(USER_ADMIN, expectedDatasetRoles);
 
-        log(String.format("Move %s to per-dataset and grant edit only to dataset %s.", GROUP_EDITORS, DS_TYPES));
+        log(String.format("Group '%s' should be able to see all datasets, but not edit anything.", GROUP_READERS));
+        expectedDatasetRoles = Map.of(DS_COHORT, DatasetRoles.READER,
+                DS_ENROLL, DatasetRoles.READER);
+        verifyPermissions(USER_READER, expectedDatasetRoles);
 
-        Map<String, DatasetRoles> datasetRoles = Map.of(DS_TYPES, DatasetRoles.EDITOR);
-        adjustGroupDatasetPerms(GROUP_EDITORS, GroupSecuritySetting.PER_DATASET, datasetRoles);
-
-        expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.NONE,
-                DS_DEMO, DatasetRoles.NONE,
-                DS_TYPES, DatasetRoles.EDITOR);
-        impersonate(EDITOR);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
-
-        log(String.format("Reset %s to general edit.", GROUP_EDITORS));
-        adjustGroupDatasetPerms(GROUP_EDITORS, GroupSecuritySetting.EDIT_ALL);
+        log(String.format("Group '%s' should be able to see all datasets and edit them.", GROUP_EDITORS));
         expectedDatasetRoles = Map.of(DS_FOLLOW_UP, DatasetRoles.EDITOR,
+                DS_MISSED, DatasetRoles.EDITOR);
+        verifyPermissions(USER_EDITOR, expectedDatasetRoles);
+
+        log(String.format("No datasets should be visible to group '%s'.", GROUP_NONE));
+        verifyNoDatasetPermissions(USER_NONE);
+
+    }
+
+    /**
+     * Simple test of groups with Per Dataset Permissions set.
+     */
+    @Test
+    public void testSimplePerDatasetPermissions()
+    {
+        log(String.format("Verify the per dataset permissions for user '%s'. This verifies all per dataset permissions.", USER_LIMITED));
+        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_ALT_ID, DatasetRoles.READER,
+                DS_COHORT, DatasetRoles.READER,
                 DS_DEMO, DatasetRoles.EDITOR,
-                DS_TYPES, DatasetRoles.EDITOR);
-        impersonate(EDITOR);
-        verifyPermissions(expectedDatasetRoles);
-        stopImpersonating();
+                DS_ENROLL, DatasetRoles.NONE,
+                DS_TYPES, DatasetRoles.AUTHOR);
+        verifyPermissions(USER_LIMITED, expectedDatasetRoles);
+
+        log(String.format("Verify the per dataset permissions for user '%s'.", USER_AUTHOR));
+        expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.AUTHOR,
+                DS_ENROLL, DatasetRoles.AUTHOR,
+                DS_MISSED, DatasetRoles.AUTHOR);
+        verifyPermissions(USER_AUTHOR, expectedDatasetRoles);
+
+    }
+
+    /**
+     * Validate that removing permissions and canceling changes work as expected.
+     */
+    @Test
+    public void testPermissionsReset()
+    {
+
+        log(String.format("Change %s permissions to 'Read All' and verify.", GROUP_LIMITED));
+        adjustGroupDatasetPerms(GROUP_LIMITED, GroupSecuritySetting.READ_ALL);
+        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.READER,
+                DS_TYPES, DatasetRoles.READER);
+        verifyPermissions(USER_LIMITED, expectedDatasetRoles);
+
+        log("Check that the groups is no longer visible in the 'Per Dataset' panel.");
+
+        StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
+        List<String> groups = studySecurityPage.getGroupsListedInPerDatasets();
+        checker().verifyFalse(String.format("Group '%s' still has a column in the 'Per Dataset' panel.", GROUP_LIMITED),
+                groups.contains(GROUP_LIMITED));
+
+        log(String.format("Reinstate per dataset permission to %s and dataset permissions default to 'NONE'.", GROUP_LIMITED));
+        adjustGroupDatasetPerms(GROUP_LIMITED, GroupSecuritySetting.PER_DATASET);
+        expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.NONE,
+                DS_ALT_ID, DatasetRoles.NONE,
+                DS_TYPES, DatasetRoles.NONE,
+                DS_COHORT, DatasetRoles.NONE);
+        verifyPermissions(USER_LIMITED, expectedDatasetRoles);
+
+        log("Set the permissions to what they were at the start.");
+        expectedDatasetRoles = Map.of(DS_DEMO, DatasetRoles.EDITOR,
+                DS_ALT_ID, DatasetRoles.READER,
+                DS_TYPES, DatasetRoles.AUTHOR,
+                DS_COHORT, DatasetRoles.READER);
+        adjustGroupDatasetPerms(GROUP_LIMITED, GroupSecuritySetting.PER_DATASET, expectedDatasetRoles);
+
+        log("Set them to something else and then cancel.");
+        studySecurityPage = _studyHelper.enterStudySecurity();
+        studySecurityPage.setDatasetPermissions(GROUP_LIMITED, DS_DEMO, DatasetRoles.NONE);
+        studySecurityPage.setDatasetPermissions(GROUP_LIMITED, DS_ALT_ID, DatasetRoles.NONE);
+        studySecurityPage.setDatasetPermissions(GROUP_LIMITED, DS_TYPES, DatasetRoles.NONE);
+        studySecurityPage.setDatasetPermissions(GROUP_LIMITED, DS_COHORT, DatasetRoles.NONE);
+        studySecurityPage.cancel();
+
+        log("Go back and verify that the permissions are as expected after cancel.");
+        goToStudyFolder();
+        studySecurityPage = _studyHelper.enterStudySecurity();
+        checker().verifyEquals(String.format("For group '%s' dataset '%s' should have permission '%s'.",
+                    GROUP_LIMITED, DS_DEMO, DatasetRoles.EDITOR),
+                DatasetRoles.EDITOR, studySecurityPage.getDatasetPermission(GROUP_LIMITED, DS_DEMO));
+
+        verifyPermissions(USER_LIMITED, expectedDatasetRoles);
+    }
+
+    /**
+     * Validate that a user can actually insert a record. The user is in a group that has editor permissions on the
+     * 'types' dataset and read permissions on the alt-id dataset. These two permissions are needed to insert into
+     * the types dataset.
+     */
+    @Test
+    public void testUserCanActuallyInsert()
+    {
+
+        log("Validate that a user with a per dataset permission can really insert a record in that dataset.");
+        goToStudyFolder();
+
+        log(String.format("User '%s' has editor permissions for dataset '%s', go there and insert a record.",
+                USER_LIMITED, DS_TYPES));
+        WebElement datasetLink = Locator.linkWithText(DS_TYPES).findWhenNeeded(getDriver());
+        clickAndWait(datasetLink);
+
+        DataRegionTable dataRegionTable = new DataRegionTable("Dataset", getDriver());
+        dataRegionTable.clickInsertNewRow();
+        setFormElement(Locator.tagWithName("input", "quf_MouseId"), "12345");
+        setFormElement(Locator.tagWithName("input", "quf_SequenceNum"), "1.1234");
+        clickAndWait(Locator.lkButton("Submit"));
+
+        WebElement header = Locator.tagWithClassContaining("div", "lk-body-title")
+                .child(Locator.xpath(String.format("h3[contains(text(), '%s')]", DS_TYPES)))
+                .findWhenNeeded(getDriver());
+
+        checker()
+                .withScreenshot(String.format("InsertToDatasetFailed_%s", DS_TYPES))
+                .verifyTrue(
+                        String.format("Successful insert should have sent us back to '%s' dataset.", DS_TYPES),
+                        header.isDisplayed());
+    }
+
+    /**
+     * Put a user into two groups, where each group has a different permissions setting for a dataset, then validate
+     * that the more permissive role is the one that is taken.
+     */
+    @Test
+    public void testUserInMultipleGroups()
+    {
+        log(String.format("Put user '%s' into groups '%s' and '%s'.", USER_IN_TWO, GROUP_AUTHORS, GROUP_LIMITED));
+
+        ApiPermissionsHelper apiPermissionsHelper = new ApiPermissionsHelper(this);
+        apiPermissionsHelper.addUserToProjGroup(USER_IN_TWO, getProjectName(), GROUP_AUTHORS);
+        apiPermissionsHelper.addUserToProjGroup(USER_IN_TWO, getProjectName(), GROUP_LIMITED);
+
+        log("Validate that the user has permission from both groups and that the more permissive role is present whent here is a conflict.");
+        Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_ALT_ID, DatasetRoles.READER,
+                DS_COHORT, DatasetRoles.READER,
+                DS_DEMO, DatasetRoles.EDITOR,
+                DS_TYPES, DatasetRoles.AUTHOR,
+                DS_ENROLL, DatasetRoles.AUTHOR,
+                DS_MISSED, DatasetRoles.AUTHOR);
+        verifyPermissions(USER_IN_TWO, expectedDatasetRoles);
     }
 
     protected void adjustGroupDatasetPerms(String groupName, GroupSecuritySetting setting)
@@ -191,13 +435,13 @@ public class StudySecurityTest extends BaseWebDriverTest
 
     protected void adjustGroupDatasetPerms(String groupName, GroupSecuritySetting setting, Map<String, DatasetRoles> datasetRolesMap)
     {
-        navigateToFolder(getProjectName(), FOLDER_NAME);
+        goToStudyFolder();
         StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
 
         studySecurityPage.setGroupStudySecurity(groupName, setting);
         studySecurityPage.updateGroupSecurity();
 
-        if (null != datasetRolesMap)
+        if (null != datasetRolesMap && !datasetRolesMap.isEmpty())
         {
             studySecurityPage.setDatasetPermissionsAndSave(groupName, datasetRolesMap);
             studySecurityPage.saveDatasetPermissions();
@@ -206,19 +450,49 @@ public class StudySecurityTest extends BaseWebDriverTest
         clickFolder(FOLDER_NAME);
     }
 
-    private void verifyPermissions(Map<String, DatasetRoles> expectedDatasetRoles)
+    // Special case the check when a user should have no permissions to any datasets.
+    private void verifyNoDatasetPermissions(String user)
     {
 
-        navigateToFolder(getProjectName(), FOLDER_NAME);
+        goToStudyFolder();
 
-        for(Map.Entry<String, DatasetRoles> entry : expectedDatasetRoles.entrySet())
+        checker()
+                .verifyNotEquals(
+                        String.format("You are checking to see if site admin '%s' has no permissions, that is just plain wrong.", user),
+                        USER_ADMIN, user);
+
+        impersonate(user);
+
+        WebElement datasetsPanel = Locator
+                .tagWithClassContaining("div", "panel-body")
+                .findElements(getDriver()).get(2);
+        List<WebElement> datasetLinks = Locator.tag("table").childTag("a").findElements(datasetsPanel);
+
+        checker()
+                .withScreenshot("Dataset_Links_Present")
+                .verifyTrue(String.format("There should be no links visible to user '%s'.", user),
+                        datasetLinks.isEmpty());
+
+        stopImpersonating();
+
+    }
+
+    private void verifyPermissions(String user, Map<String, DatasetRoles> expectedDatasetRoles)
+    {
+
+        goToStudyFolder();
+
+        if(!user.equalsIgnoreCase(USER_ADMIN))
+            impersonate(user);
+
+        for (Map.Entry<String, DatasetRoles> entry : expectedDatasetRoles.entrySet())
         {
 
             String datasetName = entry.getKey();
 
             WebElement datasetLink = Locator.linkWithText(datasetName).findWhenNeeded(getDriver());
 
-            if(entry.getValue().equals(DatasetRoles.NONE))
+            if (entry.getValue().equals(DatasetRoles.NONE))
             {
                 checker().verifyFalse(
                         String.format("The user does not have permissions to dataset '%s' but the link is visible.",
@@ -263,14 +537,12 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         }
 
-    }
+        if(!user.equalsIgnoreCase(USER_ADMIN))
+            stopImpersonating();
 
-    // TODO maybe add one test to verify that only admins can set the pipeline.
-    private void verifyPipelinePermissions(boolean canSetupPipeline)
-    {
-        WebElement dataPipelinePanel = Locator.tagWithClassContaining("div", "panel-body").findElements(getDriver()).get(1);
-        WebElement setupButton = Locator.lkButton("Setup").findWhenNeeded(dataPipelinePanel);
-        checker().verifyEquals("Pipeline 'Setup' button visibility not as expected.", canSetupPipeline, setupButton.isDisplayed());
+        // Go back to where you started.
+        goToStudyFolder();
+
     }
 
     private void verifyDataRegionTable(String datasetName, DatasetRoles datasetRole)
@@ -352,6 +624,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         Map<String, GroupSecuritySetting> groupSettings = Map.of(GROUP_READERS, GroupSecuritySetting.READ_ALL,
                 GROUP_EDITORS, GroupSecuritySetting.EDIT_ALL,
+                GROUP_AUTHORS, GroupSecuritySetting.PER_DATASET,
                 GROUP_LIMITED, GroupSecuritySetting.PER_DATASET,
                 GROUP_NONE, GroupSecuritySetting.NONE,
                 GROUP_DEVELOPER, GroupSecuritySetting.NONE,
@@ -364,11 +637,20 @@ public class StudySecurityTest extends BaseWebDriverTest
         // Clear any previous per dataset permissions.
         studySecurityPage.clearAll();
 
-        // Grant reader rights to the LIMITED group for a couple of datasets.
-        Map<String, DatasetRoles> permissions = Map.of(DS_DEMO, DatasetRoles.READER,
-                                                DS_TYPES, DatasetRoles.READER);
+        // Grant rights to the LIMITED group for a couple of datasets.
+        Map<String, DatasetRoles> permissions = Map.of(DS_DEMO, DatasetRoles.EDITOR,
+                                                DS_ALT_ID, DatasetRoles.READER,
+                                                DS_TYPES, DatasetRoles.AUTHOR,
+                                                DS_COHORT, DatasetRoles.READER);
 
         studySecurityPage.setDatasetPermissionsAndSave(GROUP_LIMITED, permissions);
+
+        // Grant author rights to the AUTHORS group for a couple of datasets.
+        permissions = Map.of(DS_DEMO, DatasetRoles.AUTHOR,
+                DS_ENROLL, DatasetRoles.AUTHOR,
+                DS_MISSED, DatasetRoles.AUTHOR);
+
+        studySecurityPage.setDatasetPermissionsAndSave(GROUP_AUTHORS, permissions);
 
     }
 
@@ -389,11 +671,22 @@ public class StudySecurityTest extends BaseWebDriverTest
         return studySecurityPage;
     }
 
+    private void goToStudyFolder()
+    {
+        String currentUrl = getCurrentRelativeURL().toLowerCase();
+
+        if(!currentUrl.contains(FOLDER_NAME.toLowerCase()))
+        {
+            navigateToFolder(getProjectName(), FOLDER_NAME);
+        }
+
+    }
+
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        _userHelper.deleteUsers(false, READER, EDITOR, LIMITED, NONE);
+        _userHelper.deleteUsers(false, USER_READER, USER_EDITOR, USER_AUTHOR, USER_LIMITED, USER_NONE, USER_IN_TWO);
     }
 
     @Override
