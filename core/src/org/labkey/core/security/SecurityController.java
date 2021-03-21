@@ -58,6 +58,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
@@ -126,10 +127,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -1786,9 +1789,34 @@ public class SecurityController extends SpringActionController
             if (!loginExists)
                 throw new NotFoundException(emailAddress + " does not seem to have a password");
 
-            // TODO: Additional checks and guidance here -- Is LDAP configured for this user? Is SSO configured at all?
+            // TODO: Use SecurityManager.isLdapEmail() once that method is fixed. See #42435.
+            boolean ldapConfigured = null != AuthenticationManager.getLdapDomain();
+            Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationManager.getActiveConfigurations(SSOAuthenticationConfiguration.class);
 
-            return HtmlString.of("Are you sure you want to delete the current password for " + emailAddress + "? Once deleted, this user will be able to login via LDAP or SSO only.");
+            List<String> authMethods = new LinkedList<>();
+            String ssoDetails = "";
+
+            if (ldapConfigured)
+                authMethods.add("LDAP");
+
+            if (!ssoConfigs.isEmpty())
+            {
+                authMethods.add("SSO");
+                ssoDetails = " (" +
+                    ssoConfigs.stream()
+                        .map(AuthenticationConfiguration::getDescription)
+                        .collect(Collectors.joining(", ")) +
+                    ")";
+            }
+
+            String guidance;
+
+            if (authMethods.isEmpty())
+                guidance = "have no way to login!";
+            else
+                guidance = "be able to login via " + String.join(" or ", authMethods) + ssoDetails + " only.";
+
+            return HtmlString.of("Are you sure you want to delete the current password for " + emailAddress + "? Once deleted, this user will " + guidance);
         }
 
         @Override
