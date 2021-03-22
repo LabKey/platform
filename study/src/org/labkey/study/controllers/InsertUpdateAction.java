@@ -297,9 +297,9 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         {
             throw new UnauthorizedException("User does not have permission to edit this dataset");
         }
-        if (_ds.isAssayData())
+        if (_ds.isPublishedData())
         {
-            throw new UnauthorizedException("This dataset comes from an assay. You cannot update it directly");
+            throw new UnauthorizedException("This dataset comes from linked data. You cannot update it directly");
         }
 
         TableInfo datasetTable = getQueryTable();

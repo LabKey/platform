@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * Bit of a misnomer, but I couldn't think of a better name. These modules provide code and resources, but don't manage
  * any schemas, don't run SQL scripts, and don't need to do anything at upgrade time. This simplifies the implementation
- * of such modules and eases module bumps at release time.
+ * of such modules.
  *
  * Perhaps this should implement Module instead of extending DefaultModule.
  *

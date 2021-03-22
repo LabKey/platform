@@ -175,7 +175,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
 
-    public static final String EXPERIMENTAL_LEGACY_LINEAGE = "legacy-lineage";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
     public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
@@ -1989,177 +1988,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
-    @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
-    {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
-        {
-            return getParentsOldAndBusted(start);
-        }
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getParentsVeryNewHotness(c, user, start);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-        assert null != (oldAndBusted = getParentsOldAndBusted(start));
-        assert assertLineage(start, veryNewHotness, oldAndBusted);
-
-        return veryNewHotness;
-    }
-
-    // Make boolean so it can hide behind 'assert' and no-op in production mode
-    private boolean assertLineage(ExpRunItem seed, Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
-    {
-        if (newHotness.first.equals(oldAndBusted.first) &&
-                newHotness.second.equals(oldAndBusted.second))
-            return true; // short-circuit if everything matches
-
-        // when there is a recursive lineage, the old lineage includes the seed but the new lineage doesn't
-        //noinspection SuspiciousMethodCalls
-        if (oldAndBusted.first.contains(seed) || oldAndBusted.second.contains(seed))
-        {
-            Set<ExpData> recursiveDataCheck = new HashSet<>(oldAndBusted.first);
-            recursiveDataCheck.remove(seed);
-            Set<ExpMaterial> recursiveMaterialCheck = new HashSet<>(oldAndBusted.second);
-            recursiveMaterialCheck.remove(seed);
-            if (newHotness.first.equals(recursiveDataCheck) &&
-                    newHotness.second.equals(recursiveMaterialCheck))
-                return true;
-        }
-
-        Set<ExpData> newExpDataUniques = new HashSet<>(newHotness.first);
-        Set<ExpData> oldExpDataUniques = new HashSet<>(oldAndBusted.first);
-        Set<ExpMaterial> newExpMaterialUniques = new HashSet<>(newHotness.second);
-        Set<ExpMaterial> oldExpMaterialUniques = new HashSet<>(oldAndBusted.second);
-        newExpDataUniques.removeAll(oldAndBusted.first);
-        oldExpDataUniques.removeAll(newHotness.first);
-        newExpMaterialUniques.removeAll(oldAndBusted.second);
-        oldExpMaterialUniques.removeAll(newHotness.second);
-
-        Set<ExpData> expDataOverlap = new HashSet<>(newHotness.first);
-        expDataOverlap.removeAll(newExpDataUniques);
-        Set<ExpMaterial> expMaterialOverlap = new HashSet<>(newHotness.second);
-        expMaterialOverlap.removeAll(newExpMaterialUniques);
-
-        StringBuilder errorMsg = new StringBuilder("Old lineage doesn't match new lineage for: " + seed);
-        if (!newExpDataUniques.isEmpty())
-            errorMsg.append("\nOld missing data: ").append(newExpDataUniques.toString());
-        if (!oldExpDataUniques.isEmpty())
-            errorMsg.append("\nNew missing data: ").append(oldExpDataUniques.toString());
-        if (!newExpMaterialUniques.isEmpty())
-            errorMsg.append("\nOld missing materials: ").append(newExpMaterialUniques.toString());
-        if (!oldExpMaterialUniques.isEmpty())
-            errorMsg.append("\nNew missing materials: ").append(oldExpMaterialUniques.toString());
-        errorMsg.append("\nMatching Data: ").append(expDataOverlap);
-        errorMsg.append("\nMatching Materials: ").append(expMaterialOverlap);
-        errorMsg.append("\n");
-        LOG.warn(errorMsg);
-        return true;
-    }
-
-    /**
-     * walk experiment graph in memory, with tons queries, mostly repetitive queries over and over again
-     **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpRunItem start)
-    {
-        if (isUnknownMaterial(start))
-            return Pair.of(emptySet(), emptySet());
-
-        List<ExpRun> runsToInvestigate = new ArrayList<>();
-        ExpRun parentRun = start.getRun();
-        if (parentRun != null)
-            runsToInvestigate.add(parentRun);
-
-        Set<ExpRun> investigatedRuns = new HashSet<>();
-
-        final Set<ExpData> parentData = new HashSet<>();
-        final Set<ExpMaterial> parentMaterials = new HashSet<>();
-        while (!runsToInvestigate.isEmpty())
-        {
-            ExpRun predecessorRun = runsToInvestigate.remove(0);
-            investigatedRuns.add(predecessorRun);
-
-            for (ExpData d : predecessorRun.getDataInputs().keySet())
-            {
-                ExpRun dRun = d.getRun();
-                if (dRun != null && !investigatedRuns.contains(dRun))
-                    runsToInvestigate.add(dRun);
-
-                parentData.add(d);
-            }
-            for (ExpMaterial m : removeUnknownMaterials(predecessorRun.getMaterialInputs().keySet()))
-            {
-                ExpRun mRun = m.getRun();
-                if (mRun != null && !investigatedRuns.contains(mRun))
-                    runsToInvestigate.add(mRun);
-
-                parentMaterials.add(m);
-            }
-        }
-        return Pair.of(parentData, parentMaterials);
-    }
-
-
-    @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
-    {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
-        {
-            return getChildrenOldAndBusted(start);
-        }
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getChildrenVeryNewHotness(c, user, start);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-        assert assertLineage(start, veryNewHotness, oldAndBusted);
-
-        return veryNewHotness;
-    }
-
-
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpRunItem start)
-    {
-        if (isUnknownMaterial(start))
-            return Pair.of(emptySet(), emptySet());
-
-        List<ExpRun> runsToInvestigate = new ArrayList<>();
-        if (start instanceof ExpData)
-            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDataIds(Arrays.asList(start.getRowId())));
-        else if (start instanceof ExpMaterial)
-            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
-
-        runsToInvestigate.remove(start.getRun());
-        Set<ExpData> childDatas = new HashSet<>();
-        Set<ExpMaterial> childMaterials = new HashSet<>();
-
-        Set<ExpRun> investigatedRuns = new HashSet<>();
-        while (!runsToInvestigate.isEmpty())
-        {
-            ExpRun childRun = runsToInvestigate.remove(0);
-            if (!investigatedRuns.contains(childRun))
-            {
-                investigatedRuns.add(childRun);
-
-                List<ExpMaterial> materialOutputs = removeUnknownMaterials(childRun.getMaterialOutputs());
-                childMaterials.addAll(materialOutputs);
-
-                List<ExpData> dataOutputs = childRun.getDataOutputs();
-                childDatas.addAll(dataOutputs);
-
-                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(materialOutputs));
-                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDatas(dataOutputs));
-            }
-        }
-
-        if (start instanceof ExpData)
-            childDatas.remove(start);
-        else if (start instanceof ExpMaterial)
-            childMaterials.remove(start);
-
-        return Pair.of(childDatas, childMaterials);
-    }
-
-
     /**
      * walk experiment graph with one tricky recursive query
      * <p>
@@ -2178,7 +2006,8 @@ public class ExperimentServiceImpl implements ExperimentService
      * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
      * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
      **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(Container c, User user, ExpRunItem start)
+    @Override
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -2187,11 +2016,11 @@ public class ExperimentServiceImpl implements ExperimentService
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
-
     /**
      * walk experiment graph with one tricky recursive query
      **/
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(Container c, User user, ExpRunItem start)
+    @Override
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setParents(false);
@@ -2766,6 +2595,7 @@ public class ExperimentServiceImpl implements ExperimentService
         DbScope scope = expTable.getSchema().getScope();
         try (Connection conn = scope.getConnection())
         {
+            //noinspection SqlResolve
             try (PreparedStatement stmt = conn.prepareStatement("UPDATE " + expTable.getSelectName() + " SET ObjectId=? WHERE LSID=?"))
             {
                 Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
@@ -3215,18 +3045,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
     }
 
-    private List<ExpMaterial> removeUnknownMaterials(Iterable<ExpMaterial> materials)
-    {
-        // Filter out the generic unknown material, which is just a placeholder and doesn't represent a real
-        // parent
-        ArrayList<ExpMaterial> result = new ArrayList<>();
-        for (ExpMaterial material : materials)
-        {
-            if (!isUnknownMaterial(material))
-                result.add(material);
-        }
-        return result;
-    }
 
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
@@ -3631,7 +3449,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             catch (MalformedURLException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
         return data;
@@ -3880,7 +3698,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 StudyService studyService = StudyService.get();
                 if (studyService != null)
                 {
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
                         dataset.delete(user);
                     }

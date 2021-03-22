@@ -71,7 +71,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -599,13 +598,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null, null, null);
+                parentCol, nameExpression, templateInfo, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable Container autoLinkTargetContainer)
         throws ExperimentException
     {
         if (name == null)
@@ -714,6 +713,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             source.setNameExpression(nameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
+        source.setAutoLinkTargetContainer(autoLinkTargetContainer);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -873,6 +873,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             st.setLabelColor(options.getLabelColor());
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
+            st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
         }
 
         ValidationException errors;

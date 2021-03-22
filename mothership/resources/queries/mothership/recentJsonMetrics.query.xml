@@ -1,0 +1,16 @@
+<tables xmlns="http://labkey.org/data/xml">
+    <table tableName="recentJsonMetricValues" tableDbType="NOT_IN_DB">
+        <columns>
+            <column columnName="JsonKey">
+                <isKeyField>true</isKeyField>
+            </column>
+            <column columnName="Info" wrappedColumnName="JsonKey">
+                <isUnselectable>true</isUnselectable>
+                <fk>
+                    <fkDbSchema>lists</fkDbSchema>
+                    <fkTable>JsonMetricMetadata</fkTable>
+                </fk>
+            </column>
+        </columns>
+    </table>
+</tables>

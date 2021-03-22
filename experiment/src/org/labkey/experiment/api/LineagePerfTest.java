@@ -78,16 +78,12 @@ public class LineagePerfTest extends Assert
 {
     private static final Logger LOG = LogManager.getLogger(LineagePerfTest.class);
 
-    private static boolean _currentSetting;
     private static User _user;
     private static Container _container;
 
     @BeforeClass
     public static void setup()
     {
-        _currentSetting = ExperimentalFeatureService.get().isFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE);
-        LOG.info("current legacy lineage setting: " + _currentSetting);
-
         _user = TestContext.get().getUser();
         assertNotNull("Should have access to a user", _user);
 
@@ -97,15 +93,6 @@ public class LineagePerfTest extends Assert
         LOG.info("creating test container");
         _container = JunitUtil.getTestContainer();
     }
-
-    @AfterClass
-    public static void cleanup()
-    {
-        LOG.info("restoring legacy lineage setting: " + _currentSetting);
-        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, _currentSetting, _user);
-        //deleteTestContainer();
-    }
-
 
     // create new data
     private int generateNewData(List<Map<String, Object>> data, List<Map<String, Object>> samples, Random random)
@@ -303,10 +290,6 @@ public class LineagePerfTest extends Assert
         CPUTimer insertDataTimer = new CPUTimer("insertData");
         CPUTimer insertSamplesTimer = new CPUTimer("insertSamples");
 
-//        CPUTimer oldLineageQuery = new CPUTimer("old lineage query");
-//        CPUTimer oldLineageGraph = new CPUTimer("old lineage graph");
-//        CPUTimer oldInsertMoreTimer = new CPUTimer("old insertMore");
-
         CPUTimer newLineageQuery = new CPUTimer("new lineage query");
         CPUTimer newLineageGraph = new CPUTimer("new lineage graph");
         CPUTimer newInsertMoreTimer = new CPUTimer("new insertMore");
@@ -328,12 +311,8 @@ public class LineagePerfTest extends Assert
         // TEST: 10 x (insert a sample, query lineage twice)
         //
 
-//        LOG.info("TEST querying with legacy lineage: ");
-//        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, true, _user);
-//        lineageQueries("OLD", oldLineageQuery, oldLineageGraph, oldInsertMoreTimer, ss, firstData);
-
         LOG.info("TEST querying with exp.edge lineage: ");
-        ExperimentalFeatureService.get().setFeatureEnabled(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, false, _user);
+
         lineageQueries("NEW", newLineageQuery, newLineageGraph, newInsertMoreTimer, st, firstData);
 
         elapsedTimer.stop();
@@ -344,9 +323,6 @@ public class LineagePerfTest extends Assert
         LOG.info(generateRowsTimer);
         LOG.info(insertDataTimer);
         LOG.info(insertSamplesTimer);
-//        LOG.info(oldLineageQuery);
-//        LOG.info(oldLineageGraph);
-//        LOG.info(oldInsertMoreTimer);
         LOG.info(newLineageQuery);
         LOG.info(newLineageGraph);
         LOG.info(newInsertMoreTimer);

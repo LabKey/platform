@@ -52,6 +52,15 @@ public class SampleTypeContentsView extends QueryView
         return deriveButton;
     }
 
+    public static ActionButton getLinkToStudyButton()
+    {
+        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
+        ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+        linkToStudyButton.setDisplayPermission(InsertPermission.class);
+        linkToStudyButton.setRequiresSelection(true);
+        return linkToStudyButton;
+    }
+
     private String getSelectedScript(ActionURL url, boolean isOuput)
     {
         return "function(data) {" +
@@ -128,6 +137,7 @@ public class SampleTypeContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
+        bar.add(getLinkToStudyButton());
 
         // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();

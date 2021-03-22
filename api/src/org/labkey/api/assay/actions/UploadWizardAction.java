@@ -70,7 +70,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.HelpTopic;
@@ -190,7 +190,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
             else
             {
-                Set<Study> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
+                Set<Study> targets = StudyPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
                 Study study = StudyService.get().getStudy(container);
                 if (null == study || !targets.contains(study))
                 {
@@ -417,7 +417,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnURLHelper());
         }
 
-        if (null != AssayPublishService.get())
+        if (null != StudyPublishService.get())
         {
             DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
             if (targetStudyCol != null)
