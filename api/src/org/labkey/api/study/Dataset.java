@@ -18,14 +18,26 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
@@ -47,6 +59,103 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         NONE,
         ALL,
         PTID
+    }
+
+    /**
+     * Provides information about the published source for a dataset
+     */
+    enum PublishSource {
+        Assay
+                {
+                    @Override
+                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    {
+                        return ExperimentService.get().getExpProtocol(publishSourceId);
+                    }
+
+                    @Override
+                    public String getLabel(Integer publishSourceId)
+                    {
+                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
+                        if (protocol != null)
+                            return protocol.getName();
+                        return "";
+                    }
+
+                    @Override
+                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
+                    {
+                        ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                        if (protocol != null)
+                        {
+                            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
+                                    protocol.getContainer(),
+                                    protocol,
+                                    cf);
+                            return new ActionButton("View Source Assay", url);
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasUsefulDetailsPage(Integer publishSourceId)
+                    {
+                        ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                        if (protocol != null)
+                        {
+                            AssayProvider provider = AssayService.get().getProvider(protocol);
+                            if (provider != null)
+                                return provider.hasUsefulDetailsPage();
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user)
+                    {
+                        StudyService.get().addAssayRecallAuditEvent(def, rowCount, sourceContainer, user);
+                    }
+                },
+        SampleType
+                {
+                    @Override
+                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    {
+                        return SampleTypeService.get().getSampleType(publishSourceId);
+                    }
+
+                    @Override
+                    public String getLabel(Integer publishSourceId)
+                    {
+                        ExpSampleType sampleType =  SampleTypeService.get().getSampleType(publishSourceId);
+                        if (sampleType != null)
+                            return sampleType.getName();
+                        return "";
+                    }
+
+                    @Override
+                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
+                    {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasUsefulDetailsPage(Integer publishSourceId)
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    public void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user)
+                    {
+                    }
+                };
+
+        public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
+        public abstract String getLabel(Integer publishSourceId);
+        public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
+        public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
+        public abstract void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user);
     }
 
     Set<String> getDefaultFieldNames();
@@ -91,12 +200,19 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
     Date getModified();
 
     /**
-     * @return true if this dataset is backed by assay data within LabKey Server. Note that if a dataset happens
-     * to contain assay data but isn't linked to an assay provider in the server (ie., when importing a study archive), this method will return false.
+     * @return true if this dataset is backed by published data (assay, sample type etc). Note that if a dataset happens
+     * to contain published data but isn't linked to the publish source in the server (ie., when importing a study archive), this method will return false.
      */
-    boolean isAssayData();
+    boolean isPublishedData();
 
-    ExpProtocol getAssayProtocol();
+    @Nullable
+    PublishSource getPublishSource();
+
+    @Nullable
+    ExpObject resolvePublishSource();
+
+    @Nullable
+    Integer getPublishSourceId();
 
     Study getStudy();
 

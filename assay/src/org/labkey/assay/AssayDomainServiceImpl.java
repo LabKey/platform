@@ -62,7 +62,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -276,7 +276,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
-        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
         if (autoCopyValue != null)
         {
             Container autoCopyTarget = ContainerManager.getForId(autoCopyValue.getStringValue());
@@ -521,11 +521,11 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
 
                     if (autoCopyTargetContainerId != null)
                     {
-                        props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
+                        props.put(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
                     }
                     else
                     {
-                        props.remove(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+                        props.remove(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
                     }
                     protocol.setObjectProperties(props);
 

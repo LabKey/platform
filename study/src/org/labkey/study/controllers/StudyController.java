@@ -153,7 +153,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ContainerContext;
@@ -191,8 +191,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
-import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.publish.AbstractPublishConfirmAction;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -848,7 +847,7 @@ public class StudyController extends BaseStudyController
             }
 
             boolean showEditLinks = !QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), def.getName()) &&
-                !def.isAssayData();
+                !def.isPublishedData();
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             DatasetQuerySettings settings = (DatasetQuerySettings)schema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
@@ -2534,7 +2533,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
@@ -2718,7 +2717,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            UploadLog ul = AssayPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
+            UploadLog ul = StudyPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
             PageFlowUtil.streamFile(getViewContext().getResponse(), new File(ul.getFilePath()), true);
 
             return null;
@@ -2776,12 +2775,12 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String protocolId = (String)getViewContext().get("protocolId");
+                    String publishSourceId = (String)getViewContext().get("publishSourceId");
                     String sourceLsid = (String)getViewContext().get("sourceLsid");
                     String recordCount = (String)getViewContext().get("recordCount");
 
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteURL.addParameter("protocolId", protocolId);
+                    deleteURL.addParameter("publishSourceId", publishSourceId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
                     final ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
@@ -2790,7 +2789,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
                     PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid,
-                            NumberUtils.toInt(protocolId), NumberUtils.toInt(recordCount)) {
+                            NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
 
                         @Override
                         protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -2845,7 +2844,6 @@ public class StudyController extends BaseStudyController
                 allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
             }
 
-            String protocolId = (String)getViewContext().get("protocolId");
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
             // Need to handle this by groups of source lsids -- each assay container needs logging
@@ -2869,7 +2867,8 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            if (protocolId != null)
+            Dataset.PublishSource publishSource = def.getPublishSource();
+            if (form.getPublishSourceId() != null && publishSource != null)
             {
                 for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
                 {
@@ -2881,17 +2880,19 @@ public class StudyController extends BaseStudyController
                     else
                         continue; // No logging if we can't find a matching run
 
-                    StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
+                    publishSource.addRecallAuditEvent(form.getPublishSourceId(), def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);
 
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
+            // if the recall was initiated from the assay copy to study history view, redirect back to the same view
+            // will need to generalize this to support samples
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getPublishSourceId());
             if (protocol != null && originalSourceLsid != null)
             {
                 ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
                 if (expRun != null && expRun.getContainer() != null)
-                    throw new RedirectException(AssayPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
+                    throw new RedirectException(StudyPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
             }
             return true;
         }
@@ -2908,6 +2909,7 @@ public class StudyController extends BaseStudyController
     {
         private int datasetId;
         private boolean deleteAllData;
+        private Integer _publishSourceId;
 
         public int getDatasetId()
         {
@@ -2927,6 +2929,16 @@ public class StudyController extends BaseStudyController
         public void setDeleteAllData(boolean deleteAllData)
         {
             this.deleteAllData = deleteAllData;
+        }
+
+        public Integer getPublishSourceId()
+        {
+            return _publishSourceId;
+        }
+
+        public void setPublishSourceId(Integer publishSourceId)
+        {
+            _publishSourceId = publishSourceId;
         }
     }
 
@@ -3314,7 +3326,7 @@ public class StudyController extends BaseStudyController
     public static class ManageQCStatesForm extends AbstractManageQCStatesForm
     {
         private Integer _defaultPipelineQCState;
-        private Integer _defaultAssayQCState;
+        private Integer _defaultPublishDataQCState;
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
 
@@ -3328,14 +3340,14 @@ public class StudyController extends BaseStudyController
             _defaultPipelineQCState = defaultPipelineQCState;
         }
 
-        public Integer getDefaultAssayQCState()
+        public Integer getDefaultPublishDataQCState()
         {
-            return _defaultAssayQCState;
+            return _defaultPublishDataQCState;
         }
 
-        public void setDefaultAssayQCState(Integer defaultAssayQCState)
+        public void setDefaultPublishDataQCState(Integer defaultPublishDataQCState)
         {
-            _defaultAssayQCState = defaultAssayQCState;
+            _defaultPublishDataQCState = defaultPublishDataQCState;
         }
 
         public Integer getDefaultDirectEntryQCState()
@@ -3416,8 +3428,8 @@ public class StudyController extends BaseStudyController
             panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPipelineQCState", _study.getDefaultPipelineQCState()));
             panelHtml.append("      </tr>");
             panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Assay data copied to this study:</th>");
-            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultAssayQCState", _study.getDefaultAssayQCState()));
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Data linked to this study:</th>");
+            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPublishDataQCState", _study.getDefaultPublishDataQCState()));
             panelHtml.append("      </tr>");
             panelHtml.append("      <tr>");
             panelHtml.append("          <th align=\"right\" width=\"300px\">Directly inserted/updated dataset data:</th>");
@@ -4829,42 +4841,41 @@ public class StudyController extends BaseStudyController
                         }
                     }
                 }
-                DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(getUser(),
-                        study, form.getSnapshotName(), additionalKey, null, isDemographicData, null, useTimeKeyField);
-
-                if (def != null)
+                DatasetDefinition def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getSnapshotName())
+                        .setStudy(study)
+                        .setKeyPropertyName(additionalKey)
+                        .setDemographicData(isDemographicData)
+                        .setUseTimeKeyField(useTimeKeyField));
+                form.setSnapshotDatasetId(def.getDatasetId());
+                if (keyManagementType != KeyManagementType.None)
                 {
-                    form.setSnapshotDatasetId(def.getDatasetId());
-                    if (keyManagementType != KeyManagementType.None)
-                    {
-                        def = def.createMutable();
-                        def.setKeyManagementType(keyManagementType);
+                    def = def.createMutable();
+                    def.setKeyManagementType(keyManagementType);
 
-                        StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
-                    }
-
-                    // NOTE getDisplayColumns() indirectly causes a query of the datasets,
-                    // Do this before provisionTable() so we don't query the dataset we are about to create
-                    // causes a problem on postgres (bug 11153)
-                    for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
-                    {
-                        ColumnInfo col = dc.getColumnInfo();
-                        if (col != null && !DatasetDefinition.isDefaultFieldName(col.getName(), study))
-                            columnsToProvision.add(col);
-                    }
-
-                    // def may not be provisioned yet, create before we start adding properties
-                    def.provisionTable();
-                    Domain d = def.getDomain();
-
-                    for (ColumnInfo col : columnsToProvision)
-                    {
-                        DatasetSnapshotProvider.addAsDomainProperty(d, col);
-                    }
-                    d.save(getUser());
-
-                    return def;
+                    StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
                 }
+
+                // NOTE getDisplayColumns() indirectly causes a query of the datasets,
+                // Do this before provisionTable() so we don't query the dataset we are about to create
+                // causes a problem on postgres (bug 11153)
+                for (DisplayColumn dc : QuerySnapshotService.get(form.getSchemaName()).getDisplayColumns(form, errors))
+                {
+                    ColumnInfo col = dc.getColumnInfo();
+                    if (col != null && !DatasetDefinition.isDefaultFieldName(col.getName(), study))
+                        columnsToProvision.add(col);
+                }
+
+                // def may not be provisioned yet, create before we start adding properties
+                def.provisionTable();
+                Domain d = def.getDomain();
+
+                for (ColumnInfo col : columnsToProvision)
+                {
+                    DatasetSnapshotProvider.addAsDomainProperty(d, col);
+                }
+                d.save(getUser());
+
+                return def;
             }
 
             return dsDef;
@@ -6886,24 +6897,22 @@ public class StudyController extends BaseStudyController
                 switch (form.getType())
                 {
                     case defineManually:
-                        def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
-
-                        if (def != null)
-                        {
-                            def.provisionTable();
-                        }
+                        def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getName())
+                                .setStudy(_study)
+                                .setDemographicData(false)
+                                .setCategoryId(categoryId));
+                        def.provisionTable();
 
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
-                        def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
-                        if (def != null)
-                        {
-                            def.provisionTable();
-                        }
+                        def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getName())
+                                .setStudy(_study)
+                                .setDemographicData(false)
+                                .setType(Dataset.TYPE_PLACEHOLDER)
+                                .setCategoryId(categoryId));
+                        def.provisionTable();
                         response.put("datasetId", def.getDatasetId());
                         break;
 

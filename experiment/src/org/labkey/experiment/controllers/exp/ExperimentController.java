@@ -3114,7 +3114,7 @@ public class ExperimentController extends SpringActionController
                     {
                         noun = "Protocol";
                     }
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
                         Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))

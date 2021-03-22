@@ -275,9 +275,9 @@ public class DatasetFileReader
                 _datasetsNotFound.add(name);
                 continue;
             }
-            else if (ds.isAssayData())
+            else if (ds.isPublishedData())
             {
-                errors.add("Unable to import data for assay dataset '" + ds.getLabel() + "'.");
+                errors.add("Unable to import data for a dataset sourced from linked data'" + ds.getLabel() + "'.");
                 continue;
             }
             DatasetImportRunnable runnable = jobMap.get(ds);

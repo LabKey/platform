@@ -55,7 +55,7 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
 
-        if (StudyManager.safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
+        if (StudyManager.safeIntegersEqual(study.getDefaultPublishDataQCState(), state.getRowId()) ||
                 StudyManager.safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
                 StudyManager.safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
         {
@@ -76,14 +76,14 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
 
-        if (!QCStateHandler.nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
+        if (!QCStateHandler.nullSafeEqual(study.getDefaultPublishDataQCState(), form.getDefaultPublishDataQCState()) ||
                 !QCStateHandler.nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
                 !QCStateHandler.nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
                 study.isBlankQCStatePublic() != form.isBlankQCStatePublic() ||
                 study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
         {
             study = study.createMutable();
-            study.setDefaultAssayQCState(form.getDefaultAssayQCState());
+            study.setDefaultPublishDataQCState(form.getDefaultPublishDataQCState());
             study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
             study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
             study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
