@@ -128,21 +128,21 @@ public class QueryLogging
         _queryId = queryId;
     }
 
-    private static final QueryLogging _emptyQueryLogging = new QueryLogging(false, false);
-    private static final QueryLogging _noValidationNeededQueryLogging = new QueryLogging(true, false);
-    private static final QueryLogging _metadataQueryLogging = new QueryLogging(false, true);
+    private static final QueryLogging EMPTY_QUERY_LOGGING = new QueryLogging(false, false);
+    private static final QueryLogging NO_VALIDATION_NEEDED_QUERY_LOGGING = new QueryLogging(true, false);
+    private static final QueryLogging METADATA_QUERY_LOGGING = new QueryLogging(false, true);
 
     public static QueryLogging emptyQueryLogging()
     {
-        return _emptyQueryLogging;
+        return EMPTY_QUERY_LOGGING;
     }
 
     public static QueryLogging noValidationNeededQueryLogging()
     {
-        return _noValidationNeededQueryLogging;
+        return NO_VALIDATION_NEEDED_QUERY_LOGGING;
     }
 
-    public static QueryLogging metadataQueryLogging() { return _metadataQueryLogging; }
+    public static QueryLogging metadataQueryLogging() { return METADATA_QUERY_LOGGING; }
 
     @NotNull
     public SelectQueryAuditEvent getSelectQueryAuditEvent()
@@ -154,6 +154,8 @@ public class QueryLogging
 
     public void setSelectQueryAuditEvent(SelectQueryAuditEvent selectQueryAuditEvent)
     {
+        if (_readOnly)
+            throw new IllegalStateException("This QueryLogging instance is read-only.");
         _selectQueryAuditEvent = selectQueryAuditEvent;
     }
 
@@ -164,6 +166,8 @@ public class QueryLogging
 
     public void setShouldAudit(boolean shouldAudit)
     {
+        if (_readOnly)
+            throw new IllegalStateException("This QueryLogging instance is read-only.");
         _shouldAudit = shouldAudit;
     }
 
