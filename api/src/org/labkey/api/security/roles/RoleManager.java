@@ -113,7 +113,7 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
-        registerRole(new TroubleshooterRole());
+        registerRole(new TroubleshooterRole(), false);
         registerRole(new SeeUserAndGroupDetailsRole());
         registerRole(new CanSeeAuditLogRole());
         registerRole(new SharedViewEditorRole());

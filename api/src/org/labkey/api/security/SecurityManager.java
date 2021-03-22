@@ -3361,6 +3361,13 @@ public class SecurityManager
         }
     }
 
+    // We let admins delete passwords (i.e., entries in the logins table), see #42691
+    public static void adminDeletePassword(ValidEmail email, User user)
+    {
+        new SqlExecutor(CoreSchema.getInstance().getScope()).execute("DELETE FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress());
+        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " deleted the password.");
+    }
+
     public static void populateUserGroupsWithStartupProps()
     {
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag

@@ -113,6 +113,17 @@ public enum JavaVersion
         @Test
         public void test()
         {
+            // Bad
+            test(5, JAVA_UNSUPPORTED);
+            test(6, JAVA_UNSUPPORTED);
+            test(7, JAVA_UNSUPPORTED);
+            test(8, JAVA_UNSUPPORTED);
+            test(9, JAVA_UNSUPPORTED);
+            test(10, JAVA_UNSUPPORTED);
+            test(11, JAVA_UNSUPPORTED);
+            test(12, JAVA_UNSUPPORTED);
+            test(13, JAVA_UNSUPPORTED);
+
             // Good
             test(14, JAVA_14);
             test(15, JAVA_15);
@@ -122,17 +133,6 @@ public enum JavaVersion
             // Future
             test(18, JAVA_FUTURE);
             test(19, JAVA_FUTURE);
-
-            // Bad
-            test(13, JAVA_UNSUPPORTED);
-            test(12, JAVA_UNSUPPORTED);
-            test(11, JAVA_UNSUPPORTED);
-            test(10, JAVA_UNSUPPORTED);
-            test(9, JAVA_UNSUPPORTED);
-            test(8, JAVA_UNSUPPORTED);
-            test(7, JAVA_UNSUPPORTED);
-            test(6, JAVA_UNSUPPORTED);
-            test(5, JAVA_UNSUPPORTED);
         }
 
         private void test(int version, JavaVersion expectedVersion)

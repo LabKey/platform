@@ -1329,7 +1329,7 @@ public class OlapController extends SpringActionController
         return contextNames;
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ListAppsAction extends ReadOnlyApiAction<Object>
     {
         @Override
