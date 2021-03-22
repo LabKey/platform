@@ -31,4 +31,14 @@ public interface ConceptPath
     boolean hasChildren();
 
     String getLabel();
+
+    default Map<String, Object> toJSONMap()
+    {
+        Map<String, Object> valMap = new HashMap<>();
+        valMap.put("path", this.getPath().toString());
+        valMap.put("label", this.getLabel());
+        valMap.put("code", this.getCode());
+        valMap.put("hasChildren", this.hasChildren());
+        return valMap;
+    }
 }

@@ -59,14 +59,15 @@ public class StatusDetailsBean
     public final List<StatusDetailRun> runs;
     public final StatusDetailLog log;
     public final Integer fetchCount;
+    public final Integer queuePosition;
 
     // private constructor for parent/split job status
     private StatusDetailsBean(Container c, PipelineStatusFile psf)
     {
-        this(c, psf, null, null, null, null, null, null);
+        this(c, psf, null, null, null, null, null, null, null);
     }
 
-    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log, Integer fetchCount)
+    public StatusDetailsBean(Container c, PipelineStatusFile psf, List<StatusDetailFile> files, List<StatusDetailRun> runs, StatusDetailsBean parentStatus, List<StatusDetailsBean> splitStatus, StatusDetailLog log, Integer fetchCount, Integer queuePosition)
     {
         this.rowId = psf.getRowId();
         this.jobId = psf.getJobId();
@@ -89,6 +90,7 @@ public class StatusDetailsBean
         this.runs = runs;
         this.log = log;
         this.fetchCount = fetchCount;
+        this.queuePosition = queuePosition;
     }
 
     public static StatusDetailsBean create(Container c, PipelineStatusFile psf, long logOffset, int fetchCount)
@@ -159,7 +161,7 @@ public class StatusDetailsBean
                     .collect(toList());
         }
 
-        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount);
+        return new StatusDetailsBean(c, psf, statusFiles, statusRuns, parentStatus, splitStatus, statusLog, fetchCount, PipelineService.get().getPipelineQueue().getQueuePositions().get(psf.getJobId()));
     }
 
     // Copy the file content from Path to the PrintWriter,

@@ -27,6 +27,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -230,14 +231,14 @@ public abstract class EmailTemplate
      */
     public static String BODY_PART_BOUNDARY = "--text/html--boundary--";
 
-    public String getHtmlBody()
+    public HtmlString getHtmlBody()
     {
         if (getContentType() != ContentType.HTML)
         {
             throw new IllegalStateException("Cannot get the HTML for a template with content type " + getContentType());
         }
 
-        return _body.split(BODY_PART_BOUNDARY)[0];
+        return HtmlString.unsafe(_body.split(BODY_PART_BOUNDARY)[0]);
     }
 
     public String getTextBody()
@@ -370,7 +371,7 @@ public abstract class EmailTemplate
                 if (textBody != null)
                     message.setTextContent(textBody);
             }
-            message.setEncodedHtmlContent(renderHtmlBody(c));
+            message.setEncodedHtmlContent(renderHtmlBody(c).toString());
         }
         message.setSubject(renderSubject(c));
         renderSenderToMessage(message, c);
@@ -416,9 +417,10 @@ public abstract class EmailTemplate
         return render(c, getBody());
     }
 
-    public String renderHtmlBody(Container c)
+    public HtmlString renderHtmlBody(Container c)
     {
-        return render(c, getHtmlBody());
+        String s = render(c, getHtmlBody().toString());
+        return HtmlString.unsafe(s);
     }
 
     @Nullable

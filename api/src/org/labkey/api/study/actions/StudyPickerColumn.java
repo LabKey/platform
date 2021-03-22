@@ -25,17 +25,13 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select;
 import org.labkey.api.util.element.Select.SelectBuilder;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -105,7 +101,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        Set<Study> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
+        Set<Study> studies = StudyPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
 
         boolean disabled = isDisabledInput();
 

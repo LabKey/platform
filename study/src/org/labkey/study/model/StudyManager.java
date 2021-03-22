@@ -3797,9 +3797,9 @@ public class StudyManager
                 defEntryMap.put(name, new DatasetDefinitionEntry(def, true, info.tags));
                 def.setUseTimeKeyField(info.useTimeKeyField);
             }
-            else if (def.isAssayData())
+            else if (def.isPublishedData())
             {
-                 errors.reject("importDatasetSchemas", "Unable to modify assay dataset '" + def.getLabel() + "'.");
+                 errors.reject("importDatasetSchemas", "Unable to modify linked data dataset '" + def.getLabel() + "'.");
             }
             else
             {

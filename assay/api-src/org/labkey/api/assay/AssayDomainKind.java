@@ -19,6 +19,7 @@ package org.labkey.api.assay;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.DomainDescriptor;
@@ -212,7 +213,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
 
     protected Set<String> getAssayReservedPropertyNames()
     {
-        Set<String> result = new HashSet<>();
+        Set<String> result = new CaseInsensitiveHashSet();
         result.add("RowId");
         result.add("Row Id");
         result.add("Container");

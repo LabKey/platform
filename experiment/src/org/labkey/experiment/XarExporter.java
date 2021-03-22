@@ -62,7 +62,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -1275,7 +1275,7 @@ public class XarExporter
                                 queueDomain(domain);
                             }
 
-                            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
                                 Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
                                 if (autoCopyContainer != null)

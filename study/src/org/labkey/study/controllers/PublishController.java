@@ -39,7 +39,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.assay.AssayPublishConfirmAction;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.springframework.validation.BindException;
@@ -247,7 +247,7 @@ public class PublishController extends SpringActionController
                         if (run != null)
                         {
                             List<String> errors = new ArrayList<>();
-                            _statusUrl = AssayPublishManager.getInstance().autoCopyResults(
+                            _statusUrl = StudyPublishManager.getInstance().autoCopyResults(
                                     protocol,
                                     provider,
                                     run,

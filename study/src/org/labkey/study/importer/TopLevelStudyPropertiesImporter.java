@@ -117,6 +117,9 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
 
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
+            // Issue 39822: update participant visits after importing study details like start date
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), study.getDatasets());
+
             ctx.getLogger().info("Done importing " + getDescription());
         }
     }

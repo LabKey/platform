@@ -34,7 +34,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
@@ -118,7 +118,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             {
                 errors.reject(SpringActionController.ERROR_MSG, "No study configured for " + _targetStudy);
             }
-            AssayPublishService.get().getTimepointType(_targetStudy);
+            StudyPublishService.get().getTimepointType(_targetStudy);
             _targetStudyName = study.getLabel();
         }
 
@@ -191,6 +191,15 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
      */
     protected abstract ActionURL copyToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
 
+    /**
+     * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
+     * @return
+     */
+    protected Set<String> getHiddenPublishResultsCaptions(FORM form)
+    {
+        return new HashSet<>(Collections.singleton("Assay Match"));
+    }
+
     @Override
     public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
     {
@@ -210,7 +219,8 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                 mismatched,
                 form.isIncludeTimestamp(),
                 getAdditionalColumns(form),
-                getHiddenFormFields(form));
+                getHiddenFormFields(form),
+                getHiddenPublishResultsCaptions(form));
 
         List<ActionButton> buttons = new ArrayList<>();
         URLHelper returnURL = form.getReturnURLHelper();
@@ -235,7 +245,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         TimepointType timepointType = null;
         if (_targetStudy != null)
-            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
+            timepointType = StudyPublishService.get().getTimepointType(_targetStudy);
 
         if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
         {
@@ -337,7 +347,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             {
                 postedTargetStudies.put(objectId, rowLevelTargetStudy.getId());
 
-                if (AssayPublishService.get().getTimepointType(rowLevelTargetStudy) == TimepointType.VISIT)
+                if (StudyPublishService.get().getTimepointType(rowLevelTargetStudy) == TimepointType.VISIT)
                 {
                     String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
                     Float visitId = null;

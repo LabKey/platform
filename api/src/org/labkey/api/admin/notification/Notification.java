@@ -18,6 +18,7 @@ package org.labkey.api.admin.notification;
 import org.labkey.api.data.Transient;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Date;
@@ -189,13 +190,13 @@ public class Notification
     }
 
     @Transient
-    public String getHtmlContent()
+    public HtmlString getHtmlContent()
     {
         String content = getContent();
         if ("text/html".equals(getContentType()))
-            return content;
+            return HtmlString.unsafe(content);
         else
-            return PageFlowUtil.filter(content, true, true);
+            return HtmlString.unsafe(PageFlowUtil.filter(content, true, true));
     }
 
     @Transient
@@ -207,7 +208,7 @@ public class Notification
         props.put("ObjectId", getObjectId());
         props.put("Type", getType());
         props.put("ContainerId", getContainer());
-        props.put("HtmlContent", getHtmlContent());
+        props.put("HtmlContent", getHtmlContent().toString());
         props.put("Content", getContent());
         props.put("ContentType", getContentType());
         props.put("ActionLinkText", getActionLinkText());

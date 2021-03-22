@@ -985,13 +985,11 @@ public void testDetailedAuditLog() throws Exception
     assertFalse(oldRecordMap.containsKey("lsid"));
     assertEquals("Updated", oldRecordMap.get("Measure"));
     assertEquals("2.0", oldRecordMap.get("Value"));
-    //map has (measure,value,genid), do we want genid???
-    assertEquals(3, oldRecordMap.size());
+    assertEquals(2, oldRecordMap.size());
     assertFalse(newRecordMap.containsKey("lsid"));
     assertEquals("Merged",newRecordMap.get("Measure"));
     assertEquals("3.0", newRecordMap.get("Value"));
-    //map has (measure,value,genid), do we want genid???
-    assertEquals(3, newRecordMap.size());
+    assertEquals(2, newRecordMap.size());
 
     st.delete(user);
 }

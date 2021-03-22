@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 /**
  * Adds non-standard TLDs to allowable values for Apache Commons Validator. See issue 25041.
  * Needed because {@see DomainValidator.updateTLDOverride} is public, but its ArrayType argument is package-protected.
+ * TODO: Looks like this issue was fixed in Validator 1.5.1. See https://issues.apache.org/jira/browse/VALIDATOR-386
  * Created by: jeckels
  * Date: 1/16/16
  */

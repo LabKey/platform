@@ -17,6 +17,7 @@ package org.labkey.api.security.roles;
 
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.study.Dataset;
 
 import java.util.Collections;
 
@@ -35,6 +36,7 @@ public class NoPermissionsRole extends AbstractContextualRole
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return true;
+        // Don't show on dataset security page
+        return !(resource instanceof Dataset);
     }
 }

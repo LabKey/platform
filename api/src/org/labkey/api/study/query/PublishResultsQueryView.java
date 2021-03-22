@@ -19,7 +19,6 @@ package org.labkey.api.study.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -58,7 +57,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitImpl;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
@@ -108,6 +107,7 @@ public class PublishResultsQueryView extends QueryView
     private List<ActionButton> _buttons = null;
     private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
     private Map<String, Object> _hiddenFormFields;
+    private Set<String> _hiddenColumnCaptions;
 
     public enum ExtraColFieldKeys
     {
@@ -135,13 +135,14 @@ public class PublishResultsQueryView extends QueryView
                                    boolean mismatched,
                                    boolean includeTimestamp,
                                    Map<ExtraColFieldKeys, FieldKey> additionalColumns,
-                                   Map<String, Object> hiddenFormFields)
+                                   Map<String, Object> hiddenFormFields,
+                                   Set<String> hiddenColumnCaptions)
     {
         super(schema, settings, errors);
         _targetStudyContainer = targetStudyContainer;
         _mismatched = mismatched;
         if (_targetStudyContainer != null)
-            _timepointType = AssayPublishService.get().getTimepointType(_targetStudyContainer);
+            _timepointType = StudyPublishService.get().getTimepointType(_targetStudyContainer);
         else
             _timepointType = null;
         _filter = new SimpleFilter();
@@ -153,6 +154,7 @@ public class PublishResultsQueryView extends QueryView
         _includeTimestamp = includeTimestamp;
         _additionalColumns = additionalColumns;
         _hiddenFormFields = hiddenFormFields;
+        _hiddenColumnCaptions = hiddenColumnCaptions;
 
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
         getSettings().setMaxRows(Table.ALL_ROWS);
@@ -222,11 +224,10 @@ public class PublishResultsQueryView extends QueryView
                 dr.removeColumns(captionMatchColName);
             dr.addDisplayColumn(idx++, extra);
         }
-        Set<String> hiddenColNames = getHiddenColumnCaptions();
         for (Iterator<DisplayColumn> it = dr.getDisplayColumns().iterator(); it.hasNext();)
         {
             DisplayColumn current = it.next();
-            for (String hiddenColName : hiddenColNames)
+            for (String hiddenColName : _hiddenColumnCaptions)
             {
                 if (current.getCaption().endsWith(hiddenColName))
                 {
@@ -241,16 +242,6 @@ public class PublishResultsQueryView extends QueryView
         dr.setShowRecordSelectors(true);
         dr.setShowSelectMessage(false);
         return dr;
-    }
-
-    protected Set<String> getHiddenColumnCaptions()
-    {
-        HashSet<String> hidden = new HashSet<>(Collections.singleton("Assay Match"));
-        // unclear why this conditional logic exists, it seems to imply that we may not want to hide this column
-        // if the user had added a column in the result domain with the same caption
-        //if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
-            hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
-        return hidden;
     }
 
     private static Date convertObjectToDate(Container container, Object dateObject)
@@ -490,7 +481,7 @@ public class PublishResultsQueryView extends QueryView
 
         private boolean isValidPtidVisit(Container container, String participantId, Double visit) throws SQLException
         {
-            if (container == null)
+            if (container == null || SpecimenService.get() == null)
                 return false;
 
             if (_validPtidVisits == null)
@@ -511,7 +502,7 @@ public class PublishResultsQueryView extends QueryView
 
         private boolean isValidPtidDate(Container container, String participantId, Date drawDate) throws SQLException
         {
-            if (container == null)
+            if (container == null || SpecimenService.get() == null)
                 return false;
 
             if (_validPtidDates == null)
@@ -911,8 +902,6 @@ public class PublishResultsQueryView extends QueryView
             return c == null ? null : c.getId();
         }
     }
-
-    Pair<ExpProtocol.AssayDomainTypes, DomainProperty> _targetStudyDomainProperty = null;
 
     protected List<DisplayColumn> getExtraColumns(Collection<ColumnInfo> selectColumns)
     {

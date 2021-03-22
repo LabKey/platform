@@ -5,6 +5,8 @@ import { App } from '@labkey/api';
 
 import { AppContext, ErrorHandler } from './ErrorHandler';
 
+import './errorHandler.scss';
+
 const render = (target: string, ctx: AppContext) => {
     ReactDOM.render(
         <AppContainer>

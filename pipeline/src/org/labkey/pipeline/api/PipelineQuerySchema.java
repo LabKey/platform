@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -23,9 +24,11 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -37,10 +40,12 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -84,7 +89,7 @@ public class PipelineQuerySchema extends UserSchema
     {
         if (JOB_TABLE_NAME.equalsIgnoreCase(name))
         {
-            FilteredTable table = new FilteredTable<PipelineQuerySchema>(PipelineSchema.getInstance().getTableInfoStatusFiles(), this, cf)
+            FilteredTable<?> table = new FilteredTable<>(PipelineSchema.getInstance().getTableInfoStatusFiles(), this, cf)
             {
                 @Override
                 public FieldKey getContainerFieldKey()
@@ -107,6 +112,9 @@ public class PipelineQuerySchema extends UserSchema
             {
                 table.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             }
+
+            MutableColumnInfo positionCol = table.addWrapColumn("QueuePosition", table.getRealTable().getColumn("Job"));
+            positionCol.setDisplayColumnFactory(QueuePositionDisplayColumn::new);
 
             table.getMutableColumn("RowId").setURL(DetailsURL.fromString(urlExp));
             table.getMutableColumn("Status").setDisplayColumnFactory(colInfo ->
@@ -166,6 +174,7 @@ public class PipelineQuerySchema extends UserSchema
                 defaultCols.add(FieldKey.fromParts("Description"));
             }
             defaultCols.add(FieldKey.fromParts("Info"));
+            defaultCols.add(positionCol.getFieldKey());
             table.setDefaultVisibleColumns(defaultCols);
             table.setTitleColumn("Description");
             return table;
@@ -197,4 +206,47 @@ public class PipelineQuerySchema extends UserSchema
         return names;
     }
 
+    /** Show the position in the job queue (only available when using the JMS queue-based pipeline) */
+    private static class QueuePositionDisplayColumn extends DataColumn
+    {
+        private final Map<String, Integer> _positions;
+
+        public QueuePositionDisplayColumn(ColumnInfo col)
+        {
+            super(col);
+            _positions = PipelineService.get().getPipelineQueue().getQueuePositions();
+        }
+
+        @Override
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+        @Override
+        public Object getValue(RenderContext ctx)
+        {
+            Object value = super.getValue(ctx);
+            //noinspection SuspiciousMethodCalls
+            return _positions.get(value);
+        }
+
+        @Override
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return getValue(ctx);
+        }
+
+        @Override
+        public @NotNull HtmlString getFormattedHtml(RenderContext ctx)
+        {
+            return HtmlString.of(getDisplayValue(ctx));
+        }
+    }
 }

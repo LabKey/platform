@@ -22,12 +22,15 @@ import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRender;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 // TODO: Need handling for checkbox, file, and radio types
@@ -82,7 +85,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final boolean _autoFocus;
     private final boolean _checked;
     private final String _className;
-    private final String _contextContent;
+    private final HtmlString _contextContent;
     private final boolean _disabled;
     private final String _dirName;
     private final boolean _forceSmallContext;
@@ -170,7 +173,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         return _autoComplete;
     }
 
-    public String getContextContent()
+    public HtmlString getContextContent()
     {
         return _contextContent;
     }
@@ -396,63 +399,76 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     public HtmlString getHtmlString()
     {
         StringBuilder sb = new StringBuilder();
-
-        if (isHidden())
-        {
-            doInput(sb);
-        }
-        else
-        {
-            final boolean isHorizontal = Layout.HORIZONTAL.equals(getLayout());
-            final boolean needsInputGroup = needsInputGroup();
-            final boolean needsLayoutWrapping = isHorizontal && needsWrapping();
-
-            // begin form-group
-            if (isFormGroup())
-            {
-                sb.append("<div class=\"form-group");
-                if (null != getState())
-                    doValidationStates(sb);
-                sb.append("\">");
-            }
-
-            if (isShowLabel())
-                doLabel(sb);
-
-            // begin wrapper for layout
-            if (needsLayoutWrapping)
-                sb.append("<div class=\"col-sm-9 col-lg-10\">");
-
-            // begin wrapper for input group
-            if (needsInputGroup)
-            {
-                sb.append("<div class=\"input-group input-group-unstyled");
-                if (isHorizontal)
-                    sb.append(" input-group-horizontal");
-                sb.append("\">");
-            }
-
-            doInput(sb);
-
-            doStateIcon(sb);
-
-            if (isHorizontal && !isForceSmallContext() && StringUtils.isNotEmpty(getContextContent()))
-                doContextField(sb);
-
-            // end wrapper for input group
-            if (needsInputGroup)
-                sb.append("</div>");
-
-            // end wrapper for layout
-            if (needsLayoutWrapping)
-                sb.append("</div>");
-
-            // end form-group
-            if (isFormGroup())
-                sb.append("</div>");
-        }
-
+        appendTo(sb);
         return HtmlString.unsafe(sb.toString());
+    }
+
+    @Override
+    public Appendable appendTo(Appendable sb)
+    {
+        try
+        {
+            if (isHidden())
+            {
+                doInput(sb);
+            }
+            else
+            {
+                final boolean isHorizontal = Layout.HORIZONTAL.equals(getLayout());
+                final boolean needsInputGroup = needsInputGroup();
+                final boolean needsLayoutWrapping = isHorizontal && needsWrapping();
+
+                // begin form-group
+                if (isFormGroup())
+                {
+                    sb.append("<div class=\"form-group");
+                    if (null != getState())
+                        doValidationStates(sb);
+                    sb.append("\">");
+                }
+
+                if (isShowLabel())
+                    doLabel(sb);
+
+                // begin wrapper for layout
+                if (needsLayoutWrapping)
+                    sb.append("<div class=\"col-sm-9 col-lg-10\">");
+
+                // begin wrapper for input group
+                if (needsInputGroup)
+                {
+                    sb.append("<div class=\"input-group input-group-unstyled");
+                    if (isHorizontal)
+                        sb.append(" input-group-horizontal");
+                    sb.append("\">");
+                }
+
+                doInput(sb);
+
+                doStateIcon(sb);
+
+                if (isHorizontal && !isForceSmallContext() && !HtmlString.isEmpty(getContextContent()))
+                    doContextField(sb);
+
+                // end wrapper for input group
+                if (needsInputGroup)
+                    sb.append("</div>");
+
+                // end wrapper for layout
+                if (needsLayoutWrapping)
+                    sb.append("</div>");
+
+                // end form-group
+                if (isFormGroup())
+                    sb.append("</div>");
+            }
+        }
+        catch (IOException io)
+        {
+            UnexpectedException.rethrow(io);
+        }
+
+        return sb;
     }
 
     @Override
@@ -461,61 +477,76 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         return getHtmlString().toString();
     }
 
-    protected void doInput(StringBuilder sb)
+    protected final String h(String s)
+    {
+        return PageFlowUtil.filter(s);
+    }
+    protected final String h(HtmlString h)
+    {
+        return h.toString();
+    }
+    protected final String h(int i)
+    {
+        return String.valueOf(i);
+    }
+
+
+    protected void doInput(Appendable sb) throws IOException
     {
         sb.append("<input");
-        sb.append(" type=\"").append(getType()).append("\"");
+        sb.append(" type=\"").append(h(getType())).append("\"");
         if (StringUtils.isNotEmpty(getClassName()) && !isHidden())
         {
-            sb.append(" class=\"").append(PageFlowUtil.filter(getClassName()));
+            sb.append(" class=\"").append(h(getClassName()));
             if (null != getState() && Layout.INLINE.equals(getLayout()))
                 sb.append(" ").append("inline-stateful-input");
             sb.append("\"");
         }
 
-        sb.append(" name=\"").append(PageFlowUtil.filter(getName())).append("\"");
+        sb.append(" name=\"").append(h(getName())).append("\"");
 
         if (StringUtils.isNotEmpty(getId()))
-            sb.append(" id=\"").append(getId()).append("\"");
+            sb.append(" id=\"").append(h(getId())).append("\"");
         if (StringUtils.isNotEmpty(getPlaceholder()))
-            sb.append(" placeholder=\"").append(PageFlowUtil.filter(getPlaceholder())).append("\"");
+            sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
         if (getSize() != null)
-            sb.append(" size=\"").append(getSize()).append("\"");
+            sb.append(" size=\"").append(h(getSize())).append("\"");
         if (getMaxLength() != null)
-            sb.append(" maxlength=\"").append(getMaxLength()).append("\"");
+            sb.append(" maxlength=\"").append(h(getMaxLength())).append("\"");
         if (StringUtils.isNotEmpty(getAutoComplete()))
-            sb.append(" autocomplete=\"").append(getAutoComplete()).append("\"");
-        if (StringUtils.isNotEmpty(getContextContent()))
-            sb.append(" aria-describedby=\"").append(getId()).append("HelpBlock\""); //described by the help block
+            sb.append(" autocomplete=\"").append(h(getAutoComplete())).append("\"");
+        if (!HtmlString.isEmpty(getContextContent()))
+            sb.append(" aria-describedby=\"").append(h(getId())).append("HelpBlock\""); //described by the help block
         if (StringUtils.isNotEmpty(getDirName()))
-            sb.append(" dirname=\"").append(getDirName()).append("\"");
+            sb.append(" dirname=\"").append(h(getDirName())).append("\"");
         if (StringUtils.isNotEmpty(getForm()))
-            sb.append(" form=\"").append(getForm()).append("\"");
+            sb.append(" form=\"").append(h(getForm())).append("\"");
         if (StringUtils.isNotEmpty(getFormAction()))
-            sb.append(" formaction=\"").append(getFormAction()).append("\"");
+            sb.append(" formaction=\"").append(h(getFormAction())).append("\"");
         if (StringUtils.isNotEmpty(getFormEncType()))
-            sb.append(" formenctype=\"").append(getFormEncType()).append("\"");
+            sb.append(" formenctype=\"").append(h(getFormEncType())).append("\"");
         if (StringUtils.isNotEmpty(getFormMethod()))
-            sb.append(" formmethod=\"").append(getFormMethod()).append("\"");
+            sb.append(" formmethod=\"").append(h(getFormMethod())).append("\"");
         if (StringUtils.isNotEmpty(getFormTarget()))
-            sb.append(" formtarget=\"").append(getFormTarget()).append("\"");
+            sb.append(" formtarget=\"").append(h(getFormTarget())).append("\"");
         if (StringUtils.isNotEmpty(getList()))
-            sb.append(" list=\"").append(getList()).append("\"");
+            sb.append(" list=\"").append(h(getList())).append("\"");
         if (StringUtils.isNotEmpty(getMax()))
-            sb.append(" max=\"").append(getMax()).append("\"");
+            sb.append(" max=\"").append(h(getMax())).append("\"");
         if (StringUtils.isNotEmpty(getMin()))
-            sb.append(" min=\"").append(getMin()).append("\"");
+            sb.append(" min=\"").append(h(getMin())).append("\"");
         if (StringUtils.isNotEmpty(getRegExp()))
-            sb.append(" pattern=\"").append(getRegExp()).append("\"");
+            sb.append(" pattern=\"").append(h(getRegExp())).append("\"");
         if (getStep() != null)
-            sb.append(" step=\"").append(getStep()).append("\"");
+            sb.append(" step=\"").append(h(getStep())).append("\"");
         if ((isCheckbox() || isRadio()) && isChecked())
             sb.append(" checked");
         if (getTabIndex() != null)
-            sb.append(" tabIndex=\"").append(_tabIndex).append("\"");
+            sb.append(" tabIndex=\"").append(h(_tabIndex)).append("\"");
 
         doStyles(sb);
-        renderValueIfNonEmpty(s->sb.append(" value=\"").append(s).append("\""));
+        if (!HtmlString.isBlank(getValue()))
+            sb.append(" value=\"").append(h(getValue())).append("\"");
         doInputEvents(sb);
 
         if (isRequired())
@@ -539,30 +570,30 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         sb.append(">");
     }
 
-    protected void doStyles(StringBuilder sb)
+    protected void doStyles(Appendable sb) throws IOException
     {
         if (!getStyles().isEmpty())
         {
             sb.append(" style=\"");
-            getStyles().forEach(s -> sb.append(PageFlowUtil.filter(s)).append(";"));
+            getStyles().forEach(s -> {try {sb.append(h(s)).append(";");}catch(IOException io){UnexpectedException.rethrow(io);}});
             sb.append("\"");
         }
     }
 
-    protected void doInputEvents(StringBuilder sb)
+    protected void doInputEvents(Appendable sb) throws IOException
     {
         if (StringUtils.isNotEmpty(getOnChange()))
-            sb.append(" onchange=\"").append(getOnChange()).append("\"");
+            sb.append(" onchange=\"").append(h(getOnChange())).append("\"");
         if (StringUtils.isNotEmpty(getOnKeyUp()))
-            sb.append(" onkeyup=\"").append(getOnKeyUp()).append("\"");
+            sb.append(" onkeyup=\"").append(h(getOnKeyUp())).append("\"");
     }
 
-    protected void doLabel(StringBuilder sb)
+    protected void doLabel(Appendable sb) throws IOException
     {
         sb.append("<label");
 
         if (StringUtils.isNotEmpty(getId()))
-            sb.append(" for=\"").append(getId()).append("\"");
+            sb.append(" for=\"").append(h(getId())).append("\"");
 
         String cls = "";
         if (StringUtils.isNotEmpty(getLabelClassName()))
@@ -571,31 +602,31 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
             cls += " col-sm-3 col-lg-2";
 
         if (StringUtils.isNotEmpty(cls))
-            sb.append(" class=\"").append(PageFlowUtil.filter(cls)).append("\"");
+            sb.append(" class=\"").append(h(cls)).append("\"");
 
         sb.append(">");
 
         if (getLabel() != null)
-            sb.append(PageFlowUtil.filter(getLabel()));
+            sb.append(h(getLabel()));
 
-        if ((Layout.INLINE.equals(getLayout()) || isForceSmallContext()) && StringUtils.isNotEmpty(getContextContent()))
+        if ((Layout.INLINE.equals(getLayout()) || isForceSmallContext()) && !HtmlString.isEmpty(getContextContent()))
             doContextField(sb);
 
         sb.append("</label> ");
     }
 
-    private void doStateIcon(StringBuilder sb)
+    private void doStateIcon(Appendable sb) throws IOException
     {
         if (null != getState())
         {
             String iconClass = getState() != null ? "fa fa-" + getState().getIconClass() : "";
             sb.append("<span class=\"input-group-addon validation-state\">");
             sb.append("<i class=\" validation-state-icon ");
-            sb.append(iconClass).append("\"");
+            sb.append(h(iconClass)).append("\"");
             if (null != getStateMessage())
             {
                 sb.append(" data-tt=\"tooltip\" data-container=\"body\" data-placement=\"top\" title=\"");
-                sb.append(getStateMessage());
+                sb.append(h(getStateMessage()));
             }
             sb.append("\"></i>");
             sb.append("</span>");
@@ -604,10 +635,10 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
 
     private boolean needsInputGroup()
     {
-        return Layout.INLINE.equals(getLayout()) && StringUtils.isNotEmpty(getContextContent()) || null != getState();
+        return Layout.INLINE.equals(getLayout()) && !HtmlString.isEmpty(getContextContent()) || null != getState();
     }
 
-    private void doValidationStates(StringBuilder sb)
+    private void doValidationStates(Appendable sb) throws IOException
     {
         if (State.ERROR.equals(getState()))
             sb.append(" has-error");
@@ -617,34 +648,34 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
             sb.append(" has-success");
     }
 
-    protected void doContextField(StringBuilder sb)
+    protected void doContextField(Appendable sb)
     {
-        if (Layout.INLINE.equals(getLayout()) || isForceSmallContext())
+        try
         {
-            //not enough room when inline; context content hidden under '?' icon, tooltip shown on mouseover
-            sb.append("<i class=\"fa fa-question-circle context-icon\" data-container=\"body\" data-tt=\"tooltip\" data-placement=\"top\" title=\"");
-            sb.append(getContextContent());
-            sb.append("\"></i>");
+            if (Layout.INLINE.equals(getLayout()) || isForceSmallContext())
+            {
+                //not enough room when inline; context content hidden under '?' icon, tooltip shown on mouseover
+                sb.append("<i class=\"fa fa-question-circle context-icon\" data-container=\"body\" data-tt=\"tooltip\" data-placement=\"top\" title=\"");
+                sb.append(h(getContextContent()));
+                sb.append("\"></i>");
+            }
+            else
+            {
+                //context content goes underneath input for horizontal/vertical layout
+                sb.append("<p");
+                if (StringUtils.isNotEmpty(getId()))
+                    sb.append(" id=\"").append(getId()).append("HelpBlock\""); //used for aria-describedby
+                sb.append(" class=\" help-block form-text text-muted \" >");
+                sb.append(h(getContextContent()));
+                sb.append("</p>");
+            }
         }
-        else
+        catch (IOException io)
         {
-            //context content goes underneath input for horizontal/vertical layout
-            sb.append("<p");
-            if (StringUtils.isNotEmpty(getId()))
-                sb.append(" id=\"").append(getId()).append("HelpBlock\""); //used for aria-describedby
-            sb.append(" class=\" help-block form-text text-muted \" >");
-            sb.append(getContextContent());
-            sb.append("</p>");
+            UnexpectedException.rethrow(io);
         }
     }
 
-    protected void renderValueIfNonEmpty(Consumer<String> consumer)
-    {
-        if (!HtmlString.isEmpty(_value))
-        {
-            consumer.accept(_value.toString());
-        }
-    }
 
     @SuppressWarnings("unchecked")
     public static class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, SafeToRender// TODO: extends DisplayElementBuilder?
@@ -653,7 +684,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         private Boolean _autoFocus;
         private boolean _checked;
         private String _className = "form-control";
-        private String _contextContent;
+        private HtmlString _contextContent;
         private String _dataList;
         private Boolean _disabled;
         private String _dirName;
@@ -697,6 +728,12 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         }
 
         public T contextContent(String contextContent)
+        {
+            _contextContent = HtmlString.of(contextContent);
+            return (T)this;
+        }
+
+        public T contextContent(HtmlString contextContent)
         {
             _contextContent = contextContent;
             return (T)this;

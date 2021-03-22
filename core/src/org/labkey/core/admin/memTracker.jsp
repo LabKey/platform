@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
@@ -154,9 +155,9 @@
                     counter = 1;
                     for (MemTracker.HeldReference reference : bean.references)
                     {
-                        String htmlStack = reference.getHtmlStack();
-                        String[] split = htmlStack.split("<br>");
-                        String secondLine = split.length >= 2 ? split[2] : "";
+                        HtmlString htmlStack = reference.getHtmlStack();
+                        String[] split = htmlStack.toString().split("<br>");
+                        HtmlString secondLine = split.length >= 2 ? HtmlString.unsafe(split[2]) : HtmlString.EMPTY_STRING;
             %>
                 <tr class="<%=getShadeRowClass(counter + 1)%>">
                     <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
@@ -182,8 +183,8 @@
                     </td>
                     <td class='age' valign=top><%=h(DateUtil.formatDuration(currentMillis - reference.getAllocationTime()))%></td>
                     <td class='allocationStack'>
-                        <div name='stackTogglePanel' id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= text(secondLine) %></div>
-                        <div name='stackContentPanel' id='stackContentPanel<%= counter %>' style="display:none;"><%= text(htmlStack) %></div>
+                        <div name='stackTogglePanel' id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= secondLine %></div>
+                        <div name='stackContentPanel' id='stackContentPanel<%= counter %>' style="display:none;"><%= htmlStack %></div>
                     </td>
                 </tr>
             <%

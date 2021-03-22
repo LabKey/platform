@@ -1,9 +1,9 @@
 import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react'
+import {ActionURL, Ajax, getServerContext, Utils} from "@labkey/api";
 import {AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME} from '@labkey/components';
 import { Button, Panel } from "react-bootstrap";
 
-import "./AssayTypeSelect.scss"
-import {ActionURL, Ajax, getServerContext, Utils} from "@labkey/api";
+import "./AssayTypeSelect.scss";
 
 function uploadXarFile(
     file: File,

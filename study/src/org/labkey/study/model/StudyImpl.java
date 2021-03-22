@@ -113,7 +113,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _manualCohortAssignment;
     private String _lsid;
     private Integer _defaultPipelineQCState;
-    private Integer _defaultAssayQCState;
+    private Integer _defaultPublishDataQCState;
     private Integer _defaultDirectEntryQCState;
     private boolean _showPrivateDataByDefault = true;
     private boolean _blankQCStatePublic = false;
@@ -498,14 +498,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _defaultPipelineQCState = defaultPipelineQCState;
     }
 
-    public Integer getDefaultAssayQCState()
+    public Integer getDefaultPublishDataQCState()
     {
-        return _defaultAssayQCState;
+        return _defaultPublishDataQCState;
     }
 
-    public void setDefaultAssayQCState(Integer defaultAssayQCState)
+    public void setDefaultPublishDataQCState(Integer defaultPublishDataQCState)
     {
-        _defaultAssayQCState = defaultAssayQCState;
+        _defaultPublishDataQCState = defaultPublishDataQCState;
     }
 
     public Integer getDefaultDirectEntryQCState()

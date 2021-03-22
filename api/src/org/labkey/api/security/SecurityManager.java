@@ -2894,7 +2894,7 @@ public class SecurityManager
         }
         catch (ConfigurationException e)
         {
-            message.append(HtmlString.unsafe("<br>"));
+            message.append(HtmlString.BR);
             message.append(email.getEmailAddress());
             message.append(HtmlString.unsafe(" was added successfully, but could not be emailed due to a failure:<br><pre>"));
             message.append(e.getMessage());
@@ -2988,7 +2988,7 @@ public class SecurityManager
             builder.append(HtmlString.unsafe("</p>"));
             builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
             builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
-            builder.append(HtmlString.unsafe(".<br>"));
+            builder.append(".").append(HtmlString.BR);
         }
         else
         {
@@ -3359,6 +3359,13 @@ public class SecurityManager
             errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
             UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
         }
+    }
+
+    // We let admins delete passwords (i.e., entries in the logins table), see #42691
+    public static void adminDeletePassword(ValidEmail email, User user)
+    {
+        new SqlExecutor(CoreSchema.getInstance().getScope()).execute("DELETE FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress());
+        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " deleted the password.");
     }
 
     public static void populateUserGroupsWithStartupProps()

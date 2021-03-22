@@ -69,7 +69,7 @@ public class StudyDatasetColumn extends ExprColumn
         String datasetAlias = getDatasetIdAlias();
         Container studyContainer = getStudyContainer();
         TableInfo datasetTable = _assayDataset.getTableInfo(_user);
-        ExpProtocol protocol = _assayDataset.getAssayProtocol();
+        ExpProtocol protocol = (ExpProtocol)_assayDataset.resolvePublishSource();
 
         joinSql.appendComment("<StudyDatasetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.append(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).append(" ON ");
