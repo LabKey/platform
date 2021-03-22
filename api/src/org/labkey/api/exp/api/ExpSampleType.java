@@ -107,7 +107,9 @@ public interface ExpSampleType extends ExpObject
     @Nullable
     String getMetricUnit();
 
-
+    /** @return Auto link target container if set. */
+    @Nullable
+    Container getAutoLinkTargetContainer();
 
     /**
      * Generate sample names for each row map in <code>maps</code> sample group.

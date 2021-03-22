@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
             this.lsid = st.getLSID();
             this.description = st.getDescription();
             this.idCols = Collections.emptyList();
+            this.autoLinkTargetContainerId = null != st.getAutoLinkTargetContainer() ? st.getAutoLinkTargetContainer().getId() : "";
             if (st.hasIdColumns())
             {
                 this.idCols = st.getIdCols().stream().map(col -> col.getPropertyId()).collect(Collectors.toList());
@@ -56,6 +56,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private int domainId;
     private String lsid;
     private List<Integer> idCols;
+    private String autoLinkTargetContainerId;
     private Integer parentCol;
 
     //Ignored on import/save, use Domain.name & Domain.description instead
@@ -167,6 +168,16 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public JSONObject toJSONObject()
     {
         return new JSONObject(this);
+    }
+
+    public String getAutoLinkTargetContainerId()
+    {
+        return this.autoLinkTargetContainerId;
+    }
+
+    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
+    {
+        this.autoLinkTargetContainerId = autoLinkTargetContainerId;
     }
 
     public Integer getParentCol()
