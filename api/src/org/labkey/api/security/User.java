@@ -22,8 +22,11 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.compliance.ComplianceFolderSettings;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.PHI;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -620,6 +623,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
             props.put("isTrusted", user.hasRootPermission(TrustedPermission.class));
             props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
+
+            // PHI level
+            /** CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()} */
+            if (nonNullContainer)
+            {
+                PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(container, user);
+                props.put("maxAllowedPhi", maxAllowedPhi);
+            }
         }
 
         return props;
