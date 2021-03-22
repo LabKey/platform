@@ -79,7 +79,7 @@ public class DatasetDomainKindProperties implements Cloneable
             _category = ds.getViewCategory().getLabel();
         }
 
-        ExpProtocol protocol = ds.getAssayProtocol();
+        ExpProtocol protocol = (ExpProtocol)ds.resolvePublishSource();
         if (protocol != null)
         {
             _sourceAssayName = protocol.getName();

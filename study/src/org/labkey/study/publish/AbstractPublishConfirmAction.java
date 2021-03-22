@@ -34,7 +34,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
@@ -118,7 +118,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             {
                 errors.reject(SpringActionController.ERROR_MSG, "No study configured for " + _targetStudy);
             }
-            AssayPublishService.get().getTimepointType(_targetStudy);
+            StudyPublishService.get().getTimepointType(_targetStudy);
             _targetStudyName = study.getLabel();
         }
 
@@ -245,7 +245,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         TimepointType timepointType = null;
         if (_targetStudy != null)
-            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
+            timepointType = StudyPublishService.get().getTimepointType(_targetStudy);
 
         if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
         {
@@ -347,7 +347,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             {
                 postedTargetStudies.put(objectId, rowLevelTargetStudy.getId());
 
-                if (AssayPublishService.get().getTimepointType(rowLevelTargetStudy) == TimepointType.VISIT)
+                if (StudyPublishService.get().getTimepointType(rowLevelTargetStudy) == TimepointType.VISIT)
                 {
                     String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
                     Float visitId = null;

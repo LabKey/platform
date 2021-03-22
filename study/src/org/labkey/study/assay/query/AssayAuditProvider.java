@@ -144,7 +144,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
             }
         };
         FieldKey containerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
-        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
+        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?publishSourceId=${protocol}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
         url.setStrictContainerContextEval(true);
 
         table.setDetailsURL(url);

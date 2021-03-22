@@ -201,9 +201,9 @@ public class AuthenticationManager
     public enum Priority { High, Low }
 
     // TODO: Replace this with a generic domain-claiming mechanism
-    public static String _ldapDomain = null;
+    private static String _ldapDomain = null;
 
-    public static String getLdapDomain()
+    public static @Nullable String getLdapDomain()
     {
         return _ldapDomain;
     }

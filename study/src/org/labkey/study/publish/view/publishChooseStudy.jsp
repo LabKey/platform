@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
+<%@ page import="org.labkey.api.study.publish.StudyPublishService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
@@ -62,7 +62,7 @@
             .layout(Input.Layout.HORIZONTAL)
             .formGroup(true);
 
-    for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class))
+    for (Study study : StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class))
     {
         String path = study.getContainer().getPath();
         options.addOption(new Option.OptionBuilder()
