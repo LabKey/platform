@@ -18,7 +18,6 @@ package org.labkey.study.model;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,25 +57,20 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
@@ -97,7 +91,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
@@ -152,7 +145,6 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -166,7 +158,6 @@ import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 
@@ -2197,7 +2188,7 @@ public class StudyManager
             {
                 if (!names.contains(dsd.getName()) && !ids.contains(dsd.getDatasetId()))
                 {
-                    DatasetDefinition wrapped = dsd.createLocalDatasetDefintion((StudyImpl) study);
+                    DatasetDefinition wrapped = dsd.createLocalDatasetDefinition((StudyImpl) study);
                     combined.add(wrapped);
                 }
             }
@@ -2325,7 +2316,7 @@ public class StudyManager
         ds = getDatasetDefinition(sharedStudy, id);
         if (null == ds)
             return null;
-        return ds.createLocalDatasetDefintion((StudyImpl) s);
+        return ds.createLocalDatasetDefinition((StudyImpl) s);
     }
 
 
@@ -2379,7 +2370,7 @@ public class StudyManager
         DatasetDefinition def = getDatasetDefinitionByName(sharedStudy, name);
         if (null == def)
             return null;
-        return def.createLocalDatasetDefintion((StudyImpl) s);
+        return def.createLocalDatasetDefinition((StudyImpl) s);
     }
 
 
@@ -2404,10 +2395,10 @@ public class StudyManager
         // first try resolving the dataset def by name and then by label
         def = StudyManager.getInstance().getDatasetDefinitionByName(shared, queryName);
         if (null != def)
-            return def.createLocalDatasetDefintion((StudyImpl) study);
+            return def.createLocalDatasetDefinition((StudyImpl) study);
         def = StudyManager.getInstance().getDatasetDefinitionByLabel(shared, queryName);
         if (null != def)
-            return def.createLocalDatasetDefintion((StudyImpl) study);
+            return def.createLocalDatasetDefinition((StudyImpl) study);
 
         return null;
     }

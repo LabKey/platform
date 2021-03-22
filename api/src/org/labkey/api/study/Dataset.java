@@ -52,7 +52,7 @@ import java.util.Set;
  * User: kevink
  * Date: May 27, 2009
  */
-public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T>
+public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 {
     enum DataSharing
     {
@@ -268,8 +268,6 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     /**
      * Does the user have admin permissions for this dataset
-     * @param user
-     * @return
      */
     boolean canUpdateDefinition(User user);
 
