@@ -111,11 +111,11 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             _query.appendComment("</AuditUnionTableInfo>", getSchema().getSqlDialect());
 
             var createdByCol = new BaseColumnInfo("CreatedBy", this, JdbcType.INTEGER);
-            UserIdForeignKey.initColumn(createdByCol);
+            createdByCol.setConceptURI(BuiltInColumnTypes.CREATEDBY_CONCEPT_URI);
             addColumn(createdByCol);
 
             var impersonatedByCol = new BaseColumnInfo("ImpersonatedBy", this, JdbcType.INTEGER);
-            UserIdForeignKey.initColumn(impersonatedByCol);
+            impersonatedByCol.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
             addColumn(impersonatedByCol);
 
             var rowIdCol = new BaseColumnInfo("RowId", this, JdbcType.INTEGER);

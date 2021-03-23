@@ -35,6 +35,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -114,12 +115,15 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 
         var project = getMutableColumn("ProjectId");
         project.setLabel("Project");
+        project.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
 
         var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
+        createdBy.setConceptURI(BuiltInColumnTypes.CREATEDBY_CONCEPT_URI);
 
         var impersonatedBy = getMutableColumn(FieldKey.fromParts("ImpersonatedBy"));
         impersonatedBy.setLabel("Impersonated By");
+        impersonatedBy.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
 
         initColumns();
     }
