@@ -38,6 +38,9 @@ public class AliasedColumn extends BaseColumnInfo
         super(key, parent);
         copyAttributesFrom(column);
 
+        // Issue 42620: alias columns should never be considered key fields
+        setKeyField(false);
+
         Map<FieldKey, FieldKey> remap = new HashMap<>();
         remap.put(column.getFieldKey(), key);
         if (parent != null && parent != column.getParentTable())
