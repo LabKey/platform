@@ -29,6 +29,7 @@ import org.labkey.test.pages.study.StudySecurityPage.GroupSecuritySetting;
 import org.labkey.test.pages.study.StudySecurityPage.DatasetRoles;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
+import org.openqa.selenium.Alert;
 import org.openqa.selenium.WebElement;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,7 +130,7 @@ public class StudySecurityTest extends BaseWebDriverTest
     }
 
     /**
-     * Validate that the various parts of the Study Security page as shown and hidden as expected.
+     * Validate that the various parts of the Study Security page are shown and hidden as expected.
      */
     @Test
     public void testUI()
@@ -406,7 +407,7 @@ public class StudySecurityTest extends BaseWebDriverTest
     }
 
     /**
-     * Put a user into two groups, where each group has a different permissions setting for a dataset, then validate
+     * Put a user into two groups, where each group has a different permissions setting for various datasets, then validate
      * that the more permissive role is the one that is taken.
      */
     @Test
@@ -418,7 +419,7 @@ public class StudySecurityTest extends BaseWebDriverTest
         apiPermissionsHelper.addUserToProjGroup(USER_IN_TWO, getProjectName(), GROUP_AUTHORS);
         apiPermissionsHelper.addUserToProjGroup(USER_IN_TWO, getProjectName(), GROUP_LIMITED);
 
-        log("Validate that the user has permission from both groups and that the more permissive role is present whent here is a conflict.");
+        log("Validate that the user has permission from both groups and that the more permissive role is used when there is a conflict.");
         Map<String, DatasetRoles> expectedDatasetRoles = Map.of(DS_ALT_ID, DatasetRoles.READER,
                 DS_COHORT, DatasetRoles.READER,
                 DS_DEMO, DatasetRoles.EDITOR,
@@ -426,6 +427,52 @@ public class StudySecurityTest extends BaseWebDriverTest
                 DS_ENROLL, DatasetRoles.AUTHOR,
                 DS_MISSED, DatasetRoles.AUTHOR);
         verifyPermissions(USER_IN_TWO, expectedDatasetRoles);
+    }
+
+    @Test
+    public void testDirtyPage()
+    {
+        StudySecurityPage studySecurityPage = goToStudySecurityPage();
+
+        studySecurityPage.setSecurityType(StudySecurityPage.StudySecurityType.BASIC_READ);
+        clickTab("Overview", false);
+
+        checkForDirtyPageAlert("Study Security Type");
+
+        studySecurityPage = goToStudySecurityPage();
+
+        studySecurityPage.setGroupStudySecurity(GROUP_LIMITED, GroupSecuritySetting.READ_ALL);
+        clickTab("Overview", false);
+
+        checkForDirtyPageAlert("Group Permissions");
+
+        studySecurityPage = goToStudySecurityPage();
+
+        studySecurityPage.setDatasetPermissions(GROUP_LIMITED, DS_TYPES, DatasetRoles.NONE);
+        clickTab("Overview", false);
+
+        checkForDirtyPageAlert("Group Permissions");
+
+    }
+
+    private void checkForDirtyPageAlert(String changeMade)
+    {
+        // I don't know what the deal is but I am not able to get the text for the alert (it always returns empty string).
+        // So just checking if the alert is present.
+        Alert alert = getAlertIfPresent();
+        if(alert != null)
+        {
+            log(String.format("Alert message: '%s'.", alert.getText()));
+            alert.accept();
+        }
+        else
+        {
+            checker()
+                    .withScreenshot("testDirtyPage_GroupPermissions")
+                    .error(String.format("No alert shown after changing the '%s' and navigating away.", changeMade));
+
+        }
+
     }
 
     protected void adjustGroupDatasetPerms(String groupName, GroupSecuritySetting setting)
@@ -552,7 +599,7 @@ public class StudySecurityTest extends BaseWebDriverTest
 
         if(datasetRole.equals(DatasetRoles.READER))
         {
-            log("Validate the the 'reader' role does not have permission to update or insert.");
+            log("Validate the 'reader' role does not have permission to update or insert.");
             checker()
                     .verifyFalse(
                             String.format("The user should only have read permissions to dataset '%s' but the 'insert button' is present.",
