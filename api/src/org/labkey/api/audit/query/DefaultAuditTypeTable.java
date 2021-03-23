@@ -111,19 +111,15 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         created.setFormat("DateTime");
 
         var container = getMutableColumn("Container");
-        ContainerForeignKey.initColumn(container, schema);
 
         var project = getMutableColumn("ProjectId");
         project.setLabel("Project");
-        ContainerForeignKey.initColumn(project, schema);
 
         var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
-        UserIdForeignKey.initColumn(createdBy);
 
         var impersonatedBy = getMutableColumn(FieldKey.fromParts("ImpersonatedBy"));
         impersonatedBy.setLabel("Impersonated By");
-        UserIdForeignKey.initColumn(impersonatedBy);
 
         initColumns();
     }

@@ -31,6 +31,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -131,11 +132,11 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             addColumn(commentCol);
 
             var containerCol = new BaseColumnInfo("ContainerId", this, JdbcType.VARCHAR);
-            ContainerForeignKey.initColumn(containerCol, schema);
+            containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
             addColumn(containerCol);
 
             var projIdCol = new BaseColumnInfo("ProjectId", this, JdbcType.VARCHAR);
-            ContainerForeignKey.initColumn(projIdCol, schema);
+            containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
             addColumn(projIdCol);
 
             var entityIdCol = new BaseColumnInfo("EntityId", this, JdbcType.VARCHAR);

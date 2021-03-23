@@ -53,11 +53,13 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
+import org.labkey.api.query.column.ColumnDecorator;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -3181,6 +3183,26 @@ public class QueryServiceImpl implements QueryService
     {
         return _queryAnalysisService;
     }
+
+
+
+
+    /* registry of ColumnDecorators use to build common columns */
+    Map<String, ColumnDecorator> columnDecoratorMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+
+    @Override
+    public void registerColumnDecorator(@NotNull String uri, @NotNull ColumnDecorator d)
+    {
+        if (null != columnDecoratorMap.put(uri, d))
+            throw new ConfigurationException("More than one ColumnDecorator registered for " + uri);
+    }
+
+    @Override
+    public ColumnDecorator findColumnDecorator(String conceptURI)
+    {
+        return columnDecoratorMap.get(conceptURI);
+    }
+
 
     public static class TestCase extends Assert
     {

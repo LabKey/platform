@@ -53,7 +53,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         {
             case Folder:
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()));
+                columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer())));
                 return columnInfo;
             case Description:
             case LSID:

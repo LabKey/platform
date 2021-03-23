@@ -238,6 +238,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 _updateURL.setContainerContext(cc, false);
             }
         }
+
+        if (null != getUserSchema())
+        {
+            QueryService qs = QueryService.get();
+            for (var c : getMutableColumns())
+                qs.applyColumnDecorator(c);
+        }
     }
 
 

@@ -32,6 +32,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.QueryLogging;
@@ -42,6 +43,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.column.ColumnDecorator;
+import org.labkey.api.query.column.ConceptURIColumnDecorator;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -586,4 +589,26 @@ public interface QueryService
     QueryAnalysisService getQueryAnalysisService();
 
     TableInfo analyzeQuery(QuerySchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
+
+
+    /* registry of column types (named by conceptURI) */
+    default void registerColumnDecorator(@NotNull ConceptURIColumnDecorator d)
+    {
+        registerColumnDecorator(d.getConceptURI(), d);
+    }
+
+    void registerColumnDecorator(@NotNull String uri, @NotNull ColumnDecorator d);
+
+    ColumnDecorator findColumnDecorator(String conceptURI);
+
+    default MutableColumnInfo applyColumnDecorator(MutableColumnInfo col)
+    {
+        if (null != col.getConceptURI())
+        {
+            var d = findColumnDecorator(col.getConceptURI());
+            if (null != d)
+                d.apply(col);
+        }
+        return col;
+    }
 }

@@ -59,6 +59,7 @@ import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -257,12 +258,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             // This can usually be treated as a normal VARCHAR, but remember that it's actually a custom type
             // for places like multi valued columns
             folderCol.setSqlTypeName("entityid");
-            folderCol.setHidden(true);
-            folderCol.setUserEditable(false);
-            folderCol.setShownInInsertView(false);
-            folderCol.setShownInUpdateView(false);
+            folderCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
             addColumn(folderCol);
-            ContainerForeignKey.initColumn(folderCol, _userSchema);
         }
 
         var lsidCol = createRowExpressionLsidColumn(this);

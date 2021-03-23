@@ -41,14 +41,11 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
 
-        var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
-        ContainerForeignKey.initColumn(container, userSchema);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
-        var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
-        UserIdForeignKey.initColumn(createdBy);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
-        var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
-        UserIdForeignKey.initColumn(modifiedBy);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
 
         setDefaultVisibleColumns(Arrays.asList(FieldKey.fromParts("Name"), FieldKey.fromParts("Description")));
     }

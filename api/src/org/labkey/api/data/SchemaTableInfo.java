@@ -39,6 +39,10 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
+
+import org.labkey.api.query.column.BuiltInColumnTypes;
+
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -159,6 +163,24 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
             if (_updateURL != null && _updateURL != AbstractTableInfo.LINK_DISABLER)
             {
                 _updateURL.setContainerContext(cc, false);
+            }
+        }
+
+        // Tag our built-in columns: Created, CreatedBy etc.
+        for (var c : getColumns())
+        {
+            BuiltInColumnTypes type = BuiltInColumnTypes.findBuiltInType(c);
+            if (null != type)
+            {
+                MutableColumnInfo m = (MutableColumnInfo)c;
+                m.setConceptURI(type.conceptURI);
+                if (type.label != null)
+                    m.setLabel(type.label);
+                m.setUserEditable(false);
+                m.setShownInInsertView(false);
+                m.setShownInUpdateView(false);
+                if (type == BuiltInColumnTypes.EntityId)
+                    m.setHidden(true);
             }
         }
     }

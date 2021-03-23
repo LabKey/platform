@@ -36,7 +36,7 @@ public class AdditiveTypeTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "Description", _rootTable.getColumn("Additive")));
         var typeColumn = addWrapColumn("Additive", _rootTable.getColumn("Additive"));    // for lookups
         typeColumn.setHidden(true);
-        ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))).setHidden(true);
         setTitleColumn("Description");
     }
 
