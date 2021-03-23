@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
@@ -429,6 +430,17 @@ public class StudySecurityTest extends BaseWebDriverTest
         verifyPermissions(USER_IN_TWO, expectedDatasetRoles);
     }
 
+    /**
+     * Validate that the dirty page functionality works.
+     *
+     * I have no idea as to why, but the Firefox browser launched by the test automation is not showing an alert. It
+     * appears that the alert shown from the security page is different from other alerts and this is a problem for
+     * the automation.
+     *
+     * The functionality works fine manually.
+     */
+    //Issue 42762: Some browser dialogs are not shown when running test automation.
+    @Ignore
     @Test
     public void testDirtyPage()
     {
