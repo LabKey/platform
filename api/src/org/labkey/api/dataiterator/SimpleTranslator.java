@@ -77,6 +77,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_SEQUENCE_PREFIX;
+
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
  *
@@ -1359,14 +1361,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    public void addUniqueIdDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
+    {
+        target.getColumns().stream().filter(ColumnInfo::isUniqueIdField).forEach(columnInfo -> {
+            addTextSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), UNIQUE_ID_SEQUENCE_PREFIX, null, 100);
+        });
+    }
+
     public void addDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
     {
-        target.getColumns().forEach(columnInfo -> {
-            if (columnInfo.hasDbSequence())
-            {
+        target
+            .getColumns()
+            .stream()
+            .filter(columnInfo -> columnInfo.hasDbSequence() && !columnInfo.isUniqueIdField())
+            .forEach(columnInfo -> {
                 addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100);
-            }
-        });
+            });
     }
 
     /**
@@ -1448,7 +1458,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return addColumn(col, seqCol);
     }
 
-    protected class SequenceColumn implements Supplier
+    public int addTextSequenceColumn(ColumnInfo col, Container sequenceContainer, String sequenceName, @Nullable Integer sequenceId, @Nullable Integer batchSize)
+    {
+        TextIdColumn textCol = new TextIdColumn(sequenceContainer, sequenceName, sequenceId, batchSize);
+        return addColumn(col, textCol);
+    }
+
+    protected static class SequenceColumn implements Supplier
     {
         // sequence settings
         private final Container seqContainer;
@@ -1467,7 +1483,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             this.batchSize = batchSize == null ? 1 : batchSize;
         }
 
-        private DbSequence getSequence()
+        protected DbSequence getSequence()
         {
             if (sequence == null)
                 sequence = DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, seqId, batchSize);
@@ -1479,6 +1495,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             DbSequence sequence = getSequence();
             return sequence.next();
+        }
+    }
+
+    protected static class TextIdColumn extends SequenceColumn
+    {
+
+        public TextIdColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize)
+        {
+            super(seqContainer, seqName, seqId, batchSize);
+        }
+
+        @Override
+        public Object get()
+        {
+            DbSequence sequence = getSequence();
+            return String.format("%09d", sequence.next());
         }
     }
 

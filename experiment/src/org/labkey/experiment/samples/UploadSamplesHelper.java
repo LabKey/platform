@@ -27,6 +27,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
@@ -716,11 +717,16 @@ public abstract class UploadSamplesHelper
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);
             addGenId.setDebugName("add genId");
-            addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
+            Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");
+            materialTable.getColumns().stream().filter(ColumnInfo::isUniqueIdField).forEach(columnInfo -> {
+                idColNames.add(columnInfo.getName());
+            });
+            addGenId.selectAll(idColNames);
 
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
             addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize);
+            addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters

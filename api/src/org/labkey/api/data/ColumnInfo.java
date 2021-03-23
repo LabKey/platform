@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_CONCEPT_URI;
+
 public interface ColumnInfo extends ColumnRenderProperties
 {
     String DEFAULT_PROPERTY_URI_PREFIX = "http://terms.fhcrc.org/dbschemas/";
@@ -311,6 +313,11 @@ public interface ColumnInfo extends ColumnRenderProperties
     boolean hasDbSequence();
 
     boolean isRootDbSequence();
+
+    default boolean isUniqueIdField()
+    {
+        return UNIQUE_ID_CONCEPT_URI.equals(getConceptURI());
+    }
 
     default Container getDbSequenceContainer(Container container)
     {
