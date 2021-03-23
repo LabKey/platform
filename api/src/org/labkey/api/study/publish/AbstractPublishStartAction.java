@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.publish;
+package org.labkey.api.study.publish;
 
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.Container;

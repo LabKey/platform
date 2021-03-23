@@ -1,4 +1,4 @@
-package org.labkey.study.publish;
+package org.labkey.api.study.publish;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;

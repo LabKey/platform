@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.publish;
+package org.labkey.api.study.publish;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -34,8 +34,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
