@@ -59,6 +59,7 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -106,7 +107,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -150,7 +151,7 @@ import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset<DatasetDefinition>, InitializingBean
+public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements Cloneable, Dataset, InitializingBean
 {
     // DatasetQueryUpdateService
 
@@ -176,7 +177,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
     private Integer _cohortId;
-    private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
+    private Integer _publishSourceId;   // the identifier of the published data source
+    private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
+
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
     private String _tag;
     private String _type = Dataset.TYPE_STANDARD;
@@ -293,10 +296,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
+    public DatasetDefinition createMutable()
+    {
+        return (DatasetDefinition) super.createMutable();
+    }
+
     /*
      * given a potentially shared dataset definition, return a dataset definition that is scoped to the current study
      */
-    public DatasetDefinition createLocalDatasetDefintion(StudyImpl substudy)
+    public DatasetDefinition createLocalDatasetDefinition(StudyImpl substudy)
     {
         if (substudy.getContainer().equals(getContainer()))
             return this;
@@ -374,17 +383,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         if (DatasetDomainKind.DATE.equalsIgnoreCase(fieldName) && !study.getTimepointType().isVisitBased())
             return true;
-        
-        switch (study.getTimepointType())
-        {
-            case VISIT:
-                return DEFAULT_VISIT_FIELDS.contains(fieldName);
-            case CONTINUOUS:
-                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
-            case DATE:
-            default:
-                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
-        }
+
+        return switch (study.getTimepointType())
+                {
+                    case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
+                    case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+                    default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
+                };
     }
 
 
@@ -833,9 +838,28 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Override
-    public boolean isAssayData()
+    public boolean isPublishedData()
     {
-        return _protocolId != null;
+        return _publishSourceId != null;
+    }
+
+    @Override
+    public PublishSource getPublishSource()
+    {
+        if (_publishSourceType != null)
+            return PublishSource.valueOf(_publishSourceType);
+        return null;
+    }
+
+    @Override
+    public @Nullable ExpObject resolvePublishSource()
+    {
+        PublishSource publishSource = getPublishSource();
+        if (publishSource != null)
+        {
+            return publishSource.resolvePublishSource(getPublishSourceId());
+        }
+        return null;
     }
 
     public void setDemographicData(boolean demographicData)
@@ -1057,7 +1081,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (other == null)
             return false;
 
-        if (isAssayData() || other.isAssayData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
+        if (isPublishedData() || other.isPublishedData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
             return false;
 
         Domain thisDomain = getDomain();
@@ -1796,7 +1820,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    public DomainKind getDomainKind()
+    public DomainKind<DatasetDomainKindProperties> getDomainKind()
     {
         switch (getStudy().getTimepointType())
         {
@@ -1923,20 +1947,24 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
-    public Integer getProtocolId()
+    public Integer getPublishSourceId()
     {
-        return _protocolId;
+        return _publishSourceId;
     }
 
-    @Override
-    public ExpProtocol getAssayProtocol()
+    public void setPublishSourceId(Integer publishSourceId)
     {
-        return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
+        _publishSourceId = publishSourceId;
     }
 
-    public void setProtocolId(Integer protocolId)
+    public String getPublishSourceType()
     {
-        _protocolId = protocolId;
+        return _publishSourceType;
+    }
+
+    public void setPublishSourceType(String publishSourceType)
+    {
+        _publishSourceType = publishSourceType;
     }
 
     @Override
@@ -2753,7 +2781,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         for (ExpRun run : runs)
         {
             boolean syncNeeded = true;
-            if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
+            if (run.getProtocol().getLSID().equals(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
             {
                 // get all the input and output LSIDs that remain for the selected runs
                 Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getRowId()));
@@ -2819,6 +2847,173 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
+    public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
+    {
+        private final String _name;
+        private String _label;
+        private Boolean _isShowByDefault = true;
+        private Integer _categoryId;
+        private String _visitDatePropertyName;
+        private String _keyPropertyName;
+        private KeyManagementType _keyManagementType = KeyManagementType.None;
+        private String _description;
+        private Boolean _demographicData = false;   //demographic information, sequenceNum
+        private Integer _cohortId;
+        private Integer _publishSourceId;           // the identifier of the published data source
+        private PublishSource _publishSource;       // the type of published data source (assay, sample type, ...)
+        private String _tag;
+        private String _type = Dataset.TYPE_STANDARD;
+        private String _datasharing;
+        private Boolean _useTimeKeyField = false;
+        private Integer _datasetId;
+        private StudyImpl _study;
+
+        public Builder(String name)
+        {
+            _name = name;
+        }
+
+        public Builder setDescription(String description)
+        {
+            _description = description;
+            return this;
+        }
+
+        public Builder setShowByDefault(Boolean isShowByDefault)
+        {
+            _isShowByDefault = isShowByDefault;
+            return this;
+        }
+
+        public Builder setType(String type)
+        {
+            _type = type;
+            return this;
+        }
+
+        public Builder setDemographicData(Boolean demographicData)
+        {
+            _demographicData = demographicData;
+            return this;
+        }
+
+        public Builder setUseTimeKeyField(Boolean useTimeKeyField)
+        {
+            _useTimeKeyField = useTimeKeyField;
+            return this;
+        }
+
+        public Builder setKeyManagementType(KeyManagementType keyManagementType)
+        {
+            _keyManagementType = keyManagementType;
+            return this;
+        }
+
+        public Builder setCohortId(Integer cohortId)
+        {
+            _cohortId = cohortId;
+            return this;
+        }
+
+        public Builder setTag(String tag)
+        {
+            _tag = tag;
+            return this;
+        }
+
+        public Builder setLabel(String label)
+        {
+            _label = label;
+            return this;
+        }
+
+        public Builder setVisitDatePropertyName(String visitDatePropertyName)
+        {
+            _visitDatePropertyName = visitDatePropertyName;
+            return this;
+        }
+
+        public Builder setCategoryId(Integer categoryId)
+        {
+            _categoryId = categoryId;
+            return this;
+        }
+
+        public Builder setKeyPropertyName(String keyPropertyName)
+        {
+            _keyPropertyName = keyPropertyName;
+            return this;
+        }
+
+        public Builder setPublishSourceId(Integer publishSourceId)
+        {
+            _publishSourceId = publishSourceId;
+            return this;
+        }
+
+        public Builder setPublishSource(PublishSource publishSource)
+        {
+            _publishSource = publishSource;
+            return this;
+        }
+
+        public Builder setDataSharing(String dataSharing)
+        {
+            _datasharing = dataSharing;
+            return this;
+        }
+
+        public Builder setDatasetId(Integer datasetId)
+        {
+            _datasetId = datasetId;
+            return this;
+        }
+
+        public Builder setStudy(StudyImpl study)
+        {
+            _study = study;
+            return this;
+        }
+
+        public Integer getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public StudyImpl getStudy()
+        {
+            return _study;
+        }
+
+        @Override
+        public DatasetDefinition build()
+        {
+            DatasetDefinition dsd = new DatasetDefinition(_study, _datasetId, _name, _label != null ? _label : _name, null, null, null);
+            dsd.setShowByDefault(_isShowByDefault);
+            dsd.setType(_type);
+            dsd.setDemographicData(_demographicData);
+            dsd.setUseTimeKeyField(_useTimeKeyField);
+            dsd.setKeyManagementType(_keyManagementType);
+            dsd.setDescription(_description);
+            dsd.setCohortId(_cohortId);
+            dsd.setTag(_tag);
+            dsd.setVisitDatePropertyName(_visitDatePropertyName);
+            if (_categoryId != null)
+                dsd.setCategoryId(_categoryId);
+            if (_keyPropertyName != null)
+                dsd.setKeyPropertyName(_keyPropertyName);
+            if (_publishSourceId != null)
+            {
+                dsd.setPublishSourceId(_publishSourceId);
+                assert _publishSource != null : "PublishSource must be set if a publish source ID is specified";
+                dsd.setPublishSourceType(_publishSource.name());
+            }
+            if (_datasharing != null)
+                dsd.setDataSharing(_datasharing);
+
+            return dsd;
+        }
+    }
 
     public static class TestCleanupOrphanedDatasetDomains extends Assert
     {

@@ -1970,7 +1970,7 @@ public class QueryController extends SpringActionController
             if (!queryForm.canEditMetadata())
                 throw new UnauthorizedException("You do not have permission to edit the query metadata");
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
         }
 
         @Override

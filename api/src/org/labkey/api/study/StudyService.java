@@ -147,10 +147,7 @@ public interface StudyService
     /**
      * Returns the set of datasets which have ever had data copied from the provided protocol
      */
-    Set<? extends Dataset> getDatasetsForAssayProtocol(ExpProtocol protocol);
-
-    // Not used... delete? Was used by migrateToNabSpecimen()
-    Map<? extends Dataset, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol);
+    Set<? extends Dataset> getDatasetsForPublishSource(Integer sourceId, Dataset.PublishSource publishSource);
 
     /**
      * Returns the set of datasets which currently contain rows from the provided runs. The user may not have

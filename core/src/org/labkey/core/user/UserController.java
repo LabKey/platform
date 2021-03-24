@@ -136,7 +136,8 @@ import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UserAvatarDisplayColumnFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
-import org.labkey.core.security.SecurityController;
+import org.labkey.core.security.SecurityController.AdminDeletePasswordAction;
+import org.labkey.core.security.SecurityController.AdminResetPasswordAction;
 import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -1611,17 +1612,25 @@ public class UserController extends SpringActionController
                 // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record
                 if (null != detailsEmail && !isOwnRecord && canManageDetailsUser && !isLoginAutoRedirect)
                 {
-                    // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
-                    // in with SSO and later needing to use database authentication.  Also allows site admin to have
-                    // an alternate login, in case LDAP server goes down (this happened recently on one of our
-                    // production installations).
-                    ActionURL resetURL = new ActionURL(SecurityController.AdminResetPasswordAction.class, c);
+                    // Allow admins to create a logins entry if it doesn't exist. Addresses scenario of user logging in
+                    // with LDAP/SSO and later needing to use database authentication. Also allows site admin to have
+                    // an alternate login, e.g., in case LDAP server goes down or configuration changes.
+                    ActionURL resetURL = new ActionURL(AdminResetPasswordAction.class, c);
                     resetURL.addParameter("email", detailsEmail.getEmailAddress());
                     resetURL.addReturnURL(getViewContext().getActionURL());
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
-
                     bb.add(reset);
+
+                    if (loginExists)
+                    {
+                        ActionURL deleteURL = new ActionURL(AdminDeletePasswordAction.class, c);
+                        deleteURL.addParameter("email", detailsEmail.getEmailAddress());
+                        deleteURL.addReturnURL(getViewContext().getActionURL());
+                        ActionButton delete = new ActionButton(deleteURL, "Delete Password");
+                        delete.setActionType(ActionButton.Action.LINK);
+                        bb.add(delete);
+                    }
                 }
 
                 if (canManageDetailsUser && !isLoginAutoRedirect) // Issue 33393

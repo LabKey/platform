@@ -56,7 +56,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
@@ -444,7 +444,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             {
                 return "[None]";
             }
-            Set<Study> targets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
+            Set<Study> targets = StudyPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
             Container container = ContainerManager.getForId(value);
             if (null != container)
             {

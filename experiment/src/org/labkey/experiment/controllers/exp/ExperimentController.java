@@ -695,6 +695,11 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
+            ActionURL linkToStudyHistoryURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
+            ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
+            linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
+            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
+
             return new VBox(detailsView, queryView);
         }
 
@@ -1114,7 +1119,7 @@ public class ExperimentController extends SpringActionController
             if (!create)
                 _dataClass = form.getDataClass(getContainer());
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("dataClassDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("dataClassDesigner"));
         }
 
         @Override
@@ -3114,7 +3119,7 @@ public class ExperimentController extends SpringActionController
                     {
                         noun = "Protocol";
                     }
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocol))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
                         Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))
@@ -3554,7 +3559,7 @@ public class ExperimentController extends SpringActionController
             if (!create)
                 _sampleType = form.getSampleType(getContainer());
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), ModuleHtmlView.getGeneratedViewPath("sampleTypeDesigner"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("sampleTypeDesigner"));
         }
 
         @Override

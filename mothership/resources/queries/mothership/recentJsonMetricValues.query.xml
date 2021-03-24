@@ -10,6 +10,13 @@
                     <fkTable>ServerSessions</fkTable>
                 </fk>
             </column>
+            <column columnName="DisplayKey">
+                <fk>
+                    <fkDbSchema>mothership</fkDbSchema>
+                    <fkTable>recentJsonMetrics</fkTable>
+                    <fkDisplayColumnName useRawValue="true" />
+                </fk>
+            </column>
         </columns>
     </table>
 </tables>

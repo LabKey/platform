@@ -57,7 +57,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -446,9 +446,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 }
             }
 
-            DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, showByDefault,
-                    label, description, cohortId, tag, visitDatePropertyName, dataSharing);
+            DatasetDefinition def = StudyPublishManager.getInstance().createDataset(user, new DatasetDefinition.Builder(name)
+                    .setStudy(study)
+                    .setKeyPropertyName(keyPropertyName)
+                    .setDatasetId(datasetId)
+                    .setDemographicData(demographics)
+                    .setCategoryId(categoryId)
+                    .setUseTimeKeyField(useTimeKeyField)
+                    .setKeyManagementType(managementType)
+                    .setShowByDefault(showByDefault)
+                    .setLabel(label)
+                    .setDescription(description)
+                    .setCohortId(cohortId)
+                    .setTag(tag)
+                    .setVisitDatePropertyName(visitDatePropertyName)
+                    .setDataSharing(dataSharing));
 
             if (def.getDomain() != null)
             {

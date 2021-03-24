@@ -114,7 +114,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -1677,7 +1677,7 @@ public class AssayController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> containersInfo = new ArrayList<>();
 
-            AssayPublishService service = AssayPublishService.get();
+            StudyPublishService service = StudyPublishService.get();
             if (service != null)
             {
                 // issue 42415 : for assays at either the shared or project scope, allow a copy target which
@@ -1685,12 +1685,12 @@ public class AssayController extends SpringActionController
                 if (getContainer().isProject() || getContainer().equals(ContainerManager.getSharedContainer()))
                 {
                     containersInfo.add(Map.of(
-                            "id", AssayPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getId(),
-                            "name", AssayPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getName(),
+                            "id", StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getId(),
+                            "name", StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getName(),
                             "path", "(Assay import folder)"));
                 }
 
-                for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
+                for (Study study : StudyPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
                 {
                     Container container = study.getContainer();
                     Map<String, Object> containerInfo = new HashMap<>();

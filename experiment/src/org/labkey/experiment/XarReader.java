@@ -80,7 +80,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -1620,7 +1620,7 @@ public class XarReader extends AbstractXarImporter
                 value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
             }
 
-            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
+            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
             {
                 Container autoCopyContainer = ContainerManager.getForPath(value);
                 if (autoCopyContainer != null)
