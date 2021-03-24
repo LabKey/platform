@@ -54,9 +54,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI;
 
 /**
  * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example
@@ -334,9 +338,13 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             ret.setKeyField(false);
         }
-        if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
+        if (PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
         {
-            ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
+            Set<FieldKey> phiDataLoggingColumns = getPHIDataLoggingColumns();
+            if (!phiDataLoggingColumns.isEmpty())
+            {
+                ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), phiDataLoggingColumns, getPHILoggingComment(phiDataLoggingColumns), getSelectQueryAuditProvider()));
+            }
         }
         assert ret.getParentTable() == this;
         return ret;
@@ -578,23 +586,50 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         BaseColumnInfo ret = new AliasedColumn(this, name, column);
 
-        if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
+        if (PHI.NotPHI != column.getPHI() && column.isShouldLog())
         {
-            ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
+            Set<FieldKey> phiDataLoggingColumns = getPHIDataLoggingColumns();
+            if (!phiDataLoggingColumns.isEmpty())
+            {
+                ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), phiDataLoggingColumns, getPHILoggingComment(phiDataLoggingColumns), getSelectQueryAuditProvider()));
+            }
         }
         propagateKeyField(column, ret);
         addColumn(ret);
         return ret;
     }
 
-    public Set<FieldKey> getPHIDataLoggingColumns()
+    public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
     {
-        return Collections.emptySet();
+        if (!supportTableRules() || getUserSchema().getUser().isServiceUser())
+            return Collections.emptySet();
+
+        Set<FieldKey> loggingColumns = new LinkedHashSet<>();
+        if (!getColumns().isEmpty()) // it shouldn't be, as it should at least have the standard tracking columns even on initial creation
+        {
+            for (ColumnInfo pkCol : getPkColumns())
+                loggingColumns.add(pkCol.getFieldKey());
+
+            final PHI maxPHI = this.getMaxPhiLevel();
+
+            // Also log any participantId columns, but only if the user is allowed to see them. Otherwise the value wouldn't be in the SELECT list to log.
+            getColumns().stream()
+                    .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(maxPHI))
+                    .map(ColumnInfo::getFieldKey)
+                    .forEach(loggingColumns::add);
+        }
+        return loggingColumns;
     }
 
-    public String getPHILoggingComment()
+    protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
-        return "";
+        if (!supportTableRules() || getUserSchema().getUser().isServiceUser())
+            return "";
+
+        return dataLoggingColumns
+                .stream()
+                .map(FieldKey::getName)
+                .collect(Collectors.joining(", ", "PHI accessed in " + getPublicSchemaName() + "." + getPublicName() + ". Data shows ", "."));
     }
 
     /**

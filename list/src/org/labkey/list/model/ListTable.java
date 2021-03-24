@@ -71,12 +71,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI;
 
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
@@ -348,39 +344,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     public boolean supportTableRules()
     {
         return true;
-    }
-
-    @Override
-    public Set<FieldKey> getPHIDataLoggingColumns()
-    {
-        if (getUserSchema().getUser().isServiceUser())
-            return Collections.emptySet();
-        else
-        {
-            Set<FieldKey> loggingColumns = new LinkedHashSet<>();
-            if (!getRealTable().getColumns().isEmpty()) // it shouldn't be, as it should at least have the standard tracking columns even on initial creation
-            {
-                if (_list != null && _list.getKeyName() != null && getRealTable().getColumn(_list.getKeyName()) != null)
-                    loggingColumns.add(getRealTable().getColumn(_list.getKeyName()).getFieldKey());
-                // Also log any participantId columns, but only if the user is allowed to see them. Otherwise the value wouldn't be in the SELECT list to log.
-                loggingColumns.addAll(getRealTable().getColumns().stream()
-                        .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(_maxUserPhi))
-                        .map(ColumnInfo::getFieldKey).collect(Collectors.toSet()));
-            }
-            return loggingColumns;
-        }
-    }
-
-    @Override
-    public String getPHILoggingComment()
-    {
-/*        return getPHIDataLoggingColumns().stream().map(FieldKey::getName)                        // TODO; restore map if we can get it to work again
-                .collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));         */
-        List<String> names = new ArrayList<>();
-        getPHIDataLoggingColumns().forEach(fieldKey -> {
-            names.add(fieldKey.getName());
-        });
-        return names.stream().collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));
     }
 
     /**
