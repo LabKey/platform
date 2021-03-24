@@ -29,10 +29,12 @@ public class XarExportContext extends FolderExportContext
         return _includedAssayRuns;
     }
 
-    public void setIncludedAssayRuns(Set<Integer> includedRuns)
+    public void setIncludedAssayRuns(Map<Integer, Set<Integer>> includedRuns)
     {
         if (includedRuns != null)
-            _includedAssayRuns = includedRuns;
+        {
+            _includedAssayRuns = includedRuns.keySet();
+        }
     }
 
     public Map<Integer, Set<Integer>> getIncludedSamples()
