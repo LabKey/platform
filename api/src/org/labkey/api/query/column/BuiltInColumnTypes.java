@@ -63,9 +63,9 @@ public enum BuiltInColumnTypes
 
     public static void registerStandardColumnDecorators()
     {
-        QueryService.get().registerColumnInfoTransformer(new UserIdColumnDecorator());
-        QueryService.get().registerColumnInfoTransformer(CREATEDBY_CONCEPT_URI, new UserIdColumnDecorator());
-        QueryService.get().registerColumnInfoTransformer(MODIFIEDBY_CONCEPT_URI, new UserIdColumnDecorator());
+        QueryService.get().registerColumnInfoTransformer(new UserIdColumnInfoTransformer());
+        QueryService.get().registerColumnInfoTransformer(CREATEDBY_CONCEPT_URI, new UserIdColumnInfoTransformer());
+        QueryService.get().registerColumnInfoTransformer(MODIFIEDBY_CONCEPT_URI, new UserIdColumnInfoTransformer());
         QueryService.get().registerColumnInfoTransformer(new ContainerIdColumnInfoTransformer());
     }
 
