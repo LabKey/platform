@@ -82,6 +82,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_CONCEPT_URI;
+
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
  * Will do CREATE TABLE and ALTER TABLE statements to make sure the table has the right set of requested columns.
@@ -639,8 +641,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     {
                         return super.getValueSql(tableAlias);
                     }
+
                 };
                 to.setHidden(from.isHidden());
+                if (UNIQUE_ID_CONCEPT_URI.equals(from.getConceptURI()))
+                {
+                    to.setUserEditable(false);
+                    to.setHasDbSequence(true);
+                    to.setShownInInsertView(false);
+                }
                 this.addColumn(to);
             }
         }

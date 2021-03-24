@@ -603,7 +603,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (_conceptURI.equals(UNIQUE_ID_CONCEPT_URI))
         {
             _hasDbSequence = true;
-            _isRootDbSequence = true;
+            _shownInInsertView = false;
+            _isUserEditable = false;
         }
     }
 
