@@ -63,10 +63,10 @@ public enum BuiltInColumnTypes
 
     public static void registerStandardColumnDecorators()
     {
-        QueryService.get().registerColumnDecorator(new UserIdColumnDecorator());
-        QueryService.get().registerColumnDecorator(CREATEDBY_CONCEPT_URI, new UserIdColumnDecorator());
-        QueryService.get().registerColumnDecorator(MODIFIEDBY_CONCEPT_URI, new UserIdColumnDecorator());
-        QueryService.get().registerColumnDecorator(new ContainerIdColumnDecorator());
+        QueryService.get().registerColumnInfoTransformer(new UserIdColumnDecorator());
+        QueryService.get().registerColumnInfoTransformer(CREATEDBY_CONCEPT_URI, new UserIdColumnDecorator());
+        QueryService.get().registerColumnInfoTransformer(MODIFIEDBY_CONCEPT_URI, new UserIdColumnDecorator());
+        QueryService.get().registerColumnInfoTransformer(new ContainerIdColumnInfoTransformer());
     }
 
     public static final String CONTAINERID_CONCEPT_URI = "http://www.labkey.org/types#containerId";         // JbcType.GUID

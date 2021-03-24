@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -146,9 +147,10 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     }
 
     // Subclasses may override this to provide customizations to the column
-    protected void initColumn(BaseColumnInfo col)
+    protected void initColumn(MutableColumnInfo col)
     {
     }
+
 
     @Nullable
     @Override

@@ -2,13 +2,15 @@ package org.labkey.api.query.column;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.query.UserSchema;
 
-public class ContainerIdColumnDecorator implements ConceptURIColumnDecorator
+public class ContainerIdColumnInfoTransformer implements ConceptURIColumnInfoTransformer
 {
     @Override
     public @NotNull String getConceptURI()
@@ -17,12 +19,18 @@ public class ContainerIdColumnDecorator implements ConceptURIColumnDecorator
     }
 
     @Override
-    public void apply(MutableColumnInfo column)
+    public ColumnInfo apply(ColumnInfo column)
+    {
+        return applyMutable(WrappedColumnInfo.wrap(column));
+    }
+
+    @Override
+    public MutableColumnInfo applyMutable(MutableColumnInfo column)
     {
         if (column.getJdbcType() != JdbcType.GUID && column.getJdbcType() != JdbcType.VARCHAR)
         {
             Logger.getLogger(UserIdColumnDecorator.class).warn("Column is not of type GUID: " + column.getName());
-            return;
+            return column;
         }
 
         UserSchema schema = column.getParentTable().getUserSchema();
@@ -38,5 +46,7 @@ public class ContainerIdColumnDecorator implements ConceptURIColumnDecorator
             column.setShownInUpdateView(false);
             column.setReadOnly(true);
         }
+        return column;
     }
+
 }

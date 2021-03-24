@@ -2,13 +2,15 @@ package org.labkey.api.query.column;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 
 
-public class UserIdColumnDecorator implements ConceptURIColumnDecorator
+public class UserIdColumnDecorator implements ConceptURIColumnInfoTransformer
 {
     @Override
     public @NotNull String getConceptURI()
@@ -17,13 +19,14 @@ public class UserIdColumnDecorator implements ConceptURIColumnDecorator
     }
 
     @Override
-    public void apply(MutableColumnInfo column)
+    public MutableColumnInfo applyMutable(MutableColumnInfo column)
     {
         if (column.getJdbcType() != JdbcType.INTEGER)
         {
             Logger.getLogger(UserIdColumnDecorator.class).error("Column is not of type INT: " + column.getName());
-            return;
+            return column;
         }
+
         UserSchema schema = column.getParentTable().getUserSchema();
         BuiltInColumnTypes builtin = BuiltInColumnTypes.findBuiltInType(column);
 
@@ -38,5 +41,6 @@ public class UserIdColumnDecorator implements ConceptURIColumnDecorator
             column.setShownInUpdateView(false);
             column.setReadOnly(true);
         }
+        return column;
     }
 }

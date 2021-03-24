@@ -40,6 +40,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -53,7 +54,6 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
 import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
-import org.labkey.api.query.column.ColumnDecorator;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -3188,19 +3188,19 @@ public class QueryServiceImpl implements QueryService
 
 
     /* registry of ColumnDecorators use to build common columns */
-    Map<String, ColumnDecorator> columnDecoratorMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+    Map<String, ColumnInfoTransformer> columnTransformerMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
 
     @Override
-    public void registerColumnDecorator(@NotNull String uri, @NotNull ColumnDecorator d)
+    public void registerColumnInfoTransformer(@NotNull String uri, @NotNull ColumnInfoTransformer t)
     {
-        if (null != columnDecoratorMap.put(uri, d))
+        if (null != columnTransformerMap.put(uri, t))
             throw new ConfigurationException("More than one ColumnDecorator registered for " + uri);
     }
 
     @Override
-    public ColumnDecorator findColumnDecorator(String conceptURI)
+    public ColumnInfoTransformer findColumnInfoTransformer(String conceptURI)
     {
-        return columnDecoratorMap.get(conceptURI);
+        return columnTransformerMap.get(conceptURI);
     }
 
 

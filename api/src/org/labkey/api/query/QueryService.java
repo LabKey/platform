@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -43,8 +44,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
-import org.labkey.api.query.column.ColumnDecorator;
-import org.labkey.api.query.column.ConceptURIColumnDecorator;
+import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -592,20 +592,20 @@ public interface QueryService
 
 
     /* registry of column types (named by conceptURI) */
-    default void registerColumnDecorator(@NotNull ConceptURIColumnDecorator d)
+    default void registerColumnInfoTransformer(@NotNull ConceptURIColumnInfoTransformer t)
     {
-        registerColumnDecorator(d.getConceptURI(), d);
+        registerColumnInfoTransformer(t.getConceptURI(), t);
     }
 
-    void registerColumnDecorator(@NotNull String uri, @NotNull ColumnDecorator d);
+    void registerColumnInfoTransformer(@NotNull String uri, @NotNull ColumnInfoTransformer t);
 
-    ColumnDecorator findColumnDecorator(String conceptURI);
+    ColumnInfoTransformer findColumnInfoTransformer(String conceptURI);
 
     default MutableColumnInfo applyColumnDecorator(MutableColumnInfo col)
     {
         if (null != col.getConceptURI())
         {
-            var d = findColumnDecorator(col.getConceptURI());
+            var d = findColumnInfoTransformer(col.getConceptURI());
             if (null != d)
                 d.apply(col);
         }
