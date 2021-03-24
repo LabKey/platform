@@ -11,12 +11,14 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -52,9 +54,9 @@ public class SampleTypeContentsView extends QueryView
         return deriveButton;
     }
 
-    public static ActionButton getLinkToStudyButton()
+    public static ActionButton getLinkToStudyButton(Container container)
     {
-        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
+        ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(container);
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         linkToStudyButton.setRequiresSelection(true);
@@ -137,7 +139,7 @@ public class SampleTypeContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
-        bar.add(getLinkToStudyButton());
+        bar.add(getLinkToStudyButton(getContainer()));
 
         // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();

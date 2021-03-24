@@ -189,6 +189,8 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
+import org.labkey.experiment.publish.SampleTypePublishConfirmAction;
+import org.labkey.experiment.publish.SampleTypePublishStartAction;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
@@ -6340,6 +6342,18 @@ public class ExperimentController extends SpringActionController
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
+        }
+
+        @Override
+        public ActionURL getLinkToStudyURL(Container container)
+        {
+            return new ActionURL(SampleTypePublishStartAction.class, container);
+        }
+
+        @Override
+        public ActionURL getLinkToStudyConfirmURL(Container container)
+        {
+            return new ActionURL(SampleTypePublishConfirmAction.class, container);
         }
     }
 

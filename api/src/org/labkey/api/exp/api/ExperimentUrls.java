@@ -108,4 +108,7 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table);
 
+    ActionURL getLinkToStudyURL(Container container);
+
+    ActionURL getLinkToStudyConfirmURL(Container container);
 }

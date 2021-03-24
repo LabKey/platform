@@ -19,6 +19,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -113,7 +114,7 @@ public class SampleTypeWebPart extends QueryView
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
 
-        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
+        ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(getContainer());
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         bar.add(linkToStudyButton);
