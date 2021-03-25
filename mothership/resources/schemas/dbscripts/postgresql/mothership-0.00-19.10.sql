@@ -178,3 +178,13 @@ ALTER TABLE mothership.exceptionreport
     ADD COLUMN ErrorCode VARCHAR(6);
 
 CREATE INDEX IX_ExceptionReport_ErrorCode ON mothership.exceptionreport (ErrorCode);
+
+/* mothership-18.30-19.10.sql */
+
+ALTER TABLE mothership.ServerSession
+  ADD COLUMN buildTime timestamp;
+
+SELECT core.fn_dropifexists('ServerSession', 'mothership', 'COLUMN', 'buildTime');
+
+ALTER TABLE mothership.ServerSession
+  ADD COLUMN buildTime timestamp;

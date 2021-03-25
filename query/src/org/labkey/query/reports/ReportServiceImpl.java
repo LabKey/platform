@@ -52,8 +52,6 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
-import org.labkey.api.reports.report.ChartReport;
-import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
@@ -86,7 +84,6 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -251,37 +248,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         Report report = createReportInstance(descriptor.getReportType());
         report.setDescriptor(descriptor);
         return report;
-    }
-
-    @Nullable
-    @Override
-    public Report createConvertedChartViewReportInstance(Report report, ContainerUser context)
-    {
-        ReportDescriptor descriptor = report.getDescriptor();
-        if (!(descriptor instanceof ChartReportDescriptor))
-            return createReportInstance(descriptor);
-        Report newReport = createReportInstance(GenericChartReport.TYPE);
-        try
-        {
-            if (newReport instanceof GenericChartReport)
-            {
-                GenericChartReport chartReport = (GenericChartReport) newReport;
-                chartReport.setChartViewDescriptor((ChartReport) report, context);
-            }
-        }
-        catch (IOException | ValidationException e)
-        {
-            try
-            {
-                _log.error("Unable to convert chart view for " + report.getDescriptor().getReportName(), e);
-
-                // log the original descriptor for troubleshooting purposes
-                _log.error("Legacy descriptor for failed chart view conversion: " + descriptor.serialize(context.getContainer()));
-            }
-            catch (IOException ignored){}
-            return null;
-        }
-        return newReport;
     }
 
     private static TableInfo getTable()
@@ -970,16 +936,6 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 }
             }
 
-            // if we are importing legacy ChartReports, convert them to the newer GenericChartReport
-            if (report instanceof ChartReport)
-            {
-                report.getDescriptor().setContainer(ctx.getContainer().getId());
-                Report convertedReport = ReportService.get().createConvertedChartViewReportInstance(report, new DefaultContainerUser(ctx.getContainer(), ctx.getUser()));
-                if (convertedReport != null)
-                {
-                    descriptor = convertedReport.getDescriptor();
-                }
-            }
             int rowId = _saveDbReport(ctx.getUser(), ctx.getContainer(), key, descriptor).getRowId();
             descriptor.setReportId(new DbReportIdentifier(rowId));
 

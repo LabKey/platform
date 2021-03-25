@@ -153,7 +153,13 @@ import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.studydesign.AbstractStudyDesignDomainKind;
+import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
+import org.labkey.study.query.studydesign.StudyProductDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -184,6 +190,11 @@ import java.util.TreeMap;
 import java.util.WeakHashMap;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.PRODUCT_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.TREATMENT_TABLE_NAME;
 
 public class StudyManager
 {
@@ -600,6 +611,7 @@ public class StudyManager
             SpecimenSchema.get().getTableInfoSpecimenEvent(container, user);
             transaction.commit();
         }
+        StudyDesignManager.get().ensureStudyDesignDomains(container, user);
         QueryService.get().updateLastModified();
         ContainerManager.notifyContainerChange(container.getId(), ContainerManager.Property.StudyChange);
         return study;
@@ -2713,13 +2725,7 @@ public class StudyManager
             dsds = study.getDatasets();
 
         // get the list of study design tables
-        List<TableInfo> studyDesignTables = new ArrayList<>();
-        UserSchema schema = QueryService.get().getUserSchema(user, c, StudyQuerySchema.SCHEMA_NAME);
-        studyDesignTables.add(schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME));
-        studyDesignTables.add(schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME));
-        studyDesignTables.add(schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME));
-        studyDesignTables.add(schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME));
-        studyDesignTables.add(schema.getTable(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME));
+        List<TableInfo> studyDesignTables = getStudyDesignTables(c, user);
 
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -2843,6 +2849,28 @@ public class StudyManager
         assert verifyAllTablesWereDeleted(deletedTables);
     }
 
+    private List<TableInfo> getStudyDesignTables(Container c, User user)
+    {
+        List<TableInfo> studyDesignTables = new ArrayList<>();
+        UserSchema schema = QueryService.get().getUserSchema(user, c, StudyQuerySchema.SCHEMA_NAME);
+
+        addIfProvisioned(studyDesignTables, schema, new StudyProductDomainKind(), PRODUCT_TABLE_NAME);
+        addIfProvisioned(studyDesignTables, schema, new StudyProductAntigenDomainKind(), PRODUCT_ANTIGEN_TABLE_NAME);
+        addIfProvisioned(studyDesignTables, schema, new StudyTreatmentProductDomainKind(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        addIfProvisioned(studyDesignTables, schema, new StudyTreatmentDomainKind(), TREATMENT_TABLE_NAME);
+        addIfProvisioned(studyDesignTables, schema, new StudyPersonnelDomainKind(), PERSONNEL_TABLE_NAME);
+
+        return studyDesignTables;
+    }
+
+    private void addIfProvisioned(List<TableInfo> studyDesignTables, UserSchema schema, AbstractStudyDesignDomainKind domainKind, String tableName)
+    {
+        // Might not be provisioned (e.g., if this isn't a study)
+        Domain domain = domainKind.getDomain(schema.getContainer(), tableName);
+
+        if (null != domain)
+            studyDesignTables.add(schema.getTable(tableName));
+    }
 
     private void deleteStudyDesignData(Container c, User user, List<TableInfo> studyDesignTables)
     {
