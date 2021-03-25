@@ -3187,7 +3187,7 @@ public class QueryServiceImpl implements QueryService
 
 
 
-    /* registry of ColumnDecorators use to build common columns */
+    /* registry of ColumnInfoTransformer use to build common columns */
     Map<String, ColumnInfoTransformer> columnTransformerMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
 
     @Override
