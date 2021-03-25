@@ -92,14 +92,7 @@ public class PageConfig
     private boolean _includeLoginLink = true;
     private boolean _includeSearch = true;
     private int _minimumWidth = 400;
-    private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>()
-    {
-        @Override
-        public boolean add(ClientDependency clientDependency)
-        {
-            return super.add(clientDependency);
-        }
-    };
+    private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
