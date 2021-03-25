@@ -247,7 +247,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             for (var c : getMutableColumns())
             {
                 transformColumn(c, qs.findColumnInfoTransformer(c.getConceptURI()));
-                qs.applyColumnDecorator(c);
             }
         }
     }
