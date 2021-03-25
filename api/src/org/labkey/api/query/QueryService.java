@@ -601,7 +601,7 @@ public interface QueryService
 
     ColumnInfoTransformer findColumnInfoTransformer(String conceptURI);
 
-    default MutableColumnInfo applyColumnDecorator(MutableColumnInfo col)
+    default MutableColumnInfo applyColumnTransformer(MutableColumnInfo col)
     {
         if (null != col.getConceptURI())
         {
