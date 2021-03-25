@@ -17,20 +17,15 @@ package org.labkey.api.visualization;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.AbstractReport;
-import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 
-import java.io.IOException;
-
-/**
- * User: klum
- * Date: May 9, 2012
+/*
+  User: klum
+  Date: May 9, 2012
  */
 
 /**
@@ -341,6 +336,4 @@ public abstract class GenericChartReport extends AbstractReport
             descriptor.updateSaveConfig();
         }
     }
-
-    public abstract void setChartViewDescriptor(ChartReport report, ContainerUser context) throws IOException, ValidationException;
 }

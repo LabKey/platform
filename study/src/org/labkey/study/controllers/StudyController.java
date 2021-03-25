@@ -51,7 +51,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn21_7;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.attachments.AttachmentFile;
@@ -117,7 +116,6 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -153,8 +151,8 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
@@ -191,6 +189,7 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
+import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -206,7 +205,6 @@ import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
@@ -5624,23 +5622,6 @@ public class StudyController extends BaseStudyController
                 out.print("<td>" + _report.getDescriptor().getReportDescription() + "</td></tr>");
                 out.print("</table>");
             }
-        }
-    }
-
-    /**
-     * We don't need to render this report as of 19.1 but we need to be able to register an instance of it so
-     * it can be converted to a javascript report. This class can be deleted in the 21.7 release.
-     */
-    @Deprecated
-    @RemoveIn21_7
-    public static class StudyChartReport extends ChartQueryReport
-    {
-        public static final String TYPE = "Study.chartReport";
-
-        @Override
-        public String getType()
-        {
-            return TYPE;
         }
     }
 
