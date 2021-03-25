@@ -92,7 +92,8 @@ public class UserIdQueryForeignKey extends QueryForeignKey
 
     /**
      * set foreign key and display column
-     * Deprecated: relying on UserIdColumnDecorator is preferred()
+     * Deprecated: relying on UserIdColumnInfoTransformer is preferred()
+
      */
     @Deprecated
     static public ColumnInfo initColumn(QuerySchema sourceSchema, MutableColumnInfo column, boolean guestAsBlank)
