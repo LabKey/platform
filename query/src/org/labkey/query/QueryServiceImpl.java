@@ -3194,7 +3194,7 @@ public class QueryServiceImpl implements QueryService
     public void registerColumnInfoTransformer(@NotNull String uri, @NotNull ColumnInfoTransformer t)
     {
         if (null != columnTransformerMap.put(uri, t))
-            throw new ConfigurationException("More than one ColumnDecorator registered for " + uri);
+            throw new ConfigurationException("More than one ColumnTransformer registered for " + uri);
     }
 
     @Override
