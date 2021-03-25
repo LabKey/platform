@@ -138,7 +138,8 @@ public class QueryModule extends DefaultModule
     public QueryModule()
     {
         QueryService.setInstance(new QueryServiceImpl());
-        BuiltInColumnTypes.registerStandardColumnDecorators();
+        BuiltInColumnTypes.registerStandardColumnTransformers();
+
         QueryDriver.register();
         ReportAndDatasetChangeDigestProvider.set(new ReportAndDatasetChangeDigestProviderImpl());
     }
