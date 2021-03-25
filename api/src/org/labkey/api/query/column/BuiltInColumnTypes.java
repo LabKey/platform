@@ -61,7 +61,7 @@ public enum BuiltInColumnTypes
         return null != type && type.matches(col) ? type : null;
     }
 
-    public static void registerStandardColumnDecorators()
+    public static void registerStandardColumnTransformers()
     {
         QueryService.get().registerColumnInfoTransformer(new UserIdColumnInfoTransformer());
         QueryService.get().registerColumnInfoTransformer(CREATEDBY_CONCEPT_URI, new UserIdColumnInfoTransformer());
@@ -108,4 +108,3 @@ public enum BuiltInColumnTypes
     xsdLong("http://www.w3.org/2001/XMLSchema#long", true, "Long Integer", "Long", "int"),
     xsdBinary("http://www.w3.org/2001/XMLSchema#binary", false, "Byte Buffer", "Buffer", "string");
 */
-
