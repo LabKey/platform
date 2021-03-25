@@ -41,7 +41,8 @@ public class ContainerForeignKey extends QueryForeignKey
 
 
     /**
-     * Deprecated: relying on ContainerIdColumnDecorator is preferred()
+     * Deprecated: relying on ContainerIdColumnInfoTransformer is preferred()
+
      */
     @Deprecated
     static public <COL extends MutableColumnInfo> COL initColumn(@NotNull COL column, UserSchema schema, final ActionURL url)
