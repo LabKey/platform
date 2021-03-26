@@ -31,6 +31,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentForm;
@@ -2074,6 +2075,9 @@ public class WikiController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#edit");
+
+            // This adds "Admin Console" to the navtrail for the site-wide terms of use case
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, getContainer());
             if (null != _wiki && null != _wikiVer)
             {
                 ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getContainer());
