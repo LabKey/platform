@@ -36,6 +36,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -60,7 +61,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
@@ -1290,6 +1290,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         TableInfo _storage;
         TableInfo _template;
+        final PHI _maxAllowed;
 
 
         private ColumnInfo getStorageColumn(String name)
@@ -1318,6 +1319,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
+            _maxAllowed = ComplianceService.get().getMaxAllowedPhi(_container, user);
 
             // ParticipantId
 
@@ -1615,6 +1617,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             }
 
             return m;
+        }
+
+        /**
+         * Return true if the current user is allowed the maximum phi level set across all columns.
+         */
+        @Override
+        public boolean canAccessPhi()
+        {
+            return getMaxPhiLevel().isLevelAllowed(_maxAllowed);
         }
 
         @Override
