@@ -107,6 +107,7 @@ public class ChangeSummary
         _standardFields.add("Priority");
         _standardFields.add("Milestone");
         _standardFields.add("Related");
+        _standardFields.add("Folder");
     }
 
     private ChangeSummary(IssueListDef issueListDef, Issue issue, Issue prevIssue, Issue.Comment comment,

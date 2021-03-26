@@ -70,29 +70,37 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     @Override
                     public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
                     {
-                        return ExperimentService.get().getExpProtocol(publishSourceId);
+                        if (publishSourceId != null)
+                            return ExperimentService.get().getExpProtocol(publishSourceId);
+                        return null;
                     }
 
                     @Override
                     public String getLabel(Integer publishSourceId)
                     {
-                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
-                        if (protocol != null)
-                            return protocol.getName();
+                        if (publishSourceId != null)
+                        {
+                            ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
+                            if (protocol != null)
+                                return protocol.getName();
+                        }
                         return "";
                     }
 
                     @Override
                     public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
                     {
-                        ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
-                        if (protocol != null)
+                        if (publishSourceId != null)
                         {
-                            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
-                                    protocol.getContainer(),
-                                    protocol,
-                                    cf);
-                            return new ActionButton("View Source Assay", url);
+                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            if (protocol != null)
+                            {
+                                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
+                                        protocol.getContainer(),
+                                        protocol,
+                                        cf);
+                                return new ActionButton("View Source Assay", url);
+                            }
                         }
                         return null;
                     }
@@ -100,12 +108,15 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     @Override
                     public boolean hasUsefulDetailsPage(Integer publishSourceId)
                     {
-                        ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
-                        if (protocol != null)
+                        if (publishSourceId != null)
                         {
-                            AssayProvider provider = AssayService.get().getProvider(protocol);
-                            if (provider != null)
-                                return provider.hasUsefulDetailsPage();
+                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            if (protocol != null)
+                            {
+                                AssayProvider provider = AssayService.get().getProvider(protocol);
+                                if (provider != null)
+                                    return provider.hasUsefulDetailsPage();
+                            }
                         }
                         return false;
                     }

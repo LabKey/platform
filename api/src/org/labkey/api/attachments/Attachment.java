@@ -16,6 +16,8 @@
 
 package org.labkey.api.attachments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -43,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * NOTE: Attachment is only used to list the attachments, it does not contain document data
  * and cannot be used directly to insert or update attachments.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Attachment implements Serializable
 {
     private String _parent; // entityid
@@ -275,6 +278,7 @@ public class Attachment implements Serializable
     }
 
 
+    @JsonIgnore
     public Date getLastIndexed()
     {
         return _lastIndexed;
@@ -326,6 +330,7 @@ public class Attachment implements Serializable
         _parent = parent;
     }
 
+    @JsonIgnore
     public File getFile()
     {
         return _file;

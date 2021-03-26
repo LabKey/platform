@@ -31,6 +31,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.query.column.ColumnInfoTransformer;
+import org.labkey.api.query.column.MutableColumnInfoTransformer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.triggers.ScriptTriggerFactory;
 import org.labkey.api.data.triggers.Trigger;
@@ -236,6 +238,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (_updateURL != null && _updateURL != LINK_DISABLER)
             {
                 _updateURL.setContainerContext(cc, false);
+            }
+        }
+
+        if (null != getUserSchema())
+        {
+            QueryService qs = QueryService.get();
+            for (var c : getMutableColumns())
+            {
+                transformColumn(c, qs.findColumnInfoTransformer(c.getConceptURI()));
             }
         }
     }
@@ -582,12 +593,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @NotNull
-    public List<BaseColumnInfo> getMutableColumns()
+    public List<MutableColumnInfo> getMutableColumns()
     {
         checkLocked();
         return _columnMap.values().stream()
-            .map(c -> (BaseColumnInfo)c)
-            .peek(BaseColumnInfo::checkLocked)
+            .map(c -> (MutableColumnInfo)c)
+            .peek(MutableColumnInfo::checkLocked)
             .collect(Collectors.toList());
     }
 
@@ -654,6 +665,50 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         return column;
     }
+
+    /**
+     * This method can be used to to replace the implementation of a column during construction.
+     * This is usually only done in TableInfo.afterConstruct() to modify the behavior of a column.
+     * Because the ColumnInfo implementation can change in afterConstruct(), TableInfo implementations
+     * should hold to columnInfo references by FieldKey, and not by reference.
+
+     * during construction.
+     * @param updated
+     * @param existing
+     * @return
+     */
+    public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
+    {
+        checkLocked();
+        if (updated == existing)
+            return updated;
+
+        if (!_columnMap.containsKey(existing.getName()))
+            throw new IllegalStateException("Column not found");
+        if (!updated.getFieldKey().equals(existing.getFieldKey()))
+            throw new IllegalStateException("Column must have the same name");
+
+        _columnMap.put(updated.getName(), updated);
+        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
+        _resolvedColumns.clear();
+        return updated;
+    }
+
+
+    public ColumnInfo transformColumn(MutableColumnInfo existing, @Nullable ColumnInfoTransformer t)
+    {
+        checkLocked();
+        existing.checkLocked();
+        if (null == t)
+            return existing;
+        ColumnInfo updated;
+        if (t instanceof MutableColumnInfoTransformer)
+            updated = ((MutableColumnInfoTransformer) t).applyMutable(existing);
+        else
+            updated = t.apply(existing);
+        return replaceColumn(updated, existing);
+    }
+
 
     public void addCounterDefinition(@NotNull CounterDefinition counterDef)
     {

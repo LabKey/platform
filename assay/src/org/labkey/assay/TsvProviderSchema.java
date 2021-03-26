@@ -54,9 +54,7 @@ public class TsvProviderSchema extends AssayProviderSchema
             var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Lsid")));
             column.setKeyField(true);
 
-            var containerCol = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
-            ContainerForeignKey.initColumn(containerCol, schema);
-
+            addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Type")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));

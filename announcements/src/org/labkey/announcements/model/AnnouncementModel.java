@@ -183,7 +183,6 @@ public class AnnouncementModel extends Entity implements Serializable
         return UserManager.getDisplayNameOrUserId(getAssignedTo(), currentUser);
     }
 
-    @JsonIgnore // TODO: See about making Attachment serializable
     public @NotNull Collection<Attachment> getAttachments()
     {
         return AttachmentService.get().getAttachments(getAttachmentParent());

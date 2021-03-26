@@ -877,3 +877,40 @@ UPDATE core.ReportEngines SET Type = 'External' WHERE TYPE IS NULL;
 ALTER TABLE core.ReportEngines DROP CONSTRAINT UQ_Name_Type;
 ALTER TABLE core.ReportEngines ALTER COLUMN Type NVARCHAR(64) NOT NULL;
 ALTER TABLE core.ReportEngines ADD CONSTRAINT UQ_Name_Type UNIQUE (Name, Type);
+
+/* core-18.30-19.10.sql */
+
+EXEC core.fn_dropifexists 'portalwebparts', 'core', 'CONSTRAINT', 'FK_PortalWebPartPages';
+EXEC core.fn_dropifexists 'portalpages', 'core', 'CONSTRAINT', 'PK_PortalPages';
+EXEC core.fn_dropifexists 'portalpages', 'core', 'CONSTRAINT', 'UQ_PortalPage';
+
+ALTER TABLE core.PortalPages ADD RowId INT IDENTITY(1,1) NOT NULL;
+ALTER TABLE core.PortalWebParts ADD PortalPageId INT;
+GO
+
+ALTER TABLE core.PortalPages ADD CONSTRAINT PK_PortalPages PRIMARY KEY (RowId);
+UPDATE core.portalwebparts SET PortalPageId = page.RowId
+    FROM core.PortalPages page, core.PortalWebParts web
+    WHERE web.PageId = page.PageId;
+GO
+
+ALTER TABLE core.PortalWebParts DROP COLUMN PageId;
+ALTER TABLE core.PortalWebParts ALTER COLUMN PortalPageId INT NOT NULL;
+ALTER TABLE core.PortalWebParts ADD CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (PortalPageId) REFERENCES core.PortalPages (rowId);
+GO
+
+-- Fix webparts that referenced incorrect portal pages
+UPDATE core.portalwebparts
+    SET portalPageId = (SELECT rowId AS newPortalPageId FROM core.portalpages p2
+                        WHERE p2.pageid = page.pageid AND p2.Container = parts.Container)
+FROM core.portalwebparts parts
+JOIN core.portalpages page ON page.rowid = parts.portalpageid
+WHERE page.Container <> parts.Container
+
+UPDATE core.RoleAssignments SET role = 'org.labkey.api.security.roles.SeeUserDetailsRole' WHERE role = 'org.labkey.api.security.roles.SeeEmailAddressesRole';
+
+UPDATE core.RoleAssignments SET role = 'org.labkey.api.security.roles.QCAnalystRole' WHERE role = 'org.labkey.api.security.roles.QCEditorRole';
+
+ALTER TABLE core.ReportEngineMap DROP CONSTRAINT PK_ReportEngineMap;
+ALTER TABLE core.ReportEngineMap ADD EngineContext NVARCHAR(64) NOT NULL DEFAULT 'report';
+ALTER TABLE core.ReportEngineMap ADD CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext);

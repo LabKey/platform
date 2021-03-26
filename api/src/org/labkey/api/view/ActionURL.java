@@ -71,9 +71,8 @@ public class ActionURL extends URLHelper implements Cloneable
 
     
     /**
-     * Old pageflow constructor
+     * Pageflow constructor, used for URLs targeting a module resource view or React entryPoint generated view
      */
-    @Deprecated
     public ActionURL(String controller, String actionName, Container container)
     {
         this(true);

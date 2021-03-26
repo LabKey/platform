@@ -42,6 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.util.StringExpression;
 
 /**
@@ -84,7 +85,7 @@ public class LineageTableInfo extends VirtualTable
 
         var parentContainer = new BaseColumnInfo(FieldKey.fromParts("container"), this, JdbcType.VARCHAR);
         parentContainer.setSqlTypeName("entityid");
-        ContainerForeignKey.initColumn(parentContainer, schema);
+        parentContainer.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
         addColumn(parentContainer);
 
         var parentExpType = new BaseColumnInfo(FieldKey.fromParts("exptype"), this, JdbcType.VARCHAR);
@@ -297,7 +298,7 @@ public class LineageTableInfo extends VirtualTable
 
             var containerCol = new BaseColumnInfo(FieldKey.fromParts("Container"), this, JdbcType.VARCHAR);
             containerCol.setSqlTypeName("entityid");
-            ContainerForeignKey.initColumn(containerCol, schema);
+            containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
             addColumn(containerCol);
 
             var name = new BaseColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);

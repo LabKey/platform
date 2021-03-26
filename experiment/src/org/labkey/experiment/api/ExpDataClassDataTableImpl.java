@@ -238,7 +238,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             case Folder:
             {
                 var c = wrapColumn("Container", getRealTable().getColumn("Container"));
-                ContainerForeignKey.initColumn(c, getUserSchema());
                 c.setLabel("Folder");
                 c.setShownInDetailsView(false);
                 return c;
