@@ -108,10 +108,6 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
 
         var containerCol = getMutableColumn("Container");
         containerCol.setLabel("Folder");
-        ContainerForeignKey.initColumn(containerCol, schema);
-
-        getMutableColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
-        getMutableColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema, true));
 
         var modeCol = getMutableColumn("Mode");
         modeCol.setDisplayColumnFactory(new DisplayColumnFactory()

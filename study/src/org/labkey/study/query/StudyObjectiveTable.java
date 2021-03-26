@@ -68,8 +68,7 @@ public class StudyObjectiveTable extends BaseStudyTable
         descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
 
         // setup lookups for the standard fields
-        var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
-        ContainerForeignKey.initColumn(container, schema);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
 
         var created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         created.setFormat("DateTime");
@@ -78,7 +77,6 @@ public class StudyObjectiveTable extends BaseStudyTable
         var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         createdBy.setLabel("Created By");
         createdBy.setHidden(true);
-        UserIdForeignKey.initColumn(createdBy);
 
         var modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         modified.setFormat("DateTime");
@@ -87,7 +85,6 @@ public class StudyObjectiveTable extends BaseStudyTable
         var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         modifiedBy.setLabel("Modified By");
         modifiedBy.setHidden(true);
-        UserIdForeignKey.initColumn(modifiedBy);
     }
 
 

@@ -48,6 +48,7 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
@@ -133,6 +134,8 @@ public class QueryModule extends DefaultModule
     public QueryModule()
     {
         QueryService.setInstance(new QueryServiceImpl());
+        BuiltInColumnTypes.registerStandardColumnTransformers();
+
         QueryDriver.register();
         ReportAndDatasetChangeDigestProvider.set(new ReportAndDatasetChangeDigestProviderImpl());
     }

@@ -16,6 +16,8 @@
 package org.labkey.api.compliance;
 
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.column.ColumnInfoFilter;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 
 import java.util.function.UnaryOperator;
 
