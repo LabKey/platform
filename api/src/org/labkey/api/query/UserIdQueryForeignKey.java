@@ -77,7 +77,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
         if (_includeAllUsers)
         {
             // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
-            FilteredTable table = (FilteredTable) ret;
+            FilteredTable<UserSchema> table = (FilteredTable<UserSchema>) ret;
             if (table == null)
             {
                 // Exception 23740
@@ -85,24 +85,21 @@ public class UserIdQueryForeignKey extends QueryForeignKey
             }
             table.clearConditions(FieldKey.fromParts("UserId"));
         }
-        ret.setLocked(true);
+        if (null != ret)
+            ret.setLocked(true);
         return ret;
     }
 
-    /* set foreign key and display column */
+    /**
+     * set foreign key and display column
+     * Deprecated: relying on UserIdColumnInfoTransformer is preferred()
+
+     */
+    @Deprecated
     static public ColumnInfo initColumn(QuerySchema sourceSchema, MutableColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
         column.setFk(new UserIdQueryForeignKey(sourceSchema, showAllUsers));
-        column.setDisplayColumnFactory(guestAsBlank ? _factoryBlank : _factoryGuest);
-        return column;
-    }
-
-    @Deprecated // TODO ContainerFilter
-    static public ColumnInfo initColumn(User user, Container container, MutableColumnInfo column, boolean guestAsBlank)
-    {
-        boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
-        column.setFk(new UserIdQueryForeignKey(user, container, showAllUsers));
         column.setDisplayColumnFactory(guestAsBlank ? _factoryBlank : _factoryGuest);
         return column;
     }

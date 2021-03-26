@@ -35,6 +35,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -102,8 +103,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 targetOnlyColumnNames.remove(di.getColumnInfo(i).getName());
             }
             // ... except for the Modified and ModifiedBy columns, which should still be updated.
-            targetOnlyColumnNames.removeAll(Arrays.stream(SimpleTranslator.SpecialColumn.values())
-                    .filter(val -> val.when != SimpleTranslator.When.insert)
+            targetOnlyColumnNames.removeAll(Arrays.stream(BuiltInColumnTypes.values())
+                    .filter(val -> val.when != BuiltInColumnTypes.When.insert)
                     .map(Enum::name)
                     .collect(Collectors.toSet()));
 

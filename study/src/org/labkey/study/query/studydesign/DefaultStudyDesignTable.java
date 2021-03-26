@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -99,21 +100,18 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
         // setup lookups for the standard fields
         var container = getMutableColumn("Container");
-        ContainerForeignKey.initColumn(container, schema);
 
         var created = getMutableColumn("Created");
         created.setFormat("DateTime");
 
         var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
-        UserIdForeignKey.initColumn(createdBy);
 
         var modified = getMutableColumn("Modified");
         modified.setFormat("DateTime");
 
         var modifiedBy = getMutableColumn(FieldKey.fromParts("ModifiedBy"));
         modifiedBy.setLabel("Modified By");
-        UserIdForeignKey.initColumn(modifiedBy);
 
         setPublicSchemaName("study");
 
@@ -149,9 +147,10 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
     }
 
     // Subclasses may override this to provide customizations to the column
-    protected void initColumn(BaseColumnInfo col)
+    protected void initColumn(MutableColumnInfo col)
     {
     }
+
 
     @Nullable
     @Override

@@ -42,6 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -235,8 +236,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
         }
-        containerCol = ContainerForeignKey.initColumn(containerCol, _userSchema);
-        containerCol.setHidden(true);
+        containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
         return addColumn(containerCol);
     }
 
@@ -834,7 +834,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         if (getColumn("Folder") == null)
         {
             var folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
-            ContainerForeignKey.initColumn(folder,getUserSchema());
             folder.setHidden(true);
             addColumn(folder);
         }

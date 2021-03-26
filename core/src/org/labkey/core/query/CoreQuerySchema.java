@@ -214,7 +214,6 @@ public class CoreQuerySchema extends UserSchema
         groups.addColumn(col);
 
         col = groups.wrapColumn(principalsBase.getColumn("Container"));
-        col.setReadOnly(true);
         groups.addColumn(col);
 
         List<FieldKey> defCols = new ArrayList<>();
@@ -727,10 +726,6 @@ public class CoreQuerySchema extends UserSchema
             wrapAllColumns(true);
 
             getMutableColumn(FieldKey.fromParts("RowId")).setHidden(true);
-            ContainerForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("Container")), userSchema);
-            UserIdForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("CreatedBy")));
-            UserIdForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("ModifiedBy")));
-
             var parentCol = getMutableColumn(FieldKey.fromParts("Parent"));
             parentCol.setFk(new LookupForeignKey("RowId", "Label"){
 

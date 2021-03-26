@@ -28,6 +28,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 
 /**
  * User: kevink
@@ -62,7 +63,7 @@ class FileListTableInfo extends FilteredTable<CoreQuerySchema>
             _query.appendComment("</FileListTableInfo>", getSchema().getSqlDialect());
 
             var containerCol = new BaseColumnInfo("Container", this, JdbcType.VARCHAR);
-            ContainerForeignKey.initColumn(containerCol, schema);
+            containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
             addColumn(containerCol);
 
             var createdCol = new BaseColumnInfo("Created", this, JdbcType.DATE);

@@ -63,8 +63,6 @@ public class ParticipantVisitTable extends BaseStudyTable
             {
                 // 20546: need to expose Container for use in DatasetTableImpl.ParticipantVisitForeignKey
                 var containerColumn = new AliasedColumn(this, "Container", col);
-                ContainerForeignKey.initColumn(containerColumn, _userSchema);
-                containerColumn.setHidden(true);
                 addColumn(containerColumn);
             }
             else if ("VisitRowId".equalsIgnoreCase(col.getName()))
