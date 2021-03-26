@@ -24,22 +24,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.MVDisplayColumnFactory;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.ServerPrimaryKeyLock;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.dataiterator.Pump;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -91,6 +84,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_SEQUENCE_PREFIX;
 
 public class DomainImpl implements Domain
 {
@@ -725,6 +721,14 @@ public class DomainImpl implements Domain
                     if (!propsAdded.isEmpty())
                     {
                         StorageProvisionerImpl.get().addProperties(this, propsAdded, allowAddBaseProperty);
+                        try
+                        {
+                            ensureUniqueIdValues(propsAdded);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new ChangePropertyDescriptorException(e);
+                        }
                     }
                 }
 
@@ -769,6 +773,77 @@ public class DomainImpl implements Domain
             QueryService.get().updateLastModified();
             transaction.commit();
         }
+    }
+
+    private void ensureUniqueIdValues(List<DomainProperty> propsAdded) throws SQLException, BatchValidationException
+    {
+        SchemaTableInfo table = StorageProvisioner.get().getSchemaTableInfo(this);
+        DbScope scope = table.getSchema().getScope();
+
+        List<DomainProperty> uniqueIdProps = propsAdded.stream().filter(DomainProperty::isUniqueIdField).collect(Collectors.toList());
+        if (uniqueIdProps.isEmpty())
+            return;
+
+        List<ColumnInfo> uniqueIndexCols = new ArrayList<>();
+        table.getUniqueIndices().values().forEach(idx -> {
+            uniqueIndexCols.addAll(idx.second);
+        });
+
+        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), UNIQUE_ID_SEQUENCE_PREFIX);
+
+        TableSelector selector = new TableSelector(table, uniqueIndexCols, null, null);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        try (Results results = selector.getResults())
+        {
+            results.forEach(rowKeys -> {
+                Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
+                newRow.putAll(rowKeys);
+                uniqueIdProps.forEach(prop -> newRow.put(prop.getName(), SimpleTranslator.TextIdColumn.getFormattedValue(sequence.next())));
+                rows.add(newRow);
+            });
+        }
+        DataIteratorContext ctx = new DataIteratorContext();
+        Set<String> colNames = new HashSet<>();
+        uniqueIndexCols.forEach(col -> {
+            colNames.add(col.getName());
+        });
+        uniqueIdProps.forEach(prop -> {
+            colNames.add(prop.getName());
+        });
+        ListofMapsDataIterator mapsDi = new ListofMapsDataIterator(colNames, rows);
+        mapsDi.setDebugName(table.getName() + ".ensureUniqueIds");
+        SQLFragment sql = new SQLFragment().append("UPDATE ").append(table.getSelectName()).append(" SET ");
+        String separator = "";
+        for (DomainProperty prop: uniqueIdProps)
+        {
+            sql.append(separator).append(prop.getName()).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            separator = ",";
+        }
+        sql.append(" WHERE ");
+        separator = "";
+        for (ColumnInfo col: uniqueIndexCols)
+        {
+            sql.append(separator).append(col.getName()).append(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
+            separator = " AND ";
+        }
+
+        DataIteratorBuilder it = context -> {
+            try
+            {
+                ParameterMapStatement stmt1 = new ParameterMapStatement(scope, sql, null);
+                return new StatementDataIterator(table.getSqlDialect(), mapsDi, ctx, stmt1);
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        };
+
+        Pump p = new Pump(it, ctx);
+        p.run();
+
+        if (ctx.getErrors().hasErrors())
+            throw ctx.getErrors();
     }
 
     // Return true if newSize is smaller than oldSize taking into account -1 is max size

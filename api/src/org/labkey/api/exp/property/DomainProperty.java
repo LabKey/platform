@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
@@ -136,4 +137,9 @@ public interface DomainProperty extends ImportAliasable
 
     void setDerivationDataScope(String type);
     String getDerivationDataScope();
+
+    default boolean isUniqueIdField()
+    {
+        return BaseColumnInfo.UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
+    }
 }

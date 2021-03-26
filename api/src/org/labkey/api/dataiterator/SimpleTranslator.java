@@ -1498,7 +1498,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
-    protected static class TextIdColumn extends SequenceColumn
+    public static class TextIdColumn extends SequenceColumn
     {
 
         public TextIdColumn(Container seqContainer, String seqName, @Nullable Integer seqId, @Nullable Integer batchSize)
@@ -1506,11 +1506,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             super(seqContainer, seqName, seqId, batchSize);
         }
 
+        public static Object getFormattedValue(long value)
+        {
+            return String.format("%09d", value);
+        }
+
         @Override
         public Object get()
         {
             DbSequence sequence = getSequence();
-            return String.format("%09d", sequence.next());
+            return getFormattedValue(sequence.next());
         }
     }
 
