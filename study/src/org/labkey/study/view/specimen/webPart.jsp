@@ -19,14 +19,17 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission"%>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
+<%@ page import="org.labkey.api.specimen.view.SpecimenWebPart" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowCreateSpecimenRequestAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ViewRequestsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
@@ -88,7 +91,7 @@
         {
             var html = '<i>No specimens found.</i>';
             <% if (isAdmin && !c.isDataspace()) {%>
-                var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+                var importUrl = LABKEY.ActionURL.buildURL('specimen', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
                 html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
             <% } %>
             document.getElementById(names.content).innerHTML = html;
@@ -151,11 +154,11 @@
                         <table class="labkey-nav-tree-child">
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimensAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
                                 </td>
                             </tr>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimensAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -217,7 +220,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(new ActionURL(SpecimenController.AutoReportListAction.class, c))%>">View Available Reports</a></td>
+                                    <a href="<%=h(new ActionURL(AutoReportListAction.class, c))%>">View Available Reports</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -226,7 +229,7 @@
                 </tbody>
             </table>
 <%
-    if (SpecimenManager.getInstance().isSampleRequestEnabled(c))
+    if (SettingsManager.get().isSpecimenRequestEnabled(c))
     {
 %>
             <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
@@ -245,11 +248,11 @@
                             <tbody>
                             <% if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class,c))%>">Create New Request</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(ShowCreateSpecimenRequestAction.class,c))%>">Create New Request</a></td>
                             </tr>
                             <% } %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ViewRequestsAction.class,c))%>">View Current Requests</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(ViewRequestsAction.class,c))%>">View Current Requests</a></td>
                             </tr>
                             </tbody>
                         </table>

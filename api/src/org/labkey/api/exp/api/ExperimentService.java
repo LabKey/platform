@@ -93,6 +93,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
     String SAMPLE_DERIVATION_PROTOCOL_NAME = "Sample Derivation Protocol";
 
+    String SAMPLE_ALIQUOT_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleAliquotProtocol";
+    String SAMPLE_ALIQUOT_PROTOCOL_NAME = "Sample Aliquot Protocol";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -118,6 +121,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getExpRun(String lsid);
 
+    /** @return a list of ExpRuns ordered by the RowId */
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
@@ -284,8 +288,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
      *
-     * @param container       Sample will be found within this container, project, or shared container.
-     * @param user            Sample will only be resolved within containers that the user has ReadPermission.
+     * @param c       Sample will be found within this container, project, or shared container.
+     * @param u            Sample will only be resolved within containers that the user has ReadPermission.
      * @param rowId           The sample rowId.
      * @param sampleType      Optional sample type that the sample must live in.
      */
@@ -386,6 +390,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
+
+    /**
+     * Find the ExpData objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start);
+
+    /**
+     * Find the ExpMaterial objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start);
 
     /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
@@ -729,6 +745,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
+
+    // creates a non-assay backed sample aliquot protocol
+    ExpProtocol ensureSampleAliquotProtocol(User user) throws ExperimentException;
 
     // creates a non-assay backed sample derivation protocol
     ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException;

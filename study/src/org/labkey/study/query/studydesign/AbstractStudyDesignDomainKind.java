@@ -81,10 +81,10 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
         _standardFields.addAll(standardFields);
     }
 
-    public Domain ensureDomain(Container container, User user, String tableName)
+    public Domain getDomain(Container container, String tableName)
     {
         String domainURI = generateDomainURI(StudyQuerySchema.SCHEMA_NAME, tableName, container, null);
-        return PropertyService.get().ensureDomain(container, user, domainURI, tableName);
+        return PropertyService.get().getDomain(container, domainURI);
     }
 
     protected abstract String getNamespacePrefix();

@@ -26,16 +26,23 @@
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.ApplyDatasetPermissionsAction" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="javax.annotation.Nullable" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -50,6 +57,22 @@
     String getTooltip(Dataset ds, Group group)
     {
         return "Dataset: " + ds.getLabel() + ", " + "Group: " + groupName(group);
+    }
+
+    // Used to highlight special datasets in per-dataset permissions
+    @Nullable String getTooltip(StudyImpl study, Integer datasetId)
+    {
+        String participant = study.getSubjectNounSingular().toLowerCase();
+        List<String> messages = new LinkedList<>();
+        if (datasetId.equals(study.getParticipantCohortDatasetId()))
+            messages.add("This is the " + participant + "/cohort dataset");
+        if (datasetId.equals(study.getParticipantAliasDatasetId()))
+            messages.add("This is the " + participant + " alias dataset");
+        if (datasetId.equals(study.getParticipantCommentDatasetId()))
+            messages.add("This is the " + participant + " comment dataset");
+        if (datasetId.equals(study.getParticipantVisitCommentDatasetId()))
+            messages.add("This is the " + participant + "/visit comment dataset");
+        return messages.isEmpty() ? null : String.join("&#013;", messages);
     }
 %>
 <%
@@ -145,6 +168,18 @@ else
     <%
             }
 %>group's access to each dataset is controlled by the drop-down list in each cell.
+<%
+    // Count the number of "special" datasets (participant/cohort, altId, comment, etc.)
+    long specialDatasetCount = study.getDatasets().stream().map(dd->getTooltip(study, dd.getDatasetId())).filter(Objects::nonNull).count();
+    if (specialDatasetCount > 0)
+    {
+%>
+<br><br>The dataset<%=h(specialDatasetCount > 1 ? "s" : "")%> highlighted in <b>bold</b> below may warrant special attention.
+For example, permissions set on the <%=h(study.getSubjectNounSingular().toLowerCase())%>/cohort dataset dictate who can view and<br>filter on cohorts. Read permissions
+set on the alternate ID dataset will affect who can edit other datasets. Hover over the highlighted dataset labels for details.
+<%
+    }
+%>
 <style type="text/css">
     table.table {
         width: auto !important;
@@ -154,7 +189,7 @@ else
         padding: 5px 5px 0 5px !important;
     }
 </style>
-<labkey:form id="datasetSecurityForm" action="<%=urlFor(ApplyDatasetPermissionsAction.class)%>" method="POST">
+<labkey:form id="datasetSecurityForm" action="<%=urlFor(ApplyDatasetPermissionsAction.class)%>" onsubmit="LABKEY.setSubmit(true);" method="POST">
 <%
     if (returnUrl != null)
         out.print(generateReturnUrlFormField(returnUrl));
@@ -173,20 +208,28 @@ else
         %><th style="padding: 0 5px 0 5px;"><%=h(groupName(g))%></th><%
     }
 
-    java.util.List<Role> possibleRoles = new ArrayList<>();
+    List<Role> possibleRoles = new ArrayList<>();
     List<DatasetDefinition> datasets = new ArrayList<>(study.getDatasets());
     datasets.sort(Comparator.comparing(DatasetDefinition::getLabel, String.CASE_INSENSITIVE_ORDER));
 
     if (!datasets.isEmpty())
     {
-        DatasetDefinition ds = datasets.get(0);
-        SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
-        for (Role role : RoleManager.getAllRoles())
+        if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
         {
-            if (role.isApplicable(dsPolicy, ds) && role.getClass() != ReaderRole.class && role.getClass() != EditorRole.class)
+            DatasetDefinition ds = datasets.get(0);
+            SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
+            for (Role role : RoleManager.getAllRoles())
             {
-                possibleRoles.add(role);
+                if (role.isApplicable(dsPolicy, ds))
+                {
+                    possibleRoles.add(role);
+                }
             }
+            possibleRoles.sort(RoleManager.ROLE_COMPARATOR);
+        }
+        else
+        {
+            possibleRoles.add(RoleManager.getRole(ReaderRole.class));
         }
     }
 
@@ -194,37 +237,38 @@ else
     <tr class="<%=getShadeRowClass(row++)%>"><th>&nbsp;</th><%
     for (Group g : restrictedGroups)
     {
-        %><td class="dataset-permission" data-toggle="tooltip" title='Set all values in column'><select name="<%= h(g.getName()) %>" onchange="setColumnSelections(this)">
-            <option value="" selected>&lt;set all to...&gt;</option>
-            <option value="None">None</option>
-            <option value="Read">Read</option><%
-            if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
-            {
-            %>
-                <option value="Edit">Edit</option>
-            <%
-            }
-            for (Role role : possibleRoles)
-            {
-                // Filter out roles that can't be assigned to this user/group
-                if (!role.getExcludedPrincipals().contains(g))
-                {%>
-                    <option value="<%= h(role.getName()) %>"><%= h(role.getName()) %></option>
-                <% }
-            }%>
-        </select></td><%
+        %><td class="dataset-permission" data-toggle="tooltip" title='Set all values in column'>
+        <%=select()
+            .name(g.getName())
+            .addOption(new OptionBuilder("<set all to...>", "").selected(true))
+            .addOption("None")
+            .addOptions(
+                possibleRoles.stream()
+                    .filter(pr->!pr.getExcludedPrincipals().contains(g)) // Filter out roles that can't be assigned to this group
+                    .map(Role::getName)
+            )
+            .onChange("setColumnSelections(this); LABKEY.setDirty(true);")
+            .className(null)
+        %>
+    </td><%
     }
     %></tr><%
+
     for (Dataset ds : datasets)
     {
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
         String inputName = "dataset." + ds.getDatasetId();
-        %><tr class="<%=getShadeRowClass(row++)%>"><td><%=h(ds.getLabel())%></td><%
+        %><tr class="<%=getShadeRowClass(row++)%>"><%
+        // Highlight "special" datasets (cohort, altid, comments, etc.) in the grid
+        String toolTip = getTooltip(study, ds.getDatasetId());
+        HtmlString toolTipHtml = null == toolTip ? HtmlString.EMPTY_STRING : unsafe(" data-toggle=\"tooltip\" title=\"" + toolTip + "\"");
+        HtmlString label = null == toolTip ? h(ds.getLabel()) : HtmlStringBuilder.of().append(unsafe("<b>")).append(ds.getLabel()).append(unsafe("</b>")).getHtmlString();
+        %><td<%=toolTipHtml%>><%=label%></td><%
 
         for (Group g : restrictedGroups)
         {
-            java.util.List<Role> roles = dsPolicy.getAssignedRoles(g);
+            List<Role> roles = dsPolicy.getAssignedRoles(g);
             Role assignedRole = roles.isEmpty() ? null : roles.get(0);
 
             boolean writePerm = assignedRole != null && assignedRole.getClass() == EditorRole.class;
@@ -236,42 +280,34 @@ else
             boolean noPerm = !writePerm && !readPerm && assignedRole == null;
             int id = g.getUserId();
             %><td style="text-align: left;" data-toggle="tooltip" title='<%=h(getTooltip(ds, g))%>'>
-                <select name="<%=h(inputName)%>">
-                    <option value="<%=id%>_NONE"<%=selected(noPerm)%>>None</option>
-                    <option value="<%=id%>_<%= h(ReaderRole.class.getName()) %>"<%=selected(readPerm)%>>Read</option><%
-                    if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
-                    {
-                        %>
-                        <option value="<%=id%>_<%= h(EditorRole.class.getName()) %>"<%=selected(writePerm)%>>Edit</option>
-                        <% for (Role possibleRole : possibleRoles)
-                        {
-                            // Filter out roles that can't be assigned to this user/group
-                            if (!possibleRole.getExcludedPrincipals().contains(g))
-                            { %>
-                                <option value="<%=id%>_<%= h(possibleRole.getClass().getName()) %>"<%=selected(possibleRole == assignedRole)%>><%=h(possibleRole.getName()) %></option><%
-                            }
-                        }
-                    }
-                    %>
-                </select>
+                <%=select()
+                    .name(inputName)
+                    .addOption(new OptionBuilder("None", id + "_NONE").selected(noPerm))
+                    .addOptions(
+                        possibleRoles.stream()
+                            .filter(pr->!pr.getExcludedPrincipals().contains(g)) // Filter out roles that can't be assigned to this group
+                            .map(r->new OptionBuilder(r.getName(), id + "_" + r.getClass().getName()).selected(r == assignedRole))
+                    )
+                    .onChange("LABKEY.setDirty(true);")
+                    .className(null)
+                %>
               </td><%
         }
         %></tr><%
     }
     %>
     </table>
-    <table>
-        <tr>
-            <td><%= button("Save").submit(true) %></td>
-            <td><%= button("Set all to Read").href("#").onClick("return setAllSelections('Read');") %></td><%
-            if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
-            {
-            %>
-                <td><%= button("Set all to Edit").href("#").onClick("return setAllSelections('Edit');") %></td><%
-            }
-            %>
-            <td><%= button("Clear All").href("#").onClick("return setAllSelections('None');") %></td>
-        </tr></table>
+    <%=button("Save").submit(true)%>
+    <%=button("Set all to Reader").href("#").onClick("return setAllSelections('Reader');")%>
+    <%
+    if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
+    {
+    %>
+        <%=button("Set all to Editor").href("#").onClick("return setAllSelections('Editor');")%><%
+    }
+    %>
+    <%=button("Clear All").href("#").onClick("return setAllSelections('None');")%>
+    <%=button("Cancel").href(urlFor(ManageStudyAction.class)).onClick("LABKEY.setSubmit(true);")%>
 </labkey:form>
 
     <%
@@ -300,6 +336,7 @@ function setAllSelections(value)
             }
         }
     }
+    LABKEY.setDirty(true);
     return false;
 }
 
@@ -332,6 +369,7 @@ function setColumnSelections(select)
             }
         }
     }
+    LABKEY.setDirty(true);
     return false;
 }
 </script>

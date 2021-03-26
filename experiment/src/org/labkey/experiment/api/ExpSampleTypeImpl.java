@@ -278,7 +278,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     // NOTE: intentionally not public in ExpSampleType interface
     public void setNameExpression(String expression)
     {
-        if (hasIdColumns() && !hasNameAsIdCol())
+        if (expression != null && hasIdColumns() && !hasNameAsIdCol())
             throw new IllegalArgumentException("Can't set both a name expression and idCols");
 
         _object.setNameExpression(expression);
@@ -318,6 +318,17 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public @Nullable String getMetricUnit()
     {
         return _object.getMetricUnit();
+    }
+
+    public void setAutoLinkTargetContainer(Container autoLinkTargetContainerId)
+    {
+        _object.setAutoLinkTargetContainer(autoLinkTargetContainerId);
+    }
+
+    @Override
+    public @Nullable Container getAutoLinkTargetContainer()
+    {
+        return _object.getAutoLinkTargetContainer();
     }
 
     @Nullable

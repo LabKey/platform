@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -88,8 +89,9 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         )));
 
 
-        RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+        RESERVED_NAMES = new CaseInsensitiveHashSet(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
         RESERVED_NAMES.addAll(Arrays.asList(ExpDataClassDataTable.Column.values()).stream().map(ExpDataClassDataTable.Column::name).collect(Collectors.toList()));
+        RESERVED_NAMES.add("Container");
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.data using LSID instead of rowid for insert performance -- we will generate

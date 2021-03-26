@@ -40,7 +40,7 @@ public class Constants
      */
     public static double getEarliestUpgradeVersion()
     {
-        return 18.3;
+        return 19.1;
     }
 
     /**
@@ -49,7 +49,7 @@ public class Constants
      */
     public static String getDocumentationVersion()
     {
-        return "20.11";
+        return "21.3";
     }
 
     /**

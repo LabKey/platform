@@ -15,6 +15,9 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
+
 /**
  * User: jgarms
  * Date: Jul 10, 2008
@@ -23,32 +26,32 @@ package org.labkey.study.model;
 public enum SecurityType
 {
     /**
-     * Basic security: only admins can add dataset data.
+     * Basic security: only admins can add, edit, and delete dataset data
      */
     BASIC_READ("Basic security with read-only datasets",
             "Uses the security settings of the containing folder for dataset security. " +
-            "Only administrators can import or delete dataset data.", false),
+            "Only administrators can import, edit, and delete dataset data.", false),
 
     /**
-     * Anyone with update permissions can add and update dataset data
+     * Anyone with update permissions can add, edit, and delete dataset data
      */
     BASIC_WRITE("Basic security with editable datasets",
-            "Identical to Basic Read-Only Security, except that individuals with UPDATE permission " +
-            "can edit, update, and delete data from datasets.", false),
+            "Uses the security settings of the containing folder for dataset security, allowing " +
+            "non-administrators to import, edit, and delete dataset data based on their folder-assigned roles.", false),
 
     /**
      * Per-dataset security, read-only
      */
     ADVANCED_READ("Custom security with read-only datasets",
             "Allows the configuration of security on individual datasets. " +
-            "Only administrators can import or delete dataset data.  Not supported in shared studies.", true),
+            "Only administrators can import, edit, and delete dataset data. Not supported in shared studies.", true),
 
     /**
      * Per-dataset security, read and write
      */
     ADVANCED_WRITE("Custom security with editable datasets",
-            "Identical to Advanced Read-Only Security, except that datasets can be individually " +
-            "set to allow updates as well.  Not supported in shared studies.", true);
+            "Allows the configuration of security on individual datasets, including the ability for " +
+            "non-administrators to import, edit, and delete dataset data. Not supported in shared studies.", true);
 
     private final String label;
 
@@ -78,20 +81,19 @@ public enum SecurityType
         return supportsPerDatasetPermissions;
     }
 
-    public static String getHTMLDescription()
+    public static HtmlString getHTMLDescription()
     {
         StringBuilder sb = new StringBuilder("<table class=\"labkey-pad-cells\">");
         for (SecurityType securityType : values())
         {
             sb.append("<tr><td valign=\"top\"><b>");
-            sb.append(securityType.getLabel());
+            sb.append(PageFlowUtil.filter(securityType.getLabel()));
             sb.append("</b></td><td>");
-            sb.append(securityType.getDescription());
+            sb.append(PageFlowUtil.filter(securityType.getDescription()));
             sb.append("</td></tr>");
         }
         sb.append("</table>");
 
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
     }
-
 }

@@ -79,6 +79,12 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     }
 
     @Override
+    public String getPublicName()
+    {
+        return AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME;
+    }
+
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return hasPermission(user, perm, getContainer());

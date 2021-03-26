@@ -673,4 +673,11 @@ public class ExpSchema extends AbstractExpSchema
 
         return queryView;
     }
+
+    public enum DerivationDataScopeType
+    {
+        ChildOnly,
+        ParentOnly,
+        All
+    }
 }

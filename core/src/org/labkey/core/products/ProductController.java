@@ -125,4 +125,14 @@ public class ProductController extends SpringActionController
             _userMenuProductId = userMenuProductId;
         }
     }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetRegisteredProductsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors) throws Exception
+        {
+            return ProductRegistry.get().getRegisteredProducts();
+        }
+    }
 }

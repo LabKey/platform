@@ -96,7 +96,6 @@ public class DomainImpl implements Domain
 {
     boolean _new;
     boolean _enforceStorageProperties = true;
-    DomainDescriptor _ddOld;
     DomainDescriptor _dd;
     List<DomainPropertyImpl> _properties;
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
@@ -339,6 +338,7 @@ public class DomainImpl implements Domain
             OntologyManager.deleteDomain(getTypeURI(), getContainer());
             StorageProvisioner.get().drop(this);
             addAuditEvent(user, String.format("The domain %s was deleted", _dd.getName()));
+            DomainPropertyManager.clearCaches();
             transaction.commit();
         }
     }
@@ -1178,9 +1178,6 @@ public class DomainImpl implements Domain
     public boolean equals(Object obj)
     {
         if (!(obj instanceof DomainImpl))
-            return false;
-        // once a domain has been edited, it no longer equals any other domain:
-        if (_ddOld != null || ((DomainImpl) obj)._ddOld != null)
             return false;
         return (_dd.equals(((DomainImpl) obj)._dd));
     }

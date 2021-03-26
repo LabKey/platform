@@ -108,10 +108,16 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         return null;
     }
 
+    @Override
+    public String getPublicName()
+    {
+        return IssuesQuerySchema.TableType.IssueListDef.name();
+    }
+
     private void addAllColumns()
     {
         setDescription("Contains one row for each issue list");
-        setName("Issue List Definitions");
+        setTitle("Issue List Definitions");
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
 
@@ -127,8 +133,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 Collections.singletonMap("issueDefName", "name"));
         labelCol.setURL(url);
 
-        var containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
-        ContainerForeignKey.initColumn(containerCol, getUserSchema());
+        addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
 
         List<Pair<String, String>> inputValues = new ArrayList<>();
         for (IssuesListDefProvider provider : IssuesListDefService.get().getEnabledIssuesListDefProviders(getContainer()))
@@ -211,9 +216,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         addColumn(domainContainer);
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Created")));
-        UserIdQueryForeignKey.initColumn(getUserSchema(), addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))), true);
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Modified")));
-        UserIdQueryForeignKey.initColumn(getUserSchema(), addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("ModifiedBy"))), true);
     }
 
     @Nullable

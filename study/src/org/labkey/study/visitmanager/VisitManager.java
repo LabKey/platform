@@ -37,18 +37,17 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DatasetDefinition;
@@ -106,14 +105,17 @@ public abstract class VisitManager
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
+
     public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, logger);
     }
-    public void updateParticipantVisitsFromSpecimenImport(User user, @Nullable Logger logger)
+
+    public void updateParticipantVisitsWithCohortUpdate(User user, @Nullable Logger logger)
     {
         updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
     }
+
     public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
                                         @Nullable Logger logger)
@@ -133,16 +135,16 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
- * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+     * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
-* study. If null, all participants will be checked to see if they are still in the study.
+     * study. If null, all participants will be checked to see if they are still in the study.
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
-     * @param isSpecimenImport true if called from specimen import, which forces updateParticipantCohorts()
+     * @param forceUpdateCohorts If true, forces updateParticipantCohorts() (specimen import case)
      * @param logger Log4j logger to use for detailed performance information
      */
     public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
-                                        boolean isSpecimenImport, @Nullable Logger logger)
+                                        boolean forceUpdateCohorts, @Nullable Logger logger)
     {
         info(logger, "Updating participants");
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
@@ -173,7 +175,7 @@ public abstract class VisitManager
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&
                 cohortDatasetId != null &&
-                    (isSpecimenImport ||
+                    (forceUpdateCohorts ||
                     changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId))))
         {
             CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
@@ -187,17 +189,6 @@ public abstract class VisitManager
     public String getLabel()
     {
         return "Visit";
-    }
-
-
-    public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
-    {
-        SqlDialect dialect = schema.getSqlDialect();
-        String strType = dialect.getSqlTypeName(JdbcType.VARCHAR);
-
-        //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
-
-        return "(" + dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")") + ")";
     }
 
 
@@ -290,7 +281,7 @@ public abstract class VisitManager
     {
         synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
         {
-            POTENTIALLY_DELETED_PARTICIPANTS.remove(c);
+            POTENTIALLY_DELETED_PARTICIPANTS.remove(c.getId());
         }
     }
 
@@ -572,10 +563,10 @@ public abstract class VisitManager
                 // that are queued
                 mergedPTIDs = null;
             }
-            else if (POTENTIALLY_DELETED_PARTICIPANTS.containsKey(container))
+            else if (POTENTIALLY_DELETED_PARTICIPANTS.containsKey(container.getId()))
             {
                 // We already have a set of participants queued to be potentially purged
-                Set<String> existingPTIDs = POTENTIALLY_DELETED_PARTICIPANTS.get(container);
+                Set<String> existingPTIDs = POTENTIALLY_DELETED_PARTICIPANTS.get(container.getId());
                 if (existingPTIDs == null)
                 {
                     // The existing request is for all participants, so respect that
@@ -593,13 +584,13 @@ public abstract class VisitManager
                 // This is the only request for this study in the queue, so copy the set of participants
                 mergedPTIDs = new HashSet<>(potentiallyDeletedParticipants);
             }
-            POTENTIALLY_DELETED_PARTICIPANTS.put(container, mergedPTIDs);
+            POTENTIALLY_DELETED_PARTICIPANTS.put(container.getId(), mergedPTIDs);
 
             if (TIMER == null)
             {
                 // This is the first request, so start the timer
                 TIMER = new Timer("Participant purge", true);
-                TimerTask task = new PurgeParticipantsTask(POTENTIALLY_DELETED_PARTICIPANTS);
+                TimerTask task = new PurgeParticipantsTask();
                 TIMER.scheduleAtFixedRate(task, PURGE_PARTICIPANT_INTERVAL, PURGE_PARTICIPANT_INTERVAL);
                 ShutdownListener listener = new ParticipantPurgeContextListener();
                 // Add a shutdown listener to stop the worker thread if the webapp is shut down
@@ -609,7 +600,7 @@ public abstract class VisitManager
     }
 
     /** Study container -> set of participants that may no longer be referenced. Set is null if we don't know specific PTIDs. */
-    private static final Map<Container, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
+    static final Map<String, Set<String>> POTENTIALLY_DELETED_PARTICIPANTS = new HashMap<>();
     private static Timer TIMER;
     /** Number of milliseconds to wait between batches of participant purges */
     private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;

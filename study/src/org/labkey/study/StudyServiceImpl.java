@@ -24,7 +24,6 @@ import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -40,11 +39,10 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.dataiterator.DataIteratorBuilder;
-import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
@@ -67,9 +65,10 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.SpecimenDomainKind;
+import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.Study;
@@ -78,12 +77,13 @@ import org.labkey.api.study.StudyReloadSource;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
+import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
@@ -92,12 +92,10 @@ import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
-import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
-import org.labkey.api.specimen.model.VialDomainKind;
-import org.labkey.study.pipeline.SampleMindedTransformTask;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyReloadSourceJob;
 import org.labkey.study.query.AdditiveTypeTable;
 import org.labkey.study.query.BaseStudyTable;
@@ -112,8 +110,6 @@ import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
 import org.labkey.study.query.VisitTable;
-import org.labkey.api.specimen.security.roles.SpecimenCoordinatorRole;
-import org.labkey.api.specimen.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -130,6 +126,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: jgarms
@@ -185,9 +182,11 @@ public class StudyServiceImpl implements StudyService
         if (study == null)
             throw new IllegalStateException("Study required");
 
-        return AssayPublishManager.getInstance().createDataset(user, study, name, datasetId, isDemographic);
+        return StudyPublishManager.getInstance().createDataset(user, new DatasetDefinition.Builder(name)
+                .setStudy(study)
+                .setDatasetId(datasetId)
+                .setDemographicData(isDemographic));
     }
-
 
     @Override
     public DatasetDefinition getDataset(Container c, int datasetId)
@@ -282,7 +281,7 @@ public class StudyServiceImpl implements StudyService
     public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
     {
         String assayName = def.getLabel();
-        ExpProtocol protocol = def.getAssayProtocol();
+        ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
         if (protocol != null)
             assayName = protocol.getName();
 
@@ -296,6 +295,7 @@ public class StudyServiceImpl implements StudyService
         AuditLogService.get().addEvent(user, event);
     }
 
+
     @Override
     public void addStudyAuditEvent(Container container, User user, String comment)
     {
@@ -303,64 +303,6 @@ public class StudyServiceImpl implements StudyService
         AuditLogService.get().addEvent(user, event);
     }
 
-    /**
-     * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
-     * if both are set, it's an edit
-     */
-    public static void addDatasetAuditEvent(User u, Dataset def, @Nullable Map<String, Object> oldRecord, @Nullable Map<String, Object> newRecord)
-    {
-        String comment;
-        if (oldRecord == null)
-            comment = "A new dataset record was inserted";
-        else if (newRecord == null)
-            comment = "A dataset record was deleted";
-        else
-            comment = "A dataset record was modified";
-        addDatasetAuditEvent(u, def, oldRecord, newRecord, comment);
-    }
-
-    /**
-     * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
-     * if both are set, it's an edit
-     */
-    public static void addDatasetAuditEvent(User u, Dataset def, Map<String, Object> oldRecord, Map<String, Object> newRecord, String auditComment)
-    {
-        Container c = def.getContainer();
-        DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
-
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
-        event.setDatasetId(def.getDatasetId());
-        event.setHasDetails(true);
-
-        String oldRecordString = null;
-        String newRecordString = null;
-        Object lsid;
-        if (oldRecord == null)
-        {
-            newRecordString = DatasetAuditProvider.encodeForDataMap(c, newRecord);
-            lsid = newRecord.get("lsid");
-        }
-        else if (newRecord == null)
-        {
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, oldRecord);
-            lsid = oldRecord.get("lsid");
-        }
-        else
-        {
-            Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(oldRecord, newRecord, Collections.emptySet());
-
-            oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
-            newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
-            lsid = newRecord.get("lsid");
-        }
-        event.setLsid(lsid == null ? null : lsid.toString());
-
-        if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
-        if (newRecordString != null) event.setNewRecordMap(newRecordString);
-
-        AuditLogService.get().addEvent(u, event);
-    }
 
     public static void addDatasetAuditEvent(User u, Container c, Dataset def, String comment, UploadLog ul /*optional*/)
     {
@@ -375,6 +317,7 @@ public class StudyServiceImpl implements StudyService
         }
         AuditLogService.get().addEvent(u,event);
     }
+
 
     @Override
     public void applyDefaultQCStateFilter(DataView view)
@@ -459,10 +402,12 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public Set<DatasetDefinition> getDatasetsForAssayProtocol(ExpProtocol protocol)
+    public Set<DatasetDefinition> getDatasetsForPublishSource(Integer publishSourceId, Dataset.PublishSource publishSource)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolid"), protocol.getRowId());
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("publishSourceId"), publishSourceId);
+        filter.addCondition(FieldKey.fromParts("publishSourceType"), publishSource.name());
+
         Set<DatasetDefinition> result = new HashSet<>();
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
         for (Map<String, Object> row : rows)
@@ -472,16 +417,6 @@ public class StudyServiceImpl implements StudyService
             Container container = ContainerManager.getForId(containerId);
             result.add(getDataset(container, datasetId));
         }
-        return result;
-    }
-
-    @Override
-    public Map<DatasetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
-    {
-        Set<DatasetDefinition> datasets = getDatasetsForAssayProtocol(protocol);
-        Map<DatasetDefinition, String> result = new HashMap<>();
-        for (DatasetDefinition dataset : datasets)
-            result.put(dataset, dataset.getStorageTableInfo().getSelectName());
         return result;
     }
 
@@ -500,7 +435,7 @@ public class StudyServiceImpl implements StudyService
             Set<DatasetDefinition> datasets = protocolDatasets.get(protocol);
             if (datasets == null)
             {
-                datasets = getDatasetsForAssayProtocol(protocol);
+                datasets = getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay);
                 protocolDatasets.put(protocol, datasets);
             }
             List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
@@ -553,6 +488,12 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
+    public UserSchema getStudyQuerySchema(Study study, User user)
+    {
+        return StudyQuerySchema.createSchema((StudyImpl)study, user, true);
+    }
+
+    @Override
     public void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category)
     {
         DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(dataset.getStudy(), dataset.getEntityId());
@@ -573,12 +514,6 @@ public class StudyServiceImpl implements StudyService
             return Collections.emptyList();
         else
             return Collections.singletonList(study);
-    }
-
-    @Override
-    public Set<Role> getStudyRoles()
-    {
-        return RoleManager.roleSet(SpecimenCoordinatorRole.class, SpecimenRequesterRole.class);
     }
 
     @Override
@@ -711,7 +646,7 @@ public class StudyServiceImpl implements StudyService
     public Map<String, String> getAlternateIdMap(Container container)
     {
         Map<String, String> alternateIdMap = new HashMap<>();
-        Map<String, StudyManager.ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
+        Map<String, ParticipantInfo> pairMap = StudyManager.getInstance().getParticipantInfos(StudyManager.getInstance().getStudy(container), null, false, true);
 
         for(String ptid : pairMap.keySet())
             alternateIdMap.put(ptid, pairMap.get(ptid).getAlternateId());
@@ -745,13 +680,6 @@ public class StudyServiceImpl implements StudyService
         }
     }
 
-
-    @Override
-    public DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
-    {
-        return SampleMindedTransformTask.wrapSampleMindedTransform(user, in,context,study,target);
-    }
-
     @Override
     public ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c)
     {
@@ -776,7 +704,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public TableInfo getSpecimenTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
-        return getSpecimenTableUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), false, true);
+        return getSpecimenTableUnion(qsDefault, containers, new HashMap<>(), false, true);
     }
 
     @Override
@@ -790,7 +718,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public TableInfo getVialTableUnion(QuerySchema qsDefault, Set<Container> containers)
     {
-        return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<Container, SQLFragment>(), new VialDomainKind(),
+        return getOneOfSpecimenTablesUnion(qsDefault, containers, new HashMap<>(), new VialDomainKind(),
                 VialTable.class, false, true);
     }
 
@@ -1233,5 +1161,108 @@ public class StudyServiceImpl implements StudyService
     {
         return LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
             LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
+    }
+
+    @Override
+    public void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists)
+    {
+        sql
+            .append(exists)
+            .append(StudySchema.getInstance().getTableInfoParticipant(), "p")
+            .append(" WHERE (")
+            .append(locationTableAlias)
+            .append(".RowId = p.EnrollmentSiteId OR ")
+            .append(locationTableAlias)
+            .append(".RowId = p.CurrentSiteId) AND ")
+            .append(locationTableAlias)
+            .append(".Container = p.Container) OR\n")
+            .append(exists)
+            .append(StudySchema.getInstance().getTableInfoAssaySpecimen(), "a")
+            .append(" WHERE ")
+            .append(locationTableAlias)
+            .append(".RowId = a.LocationId AND ")
+            .append(locationTableAlias)
+            .append(".Container = a.Container)");
+    }
+
+    private static final List<StudyTabProvider> TAB_PROVIDERS = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void registerStudyTabProvider(StudyTabProvider provider)
+    {
+        TAB_PROVIDERS.add(provider);
+    }
+
+    public static List<StudyTabProvider> getStudyTabProviders()
+    {
+        return TAB_PROVIDERS;
+    }
+
+    @Override
+    public Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer)
+    {
+        return StudyManager.getInstance().getAncillaryStudies(sourceStudyContainer);
+    }
+
+    @Override
+    public Study getStudyForVisits(@NotNull Study study)
+    {
+        return StudyManager.getInstance().getStudyForVisits(study);
+    }
+
+    @Override
+    public boolean showCohorts(Container container, @Nullable User user)
+    {
+        return StudyManager.getInstance().showCohorts(container, user);
+    }
+
+    @Override
+    public Date getLastSpecimenLoad(@NotNull Study study)
+    {
+        return ((StudyImpl)study).getLastSpecimenLoad();
+    }
+
+    @Override
+    public void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad)
+    {
+        StudyImpl studyImpl = ((StudyImpl)study).createMutable();
+        studyImpl.setLastSpecimenLoad(new Date());
+        StudyManager.getInstance().updateStudy(user, studyImpl);
+    }
+
+    @Override
+    public List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort)
+    {
+        SimpleFilter queryFilter = SimpleFilter.createContainerFilter(study.getContainer());
+        queryFilter.addAllClauses(filter);
+        return new TableSelector(SpecimenSchema.get().getTableInfoVisit(), filter, new Sort("DisplayOrder,SequenceNumMin")).getArrayList(VisitImpl.class);
+    }
+
+    @Override
+    public void saveLocationSettings(Study study, User user, @Nullable Boolean allowReqLocRepository, @Nullable Boolean allowReqLocClinic, @Nullable Boolean allowReqLocSal, @Nullable Boolean allowReqLocEndpoint)
+    {
+        StudyImpl studyImpl = (StudyImpl)study;
+        StudyImpl mutable = studyImpl.createMutable();
+        if (null != allowReqLocRepository)
+            mutable.setAllowReqLocRepository(allowReqLocRepository);
+        if (null != allowReqLocClinic)
+            mutable.setAllowReqLocClinic(allowReqLocClinic);
+        if (null != allowReqLocSal)
+            mutable.setAllowReqLocSal(allowReqLocSal);
+        if (null != allowReqLocEndpoint)
+            mutable.setAllowReqLocEndpoint(allowReqLocEndpoint);
+        StudyManager.getInstance().updateStudy(user, mutable);
+    }
+
+    @Override
+    public Collection<String> getParticipantIds(Study study, User user)
+    {
+        return StudyManager.getInstance().getParticipantIds(study, user);
+    }
+
+    @Override
+    public boolean participantExists(Study study, String participantId)
+    {
+        return null != StudyManager.getInstance().getParticipant(study, participantId);
     }
 }

@@ -28,7 +28,9 @@ import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -77,6 +79,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
+
+    private HtmlString _adminWarning = null;
 
     protected InClauseGenerator _inClauseGenerator = null;
 
@@ -1866,5 +1870,23 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public boolean supportsBatchGeneratedKeys()
     {
         return true;
+    }
+
+    @Override
+    public boolean allowAsynchronousExecute()
+    {
+        return true;
+    }
+
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
+    @Override
+    public void addAdminWarningMessages(Warnings warnings)
+    {
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
     }
 }

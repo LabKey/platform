@@ -24,10 +24,11 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Config;
+import org.labkey.api.study.Params;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
 /**
@@ -57,11 +58,11 @@ public class SingleCohortFilter extends BaseCohortFilter
         _label = null;
     }
 
-    protected SingleCohortFilter(CohortFilterFactory.Config config)
+    protected SingleCohortFilter(Config config)
     {
-        super(config.type);
-        _cohortId = null == config.cohortId ? -1 : config.cohortId;
-        _label = config.label;
+        super(config.getType());
+        _cohortId = null == config.getCohortId() ? -1 : config.getCohortId();
+        _label = config.getLabel();
     }
 
     @Override
@@ -99,7 +100,7 @@ public class SingleCohortFilter extends BaseCohortFilter
     }
 
     @Override
-    public CohortImpl getCohort(Container container, User user)
+    public Cohort getCohort(Container container, User user)
     {
         if (!StudyManager.getInstance().showCohorts(container, user))
             return null;
@@ -112,7 +113,7 @@ public class SingleCohortFilter extends BaseCohortFilter
     @Override
     public String getDescription(Container container, User user)
     {
-        CohortImpl cohort = getCohort(container, user);
+        Cohort cohort = getCohort(container, user);
         if (cohort == null)
             return null;
         return getType().getTitle() + " is " + cohort.getLabel();
@@ -171,8 +172,8 @@ public class SingleCohortFilter extends BaseCohortFilter
         }
         else
         {
-            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortFilterType, getType().name());
-            url.replaceParameter(dataregion + "." + CohortFilterFactory.Params.cohortId, getCohortId());
+            url.replaceParameter(dataregion + "." + Params.cohortFilterType, getType().name());
+            url.replaceParameter(dataregion + "." + Params.cohortId, getCohortId());
         }
         return url;
     }
@@ -204,7 +205,7 @@ public class SingleCohortFilter extends BaseCohortFilter
         }
 
         @Override
-        public CohortImpl getCohort(Container container, User user)
+        public Cohort getCohort(Container container, User user)
         {
             return null;
         }

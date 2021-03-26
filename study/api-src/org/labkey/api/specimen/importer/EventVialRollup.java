@@ -26,7 +26,7 @@ public enum EventVialRollup implements Rollup
             // Input is SpecimenEvent list
             if (null == events || events.isEmpty())
                 return null;
-            return SpecimenEventManager.getLastEvent(events).get(eventColName);
+            return SpecimenEventManager.get().getLastEvent(events).get(eventColName);
         }
 
         @Override
@@ -49,7 +49,7 @@ public enum EventVialRollup implements Rollup
             // Input is SpecimenEvent list
             if (null == events || events.isEmpty())
                 return null;
-            return SpecimenEventManager.getFirstEvent(events).get(eventColName);
+            return SpecimenEventManager.get().getFirstEvent(events).get(eventColName);
         }
 
         @Override

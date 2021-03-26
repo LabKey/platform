@@ -29,3 +29,4 @@ ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId
     FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
 ALTER TABLE exp.experimentrun ADD CONSTRAINT FK_ExperimentRun_ObjectId
     FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
+GO

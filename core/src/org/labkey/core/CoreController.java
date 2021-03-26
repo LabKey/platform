@@ -2183,8 +2183,7 @@ public class CoreController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
-            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            root.addChild("Views and Scripting Configuration");
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Views and Scripting Configuration", getClass(), getContainer());
         }
     }
 
@@ -2403,7 +2402,7 @@ public class CoreController extends SpringActionController
             CoreController controller = new CoreController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new ProjectsAction(),
                 controller.new DownloadFileLinkAction(),
                 controller.new GetExtContainerTreeAction(),

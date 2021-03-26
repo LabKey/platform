@@ -34,12 +34,12 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
@@ -63,8 +63,6 @@ public class ParticipantVisitTable extends BaseStudyTable
             {
                 // 20546: need to expose Container for use in DatasetTableImpl.ParticipantVisitForeignKey
                 var containerColumn = new AliasedColumn(this, "Container", col);
-                ContainerForeignKey.initColumn(containerColumn, _userSchema);
-                containerColumn.setHidden(true);
                 addColumn(containerColumn);
             }
             else if ("VisitRowId".equalsIgnoreCase(col.getName()))

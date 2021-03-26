@@ -35,35 +35,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.Action;
-import org.labkey.api.action.ActionType;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExportException;
-import org.labkey.api.action.ExtendedApiQueryResponse;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasBindParameters;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReportingApiQueryResponse;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.TransactionAuditProvider;
@@ -93,10 +65,12 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresAllOf;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -700,7 +674,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration ", null);
+            requireNonNull(urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration", getClass(), getContainer());
         }
     }
 
@@ -1375,6 +1349,8 @@ public class QueryController extends SpringActionController
             QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
+            if (null == ti)
+                throw new NotFoundException();
 
             DbScope scope = ti.getSchema().getScope();
 
@@ -1994,7 +1970,7 @@ public class QueryController extends SpringActionController
             if (!queryForm.canEditMetadata())
                 throw new UnauthorizedException("You do not have permission to edit the query metadata");
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
         }
 
         @Override
@@ -2326,6 +2302,8 @@ public class QueryController extends SpringActionController
                     return false;
                 }
 
+                // Issue 40895: update queryName in xml metadata
+                updateXmlMetadata(queryDef);
 				queryDef.setName(form.rename);
 				// update form so getSuccessURL() works
 				_form = new PropertiesForm(form.getSchemaName(), form.rename);
@@ -2338,6 +2316,30 @@ public class QueryController extends SpringActionController
             queryDef.setIsHidden(form.hidden);
             queryDef.save(getUser(), getContainer());
             return true;
+        }
+
+        private void updateXmlMetadata(QueryDefinition queryDef) throws XmlException
+        {
+            if (null != queryDef.getMetadataXml())
+            {
+                TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetadataXml());
+                if (null != doc)
+                {
+                    for (TableType tableType : doc.getTables().getTableArray())
+                    {
+                        if (tableType.getTableName().equalsIgnoreCase(queryDef.getName()))
+                        {
+                            // update tableName in xml
+                            tableType.setTableName(_form.rename);
+                        }
+                    }
+                    XmlOptions xmlOptions = new XmlOptions();
+                    xmlOptions.setSavePrettyPrint();
+                    // Don't use an explicit namespace, making the XML much more readable
+                    xmlOptions.setUseDefaultNamespace();
+                    queryDef.setMetadataXml(doc.xmlText(xmlOptions));
+                }
+            }
         }
 
         @Override
@@ -3211,6 +3213,8 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
             TableInfo table = form.getQueryView().getTable();
+            if (null == table)
+                throw new NotFoundException();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
@@ -3626,7 +3630,16 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                return qus.getRows(user, container, insertedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    return qus.getRows(user, container, insertedRows);
+                }
+                else
+                {
+                    return insertedRows;
+                }
             }
         },
         insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
@@ -3650,7 +3663,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                updatedRows = qus.getRows(user, container, updatedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    updatedRows = qus.getRows(user, container, updatedRows);
+                }
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
@@ -3977,7 +3995,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) //will check below
+    @RequiresAnyOf({ReadPermission.class, InsertPermission.class}) //will check below
     @ApiVersion(8.3)
     public static class InsertRowsAction extends BaseSaveRowsAction
     {
@@ -5478,7 +5496,7 @@ public class QueryController extends SpringActionController
     public static class SetCheckAction extends MutatingApiAction<SetCheckForm>
     {
         @Override
-        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
         {
             String[] ids = form.getId(getViewContext().getRequest());
             List<String> selection = new ArrayList<>();
@@ -5491,9 +5509,16 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            int count = DataRegionSelection.setSelected(
+            int count;
+            if (form.getQueryName() != null && form.isValidateIds() && form.isChecked())
+            {
+                selection = DataRegionSelection.getValidatedIds(selection, form);
+            }
+
+            count = DataRegionSelection.setSelected(
                     getViewContext(), form.getKey(),
                     selection, form.isChecked());
+
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -5504,6 +5529,7 @@ public class QueryController extends SpringActionController
     {
         protected String[] ids;
         protected boolean checked;
+        protected boolean validateIds;
 
         public String[] getId(HttpServletRequest request)
         {
@@ -5528,6 +5554,17 @@ public class QueryController extends SpringActionController
         {
             this.checked = checked;
         }
+
+        public boolean isValidateIds()
+        {
+            return validateIds;
+        }
+
+        public void setValidateIds(boolean validateIds)
+        {
+            this.validateIds = validateIds;
+        }
+
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5813,7 +5850,6 @@ public class QueryController extends SpringActionController
         protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
         {
             Map<String, Object> qinfo = new HashMap<>();
-            qinfo.put("name", qdef.getName());
             qinfo.put("hidden", qdef.isHidden());
             qinfo.put("snapshot", qdef.isSnapshot());
             qinfo.put("inherit", qdef.canInherit());
@@ -5837,6 +5873,7 @@ public class QueryController extends SpringActionController
                 qinfo.put("viewDataUrl", viewDataUrl);
 
             String title = qdef.getName();
+            String name = qdef.getName();
             try
             {
                 //get the table info if the user requested column info
@@ -5875,8 +5912,8 @@ public class QueryController extends SpringActionController
                         if (columns.size() > 0)
                             qinfo.put("columns", columns);
                     }
-                    if (table instanceof DatasetTable)
-                        title = table.getTitle();
+                    name = table.getPublicName();
+                    title = table.getTitle();
                 }
             }
             catch(Exception e)
@@ -5885,6 +5922,7 @@ public class QueryController extends SpringActionController
             }
 
             qinfo.put("title", title);
+            qinfo.put("name", name);
             return qinfo;
         }
     }
@@ -6979,7 +7017,7 @@ public class QueryController extends SpringActionController
             QueryController controller = new QueryController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 new BrowseAction(),
                 new BeginAction(),
                 controller.new SchemaAction(),
@@ -7002,7 +7040,6 @@ public class QueryController extends SpringActionController
                 controller.new ImportAction(),
                 new ExportSqlAction(),
                 new UpdateRowsAction(),
-                new InsertRowsAction(),
                 new ImportRowsAction(),
                 new DeleteRowsAction(),
                 new TableInfoAction(),
@@ -7018,6 +7055,10 @@ public class QueryController extends SpringActionController
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction()
             );
+
+
+            // submitter should be allowed for InsertRows
+            assertForReadPermission(user, true, new InsertRowsAction());
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,

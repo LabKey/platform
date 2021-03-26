@@ -45,6 +45,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -62,21 +63,20 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
@@ -92,7 +92,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.util.ArrayList;
@@ -303,13 +302,23 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     if (!col.isMvIndicatorColumn() && null != dp && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
                         col.setFk(PdLookupForeignKey.create(schema, pd));
 
-                    if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    if (pd != null)
                     {
-                        col.setDisplayColumnFactory(colInfo -> {
-                            DataColumn dc = new DataColumn(colInfo);
-                            dc.setPreserveNewlines(true);
-                            return dc;
-                        });
+                        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+                        {
+                            col.setDisplayColumnFactory(colInfo -> {
+                                DataColumn dc = new DataColumn(colInfo);
+                                dc.setPreserveNewlines(true);
+                                return dc;
+                            });
+                        }
+                        else if (pd.getPropertyType() == PropertyType.FILE_LINK)
+                        {
+                            col.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(pd, getContainer(),
+                                    SchemaKey.fromParts("study"),
+                                    dsd.getName(),
+                                    FieldKey.fromParts("lsid")));
+                        }
                     }
                 }
                 if (isVisibleByDefault(col))
@@ -419,34 +428,41 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
 
-        if (_dsd.isAssayData())
+        if (_dsd.isPublishedData())
         {
-            TableInfo assayResultTable = getAssayResultTable();
-            if (assayResultTable != null)
+            Dataset.PublishSource source = _dsd.getPublishSource();
+            switch (source)
             {
-                ExpProtocol protocol = _dsd.getAssayProtocol();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                AssayTableMetadata tableMeta = provider.getTableMetadata(protocol);
-                FieldKey assayResultLsid = tableMeta.getResultLsidFieldKey();
-
-                for (final ColumnInfo columnInfo : assayResultTable.getColumns())
-                {
-                    String name = columnInfo.getName();
-                    if (assayResultLsid != null && columnInfo.getFieldKey().equals(assayResultLsid))
+                case Assay -> {
+                    TableInfo assayResultTable = getAssayResultTable();
+                    ExpObject publishSource = _dsd.resolvePublishSource();
+                    if (assayResultTable != null && publishSource instanceof ExpProtocol)
                     {
-                        // add the assay result lsid column as "AssayResultLsid" so it won't collide with the dataset's LSID column
-                        name = ASSAY_RESULT_LSID;
-                    }
+                        ExpProtocol protocol = (ExpProtocol)publishSource;
 
-                    if (!getColumnNameSet().contains(name))
-                    {
-                        ExprColumn wrappedColumn = wrapAssayColumn(columnInfo, name);
-                        addColumn(wrappedColumn);
+                        AssayProvider provider = AssayService.get().getProvider(protocol);
+                        AssayTableMetadata tableMeta = provider.getTableMetadata(protocol);
+                        FieldKey assayResultLsid = tableMeta.getResultLsidFieldKey();
+
+                        for (final ColumnInfo columnInfo : assayResultTable.getColumns())
+                        {
+                            String name = columnInfo.getName();
+                            if (assayResultLsid != null && columnInfo.getFieldKey().equals(assayResultLsid))
+                            {
+                                // add the assay result lsid column as "AssayResultLsid" so it won't collide with the dataset's LSID column
+                                name = ASSAY_RESULT_LSID;
+                            }
+
+                            if (!getColumnNameSet().contains(name))
+                            {
+                                ExprColumn wrappedColumn = wrapAssayColumn(columnInfo, name);
+                                addColumn(wrappedColumn);
+                            }
+                        }
                     }
                 }
             }
         }
-
         addFolderColumn();
     }
 
@@ -498,44 +514,59 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        if (!_dsd.isAssayData())
+        if (!_dsd.isPublishedData())
             return super.getDefaultVisibleColumns();
-        else if (null != _assayDefaultVisibleColumns)
-            return _assayDefaultVisibleColumns;
-
-        // compute default visible columns for assay dataset
-        List<FieldKey> defaultVisibleCols = new ArrayList<>(super.getDefaultVisibleColumns());
-        TableInfo assayResultTable = getAssayResultTable();
-        if (null != assayResultTable)
+        else
         {
-            for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
+            Dataset.PublishSource source = _dsd.getPublishSource();
+            switch (source)
             {
-                if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
-                {
-                    defaultVisibleCols.add(fieldKey);
-                }
-            }
+                case Assay -> {
+                    if (_assayDefaultVisibleColumns != null)
+                        return _assayDefaultVisibleColumns;
 
-            // Remove the target study column from the dataset version of the table - it's already scoped to the
-            // relevant study so don't clutter the UI with it
-            for (FieldKey fieldKey : defaultVisibleCols)
-            {
-                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(fieldKey.getName()))
-                {
-                    defaultVisibleCols.remove(fieldKey);
-                    break;
+                    ExpObject publishSource = _dsd.resolvePublishSource();
+                    if (publishSource instanceof ExpProtocol)
+                    {
+                        ExpProtocol protocol = (ExpProtocol)publishSource;
+
+                        // compute default visible columns for assay dataset
+                        List<FieldKey> defaultVisibleCols = new ArrayList<>(super.getDefaultVisibleColumns());
+                        TableInfo assayResultTable = getAssayResultTable();
+                        if (null != assayResultTable)
+                        {
+                            for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
+                            {
+                                if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
+                                {
+                                    defaultVisibleCols.add(fieldKey);
+                                }
+                            }
+
+                            // Remove the target study column from the dataset version of the table - it's already scoped to the
+                            // relevant study so don't clutter the UI with it
+                            for (FieldKey fieldKey : defaultVisibleCols)
+                            {
+                                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(fieldKey.getName()))
+                                {
+                                    defaultVisibleCols.remove(fieldKey);
+                                    break;
+                                }
+                            }
+                            AssayProvider provider = AssayService.get().getProvider(protocol);
+                            if (null != provider)
+                            {
+                                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
+                                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
+                            }
+                        }
+                        _assayDefaultVisibleColumns = Collections.unmodifiableList(defaultVisibleCols);
+                        return _assayDefaultVisibleColumns;
+                    }
                 }
-            }
-            ExpProtocol protocol = _dsd.getAssayProtocol();
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            if (null != provider)
-            {
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
             }
         }
-        _assayDefaultVisibleColumns = Collections.unmodifiableList(defaultVisibleCols);
-        return _assayDefaultVisibleColumns;
+        return super.getDefaultVisibleColumns();
     }
 
 
@@ -633,91 +664,99 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         // Be backwards compatible with the old field keys for these properties.
         // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,
         // so transform to do a lookup instead
-        ExpProtocol protocol = _dsd.getAssayProtocol();
-        if (protocol != null)
+        if (_dsd.isPublishedData() && (_dsd.getPublishSource() == Dataset.PublishSource.Assay))
         {
-            // First, if it's Properties,
-            if ("Properties".equalsIgnoreCase(name))
+            ExpObject source = _dsd.resolvePublishSource();
+            if (source instanceof ExpProtocol)
             {
-                // Hook up a column that joins back to this table so that the columns formerly under the Properties
-                // node when this was OntologyManager-backed can still be queried there
-                var wrapped = wrapColumn("Properties", getRealTable().getColumn("_key"));
-                wrapped.setIsUnselectable(true);
-                LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "_key", null)
+                ExpProtocol protocol = (ExpProtocol)source;
+                if (protocol != null)
                 {
-                    @Override
-                    public TableInfo getLookupTableInfo()
+                    // First, if it's Properties,
+                    if ("Properties".equalsIgnoreCase(name))
                     {
-                        return new DatasetTableImpl(getUserSchema(), getLookupContainerFilter(), _dsd);
+                        // Hook up a column that joins back to this table so that the columns formerly under the Properties
+                        // node when this was OntologyManager-backed can still be queried there
+                        var wrapped = wrapColumn("Properties", getRealTable().getColumn("_key"));
+                        wrapped.setIsUnselectable(true);
+                        LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "_key", null)
+                        {
+                            @Override
+                            public TableInfo getLookupTableInfo()
+                            {
+                                return new DatasetTableImpl(getUserSchema(), getLookupContainerFilter(), _dsd);
+                            }
+
+                            @Override
+                            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                            {
+                                return super.createLookupColumn(parent, displayField);
+                            }
+                        };
+                        fk.setPrefixColumnCaption(false);
+                        wrapped.setFk(fk);
+                        return wrapped;
                     }
 
-                    @Override
-                    public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+                    // Second, see the if the assay table can resolve the column
+                    TableInfo assayTable = getAssayResultTable();
+                    if (null != assayTable)
                     {
-                        return super.createLookupColumn(parent, displayField);
+                        result = getAssayResultTable().getColumn(name);
+                        if (result != null)
+                        {
+                            return wrapAssayColumn(result, result.getName());
+                        }
                     }
-                };
-                fk.setPrefixColumnCaption(false);
-                wrapped.setFk(fk);
-                return wrapped;
-            }
 
-            // Second, see the if the assay table can resolve the column
-            TableInfo assayTable = getAssayResultTable();
-            if (null != assayTable)
-            {
-                result = getAssayResultTable().getColumn(name);
-                if (result != null)
-                {
-                    return wrapAssayColumn(result, result.getName());
-                }
-            }
-
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata(protocol).getRunFieldKeyFromResults();
-            if (name.toLowerCase().startsWith("run"))
-            {
-                String runProperty = name.substring("run".length()).trim();
-                if (runProperty.length() > 0 && runFieldKey != null)
-                {
-                    fieldKey = new FieldKey(runFieldKey, runProperty);
-                }
-            }
-            else if (name.toLowerCase().startsWith("batch"))
-            {
-                String batchPropertyName = name.substring("batch".length()).trim();
-                if (batchPropertyName.length() > 0 && runFieldKey != null)
-                {
-                    fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
-                }
-            }
-            else if (name.toLowerCase().startsWith("analyte"))
-            {
-                String analytePropertyName = name.substring("analyte".length()).trim();
-                if (analytePropertyName.length() > 0)
-                {
-                    fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
-                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                    result = columns.get(fieldKey);
-                    if (result != null)
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
+                    FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata(protocol).getRunFieldKeyFromResults();
+                    if (name.toLowerCase().startsWith("run"))
                     {
-                        return result;
+                        String runProperty = name.substring("run".length()).trim();
+                        if (runProperty.length() > 0 && runFieldKey != null)
+                        {
+                            fieldKey = new FieldKey(runFieldKey, runProperty);
+                        }
                     }
-                    fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
-                }
-            }
-            else if (!"SpecimenLsid".equalsIgnoreCase(name))
-            {
-                // Try looking for it as a NAb specimen property
-                fieldKey = FieldKey.fromParts("SpecimenLsid", "Property", name);
-                Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                result = columns.get(fieldKey);
-                if (result != null)
-                {
-                    return result;
+                    else if (name.toLowerCase().startsWith("batch"))
+                    {
+                        String batchPropertyName = name.substring("batch".length()).trim();
+                        if (batchPropertyName.length() > 0 && runFieldKey != null)
+                        {
+                            fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
+                        }
+                    }
+                    else if (name.toLowerCase().startsWith("analyte"))
+                    {
+                        String analytePropertyName = name.substring("analyte".length()).trim();
+                        if (analytePropertyName.length() > 0)
+                        {
+                            fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
+                            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                            result = columns.get(fieldKey);
+                            if (result != null)
+                            {
+                                return result;
+                            }
+                            fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
+                        }
+                    }
+                    else if (!"SpecimenLsid".equalsIgnoreCase(name))
+                    {
+                        // Try looking for it as a NAb specimen property
+                        fieldKey = FieldKey.fromParts("SpecimenLsid", "Property", name);
+                        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
+                        result = columns.get(fieldKey);
+                        if (result != null)
+                        {
+                            return result;
+                        }
+                    }
                 }
             }
         }
+
         if (fieldKey == null && !"Properties".equalsIgnoreCase((name)) && !"SpecimenLsid".equalsIgnoreCase(name) && !"Analyte".equalsIgnoreCase(name))
         {
             fieldKey = FieldKey.fromParts("Properties", name);
@@ -774,11 +813,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     private SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
         ParticipantGroup group = getUserSchema().getSessionParticipantGroup();
-        DatasetDefinition.DataSharing sharing = ((DatasetDefinition)getDataset()).getDataSharingEnum();
+        DatasetDefinition.DataSharing sharing = getDataset().getDataSharingEnum();
 
         final SQLFragment sqlf;
 
-        if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
+        if (!includeParticipantVisit && !_dsd.isPublishedData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
         {
             sqlf = super.getFromSQL(alias, true);
         }
@@ -881,17 +920,22 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
             sqlf.append(") AS ").append(alias);
 
-            if (_dsd.isAssayData())
+            if (_dsd.isPublishedData())
             {
-                // Join in Assay-side data to make it appear as if it's in the dataset table itself
-                String assayResultAlias = getAssayResultAlias(alias);
-                TableInfo assayResultTable = getAssayResultTable();
-                // Check if assay design has been deleted
-                if (assayResultTable != null)
+                switch (_dsd.getPublishSource())
                 {
-                    sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
-                    sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
-                    sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+                    case Assay -> {
+                        // Join in Assay-side data to make it appear as if it's in the dataset table itself
+                        String assayResultAlias = getAssayResultAlias(alias);
+                        TableInfo assayResultTable = getAssayResultTable();
+                        // Check if assay design has been deleted
+                        if (assayResultTable != null)
+                        {
+                            sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
+                            sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
+                            sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+                        }
+                    }
                 }
             }
             sqlf.appendComment("</DatasetTableImpl>", d);
@@ -926,11 +970,12 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         if (_assayResultTable == null)
         {
-            ExpProtocol protocol = _dsd.getAssayProtocol();
-            if (protocol == null)
+            ExpObject source = _dsd.resolvePublishSource();
+            if (!(source instanceof ExpProtocol))
             {
                 return null;
             }
+            ExpProtocol protocol = (ExpProtocol)source;
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
             {
@@ -1043,9 +1088,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "SequenceNum", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid", "DSRowID");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
-        // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default
+        // If this is a server-managed key, or a published data dataset, don't include the key column in the default
         // set of visible columns
-        if ((_dsd.getKeyManagementType() != Dataset.KeyManagementType.None || _dsd.isAssayData()) &&
+        if ((_dsd.getKeyManagementType() != Dataset.KeyManagementType.None || _dsd.isPublishedData()) &&
                 col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
         // for backwards compatibility "Date" is not in default visible columns for visit-based study
@@ -1099,7 +1144,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.hasRootAdminPermission() && !def.canWrite(user))
+        if (!user.hasRootAdminPermission() && !def.canInsert(user))
             return null;
         return new DatasetUpdateService(this);
     }
@@ -1108,12 +1153,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // OK to edit these in Dataspace project and in any folder
-        Dataset def = getDatasetDefinition();
-        if (ReadPermission.class.isAssignableFrom(perm))
-            return def.canRead(user);
-        if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
-            return def.canWrite(user);
-        return def.getPolicy().hasPermission(user, perm);
+        return getDatasetDefinition().hasPermission(user, perm);
     }
 
     @Override
@@ -1142,7 +1182,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         Map<FieldKey, ColumnInfo> columns = super.getExtendedColumns(includeHidden);
 
-        if (_dsd.isAssayData())
+        if (_dsd.isPublishedData() && (_dsd.getPublishSource() == Dataset.PublishSource.Assay))
         {
             TableInfo assayResultTable = getAssayResultTable();
             if (assayResultTable != null)
@@ -1259,4 +1299,5 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
         }
         return cols;
-    }}
+    }
+}

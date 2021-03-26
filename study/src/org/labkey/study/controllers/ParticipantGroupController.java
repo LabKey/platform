@@ -47,6 +47,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.ParticipantCategory;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -54,7 +55,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -1536,7 +1536,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     Collection<String> getParticipantIds()
     {
-        return Arrays.asList(StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1));
+        return StudyManager.getInstance().getParticipantIds(getStudy(), getUser(), getDefaultContainerFilter(), -1);
     }
 
     Collection<String> getParticipantIdsNotInGroupCategory(ParticipantCategoryImpl category)

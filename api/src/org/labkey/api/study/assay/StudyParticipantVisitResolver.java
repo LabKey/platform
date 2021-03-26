@@ -65,7 +65,7 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
     {
         ParticipantVisitImpl originalInfo = new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
 
-        if (targetStudyContainer != null)
+        if (targetStudyContainer != null && SpecimenService.get() != null)
         {
             try
             {

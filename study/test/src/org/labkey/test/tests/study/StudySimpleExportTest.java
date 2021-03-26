@@ -187,7 +187,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         new ManageStudyPage(getDriver())
                 .manageDatasetQCStates()
                 .setDefaultPipelineQCState("First QC State")
-                .setDefaultAssayQCState("Second QC State")
+                .setDefaultPublishDataQCState("Second QC State")
                 .setDefaultDirectEntryQCState("Third QC State")
                 .setDefaultVisibility("Public data")
                 .clickSave();
@@ -224,7 +224,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         assertFalse("don't expect 3rd row to be public", thirdRow.getPublicData());
 
         assertEquals("First QC State", statesPage.getDefaultPipelineQCState());
-        assertEquals("Second QC State", statesPage.getDefaultAssayQCState());
+        assertEquals("Second QC State", statesPage.getDefaultPublishDataQCState());
         assertEquals("Third QC State", statesPage.getDefaultDirectEntryQCState());
         assertEquals("Public data", statesPage.getDefaultVisibility());
 

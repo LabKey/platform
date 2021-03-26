@@ -77,7 +77,8 @@
 %>
 <style type="text/css">
     #log-container {
-        height: 30em;
+        /* viewport height minus a bit for the panel header and log controls and body margin-bottom (50px) */
+        height: calc(100vh - 10em - 50px);
         overflow: auto;
     }
     td.split-job-status {
@@ -115,6 +116,12 @@
             <td class="lk-form-label">Info:</td>
             <td id="info"><%=h(status.info)%></td>
         </tr>
+        <% if (bean.queuePosition != null) { %>
+            <tr>
+                <td class="lk-form-label">Queue Position:</td>
+                <td id="queuePosition"><%=h(bean.queuePosition)%></td>
+            </tr>
+        <% } %>
         <tr>
             <td class="lk-form-label">Description:</td>
             <td id="description"><%=h(status.description)%></td>
@@ -257,6 +264,7 @@
     let infoEl = document.getElementById('info');
     let descriptionEl = document.getElementById('description');
     let filePathEl = document.getElementById('file-path');
+    let queuePosition = document.getElementById('queuePosition');
 
     let filesListEl = document.getElementById('files-list');
     let runsListEl = document.getElementById('runs-list');
@@ -361,7 +369,7 @@ ended very recently. --%>
         const MAX_UNCHANGED_COUNT = 3;
 
         function updateField(el, text) {
-            if (text !== null && text !== undefined)
+            if (text !== null && text !== undefined && el)
                 el.innerText = text;
         }
 
@@ -565,6 +573,8 @@ ended very recently. --%>
                     logDataEl = document.getElementById('log-data');
                 }
 
+                const scrolledToBottom = logContainerEl.scrollHeight - logContainerEl.scrollTop === logContainerEl.clientHeight;
+
                 if (log.success) {
                     // successfully read the status log file
                     if (log.records && log.records.length > 0) {
@@ -591,7 +601,13 @@ ended very recently. --%>
                     }
                 }
 
-                scrollLog(true);
+                const selection = window.getSelection();
+                const hasSelection = selection && !selection.isCollapsed;
+
+                // scroll if we are at the bottom of the scrollable pane and nothing is selected
+                if (scrolledToBottom && !hasSelection) {
+                    scrollLog(true);
+                }
             }
         }
 
@@ -635,7 +651,6 @@ ended very recently. --%>
                         else {
                             // we failed to read the log file or the log file hasn't changed since last fetch
                             offsetUnchangedCount++;
-                            console.log("offset " + nextOffset + " unchanged (" + offsetUnchangedCount + ")");
                         }
 
                         if (!active) {
@@ -671,6 +686,7 @@ ended very recently. --%>
                         updateField(emailEl, status.email);
                         updateField(infoEl, status.info);
                         updateField(descriptionEl, status.description);
+                        updateField(queuePosition, status.queuePosition);
                         updateStatus(active, status.status, status.hadError);
                         updateRuns(status.runs);
                         updateFiles(status.files);

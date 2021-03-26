@@ -1,0 +1,18 @@
+@import "@labkey/components-scss";
+
+.assay-type-select-hdr {
+  font-size: 16px;
+  font-weight: bold;
+  height: 45px;
+  padding: 10px 15px;
+}
+
+.assay-type-select-panel {
+  min-width: 1000px;
+  margin-top: 10px;
+
+  .panel-body {
+    margin: 10px;
+  }
+}
+

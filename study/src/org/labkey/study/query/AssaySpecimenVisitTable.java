@@ -23,6 +23,7 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.StudySchema;
@@ -65,16 +66,10 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
         addContainerColumn();
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
-            String name = baseColumn.getName();
-            if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") || name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
+            BuiltInColumnTypes type = BuiltInColumnTypes.findBuiltInType(baseColumn);
+            if (null != type && type != BuiltInColumnTypes.Container)
             {
-                var column = addWrapColumn(baseColumn);
-                if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
-                    UserIdQueryForeignKey.initColumn(schema, column, true);
-                column.setHidden(true);
-                column.setUserEditable(false);
-                column.setShownInInsertView(false);
-                column.setShownInUpdateView(false);
+                addWrapColumn(baseColumn);
             }
         }
     }

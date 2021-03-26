@@ -33,6 +33,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
@@ -46,35 +47,18 @@ import org.labkey.api.module.AllowedOutsideImpersonationProject;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationConfigurationCache;
-import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.TokenAuthenticationManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -136,7 +120,6 @@ import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
  * User: adam
@@ -171,13 +154,6 @@ public class LoginController extends SpringActionController
 
     public static class LoginUrlsImpl implements LoginUrls
     {
-        @Override
-        public void addAuthenticationNavTrail(NavTree root)
-        {
-            root.addChild("Admin Console", AdminController.getShowAdminURL());
-            root.addChild("Authentication", getConfigureURL());
-        }
-
         @Override
         public ActionURL getConfigureURL()
         {
@@ -736,8 +712,10 @@ public class LoginController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("full", DbLoginManager.getPasswordRule().getFullRuleHTML());
-            response.put("summary", DbLoginManager.getPasswordRule().getSummaryRuleHTML());
+            PasswordRule passwordRule = DbLoginManager.getPasswordRule();
+
+            response.put("full", passwordRule.getFullRuleHTML());
+            response.put("summary", passwordRule.getSummaryRuleHTML());
             return response;
         }
     }
@@ -1116,7 +1094,7 @@ public class LoginController extends SpringActionController
         // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
         String loginController = "login";
         String loginAction = "login";
-        String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomLogin());
+        String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(getContainer()).getCustomLogin());
         WebPartView view = null;
         if (null != customLogin)
         {
@@ -2405,7 +2383,7 @@ public class LoginController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            getUrls().addAuthenticationNavTrail(root);
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", getClass(), getContainer());
         }
     }
 

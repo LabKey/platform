@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,6 +60,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
@@ -67,6 +69,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -116,7 +119,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
-import static org.labkey.experiment.api.ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE;
 
 /**
  * User: phussey (Peter Hussey)
@@ -138,7 +140,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.000;
+        return 21.003;
     }
 
     @Nullable
@@ -181,11 +183,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
 
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
-                "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
-
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, "Sample aliquot",
+                "Support creation of sample aliquot", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -465,7 +467,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("dataClassCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
 
-                results.put("legacyLineage", AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE));
+                results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
+                results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
+                results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
+                results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 
                 return results;
             });
@@ -522,9 +527,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         return Set.of(
             DomainPropertyImpl.TestCase.class,
-            ExpDataClassDataTestCase.class,
             ExpDataTableImpl.TestCase.class,
-            ExpSampleTypeTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
@@ -534,6 +537,16 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             UniqueValueCounterTestCase.class
         );
     }
+
+    @Override
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    {
+        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpDataClassDataTestCase.jsp"));
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
+        return list;
+    }
+
 
     @NotNull
     @Override

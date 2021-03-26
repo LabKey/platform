@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ public class ExperimentListenerImpl implements ExperimentListener
         List<ValidationException> errors = new ArrayList<>();
         List<String> copyToStudyErrors = new ArrayList<>();
 
-        AssayPublishService.get().autoCopyResults(protocol, run, user, container, copyToStudyErrors);
+        StudyPublishService.get().autoCopyResults(protocol, run, user, container, copyToStudyErrors);
 
         // copy results data to the target study if the protocol is configured to auto copy
         for (String error : copyToStudyErrors)

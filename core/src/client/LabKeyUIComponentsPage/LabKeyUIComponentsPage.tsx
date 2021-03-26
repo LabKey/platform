@@ -34,7 +34,7 @@ import {
     SearchResultsPanel,
     ChangePasswordModal,
     UserDetailHeader,
-    SelectInput
+    SelectInput,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -50,8 +50,6 @@ import { UserProfilePage } from "./UserProfilePage";
 import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
-
-import "./LabKeyUIComponentsPage.scss"
 
 const COMPONENT_NAMES = List<string>([
     {value: 'Alert'},
@@ -488,4 +486,3 @@ export class App extends React.Component<any, State> {
         )
     }
 }
-

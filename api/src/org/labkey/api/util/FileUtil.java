@@ -671,7 +671,12 @@ public class FileUtil
                 throw new IOException("Unable to create the directory " + dest.toString() + "!");
         }
 
-        for(File file : src.listFiles())
+        File[] children = src.listFiles();
+        if (children == null)
+        {
+            throw new IOException("Unable to get file listing for directory: " + src);
+        }
+        for (File file : children)
         {
             copyBranch(file, dest, false);
         }

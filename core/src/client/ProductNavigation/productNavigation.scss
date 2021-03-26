@@ -1,0 +1,11 @@
+@import "../../../node_modules/@labkey/components/dist/assets/scss/theme/variables";
+@import "../../../node_modules/@labkey/components/dist/assets/scss/theme/navbar";
+@import "../../../node_modules/@labkey/components/dist/assets/scss/theme/product-navigation";
+
+#headerProductDropdown .dropdown-menu-right {
+  padding: 0;
+
+  .navbar-icon-connector {
+    right: 6px;
+  }
+}

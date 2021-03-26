@@ -56,6 +56,7 @@ import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -821,7 +822,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             int datasetIndex = 0;
             Set<String> usedColumnNames = new HashSet<>();
-            for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
+            for (final Dataset assayDataset : StudyService.get().getDatasetsForPublishSource(getProtocol().getRowId(), Dataset.PublishSource.Assay))
             {
                 if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
                 {
@@ -917,9 +918,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 public TableInfo getLookupTableInfo()
                 {
                     FilteredTable table = new FilteredTable<>(DbSchema.get("study", DbSchemaType.Module).getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
-                    ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
+                    AliasedColumn col = new AliasedColumn(table, "Folder", table.getRealTable().getColumn("Container"));
                     col.setKeyField(true);
-                    ContainerForeignKey.initColumn(col, AssayProtocolSchema.this);
                     table.addColumn(col);
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));
                     table.setPublic(false);

@@ -107,7 +107,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -122,6 +121,7 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.api.property.DomainPropertyManager;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
@@ -175,7 +175,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
 
-    public static final String EXPERIMENTAL_LEGACY_LINEAGE = "legacy-lineage";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
     public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
@@ -371,6 +370,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     + " WHERE PA.ProtocolLSID = ? ) ");
             sql.add(childProtocol.getLSID());
         }
+        sql.append(" ORDER BY ER.RowId ");
         return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
@@ -1988,177 +1988,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
-    @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
-    {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
-        {
-            return getParentsOldAndBusted(start);
-        }
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getParentsVeryNewHotness(c, user, start);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-        assert null != (oldAndBusted = getParentsOldAndBusted(start));
-        assert assertLineage(start, veryNewHotness, oldAndBusted);
-
-        return veryNewHotness;
-    }
-
-    // Make boolean so it can hide behind 'assert' and no-op in production mode
-    private boolean assertLineage(ExpRunItem seed, Pair<Set<ExpData>, Set<ExpMaterial>> newHotness, Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted)
-    {
-        if (newHotness.first.equals(oldAndBusted.first) &&
-                newHotness.second.equals(oldAndBusted.second))
-            return true; // short-circuit if everything matches
-
-        // when there is a recursive lineage, the old lineage includes the seed but the new lineage doesn't
-        //noinspection SuspiciousMethodCalls
-        if (oldAndBusted.first.contains(seed) || oldAndBusted.second.contains(seed))
-        {
-            Set<ExpData> recursiveDataCheck = new HashSet<>(oldAndBusted.first);
-            recursiveDataCheck.remove(seed);
-            Set<ExpMaterial> recursiveMaterialCheck = new HashSet<>(oldAndBusted.second);
-            recursiveMaterialCheck.remove(seed);
-            if (newHotness.first.equals(recursiveDataCheck) &&
-                    newHotness.second.equals(recursiveMaterialCheck))
-                return true;
-        }
-
-        Set<ExpData> newExpDataUniques = new HashSet<>(newHotness.first);
-        Set<ExpData> oldExpDataUniques = new HashSet<>(oldAndBusted.first);
-        Set<ExpMaterial> newExpMaterialUniques = new HashSet<>(newHotness.second);
-        Set<ExpMaterial> oldExpMaterialUniques = new HashSet<>(oldAndBusted.second);
-        newExpDataUniques.removeAll(oldAndBusted.first);
-        oldExpDataUniques.removeAll(newHotness.first);
-        newExpMaterialUniques.removeAll(oldAndBusted.second);
-        oldExpMaterialUniques.removeAll(newHotness.second);
-
-        Set<ExpData> expDataOverlap = new HashSet<>(newHotness.first);
-        expDataOverlap.removeAll(newExpDataUniques);
-        Set<ExpMaterial> expMaterialOverlap = new HashSet<>(newHotness.second);
-        expMaterialOverlap.removeAll(newExpMaterialUniques);
-
-        StringBuilder errorMsg = new StringBuilder("Old lineage doesn't match new lineage for: " + seed);
-        if (!newExpDataUniques.isEmpty())
-            errorMsg.append("\nOld missing data: ").append(newExpDataUniques.toString());
-        if (!oldExpDataUniques.isEmpty())
-            errorMsg.append("\nNew missing data: ").append(oldExpDataUniques.toString());
-        if (!newExpMaterialUniques.isEmpty())
-            errorMsg.append("\nOld missing materials: ").append(newExpMaterialUniques.toString());
-        if (!oldExpMaterialUniques.isEmpty())
-            errorMsg.append("\nNew missing materials: ").append(oldExpMaterialUniques.toString());
-        errorMsg.append("\nMatching Data: ").append(expDataOverlap);
-        errorMsg.append("\nMatching Materials: ").append(expMaterialOverlap);
-        errorMsg.append("\n");
-        LOG.warn(errorMsg);
-        return true;
-    }
-
-    /**
-     * walk experiment graph in memory, with tons queries, mostly repetitive queries over and over again
-     **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpRunItem start)
-    {
-        if (isUnknownMaterial(start))
-            return Pair.of(emptySet(), emptySet());
-
-        List<ExpRun> runsToInvestigate = new ArrayList<>();
-        ExpRun parentRun = start.getRun();
-        if (parentRun != null)
-            runsToInvestigate.add(parentRun);
-
-        Set<ExpRun> investigatedRuns = new HashSet<>();
-
-        final Set<ExpData> parentData = new HashSet<>();
-        final Set<ExpMaterial> parentMaterials = new HashSet<>();
-        while (!runsToInvestigate.isEmpty())
-        {
-            ExpRun predecessorRun = runsToInvestigate.remove(0);
-            investigatedRuns.add(predecessorRun);
-
-            for (ExpData d : predecessorRun.getDataInputs().keySet())
-            {
-                ExpRun dRun = d.getRun();
-                if (dRun != null && !investigatedRuns.contains(dRun))
-                    runsToInvestigate.add(dRun);
-
-                parentData.add(d);
-            }
-            for (ExpMaterial m : removeUnknownMaterials(predecessorRun.getMaterialInputs().keySet()))
-            {
-                ExpRun mRun = m.getRun();
-                if (mRun != null && !investigatedRuns.contains(mRun))
-                    runsToInvestigate.add(mRun);
-
-                parentMaterials.add(m);
-            }
-        }
-        return Pair.of(parentData, parentMaterials);
-    }
-
-
-    @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
-    {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
-        {
-            return getChildrenOldAndBusted(start);
-        }
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getChildrenVeryNewHotness(c, user, start);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
-        assert null != (oldAndBusted = getChildrenOldAndBusted(start));
-        assert assertLineage(start, veryNewHotness, oldAndBusted);
-
-        return veryNewHotness;
-    }
-
-
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpRunItem start)
-    {
-        if (isUnknownMaterial(start))
-            return Pair.of(emptySet(), emptySet());
-
-        List<ExpRun> runsToInvestigate = new ArrayList<>();
-        if (start instanceof ExpData)
-            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDataIds(Arrays.asList(start.getRowId())));
-        else if (start instanceof ExpMaterial)
-            runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(start.getRowId()));
-
-        runsToInvestigate.remove(start.getRun());
-        Set<ExpData> childDatas = new HashSet<>();
-        Set<ExpMaterial> childMaterials = new HashSet<>();
-
-        Set<ExpRun> investigatedRuns = new HashSet<>();
-        while (!runsToInvestigate.isEmpty())
-        {
-            ExpRun childRun = runsToInvestigate.remove(0);
-            if (!investigatedRuns.contains(childRun))
-            {
-                investigatedRuns.add(childRun);
-
-                List<ExpMaterial> materialOutputs = removeUnknownMaterials(childRun.getMaterialOutputs());
-                childMaterials.addAll(materialOutputs);
-
-                List<ExpData> dataOutputs = childRun.getDataOutputs();
-                childDatas.addAll(dataOutputs);
-
-                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingMaterials(materialOutputs));
-                runsToInvestigate.addAll(ExperimentServiceImpl.get().getRunsUsingDatas(dataOutputs));
-            }
-        }
-
-        if (start instanceof ExpData)
-            childDatas.remove(start);
-        else if (start instanceof ExpMaterial)
-            childMaterials.remove(start);
-
-        return Pair.of(childDatas, childMaterials);
-    }
-
-
     /**
      * walk experiment graph with one tricky recursive query
      * <p>
@@ -2177,7 +2006,8 @@ public class ExperimentServiceImpl implements ExperimentService
      * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
      * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
      **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(Container c, User user, ExpRunItem start)
+    @Override
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
@@ -2186,11 +2016,11 @@ public class ExperimentServiceImpl implements ExperimentService
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
-
     /**
      * walk experiment graph with one tricky recursive query
      **/
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(Container c, User user, ExpRunItem start)
+    @Override
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setParents(false);
@@ -2207,6 +2037,30 @@ public class ExperimentServiceImpl implements ExperimentService
 
         ExpLineage lineage = getLineage(c, user, start, options);
         return lineage.findRelatedChildSamples(start);
+    }
+
+    @Override
+    @NotNull
+    public Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+        options.setDepth(2); // 2 because of the ExpRun that will always be in between
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentDatas(start);
+    }
+
+    @Override
+    @NotNull
+    public Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start)
+    {
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+        options.setDepth(2); // 2 because of the ExpRun that will always be in between.
+
+        ExpLineage lineage = getLineage(c, user, start, options);
+        return lineage.findNearestParentMaterials(start);
     }
 
     @Override
@@ -2741,6 +2595,7 @@ public class ExperimentServiceImpl implements ExperimentService
         DbScope scope = expTable.getSchema().getScope();
         try (Connection conn = scope.getConnection())
         {
+            //noinspection SqlResolve
             try (PreparedStatement stmt = conn.prepareStatement("UPDATE " + expTable.getSelectName() + " SET ObjectId=? WHERE LSID=?"))
             {
                 Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
@@ -3190,18 +3045,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 ParticipantVisit.ASSAY_RUN_MATERIAL_NAMESPACE.equals(output.getLSIDNamespacePrefix());
     }
 
-    private List<ExpMaterial> removeUnknownMaterials(Iterable<ExpMaterial> materials)
-    {
-        // Filter out the generic unknown material, which is just a placeholder and doesn't represent a real
-        // parent
-        ArrayList<ExpMaterial> result = new ArrayList<>();
-        for (ExpMaterial material : materials)
-        {
-            if (!isUnknownMaterial(material))
-                result.add(material);
-        }
-        return result;
-    }
 
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
@@ -3528,6 +3371,7 @@ public class ExperimentServiceImpl implements ExperimentService
         ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
         getProtocolCache().clear();
+        DomainPropertyManager.clearCaches();
     }
 
     @Override
@@ -3605,7 +3449,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             catch (MalformedURLException e)
             {
-                throw new UnexpectedException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
         return data;
@@ -3698,7 +3542,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                             for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
-                                if (!dataset.canWrite(user))
+                                if (!dataset.canDelete(user))
                                 {
                                     throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                                 }
@@ -3854,7 +3698,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 StudyService studyService = StudyService.get();
                 if (studyService != null)
                 {
-                    for (Dataset dataset : StudyService.get().getDatasetsForAssayProtocol(protocolToDelete))
+                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
                         dataset.delete(user);
                     }
@@ -4295,6 +4139,13 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             SimpleFilter rowIdFilter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), selectedDataIds);
             List<Data> datas = new TableSelector(getTinfoData(), rowIdFilter, null).getArrayList(Data.class);
+
+            if (datas.isEmpty())
+            {
+                // Nothing to do - already deleted. Bail out. See issue 41715
+                transaction.commit();
+                return;
+            }
 
             List<String> allLsids = new ArrayList<>(datas.size());
             Map<Integer, List<String>> lsidsByClass = new LinkedHashMap<>();
@@ -5692,7 +5543,7 @@ public class ExperimentServiceImpl implements ExperimentService
             List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
             if (actions.size() != 3)
             {
-                throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+                throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol; it should have three.");
             }
             ExpProtocolActionImpl action1 = actions.get(0);
             assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
@@ -5876,72 +5727,94 @@ public class ExperimentServiceImpl implements ExperimentService
         return derive(inputMaterials, Collections.emptyMap(), outputMaterials, Collections.emptyMap(), info, log);
     }
 
+    private void _prepareRun(DeriveSamplesBulkHelper helper, ExpRunImpl run, SimpleRunRecord runRecord, User user, Date date)
+    {
+        helper.addRunParams(run._object, user.getUserId());
+
+        // protocol applications
+        ExpProtocolImpl parentProtocol = run.getProtocol();
+
+        List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
+        if (actions.size() != 3)
+        {
+            throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol; it should have three.");
+        }
+        ExpProtocolActionImpl action1 = actions.get(0);
+        assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
+        assert action1.getChildProtocol().getRowId() == parentProtocol.getRowId();
+
+        ExpProtocolActionImpl action2 = actions.get(1);
+        assert action2.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
+        ExpProtocol protocol2 = action2.getChildProtocol();
+
+        ExpProtocolActionImpl action3 = actions.get(2);
+        assert action3.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
+        ExpProtocol outputProtocol = action3.getChildProtocol();
+        assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
+
+        ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+        ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+        ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
+
+        helper.addProtocolApp(protApp1, date, action1, parentProtocol, run, runRecord);
+
+        helper.addProtocolApp(protApp2, date, action2, protocol2, run, runRecord);
+
+        helper.addProtocolApp(protApp3, date, action3, outputProtocol, run, runRecord);
+    }
+
     @Override
     public void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException
     {
         final int MAX_RUNS_IN_BATCH = 1000;
-        int count = 0;
+        int countD = 0;
+        int countA = 0;
 
         User user = info.getUser();
         XarContext context = new XarContext("Simple Run Creation", info.getContainer(), user);
         Date date = new Date();
-        DeriveSamplesBulkHelper helper = new DeriveSamplesBulkHelper(info.getContainer(), context);
+        DeriveSamplesBulkHelper derivationHelper = new DeriveSamplesBulkHelper(info.getContainer(), context, false);
+        DeriveSamplesBulkHelper aliquotHelper = new DeriveSamplesBulkHelper(info.getContainer(), context, true);
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             for (SimpleRunRecord runRecord : runRecords)
             {
-                count++;
-                ExpRunImpl run = createRun(runRecord.getInputMaterialMap(), runRecord.getInputDataMap(), runRecord.getOutputMaterialMap(), runRecord.getOutputDataMap(), info);
-
-                helper.addRunParams(run._object, user.getUserId());
-
-                // protocol applications
-                ExpProtocolImpl parentProtocol = run.getProtocol();
-
-                List<ExpProtocolActionImpl> actions = parentProtocol.getSteps();
-                if (actions.size() != 3)
+                if (!runRecord.getInputDataMap().isEmpty() || !runRecord.getInputMaterialMap().isEmpty())
                 {
-                    throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
+                    countD++;
+                    ExpRunImpl run = createRun(runRecord.getInputMaterialMap(), runRecord.getInputDataMap(), runRecord.getOutputMaterialMap(), runRecord.getOutputDataMap(), info);
+                    _prepareRun(derivationHelper, run, runRecord, user, date);
+                    if ((countD % MAX_RUNS_IN_BATCH) == 0)
+                    {
+                        derivationHelper.saveBatch();
+                    }
                 }
-                ExpProtocolActionImpl action1 = actions.get(0);
-                assert action1.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
-                assert action1.getChildProtocol().getRowId() == parentProtocol.getRowId();
-
-                ExpProtocolActionImpl action2 = actions.get(1);
-                assert action2.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
-                ExpProtocol protocol2 = action2.getChildProtocol();
-
-                ExpProtocolActionImpl action3 = actions.get(2);
-                assert action3.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
-                ExpProtocol outputProtocol = action3.getChildProtocol();
-                assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
-
-                ExpProtocolApplicationImpl protApp1 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-                ExpProtocolApplicationImpl protApp2 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-                ExpProtocolApplicationImpl protApp3 = new ExpProtocolApplicationImpl(new ProtocolApplication());
-
-                helper.addProtocolApp(protApp1, date, action1, parentProtocol, run, runRecord);
-
-                helper.addProtocolApp(protApp2, date, action2, protocol2, run, runRecord);
-
-                helper.addProtocolApp(protApp3, date, action3, outputProtocol, run, runRecord);
-
-                if ((count % MAX_RUNS_IN_BATCH) == 0)
+                if (runRecord.getAliquotInput() != null)
                 {
-                    helper.saveBatch();
+                    countA++;
+                    ExpRunImpl run = createAliquotRun(runRecord.getAliquotInput(), runRecord.getAliquotOutputs(), info);
+                    _prepareRun(aliquotHelper, run, runRecord, user, date);
+                    if ((countA % MAX_RUNS_IN_BATCH) == 0)
+                    {
+                        aliquotHelper.saveBatch();
+                    }
                 }
             }
 
             // process the rest of the list
-            if (!helper.isEmpty())
+            if (!derivationHelper.isEmpty())
             {
-                helper.saveBatch();
+                derivationHelper.saveBatch();
+            }
+            if (!aliquotHelper.isEmpty())
+            {
+                aliquotHelper.saveBatch();
             }
 
             transaction.commit();
         }
-        catch (SQLException e)
+        catch (SQLException | ValidationException e)
         {
             throw new ExperimentException(e);
         }
@@ -5951,6 +5824,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         private Container _container;
         private XarContext _context;
+        private boolean _isAliquot;
 
         private List<List<?>> _runParams;
         private List<List<?>> _protAppParams;
@@ -5958,10 +5832,16 @@ public class ExperimentServiceImpl implements ExperimentService
         private List<List<?>> _materialInputParams;
         private List<List<?>> _dataInputParams;
 
-        public DeriveSamplesBulkHelper(Container container, XarContext context)
+        private List<List<?>> _aliquotInputParams;
+
+        private Map<String, String> _aliquotRootCache;
+
+        public DeriveSamplesBulkHelper(Container container, XarContext context, boolean isAliquot)
         {
             _container = container;
             _context = context;
+            _isAliquot = isAliquot;
+            _aliquotRootCache = new HashMap<>();
             resetState();
         }
 
@@ -5972,6 +5852,9 @@ public class ExperimentServiceImpl implements ExperimentService
             _protAppRecords = new ArrayList<>();
             _materialInputParams = new ArrayList<>();
             _dataInputParams = new ArrayList<>();
+
+            _aliquotInputParams = new ArrayList<>();
+            _aliquotRootCache = new HashMap<>();
         }
 
         public void addRunParams(ExperimentRun run, int userId)
@@ -5996,7 +5879,7 @@ public class ExperimentServiceImpl implements ExperimentService
             _protAppRecords.add(new ProtocolAppRecord(protApp, activityDate, action, protocol, run, runRecord));
         }
 
-        public void saveBatch() throws SQLException, XarFormatException
+        public void saveBatch() throws SQLException, XarFormatException, ValidationException
         {
             // insert into the experimentrun table
             Map<String, ExperimentRun> runLsidToRowId = saveExpRunsBatch(_container, _runParams);
@@ -6006,12 +5889,24 @@ public class ExperimentServiceImpl implements ExperimentService
             saveExpProtocolApplicationBatch(_protAppParams);
 
             // insert into the materialinput table
-            createMaterialInputParams(_protAppRecords, _materialInputParams);
-            saveExpMaterialInputBatch(_materialInputParams);
-            saveExpMaterialOutputs(_protAppRecords);
-            createDataInputParams(_protAppRecords, _dataInputParams);
-            saveExpDataInputBatch(_dataInputParams);
-            saveExpDataOutputs(_protAppRecords);
+
+            if (!_isAliquot)
+            {
+                createMaterialInputParams(_protAppRecords, _materialInputParams);
+                saveExpMaterialInputBatch(_materialInputParams);
+                saveExpMaterialOutputs(_protAppRecords);
+
+                createDataInputParams(_protAppRecords, _dataInputParams);
+                saveExpDataInputBatch(_dataInputParams);
+                saveExpDataOutputs(_protAppRecords);
+            }
+            else
+            {
+                createAliquotInputParams(_protAppRecords, _aliquotInputParams);
+                saveExpMaterialInputBatch(_aliquotInputParams);
+                initAliquotRootsCache(_protAppRecords);
+                saveExpMaterialAliquotOutputs(_protAppRecords);
+            }
 
             // clear the stored records
             resetState();
@@ -6021,6 +5916,26 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 syncRunEdges(er.getRowId(), er.getObjectId(), er.getLSID(), _container, false, cpasTypeToObjectId);
             }
+        }
+
+        private void initAliquotRootsCache(List<ProtocolAppRecord> protAppRecords)
+        {
+            Set<String> parentLSIDS = new HashSet<>();
+
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                if (rec._runRecord.getAliquotInput() != null)
+                    parentLSIDS.add(rec._runRecord.getAliquotInput().getName());
+            }
+
+            TableInfo table = getTinfoMaterial();
+            SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("Lsid"), parentLSIDS, IN).getSQLFragment(table, "m");
+
+            new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialLSID FROM " + table + " ")
+                    .append(sqlfilter).append(" AND RootMaterialLSID IS NOT NULL")).forEach(rs ->
+            {
+                _aliquotRootCache.put(rs.getString("Lsid"), rs.getString("RootMaterialLSID"));
+            });
         }
 
         public boolean isEmpty()
@@ -6130,6 +6045,54 @@ public class ExperimentServiceImpl implements ExperimentService
             }
         }
 
+        private void createAliquotInputParams(List<ProtocolAppRecord> protAppRecords, List<List<?>> aliquotInputParams)
+        {
+            // get the protocol application rows id's
+            Map<String, Integer> protAppRowMap = new HashMap<>();
+
+            for (ProtocolAppRecord rec : protAppRecords)
+                protAppRowMap.put(rec._protApp.getLSID(), null);
+
+            TableInfo pa = getTinfoProtocolApplication();
+            SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, "pa");
+            new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa + " ")
+                    .append(sqlfilter)).forEach(rs ->
+            {
+                if (protAppRowMap.containsKey(rs.getString("Lsid")))
+                    protAppRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
+            });
+
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                assert protAppRowMap.containsKey(rec._protApp.getLSID());
+
+                Integer rowId = protAppRowMap.get(rec._protApp.getLSID());
+                rec._protApp._object.setRowId(rowId);
+
+                // wire the input materials to the protocol inputs for actions 1&2
+                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE ||
+                        rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                {
+                    ExpMaterial parent = rec._runRecord.getAliquotInput();
+                    aliquotInputParams.add(Arrays.asList(
+                            parent.getRowId(),
+                            rowId,
+                            parent.getSampleType().getName()));
+                }
+                // wire the output materials to the protocol input for the last action
+                else if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE)
+                {
+                    for (ExpMaterial aliquot: rec._runRecord.getAliquotOutputs())
+                    {
+                        aliquotInputParams.add(Arrays.asList(
+                                aliquot.getRowId(),
+                                rowId,
+                                aliquot.getSampleType().getName()));
+                    }
+                }
+            }
+        }
+
         private void createDataInputParams(List<ProtocolAppRecord> protAppRecords, List<List<?>> dataInputParams)
         {
             for (ProtocolAppRecord rec : protAppRecords)
@@ -6162,6 +6125,37 @@ public class ExperimentServiceImpl implements ExperimentService
             }
         }
 
+        private void saveExpMaterialAliquotOutputs(List<ProtocolAppRecord> protAppRecords) throws ValidationException
+        {
+            for (ProtocolAppRecord rec : protAppRecords)
+            {
+                if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
+                {
+                    ExpMaterial parent = rec._runRecord.getAliquotInput();
+                    boolean isParentRootMaterial = StringUtils.isEmpty(parent.getAliquotedFromLSID());
+                    for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
+                    {
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
+                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
+
+                        String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
+                        if (StringUtils.isEmpty(rootMaterial))
+                        {
+                            rootMaterial = parent.getRootMaterialLSID();
+                            if (StringUtils.isEmpty(rootMaterial))
+                                throw new ValidationException("Unable to find aliquot parent");
+                        }
+
+                        _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache
+
+                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
+                        
+                        new SqlExecutor(getTinfoMaterial().getSchema()).execute(sql);
+                    }
+                }
+            }
+        }
+        
         private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)
         {
             for (ProtocolAppRecord rec : protAppRecords)
@@ -6331,6 +6325,49 @@ public class ExperimentServiceImpl implements ExperimentService
         return run;
     }
 
+    private ExpRunImpl createAliquotRun(ExpMaterial parent, List<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
+    {
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
+        if (pipeRoot == null || !pipeRoot.isValid())
+            throw new ExperimentException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
+
+        if (aliquots == null || aliquots.isEmpty())
+            throw new IllegalArgumentException("You must create at least one aliquot");
+
+        if (parent == null)
+            throw new IllegalArgumentException("You must create aliquot from a parent material or aliquot");
+
+        StringBuilder name = new StringBuilder("Create ");
+        if (aliquots.size() == 1)
+            name.append("aliquot ");
+        else
+            name.append(aliquots.size()).append(" aliquots ");
+        name.append("from ");
+        name.append(parent.getName());
+
+        ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
+        ExpRunImpl run = createExperimentRun(info.getContainer(), name.toString());
+        run.setProtocol(protocol);
+        run.setFilePathRoot(pipeRoot.getRootPath());
+
+        return run;
+    }
+
+    @Override
+    public ExpProtocol ensureSampleAliquotProtocol(User user) throws ExperimentException
+    {
+        ExpProtocol protocol = getExpProtocol(SAMPLE_ALIQUOT_PROTOCOL_LSID);
+        if (protocol == null)
+        {
+            ExpProtocolImpl baseProtocol = createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, SAMPLE_ALIQUOT_PROTOCOL_NAME);
+            baseProtocol.setLSID(SAMPLE_ALIQUOT_PROTOCOL_LSID);
+            baseProtocol.setMaxInputDataPerInstance(0);
+            baseProtocol.setProtocolDescription("Simple protocol for creating aliquots or subaliquots from the original sample or aliquots.");
+            return insertSimpleProtocol(baseProtocol, user);
+        }
+        return protocol;
+    }
+
     @Override
     public ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException
     {
@@ -6352,6 +6389,14 @@ public class ExperimentServiceImpl implements ExperimentService
             return false;
 
         return SAMPLE_DERIVATION_PROTOCOL_LSID.equals(protocol.getLSID());
+    }
+
+    public boolean isSampleAliquot(ExpProtocol protocol)
+    {
+        if (protocol == null)
+            return false;
+
+        return SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
     }
 
     @Override

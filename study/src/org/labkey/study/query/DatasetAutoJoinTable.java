@@ -32,6 +32,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -91,12 +92,14 @@ public class DatasetAutoJoinTable extends VirtualTable
             // Container is always available, but we only need it for Dataspace shared datasets
             if (source.isShared())
             {
+                Objects.requireNonNull(parent.getColumn("Container"));
                 var colContainer = new AliasedColumn(parent, "Container", parent.getColumn("Container"));
                 colContainer.setHidden(true);
                 addColumn(colContainer);
             }
 
             // SequenceNum is always available
+            Objects.requireNonNull(parent.getColumn(sequenceNumFieldKey.getName()));
             var colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
             colSequenceNum.setHidden(true);
             addColumn(colSequenceNum);
@@ -162,7 +165,7 @@ public class DatasetAutoJoinTable extends VirtualTable
                 // A -> A
                 fk = createParticipantFK(dsd, cf);
         }
-        else if (_keyPropertyName == null || _source.isAssayData())
+        else if (_keyPropertyName == null || _source.isPublishedData())
         {
             if (dsd.isDemographicData())
                 // B -> A
@@ -176,7 +179,7 @@ public class DatasetAutoJoinTable extends VirtualTable
             if (dsd.isDemographicData())
                 // C -> A
                 fk = createParticipantFK(dsd, cf);
-            else if (dsd.getKeyPropertyName() == null || dsd.isAssayData())
+            else if (dsd.getKeyPropertyName() == null || dsd.isPublishedData())
                 // C -> B
                 fk = createParticipantSequenceNumFK(dsd, cf);
             else
@@ -210,7 +213,7 @@ public class DatasetAutoJoinTable extends VirtualTable
 
     private DatasetForeignKey createParticipantSequenceNumFK(DatasetDefinition dsd, ContainerFilter cf)
     {
-        assert !dsd.isDemographicData() && (dsd.getKeyPropertyName() == null || dsd.isAssayData());
+        assert !dsd.isDemographicData() && (dsd.getKeyPropertyName() == null || dsd.isPublishedData());
         assert !_source.isDemographicData();
 
         DatasetForeignKey fk = new DatasetForeignKey(dsd, cf);

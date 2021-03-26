@@ -209,7 +209,7 @@ public abstract class AbstractClrInstallationManager
         if (null != helpTopic)
             builder.append(" ").append(new HelpTopic(helpTopic).getSimpleLinkHtml("View installation instructions."));
 
-        warnings.add(builder.getHtmlString());
+        warnings.add(builder);
     }
 
     private static class ClrInstallationScriptProvider extends FileSqlScriptProvider

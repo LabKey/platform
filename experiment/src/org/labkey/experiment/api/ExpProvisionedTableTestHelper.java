@@ -28,14 +28,14 @@ import java.util.Map;
 
 public class ExpProvisionedTableTestHelper
 {
-    protected static SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
+    public static final SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
 
     final User user = TestContext.get().getUser();
-    protected String agePropertyName = "Age";
-    protected String colorPropertyName = "Color";
-    protected String typePropertyName = "Type";
+    public static final String agePropertyName = "Age";
+    public static final String colorPropertyName = "Color";
+    public static final String typePropertyName = "Type";
 
-    protected Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
+    public Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
     {
         String domainName = "TestVocabularyDomain";
         String domainDescription = "This is a test vocabulary";
@@ -60,14 +60,14 @@ public class ExpProvisionedTableTestHelper
         return DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null);
     }
 
-    protected Map<String, String> getVocabularyPropertyURIS(Domain domain)
+    public Map<String, String> getVocabularyPropertyURIS(Domain domain)
     {
         Map<String, String> propertyURIs = new HashMap<>();
         domain.getProperties().forEach(dp -> propertyURIs.put(dp.getName(), dp.getPropertyURI()));
         return propertyURIs;
     }
 
-    protected List<Map<String, Object>> buildRows(ArrayListMap row)
+    public List<Map<String, Object>> buildRows(ArrayListMap row)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
         rows.add(row);
@@ -84,7 +84,7 @@ public class ExpProvisionedTableTestHelper
         return qus;
     }
 
-    protected List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName, @Nullable UserSchema schema)
+    public List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName, @Nullable UserSchema schema)
             throws Exception
     {
         BatchValidationException errors = new BatchValidationException();
@@ -95,20 +95,20 @@ public class ExpProvisionedTableTestHelper
         return ret;
     }
 
-    protected List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName)
+    public List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName)
             throws Exception
     {
         return  this.insertRows(c, rows, tableName, null);
     }
 
-    protected List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName, @Nullable UserSchema schema) throws Exception
+    public List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName, @Nullable UserSchema schema) throws Exception
     {
         UserSchema userSchema = null == schema ? QueryService.get().getUserSchema(user, c, expDataSchemaKey) : schema;
         List<Map<String, Object>> ret = getQueryUpdateService(userSchema, tableName).updateRows(user, c, rowsToUpdate, oldKeys, null, null);
         return ret;
     }
 
-    protected List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName) throws Exception
+    public List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName) throws Exception
     {
         return this.updateRows(c, rowsToUpdate, oldKeys, tableName, null);
     }

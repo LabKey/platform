@@ -201,9 +201,9 @@ public class AuthenticationManager
     public enum Priority { High, Low }
 
     // TODO: Replace this with a generic domain-claiming mechanism
-    public static String _ldapDomain = null;
+    private static String _ldapDomain = null;
 
-    public static String getLdapDomain()
+    public static @Nullable String getLdapDomain()
     {
         return _ldapDomain;
     }
@@ -324,9 +324,9 @@ public class AuthenticationManager
             if (!configuration.isAutoRedirect())
             {
                 LinkFactory factory = configuration.getLinkFactory();
-                html.append(HtmlString.unsafe("<li>"));
+                html.startTag("li");
                 html.append(factory.getLink(currentURL, logoType));
-                html.append(HtmlString.unsafe("</li>"));
+                html.endTag("li");
             }
         }
 
@@ -1054,7 +1054,7 @@ public class AuthenticationManager
         if (null != session && !user.isGuest())
         {
             // notify websocket clients associated with this http session, the user has logged out
-            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.LoggedOut);
+            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);
 
             // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
             NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);

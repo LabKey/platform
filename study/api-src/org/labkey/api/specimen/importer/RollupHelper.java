@@ -2,9 +2,12 @@ package org.labkey.api.specimen.importer;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.security.User;
+import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
@@ -14,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 // Methods extracted from SpecimenImporter to allow migrating AbstractSpecimenDomainKind, et al
-// TODO: Consider combining this back with SpecimenImporter or move some of its rollup methods here
+// TODO: Consider combining this back with SpecimenImporter or move some of its other rollup methods here
 public class RollupHelper
 {
     public static class RollupMap<K extends Rollup> extends CaseInsensitiveHashMap<List<RollupInstance<K>>>
@@ -117,5 +120,69 @@ public class RollupHelper
             }
         }
         return resultMap;
+    }
+
+    public static List<String> getRolledupDuplicateVialColumnNames(Container container, User user)
+    {
+        // Return names of columns where column is 2nd thru nth column rolled up on same Event column
+        List<String> rolledupNames = new ArrayList<>();
+        RollupMap<EventVialRollup> eventToVialRollups = getEventToVialRollups(container, user);
+        for (List<RollupInstance<EventVialRollup>> rollupList : eventToVialRollups.values())
+        {
+            boolean duplicate = false;
+            for (RollupInstance<EventVialRollup> rollupItem : rollupList)
+            {
+                if (duplicate)
+                    rolledupNames.add(rollupItem.first.toLowerCase());
+                duplicate = true;
+            }
+        }
+        return rolledupNames;
+    }
+
+    public static RollupMap<EventVialRollup> getEventToVialRollups(Container container, User user)
+    {
+        List<EventVialRollup> rollups = RollupHelper.getEventVialRollups();
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+
+        Domain fromDomain = specimenTablesProvider.getDomain("SpecimenEvent", true);
+        if (null == fromDomain)
+            throw new IllegalStateException("Expected SpecimenEvent table to already be created.");
+
+        Domain toDomain = specimenTablesProvider.getDomain("Vial", true);
+        if (null == toDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        return RollupHelper.getRollups(fromDomain, toDomain, rollups);
+    }
+
+    public static List<String> getRolledupSpecimenColumnNames(Container container, User user)
+    {
+        List<String> rolledupNames = new ArrayList<>();
+        RollupMap<VialSpecimenRollup> vialToSpecimenRollups = getVialToSpecimenRollups(container, user);
+        for (List<RollupInstance<VialSpecimenRollup>> rollupList : vialToSpecimenRollups.values())
+        {
+            for (RollupInstance<VialSpecimenRollup> rollupItem : rollupList)
+            {
+                rolledupNames.add(rollupItem.first.toLowerCase());
+            }
+        }
+        return rolledupNames;
+    }
+
+    public static RollupMap<VialSpecimenRollup> getVialToSpecimenRollups(Container container, User user)
+    {
+        List<VialSpecimenRollup> rollups = RollupHelper.getVialSpecimenRollups();
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+
+        Domain fromDomain = specimenTablesProvider.getDomain("Vial", true);
+        if (null == fromDomain)
+            throw new IllegalStateException("Expected Vial table to already be created.");
+
+        Domain toDomain = specimenTablesProvider.getDomain("Specimen", true);
+        if (null == toDomain)
+            throw new IllegalStateException("Expected Specimen table to already be created.");
+
+        return RollupHelper.getRollups(fromDomain, toDomain, rollups);
     }
 }

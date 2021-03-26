@@ -28,7 +28,6 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.OORDisplayColumnFactory;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
@@ -39,7 +38,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -60,6 +59,7 @@ import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -258,12 +258,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             // This can usually be treated as a normal VARCHAR, but remember that it's actually a custom type
             // for places like multi valued columns
             folderCol.setSqlTypeName("entityid");
-            folderCol.setHidden(true);
-            folderCol.setUserEditable(false);
-            folderCol.setShownInInsertView(false);
-            folderCol.setShownInUpdateView(false);
+            folderCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
             addColumn(folderCol);
-            ContainerForeignKey.initColumn(folderCol, _userSchema);
         }
 
         var lsidCol = createRowExpressionLsidColumn(this);
@@ -548,7 +544,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return TableInsertDataIterator.create(data, this, null, context);
+        return new TableInsertDataIteratorBuilder(data, this);
     }
 
     @Override

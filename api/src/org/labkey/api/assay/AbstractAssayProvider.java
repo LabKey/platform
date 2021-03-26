@@ -35,14 +35,12 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -92,12 +90,10 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishKey;
-import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.publish.PublishKey;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -133,6 +129,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: jeckels
@@ -209,7 +206,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors)
+    public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         try
         {
@@ -236,14 +233,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 while (rs.next())
                 {
-                    AssayPublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
+                    PublishKey publishKey = dataKeys.get(((Number)rowIdColumn.getValue(rs)).intValue());
 
                     Container targetStudyContainer = study;
                     if (publishKey.getTargetStudy() != null)
                         targetStudyContainer = publishKey.getTargetStudy();
                     assert targetStudyContainer != null;
 
-                    TimepointType studyType = AssayPublishService.get().getTimepointType(targetStudyContainer);
+                    TimepointType studyType = StudyPublishService.get().getTimepointType(targetStudyContainer);
 
                     Map<String, Object> dataMap = new HashMap<>();
 
@@ -256,22 +253,22 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         sourceContainer = ExperimentService.get().getExpRun(runLSID).getContainer();
                     }
 
-                    dataMap.put(AssayPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
+                    dataMap.put(StudyPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
 
                     if (!studyType.isVisitBased())
                     {
-                        dataMap.put(AssayPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
+                        dataMap.put(StudyPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
                     }
                     else
                     {
                         // add the sequencenum only for visit-based studies, a date based sequencenum will get calculated
                         // for date-based studies in the ETL layer
-                        dataMap.put(AssayPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
+                        dataMap.put(StudyPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
                     }
 
-                    dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
+                    dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
                     dataMap.put(getTableMetadata(protocol).getDatasetRowIdPropertyName(), publishKey.getDataId());
-                    dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
+                    dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
                     // Remember which rows we're planning to copy, partitioned by the target study
                     Set<Integer> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
@@ -285,48 +282,20 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMaps.add(dataMap);
                 }
 
-                checkForAlreadyCopiedRows(user, protocol, errors, rowIdsByTargetContainer);
-
+                StudyPublishService.get().checkForAlreadyCopiedRows(user, Pair.of(Dataset.PublishSource.Assay, protocol.getRowId()), errors, rowIdsByTargetContainer);
                 if (!errors.isEmpty())
                 {
                     return null;
                 }
                 
-                return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
+                return StudyPublishService.get().publishData(user, sourceContainer, study, protocol.getName(),
+                        Pair.of(Dataset.PublishSource.Assay, protocol.getRowId()),
                         dataMaps, getTableMetadata(protocol).getDatasetRowIdPropertyName(), errors);
             }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
-        }
-    }
-
-    private void checkForAlreadyCopiedRows(User user, ExpProtocol protocol, List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer)
-    {
-        for (Map.Entry<Container, Set<Integer>> entry : rowIdsByTargetContainer.entrySet())
-        {
-            Study targetStudy = StudyService.get().getStudy(entry.getKey());
-
-            // Look for an existing dataset backed by this assay definition
-            for (Dataset dataset : targetStudy.getDatasets())
-            {
-                if (protocol.equals(dataset.getAssayProtocol()) && dataset.getKeyPropertyName() != null)
-                {
-                    // Check to see if it already has the data rows that are being copied
-                    TableInfo tableInfo = dataset.getTableInfo(user, false);
-                    Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts(dataset.getKeyPropertyName()), entry.getValue()));
-                    long existingRowCount = new TableSelector(tableInfo, datasetFilter, null).getRowCount();
-                    if (existingRowCount > 0)
-                    {
-                        // If so, don't let the user copy them again, even if they have different participant/visit/date info
-                        String errorMessage = existingRowCount == 1 ? "One of the selected rows has" : (existingRowCount + " of the selected rows have");
-                        errorMessage += " already been copied to the study \"" + targetStudy.getLabel() + "\" in " + entry.getKey().getPath();
-                        errorMessage += " (RowIds: " + entry.getValue() + ")";
-                        errors.add(errorMessage);
-                    }
-                }
-            }
         }
     }
 
@@ -757,52 +726,100 @@ public abstract class AbstractAssayProvider implements AssayProvider
     // CONSIDER: combining with .getTargetStudy()
     // UNDONE: Doesn't look at TargetStudy in Results domain yet.
     @Override
-    public Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId)
+    public Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Integer> rowIds)
     {
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = findTargetStudyProperty(protocol);
         if (pair == null)
-            return null;
+            return Collections.emptySet();
 
         DomainProperty targetStudyColumn = pair.second;
 
-        ExpData data = getDataForDataRow(dataId, protocol);
-        if (data == null)
-            return null;
-        ExpRun run = data.getRun();
-        if (run == null)
-            return null;
+        ResolverCache cache = new ResolverCache();
 
-        ExpObject source;
-        switch (pair.first)
+        Set<Container> result = new HashSet<>();
+
+        for (ExpData data : getDatasForResultRows(rowIds, protocol, cache))
         {
+            Container container = null;
+            if (data.getRunId() != null)
+            {
+                ExpRun run = cache.getRun(data.getRunId());
+                if (run != null)
+                {
+                    // Ignore Results domain TargetStudy for now.
+                    // The participant resolver will find the TargetStudy on the row.
+                    ExpObject source = switch (pair.first)
+                    {
+                        case Run -> run;
+                        default -> cache.getBatch(run);
+                    };
 
-            case Run:
-                source = run;
-                break;
+                    if (source != null)
+                    {
+                        Map<String, Object> properties = OntologyManager.getProperties(source.getContainer(), source.getLSID());
+                        String targetStudyId = (String) properties.get(targetStudyColumn.getPropertyURI());
 
-            case Result:
-                // Ignore Results domain TargetStudy for now.
-                // The participant resolver will find the TargetStudy on the row.
-            case Batch:
-            default:
-                source = AssayService.get().findBatch(run);
-                break;
+                        if (targetStudyId != null)
+                            container = ContainerManager.getForId(targetStudyId);
+                    }
+                }
+            }
+            result.add(container);
         }
-
-        if (source != null)
-        {
-            Map<String, Object> properties = OntologyManager.getProperties(source.getContainer(), source.getLSID());
-            String targetStudyId = (String) properties.get(targetStudyColumn.getPropertyURI());
-
-            if (targetStudyId != null)
-                return ContainerManager.getForId(targetStudyId);
-        }
-        
-        return null;
+        return result;
     }
 
-    public abstract ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol);
+    @Nullable
+    public final ExpData getDataForDataRow(int resultRowId, ExpProtocol protocol)
+    {
+        Set<ExpData> matches = getDatasForResultRows(Collections.singleton(resultRowId), protocol, new ResolverCache());
+        return matches.isEmpty() ? null : matches.iterator().next();
+    }
 
+    /** Resolve result rows to their owning ExpData object. Optional method for assays that support copy-to-study */
+    public Set<ExpData> getDatasForResultRows(Collection<Integer> rowIds, ExpProtocol protocol, ResolverCache cache)
+    {
+        return Collections.emptySet();
+    }
+
+    public static class ResolverCache
+    {
+        private final Map<Integer, ExpData> _dataById = new HashMap<>();
+        private final Map<Integer, ExpRun> _runById = new HashMap<>();
+        private final Map<ExpRun, ExpExperiment> _batchByRun = new HashMap<>();
+
+        private <K, T extends ExpObject> T get(K key, Map<K, T> cache, Supplier<T> supplier)
+        {
+            if (key == null)
+            {
+                return null;
+            }
+            // Don't use computeIfAbsent() because it treats null values as if they weren't in the map at all
+            if (cache.containsKey(key))
+            {
+                return cache.get(key);
+            }
+            T result = supplier.get();
+            cache.put(key, result);
+            return result;
+
+        }
+
+        public ExpData getDataById(int dataId)
+        {
+            return get(dataId, _dataById, () -> ExperimentService.get().getExpData(dataId));
+        }
+
+        public ExpRun getRun(int runId)
+        {
+            return get(runId, _runById, () -> ExperimentService.get().getExpRun(runId));
+        }
+
+        public ExpExperiment getBatch(ExpRun run)
+        {
+            return get(run, _batchByRun, () -> AssayService.get().findBatch(run));
+        }
+    }
 
     @Override
     public ActionURL getImportURL(Container container, ExpProtocol protocol)
@@ -1498,7 +1515,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             result.add(new NavTree("view upload jobs", PageFlowUtil.addLastFilterParameter(url, AssayProtocolSchema.getLastFilterScope(protocol))));
         }
 
-        AssayPublishService svc = AssayPublishService.get();
+        StudyPublishService svc = StudyPublishService.get();
 
         if (AuditLogService.get().isViewable() && null != svc)
             result.add(new NavTree("view copy-to-study history", svc.getPublishHistory(viewContext.getContainer(), protocol, containerFilter)));

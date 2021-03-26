@@ -1,0 +1,37 @@
+<div>
+    <br>
+    Specimen request #^specimenRequestNumber^ was ^simpleStatus^ in ^studyName^.
+    <br>
+    <br>
+</div>
+<table width="500px">
+    <tr>
+        <td valign="top"><b>Request&nbsp;Details</b></td>
+    </tr>
+    <tr>
+        <td valign="top"><b>Specimen&nbsp;Request</b></td>
+        <td align="left">^specimenRequestNumber^</td>
+    </tr>
+    <tr>
+        <td valign="top"><b>Destination</b></td>
+        <td align="left">^destinationLocation^</td>
+    </tr>
+    <tr>
+        <td valign="top"><b>Status</b></td>
+        <td align="left">^status^</td>
+    </tr>
+    <tr>
+        <td valign="top"><b>Modified&nbsp;by</b></td>
+        <td align="left">^modifiedBy^</td>
+    </tr>
+    <tr>
+        <td valign="top"><b>Action</b></td>
+        <td align="left">^action^</td>
+    </tr>
+    ^attachments|<tr><td valign="top"><b>Attachments</b></td><td align="left">%s</td></tr>^
+</table>
+^comments|<p><b>Current&nbsp;Comments</b><br>%s</p>^
+<p>
+    ^requestDescription^
+</p>
+^specimenList^

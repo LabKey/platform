@@ -48,9 +48,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.ResourceURL;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -59,7 +61,6 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
@@ -344,8 +345,9 @@ public class ParticipantGroupManager
                     item = new NavTree("Create " + study.getSubjectNounSingular() + " Group");
                     button.addMenuItem(item);
 
-                    NavTree fromSeletion = item.addChild("From Selected " + study.getSubjectNounPlural());
-                    fromSeletion.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
+                    NavTree fromSelection = item.addChild("From Selected " + study.getSubjectNounPlural());
+                    fromSelection.setScript(createNewParticipantGroupScript(context, dataRegionName, true));
+                    // TODO: Ideally, we'd do something like "fromSelection.setRequiresSelection(true)" here, like we can with buttons, but that's not an option
 
                     NavTree fromGrid = item.addChild("From All " + study.getSubjectNounPlural());
                     fromGrid.setScript(createNewParticipantGroupScript(context, dataRegionName, false));

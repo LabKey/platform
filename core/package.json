@@ -4,11 +4,11 @@
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/dev.config.js --progress --profile --colors",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/prod.config.js --progress --profile --colors",
+    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/views/authenticationConfiguration.* && rimraf resources/views/components.*",
     "copy-distributions": "npm run clean && node copy-distributions.js",
-    "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack-dev-server --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
     "teamcity": "cross-env NODE_ENV=test jest --testResultsProcessor=jest-teamcity-reporter",
@@ -18,6 +18,9 @@
   },
   "jest": {
     "globals": {
+      "ts-jest": {
+        "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.json"
+      },
       "LABKEY": {
         "container": {
           "formats": {
@@ -37,28 +40,28 @@
       "tsx"
     ],
     "setupFilesAfterEnv": [
-      "<rootDir>/test/jest.setup.ts"
+      "<rootDir>/test/js/setup.ts"
     ],
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
     "moduleNameMapper": {
-      "\\.(css|scss)$": "<rootDir>/test/styleMock.ts"
+      "\\.(css|scss)$": "<rootDir>/test/js/styleMock.ts"
     }
   },
   "dependencies": {
-    "@labkey/api": "1.1.6",
-    "@labkey/components": "1.12.2",
+    "@labkey/api": "1.1.8",
+    "@labkey/components": "2.16.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },
   "devDependencies": {
-    "@labkey/build": "1.1.1",
+    "@labkey/build": "2.1.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.5",
     "@types/enzyme-adapter-react-16": "1.0.6",
-    "@types/jest": "26.0.8",
+    "@types/jest": "26.0.20",
     "@typescript-eslint/eslint-plugin": "3.8.0",
     "@typescript-eslint/parser": "3.8.0",
     "enzyme": "3.11.0",
@@ -71,11 +74,11 @@
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-react": "7.20.5",
     "fs-extra": "9.0.1",
-    "jest": "26.2.2",
+    "jest": "26.6.3",
     "jest-teamcity-reporter": "0.9.0",
     "mixin-deep": "2.0.1",
     "prettier": "2.0.5",
     "react-test-renderer": "16.13.1",
-    "ts-jest": "26.1.4"
+    "ts-jest": "26.5.3"
   }
 }

@@ -18,6 +18,10 @@ package org.labkey.study.writer;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.study.importer.SimpleStudyImporter;
+import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
+import org.labkey.api.study.writer.SimpleStudyWriter;
+import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.study.importer.AssayScheduleImporter;
 import org.labkey.study.importer.CohortImporter;
 import org.labkey.study.importer.DatasetCohortAssigner;
@@ -26,8 +30,6 @@ import org.labkey.study.importer.InternalStudyImporter;
 import org.labkey.study.importer.ParticipantCommentImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.ProtocolDocumentImporter;
-import org.labkey.study.importer.SpecimenSchemaImporter;
-import org.labkey.study.importer.SpecimenSettingsImporter;
 import org.labkey.study.importer.StudyQcStatesImporter;
 import org.labkey.study.importer.StudyViewsImporter;
 import org.labkey.study.importer.TopLevelStudyPropertiesImporter;
@@ -40,6 +42,7 @@ import org.labkey.study.importer.VisitImporter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudySerializationRegistryImpl implements StudySerializationRegistry
@@ -56,7 +59,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         return INSTANCE;
     }
 
-    // These importers are defined and registered by other modules.  They have no knowledge of study internals, other
+    // These importers are defined and registered by other modules. They have no knowledge of study internals, other
     // than being able to read elements from study.xml.
     public Collection<FolderImporter> getRegisteredStudyImporters()
     {
@@ -75,11 +78,11 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         IMPORTER_FACTORIES.add(importerFactory);
     }
 
-    // These writers are internal to study.  They have access to study internals.
+    // These writers are internal to study. They have access to study internals.
     public Collection<InternalStudyWriter> getInternalStudyWriters()
     {
         // New up the writers every time since these classes can be stateful
-        return Arrays.asList(
+        return List.of(
             new AssayDatasetWriter(),
             new AssayScheduleWriter(),
             new ViewCategoryWriter(),
@@ -89,13 +92,17 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantCommentWriter(),
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),
-            new SpecimenSettingsWriter(),
-            new SpecimenArchiveWriter(),
             new TreatmentDataWriter(),
             new VisitMapWriter(),
             new StudyViewsWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
         );
+    }
+
+    // These writers are related to study and serialize into the study archive, but are registered by other modules
+    public Collection<SimpleStudyWriter> getSimpleStudyWriters()
+    {
+        return SimpleStudyWriterRegistry.getSimpleStudyWriters();
     }
 
     public Collection<InternalStudyImporter> getInternalStudyImporters()
@@ -110,8 +117,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantGroupImporter(),
             new ProtocolDocumentImporter(),
             new StudyQcStatesImporter(),
-            new SpecimenSettingsImporter(),
-            new SpecimenSchemaImporter(),
             new TreatmentDataImporter(),
             new TreatmentVisitMapImporter(),
             new VisitImporter(),
@@ -119,5 +124,10 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new StudyViewsImporter(),
             new TopLevelStudyPropertiesImporter()
         );
+    }
+
+    public Collection<SimpleStudyImporter> getSimpleStudyImporters()
+    {
+        return SimpleStudyImporterRegistry.getSimpleStudyImporters();
     }
 }

@@ -20,4 +20,12 @@ package org.labkey.core.dialect;
  */
 public class PostgreSql96Dialect extends PostgreSql95Dialect
 {
+    public PostgreSql96Dialect()
+    {
+    }
+
+    public PostgreSql96Dialect(boolean standardConformingStrings)
+    {
+        super(standardConformingStrings);
+    }
 }

@@ -40,7 +40,7 @@ public interface InventoryService
 {
     String PRODUCT_ID = "freezerManager";
 
-    public static Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
+    Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
             "FreezeThawCount",
             "CheckedOutBy",
             "CheckedOut",
@@ -48,9 +48,15 @@ public interface InventoryService
             "StorageRow",
             "StorageCol",
             "StorageLocation",
+            "EnteredStorage",
+            "StorageStatus",
+            "StoredAmountDisplay",
             "StoredAmount",
-            "EnteredStorage"
+            "Units",
+            "StorageComment"
     );
+
+    String EXPERIMENTAL_FM_BIOLOGICS = "experimental-freezermanager-biologics";
 
     static void setInstance(InventoryService impl)
     {
@@ -59,12 +65,12 @@ public interface InventoryService
 
     static InventoryService get() { return ServiceRegistry.get().getService(InventoryService.class); }
 
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows);
 
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
-    List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
+    List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container, User user);
 
     DataIteratorBuilder getPersistStorageItemDataIteratorBuilder(DataIteratorBuilder data, Container container, User user, String metricUnit);
 

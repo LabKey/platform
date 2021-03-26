@@ -18,16 +18,21 @@ package org.labkey.pipeline.mule;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.RemoteExecutionEngine;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.TaskPipelineRegistry;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.AbstractPipelineQueue;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
+import org.labkey.pipeline.api.PipelineStatusFileImpl;
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.mule.filters.JobIdJmsSelectorFilter;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.mule.MuleManager;
@@ -47,8 +52,11 @@ import javax.jms.TextMessage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Enterprise pipeline queue uses Mule to place jobs on a JMS message queue.
@@ -328,5 +336,31 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     public void done(PipelineJob job)
     {
         // No-op
+    }
+
+    @Override
+    @NotNull
+    public Map<String, Integer> getQueuePositions()
+    {
+        Map<String, Integer> result = new HashMap<>();
+
+        Set<String> locations = new TreeSet<>();
+        TaskPipelineRegistry registry = PipelineJobService.get();
+        for (TaskFactory<?> taskFactory : registry.getTaskFactories(null))
+        {
+            locations.add(taskFactory.getExecutionLocation());
+        }
+
+        for (String location : locations)
+        {
+            // Jobs come back in queued order
+            List<PipelineStatusFileImpl> queuedJobs = PipelineStatusManager.getStatusFilesForLocation(location, true);
+            int position = 0;
+            for (PipelineStatusFileImpl sf : queuedJobs)
+            {
+                result.put(sf.getJobId(), ++position);
+            }
+        }
+        return result;
     }
 }

@@ -99,6 +99,8 @@ public interface AuditLogService
 
     <K extends AuditTypeEvent> K addEvent(User user, K event);
 
+    <K extends AuditTypeEvent> void addEvents(User user, List<K> events);
+
     @Nullable
     <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
 

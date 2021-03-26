@@ -5,13 +5,17 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenEvent;
+import org.labkey.api.specimen.SpecimenEventManager;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -191,6 +195,122 @@ public class LocationManager
         else
         {
             throw new ValidationException("Locations currently in use cannot be deleted");
+        }
+    }
+
+    public LocationImpl getOriginatingLocation(Vial vial)
+    {
+        if (vial.getOriginatingLocationId() != null)
+        {
+            LocationImpl location = LocationManager.get().getLocation(vial.getContainer(), vial.getOriginatingLocationId());
+            if (location != null)
+                return location;
+        }
+
+        List<SpecimenEvent> events = SpecimenEventManager.get().getDateOrderedEventList(vial);
+        Integer firstLabId = getProcessingLocationId(events);
+        if (firstLabId != null)
+            return LocationManager.get().getLocation(vial.getContainer(), firstLabId);
+        else
+            return null;
+    }
+
+    public LocationImpl getCurrentLocation(Vial vial)
+    {
+        Integer locationId = getCurrentLocationId(vial);
+        if (locationId != null)
+            return LocationManager.get().getLocation(vial.getContainer(), locationId);
+        return null;
+    }
+
+    private Integer getCurrentLocationId(Vial vial)
+    {
+        List<SpecimenEvent> events = SpecimenEventManager.get().getDateOrderedEventList(vial);
+        return getCurrentLocationId(events);
+    }
+
+    public Integer getCurrentLocationId(List<SpecimenEvent> dateOrderedEvents)
+    {
+        if (!dateOrderedEvents.isEmpty())
+        {
+            SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
+
+            if (lastEvent.getShipDate() == null &&
+                    (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber() == 0) &&
+                    (lastEvent.getShipFlag() == null || lastEvent.getShipFlag() == 0))
+            {
+                return lastEvent.getLabId();
+            }
+        }
+        return null;
+    }
+
+    public Integer getProcessingLocationId(List<SpecimenEvent> dateOrderedEvents)
+    {
+        SpecimenEvent firstEvent = SpecimenEventManager.get().getFirstEvent(dateOrderedEvents);
+        return firstEvent != null ? firstEvent.getLabId() : null;
+    }
+
+    private static final String EXISTS = "    EXISTS(SELECT 1 FROM ";
+
+    public static void updateLocationTableInUse(TableInfo locationTableInfo, Container container)
+    {
+        final String tableAlias = locationTableInfo.getSelectName();
+        SpecimenSchema schema = SpecimenSchema.get();
+        TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(container);
+        TableInfo vialTableInfo = schema.getTableInfoVialIfExists(container);
+        TableInfo specimenTableInfo = schema.getTableInfoSpecimenIfExists(container);
+        if (null != eventTableInfo && null != vialTableInfo && null != specimenTableInfo)
+        {
+            var inUseColumn = locationTableInfo.getColumn("InUse");
+
+            SQLFragment existsSQL = new SQLFragment();
+            existsSQL
+                .append(EXISTS)
+                .append(eventTableInfo, "se")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = se.LabId OR ")
+                .append(tableAlias)
+                .append(".RowId = se.OriginatingLocationId)) ");
+
+            existsSQL
+                .append(" OR\n")
+                .append(EXISTS)
+                .append(vialTableInfo, "v")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = v.CurrentLocation OR ")
+                .append(tableAlias)
+                .append(".RowId = v.ProcessingLocation)) ");
+
+            existsSQL
+                .append(" OR\n")
+                .append(EXISTS)
+                .append(specimenTableInfo, "s")
+                .append(" WHERE (")
+                .append(tableAlias)
+                .append(".RowId = s.OriginatingLocationId OR ")
+                .append(tableAlias)
+                .append(".RowId = s.ProcessingLocation)) ");
+
+            SQLFragment updateSQL = new SQLFragment("UPDATE ");
+            updateSQL
+                .append(locationTableInfo.getSelectName())
+                .append(" SET ")
+                .append(inUseColumn.getSelectName())
+                .append(" = ")
+                .append(schema.getSqlDialect().wrapExistsExpression(existsSQL));
+
+            try
+            {
+                new SqlExecutor(locationTableInfo.getSchema()).execute(updateSQL);
+            }
+            finally
+            {
+                // Not strictly required, since LocationImpl doesn't currently hold inUse
+                LocationCache.clear(container);
+            }
         }
     }
 }

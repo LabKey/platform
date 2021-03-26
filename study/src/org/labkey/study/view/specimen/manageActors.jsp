@@ -16,26 +16,28 @@
  */
 %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
+<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteActorAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
-<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
-    StudyImpl study = me.getModelBean();
-    SpecimenRequestActor[] actors = study.getSampleRequestActors();
+    JspView<Study> me = (JspView<Study>) HttpView.currentView();
+    Study study = me.getModelBean();
+    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
     String showMemberSitesIdStr = request.getParameter("showMemberSites");
     int showMemberSitesId = -1;
-    Set<Integer> inUseActorIds = study.getSampleRequestActorsInUse();
+    Set<Integer> inUseActorIds = SpecimenRequestRequirementProvider.get().getActorsInUseSet(getContainer());
     if (showMemberSitesIdStr != null && showMemberSitesIdStr.length() > 0)
     {
         try
@@ -88,7 +90,7 @@
                     %>
                         <b>Choose Site</b>:<br>
                         <%
-                            for (LocationImpl location : study.getLocations())
+                            for (LocationImpl location : LocationManager.get().getLocations(study.getContainer()))
                             {
                             %><a href="<%=h(urlFor(ShowGroupMembersAction.class).addParameter("id", actor.getRowId()).addParameter("locationId", location.getRowId()))%>"><%= h(location.getDisplayName()) %></a><br><%
                             }

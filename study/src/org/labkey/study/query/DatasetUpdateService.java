@@ -15,17 +15,23 @@
  */
 package org.labkey.study.query;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.qc.QCState;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
@@ -33,25 +39,26 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.visitmanager.PurgeParticipantsTask;
+import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 /*
 * User: Dave
@@ -85,6 +92,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         StudyImportMaps       // expected: Map<String,Map<Object,Object>>
     }
 
+    private static final Logger LOG = LogManager.getLogger(DatasetUpdateService.class);
+
     private final DatasetDefinition _dataset;
     private final Set<String> _potentiallyNewParticipants = new HashSet<>();
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
@@ -103,7 +112,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
         if (StudySecurityEscalator.isEscalated()) {
             return true;
@@ -164,14 +173,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
+        if (!isBulkLoad())
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
+
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+
         if (null != result && result.size() > 0)
         {
             for (Map<String, Object> row : result)
             {
-                if (!isBulkLoad())
-                    StudyServiceImpl.addDatasetAuditEvent(user, _dataset, null, row);
-
                 try
                 {
                     String participantID = getParticipant(row, user, container);
@@ -190,7 +200,57 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return result;
     }
 
+    protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
+    {
+        // If we're using a managed GUID as a key, wire it up here so that it's available to trigger scripts
+        if (_dataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER &&
+                _dataset.getKeyManagementType() == Dataset.KeyManagementType.GUID &&
+                _dataset.getKeyPropertyName() != null)
+        {
+            return new DataIteratorBuilder()
+            {
+                @Override
+                public DataIterator getDataIterator(DataIteratorContext context)
+                {
+                    DataIterator input = in.getDataIterator(context);
+                    if (null == input)
+                        return null;           // Can happen if context has errors
 
+                    final SimpleTranslator result = new SimpleTranslator(input, context);
+
+                    boolean foundKeyCol = false;
+                    for (int c = 1; c <= input.getColumnCount(); c++)
+                    {
+                        ColumnInfo col = input.getColumnInfo(c);
+
+                        // Incoming data has a matching field
+                        if (col.getName().equalsIgnoreCase(_dataset.getKeyPropertyName()))
+                        {
+                            // make sure guid is not null (12884)
+                            result.addCoaleseColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
+                            foundKeyCol = true;
+                        }
+                        else
+                        {
+                            // Pass it through as-is
+                            result.addColumn(c);
+                        }
+                    }
+
+                    if (!foundKeyCol)
+                    {
+                        // Inject a column with a new GUID
+                        ColumnInfo key = getQueryTable().getColumn(_dataset.getKeyPropertyName());
+                        result.addColumn(new BaseColumnInfo(key), new SimpleTranslator.GuidColumn());
+                    }
+
+                    return result;
+                }
+            };
+        }
+        return in;
+    }
+    
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
@@ -281,22 +341,19 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     static class PurgeParticipantCommitTask implements Runnable
     {
-        public Container _container;
-        public Set<String> _potentiallyDeletedParticipants = new HashSet<>();
+        private final Container _container;
+        private final Set<String> _potentiallyDeletedParticipants;
 
-        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants) {
+        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants)
+        {
             _container = container;
-            Set<String> copySet = new HashSet<>(potentiallyDeletedParticipants);
-            _potentiallyDeletedParticipants = copySet;
+            _potentiallyDeletedParticipants = new HashSet<>(potentiallyDeletedParticipants);
         }
 
         @Override
         public void run()
         {
-            HashMap<Container, Set<String>> potentiallyDeletedParticipantsMap = new HashMap<>();
-            potentiallyDeletedParticipantsMap.put(_container, _potentiallyDeletedParticipants);
-            PurgeParticipantsTask purgeParticipantsTask = new PurgeParticipantsTask(potentiallyDeletedParticipantsMap );
-            purgeParticipantsTask.run();
+            new ParticipantPurger(_container, _potentiallyDeletedParticipants, LOG::info, LOG::error).purgeParticipants();
         }
 
         @Override

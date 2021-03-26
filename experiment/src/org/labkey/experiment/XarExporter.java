@@ -62,7 +62,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -146,9 +146,10 @@ public class XarExporter
     AssayProvider.XarCallbacks assayCallbacks = null;
 
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user)
     {
-        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer);
+        // UNDONE: Is it ok to share the relativizedLSIDs across XarExporters and tsv writers?
+        _relativizedLSIDs = relativizedLSIDs;
         _urlRewriter = urlRewriter;
         _user = user;
 
@@ -156,9 +157,19 @@ public class XarExporter
         _archive = _document.addNewExperimentArchive();
     }
 
+    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    {
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user);
+    }
+
     public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
     {
-        this(lsidRelativizer, selection.createURLRewriter(), user);
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), selection, user, xarXmlFileName, log);
+    }
+
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
+    {
+        this(relativizedLSIDs, selection.createURLRewriter(), user);
         _log = log;
 
         selection.addContent(this);
@@ -394,6 +405,8 @@ public class XarExporter
                     dataLSID.setDataFileUrl(url);
                 }
             }
+            else
+                dataLSID.setCpasType(data.getCpasType());
         }
 
         List<Material> inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
@@ -440,8 +453,9 @@ public class XarExporter
             {
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
                 // include a file path in the export, though.  We use "Data" + rowId of the data object as the file name
-                // to ensure that the path won't collide with other output data from exported runs in the xar archive.
-                if (data.getDataFileUrl() == null && data.isFinalRunOutput())
+                // to ensure that the path won't collide with other output data from exported runs in the xar archive,
+                // but we don't want to include data classes as part of this behavior.
+                if (data.getDataFileUrl() == null && data.isFinalRunOutput() && (data.getDataClass(null) == null))
                     data.setDataFileURI(run.getFilePathRootPath().resolve("Data" + data.getRowId()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
@@ -514,7 +528,7 @@ public class XarExporter
     }
 
     private String relativizeLSIDPropertyValue(String value, SimpleTypeNames.Enum type)
-    {
+    {// NOTE: this is interesting - we fixup LSID values in the xar xml
         if (type == SimpleTypeNames.STRING &&
             value != null &&
             value.indexOf("urn:lsid:") == 0)
@@ -1261,7 +1275,7 @@ public class XarExporter
                                 queueDomain(domain);
                             }
 
-                            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
                                 Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
                                 if (autoCopyContainer != null)

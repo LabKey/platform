@@ -33,7 +33,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
@@ -59,6 +59,7 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
@@ -96,6 +97,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
 {
@@ -163,7 +166,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
         var folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));
         folder.setHidden(true);
-        ContainerForeignKey.initColumn(folder, _userSchema);
         addColumn(folder);
 
         var related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
@@ -271,7 +273,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
             if (isUserId(colName))
             {
-                UserIdQueryForeignKey.initColumn(getUserSchema(), extensionCol, true);
+                if (isBlank(extensionCol.getConceptURI()))
+                    extensionCol.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
             }
             else if (colName.equalsIgnoreCase("AssignedTo"))
             {
@@ -605,8 +608,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             step0.addColumn(issueDefCol, new SimpleTranslator.ConstantColumn(_issueDef.getRowId()));
 
             // Insert into issues.issues then the provisioned table
-            DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), IssuesSchema.getInstance().getTableInfoIssues(), c, context);
-            DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _issueDef.createTable(getUserSchema().getUser()), c, context);
+            var step2 = new TableInsertDataIteratorBuilder(step0, IssuesSchema.getInstance().getTableInfoIssues(), c);
+            var step3 = new TableInsertDataIteratorBuilder(step2, _issueDef.createTable(getUserSchema().getUser()), c);
 
             return LoggingDataIterator.wrap(step3.getDataIterator(context));
         }
@@ -741,7 +744,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         }
     }
 
-    static class AssignedToForeignKey extends UserIdQueryForeignKey
+    static class AssignedToForeignKey extends UserIdForeignKey
     {
         UserSchema _schema;
 

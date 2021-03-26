@@ -209,4 +209,26 @@ public class SpecimenSchema
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, _specimenTablesTemplate);
         return specimenTablesProvider.createTableInfo(SpecimenTablesProvider.DERIVATIVETYPE_TABLENAME);
     }
+
+    // The tables below are managed by study, not by specimen, but lots of specimen code interacts with them
+
+    public TableInfo getTableInfoParticipantVisit()
+    {
+        return getSchema().getTable("ParticipantVisit");
+    }
+
+    public TableInfo getTableInfoParticipant()
+    {
+        return getSchema().getTable("Participant");
+    }
+
+    public TableInfo getTableInfoParticipantGroupMap()
+    {
+        return getSchema().getTable("ParticipantGroupMap");
+    }
+
+    public TableInfo getTableInfoVisit()
+    {
+        return getSchema().getTable("Visit");
+    }
 }

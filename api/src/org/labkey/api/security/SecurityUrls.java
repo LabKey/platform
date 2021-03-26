@@ -41,6 +41,6 @@ public interface SecurityUrls extends UrlProvider
     ActionURL getAddUsersURL(Container container);
     ActionURL getFolderAccessURL(Container container);
     ActionURL getExternalToolsViewURL(User user, URLHelper returnURL); // Always root
-    String getCompleteUserURLPrefix(Container container);
-    String getCompleteUserReadURLPrefix(Container container);
+    ActionURL getCompleteUserURL(Container container);
+    ActionURL getCompleteUserReadURL(Container container);
 }

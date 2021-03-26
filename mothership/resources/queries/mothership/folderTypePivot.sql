@@ -17,7 +17,7 @@ SELECT
     SUM(NumberValue) AS FolderCount,
     Key,
     ServerSessionId
-FROM JsonMetricValues
+FROM recentJsonMetricValues
 WHERE DisplayKey LIKE 'folderTypeCounts.%'
 GROUP BY ServerSessionId, Key
 PIVOT FolderCount BY Key

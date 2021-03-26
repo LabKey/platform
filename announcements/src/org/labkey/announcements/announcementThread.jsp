@@ -74,14 +74,14 @@ if (announcementModel.isSpam())
 }
 else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminPermission.class))
 {
-    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> requires moderator review.<%
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This <%=h(settings.getConversationName().toLowerCase())%> requires <%=link("moderator review", new ActionURL(AnnouncementsController.ModeratorReviewAction.class, c)).clearClasses()%>.<%
 }
 %>
 
 <table style="table-layout:fixed;width:100%">
 <tr>
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=text(AnnouncementManager.getUserDetailsLink(c, user, announcementModel.getCreatedBy(), bean.includeGroups, false))%></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=AnnouncementManager.getUserDetailsLink(c, user, announcementModel.getCreatedBy(), bean.includeGroups, false)%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
@@ -171,7 +171,7 @@ if (!announcementModel.getResponses().isEmpty())
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
-                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=text(AnnouncementManager.getUserDetailsLink(c, user, r.getCreatedBy(), bean.includeGroups, false) + " responded:")%></td>
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=AnnouncementManager.getUserDetailsLink(c, user, r.getCreatedBy(), bean.includeGroups, false)%> responded:</td>
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {

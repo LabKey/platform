@@ -21,12 +21,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.CohortFilter.Type;
+import org.labkey.api.study.Config;
+import org.labkey.api.study.Params;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.CohortFilter.Type;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -46,129 +48,6 @@ import java.util.Set;
  */
 public class CohortFilterFactory
 {
-    public enum Params implements SafeToRenderEnum
-    {
-        cohortFilterType
-        {
-            @Override
-            void apply(Config c, Pair<String, String> entry)
-            {
-                c.oldstyle = true;
-                c.setType(entry.getValue());
-            }
-        },
-        cohortId
-        {
-            @Override
-            void apply(Config c, Pair<String, String> entry)
-            {
-                c.oldstyle = true;
-                c.setCohortId(entry.getValue());
-            }
-        },
-        cohortEnrolled
-        {
-            @Override
-            void apply(Config c, Pair<String, String> entry)
-            {
-                c.oldstyle = true;
-                c.setEnrolled(entry.getValue());
-            }
-        };
-
-        abstract void apply(Config c, Pair<String,String> value);
-    }
-
-    public static class Config
-    {
-        Type type;
-        Integer cohortId;
-        String label;
-        Boolean enrolled;
-
-        public Type getType()
-        {
-            return type;
-        }
-
-        public void setType(String s)
-        {
-            Type type = null;
-            try { type = Type.valueOf(s); } catch (Exception x) {/* */}
-            setType(type);
-        }
-
-        public void setType(Type type)
-        {
-            if (null == type)
-                return;
-            if (null != this.type)
-                this.ambiguous = true;
-            this.type = type;
-        }
-
-        public Integer getCohortId()
-        {
-            return cohortId;
-        }
-
-        public void setCohortId(String s)
-        {
-            Integer i = null;
-            try { i = Integer.parseInt(s); } catch (Exception x) {/* */}
-            setCohortId(i);
-        }
-
-        public void setCohortId(Integer cohortId)
-        {
-            if (null == cohortId)
-                return;
-            if (null != this.label || null != this.cohortId)
-                this.ambiguous = true;
-            this.cohortId = cohortId;
-        }
-
-        public String getLabel()
-        {
-            return label;
-        }
-
-        public void setLabel(String label)
-        {
-            if (null == label)
-                return;
-            if (null != this.label || null != this.cohortId)
-                this.ambiguous = true;
-            this.label = label;
-        }
-
-        public Boolean getEnrolled()
-        {
-            return enrolled;
-        }
-
-        public void setEnrolled(String s)
-        {
-            Boolean b = null;
-            try { b = ConvertHelper.convert(s, Boolean.class); } catch (Exception x) {/* */}
-            setEnrolled(b);
-        }
-
-        public void setEnrolled(Boolean enrolled)
-        {
-            if (null == enrolled)
-                return;
-            if (null != this.enrolled)
-                ambiguous = true;
-            this.enrolled = enrolled;
-        }
-
-        // detect whether the filter might not have been created via the cohort picker
-        boolean oldstyle=false;
-        boolean ambiguous=false;
-    }
-
-
     enum CohortFilterField
     {
         currentCohortLabel("ParticipantId/Cohort/Label"){
@@ -176,7 +55,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.PTID_CURRENT);
-                c.label = entry.getValue();
+                c.setLabel(entry.getValue());
             }
         },
         currentCohortRowId("ParticipantId/Cohort/RowId"){
@@ -184,7 +63,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.PTID_CURRENT);
-                try { c.cohortId = Integer.parseInt(entry.getValue()); } catch (Exception x) {/* */}
+                try { c.setCohortId(Integer.parseInt(entry.getValue())); } catch (Exception x) {/* */}
             }
         },
         currentCohortEnrolled("ParticipantId/Cohort/Enrolled"){
@@ -200,7 +79,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.PTID_INITIAL);
-                c.label = entry.getValue();
+                c.setLabel(entry.getValue());
             }
         },
         initialCohortRowId("ParticipantId/InitialCohort/RowId"){
@@ -208,7 +87,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.PTID_INITIAL);
-                try { c.cohortId = Integer.parseInt(entry.getValue()); } catch (Exception x) {/* */}
+                try { c.setCohortId(Integer.parseInt(entry.getValue())); } catch (Exception x) {/* */}
             }
         },
         initialCohortEnrolled("ParticipantId/InitialCohort/Enrolled"){
@@ -224,7 +103,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.DATA_COLLECTION);
-                c.label = entry.getValue();
+                c.setLabel(entry.getValue());
             }
         },
         visitCohortRowId("ParticipantVisit/Cohort/RowId"){
@@ -232,7 +111,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.DATA_COLLECTION);
-                try { c.cohortId = Integer.parseInt(entry.getValue()); } catch (Exception x) {/* */}
+                try { c.setCohortId(Integer.parseInt(entry.getValue())); } catch (Exception x) {/* */}
             }
         },
         visitCohortEnrolled("ParticipantVisit/Cohort/Enrolled"){
@@ -249,7 +128,7 @@ public class CohortFilterFactory
             void apply(Config c, Pair<String,String> entry)
             {
                 c.setType(Type.DATA_COLLECTION);
-                c.label = entry.getValue();
+                c.setLabel(entry.getValue());
             }
         },
         collectionCohortRowId("CollectionCohort/RowId"){
@@ -298,7 +177,7 @@ public class CohortFilterFactory
             {
                 if (!"~eq".equals(op) && !(fk.getName().equals("Enrolled") && "~neqornull".equals(op)))
                 {
-                    c.ambiguous = true;
+                    c.setAmbiguous(true);
                     return;
                 }
             }
@@ -431,9 +310,9 @@ public class CohortFilterFactory
             }
             */
         }
-        if ((config.label != null || config.cohortId != null) && config.enrolled == Boolean.TRUE)
-            config.ambiguous = true;
-        return config.type != null && (config.cohortId != null || config.enrolled == Boolean.TRUE || config.label != null);
+        if ((config.getLabel() != null || config.getCohortId() != null) && config.getEnrolled() == Boolean.TRUE)
+            config.setAmbiguous(true);
+        return config.getType() != null && (config.getCohortId() != null || config.getEnrolled() == Boolean.TRUE || config.getLabel() != null);
     }
 
 
@@ -499,16 +378,16 @@ public class CohortFilterFactory
         if (!parseCohortUrlParameter(url, study, dataregion, config))
             return null;
 
-        if (null != config.type && !config.ambiguous)
+        if (null != config.getType() && !config.getAmbiguous())
         {
-            if (null != config.cohortId || null != config.label)
+            if (null != config.getCohortId() || null != config.getLabel())
             {
-                if (config.type == UNASSIGNED.getType() && config.label==null && (config.cohortId == null || config.cohortId == UNASSIGNED.getCohortId()))
+                if (config.getType() == UNASSIGNED.getType() && config.getLabel() == null && (config.getCohortId() == null || config.getCohortId() == UNASSIGNED.getCohortId()))
                     return UNASSIGNED;
 
                 return new SingleCohortFilter(config);
             }
-            else if (config.enrolled == Boolean.TRUE)
+            else if (config.getEnrolled() == Boolean.TRUE)
             {
                 return getEnrolledCohortFilter(c, user, config);
             }
@@ -523,8 +402,8 @@ public class CohortFilterFactory
     public static @Nullable CohortFilter getEnrolledCohortFilter(Container c, User user, Type type)
     {
         Config config = new Config();
-        config.type = type;
-        config.enrolled = Boolean.TRUE;
+        config.setType(type);
+        config.setEnrolled(Boolean.TRUE);
         return getEnrolledCohortFilter(c, user, config);
     }
 

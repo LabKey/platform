@@ -41,15 +41,15 @@ public class RepositorySettings
         return "SpecWebPart_Group" + grouping.toString() + "." + groupBy.toString();
     }
 
+    private final String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
+    private final Map<String, String> _mapOldNamesToNewNames = new HashMap<>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
+    private final Container _container;
+
     private boolean _simple;
     private boolean _enableRequests;
     private boolean _specimenDataEditable;
-    private String[][] _specWebPartColumnGroup = new String[2][3];      // 2 groupings; 3 groupBys within each
-    private Map<String, String> _mapOldNamesToNewNames = new HashMap<>();     // TODO: needed for any studies saved between 1/20/2013 and 2/1/2013
 
-    private Container _container;
-
-    public RepositorySettings(Container container)
+    private RepositorySettings(Container container)
     {
         _container = container;
         setSpecimenWebPartGroupingDefaults();
@@ -59,11 +59,11 @@ public class RepositorySettings
     {
         this(container);
         String simple = map.get(KEY_SIMPLE);
-        _simple = null != simple && Boolean.parseBoolean(simple);
+        _simple = Boolean.parseBoolean(simple);
         String enableRequests = map.get(KEY_ENABLE_REQUESTS);
         _enableRequests = null == enableRequests ? !_simple : Boolean.parseBoolean(enableRequests);
         String specimenDataEditable = map.get(KEY_SPECIMENDATA_EDITABLE);
-        _specimenDataEditable = null != specimenDataEditable && Boolean.parseBoolean(specimenDataEditable);
+        _specimenDataEditable = Boolean.parseBoolean(specimenDataEditable);
 
         String firstGrouping = map.get(makeKeySpecWebPartGroup(0,0));
         if (null != firstGrouping)
@@ -188,18 +188,9 @@ public class RepositorySettings
     public static RepositorySettings getDefaultSettings(Container container)
     {
         RepositorySettings settings = new RepositorySettings(container);
-        if (null != StudyService.get().getStudy(container))
-        {
-            settings.setSimple(false);
-            settings.setEnableRequests(true);
-            settings.setSpecimenDataEditable(false);
-        }
-        else
-        {
-            settings.setSimple(true);
-            settings.setEnableRequests(false);
-            settings.setSpecimenDataEditable(false);
-        }
+        settings.setSimple(true);
+        settings.setEnableRequests(false);
+        settings.setSpecimenDataEditable(false);
         return settings;
     }
 

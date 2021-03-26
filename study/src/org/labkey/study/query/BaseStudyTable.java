@@ -42,6 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -235,8 +236,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
         }
-        containerCol = ContainerForeignKey.initColumn(containerCol, _userSchema);
-        containerCol.setHidden(true);
+        containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
         return addColumn(containerCol);
     }
 
@@ -411,32 +411,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
     }
 
-
-/*
-    private static class DateVisitColumn extends ExprColumn
-    {
-        private static final String DATE_VISIT_JOIN_ALIAS = "DateVisitJoin";
-        public DateVisitColumn(TableInfo parent)
-        {
-            super(parent, "Visit", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + DATE_VISIT_JOIN_ALIAS + ".SequenceNumMin"), JdbcType.VARCHAR);
-        }
-
-        @Override
-        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-        {
-            String pvAlias = parentAlias + "$PV";
-            String dateVisitJoinAlias = parentAlias + "$" + DATE_VISIT_JOIN_ALIAS;
-            SQLFragment join = new SQLFragment();
-            join.append(" LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoParticipantVisit() + " " + pvAlias + " ON\n" +
-                    parentAlias + ".ParticipantSequenceNum = " + pvAlias + ".ParticipantSequenceNum AND\n" +
-                    parentAlias + ".Container = " + pvAlias + ".Container\n");
-            join.append("LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " " + dateVisitJoinAlias +
-                    " ON " + dateVisitJoinAlias + ".RowId = " + pvAlias + ".VisitRowId");
-            map.put(DATE_VISIT_JOIN_ALIAS, join);
-        }
-    }
-*/
-
     protected void addVialCommentsColumn(final boolean joinBackToSpecimens)
     {
         var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
@@ -453,14 +427,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         commentsFK.addJoin(FieldKey.fromParts("Container"), "Folder", false);
         commentsColumn.setFk(commentsFK);
         commentsColumn.setDescription("");
-        commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new CommentDisplayColumn(colInfo);
-            }
-        });
+        commentsColumn.setDisplayColumnFactory(CommentDisplayColumn::new);
         commentsColumn.setUserEditable(false);
         addColumn(commentsColumn);
     }
@@ -867,7 +834,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         if (getColumn("Folder") == null)
         {
             var folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("Container"));
-            ContainerForeignKey.initColumn(folder,getUserSchema());
             folder.setHidden(true);
             addColumn(folder);
         }

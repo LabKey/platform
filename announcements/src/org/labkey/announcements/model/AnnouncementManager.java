@@ -63,6 +63,7 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MailHelper.BulkEmailer;
@@ -325,13 +326,23 @@ public class AnnouncementManager
     {
         String name = AnnouncementManager.getMessageBoardSettings(c).getConversationName();
         BulkEmailer emailer = new BulkEmailer(user);
-        List<String> toList = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class)).stream()
+
+        // Only admins should be part of the moderator review process, but we will still respect their email subscription
+        // preferences for this container
+        IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
+        Set<User> subscribers = sel.getNotificationUsers(ann);
+
+        List<User> admins = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class));
+        admins.retainAll(subscribers);
+
+        List<String> toList = admins.stream()
             .map(User::getEmail)
             .collect(Collectors.toList());
 
         if (toList.isEmpty())
         {
-            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are authorized in this folder: " + c.getPath());
+            LogManager.getLogger(AnnouncementManager.class).warn("New " + name.toLowerCase() + " requires moderator review, but no moderators are subscribed to receive 'Individual' notifications in this folder: " + c.getPath());
+
         }
         else
         {
@@ -361,7 +372,7 @@ public class AnnouncementManager
 
     public static Permissions getPermissions(Container c, User user, Settings settings)
     {
-        if (settings.isSecure())
+        if (settings.isSecureOn())
             return new SecureMessageBoardPermissions(c, user, settings);
         else
             return new NormalMessageBoardPermissions(c, user, settings);
@@ -745,7 +756,7 @@ public class AnnouncementManager
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());
-        props.put("secure", String.valueOf(settings.isSecure()));
+        props.put("secure", settings.getSecure());
         props.put("status", String.valueOf(settings.hasStatus()));
         props.put("expires", String.valueOf(settings.hasExpires()));
         props.put("assignedTo", String.valueOf(settings.hasAssignedTo()));
@@ -935,7 +946,7 @@ public class AnnouncementManager
 
     private static boolean isSecure(@NotNull Container c)
     {
-        return AnnouncementManager.getMessageBoardSettings(c).isSecure();
+        return AnnouncementManager.getMessageBoardSettings(c).isSecureOn();
     }
 
 
@@ -972,30 +983,30 @@ public class AnnouncementManager
         }
     }
 
-    public static String getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
+    public static HtmlString getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
     {
-        String result;
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
 
         // Email link shows display name and not html link
         if (forEmail)
         {
-            result = PageFlowUtil.filter(UserManager.getDisplayName(formattedUserId, currentUser));
+            builder.append(UserManager.getDisplayName(formattedUserId, currentUser));
         }
         else
         {
-            result = UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId);
+            builder.append(UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId));
         }
 
         if (includeGroups)
         {
-            String groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
+            HtmlString groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
             if (groupList.length() > 0)
             {
-                result += " (" + (groupList) + ")";
+                builder.append(" (").append(groupList).append(")");
             }
         }
 
-        return result;
+        return builder.getHtmlString();
     }
 
 
@@ -1105,7 +1116,7 @@ public class AnnouncementManager
                     if (notificationBean == null)
                         return null;
 
-                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true);
+                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true).toString();
                 }
             });
 
@@ -1343,7 +1354,7 @@ public class AnnouncementManager
             this.reason = reason;
             this.includeGroups = perm.includeGroups();
             this.bodyText = a.getBody();
-            if (!settings.isSecure())
+            if (settings.isSecureWithEmailOn() || settings.isSecureOff())
             {
                 WikiRenderingService renderingService = WikiRenderingService.get();
                 this.body = renderingService.getFormattedHtml(currentRendererType, a.getBody());

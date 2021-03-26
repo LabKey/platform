@@ -33,6 +33,7 @@ import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -202,12 +203,14 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 {
                     // Use rowId mapping tables or extra column if necessary to map FKs
                     FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
-                    Map<Object, Object> dataspaceTableIdMap = Collections.emptyMap();
+                    Map<Object, Object> dataspaceTableIdMap = null;
                     if (null != match.getFk())
                     {
                         String lookupTableName = match.getFk().getLookupTableName();
                         dataspaceTableIdMap = _tableIdMapMap.get(lookupTableName);
                     }
+                    if (null == dataspaceTableIdMap)
+                        dataspaceTableIdMap = Collections.emptyMap();
                     out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
                             dataspaceTableIdMap);
                 }
@@ -216,10 +219,9 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     // usually we let DataIterator handle convert, but we need to convert for consistent _key/lsid generation
                     out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
                 }
-                else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID)
+                else if (match.getPropertyType() == PropertyType.FILE_LINK)
                 {
-                    // make sure guid is not null (12884)
-                    out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
+                    out = it.addFileColumn(match.getName(), in);
                 }
                 else
                 {
@@ -579,6 +581,12 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             qcCol.setPropertyURI(uri);
             Callable qcCall = new QCStateColumn(index, defaultQCState);
             return addColumn(qcCol, qcCall);
+        }
+
+        int addFileColumn(String name, int index)
+        {
+            var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
+            return addColumn(col, new FileColumn(_datasetDefinition.getContainer(), name, index, "datasetdata"));
         }
 
     //        int addSequenceNumFromDateColumn()

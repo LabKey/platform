@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
@@ -152,8 +153,8 @@ public class SecurityManager
     static final String ADD_GROUP_TO_ITSELF_ERROR_MESSAGE = "Can't add a group to itself";
     static final String ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a group to a system group";
     static final String ADD_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a system group to another group";
-    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE =  "Can't add a project group to a group in a different project";
-    static final String PROJECT_TO_SITE_ERROR_MESSAGE =  "Can't add a project group to a site group";
+    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE = "Can't add a project group to a group in a different project";
+    static final String PROJECT_TO_SITE_ERROR_MESSAGE = "Can't add a project group to a site group";
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
@@ -844,7 +845,7 @@ public class SecurityManager
         if (provider == null)
             return defaultUrl;
 
-        ResetPasswordProvider urlProvider =  AuthenticationManager.getResetPasswordProvider(provider);
+        ResetPasswordProvider urlProvider = AuthenticationManager.getResetPasswordProvider(provider);
         if (urlProvider == null)
             return defaultUrl;
 
@@ -1757,12 +1758,12 @@ public class SecurityManager
     }
 
     // Returns comma-separated list of group names this user belongs to in this container
-    public static String getGroupList(Container c, User u)
+    public static HtmlString getGroupList(Container c, User u)
     {
         Container proj = c.getProject();
 
         if (null == proj || u == null)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         int[] groupIds = u.getGroups();
 
@@ -1789,7 +1790,7 @@ public class SecurityManager
             }
         }
 
-        return groupList.toString();
+        return HtmlString.of(groupList.toString());
     }
 
 
@@ -2447,7 +2448,7 @@ public class SecurityManager
                     try
                     {
                         addMember(newGroup, groupA);
-                        fail("Should have thrown error when attempting to create circular group.  Chain is lenght: " + count);
+                        fail("Should have thrown error when attempting to create circular group. Chain is length: " + count);
                     }
                     catch (InvalidGroupMembershipException e)
                     {
@@ -2519,11 +2520,11 @@ public class SecurityManager
 
                 SecurityManager.setVerification(email, null);
 
-                String password = generateStrongPassword();
+                String password = generateStrongPassword(user);
                 SecurityManager.setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
-                assertNotNull(rawEmail + " failed to authenticate; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
+                assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
                 assertEquals(user, user2);
             }
             finally
@@ -2532,9 +2533,20 @@ public class SecurityManager
             }
         }
 
-        private String generateStrongPassword()
+        private String generateStrongPassword(User user)
         {
-            return createTempPassword() + "Az9!";
+            String password;
+
+            // Check and loop until password is valid for this user. These randomly generated passwords will often
+            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
+            // rules disallow.
+            do
+            {
+                password = createTempPassword() + "Az9!";
+            }
+            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
+
+            return password;
         }
 
         @Test
@@ -2729,15 +2741,15 @@ public class SecurityManager
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test UserRole properties
-            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
+            ConfigProperty testUserRoleProp = new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
 
             // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
+            ConfigProperty testGroupRoleProp = new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
 
             // prepare test UserRole properties
-            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
+            ConfigProperty testUserGroupProp = new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
 
             // set these test startup properties to be used by the entire server
@@ -2882,7 +2894,7 @@ public class SecurityManager
         }
         catch (ConfigurationException e)
         {
-            message.append(HtmlString.unsafe("<br>"));
+            message.append(HtmlString.BR);
             message.append(email.getEmailAddress());
             message.append(HtmlString.unsafe(" was added successfully, but could not be emailed due to a failure:<br><pre>"));
             message.append(e.getMessage());
@@ -2976,7 +2988,7 @@ public class SecurityManager
             builder.append(HtmlString.unsafe("</p>"));
             builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
             builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
-            builder.append(HtmlString.unsafe(".<br>"));
+            builder.append(".").append(HtmlString.BR);
         }
         else
         {
@@ -3347,6 +3359,13 @@ public class SecurityManager
             errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
             UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
         }
+    }
+
+    // We let admins delete passwords (i.e., entries in the logins table), see #42691
+    public static void adminDeletePassword(ValidEmail email, User user)
+    {
+        new SqlExecutor(CoreSchema.getInstance().getScope()).execute("DELETE FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress());
+        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " deleted the password.");
     }
 
     public static void populateUserGroupsWithStartupProps()

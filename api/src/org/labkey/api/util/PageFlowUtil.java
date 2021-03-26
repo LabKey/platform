@@ -366,7 +366,7 @@ public class PageFlowUtil
         return PageFlowUtil.jsString(PageFlowUtil.filter(s));
     }
 
-    static public String jsString(CharSequence cs)
+    public static String jsString(CharSequence cs)
     {
         if (cs == null)
             return "''";
@@ -375,12 +375,17 @@ public class PageFlowUtil
     }
 
     @Deprecated // usages look wrong to me -- they should just use q()?
-    static public HtmlString jsString(HtmlString hs)
+    public static HtmlString jsString(HtmlString hs)
     {
         return HtmlString.unsafe(jsString(hs.toString()));
     }
 
-    static public String jsString(String s)
+    public static String jsString(ActionURL url)
+    {
+        return jsString(url.getLocalURIString());
+    }
+
+    public static String jsString(String s)
     {
         if (s == null)
             return "''";
@@ -1419,7 +1424,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 35 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 33 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
@@ -1516,7 +1521,7 @@ public class PageFlowUtil
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            return new String(out.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
         }
         catch (TransformerFactoryConfigurationError e)
         {
@@ -2110,6 +2115,7 @@ public class PageFlowUtil
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
+        experimental.put(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
@@ -2168,6 +2174,7 @@ public class PageFlowUtil
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
+            projectProps.put("title", project.getTitle());
             projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }

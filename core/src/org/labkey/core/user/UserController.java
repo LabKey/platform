@@ -105,7 +105,6 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
@@ -130,13 +129,15 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.core.login.DbLoginConfiguration;
+import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UserAvatarDisplayColumnFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
-import org.labkey.core.security.SecurityController;
+import org.labkey.core.security.SecurityController.AdminDeletePasswordAction;
+import org.labkey.core.security.SecurityController.AdminResetPasswordAction;
 import org.labkey.core.view.template.bootstrap.PrintTemplate;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -327,7 +328,7 @@ public class UserController extends SpringActionController
 
         if (canAddUser)
         {
-            ActionButton insert = new ActionButton(PageFlowUtil.urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
+            ActionButton insert = new ActionButton(urlProvider(SecurityUrls.class).getAddUsersURL(getContainer()), "Add Users");
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
         }
@@ -1093,7 +1094,7 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(QueryUpdateForm form)
         {
-            return form.getReturnActionURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
+            return form.getReturnActionURL(urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
         }
 
         @Override
@@ -1105,11 +1106,28 @@ public class UserController extends SpringActionController
         }
     }
 
+    private static class UpdateUserDetailsForm extends UserQueryForm
+    {
+        // Specifying "merge" as true allows for passing sparse row data and assumes the original row
+        // values that are not explicitly specified should be left unchanged.
+        private boolean _merge;
+
+        public boolean isMerge()
+        {
+            return _merge;
+        }
+
+        public void setMerge(boolean merge)
+        {
+            _merge = merge;
+        }
+    }
+
     @RequiresLogin // permission check will happen with form.mustCheckPermissions
-    public class UpdateUserDetailsAction extends MutatingApiAction<UserQueryForm>
+    public class UpdateUserDetailsAction extends MutatingApiAction<UpdateUserDetailsForm>
     {
         @Override
-        public void validateForm(UserQueryForm form, Errors errors)
+        public void validateForm(UpdateUserDetailsForm form, Errors errors)
         {
             if (form.getUserId() <= 0)
             {
@@ -1122,7 +1140,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public Object execute(UserQueryForm form, BindException errors) throws Exception
+        public Object execute(UpdateUserDetailsForm form, BindException errors) throws Exception
         {
             Container root = ContainerManager.getRoot();
             UserSchema schema = form.getSchema();
@@ -1135,6 +1153,32 @@ public class UserController extends SpringActionController
                 QueryUpdateForm queryUpdateForm = new QueryUpdateForm(table, getViewContext(), true);
                 queryUpdateForm.bindParameters(form.getInitParameters());
                 Map<String, Object> row = queryUpdateForm.getTypedColumns();
+
+                // TODO: Update this to use our normal strategy for updating (assume null values are not being touched)
+                if (form.isMerge())
+                {
+                    Map<String, Object> props = getUserProps(form);
+
+                    // Remove properties that are not to be updated
+                    props.remove("userid");
+                    props.remove("haspassword");
+                    props.remove("lastlogin");
+                    props.remove("expirationdate");
+                    props.remove("active");
+                    props.remove("_row");
+                    props.remove("_ts");
+                    props.remove("groups");
+                    props.remove("owner");
+                    props.remove("avatar");
+                    props.remove("created");
+                    props.remove("createdby");
+                    props.remove("modified");
+                    props.remove("modifiedby");
+                    props.remove("entityid");
+
+                    props.putAll(row);
+                    row = props;
+                }
 
                 // handle file attachment for avatar file
                 Map<String, MultipartFile> fileMap = getFileMap();
@@ -1328,6 +1372,19 @@ public class UserController extends SpringActionController
         }
     }
 
+    private Map<String, Object> getUserProps(UserQueryForm form) throws NotFoundException
+    {
+        UserSchema schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException("Schema not found");
+
+        TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
+        if (table == null)
+            throw new NotFoundException("Query not found");
+
+        return new TableSelector(table).getMap(form.getUserId());
+    }
+
     @RequiresLogin
     public class GetUserPropsAction extends ReadOnlyApiAction<UserQueryForm>
     {
@@ -1335,20 +1392,14 @@ public class UserController extends SpringActionController
         public ApiResponse execute(UserQueryForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            UserSchema schema = form.getSchema();
-            if (schema == null)
-                throw new NotFoundException("Schema not found");
+            Map<String, Object> props = getUserProps(form);
 
-            TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
-            if (table == null)
-                throw new NotFoundException("Query not found");
-
-            Map<String, Object> props = new TableSelector(table).getMap(form.getUserId());
             if (props != null)
             {
                 response.put("success", true);
                 response.put("props", props);
             }
+
             return response;
         }
     }
@@ -1550,7 +1601,7 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
-                ActionButton changePasswordButton = new ActionButton(PageFlowUtil.urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
+                ActionButton changePasswordButton = new ActionButton(urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
                 changePasswordButton.setActionType(ActionButton.Action.LINK);
                 changePasswordButton.addContextualRole(OwnerRole.class);
                 bb.add(changePasswordButton);
@@ -1561,17 +1612,25 @@ public class UserController extends SpringActionController
                 // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record
                 if (null != detailsEmail && !isOwnRecord && canManageDetailsUser && !isLoginAutoRedirect)
                 {
-                    // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
-                    // in with SSO and later needing to use database authentication.  Also allows site admin to have
-                    // an alternate login, in case LDAP server goes down (this happened recently on one of our
-                    // production installations).
-                    ActionURL resetURL = new ActionURL(SecurityController.AdminResetPasswordAction.class, c);
+                    // Allow admins to create a logins entry if it doesn't exist. Addresses scenario of user logging in
+                    // with LDAP/SSO and later needing to use database authentication. Also allows site admin to have
+                    // an alternate login, e.g., in case LDAP server goes down or configuration changes.
+                    ActionURL resetURL = new ActionURL(AdminResetPasswordAction.class, c);
                     resetURL.addParameter("email", detailsEmail.getEmailAddress());
                     resetURL.addReturnURL(getViewContext().getActionURL());
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
-
                     bb.add(reset);
+
+                    if (loginExists)
+                    {
+                        ActionURL deleteURL = new ActionURL(AdminDeletePasswordAction.class, c);
+                        deleteURL.addParameter("email", detailsEmail.getEmailAddress());
+                        deleteURL.addReturnURL(getViewContext().getActionURL());
+                        ActionButton delete = new ActionButton(deleteURL, "Delete Password");
+                        delete.setActionType(ActionButton.Action.LINK);
+                        bb.add(delete);
+                    }
                 }
 
                 if (canManageDetailsUser && !isLoginAutoRedirect) // Issue 33393
@@ -2000,11 +2059,7 @@ public class UserController extends SpringActionController
         {
             try
             {
-                Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
-                if (configurations.size() != 1)
-                    throw new IllegalStateException("Expected exactly one DbAuthenticationConfiguration, but was: " + configurations.size());
-
-                DbLoginConfiguration configuration = configurations.iterator().next();
+                DbLoginConfiguration configuration = DbLoginManager.getConfiguration();
                 return configuration.getAuthenticationProvider().authenticate(configuration, email, password, returnUrlHelper).isAuthenticated();
             }
             catch (ValidEmail.InvalidEmailException e)
@@ -2964,7 +3019,7 @@ public class UserController extends SpringActionController
             UserController controller = new UserController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new BeginAction(),
                 controller.new GetUsersAction(),
                 controller.new GetUsersWithPermissionsAction()

@@ -2,17 +2,18 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -20,183 +21,95 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class AuditHandler
+
+public interface AuditHandler
 {
-    // we exclude these from the detailed record because they are already on the audit record itself and
-    // depending on the data iterator behavior (e.g., for ExpDataIteraotrs.getDataIterator), these values
-    // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
-    protected static final Set<String> excludedFromDetailDiff = CaseInsensitiveHashSet.of("Modified", "ModifiedBy");
+    void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount);
 
-    protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
+    /* In the case of update the 'existingRows' is the 'before' version of the record. Caller is not expected to provide existingRows without rows. */
+    void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,
+                       @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows);
 
-    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow);
 
-    /**
-     * Allow for adding fields that may be present in the updated row but not represented in the original row
-     * @param originalRow the original data
-     * @param modifiedRow the data from the updated row that has changed
-     * @param updatedRow the row that has been updated, which may include fields that have not changed
-     */
-    protected void addDetailedModifiedFields(Map<String, Object> originalRow, Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    static Map<String, Object> getRecordForInsert(Map<String, Object> updatedRow)
     {
-        // do nothing extra by default
+        Map<String, Object> modifiedRow = new HashMap<>(updatedRow);
+        // remove DataIterator artifacts
+        modifiedRow.remove(DataIterator.ROWNUMBER_COLUMNNAME);
+        modifiedRow.remove(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME);
+        return modifiedRow;
     }
 
-    public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params)
+    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> existingRow, Set<String> extraFieldsToInclude)
     {
-        if (table.supportsAuditTracking())
-        {
-            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
-                auditType = auditConfigurable.getAuditBehavior();
-
-            // Truncate audit event doesn't accept any params
-            if (action == QueryService.AuditAction.TRUNCATE)
-            {
-                assert params.length == 0;
-                switch (auditType)
-                {
-                    case NONE:
-                        return;
-
-                    case SUMMARY:
-                    case DETAILED:
-                        AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, 0, null);
-                        AuditLogService.get().addEvent(user, event);
-                        return;
-                }
-            }
-
-            switch (auditType)
-            {
-                case NONE:
-                    return;
-
-                case SUMMARY:
-                {
-                    assert (params.length > 0);
-
-                    List<Map<String, Object>> rows = params[0];
-                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.get(0));
-
-                    AuditLogService.get().addEvent(user, event);
-                }
-                case DETAILED:
-                {
-                    assert (params.length > 0);
-
-                    List<Map<String, Object>> rows = params[0];
-                    List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
-
-                    for (int i=0; i < rows.size(); i++)
-                    {
-                        Map<String, Object> row = rows.get(i);
-                        Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, updatedRow);
-
-                        switch (action)
-                        {
-                            case INSERT:
-                            {
-                                String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
-                                if (newRecord != null)
-                                    event.setNewRecordMap(newRecord);
-                                break;
-                            }
-                            case MERGE:
-                            {
-                                if (updatedRow.isEmpty())
-                                {
-                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
-                                    if (newRecord != null)
-                                        event.setNewRecordMap(newRecord);
-                                }
-                                else
-                                {
-                                    setOldAndNewMapsForUpdate(event, c, row, updatedRow, table);
-                                }
-                                break;
-                            }
-                            case DELETE:
-                            {
-                                String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
-                                if (oldRecord != null)
-                                    event.setOldRecordMap(oldRecord);
-                                break;
-                            }
-                            case UPDATE:
-                            {
-                                setOldAndNewMapsForUpdate(event, c, row, updatedRow, table);
-                                break;
-                            }
-                        }
-                        AuditLogService.get().addEvent(user, event);
-                    }
-                    break;
-                }
-            }
-        }
+        return getOldAndNewRecordForMerge(row, existingRow, extraFieldsToInclude, TableInfo.defaultExcludedDetailedUpdateAuditFields);
     }
 
-    private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> updatedRow, TableInfo table)
-    {
-        Pair<Map<String, Object>, Map<String, Object>> rowPair = getOldAndNewRecordForMerge(row, updatedRow, table.getExtraDetailedUpdateAuditFields());
-
-        Map<String, Object> originalRow = rowPair.first;
-        Map<String, Object> modifiedRow = rowPair.second;
-
-        // allow for adding fields that may be present in the updated row but not represented in the original row
-        addDetailedModifiedFields(row, modifiedRow, updatedRow);
-
-        String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
-        if (oldRecord != null)
-            event.setOldRecordMap(oldRecord);
-
-        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, modifiedRow);
-        if (newRecord != null)
-            event.setNewRecordMap(newRecord);
-    }
-
-    public static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> updatedRow, Set<String> extraFieldsToInclude)
+    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> existingRow, Set<String> extraFieldsToInclude, Set<String> excludedFromDetailDiff)
     {
         // record modified fields
         Map<String, Object> originalRow = new HashMap<>();
         Map<String, Object> modifiedRow = new HashMap<>();
 
-        for (Map.Entry<String, Object> entry : row.entrySet())
+        // Iterate through existingRow keys since these have the casing we want
+        // and we won't convert sample type and data class names into lower case.
+        for (Map.Entry<String, Object> entry : existingRow.entrySet())
         {
-            boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
-            if (!excludedFromDetailDiff.contains(entry.getKey()) && updatedRow.containsKey(entry.getKey()))
+            String key = entry.getKey();
+            boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(key);
+            if (!excludedFromDetailDiff.contains(key) && row.containsKey(key))
             {
-                Object newValue = updatedRow.get(entry.getKey());
+                Object oldValue = entry.getValue();
+                Object newValue = row.get(key);
                 // compare dates using string values to allow for both Date and Timestamp types
-                if (newValue instanceof Date && entry.getValue() != null)
+                if (newValue instanceof Date && oldValue != null)
                 {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
                     String newString = formatter.format((java.util.Date) newValue);
-                    Object oldValue = entry.getValue();
                     String oldString = oldValue instanceof Date ? formatter.format((Date) oldValue) : oldValue.toString();
                     if (!newString.equals(oldString) || isExtraAuditField)
                     {
-                        originalRow.put(entry.getKey(), oldValue);
-                        modifiedRow.put(entry.getKey(), newValue);
+                        originalRow.put(key, oldValue);
+                        modifiedRow.put(key, newValue);
                     }
                 }
-                else if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
+                else if (newValue instanceof Number && oldValue != null)
                 {
-                    originalRow.put(entry.getKey(), entry.getValue());
-                    modifiedRow.put(entry.getKey(), newValue);
+                    try
+                    {
+                        //Trying to catch 1.000 != 1.0
+                        Number num = NumberFormat.getInstance().parse(String.valueOf(oldValue));
+                        Double newVal = ((Number) newValue).doubleValue();
+                        Double oldVal = num.doubleValue();
+
+                        // If values differ than include in difference maps
+                        if (!newVal.equals(oldVal) || isExtraAuditField)
+                        {
+                            originalRow.put(key, oldValue);
+                            modifiedRow.put(key, newValue);
+                        }
+                    }
+                    catch (ParseException e)
+                    {
+                        // If a parsing error occurred e.g. one value was NaN, then include values in difference maps
+                        originalRow.put(key, oldValue);
+                        modifiedRow.put(key, newValue);
+                    }
+                }
+                else if (!Objects.equals(oldValue, newValue) || isExtraAuditField)
+                {
+                    originalRow.put(key, oldValue);
+                    modifiedRow.put(key, newValue);
                 }
             }
             else if (isExtraAuditField)
             {
                 // persist extra fields desired for audit details even if no change is made, so that extra field values is available after record is deleted
                 // for example, a display label/id is desired in audit log for the record updated.
-                originalRow.put(entry.getKey(), entry.getValue());
-                modifiedRow.put(entry.getKey(), entry.getValue());
+                originalRow.put(key, entry.getValue());
+                modifiedRow.put(key, entry.getValue());
             }
         }
         return new Pair<>(originalRow, modifiedRow);
     }
-
 }

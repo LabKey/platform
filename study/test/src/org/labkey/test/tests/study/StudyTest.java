@@ -140,9 +140,10 @@ public class StudyTest extends StudyBaseTest
         enableEmailRecorder();
 
         importStudy();
-        startSpecimenImport(2);
+        if (_studyHelper.isSpecimenModulePresent())
+            startSpecimenImport(2);
 
-        waitForPipelineJobsToComplete(2, "study import", false);
+        waitForPipelineJobsToComplete(_studyHelper.isSpecimenModulePresent() ? 2 : 1, "study import", false);
     }
 
     @Override
@@ -173,11 +174,17 @@ public class StudyTest extends StudyBaseTest
 
         if (!isQuickTest())
         {
-            waitForSpecimenImport();
-            verifySpecimens();
-            verifyParticipantComments();
+            if (_studyHelper.isSpecimenModulePresent())
+            {
+                waitForSpecimenImport();
+                verifySpecimens();
+                verifyParticipantComments();
+            }
             verifyParticipantReports(27);
-            verifyPermissionsRestrictions();
+            if (_studyHelper.isSpecimenModulePresent())
+            {
+                verifyPermissionsRestrictions();
+            }
             verifyDeleteUnusedVisits();
         }
     }
@@ -277,12 +284,12 @@ public class StudyTest extends StudyBaseTest
 
     protected int getVisitCount()
     {
-        return 66;
+        return _studyHelper.isSpecimenModulePresent() ? 66 : 55;
     }
 
     protected int getUnusedVisitCount()
     {
-        return 24;
+        return _studyHelper.isSpecimenModulePresent() ? 24 : 26;
     }
 
     protected static final String SUBJECT_NOUN = "Mouse";
@@ -754,11 +761,11 @@ public class StudyTest extends StudyBaseTest
     protected void verifySpecimens()
     {
         clickFolder(getFolderName());
+        _containerHelper.enableModule("Specimen");
         portalHelper.addWebPart("Specimens");
         waitForText("Blood (Whole)");
         clickAndWait(Locator.linkWithText("Blood (Whole)"));
         specimenUrl = getCurrentRelativeURL();
-
 
         log("verify presence of \"create new request\" button");
         BootstrapMenu menu = BootstrapMenu.find(getDriver(),"Request Options");

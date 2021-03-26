@@ -61,7 +61,6 @@ import java.util.Map;
  */
 public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 {
-    public static final String RESPONSE_FORMAT_PARAMETER_NAME = "respFormat";
     private final Marshaller _marshaller;
 
     private ApiResponseWriter.Format _reqFormat = null;
@@ -107,17 +106,9 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     @Override
-    public void checkPermissions() throws UnauthorizedException
+    public ApiResponseWriter.Format getDefaultResponseFormat()
     {
-        // Set the preferred response format here so we can use it for 401s
-        setResponseFormat();
-
-        super.checkPermissions();
-    }
-
-    private void setResponseFormat()
-    {
-        ApiResponseWriter.setResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.getFormatByName(getViewContext().getRequest().getParameter(RESPONSE_FORMAT_PARAMETER_NAME), ApiResponseWriter.Format.JSON));
+        return ApiResponseWriter.Format.JSON;
     }
 
     @Override
@@ -129,9 +120,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     @Override
     public ModelAndView handleRequest() throws Exception
     {
-        // Likely a dupe with what's been done in checkPermissions(), but ensuring that future code path variants will pass through
-        setResponseFormat();
-
         switch (getViewContext().getMethod())
         {
             case POST:

@@ -16,9 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.Params" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
@@ -114,7 +114,7 @@
                 {
                     %>
                 <input type="hidden" name="participantId" value="<%=h(entry.getKey().getParticipantId())%>">
-                <select name="<%= h(CohortFilterFactory.Params.cohortId.name()) %>"><%
+                <select name="<%= h(Params.cohortId.name()) %>"><%
                     // Need to display selection drop-down for each participant
                     CohortImpl selectedCohort = entry.getValue();
                     

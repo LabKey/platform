@@ -25,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
@@ -116,7 +116,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
     public static SampleTypeServiceImpl get()
     {
@@ -598,13 +598,13 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null, null, null);
+                parentCol, nameExpression, templateInfo, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable Container autoLinkTargetContainer)
         throws ExperimentException
     {
         if (name == null)
@@ -713,6 +713,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             source.setNameExpression(nameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
+        source.setAutoLinkTargetContainer(autoLinkTargetContainer);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -872,6 +873,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             st.setLabelColor(options.getLabelColor());
             st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
+            st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
         }
 
         ValidationException errors;
@@ -900,17 +902,17 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return true;
     }
 
-    protected String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
+    public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {
         String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action, isUpdate);
         return StringUtils.isEmpty(comment) ? action.getCommentDetailed() : comment;
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
         // not doing anything with userComment at the moment
-        return createAuditRecord(c, getCommentDetailed(action, !updatedRow.isEmpty()), row, updatedRow, action);
+        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), action, row, existingRow);
     }
 
     @Override
@@ -926,7 +928,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         // we want to include the fields that indicate parent lineage has changed.
         // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
         updatedRow.forEach((fieldName, value) -> {
-            if (fieldName.startsWith(ExpData.DATA_INPUT_PARENT) || fieldName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
                 if (!originalRow.containsKey(fieldName))
                 {
                     modifiedRow.put(fieldName, value);
@@ -936,10 +938,18 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, row, null, null);
+        return createAuditRecord(c, comment, null, row, null);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
+    // move to UploadSamplesHelper?
+    private boolean isInputFieldKey(String fieldKey)
+    {
+        int slash = fieldKey.indexOf('/');
+        return  slash==ExpData.DATA_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpData.DATA_INPUT_PARENT) ||
+                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
+    }
+
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
         var tx = getExpSchema().getScope().getCurrentTransaction();
@@ -949,20 +959,18 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
 
-        if (updatedRow != null)
-        {
-            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
-            event.setLineageUpdate(parentFields.isPresent());
-        }
-
+        var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
         {
+            Optional<String> parentFields = row.keySet().stream().filter(this::isInputFieldKey).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+
             String sampleTypeLsid = null;
-            if (row.containsKey(CPAS_TYPE))
-                sampleTypeLsid =  String.valueOf(row.get(CPAS_TYPE));
+            if (staticsRow.containsKey(CPAS_TYPE))
+                sampleTypeLsid =  String.valueOf(staticsRow.get(CPAS_TYPE));
             // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
-            if (sampleTypeLsid == null && row.containsKey("sampleset"))
-                sampleTypeLsid = String.valueOf(row.get("sampleset"));
+            if (sampleTypeLsid == null && staticsRow.containsKey("sampleset"))
+                sampleTypeLsid = String.valueOf(staticsRow.get("sampleset"));
             if (sampleTypeLsid != null)
             {
                 ExpSampleType sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
@@ -972,12 +980,14 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
                     event.setSampleTypeId(sampleType.getRowId());
                 }
             }
-            if (row.containsKey(LSID))
-                event.setSampleLsid(String.valueOf(row.get(LSID)));
-            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
-                event.setSampleId((Integer) row.get(ROW_ID));
-            if (row.containsKey(NAME))
-                event.setSampleName(String.valueOf(row.get(NAME)));
+            if (staticsRow.containsKey(LSID))
+                event.setSampleLsid(String.valueOf(staticsRow.get(LSID)));
+            if (staticsRow.containsKey(ROW_ID) && staticsRow.get(ROW_ID) != null)
+                event.setSampleId((Integer) staticsRow.get(ROW_ID));
+            if (staticsRow.containsKey(NAME))
+                event.setSampleName(String.valueOf(staticsRow.get(NAME)));
+            // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
+            row.put(ROW_ID,staticsRow.get(ROW_ID));
         }
 
         if (action != null)

@@ -499,6 +499,7 @@ if (!LABKEY.DataRegions) {
             _initHeaderLocking.call(this);
             _initCustomViews.call(this);
             _initPanes.call(this);
+            _initReport.call(this);
         }
         // else the user needs to call render
 
@@ -2300,6 +2301,23 @@ if (!LABKEY.DataRegions) {
         }
     };
 
+    /**
+     * @private
+     */
+    var _initReport = function() {
+        if (LABKEY.Utils.isObject(this.report)) {
+            this.addMessage({
+                html: [
+                    '<span class="labkey-strong">Name:</span>',
+                    LABKEY.Utils.encodeHtml(this.report.name),
+                    '<span class="labkey-strong" style="padding-left: 30px;">Source:</span>',
+                    LABKEY.Utils.encodeHtml(this.report.source)
+                ].join('&nbsp;'),
+                part: 'report',
+            });
+        }
+    };
+
     // These study specific functions/constants should be moved out of Data Region
     // and into their own dependency.
 
@@ -3316,53 +3334,53 @@ if (!LABKEY.DataRegions) {
     };
 
     var _saveSessionShowPrompt = function(region, queryDetails) {
-        var config = Ext4.applyIf({
-            allowableContainerFilters: region.allowableContainerFilters,
-            targetContainers: queryDetails.targetContainers,
-            canEditSharedViews: queryDetails.canEditSharedViews,
-            canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
-            success: function (win, o) {
-                var timerId = setTimeout(function() {
-                    timerId = 0;
-                    Ext4.Msg.progress("Saving...", "Saving custom view...");
-                }, 500);
-
-                var jsonData = {
-                    schemaName: region.schemaName,
-                    "query.queryName": region.queryName,
-                    "query.viewName": region.viewName,
-                    newName: o.name,
-                    inherit: o.inherit,
-                    shared: o.shared
-                };
-
-                if (o.inherit) {
-                    jsonData.containerPath = o.containerPath;
-                }
-
-                LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
-                    method: 'POST',
-                    jsonData: jsonData,
-                    callback: function() {
-                        if (timerId > 0)
-                            clearTimeout(timerId);
-                        win.close();
-                    },
-                    success: function() {
-                        region.showSuccessMessage.call(region);
-                        region.changeView.call(region, {type: 'view', viewName: o.name});
-                    },
-                    failure: function(json) {
-                        Ext4.Msg.alert('Error saving view', json.exception || json.statusText);
-                    },
-                    scope: region
-                });
-            },
-            scope: region
-        }, region.view);
-
         LABKEY.DataRegion.loadViewDesigner(function() {
+            var config = Ext4.applyIf({
+                allowableContainerFilters: region.allowableContainerFilters,
+                targetContainers: queryDetails.targetContainers,
+                canEditSharedViews: queryDetails.canEditSharedViews,
+                canEdit: LABKEY.DataRegion.getCustomViewEditableErrors(config).length == 0,
+                success: function (win, o) {
+                    var timerId = setTimeout(function() {
+                        timerId = 0;
+                        Ext4.Msg.progress("Saving...", "Saving custom view...");
+                    }, 500);
+
+                    var jsonData = {
+                        schemaName: region.schemaName,
+                        "query.queryName": region.queryName,
+                        "query.viewName": region.viewName,
+                        newName: o.name,
+                        inherit: o.inherit,
+                        shared: o.shared
+                    };
+
+                    if (o.inherit) {
+                        jsonData.containerPath = o.containerPath;
+                    }
+
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('query', 'saveSessionView', region.containerPath),
+                        method: 'POST',
+                        jsonData: jsonData,
+                        callback: function() {
+                            if (timerId > 0)
+                                clearTimeout(timerId);
+                            win.close();
+                        },
+                        success: function() {
+                            region.showSuccessMessage.call(region);
+                            region.changeView.call(region, {type: 'view', viewName: o.name});
+                        },
+                        failure: function(json) {
+                            Ext4.Msg.alert('Error saving view', json.exception || json.statusText);
+                        },
+                        scope: region
+                    });
+                },
+                scope: region
+            }, region.view);
+
             LABKEY.internal.ViewDesigner.Designer.saveCustomizeViewPrompt(config);
         });
     };
@@ -4540,7 +4558,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
      * @param {boolean} [config.showFilterDescription] Include filter and parameter values in the grid header, if present (default true).
      * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default undefined, meaning they will be shown if the query is updatable by the current user).
-     *  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
+     *  Both 'showDeleteButton' and 'showExportButtons' must be set to false for the 'showRecordSelectors = false' setting to hide the checkboxes.
      * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
      * @param {boolean} [config.showPaginationCount] Show the total count of rows in the pagination information text (default true).
      * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).

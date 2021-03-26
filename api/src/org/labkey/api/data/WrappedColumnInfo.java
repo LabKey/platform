@@ -317,6 +317,8 @@ public class WrappedColumnInfo
         public void setShownInInsertView(boolean shownInInsertView)
         {
             checkLocked();
+            if (shownInInsertView == delegate.isShownInInsertView())
+                return;
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
@@ -331,6 +333,8 @@ public class WrappedColumnInfo
         public void setShownInUpdateView(boolean shownInUpdateView)
         {
             checkLocked();
+            if (shownInUpdateView == delegate.isShownInUpdateView())
+                return;
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
@@ -648,6 +652,8 @@ public class WrappedColumnInfo
         public void setUserEditable(boolean editable)
         {
             checkLocked();
+            if (editable == delegate.isUserEditable())
+                return;
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
@@ -699,6 +705,8 @@ public class WrappedColumnInfo
         public void setReadOnly(boolean readOnly)
         {
             checkLocked();
+            if (readOnly == delegate.isReadOnly())
+                return;
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
@@ -937,6 +945,12 @@ public class WrappedColumnInfo
 
         @Override
         public void setConceptLabelColumn(String name)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setDerivationDataScope(String scope)
         {
             throw new java.lang.UnsupportedOperationException();
         }

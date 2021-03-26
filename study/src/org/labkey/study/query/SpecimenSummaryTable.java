@@ -35,12 +35,13 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
+import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.SpecimenManager;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -82,7 +83,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         _participantSequenceNumColumn.setIsUnselectable(true);
         addColumn(_participantSequenceNumColumn);
 
-        boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
@@ -247,7 +248,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         private void addComments(Container container, Set<String> hashes, Map<String, List<SpecimenComment>> hashToComments)
         {
-            SpecimenComment[] comments = SpecimenManager.getInstance().getSpecimenCommentForSpecimens(container, hashes);
+            SpecimenComment[] comments = SpecimenManager.get().getSpecimenCommentForSpecimens(container, hashes);
             for (SpecimenComment comment : comments)
             {
                 List<SpecimenComment> commentList = hashToComments.get(comment.getSpecimenHash());
@@ -338,7 +339,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             {
                 // we must not have a cached resultset, so we couldn't get the full set of comments efficiently; we'll select
                 // comments for each row:
-                SpecimenComment[] comments = SpecimenManager.getInstance().getSpecimenCommentForSpecimen(ctx.getContainer(), specimenHash);
+                SpecimenComment[] comments = SpecimenManager.get().getSpecimenCommentForSpecimen(ctx.getContainer(), specimenHash);
                 return formatCommentText(comments, lineSeparator);
             }
         }

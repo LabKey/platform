@@ -1329,7 +1329,7 @@ public class OlapController extends SpringActionController
         return contextNames;
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ListAppsAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -1592,7 +1592,7 @@ public class OlapController extends SpringActionController
             OlapController controller = new OlapController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new GetCubeDefinitionAction(),
                 new TestMdxAction(),
                 new TestJsonAction(),

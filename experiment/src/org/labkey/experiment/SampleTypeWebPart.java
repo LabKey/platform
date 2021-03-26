@@ -25,6 +25,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -111,6 +112,11 @@ public class SampleTypeWebPart extends QueryView
         ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials");
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
+
+        ActionURL linkToStudyURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
+        ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+        linkToStudyButton.setDisplayPermission(InsertPermission.class);
+        bar.add(linkToStudyButton);
     }
 
     @Override

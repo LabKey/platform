@@ -62,7 +62,7 @@
       <column columnName="DefaultPipelineQCState">
         <description>The default quality control state to be applied to data imported via the pipeline.</description>
       </column>
-      <column columnName="DefaultAssayQCState">
+      <column columnName="DefaultPublishDataQCState">
         <description>The default quality control state to be applied to assay data copied to the study.</description>
       </column>
       <column columnName="DefaultDirectEntryQCState">
@@ -389,8 +389,11 @@
       <column columnName="cohortid">
         <description>The ID of each dataset's cohort, if it is cohort specific.</description>
       </column>
-      <column columnName="ProtocolId">
-        <description>The unique ID of the assay design associated with each dataset, if the data is assay-associated.</description>
+      <column columnName="PublishSourceId">
+        <description>The unique ID of the source of published data associated with each dataset, if the data is publish-associated.</description>
+      </column>
+      <column columnName="PublishSourceType">
+        <description>The type of published data</description>
       </column>
       <column columnName="Modified">
         <description>The timestamp of the last modification of this dataset.</description>
@@ -600,6 +603,7 @@
         <nullable>false</nullable>
         <importAliases>
             <importAlias>ptid</importAlias>
+            <importAlias>participantid</importAlias>
         </importAliases>
       </column>
       <column columnName="datasetid">

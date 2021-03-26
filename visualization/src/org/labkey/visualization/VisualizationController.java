@@ -19,11 +19,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.fop.svg.PDFTranscoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -122,7 +119,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.StringReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -778,19 +774,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView handleRequest() throws Exception
         {
-            HttpServletResponse response = getViewContext().getResponse();
-            response.setContentType("application/pdf");
-            response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("pdf") + "\"");
-
-            PDFTranscoder transcoder = new PDFTranscoder();
-            TranscoderInput xIn = new TranscoderInput(new StringReader(getSVGSource()));
-            TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
-
-            // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
-            transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
-
-            transcoder.transcode(xIn, xOut);
-
+            VisualizationService.get().renderSvgAsPdf(getSVGSource(), getFilename("pdf"), getViewContext().getResponse());
             return null;
         }
     }

@@ -23,9 +23,11 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -44,6 +46,7 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -59,6 +62,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
+import org.springframework.util.StringUtils;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -68,6 +72,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 
 /**
  *
@@ -83,7 +91,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
 
     public enum Options {
-        SkipDerivation
+        SkipDerivation,
+        SkipAliquot
     }
 
 
@@ -100,6 +109,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         _sampleType = sampleType;
         _schema = table.getUserSchema();
         _samplesTable = sampleType.getTinfo();
+        // we do this in ExpMaterialTableImpl.persistRows() via ExpDataIterators.PersistDataIteratorBuilder
+        _enableExistingRecordsDataIterator = false;
     }
 
     UserSchema getSchema()
@@ -141,7 +152,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         DataIteratorBuilder dib = super.createImportDIB(user, container, data, context);
-        if (InventoryService.get() != null && ExperimentalFeatureService.get().isFeatureEnabled("experimental_freezerManagement"))
+        if (InventoryService.get() != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
             UserSchema userSchema = getQueryTable().getUserSchema();
@@ -201,7 +212,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         /* setup mini dataiterator pipeline to process lineage */
         DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.derive(user, container, di, true);
+        ExpDataIterators.derive(user, container, di, true, true);
 
         if (ret.size() > 0)
         {
@@ -229,6 +240,28 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new SqlSelector(getDbTable().getSchema(), sql).getMap();
     }
 
+    public Set<String> getAliquotSpecificFields()
+    {
+        Domain domain = getDomain();
+        Set<String> fields = domain.getProperties().stream()
+                .filter(dp -> ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
+                .map(ImportAliasable::getName)
+                .collect(Collectors.toSet());
+
+        return new CaseInsensitiveHashSet(fields);
+    }
+
+    public Set<String> getSampleMetaFields()
+    {
+        Domain domain = getDomain();
+        Set<String> fields = domain.getProperties().stream()
+                .filter(dp -> !ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(dp.getDerivationDataScope()))
+                .map(ImportAliasable::getName)
+                .collect(Collectors.toSet());
+
+        return new CaseInsensitiveHashSet(fields);
+    }
+
     @Override
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
@@ -237,20 +270,53 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (lsid == null)
             throw new ValidationException("lsid required to update row");
 
+        String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
+        boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
+        Set<String> aliquotFields = getAliquotSpecificFields();
+        Set<String> sampleMetaFields = getSampleMetaFields();
+
         // Replace attachment columns with filename and keep AttachmentFiles
         Map<String, Object> rowCopy = new CaseInsensitiveHashMap<>();
 
+        // remove aliquotedFrom from row, or error out
         rowCopy.putAll(row);
+        String newAliquotedFromLSID = (String) rowCopy.get(AliquotedFromLSID.name());
+        if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
+            throw new ValidationException("Updating aliquotedFrom is not supported");
+
+        rowCopy.remove(AliquotedFromLSID.name());
+        rowCopy.remove(RootMaterialLSID.name());
+
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
-        // update provisioned table -- note that LSID isn't the PK so we need to use the filter to update the correct row instead
+        Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
+        for (String updateField : rowCopy.keySet())
+        {
+            Object updateValue = rowCopy.get(updateField);
+            boolean isAliquotField = aliquotFields.contains(updateField);
+            boolean isSampleMetaField = sampleMetaFields.contains(updateField);
+
+            if (isAliquot && isSampleMetaField)
+            {
+                LOG.warn("Sample metadata update has been skipped for an aliquot");
+            }
+            else if (!isAliquot && isAliquotField)
+            {
+                LOG.warn("Aliquot-specific field update has been skipped for a sample.");
+            }
+            else
+            {
+                validRowCopy.put(updateField, updateValue);
+            }
+        }
+
         keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        convertTypes(c, rowCopy, t, "sampleset");
-        if (t.getColumnNameSet().stream().anyMatch(rowCopy::containsKey))
+        convertTypes(c, validRowCopy, t, "sampleset");
+        if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {
-            ret.putAll(Table.update(user, t, rowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
+            ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));
         }
 
         // update comment
@@ -351,7 +417,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by deleteMaterialByRowIds
             audit(QueryService.AuditAction.DELETE);
-            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
+            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
         }
         return result;
     }
@@ -392,16 +458,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
         Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
-
-        if (!addInputs)
+        if (null == sampleRow || !addInputs)
             return sampleRow;
 
         ExperimentService experimentService = ExperimentService.get();
         ExpMaterial seed = rowId != null ? experimentService.getExpMaterial(rowId) : experimentService.getExpMaterial(lsid);
-        Set<ExpMaterial> parentSamples = experimentService.getNearestParentMaterials(container, user, seed);
+        if (null == seed)
+            return sampleRow;
+        Set<ExpMaterial> parentSamples = experimentService.getParentMaterials(container, user, seed);
         if (!parentSamples.isEmpty())
             addParentFields(sampleRow, parentSamples, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
-        Set<ExpData> parentDatas = experimentService.getNearestParentDatas(container, user, seed);
+        Set<ExpData> parentDatas = experimentService.getParentDatas(container, user, seed);
         if (!parentDatas.isEmpty())
             addParentFields(sampleRow, parentDatas, ExpData.DATA_INPUT_PARENT + "/", user);
 
@@ -447,6 +514,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throws QueryUpdateServiceException
     {
         return getRows(user, container, keys, false /*skip addInputs for insertRows*/);
+    }
+
+    @Override
+    public List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
+            throws QueryUpdateServiceException
+    {
+        return getRows(user, container, keys, true /* this is for detailed audit logging */);
     }
 
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)

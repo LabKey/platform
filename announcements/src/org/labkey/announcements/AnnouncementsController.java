@@ -299,7 +299,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static ActionURL getAdminEmailURL(Container c, @Nullable URLHelper returnURL)
     {
-        ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getNotificationsURL(c);
+        ActionURL url = urlProvider(AdminUrls.class).getNotificationsURL(c);
         if (returnURL != null)
             url.addReturnURL(returnURL);
 
@@ -1880,8 +1880,8 @@ public class AnnouncementsController extends SpringActionController
                 adminURL = c.hasPermission(user, AdminPermission.class) ? getAdminURL(c, url) : null;
                 emailPrefsURL = user.isGuest() ? null : getEmailPreferencesURL(c, url, c.getId());
                 emailManageURL = c.hasPermission(user, AdminPermission.class) ? getAdminEmailURL(c, url) : null;
-                containerEmailTemplateURL = c.hasPermission(user, AdminPermission.class) ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(c, AnnouncementManager.NotificationEmailTemplate.class, url) : null;
-                siteEmailTemplateURL = user.hasSiteAdminPermission() ? PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, url) : null;
+                containerEmailTemplateURL = c.hasPermission(user, AdminPermission.class) ? urlProvider(AdminUrls.class).getCustomizeEmailURL(c, AnnouncementManager.NotificationEmailTemplate.class, url) : null;
+                siteEmailTemplateURL = user.hasSiteAdminPermission() ? urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, url) : null;
                 insertURL = perm.allowInsert() ? getInsertURL(c, url) : null;
                 includeGroups = perm.includeGroups();
             }
@@ -2247,7 +2247,7 @@ public class AnnouncementsController extends SpringActionController
                     User user = UserManager.getUser(userId);
 
                     if (null != user)
-                        return HtmlString.of(SecurityManager.getGroupList(ctx.getContainer(), user));
+                        return SecurityManager.getGroupList(ctx.getContainer(), user);
                 }
 
                 return HtmlString.EMPTY_STRING;

@@ -34,19 +34,20 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.importer.ImportTemplate;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
-import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.model.ChildStudyDefinition;
-import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
@@ -88,7 +89,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         try
         {
             // Need to set optional fields to null, or user-added metadata on those fields won't be copied over properly
-            previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new SpecimenSchemaImporter.ImportTemplate());
+            previousTablesTemplate = SpecimenSchema.get().setSpecimenTablesTemplates(new ImportTemplate());
             StudyImpl newStudy = createNewStudy(form);
 
             if (newStudy != null)
@@ -164,11 +165,11 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         if (null != form.getRequestId() || null != form.getSpecimenIds())
         {
             form.setIncludeSpecimens(true);
-            SpecimenManager sm = SpecimenManager.getInstance();
+            SpecimenManagerNew sm = SpecimenManagerNew.get();
 
             if (null != form.getRequestId())
             {
-                SpecimenRequest request = sm.getRequest(sourceContainer, form.getRequestId());
+                SpecimenRequest request = SpecimenRequestManager.get().getRequest(sourceContainer, form.getRequestId());
 
                 if (null == request)
                 {

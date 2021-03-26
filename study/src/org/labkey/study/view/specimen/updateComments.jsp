@@ -18,6 +18,8 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -26,13 +28,11 @@
 <%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.UpdateCommentsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.UpdateSpecimenCommentsBean" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -57,13 +57,13 @@
     <input type="hidden" name="copyParticipantId" value="0">
     <input type="hidden" name="copySampleId" value="-1">
 <%
-    if (SpecimenManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
+    if (SettingsManager.get().getDisplaySettings(container).isEnableManualQCFlagging())
     {
         FrameFactoryClassic.startTitleFrame(out, "Quality Control Flags", null, null, null);
         if (bean.isMixedFlagState())
         {
 %>
-        <b>Note:</b> A subset of the selected vials have quality control flags.  See vial list below for details.<p>
+        <b>Note:</b> A subset of the selected vials have quality control flags. See vial list below for details.<p>
 <%
         }
 %>
@@ -158,13 +158,13 @@
         if (hasParticipantMenu)
         {
             DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
-            hasParticipantMenu = def != null && def.canWrite(user);
+            hasParticipantMenu = def != null && def.canUpdate(user);
         }
 
         if (hasParticipantVisitMenu)
         {
             DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
-            hasParticipantVisitMenu = def != null && def.canWrite(user);
+            hasParticipantVisitMenu = def != null && def.canUpdate(user);
         }
 
         if (hasParticipantMenu || hasParticipantVisitMenu)

@@ -28,13 +28,13 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -169,7 +169,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     private SpecimenRequestActor getActor(UpdateGroupForm form)
     {
         if (_actor == null)
-            _actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
+            _actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getId());
 
         return _actor;
     }
@@ -272,9 +272,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             return _returnUrl;
         }
 
-        public String getCompleteUsersPrefix()
+        public ActionURL getCompleteUsersPrefix()
         {
-            return PageFlowUtil.urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(_actor.getContainer());
+            return PageFlowUtil.urlProvider(SecurityUrls.class).getCompleteUserURL(_actor.getContainer());
         }
     }
 }

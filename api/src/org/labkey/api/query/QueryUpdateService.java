@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
@@ -41,7 +42,7 @@ import java.util.Map;
  * User: Dave
  * Date: Jun 9, 2008
  */
-public interface QueryUpdateService
+public interface QueryUpdateService extends HasPermission
 {
     enum InsertOption
     {
@@ -90,16 +91,32 @@ public interface QueryUpdateService
     /**
      * Returns the rows identified by the keys, existing in the container, as maps.
      * If the row is not found, it is omitted from the returned list.
-     * @param user The current user.
+     * @param user      The current user.
      * @param container The container in which the data should exist.
-     * @param keys A map of primary key values.
+     * @param keys      A map of primary key values.
      * @return The row data as maps.
-     * @throws InvalidKeyException Thrown if the key value(s) is(are) not valid.
-     * @throws SQLException Thrown if there was an error communicating with the database.
+     * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
+     * @throws SQLException                Thrown if there was an error communicating with the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      */
-    List<Map<String,Object>> getRows(User user, Container container, List<Map<String,Object>> keys)
+    List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
+
+    /**
+     * Same as getRows(), but used by ExistingRecordsDataIterator, this exisits because SampleTypeUpdateService is special.
+     * @param user      The current user.
+     * @param container The container in which the data should exist.
+     * @param keys      A map of primary key values.
+     * @return The row data as maps.
+     * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
+     * @throws SQLException                Thrown if there was an error communicating with the database.
+     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
+     */
+    default List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        return getRows(user, container, keys);
+    }
 
     /**
      * Inserts or merges the given values into the source table of this query.

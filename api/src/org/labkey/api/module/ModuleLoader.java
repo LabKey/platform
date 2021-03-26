@@ -66,12 +66,14 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -141,6 +143,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
     public static final String CPAS_DATA_SOURCE = "cpasDataSource";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
+
+    private static volatile List<String> _missingViews = Collections.emptyList();
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
@@ -496,6 +500,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         synchronized (_modulesLock)
         {
+            checkForRenamedModules();
             // use _modules here because this List<> needs to be modifiable
             initializeModules(_modules);
         }
@@ -605,6 +610,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+    }
+
+    private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
+
+    private void checkForRenamedModules()
+    {
+        getModules().stream()
+            .filter(module -> _moduleRenames.containsKey(module.getName())).findAny()
+            .ifPresent(module -> {
+                String msg = String.format("Invalid LabKey deployment. The '%s' module has been renamed, %s", module.getName(),
+                    AppProps.getInstance().getProjectRoot() == null
+                        ? " please deploy an updated distribution and restart LabKey." // Likely production environment
+                        : " please update your enlistment." // Likely dev environment
+                );
+
+                throw new IllegalStateException(msg);
+            });
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -1234,6 +1256,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         if (null == _startupFailure)
             _startupFailure = t;
+
+        if (Boolean.valueOf(System.getProperty("terminateOnStartupFailure")))
+        {
+            // Issue 40038: Ride-or-die Mode
+            _log.fatal("Startup failure, terminating", t);
+            System.exit(1);
+        }
     }
 
     public void addModuleFailure(String moduleName, Throwable t)
@@ -1342,6 +1371,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             runDropScripts();
             runCreateScripts();
         }
+        refreshMissingViews();
     }
 
     // Runs the drop and create scripts in a single module
@@ -1604,6 +1634,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // performedUpgrade is true if any module required upgrading
     private void afterUpgrade(boolean performedUpgrade)
     {
+        verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
 
         if (performedUpgrade)
@@ -1616,6 +1647,33 @@ public class ModuleLoader implements Filter, MemTrackerListener
         verifyRequiredModules();
     }
 
+    // Register an admin warning that reports if any database views are missing, Issue 40187
+    private void verifyDatabaseViews()
+    {
+        // This is a "dynamic" warning because RecreateViewsAction might correct the problem at runtime
+        WarningService.get().register(new WarningProvider()
+        {
+            @Override
+            public void addDynamicWarnings(Warnings warnings, ViewContext context)
+            {
+                if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
+                    warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews + ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
+            }
+        });
+        refreshMissingViews();
+    }
+
+    // Determine if any module database views are missing
+    private void refreshMissingViews()
+    {
+        _missingViews = DbSchema.getAllSchemasToTest().stream()
+            .flatMap(s -> s.getTableXmlMap().entrySet().stream()
+                .filter(e -> "VIEW".equalsIgnoreCase(e.getValue().getTableDbType()))
+                .filter(e -> s.getTable(e.getKey()).getTableType() == DatabaseTableType.NOT_IN_DB)
+                .map(e -> s.getName() + "." + e.getValue().getTableName())
+            )
+            .collect(Collectors.toList());
+    }
 
     // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
     // Particularly interesting for compliant deployments, e.g., <Parameter name="requiredModules" value="Compliance"/>
@@ -2155,11 +2213,17 @@ public class ModuleLoader implements Filter, MemTrackerListener
             File newinstall = new File(propsDir, "newinstall");
             if (newinstall.isFile())
             {
+                _log.debug("'newinstall' file detected: " + newinstall.getAbsolutePath());
+
                 _newInstall = true;
                 if (newinstall.canWrite())
                     newinstall.delete();
                 else
                     throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
+            }
+            else
+            {
+                _log.debug("no 'newinstall' file detected");
             }
 
             File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
@@ -2172,6 +2236,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
                 for (File propFile : sortedPropFiles)
                 {
+                    _log.debug("loading propsFile: " + propFile.getAbsolutePath());
+
                     try (FileInputStream in = new FileInputStream(propFile))
                     {
                         Properties props = new Properties();
@@ -2181,6 +2247,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         {
                             if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                             {
+                                _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
+
                                 ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
                                 if (_configPropertyMap.containsMapping(config.getScope(), config))
                                     _configPropertyMap.removeMapping(config.getScope(), config);
@@ -2194,6 +2262,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     }
                 }
             }
+            else
+            {
+                _log.debug("no propFiles to load");
+            }
+        }
+        else
+        {
+            _log.debug("propsDir non-existant or not a directory: " + propsDir.getAbsolutePath());
         }
 
         // load any system properties with the labkey prop prefix

@@ -25,7 +25,6 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -77,7 +76,7 @@ public class AnalyticsController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Analytics", null);
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Analytics", getClass(), getContainer());
         }
 
         @Override
@@ -102,7 +101,7 @@ public class AnalyticsController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(SettingsForm settingsForm)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+            return urlProvider(AdminUrls.class).getAdminConsoleURL();
         }
     }
 }

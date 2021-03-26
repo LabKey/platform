@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 public abstract class Method
@@ -1287,6 +1288,30 @@ public abstract class Method
         }
     }
 
+    class SimilarToMethodInfo extends AbstractMethodInfo
+    {
+        SimilarToMethodInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append("((").append(arguments[0]).append(")");
+            ret.append(" SIMILAR TO ");
+            ret.append("(").append(arguments[1]).append(")");
+            if (arguments.length == 3)
+            {
+                ret.append(" ESCAPE (").append(arguments[2]).append(")");
+            }
+            ret.append(")");
+            return ret;
+        }
+    }
+
+
     class GreatestAndLeastInfo extends PassthroughInfo
     {
         public GreatestAndLeastInfo(String method)
@@ -1393,6 +1418,10 @@ public abstract class Method
         postgresMethods.put("repeat",new PassthroughMethod("repeat",JdbcType.VARCHAR,2,2));
         postgresMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
         postgresMethods.put("rpad",new PassthroughMethod("rpad",JdbcType.VARCHAR,2,3));
+        postgresMethods.put("similar_to", new PassthroughMethod("similar_to", JdbcType.BOOLEAN, 2, 3) {
+            @Override
+            public MethodInfo getMethodInfo() { return new SimilarToMethodInfo(); }
+        });
         postgresMethods.put("split_part",new PassthroughMethod("split_part",JdbcType.VARCHAR,3,3));
         postgresMethods.put("strpos",new PassthroughMethod("strpos",JdbcType.VARCHAR,2,2));
         postgresMethods.put("substr",new PassthroughMethod("substr",JdbcType.VARCHAR,2,3));
@@ -1405,6 +1434,85 @@ public abstract class Method
         postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
         postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,2));
         postgresMethods.put("unnest",new PassthroughMethod("unnest",JdbcType.VARCHAR,1,1));
+
+        addPostgresJsonMethods();
+    }
+
+    /**
+     * Wire up JSON and JSONB data type support for Postgres, as described here:
+     * https://www.postgresql.org/docs/9.5/functions-json.html
+     */
+    private static void addPostgresJsonMethods()
+    {
+        // Pretend that the JSON operators are a function instead so that we don't need them to be fully supported
+        // for query parsing
+        postgresMethods.put("json_op", new Method(JdbcType.VARCHAR, 3, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.VARCHAR)
+                {
+                    private final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
+                            "?", "?|", "?&", "||", "-", "#-");
+
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment rawOperator = arguments[1];
+                        String operatorRawString = rawOperator.getSQL();
+                        if (!rawOperator.getParams().isEmpty() || !operatorRawString.startsWith("'") || !operatorRawString.endsWith("'"))
+                        {
+                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                        }
+
+                        String strippedOperator = operatorRawString.substring(1, operatorRawString.length() - 1);
+                        if (!ALLOWED_OPERATORS.contains(strippedOperator))
+                        {
+                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                        }
+
+                        return new SQLFragment("(").append(arguments[0]).append(")").
+                                append(strippedOperator).
+                                append("(").append(arguments[2]).append(")");
+                    }
+                };
+            }
+        });
+
+        postgresMethods.put("to_json", new PassthroughMethod("to_json", JdbcType.OTHER, 1, 1));
+        postgresMethods.put("to_jsonb", new PassthroughMethod("to_jsonb", JdbcType.OTHER, 1, 1));
+        postgresMethods.put("array_to_json", new PassthroughMethod("array_to_json", JdbcType.OTHER, 1, 2));
+        postgresMethods.put("row_to_json", new PassthroughMethod("row_to_json", JdbcType.OTHER, 1, 2));
+
+        addJsonPassthroughMethod("build_array", JdbcType.OTHER, 1, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("build_object", JdbcType.OTHER, 1, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("object", JdbcType.OTHER, 1, 2);
+
+        addJsonPassthroughMethod("array_length", JdbcType.INTEGER, 1, 1);
+        addJsonPassthroughMethod("each", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("each_text", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("extract_path", JdbcType.OTHER, 2, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("extract_path_text", JdbcType.VARCHAR, 2, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("object_keys", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("populate_record", JdbcType.OTHER, 2, 2);
+        addJsonPassthroughMethod("populate_recordset", JdbcType.OTHER, 2, 2);
+        addJsonPassthroughMethod("array_elements", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("array_elements_text", JdbcType.VARCHAR, 1, 1);
+        addJsonPassthroughMethod("typeof", JdbcType.VARCHAR, 1, 1);
+        addJsonPassthroughMethod("to_record", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("strip_nulls", JdbcType.OTHER, 1, 1);
+
+        postgresMethods.put("jsonb_set", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_pretty", new PassthroughMethod("jsonb_pretty", JdbcType.VARCHAR, 1, 1));
+    }
+
+    private static void addJsonPassthroughMethod(String name, JdbcType type, int minArgs, int maxArgs)
+    {
+        postgresMethods.put("json_" + name, new PassthroughMethod("json_" + name, type, minArgs, maxArgs));
+        postgresMethods.put("jsonb_" + name, new PassthroughMethod("jsonb_" + name, type, minArgs, maxArgs));
     }
 
     final static Map<String, Method> mssqlMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());

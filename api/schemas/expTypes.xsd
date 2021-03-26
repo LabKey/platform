@@ -197,6 +197,7 @@
 			<xs:element name="SourceProtocolLSID" type="string" minOccurs="0"/>
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
 			<xs:element name="Alias" type="string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="RootMaterialLSID" type="string" minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 		<xs:attribute ref="rdf:about" use="required"/>
 	</xs:complexType>
@@ -434,6 +435,7 @@
             <xs:element name="NameExpression" type="string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="LabelColor" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="MetricUnit" type="string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="AutoLinkTargetContainerId" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="ParentImportAlias" minOccurs="0" maxOccurs="1">
 				<xs:complexType>
 					<xs:choice minOccurs="0" maxOccurs="unbounded">

@@ -9,6 +9,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -57,6 +58,11 @@ public interface PipelineJobNotificationProvider
 
     }
 
+    default URLHelper getPipelineStatusHref(PipelineJob job)
+    {
+        return null;
+    }
+
     // allow provider to fall back to the default notification for specific jobs
     //
     default boolean useDefaultJobNotification(PipelineJob job)
@@ -87,7 +93,7 @@ public interface PipelineJobNotificationProvider
             User user = job.getUser();
             PipelineJob.TaskStatus status = job.getActiveTaskStatus();
 
-            Notification n = new Notification(job.getJobGUID(), status.getNotificationType(), user);
+            Notification n = new Notification(job.getJobGUID(), job.getNotificationType(status), user);
             if (StringUtils.isEmpty(msgContent))
             {
                 String description = StringUtils.defaultString(job.getDescription(), job.toString());

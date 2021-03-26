@@ -209,7 +209,13 @@ public enum UsageReportingLevel
             }
             report.addServerSessionParams();
             Map<String, Object> additionalMetrics = new LinkedHashMap<>();
+
+            // Track the time to compute the metrics
+            long startTime = System.currentTimeMillis();
+
             level.addExtraParams(report, additionalMetrics);
+
+            additionalMetrics.put("timeToCalculateMetrics", System.currentTimeMillis() - startTime);
             report.setMetrics(additionalMetrics);
             return report;
         }
