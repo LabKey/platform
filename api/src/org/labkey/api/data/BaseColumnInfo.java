@@ -600,7 +600,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _conceptURI = conceptURI;
-        if (_conceptURI.equals(UNIQUE_ID_CONCEPT_URI))
+        if (UNIQUE_ID_CONCEPT_URI.equals(_conceptURI))
         {
             _hasDbSequence = true;
             _shownInInsertView = false;
