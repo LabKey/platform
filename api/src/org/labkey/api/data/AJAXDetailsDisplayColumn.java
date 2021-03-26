@@ -108,9 +108,9 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             out.write("</span>");
             out.write("<script type=\"text/javascript\"> \n" +
                 "    Ext.onReady(function () { \n" +
-                "        var tip = new LABKEY.ext.CalloutTip( \n" +
-                        props.toString(0) +
-                "        ); \n" +
+                "    var config = " + props.toString(0) + "\n" +
+                "    config.autoLoad.callback = function(el, success, response) { if (!success) el.update('Failed to load'); }; \n" +
+                "        var tip = new LABKEY.ext.CalloutTip(config); \n" +
                 "    }); \n" +
                 "    </script> ");
         }

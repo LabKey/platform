@@ -456,7 +456,7 @@ public class SecurityApiActions
     @RequiresPermission(ReadPermission.class)
     public static class GetRolesAction extends ReadOnlyApiAction
     {
-        private Set<Permission> _allPermissions = new HashSet<>();
+        private final Set<Permission> _allPermissions = new HashSet<>();
 
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2228,7 +2228,7 @@ public class SecurityApiActions
             assertTrue(user.hasSiteAdminPermission());
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 new GetUserPermsAction(),
                 new GetGroupsForCurrentUserAction(),
                 new GetRolesAction(),

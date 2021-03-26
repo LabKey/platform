@@ -240,7 +240,7 @@ public class ExperimentRunListView extends QueryView
                         NavTree btn;
                         if (!c.isContainerFor(ContainerType.DataType.assayData))
                         {
-                            btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
+                            btn = new NavTree(protocol.getName() + " (" + provider.getLabel() + ")");
                             btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
                                 "controller: '" + provider.getImportURL(c, protocol).getController() + "'," +
                                 "action: '" + provider.getImportURL(c, protocol).getAction() + "'," +
@@ -249,7 +249,7 @@ public class ExperimentRunListView extends QueryView
                         }
                         else
                         {
-                            btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")", provider.getImportURL(getContainer(), protocol));
+                            btn = new NavTree(protocol.getName() + " (" + provider.getLabel() + ")", provider.getImportURL(getContainer(), protocol));
                         }
 
                         addRunsButton.addMenuItem(btn);

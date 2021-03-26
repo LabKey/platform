@@ -49,6 +49,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.FileUtil;
@@ -268,7 +269,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
         return _container.hasPermission(user, acl);
     }

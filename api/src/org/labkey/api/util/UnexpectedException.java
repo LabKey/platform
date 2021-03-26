@@ -16,10 +16,18 @@
 
 package org.labkey.api.util;
 
+import java.lang.reflect.InvocationTargetException;
+
 public class UnexpectedException extends RuntimeException
 {
     static public void rethrow(Throwable cause)
     {
+        // This case avoids extra wrapping when bad webpart parameters cause exceptions. For example, crawler passing a
+        // bogus enrollmentTokenBatches.containerFilterName parameter.
+        if (cause instanceof InvocationTargetException && cause.getCause() instanceof RuntimeException)
+        {
+            throw (RuntimeException) cause.getCause();
+        }
         if (cause instanceof RuntimeException)
         {
             throw (RuntimeException) cause;
