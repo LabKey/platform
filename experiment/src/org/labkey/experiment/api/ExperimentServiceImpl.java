@@ -2436,6 +2436,8 @@ public class ExperimentServiceImpl implements ExperimentService
         boolean up = options.isParents();
         boolean down = options.isChildren();
 
+        boolean excludeDerivation = "AliquotationOnly".equals(options.getMaterialRunType());
+        boolean excludeAliquotation = "DerivationOnly".equals(options.getMaterialRunType());
         if (up || down)
         {
             if (up)
@@ -2476,6 +2478,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         parents.append(and).append("parent_cpastype = ?\n");
                     parents.add(options.getCpasType());
+                }
+
+                if (excludeAliquotation || excludeDerivation)
+                {
+                    if (options.isForLookup())
+                        parents.append(and).append("cpastype != ?\n");
+                    else
+                        parents.append(and).append("child_cpastype != ?\n");
+                    parents.add(excludeAliquotation ? SAMPLE_ALIQUOT_PROTOCOL_LSID : SAMPLE_DERIVATION_PROTOCOL_LSID);
                 }
 
                 if (options.getDepth() != 0)
@@ -2538,6 +2549,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         children.append(and).append("child_cpastype = ?\n");
                     children.add(options.getCpasType());
+                }
+
+                if (excludeAliquotation || excludeDerivation)
+                {
+                    if (options.isForLookup())
+                        children.append(and).append("cpastype != ?\n");
+                    else
+                        children.append(and).append("parent_cpastype != ?\n");
+                    children.add(excludeAliquotation ? SAMPLE_ALIQUOT_PROTOCOL_LSID : SAMPLE_DERIVATION_PROTOCOL_LSID);
                 }
 
                 if (options.getDepth() > 0)

@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -382,6 +383,16 @@ public class ExpLineage
         {
             json = ExperimentJSONConverter.serialize(node, user, settings);
 
+            if (node instanceof ExpMaterial)
+            {
+                ExpMaterial material = (ExpMaterial) node;
+                boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
+                boolean isDerivative = false;
+                if (!isAliquot)
+                    isDerivative = material.getRunId() != null && material.getRunId() > 0;
+
+                json.put("materialLineageType", isAliquot ? "Aliquot" : (isDerivative ? "Derivative" : "RootMaterial"));
+            }
             json.put("type", node.getLSIDNamespacePrefix());
         }
 

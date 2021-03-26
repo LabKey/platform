@@ -36,6 +36,10 @@
     var CONCAT = HtmlString.unsafe(dialect.isPostgreSQL() ? "||" : "+");
 
     assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType) || "Object".equals(expType);
+
+  String materialRunType = StringUtils.defaultString(bean.getMaterialRunType(), "ALL");
+  assert "ALL".equals(materialRunType) || "AliquotationOnly".equals(materialRunType) || "DerivationOnly".equals(materialRunType);
+
 %>
   /* CTE */
     $PARENTS_INNER$ AS
