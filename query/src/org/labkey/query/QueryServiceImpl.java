@@ -40,6 +40,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -58,6 +59,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -3181,6 +3183,26 @@ public class QueryServiceImpl implements QueryService
     {
         return _queryAnalysisService;
     }
+
+
+
+
+    /* registry of ColumnInfoTransformer use to build common columns */
+    Map<String, ColumnInfoTransformer> columnTransformerMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+
+    @Override
+    public void registerColumnInfoTransformer(@NotNull String uri, @NotNull ColumnInfoTransformer t)
+    {
+        if (null != columnTransformerMap.put(uri, t))
+            throw new ConfigurationException("More than one ColumnTransformer registered for " + uri);
+    }
+
+    @Override
+    public ColumnInfoTransformer findColumnInfoTransformer(String conceptURI)
+    {
+        return columnTransformerMap.get(conceptURI);
+    }
+
 
     public static class TestCase extends Assert
     {

@@ -68,7 +68,7 @@ public class LocationTable extends BaseStudyTable
     {
         super(schema, SpecimenSchema.get().getTableInfoLocation(schema.getContainer()), cf);
         // FK on Container
-        var containerColumn = ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema);
+        var containerColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
         containerColumn.setHidden(true);
         containerColumn.setRequired(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);

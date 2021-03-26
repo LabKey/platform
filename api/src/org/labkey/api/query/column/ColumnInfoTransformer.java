@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2017 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,5 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-DROP TABLE issues.IssueKeywords;
-DROP TABLE issues.CustomColumns;
+package org.labkey.api.query.column;
+
+import org.labkey.api.data.ColumnInfo;
+
+import java.util.function.UnaryOperator;
+
+/**
+ * Created by adam on 1/17/2016.
+ */
+public interface ColumnInfoTransformer extends UnaryOperator<ColumnInfo>
+{
+}

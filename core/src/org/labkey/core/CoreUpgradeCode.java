@@ -42,10 +42,8 @@ import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.security.AuthenticationManager.AUTHENTICATION_CATEGORY;
 import static org.labkey.api.security.AuthenticationManager.PROVIDERS_KEY;
@@ -73,37 +71,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
-    }
-
-    /**
-     * Invoked from 18.33-18.34 to update script engine configurations so choose a site default when more than one is present (sandboxed vs non sandboxed)
-     */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void migrateSiteDefaultEngines(final ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            if (svc != null)
-            {
-                List<ExternalScriptEngineDefinition> rDefs = svc.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R);
-                if (rDefs == null || rDefs.size() <= 1)
-                    return;
-                List<ExternalScriptEngineDefinition> siteDefaultRDefs = rDefs.stream().filter(ExternalScriptEngineDefinition::isDefault).collect(Collectors.toList());
-                if (siteDefaultRDefs.size() <= 1)
-                    return;
-
-                // prior to 18.34, up to 2 site defaults are allowed: one for sandboxed and one for non sandboxed. Going forward, a single site default will be allowed.
-                ExternalScriptEngineDefinition sandboxedSiteDefaultRDef = siteDefaultRDefs.stream().filter(ExternalScriptEngineDefinition::isSandboxed).findFirst().orElse(null);
-                if (sandboxedSiteDefaultRDef instanceof ExternalScriptEngineDefinitionImpl)
-                {
-                    ExternalScriptEngineDefinitionImpl newDef = (ExternalScriptEngineDefinitionImpl) sandboxedSiteDefaultRDef;
-                    newDef.setDefault(false);
-                    newDef.updateConfiguration(); // update config json
-                    svc.saveDefinition(context.getUpgradeUser(), newDef);
-                }
-            }
-        }
     }
 
     /**

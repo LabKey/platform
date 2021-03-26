@@ -79,7 +79,6 @@ import org.labkey.api.specimen.model.LocationDomainKind;
 import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.SpecimenEventDomainKind;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.VialDomainKind;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
@@ -91,11 +90,11 @@ import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.ParticipantGroupService;
 import org.labkey.api.study.model.VisitService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
@@ -118,8 +117,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.ExperimentListenerImpl;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
@@ -175,12 +174,10 @@ import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.DatasetChartReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
 import org.labkey.study.reports.ReportViewProvider;
-import org.labkey.study.reports.StudyChartQueryReport;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
@@ -271,14 +268,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         VisitService.setInstance(new VisitServiceImpl());
         ImportHelperService.setInstance(new ImportHelperServiceImpl());
         StudyInternalService.setInstance(new StudyInternalServiceImpl());
-        SpecimenMigrationService.setInstance(new SpecimenMigrationService()
-        {
-            @Override
-            public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
-            {
-                return SpecimenController.getDownloadURL(event, name);
-            }
-        });
+        SpecimenMigrationService.setInstance(SpecimenController::getDownloadURL);
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
@@ -396,11 +386,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
         AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
 
-        ReportService.get().registerReport(new StudyController.StudyChartReport());
         ReportService.get().registerReport(new StudyQueryReport());
-        ReportService.get().registerReport(new DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
-        ReportService.get().registerReport(new StudyChartQueryReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
         ReportService.get().registerReport(new StudyRReport());

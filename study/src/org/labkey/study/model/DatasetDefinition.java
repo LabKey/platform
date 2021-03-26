@@ -152,7 +152,7 @@ import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset<DatasetDefinition>, InitializingBean
+public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements Cloneable, Dataset, InitializingBean
 {
     // DatasetQueryUpdateService
 
@@ -297,10 +297,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
+    public DatasetDefinition createMutable()
+    {
+        return (DatasetDefinition) super.createMutable();
+    }
+
     /*
      * given a potentially shared dataset definition, return a dataset definition that is scoped to the current study
      */
-    public DatasetDefinition createLocalDatasetDefintion(StudyImpl substudy)
+    public DatasetDefinition createLocalDatasetDefinition(StudyImpl substudy)
     {
         if (substudy.getContainer().equals(getContainer()))
             return this;
@@ -378,17 +384,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         if (DatasetDomainKind.DATE.equalsIgnoreCase(fieldName) && !study.getTimepointType().isVisitBased())
             return true;
-        
-        switch (study.getTimepointType())
-        {
-            case VISIT:
-                return DEFAULT_VISIT_FIELDS.contains(fieldName);
-            case CONTINUOUS:
-                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
-            case DATE:
-            default:
-                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
-        }
+
+        return switch (study.getTimepointType())
+                {
+                    case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
+                    case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+                    default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
+                };
     }
 
 

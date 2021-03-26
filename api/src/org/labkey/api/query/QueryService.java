@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -32,6 +33,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.QueryLogging;
@@ -42,6 +44,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -586,4 +589,26 @@ public interface QueryService
     QueryAnalysisService getQueryAnalysisService();
 
     TableInfo analyzeQuery(QuerySchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
+
+
+    /* registry of column types (named by conceptURI) */
+    default void registerColumnInfoTransformer(@NotNull ConceptURIColumnInfoTransformer t)
+    {
+        registerColumnInfoTransformer(t.getConceptURI(), t);
+    }
+
+    void registerColumnInfoTransformer(@NotNull String uri, @NotNull ColumnInfoTransformer t);
+
+    ColumnInfoTransformer findColumnInfoTransformer(String conceptURI);
+
+    default MutableColumnInfo applyColumnTransformer(MutableColumnInfo col)
+    {
+        if (null != col.getConceptURI())
+        {
+            var d = findColumnInfoTransformer(col.getConceptURI());
+            if (null != d)
+                d.apply(col);
+        }
+        return col;
+    }
 }

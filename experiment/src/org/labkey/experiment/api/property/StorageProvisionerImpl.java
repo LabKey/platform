@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment.api.property;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,6 +60,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -80,6 +83,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_CONCEPT_URI;
@@ -105,6 +109,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
     private StorageProvisionerImpl()
     {
     }
+
+    // #42641: Track recently created tables in a cache to limit size and duration
+    private static final Cache<String, StackTraceElement[]> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
+        .maximumSize(10000)
+        .expireAfterWrite(1, TimeUnit.DAYS)
+        .build();
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain)
     {
@@ -168,7 +178,21 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             change.setForeignKeys(domain.getPropertyForeignKeys());
 
-            change.execute();
+            try
+            {
+                log.info("Attempting to create " + tableName);
+                change.execute();
+                RECENTLY_CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
+            }
+            catch (RuntimeException re)
+            {
+                StackTraceElement[] previousCreationStack = RECENTLY_CREATED_TABLES.getIfPresent(tableName);
+
+                if (null != previousCreationStack)
+                    log.error(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
+
+                throw re;
+            }
 
             DomainDescriptor editDD = dd.edit()
                     .setStorageTableName(tableName)

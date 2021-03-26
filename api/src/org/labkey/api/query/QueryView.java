@@ -33,7 +33,6 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -215,8 +214,7 @@ public class QueryView extends WebPartView<Object>
     {
         if (ReportService.get().getGlobalItemFilterTypes().contains(type)) return true;
         if (RReport.TYPE.equals(type)) return true;
-        if (CrosstabReport.TYPE.equals(type)) return true;
-        return ChartQueryReport.TYPE.equals(type);
+        return CrosstabReport.TYPE.equals(type);
     };
 
     private TableInfo _table;
@@ -1853,8 +1851,7 @@ public class QueryView extends WebPartView<Object>
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null)
                     && !report.getType().equals(TimeChartReport.TYPE)
-                    && !report.getType().equals(GenericChartReport.TYPE)
-                    && !(report instanceof ChartQueryReport))
+                    && !report.getType().equals(GenericChartReport.TYPE))
             {
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
@@ -1913,7 +1910,7 @@ public class QueryView extends WebPartView<Object>
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null) &&
-                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE) || report instanceof ChartQueryReport))
+                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE)))
             {
                 if (canViewReport(getUser(), getContainer(), report))
                 {
