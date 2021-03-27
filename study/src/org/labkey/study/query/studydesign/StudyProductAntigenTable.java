@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -72,7 +73,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
 
 
     @Override
-    protected void initColumn(BaseColumnInfo col)
+    protected void initColumn(MutableColumnInfo col)
     {
         if ("ProductId".equalsIgnoreCase(col.getName()))
         {

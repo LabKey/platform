@@ -59,6 +59,7 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
@@ -96,6 +97,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements UpdateableTableInfo
 {
@@ -163,7 +166,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
         var folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));
         folder.setHidden(true);
-        ContainerForeignKey.initColumn(folder, _userSchema);
         addColumn(folder);
 
         var related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
@@ -271,7 +273,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
             if (isUserId(colName))
             {
-                UserIdQueryForeignKey.initColumn(getUserSchema(), extensionCol, true);
+                if (isBlank(extensionCol.getConceptURI()))
+                    extensionCol.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
             }
             else if (colName.equalsIgnoreCase("AssignedTo"))
             {

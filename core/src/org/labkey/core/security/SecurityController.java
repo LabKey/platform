@@ -1635,11 +1635,11 @@ public class SecurityController extends SpringActionController
                 // don't let non-site admin delete/reset password of site admin
                 User formUser = UserManager.getUser(email);
                 if (formUser != null && !getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
-                    errors.reject("Permission denied: not authorized to " + getVerb() + " password for a Site Admin user.");
+                    errors.reject(ERROR_MSG, "Permission denied: not authorized to " + getVerb() + " password for a Site Admin user.");
             }
             catch (InvalidEmailException e)
             {
-                errors.reject(" failed: invalid email address.");
+                errors.reject(ERROR_MSG, getVerb() + " failed: invalid email address.");
             }
         }
 

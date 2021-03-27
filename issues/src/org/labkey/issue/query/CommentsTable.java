@@ -71,7 +71,6 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         addColumn(issueIdColumn);
 
         var createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
-        UserIdQueryForeignKey.initColumn(getUserSchema(), createdBy, true);
         addColumn(createdBy);
 
         addWrapColumn(_rootTable.getColumn("Created"));

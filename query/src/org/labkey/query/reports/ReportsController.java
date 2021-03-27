@@ -85,7 +85,6 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
-import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
@@ -187,8 +186,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -3925,10 +3922,6 @@ public class ReportsController extends SpringActionController
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
             reportDescriptor.setProperty(ReportDescriptor.Prop.showInParticipantView, form.isShowInParticipantView());
-            if (_report instanceof ChartReport)
-            {
-                reportDescriptor.setProperty(ReportDescriptor.Prop.filterParam, form.isShowInParticipantView() ? "participantId" : "");
-            }
             ReportService.get().saveReport(getViewContext(), reportDescriptor.getReportKey(), _report);
 
             ApiSimpleResponse response = new ApiSimpleResponse();

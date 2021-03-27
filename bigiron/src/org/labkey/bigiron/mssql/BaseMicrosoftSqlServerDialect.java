@@ -335,12 +335,17 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
+    private static final Pattern DROP_IF_EXISTS = Pattern.compile(
+        "drop(aggregate|assembly|database|default|function|index|procedure|role|rule|schema|securitypolicy|sequence|synonym|table|trigger|type|user|view)ifexists"
+    );
 
     @Override
     protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
         if (lowerNoComments.startsWith("use ") || lowerNoComments.contains("\nuse "))
             errors.add("USE statements are prohibited");
+        if (DROP_IF_EXISTS.matcher(lowerNoCommentsNoWhiteSpace).find())
+            errors.add("DROP xxx IF EXISTS statements are prohibited since they're not supported on SQL Server 2012. Instead, use EXEC core.fn_dropifexists.");
     }
 
 

@@ -44,7 +44,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -68,7 +67,6 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
@@ -326,12 +324,6 @@ public class ReportUtil
         int width = 640;
         int height = 480;
 
-        ReportDescriptor descriptor = r.getDescriptor();
-        if (descriptor instanceof ChartReportDescriptor)
-        {
-            width = ((ChartReportDescriptor)descriptor).getWidth();
-            height = ((ChartReportDescriptor)descriptor).getHeight();
-        }
         renderErrorImage(outputStream, width, height, errorMessage);
     }
 

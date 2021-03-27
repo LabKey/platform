@@ -56,6 +56,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -142,38 +143,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 {
                     continue; // processed at the end
                 }
-                else if (name.equalsIgnoreCase("Created") || name.equalsIgnoreCase("Modified") ||
-                        name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy")
-                        )
+                else if (null != BuiltInColumnTypes.findBuiltInType((baseColumn)))
                 {
                     var c = wrapColumn(baseColumn);
-                    if (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("ModifiedBy"))
-                    {
-                        UserIdQueryForeignKey.initColumn(schema, c, true);
-                        if (name.equalsIgnoreCase("CreatedBy"))
-                        {
-                            c.setFieldKey(new FieldKey(null,"CreatedBy"));
-                            c.setLabel("Created By");
-                        }
-                        else
-                        {
-                            c.setFieldKey(new FieldKey(null,"ModifiedBy"));
-                            c.setLabel("Modified By");
-                        }
-                    }
-                    else if (name.equalsIgnoreCase("modified"))
-                    {
-                        c.setFieldKey(new FieldKey(null,"Modified"));
-                        c.setLabel("Modified");
-                    }
-                    else
-                    {
-                        c.setFieldKey(new FieldKey(null,"Created"));
-                        c.setLabel("Created");
-                    }
-                    c.setUserEditable(false);
-                    c.setShownInInsertView(false);
-                    c.setShownInUpdateView(false);
                     addColumn(c);
                 }
                 else if (name.equalsIgnoreCase(DataIntegrationService.Columns.TransformImportHash.getColumnName()))
@@ -380,7 +352,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         // Title column setting is <AUTO> -- select the first string column that's not a lookup (see #9114)
         for (ColumnInfo column : getColumns())
-            if (column.isStringType() && !column.isHidden() && null == column.getFk())
+            if (column.isStringType() && !column.isHidden() && null == column.getFk() && null==BuiltInColumnTypes.findBuiltInType(column))
                 return column.getName();
 
         // No non-FK string columns -- fall back to pk (see issue #5452)

@@ -37,12 +37,13 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -55,6 +56,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 abstract public class ExpTableImpl<C extends Enum>
         extends FilteredTable<UserSchema>
@@ -155,7 +158,8 @@ abstract public class ExpTableImpl<C extends Enum>
         Set<String> set = new LinkedHashSet(result.getImportAliasSet());
         set.add("container");
         result.setImportAliasesSet(set);
-        ContainerForeignKey.initColumn(result, _userSchema, url);
+        if (null != url)
+            result.setURL(new DetailsURL(url));
         return result;
     }
 
@@ -215,10 +219,8 @@ abstract public class ExpTableImpl<C extends Enum>
     public MutableColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         var ret = wrapColumn(name, userIdColumn);
-        UserIdQueryForeignKey.initColumn(getUserSchema(), ret, true);
-        ret.setShownInInsertView(false);
-        ret.setShownInUpdateView(false);
-        ret.setUserEditable(false);
+        if (isBlank(ret.getConceptURI()))
+            ret.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
         return ret;
     }
 
