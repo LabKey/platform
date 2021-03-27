@@ -412,7 +412,7 @@ public class StudyQuerySchema extends UserSchema
     {
         try
         {
-            DatasetTableImpl ret = new DatasetTableImpl(this, cf, definition);
+            DatasetTableImpl ret = DatasetFactory.createDataset(this, cf, definition);
             ret.afterConstruct();
             return ret;
         }
@@ -826,7 +826,7 @@ public class StudyQuerySchema extends UserSchema
         {
             try
             {
-                return new DatasetTableImpl(this, cf, dsd);
+                return DatasetFactory.createDataset(this, cf, dsd);
             }
             catch (UnauthorizedException e)
             {
@@ -910,7 +910,7 @@ public class StudyQuerySchema extends UserSchema
 
                 if (null != def)
                 {
-                    DatasetTableImpl datasetTable = new DatasetTableImpl(this, null, def);
+                    DatasetTableImpl datasetTable = DatasetFactory.createDataset(this, null, def);
 
                     String aliasName = study.getParticipantAliasProperty();
                     String sourceName = study.getParticipantAliasSourceProperty();

@@ -117,7 +117,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.labkey.study.query.DatasetTableImpl.ASSAY_RESULT_LSID;
+import static org.labkey.study.query.AssayDatasetTable.ASSAY_RESULT_LSID;
 
 /**
  * Manages the copy-to-study operation that links assay rows into datasets in the target study, creating the dataset
@@ -221,22 +221,22 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String assayName,
+    public ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
                                  Pair<Dataset.PublishSource, Integer> publishSource,
                                  List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
-        return publishData(user, sourceContainer, targetContainer, assayName, publishSource, dataMaps, types, null, errors);
+        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, types, null, errors);
     }
 
     @Override
-    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName,
+    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
                                  Pair<Dataset.PublishSource, Integer> publishSource,
                                  List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
-        return publishData(user, sourceContainer, targetContainer, assayName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
+        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
     }
 
-    private ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String assayName,
+    private ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
                                   Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
@@ -255,10 +255,10 @@ public class StudyPublishManager implements StudyPublishService
                 pd.setFormat("0.###");
             propertyDescriptors.add(pd);
         }
-        return publishData(user, sourceContainer, targetContainer, assayName, publishSource, dataMaps, propertyDescriptors, keyPropertyName, errors);
+        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, propertyDescriptors, keyPropertyName, errors);
     }
 
-    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName,
+    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
                                   Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -282,12 +282,12 @@ public class StudyPublishManager implements StudyPublishService
         {
             Container targetStudy = entry.getKey();
             List<Map<String, Object>> maps = entry.getValue();
-            url = _publishData(user, sourceContainer, targetStudy, assayName, publishSource, maps, columns, keyPropertyName, errors);
+            url = _publishData(user, sourceContainer, targetStudy, sourceName, publishSource, maps, columns, keyPropertyName, errors);
         }
         return url;
     }
 
-    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName,
+    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, String sourceName,
                                    Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -327,7 +327,7 @@ public class StudyPublishManager implements StudyPublishService
                 else if (publishSource.second == null &&
                         publishSource.first == Dataset.PublishSource.Assay &&
                         dsd.getTypeURI() != null &&
-                        dsd.getTypeURI().equals(DatasetDomainKind.generateDomainURI(assayName, dsd.getEntityId(), targetStudy.getContainer())))
+                        dsd.getTypeURI().equals(DatasetDomainKind.generateDomainURI(sourceName, dsd.getEntityId(), targetStudy.getContainer())))
                 {
                     // No protocol, but we've got a type uri match. This is used when creating a study
                     // from a study design
@@ -337,7 +337,7 @@ public class StudyPublishManager implements StudyPublishService
             }
             if (dataset == null)
             {
-                dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, assayName))
+                dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, sourceName))
                         .setStudy(targetStudy)
                         .setKeyPropertyName(keyPropertyName)
                         .setPublishSourceId(publishSource.second)
@@ -399,7 +399,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 ExpObject expSource = publishSource.first.resolvePublishSource(publishSource.second);
                 if (expSource instanceof ExpProtocol)
-                    createProvenanceRun(user, targetContainer, assayName, (ExpProtocol)expSource, errors, dataset, lsids);
+                    createProvenanceRun(user, targetContainer, sourceName, (ExpProtocol)expSource, errors, dataset, lsids);
             }
             if (!errors.isEmpty())
                 return null;
