@@ -27,6 +27,7 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -928,6 +929,12 @@ public abstract class SqlDialect
     public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
     {
         return getTableResolver().getForeignKeyResolver(scope, schemaName, tableName);
+    }
+
+    // Pass-through by default. Dialects can override if they need special handling.
+    public JdbcMetaDataResultSetFactory getJdbcMetaDataResultSetFactory(JdbcMetaDataResultSetFactory jdbcMetaDataResultSetFactory)
+    {
+        return jdbcMetaDataResultSetFactory;
     }
 
     public abstract boolean canExecuteUpgradeScripts();
