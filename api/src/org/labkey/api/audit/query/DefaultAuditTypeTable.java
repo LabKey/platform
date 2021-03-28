@@ -120,10 +120,14 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
         createdBy.setConceptURI(BuiltInColumnTypes.CREATEDBY_CONCEPT_URI);
+        // NOTE: DefaultAuditTypeTable uses UserIdForeignKey instead of UserIdQueryForeignKey (?)
+        UserIdForeignKey.initColumn(createdBy);
 
         var impersonatedBy = getMutableColumn(FieldKey.fromParts("ImpersonatedBy"));
         impersonatedBy.setLabel("Impersonated By");
         impersonatedBy.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
+        // NOTE: DefaultAuditTypeTable uses UserIdForeignKey instead of UserIdQueryForeignKey (?)
+        UserIdForeignKey.initColumn(impersonatedBy);
 
         initColumns();
     }
