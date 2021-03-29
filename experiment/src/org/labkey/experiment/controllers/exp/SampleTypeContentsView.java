@@ -19,6 +19,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -54,9 +55,41 @@ public class SampleTypeContentsView extends QueryView
         return deriveButton;
     }
 
-    public static ActionButton getLinkToStudyButton(Container container)
+    // Rosaline temp note: V similar to ResultsQueryView's createDataView
+    @Override
+    public DataView createDataView()
+    {
+        DataView view = super.createDataView();
+        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+
+        if (returnURL == null)
+        {
+            // 27693: Respect returnURL from async webpart requests
+            if (getSettings().getReturnURLHelper() != null)
+                returnURL = getSettings().getReturnURLHelper().toString();
+            else
+                returnURL = getViewContext().getActionURL().toString();
+        }
+
+        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+
+        return view;
+    }
+
+    public static ActionButton getLinkToStudyButton(DataView view, int rowId, Container container)
     {
         ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(container);
+        view.getDataRegion().addHiddenFormField("rowId", String.valueOf(rowId));
+
+        linkToStudyURL.deleteParameters(); //Rosaline temp note: this code is similar to ResultsQueryView, populateButtonBar
+
+//        TODO: containerFilterName
+//        if (getTable().getContainerFilter() != null && getTable().getContainerFilter().getType() != null)
+//            publishURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
+        linkToStudyURL.addParameter("containerFilterName", "Current");
+
+        //_source.getRowId()
+
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         linkToStudyButton.setRequiresSelection(true);
@@ -139,7 +172,7 @@ public class SampleTypeContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
-        bar.add(getLinkToStudyButton(getContainer()));
+        bar.add(getLinkToStudyButton(view, _source.getRowId(), getContainer()));
 
         // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();

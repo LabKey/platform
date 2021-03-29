@@ -266,7 +266,11 @@ import static org.labkey.api.util.DOM.cl;
 public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
+            ExperimentController.class,
+            SampleTypePublishStartAction.class,
+            SampleTypePublishConfirmAction.class
+    );
     private static final String GUEST_DIRECTORY_NAME = "guest";
 
     public ExperimentController()
@@ -6351,7 +6355,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getLinkToStudyConfirmURL(Container container)
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
         {
             return new ActionURL(SampleTypePublishConfirmAction.class, container);
         }

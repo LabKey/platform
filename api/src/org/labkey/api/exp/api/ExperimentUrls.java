@@ -110,5 +110,5 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getLinkToStudyURL(Container container);
 
-    ActionURL getLinkToStudyConfirmURL(Container container);
+    ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType);
 }

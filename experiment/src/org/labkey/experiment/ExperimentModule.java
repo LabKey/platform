@@ -97,7 +97,6 @@ import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
 import org.labkey.experiment.api.property.StorageProvisionerImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
-import org.labkey.experiment.controllers.exp.PublishController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
@@ -157,7 +156,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         addController("experiment", ExperimentController.class);
         addController("experiment-types", TypesController.class);
         addController("property", PropertyController.class);
-        addController("experiment-publish", PublishController.class);
         ExperimentService.setInstance(new ExperimentServiceImpl());
         SampleTypeService.setInstance(new SampleTypeServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());

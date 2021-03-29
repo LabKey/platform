@@ -2,8 +2,10 @@ package org.labkey.experiment.publish;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -13,6 +15,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.study.publish.AbstractPublishConfirmAction;
 import org.labkey.api.study.publish.PublishConfirmForm;
+import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +27,8 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 @RequiresPermission(InsertPermission.class)
 public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction<SampleTypePublishConfirmAction.SampleTypePublishConfirmForm>
 {
+    private SamplesSchema _samplesSchema;
+
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
     {
         private Integer _rowId;
@@ -39,15 +45,42 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
-    protected UserSchema getUserSchema(SampleTypePublishConfirmForm form)
+    public boolean handlePost(SampleTypePublishConfirmForm form, BindException errors) throws Exception
     {
-        return null;
+        return super.handlePost(form, errors);
     }
 
     @Override
+    public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
+    {
+        return super.getView(form, reshow, errors);
+    }
+
+    @Override
+    protected UserSchema getUserSchema(SampleTypePublishConfirmForm form) //Rosaline temp: Definitely not right
+    {
+
+        _samplesSchema = new SamplesSchema(form.getUser(), form.getContainer());
+        return _samplesSchema;
+    }
+
+    // Rosaline TODO: Update
+    @Override
     protected QuerySettings getQuerySettings(SampleTypePublishConfirmForm form)
     {
-        return null;
+//        String dataRegionSelectionKey = form.getDataRegionSelectionKey();
+//        String[] tempSolutionTODO = dataRegionSelectionKey.split("\\$");
+//        String dataRegionName = tempSolutionTODO[2];
+//        String queryName = tempSolutionTODO[4];
+        String queryName = "name";
+
+        QuerySettings qs = new QuerySettings(form.getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
+        qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
+        qs.setQueryName(queryName);
+
+        getUserSchema(form); //getQuerySettings
+
+        return qs;
     }
 
     @Override
@@ -59,7 +92,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     protected ActionURL getPublishHandlerURL(SampleTypePublishConfirmForm form)
     {
-        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer()).deleteParameters();
+        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), null).deleteParameters();
     }
 
     @Override
