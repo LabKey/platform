@@ -22,7 +22,6 @@ import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -33,7 +32,6 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.SecurityManager;
@@ -120,14 +118,10 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         var createdBy = getMutableColumn(FieldKey.fromParts("CreatedBy"));
         createdBy.setLabel("Created By");
         createdBy.setConceptURI(BuiltInColumnTypes.CREATEDBY_CONCEPT_URI);
-        // NOTE: DefaultAuditTypeTable uses UserIdForeignKey instead of UserIdQueryForeignKey (?)
-        UserIdForeignKey.initColumn(createdBy);
 
         var impersonatedBy = getMutableColumn(FieldKey.fromParts("ImpersonatedBy"));
         impersonatedBy.setLabel("Impersonated By");
         impersonatedBy.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
-        // NOTE: DefaultAuditTypeTable uses UserIdForeignKey instead of UserIdQueryForeignKey (?)
-        UserIdForeignKey.initColumn(impersonatedBy);
 
         initColumns();
     }
