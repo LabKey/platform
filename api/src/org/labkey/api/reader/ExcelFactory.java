@@ -16,6 +16,8 @@
 package org.labkey.api.reader;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.format.CellGeneralFormatter;
@@ -75,6 +77,8 @@ import java.util.Map;
  */
 public class ExcelFactory
 {
+    private static final Logger LOG = LogManager.getLogger(ExcelFactory.class);
+
     public static final String SUB_TYPE_XSSF = "vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     public static final String SUB_TYPE_BIFF5 = "x-tika-msoffice";
     public static final String SUB_TYPE_BIFF8 = "vnd.ms-excel";
@@ -384,9 +388,17 @@ public class ExcelFactory
             {
                 // This seems to be the best way to get the value that's shown in Excel
                 // http://stackoverflow.com/questions/1072561/how-can-i-read-numeric-strings-in-excel-cells-as-string-not-numbers-with-apach
-                Workbook wb = cell.getSheet().getWorkbook();
-                FormulaEvaluator evaluator = createFormulaEvaluator(wb);
-                return new DataFormatter().formatCellValue(cell, evaluator);
+                try
+                {
+                    Workbook wb = cell.getSheet().getWorkbook();
+                    FormulaEvaluator evaluator = createFormulaEvaluator(wb);
+                    return new DataFormatter().formatCellValue(cell, evaluator);
+                }
+                catch (Exception e)
+                {
+                    // Issue 41879 -- best effort, don't make a big fuss over bad formula
+                    LOG.warn("Exception parsing Excel formula: " + e.getMessage());
+                }
             }
         }
         return "";
