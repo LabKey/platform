@@ -86,7 +86,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.data.BaseColumnInfo.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 
 public class DomainImpl implements Domain
 {
@@ -788,7 +788,7 @@ public class DomainImpl implements Domain
             uniqueIndexCols.addAll(idx.second);
         });
 
-        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), UNIQUE_ID_SEQUENCE_PREFIX);
+        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX);
 
         TableSelector selector = new TableSelector(table, uniqueIndexCols, null, null);
         List<Map<String, Object>> rows = new ArrayList<>();

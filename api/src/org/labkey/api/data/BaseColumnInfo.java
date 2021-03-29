@@ -74,8 +74,8 @@ import java.util.Set;
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
-    public static final String UNIQUE_ID_CONCEPT_URI = "http://www.labkey.org/types#uniqueId";
-    public static final String UNIQUE_ID_SEQUENCE_PREFIX = "org.labkey.api.UniqueId";
+    public static final String STORAGE_UNIQUE_ID_CONCEPT_URI = "http://www.labkey.org/types#storageUniqueId";
+    public static final String STORAGE_UNIQUE_ID_SEQUENCE_PREFIX = "org.labkey.api.StorageUniqueId";
 
     private static final Logger LOG = LogManager.getLogger(ColumnInfo.class);
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
@@ -600,7 +600,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _conceptURI = conceptURI;
-        if (UNIQUE_ID_CONCEPT_URI.equals(_conceptURI))
+        if (STORAGE_UNIQUE_ID_CONCEPT_URI.equals(_conceptURI))
         {
             _hasDbSequence = true;
             _shownInInsertView = false;

@@ -140,6 +140,6 @@ public interface DomainProperty extends ImportAliasable
 
     default boolean isUniqueIdField()
     {
-        return BaseColumnInfo.UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
+        return BaseColumnInfo.STORAGE_UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
     }
 }

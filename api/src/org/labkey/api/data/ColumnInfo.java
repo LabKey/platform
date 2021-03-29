@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_CONCEPT_URI;
+import static org.labkey.api.data.BaseColumnInfo.STORAGE_UNIQUE_ID_CONCEPT_URI;
 
 public interface ColumnInfo extends ColumnRenderProperties
 {
@@ -316,7 +316,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     default boolean isUniqueIdField()
     {
-        return UNIQUE_ID_CONCEPT_URI.equals(getConceptURI());
+        return STORAGE_UNIQUE_ID_CONCEPT_URI.equals(getConceptURI());
     }
 
     default Container getDbSequenceContainer(Container container)

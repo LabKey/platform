@@ -77,7 +77,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-import static org.labkey.api.data.BaseColumnInfo.UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.data.BaseColumnInfo.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.
@@ -1364,7 +1364,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public void addUniqueIdDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
     {
         target.getColumns().stream().filter(ColumnInfo::isUniqueIdField).forEach(columnInfo -> {
-            addTextSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), UNIQUE_ID_SEQUENCE_PREFIX, null, 100);
+            addTextSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX, null, 100);
         });
     }
 
