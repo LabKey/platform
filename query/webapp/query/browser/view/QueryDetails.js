@@ -58,7 +58,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             description: 'This column contains a calculated expression'
         },
         phi: {
-            enum: {
+            enumeration: {
                 PHI: {
                     abbreviation: 'PHI',
                     label: 'Full PHI',
@@ -164,8 +164,8 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             if (this.attrMap.hasOwnProperty(attrName)) {
                 attr = this.attrMap[attrName];
                 let value = col[attrName];
-                if (attr.enum && attr.enum[value]) {
-                    attrs[value] = attr.enum[value];
+                if (attr.enumeration && attr.enumeration[value]) {
+                    attrs[value] = attr.enumeration[value];
                 }
                 else if (attr.negate ? !value : value) {
                     if (attr.trump) {
