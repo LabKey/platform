@@ -29,8 +29,7 @@ import org.labkey.api.view.ViewContext;
  */
 
 /**
- * Generic javascript report which uses the client side apis developed over d3/raphael to
- * create box, scatter, bar charts.
+ * Generic javascript report which uses the client side apis developed over d3 to create box, scatter, bar charts.
  */
 public abstract class GenericChartReport extends AbstractReport
 {
