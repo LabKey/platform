@@ -1330,7 +1330,7 @@ public class Query
             }
             catch (Exception x)
             {
-                QueryTestCase.fail("unexpected exception: " + x.toString());
+                throw new AssertionError("unexpected exception: " + x.getMessage(), x);
             }
         }
     }
@@ -1437,11 +1437,6 @@ public class Query
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0 AS ZERO, 1 ONE, 2 AS TWO, 3 THREE, 4 FOUR, 5 FIVE, 6 SIX, NULL AS UNKNOWN)", 10, 12),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4", 9, 4),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY \"0::C\" LIMIT 12", 9, 12),
-        // TODO: Pivot a calculated column
-//        new SqlTest("SELECT seven, (twelve/2) AS half, COUNT(*) as C " +
-//            "FROM lists.R " +
-//            "GROUP BY seven, half " +
-//            "PIVOT C BY half", 9, 12), // Pivot on calculated column
         new SqlTest("SELECT seven, month, count(*) C\n" +
                 "FROM R\n" +
                 "GROUP BY seven, month\n" +
