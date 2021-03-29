@@ -1820,19 +1820,19 @@ public class UserController extends SpringActionController
                     User user = getUser();
                     int userId = user.getUserId();
 
-                    // don't let non-site admin reset password of site admin
+                    // don't let non-site admin change email of site admin
                     User formUser = UserManager.getUser(_urlUserId);
                     if (formUser != null && !user.hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
-                        throw new UnauthorizedException("Can not reset password for a Site Admin user");
+                        throw new UnauthorizedException("Can not change email of a Site Admin user");
 
-                    // Allow mutating SQL from GET requests, since links in password change emails must use GET. Database updates
+                    // Allow mutating SQL from GET requests, since links in verification emails must use GET. Database updates
                     // occur only if a secret (validation token) is provided, which prevents CSRF attacks on this action.
                     try (var ignored = SpringActionController.ignoreSqlUpdates())
                     {
                         // update email in database
                         UserManager.changeEmail(canUpdateUser, userId, _currentEmailFromDatabase, _requestedEmailFromDatabase, form.getVerificationToken(), getUser());
                     }
-                    // post-verification email to old account
+                    // post-verification email to old email address
                     Container c = getContainer();
                     MimeMessage m = getChangeEmailMessage(_currentEmailFromDatabase, _requestedEmailFromDatabase);
                     MailHelper.send(m, user, c);
@@ -1895,7 +1895,7 @@ public class UserController extends SpringActionController
                 {
                     if ((verificationToken == null) || (verificationToken.length() != SecurityManager.tempPasswordLength))
                     {
-                        if (!canUpdateUser)  // don't bother auditing admin password link clicks
+                        if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
@@ -1903,7 +1903,7 @@ public class UserController extends SpringActionController
                     }
                     else if(!(verificationToken.equals(verifyEmail.getVerification())))
                     {
-                        if (!canUpdateUser)  // don't bother auditing admin password link clicks
+                        if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
@@ -2008,9 +2008,9 @@ public class UserController extends SpringActionController
                 if (user == null)
                     throw new IllegalStateException("Unknown user for change email POST.");
 
-                // don't let non-site admin reset password of site admin
+                // don't let non-site admin change email of site admin
                 if (!getUser().hasSiteAdminPermission() && user.hasSiteAdminPermission())
-                    throw new UnauthorizedException("Can not reset password for a Site Admin user");
+                    throw new UnauthorizedException("Can not change email of a Site Admin user");
 
                 // use "ADMIN" as verification token for debugging, but should never be checked/used
                 UserManager.changeEmail(true, userId, user.getEmail(), form.getRequestedEmail(), "ADMIN", getUser());
