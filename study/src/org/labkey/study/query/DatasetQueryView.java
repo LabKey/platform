@@ -437,8 +437,8 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (publishSource != null)
                 {
-                    ExpProtocol protocol = (ExpProtocol)publishSource;
-//                  do we ever add the assay import buttons to the dataset query view?
+//                    ExpProtocol protocol = (ExpProtocol)publishSource;
+//                    do we ever add the assay import buttons to the dataset query view?
 //                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
                     if (user.hasRootAdminPermission() || canDelete)
@@ -449,8 +449,8 @@ public class DatasetQueryView extends StudyQueryView
                         deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         // Dataset permissions mean user might not have delete permissions in the folder. We checked for
-                    // delete permissions above so just require read (which we know user must have in the folder)
-                    deleteRows.setDisplayPermission(ReadPermission.class);
+                        // delete permissions above so just require read (which we know user must have in the folder)
+                        deleteRows.setDisplayPermission(ReadPermission.class);
                         bar.add(deleteRows);
                     }
                 }

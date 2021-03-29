@@ -74,11 +74,11 @@ public interface StudyPublishService
     void checkForAlreadyCopiedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer);
 
-    ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String assayName,
+    ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
                           Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, Map<String, PropertyType> propertyTypes, List<String> errors);
 
-    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName,
+    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
                           Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 
