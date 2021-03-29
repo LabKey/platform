@@ -54,7 +54,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return isAllowedPermission(perm) && getContainer().hasPermission(user, perm) && canAccessPhi();
+        return isAllowedPermission(perm) && getContainer().hasPermission(user, perm) && canUserAccessPhi();
     }
 
     protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)

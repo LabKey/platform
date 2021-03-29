@@ -140,6 +140,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         super.afterConstruct();
         if (getRealTable() instanceof AbstractTableInfo)
             ((AbstractTableInfo)getRealTable()).afterConstruct();
+
+        applyTableRules();
     }
 
     @Override
@@ -338,14 +340,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             ret.setKeyField(false);
         }
-        if (PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
-        {
-            Set<FieldKey> phiDataLoggingColumns = getPHIDataLoggingColumns();
-            if (!phiDataLoggingColumns.isEmpty())
-            {
-                ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), phiDataLoggingColumns, getPHILoggingComment(phiDataLoggingColumns), getSelectQueryAuditProvider()));
-            }
-        }
         assert ret.getParentTable() == this;
         return ret;
     }
@@ -521,34 +515,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _aliasManager;
     }
 
-    @Override
-    public MutableColumnInfo addColumn(MutableColumnInfo column)
-    {
-        checkLocked();
-        MutableColumnInfo ret = column;
-
-        // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
-        if (_rules.getColumnInfoFilter().test(column))
-        {
-            ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
-            getAliasManager().ensureAlias(column);
-            ret = super.addColumn((MutableColumnInfo)transformed);
-            if (column != transformed)
-            {
-                if (_rulesTransformedColumns == null)
-                    _rulesTransformedColumns = new HashSet<>();
-                _rulesTransformedColumns.add(column.getFieldKey());
-            }
-        }
-        else
-        {
-            if (_rulesOmittedColumns == null)
-                _rulesOmittedColumns = new HashSet<>();
-            _rulesOmittedColumns.add(column.getFieldKey());
-        }
-
-        return ret;
-    }
 
     /**
      * Returns true if at least one of the columns on the table has been omitted by the table rules.
@@ -586,17 +552,46 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         BaseColumnInfo ret = new AliasedColumn(this, name, column);
 
-        if (PHI.NotPHI != column.getPHI() && column.isShouldLog())
-        {
-            Set<FieldKey> phiDataLoggingColumns = getPHIDataLoggingColumns();
-            if (!phiDataLoggingColumns.isEmpty())
-            {
-                ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), phiDataLoggingColumns, getPHILoggingComment(phiDataLoggingColumns), getSelectQueryAuditProvider()));
-            }
-        }
         propagateKeyField(column, ret);
         addColumn(ret);
         return ret;
+    }
+
+    // Choke point for TableRules column filtering and transforming, e.g., respecting PHI annotations
+    protected void applyTableRules()
+    {
+        final Set<FieldKey> phiDataLoggingColumns = getPHIDataLoggingColumns();
+        final String loggingComment = getPHILoggingComment(phiDataLoggingColumns);
+
+        for (var column : getMutableColumns())
+        {
+            MutableColumnInfo transformed;
+            if (_rules.getColumnInfoFilter().test(column))
+            {
+                transformed = _rules.getColumnInfoTransformer().apply(column);
+                getAliasManager().ensureAlias(column);
+                replaceColumn(transformed, column);
+
+                if (column != transformed)
+                {
+                    if (_rulesTransformedColumns == null)
+                        _rulesTransformedColumns = new HashSet<>();
+                    _rulesTransformedColumns.add(column.getFieldKey());
+                }
+
+                if (PHI.NotPHI != transformed.getPHI() && transformed.isShouldLog() && !phiDataLoggingColumns.isEmpty())
+                {
+                    transformed.setColumnLogging(new ColumnLogging(true, transformed.getFieldKey(), transformed.getParentTable(), phiDataLoggingColumns, loggingComment, getSelectQueryAuditProvider()));
+                }
+            }
+            else
+            {
+                removeColumn(column);
+                if (_rulesOmittedColumns == null)
+                    _rulesOmittedColumns = new HashSet<>();
+                _rulesOmittedColumns.add(column.getFieldKey());
+            }
+        }
     }
 
     public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
@@ -610,11 +605,11 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             for (ColumnInfo pkCol : getPkColumns())
                 loggingColumns.add(pkCol.getFieldKey());
 
-            final PHI maxPHI = this.getMaxPhiLevel();
+            final PHI maxAllowed = this.getUserMaxAllowedPhiLevel();
 
             // Also log any participantId columns, but only if the user is allowed to see them. Otherwise the value wouldn't be in the SELECT list to log.
             getColumns().stream()
-                    .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(maxPHI))
+                    .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(maxAllowed))
                     .map(ColumnInfo::getFieldKey)
                     .forEach(loggingColumns::add);
         }

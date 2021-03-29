@@ -695,16 +695,23 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     }
 
     /**
-     * Return true if the current user is allowed the maximum phi level set across all columns.
+     * Get the max allowed PHI for the current user in the current container.
      */
-    default boolean canAccessPhi()
+    default PHI getUserMaxAllowedPhiLevel()
     {
         UserSchema schema = getUserSchema();
         if (schema == null)
-            return false;
+            return PHI.NotPHI;
 
-        PHI maxAllowed = ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
-        return getMaxPhiLevel().isLevelAllowed(maxAllowed);
+        return ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
+    }
+
+    /**
+     * Return true if the current user is allowed the maximum phi level set across all columns.
+     */
+    default boolean canUserAccessPhi()
+    {
+        return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
     }
 
 }

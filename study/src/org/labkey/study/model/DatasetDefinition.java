@@ -1033,7 +1033,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         {
             DatasetSchemaTableInfo table = getTableInfo(user);
             if (null != table)
-                return table.canAccessPhi();
+                return table.canUserAccessPhi();
         }
         return false;
     }
@@ -1619,13 +1619,19 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             return m;
         }
 
+        @Override
+        public PHI getUserMaxAllowedPhiLevel()
+        {
+            return _maxAllowed;
+        }
+
         /**
          * Return true if the current user is allowed the maximum phi level set across all columns.
          */
         @Override
-        public boolean canAccessPhi()
+        public boolean canUserAccessPhi()
         {
-            return getMaxPhiLevel().isLevelAllowed(_maxAllowed);
+            return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
         }
 
         @Override

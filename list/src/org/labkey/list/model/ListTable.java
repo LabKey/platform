@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
@@ -55,7 +54,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -80,7 +78,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     private final ListDefinition _list;
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
     private final boolean _canAccessPhi;
-    private final PHI _maxUserPhi;
 
     public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
     {
@@ -269,8 +266,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             addColumn(entityId);
         }
 
-        _maxUserPhi = ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
-        _canAccessPhi = canAccessPhi();
+        _canAccessPhi = canUserAccessPhi();
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(_userSchema.getContainer()), Collections.<String, String>emptyMap());
         setGridURL(gridURL);

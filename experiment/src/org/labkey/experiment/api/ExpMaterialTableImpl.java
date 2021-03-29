@@ -336,7 +336,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (filter)
                 addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
 
-            if (canAccessPhi())
+            if (canUserAccessPhi())
             {
                 ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
                 setImportURL(new DetailsURL(url));
@@ -540,7 +540,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rowIdCol.setURL(url);
         setDetailsURL(url);
 
-        if (canAccessPhi())
+        if (canUserAccessPhi())
         {
             ActionURL updateActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getUpdateMaterialQueryRowAction(getContainer(), this);
             setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));

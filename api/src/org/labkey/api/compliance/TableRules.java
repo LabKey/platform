@@ -44,7 +44,16 @@ public interface TableRules
         }
     };
 
+    /**
+     * Only add columns to the TableInfo that are allowed by the ColumnInfoFilter.
+     */
     ColumnInfoFilter getColumnInfoFilter();
+
+    /**
+     * Columns that are allowed by the ColumnInfoFilter will be transformed by
+     * the ColumnInfoTransformer.  The transform may return the same column instance or a new column.
+     */
     ColumnInfoTransformer getColumnInfoTransformer();
+
     UnaryOperator<SQLFragment> getSqlTransformer();
 }

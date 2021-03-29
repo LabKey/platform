@@ -31,7 +31,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
@@ -405,7 +404,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         rowIdCol.setURL(url);
         nameCol.setURL(url);
 
-        if (canAccessPhi())
+        if (canUserAccessPhi())
         {
             ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
             setDeleteURL(new DetailsURL(deleteUrl));
