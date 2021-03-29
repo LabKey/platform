@@ -1218,9 +1218,9 @@ public class Query
             {
                 ResultSetMetaData md = rs.getMetaData();
                 if (_countColumns >= 0)
-                    QueryTestCase.assertEquals(_sql, _countColumns, md.getColumnCount());
+                    QueryTestCase.assertEquals("Wrong number of columns. " + _sql, _countColumns, md.getColumnCount());
                 if (_countRows >= 0)
-                    QueryTestCase.assertEquals(_sql, _countRows, rs.getSize());
+                    QueryTestCase.assertEquals("Wrong number of rows. " + _sql, _countRows, rs.getSize());
 
                 validateResults(rs);
 
@@ -1382,6 +1382,7 @@ public class Query
         new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
         new SqlTest("SELECT u.seven FROM (SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R) u WHERE u.seven > 5", 1, 6),
 
+        new SqlTest("SELECT d, seven, twelve, (twelve/2) AS half FROM R", 4, Rsize), // Calculated column
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM R", 8, Rsize),
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM lists.R", 8, Rsize),
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM Folder.qtest.lists.S", 8, Rsize),
@@ -1436,7 +1437,10 @@ public class Query
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0 AS ZERO, 1 ONE, 2 AS TWO, 3 THREE, 4 FOUR, 5 FIVE, 6 SIX, NULL AS UNKNOWN)", 10, 12),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY twelve LIMIT 4", 9, 4),
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven IN (0, 1, 2, 3, 4, 5, 6) ORDER BY \"0::C\" LIMIT 12", 9, 12),
-        new SqlTest("SELECT seven, twelve, CASE WHEN (seven + twelve) > 6 THEN TRUE ELSE FALSE END AS big, COUNT(*) as C FROM R GROUP BY seven, twelve, big PIVOT C BY big", 9, 12), // Pivot on calculated column
+        new SqlTest("SELECT seven, (twelve/2) AS half, COUNT(*) as C " +
+            "FROM lists.R " +
+            "GROUP BY seven, half " +
+            "PIVOT C BY half", 9, 12), // Pivot on calculated column
         new SqlTest("SELECT seven, month, count(*) C\n" +
                 "FROM R\n" +
                 "GROUP BY seven, month\n" +
@@ -1447,17 +1451,11 @@ public class Query
                 "SUM(CASE WHEN month = 'May' THEN 1 ELSE 0 END) AS M " +
                 "FROM lists.R GROUP BY month, day " +
                 "PIVOT A, M BY month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", 28, 7),
-        // Regression test for Issue 40618: Generate better error message when PIVOT column list can't be computed due to bad sql
-        new SqlTest("SELECT seven, COUNT(*) as C, " +
-            "CASE WHEN (twelve / seven) > 0.5 THEN 1 ELSE 0 END AS Z " + // divide by zero
-            "FROM R GROUP BY seven, Z " +
-            "PIVOT C BY Z", 0, 0),
-        // Try sub-select
-        new SqlTest("SELECT seven, COUNT(*) AS C, Z FROM " +
-            "(SELECT seven, " +
-            "CASE WHEN (twelve / seven) > 0.5 THEN 1 ELSE 0 END AS Z " + // divide by zero
-            "FROM R) " +
-            "GROUP BY seven, Z PIVOT C BY Z", 0, 0),
+        // Verify pivot on sub-select
+        new SqlTest("SELECT A, B, count(*) As C " +
+            "FROM (SELECT seven as A, twelve/1 AS B FROM lists.R) " +
+            "GROUP BY A, B " +
+            "PIVOT C BY B", 14, 7),
 
         // saved queries
         new SqlTest("Rquery",
@@ -1827,7 +1825,13 @@ public class Query
         new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name"), // Missing from-clause entry
 
         // trailing semicolon in subselect
-        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X")
+        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X"),
+
+        // Regression test for Issue 40618: Generate better error message when PIVOT column list can't be computed due to bad sql
+        new FailTest("SELECT A, B, count(*) As C " +
+            "FROM (SELECT seven as A, twelve/0 AS B FROM lists.R) " +
+            "GROUP BY A, B " +
+            "PIVOT C BY B")
     };
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
