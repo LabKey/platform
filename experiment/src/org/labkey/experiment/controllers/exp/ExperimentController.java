@@ -6357,7 +6357,10 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
         {
-            return new ActionURL(SampleTypePublishConfirmAction.class, container);
+            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
         }
     }
 

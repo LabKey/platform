@@ -101,7 +101,6 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     protected ActionURL getSuccessUrl(SampleTypePublishStartForm form)
     {
         ActionURL url = urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType);
-        url.addParameter("rowId", form.getRowId());
         return url;
     }
 
