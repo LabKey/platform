@@ -164,6 +164,14 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract boolean isMismatchedSpecimenInfo(FORM form);
 
     /**
+     * Show the column to indicate whether there are specimens which match the subject/timepoint combination
+     */
+    protected boolean showSpecimenMatchColumn(FORM form)
+    {
+        return false;
+    }
+
+    /**
      * Returns the publish URL
      */
     protected abstract ActionURL getPublishHandlerURL(FORM form);
@@ -215,6 +223,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, errors, getObjectIdFieldKey(form),
                 _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids,
                 mismatched,
+                showSpecimenMatchColumn(form),
                 form.isIncludeTimestamp(),
                 getAdditionalColumns(form),
                 getHiddenFormFields(form),
@@ -247,7 +256,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
         {
-            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.PublishSource.toString());
             publishURL.replaceParameter("includeTimestamp", "true");
             ActionButton includeTimeButton = new ActionButton(publishURL, "Display DateTime");
             includeTimeButton.setScript("return assayPublish_onCopyToStudy(this)", true);
@@ -257,7 +266,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         if (mismatched)
         {
             publishURL.deleteParameter("validate");
-            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.PublishSource.toString());
             ActionButton fromAssayButton = new ActionButton(publishURL, "Reset with Assay Data");
             buttons.add(fromAssayButton);
 

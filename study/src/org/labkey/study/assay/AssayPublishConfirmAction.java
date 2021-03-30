@@ -96,9 +96,12 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         }
     }
 
+    /**
+     * Names need to match those found in PublishConfirmForm.DefaultValueSource
+     */
     public enum DefaultValueSource
     {
-        Assay
+        PublishSource
                 {
                     @Override
                     public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
@@ -181,6 +184,12 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         if (_protocolSchema == null)
             getUserSchema(form);
         return StudyPublishService.get().hasMismatchedInfo(_allObjects, _protocolSchema);
+    }
+
+    @Override
+    protected boolean showSpecimenMatchColumn(AssayPublishConfirmForm form)
+    {
+        return true;
     }
 
     @Override

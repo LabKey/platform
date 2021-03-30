@@ -99,9 +99,12 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return super.handlePost(form, errors);
     }
 
+    /**
+     * Names need to match those found in PublishConfirmForm.DefaultValueSource
+     */
     public enum DefaultValueSource
     {
-        SampleType
+        PublishSource
                 {
                     @Override
                     public FieldKey getParticipantIDFieldKey()

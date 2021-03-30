@@ -98,6 +98,7 @@ public class PublishResultsQueryView extends QueryView
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final boolean _mismatched;
+    private final boolean _showSpecimenMatch;
     private final TimepointType _timepointType;
     private final Map<Object, String> _reshowVisits;
     private final Map<Object, String> _reshowDates;
@@ -108,6 +109,7 @@ public class PublishResultsQueryView extends QueryView
     private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
     private Map<String, Object> _hiddenFormFields;
     private Set<String> _hiddenColumnCaptions;
+    private FieldKey _objectIdFieldKey;
 
     public enum ExtraColFieldKeys
     {
@@ -133,6 +135,7 @@ public class PublishResultsQueryView extends QueryView
                                    Map<Object, String> reshowDates,
                                    Map<Object, String> reshowPtids,
                                    boolean mismatched,
+                                   boolean showSpecimenMatch,
                                    boolean includeTimestamp,
                                    Map<ExtraColFieldKeys, FieldKey> additionalColumns,
                                    Map<String, Object> hiddenFormFields,
@@ -141,12 +144,14 @@ public class PublishResultsQueryView extends QueryView
         super(schema, settings, errors);
         _targetStudyContainer = targetStudyContainer;
         _mismatched = mismatched;
+        _showSpecimenMatch = showSpecimenMatch;
         if (_targetStudyContainer != null)
             _timepointType = StudyPublishService.get().getTimepointType(_targetStudyContainer);
         else
             _timepointType = null;
+        _objectIdFieldKey = objectIdFieldKey;
         _filter = new SimpleFilter();
-        _filter.addInClause(objectIdFieldKey, objectIds);
+        _filter.addInClause(_objectIdFieldKey, objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         _reshowDates = reshowDates;
@@ -911,7 +916,9 @@ public class PublishResultsQueryView extends QueryView
         fieldKeys.remove(null);
         
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys, selectColumns);
-        ColumnInfo objectIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ObjectId));
+        ColumnInfo objectIdCol = colInfos.get(_objectIdFieldKey);
+        if (_additionalColumns.containsKey(ExtraColFieldKeys.ObjectId))
+            objectIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ObjectId));
         ColumnInfo ptidCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ParticipantId));
         if (ptidCol == null)
         {
@@ -991,9 +998,13 @@ public class PublishResultsQueryView extends QueryView
             c.setCaption("Specimen Match - hidden");
         }
 
-        columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
+        if (_showSpecimenMatch)
+            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
+
         if (runIdCol != null && objectIdCol != null)
+        {
             columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
+        }
 
         ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, ptidCol);
         columns.add(participantColumn);
