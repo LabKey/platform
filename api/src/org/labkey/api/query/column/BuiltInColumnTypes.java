@@ -71,8 +71,8 @@ public enum BuiltInColumnTypes
 
     public static final String CONTAINERID_CONCEPT_URI = "http://www.labkey.org/types#containerId";         // JbcType.GUID
     public static final String USERID_CONCEPT_URI      = "http://www.labkey.org/types#userId";              // JbcType.INTEGER
-    public static final String CREATEDBY_CONCEPT_URI   = "http://www.labkey.org/types#modifiedByUserId";    // JbcType.INTEGER
-    public static final String MODIFIEDBY_CONCEPT_URI  = "http://www.labkey.org/types#createdByUserId";     // JbcType.INTEGER
+    public static final String CREATEDBY_CONCEPT_URI   = "http://www.labkey.org/types#createdByUserId";    // JbcType.INTEGER
+    public static final String MODIFIEDBY_CONCEPT_URI  = "http://www.labkey.org/types#modifiedByUserId";     // JbcType.INTEGER
     public static final String CREATED_CONCEPT_URI     = "http://www.labkey.org/types#createdTimestamp";    // JbcType.TIMESTAMP
     public static final String MODIFIED_CONCEPT_URI    = "http://www.labkey.org/types#modifiedTimestamp";   // JbcType.TIMESTAMP
 }
