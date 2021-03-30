@@ -127,6 +127,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;

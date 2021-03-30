@@ -35,6 +35,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,4 +105,17 @@ public interface StudyPublishService
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
 
     ExpProtocol ensureStudyPublishProtocol(User user, Container container, @Nullable String name, @Nullable String lsid) throws ExperimentException;
+
+    /**
+     * Returns the set of datasets which have ever had data copied from the provided protocol
+     */
+    Set<? extends Dataset> getDatasetsForPublishSource(Integer sourceId, Dataset.PublishSource publishSource);
+
+    /**
+     * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
+     * permission to read or modify all of the datasets that are returned.
+     */
+    Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
+
+    void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 }

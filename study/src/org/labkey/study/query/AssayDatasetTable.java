@@ -9,7 +9,6 @@ import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
@@ -20,7 +19,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
@@ -65,7 +63,7 @@ public class AssayDatasetTable extends DatasetTableImpl
 
                 if (!getColumnNameSet().contains(name))
                 {
-                    ExprColumn wrappedColumn = wrapAssayColumn(columnInfo, name);
+                    ExprColumn wrappedColumn = wrapPublishSourceColumn(columnInfo, name, (parent) -> getAssayResultAlias(parent));
                     addColumn(wrappedColumn);
                 }
             }
@@ -170,7 +168,7 @@ public class AssayDatasetTable extends DatasetTableImpl
                     result = getAssayResultTable().getColumn(name);
                     if (result != null)
                     {
-                        return wrapAssayColumn(result, result.getName());
+                        return wrapPublishSourceColumn(result, result.getName(), this::getAssayResultAlias);
                     }
                 }
 
@@ -292,30 +290,6 @@ public class AssayDatasetTable extends DatasetTableImpl
             _assayResultTable = schema.createDataTable(ContainerFilter.EVERYTHING, false);
         }
         return _assayResultTable;
-    }
-
-    /** Wrap a column in our underlying assay data table with one that puts it in the dataset table */
-    private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo, final String name)
-    {
-        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
-        {
-            @Override
-            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-            {
-                super.declareJoins(parentAlias, map);
-                columnInfo.declareJoins(getAssayResultAlias(parentAlias), map);
-            }
-        };
-        wrappedColumn.copyAttributesFrom(columnInfo);
-
-        // When copying a column, the hidden bit is not propagated, so we need to do it manually
-        if (columnInfo.isHidden())
-            wrappedColumn.setHidden(true);
-
-        ForeignKey fk = wrappedColumn.getFk();
-        if (fk instanceof SpecimenForeignKey)
-            ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
-        return wrappedColumn;
     }
 
     private String getAssayResultAlias(String mainAlias)

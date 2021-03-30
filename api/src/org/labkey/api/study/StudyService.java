@@ -144,22 +144,9 @@ public interface StudyService
 
     ActionURL getDatasetURL(Container container, int datasetId);
 
-    /**
-     * Returns the set of datasets which have ever had data copied from the provided protocol
-     */
-    Set<? extends Dataset> getDatasetsForPublishSource(Integer sourceId, Dataset.PublishSource publishSource);
-
-    /**
-     * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
-     * permission to read or modify all of the datasets that are returned.
-     */
-    Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
-
     DbSchema getDatasetSchema();
 
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
-
-    void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 
     void addStudyAuditEvent(Container container, User user, String comment);
 
