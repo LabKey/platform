@@ -602,6 +602,19 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Sample Type Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
+            Container autoLinkContainer = _sampleType.getAutoLinkTargetContainer();
+            if (null != autoLinkContainer)
+            {
+                DisplayColumn autoLinkTargetColumn = detailsView.getDataRegion().getDisplayColumn("autoLinkTargetContainer");
+                autoLinkTargetColumn.setVisible(false);
+
+                SimpleDisplayColumn displayAutoLinkTargetColumn = new SimpleDisplayColumn();
+                displayAutoLinkTargetColumn.setCaption("Auto Link Target Container:");
+                String path = autoLinkContainer.getPath();
+                displayAutoLinkTargetColumn.setDisplayHtml(path.equals("/") ? "" : path);
+                detailsView.getDataRegion().addDisplayColumn(displayAutoLinkTargetColumn);
+            }
+
             if (_sampleType.hasNameAsIdCol())
             {
                 SimpleDisplayColumn nameIdCol = new SimpleDisplayColumn();
