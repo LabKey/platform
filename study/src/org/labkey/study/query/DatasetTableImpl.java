@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
@@ -48,6 +49,7 @@ import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -67,6 +69,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
@@ -966,7 +969,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
     }
 
-
     @NotNull
     @Override
     public List<ColumnInfo> getAlternateKeyColumns()
@@ -999,5 +1001,34 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
         }
         return cols;
+    }
+
+    interface AliasSupplier<K>
+    {
+        K get(K parent);
+    }
+
+    /** Wrap a column in our underlying publish source results table with one that puts it in the dataset table */
+    protected ExprColumn wrapPublishSourceColumn(final ColumnInfo columnInfo, final String name, AliasSupplier<String> supplier)
+    {
+        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(supplier.get(ExprColumn.STR_TABLE_ALIAS)), columnInfo.getJdbcType())
+        {
+            @Override
+            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+            {
+                super.declareJoins(parentAlias, map);
+                columnInfo.declareJoins(supplier.get(parentAlias), map);
+            }
+        };
+        wrappedColumn.copyAttributesFrom(columnInfo);
+
+        // When copying a column, the hidden bit is not propagated, so we need to do it manually
+        if (columnInfo.isHidden())
+            wrappedColumn.setHidden(true);
+
+        ForeignKey fk = wrappedColumn.getFk();
+        if (fk instanceof SpecimenForeignKey)
+            ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
+        return wrappedColumn;
     }
 }

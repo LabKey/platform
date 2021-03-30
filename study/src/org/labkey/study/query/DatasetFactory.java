@@ -18,7 +18,7 @@ public class DatasetFactory
                     return new AssayDatasetTable(schema, cf, dsd);
                 }
                 case SampleType -> {
-                    return new DatasetTableImpl(schema, cf, dsd);
+                    return new SampleDatasetTable(schema, cf, dsd);
                 }
                 default -> throw new IllegalStateException("Unknown publish source type " + source);
             }

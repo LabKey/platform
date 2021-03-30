@@ -132,6 +132,7 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
@@ -2872,9 +2873,9 @@ public class ExperimentController extends SpringActionController
 
             List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<>();
-            if (StudyService.get() != null)
+            if (StudyPublishService.get() != null)
             {
-                for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForAssayRuns(runs, getUser()))
                 {
                     ActionURL url = urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
                     if (dataset.canDelete(getUser()))
@@ -3125,7 +3126,7 @@ public class ExperimentController extends SpringActionController
                     {
                         noun = "Protocol";
                     }
-                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
+                    for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
                         Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))

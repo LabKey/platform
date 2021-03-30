@@ -2878,7 +2878,7 @@ public class StudyController extends BaseStudyController
                     else
                         continue; // No logging if we can't find a matching run
 
-                    publishSource.addRecallAuditEvent(form.getPublishSourceId(), def, entry.getValue().size(), sourceContainer, getUser());
+                    StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);

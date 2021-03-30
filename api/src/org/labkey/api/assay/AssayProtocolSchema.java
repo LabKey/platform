@@ -33,7 +33,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
@@ -85,6 +84,7 @@ import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -822,7 +822,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             int datasetIndex = 0;
             Set<String> usedColumnNames = new HashSet<>();
-            for (final Dataset assayDataset : StudyService.get().getDatasetsForPublishSource(getProtocol().getRowId(), Dataset.PublishSource.Assay))
+            for (final Dataset assayDataset : StudyPublishService.get().getDatasetsForPublishSource(getProtocol().getRowId(), Dataset.PublishSource.Assay))
             {
                 if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
                 {

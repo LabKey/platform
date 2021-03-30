@@ -347,7 +347,7 @@ public class PublishResultsQueryView extends QueryView
 
         public ParticipantVisitResolver getResolver(RenderContext ctx)
         {
-            Integer runId = (Integer)_runIdCol.getValue(ctx);
+            Integer runId = _runIdCol != null ? (Integer)_runIdCol.getValue(ctx) : null;
             if (runId != null && !_resolvers.containsKey(runId))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
@@ -992,7 +992,8 @@ public class PublishResultsQueryView extends QueryView
         }
 
         columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
-        columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
+        if (runIdCol != null && objectIdCol != null)
+            columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
 
         ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, ptidCol);
         columns.add(participantColumn);
