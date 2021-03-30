@@ -215,6 +215,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             {
                 PropertyStorageSpec key = this.getKeyProperty(list);
                 assert key.isPrimaryKey();
+                _list = null;
                 return key;
             }
         }
