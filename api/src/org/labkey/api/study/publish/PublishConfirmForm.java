@@ -16,11 +16,14 @@ import java.util.stream.Collectors;
 
 public class PublishConfirmForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm, HasBindParameters
 {
+    /**
+     * Controls the source of the subject and timepoint values for the publish results query view
+     */
     public enum DefaultValueSource
     {
-        Assay,
-        Specimen,
-        UserSpecified,
+        PublishSource,  // the publish source results table
+        Specimen,       // for assays only, specimen linked to assay results
+        UserSpecified,  // user specified from the confirm view
     }
 
     private void convertStringArrayParam(PropertyValue pv)
@@ -57,7 +60,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     private boolean _includeTimestamp;
     private String _dataRegionSelectionKey;
     private String _containerFilterName;
-    private String _defaultValueSource = DefaultValueSource.Assay.name();
+    private String _defaultValueSource = DefaultValueSource.PublishSource.name();
 
     @Override
     public String getDataRegionSelectionKey()
