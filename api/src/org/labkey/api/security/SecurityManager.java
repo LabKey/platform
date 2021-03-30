@@ -62,13 +62,11 @@ import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -395,14 +393,14 @@ public class SecurityManager
         @Override
         public void userDeletedFromSite(User user)
         {
-            // This clears the cache of security policies.  It does not remove the policies themselves.
+            // This clears the cache of security policies. It does not remove the policies themselves.
             SecurityPolicyManager.removeAll();
         }
 
         @Override
         public void userAccountDisabled(User user)
         {
-            // This clears the cache of security policies.  It does not remove the policies themselves.
+            // This clears the cache of security policies. It does not remove the policies themselves.
             SecurityPolicyManager.removeAll();
         }
 
@@ -418,7 +416,6 @@ public class SecurityManager
             // do nothing
         }
     }
-
 
     private static @Nullable Pair<String, String> getBasicCredentials(HttpServletRequest request)
     {
@@ -443,7 +440,6 @@ public class SecurityManager
         return ret;
     }
 
-
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
     private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Pair<String, String> basicCredentials)
     {
@@ -451,7 +447,7 @@ public class SecurityManager
         {
             String rawEmail = basicCredentials.getKey();
             String password = basicCredentials.getValue();
-            if (rawEmail.toLowerCase().equals("guest"))
+            if (rawEmail.equalsIgnoreCase("guest"))
                 return User.guest;
             new ValidEmail(rawEmail);  // validate email address
 
@@ -463,12 +459,10 @@ public class SecurityManager
         }
     }
 
-
     public static boolean isBasicAuthentication(HttpServletRequest request)
     {
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
-
 
     public static User getSessionUser(HttpSession session)
     {
@@ -481,7 +475,6 @@ public class SecurityManager
 
         return sessionUser;
     }
-
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
     {
@@ -581,7 +574,6 @@ public class SecurityManager
         return null == u || u.isGuest() ? null : new Pair<>(u, request);
     }
 
-
     /**
      * Determine if an API key is present, checking basic auth first, then "apikey" header, and then the special "transform"
      * cookie and parameters. Return the API key if it's present; otherwise return null.
@@ -631,7 +623,6 @@ public class SecurityManager
 
         return apiKey;
     }
-
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
@@ -743,14 +734,12 @@ public class SecurityManager
         return newSession;
     }
 
-
     public static URLHelper logoutUser(HttpServletRequest request, User user, @Nullable URLHelper returnURL)
     {
         URLHelper ret = AuthenticationManager.logout(user, request, returnURL);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
         SessionHelper.clearSession(request, true);
         return ret;
     }
-
 
     public static void impersonateUser(ViewContext viewContext, User impersonatedUser, ActionURL returnURL)
     {
@@ -763,13 +752,11 @@ public class SecurityManager
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnURL));
     }
 
-
     public static void impersonateGroup(ViewContext viewContext, Group group, ActionURL returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         impersonate(viewContext, new GroupImpersonationContextFactory(project, viewContext.getUser(), group, returnURL));
     }
-
 
     public static void impersonateRoles(ViewContext viewContext, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
     {
@@ -782,7 +769,6 @@ public class SecurityManager
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
     }
 
-
     private static void impersonate(ViewContext viewContext, ImpersonationContextFactory factory)
     {
         // Tell the factory to start impersonating
@@ -794,7 +780,6 @@ public class SecurityManager
         session.setAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY, factory);
     }
 
-
     public static void stopImpersonating(HttpServletRequest request, ImpersonationContextFactory factory)
     {
         factory.stopImpersonating(request);
@@ -804,7 +789,6 @@ public class SecurityManager
         session.removeAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
     }
 
-
     public static void setValidators(HttpSession session, List<AuthenticationValidator> validators)
     {
         if (validators.isEmpty())
@@ -813,12 +797,10 @@ public class SecurityManager
             session.setAttribute(AUTHENTICATION_VALIDATORS_KEY, validators);
     }
 
-
     public static @Nullable List<AuthenticationValidator> getValidators(HttpSession session)
     {
         return (List<AuthenticationValidator>)session.getAttribute(AUTHENTICATION_VALIDATORS_KEY);
     }
-
 
     private static final String passwordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     public static final int tempPasswordLength = 32;
@@ -832,7 +814,6 @@ public class SecurityManager
 
         return tempPassword.toString();
     }
-
 
     public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
     {
@@ -865,13 +846,11 @@ public class SecurityManager
         return (null == getVerification(email));
     }
 
-
     public static boolean verify(ValidEmail email, String verification)
     {
         String dbVerification = getVerification(email);
         return (dbVerification != null && dbVerification.equals(verification));
     }
-
 
     public static void setVerification(ValidEmail email, @Nullable String verification) throws UserManagementException
     {
@@ -880,12 +859,10 @@ public class SecurityManager
             throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
     }
 
-
     public static String getVerification(ValidEmail email)
     {
         return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
     }
-
 
     public static class NewUserStatus
     {
@@ -906,7 +883,7 @@ public class SecurityManager
 
         public boolean isLdapEmail()
         {
-            return SecurityManager.isLdapEmail(_email);
+            return AuthenticationManager.isLdapEmail(_email);
         }
 
         public String getVerification()
@@ -1029,7 +1006,7 @@ public class SecurityManager
 
                 try
                 {
-                    Map returnMap = Table.insert(currentUser, core.getTableInfoPrincipals(), fieldsIn);
+                    Map<String, Object> returnMap = Table.insert(currentUser, core.getTableInfoPrincipals(), fieldsIn);
                     userId = (Integer) returnMap.get("UserId");
                 }
                 catch (RuntimeSQLException e)
@@ -1095,7 +1072,6 @@ public class SecurityManager
         }
     }
 
-
     private static String displayNameFromEmail(ValidEmail email, Integer userId)
     {
         String displayName;
@@ -1127,7 +1103,6 @@ public class SecurityManager
         }
         return displayName;
     }
-
 
     public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
     {
@@ -1169,7 +1144,7 @@ public class SecurityManager
         }
     }
 
-    // Create record for non-LDAP login, saving email address and hashed password.  Return verification token.
+    // Create record for non-LDAP login, saving email address and hashed password. Return verification token.
     public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
@@ -1195,7 +1170,6 @@ public class SecurityManager
         return verification;
     }
 
-
     public static void setPassword(ValidEmail email, String password) throws UserManagementException
     {
         String crypt = Crypt.BCrypt.digestWithPrefix(password);
@@ -1212,7 +1186,6 @@ public class SecurityManager
         if (1 != rows)
             throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
     }
-
 
     private static final int MAX_HISTORY = 10;
 
@@ -1234,7 +1207,6 @@ public class SecurityManager
         }
     }
 
-
     public static boolean matchesPreviousPassword(String password, User user)
     {
         List<String> history = getCryptHistory(user.getEmail());
@@ -1248,13 +1220,11 @@ public class SecurityManager
         return false;
     }
 
-
     public static Date getLastChanged(User user)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT LastChanged FROM " + core.getTableInfoLogins() + " WHERE Email=?", user.getEmail()));
         return selector.getObject(Date.class);
     }
-
 
     // Look up email in Logins table and return the corresponding password hash
     public static String getPasswordHash(ValidEmail email)
@@ -1262,14 +1232,12 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-
     // Look up email in Logins table and return the corresponding password hash
     private static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
     }
-
 
     public static boolean matchPassword(String password, String hash)
     {
@@ -1285,25 +1253,21 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-
     // Used only in the case of email change... current email address might be invalid
     static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
     }
 
-
     public static boolean loginExists(ValidEmail email)
     {
         return (null != getPasswordHash(email));
     }
 
-
     public static Group createGroup(Container c, String name)
     {
         return createGroup(c, name, PrincipalType.GROUP);
     }
-
 
     public static Group createGroup(Container c, String name, PrincipalType type)
     {
@@ -1329,7 +1293,6 @@ public class SecurityManager
         return createGroup(c, name, type, ownerId);
     }
 
-
     public static Group createGroup(Container c, String name, PrincipalType type, String ownerId)
     {
         String containerId = (null == c || c.isRoot()) ? null : c.getId();
@@ -1354,14 +1317,11 @@ public class SecurityManager
         return group;
     }
 
-
     // Case-insensitive existence check -- disallows groups that differ only by case
     private static boolean groupExists(Container c, String groupName, String ownerId)
     {
         return null != getGroupId(c, groupName, ownerId, false, true);
-
     }
-
 
     public static Group renameGroup(Group group, String newName, User currentUser)
     {
@@ -1380,14 +1340,12 @@ public class SecurityManager
         GroupCache.uncache(group.getUserId());
 
         return getGroup(getGroupId(c, newName));
-
     }
 
     public static void deleteGroup(Group group)
     {
         deleteGroup(group.getUserId());
     }
-
 
     static void deleteGroup(int groupId)
     {
@@ -1439,7 +1397,6 @@ public class SecurityManager
         SecurityPolicyManager.notifyPolicyChanges(resources);
     }
 
-
     public static void deleteGroups(Container c, @Nullable PrincipalType type)
     {
         if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
@@ -1487,7 +1444,6 @@ public class SecurityManager
         }
     }
 
-
     public static void deleteMember(Group group, UserPrincipal principal)
     {
         int groupId = group.getUserId();
@@ -1495,7 +1451,6 @@ public class SecurityManager
             "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId());
         fireDeletePrincipalFromGroup(groupId, principal);
     }
-
 
     // Returns a list of errors
     public static List<String> addMembers(Group group, Collection<? extends UserPrincipal> principals)
@@ -1517,13 +1472,11 @@ public class SecurityManager
         return errors;
     }
 
-
     // Add a single user/group to a single group
     public static void addMember(Group group, UserPrincipal principal) throws InvalidGroupMembershipException
     {
         addMember(group, principal, null);
     }
-
 
     // Internal only; used by junit test
     static void addMember(Group group, UserPrincipal principal, @Nullable Runnable afterAddRunnable) throws InvalidGroupMembershipException
@@ -1539,14 +1492,13 @@ public class SecurityManager
             afterAddRunnable.run();
 
         // If we added a group then check for circular relationship... we check this above, but it's possible that
-        // another thread concurrently made a change that introduced a cycle.  If so, revert the add.
+        // another thread concurrently made a change that introduced a cycle. If so, revert the add.
         if (principal instanceof Group && hasCycle(group))
         {
             deleteMember(group, principal);
             throw new InvalidGroupMembershipException(CIRCULAR_GROUP_ERROR_MESSAGE);
         }
     }
-
 
     // Internal only; used by junit test
     static void addMemberWithoutValidation(Group group, UserPrincipal principal)
@@ -1565,7 +1517,6 @@ public class SecurityManager
 
         fireAddPrincipalToGroup(group, principal);
     }
-
 
     // True if current group relationships cycle through root. Does NOT detect all cycles in the group graph nor even
     // in the subgraph represented by root, just the ones that that link back to root itself.
@@ -1594,8 +1545,7 @@ public class SecurityManager
         return false;
     }
 
-
-    // TODO: getAddMemberError() now uses the cache (see #14383), but this is still an n^2 algorithm.  Better would be for this
+    // TODO: getAddMemberError() now uses the cache (see #14383), but this is still an n^2 algorithm. Better would be for this
     // method to validate an entire collection of candidates at once, and switch getAddMemberError() to call getValidPrincipals()
     // with a singleton.
     public static <K extends UserPrincipal> Collection<K> getValidPrincipals(Group group, Collection<K> candidates)
@@ -1611,7 +1561,6 @@ public class SecurityManager
 
         return valid;
     }
-
 
     // Return an error message if principal can't be added to the group, otherwise return null
     public static String getAddMemberError(Group group, UserPrincipal principal)
@@ -1665,7 +1614,6 @@ public class SecurityManager
         return null;
     }
 
-
     // Site groups are first (if included) followed by project groups. Each list is sorted by name (case-insensitive).
     public static @NotNull List<Group> getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
@@ -1688,7 +1636,7 @@ public class SecurityManager
         return null != principal ? principal : getGroup(id);
     }
 
-    /** This will preferentially return project users/groups.  If no principal is found at the project level and includeSiteGroups=true, it will check site groups */
+    /** This will preferentially return project users/groups. If no principal is found at the project level and includeSiteGroups=true, it will check site groups */
     @Nullable
     public static UserPrincipal getPrincipal(String name, Container container, boolean includeSiteGroups)
     {
@@ -1793,7 +1741,6 @@ public class SecurityManager
         return HtmlString.of(groupList.toString());
     }
 
-
     /** Returns the requested direct members of this group (non-recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
     {
@@ -1803,7 +1750,6 @@ public class SecurityManager
 
         return principals;
     }
-
 
     /** Returns the members of this group dictated by memberType, including those in subgroups (recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
@@ -1853,7 +1799,6 @@ public class SecurityManager
         return members;
     }
 
-
     private static <P extends UserPrincipal> void addMembers(Collection<P> principals, int[] ids, MemberType<P> memberType)
     {
         for (int id : ids)
@@ -1863,7 +1808,6 @@ public class SecurityManager
                 principals.add(principal);
         }
     }
-
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
     public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
@@ -1990,7 +1934,6 @@ public class SecurityManager
         return sb.toString();
     }    
 
-
     // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
     // TODO: Also redundant with getFolderUserids()
     // TODO: Cache this set
@@ -2002,7 +1945,6 @@ public class SecurityManager
         Selector selector = new SqlSelector(core.getSchema(), sql);
         return new HashSet<>(selector.getCollection(Integer.class));
     }
-
 
     // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
     public static SQLFragment getProjectUsersSQL(Container c)
@@ -2054,7 +1996,6 @@ public class SecurityManager
 
         return projectUsers;
     }
-
 
     public static Collection<Integer> getFolderUserids(Container c)
     {
@@ -2115,10 +2056,9 @@ public class SecurityManager
         return userIds;
     }
 
-
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
-        // No cache right now, but performance seems fine.  After the user list and policy are cached, no other queries occur.
+        // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
         Collection<User> allUsers = UserManager.getActiveUsers();
         List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
@@ -2142,7 +2082,6 @@ public class SecurityManager
 
         return users;
     }
-
 
     /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
@@ -2195,7 +2134,6 @@ public class SecurityManager
         return members;
     }
 
-
     /** Returns both users and groups, but direct members only (not recursive) */
     public static String[] getGroupMemberNames(Integer groupId)
     {
@@ -2206,7 +2144,6 @@ public class SecurityManager
             names[i++] = member.getValue();
         return names;
     }
-
 
     /** Takes string such as "/test/subfolder/Users" and returns groupId */
     public static Integer getGroupId(String extraPath)
@@ -2233,13 +2170,11 @@ public class SecurityManager
         return getGroupId(c, group);
     }
 
-
     /** Takes Container (or null for root) and group name; returns groupId */
     public static Integer getGroupId(@Nullable Container c, String group)
     {
         return getGroupId(c, group, null, true);
     }
-
 
     /** Takes Container (or null for root) and group name; returns groupId */
     public static Integer getGroupId(@Nullable Container c, String group, boolean throwOnFailure)
@@ -2247,15 +2182,13 @@ public class SecurityManager
         return getGroupId(c, group, null, throwOnFailure);
     }
 
-
     public static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
     {
         return getGroupId(c, groupName, ownerId, throwOnFailure, false);
     }
 
-
     // This is temporary... in CPAS 1.5 on PostgreSQL it was possible to create two groups in the same container that differed only
-    // by case (this was not possible on SQL Server).  In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
+    // by case (this was not possible on SQL Server). In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
     // retrieve group IDs in a case-sensitive manner.
     // TODO: For CPAS 1.7: this should always be case-insensitive (we will clean up the database by renaming duplicate groups)
     private static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
@@ -2295,14 +2228,6 @@ public class SecurityManager
         return groupId;
     }
 
-    // TODO: Update to iterate through all configurations
-    public static boolean isLdapEmail(ValidEmail email)
-    {
-        String ldapDomain = AuthenticationManager.getLdapDomain();
-        return AuthenticationManager.ALL_DOMAINS.equals(ldapDomain) || ldapDomain != null && email.getEmailAddress().endsWith("@" + ldapDomain.toLowerCase());
-    }
-
-
     public interface ViewFactory
     {
         HttpView createView(ViewContext context);
@@ -2318,7 +2243,6 @@ public class SecurityManager
     {
         return VIEW_FACTORIES;
     }
-
 
     public interface TermsOfUseProvider
     {
@@ -2342,7 +2266,6 @@ public class SecurityManager
     {
         return TERMS_OF_USE_PROVIDERS;
     }
-
 
     public static class TestCase extends Assert
     {
@@ -2867,13 +2790,13 @@ public class SecurityManager
 
             if (newUserStatus.isLdapEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  This user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system. This user will be authenticated via LDAP.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. This user will be authenticated via LDAP.");
             }
             else if (sendMail)
             {
                 message.append(email.getEmailAddress()).append(" added as a new user to the system and emailed successfully.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Verification email was sent successfully.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Verification email was sent successfully.");
             }
             else
             {
@@ -2904,7 +2827,7 @@ public class SecurityManager
             User newUser = UserManager.getUser(email);
 
             if (null != newUser)
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Sending the verification email failed.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Sending the verification email failed.");
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -2959,14 +2882,14 @@ public class SecurityManager
             try
             {
                 SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, extraParameters, registrationProviderName, true);
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration.  Verification email was sent successfully.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration. Verification email was sent successfully.");
             }
             catch (ConfigurationException e)
             {
                 User createdUser = UserManager.getUser(email);
 
                 if (null != createdUser)
-                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system via self-registration.  Sending the verification email failed.");
+                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system via self-registration. Sending the verification email failed.");
                 throw e;
             }
         }
@@ -3046,22 +2969,6 @@ public class SecurityManager
         SecurityPolicyManager.savePolicy(policy);
     }
 
-    public static boolean containsOnlyAdminPermissions(Container c)
-    {
-        SecurityPolicy policy = c.getPolicy();
-
-        for (RoleAssignment ra : policy.getAssignments())
-        {
-            Role role = ra.getRole();
-            Set<Class<? extends Permission>> permissions = role.getPermissions();
-            if (!(role instanceof ProjectAdminRole) && !(role instanceof FolderAdminRole)
-                && !(permissions.contains(SiteAdminPermission.class) && !permissions.contains(ApplicationAdminPermission.class)))
-                return false;
-        }
-
-        return true;
-    }
-
     public static void setInheritPermissions(Container c)
     {
         SecurityPolicyManager.deletePolicy(c);
@@ -3134,15 +3041,23 @@ public class SecurityManager
         {
             super(name);
 
-            _replacements.add(new ReplacementParam<String>("verificationURL", String.class, "Link for a user to set a password"){
+            _replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
+            {
                 @Override
-                public String getValue(Container c) {return _verificationUrl;}
+                public String getValue(Container c)
+                {
+                    return _verificationUrl;
+                }
             });
-            _replacements.add(new ReplacementParam<String>("emailAddress", String.class, "The email address of the user performing the operation"){
+            _replacements.add(new ReplacementParam<>("emailAddress", String.class, "The email address of the user performing the operation")
+            {
                 @Override
-                public String getValue(Container c) {return _originatingUser == null ? null : _originatingUser.getEmail();}
+                public String getValue(Container c)
+                {
+                    return _originatingUser == null ? null : _originatingUser.getEmail();
+                }
             });
-            _replacements.add(new ReplacementParam<String>("recipient", String.class, "The email address on the 'to:' line")
+            _replacements.add(new ReplacementParam<>("recipient", String.class, "The email address on the 'to:' line")
             {
                 @Override
                 public String getValue(Container c)
@@ -3182,12 +3097,12 @@ public class SecurityManager
                 "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
         protected static final String DEFAULT_BODY =
                 "^optionalMessage^\n\n" +
-                "You now have an account on the ^organizationName^ ^siteShortName^ web site.  We are sending " +
+                "You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending " +
                 "you this message to verify your email address and to allow you to create a password that will provide secure " +
-                "access to your data on the web site.  To complete the registration process, simply click the link below or " +
-                "copy it to your browser's address bar.  You will then be asked to choose a password.\n\n" +
+                "access to your data on the web site. To complete the registration process, simply click the link below or " +
+                "copy it to your browser's address bar. You will then be asked to choose a password.\n\n" +
                 "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^.  If you have any questions don't hesitate to " +
+                "The ^siteShortName^ home page is ^homePageURL^. If you have any questions don't hesitate to " +
                 "contact the ^siteShortName^ team at ^systemEmail^.";
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
@@ -3230,7 +3145,7 @@ public class SecurityManager
         protected static final String DEFAULT_BODY =
                 "We have reset your password on the ^organizationName^ ^siteShortName^ web site. " +
                 "To sign in to the system you will need " +
-                "to specify a new password.  Click the link below or copy it to your browser's address bar.  You will then be " +
+                "to specify a new password. Click the link below or copy it to your browser's address bar. You will then be " +
                 "asked to enter a new password.\n\n" +
                 "^verificationURL^\n\n" +
                 "The ^siteShortName^ home page is ^homePageURL^.";
@@ -3272,15 +3187,12 @@ public class SecurityManager
     {
         int id = group.getUserId();
 
-        switch(id)
+        return switch (id)
         {
-            case Group.groupAdministrators:
-                return "Site Administrators";
-            case Group.groupUsers:
-                return "All Site Users";
-            default:
-                return group.getName();
-        }
+            case Group.groupAdministrators -> "Site Administrators";
+            case Group.groupUsers -> "All Site Users";
+            default -> group.getName();
+        };
     }
 
     public static boolean canSeeUserDetails(Container c, User user)
@@ -3291,7 +3203,7 @@ public class SecurityManager
     public static boolean canSeeAuditLog(User user)
     {
         //
-        // Only returns true if the user has the site permission.  If the user is an admin, then the permission
+        // Only returns true if the user has the site permission. If the user is an admin, then the permission
         // check on the current container filter will return true
         //
         return user.hasRootPermission(CanSeeAuditLogPermission.class);

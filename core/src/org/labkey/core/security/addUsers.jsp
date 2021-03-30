@@ -119,13 +119,7 @@
             <td><div id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></div></td>
         </tr>
         <tr><td colspan="3">
-            <input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail">Send notification emails to all new<%
-            String LDAPDomain = AuthenticationManager.getLdapDomain();
-            if (LDAPDomain != null && LDAPDomain.length() > 0 && !AuthenticationManager.ALL_DOMAINS.equals(LDAPDomain))
-            {
-                %>, non-<%=h(LDAPDomain)%><%
-            }
-            %> users</label><br><br>
+            <input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail"><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%></label><br><br>
         </td></tr>
         <tr>
             <td>

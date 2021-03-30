@@ -827,12 +827,6 @@ public class LoginController extends SpringActionController
             return Pair.of(false, "Reset Password failed: " + rawEmail + " is not a valid email address.");
         }
 
-        if (SecurityManager.isLdapEmail(email))
-        {
-            // ldap authentication users must reset through their ldap administrator
-            return Pair.of(false, "Reset Password failed: " + email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
-        }
-
         // Every case below this point should result in the same, generic message being displayed to the user to avoid revealing any details about accounts, #33907
 
         final User user = UserManager.getUser(email);
@@ -846,7 +840,7 @@ public class LoginController extends SpringActionController
         if (!SecurityManager.loginExists(email))
         {
             _log.error("Password reset attempted for an account that doesn't have a password: " + email);
-            return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via a single sign-on provider. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
+            return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via LDAP or single sign-on. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
         }
 
         if (!user.isActive())
@@ -1151,7 +1145,7 @@ public class LoginController extends SpringActionController
 
         if (null != cookies)
         {
-            // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @.  See #6736.
+            // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @. See #6736.
             String encodedEmail = PageFlowUtil.getCookieValue(cookies, "email", null);
 
             if (null != encodedEmail)
@@ -1687,7 +1681,7 @@ public class LoginController extends SpringActionController
         }
         catch (UserManagementException e)
         {
-            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ". Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             return null;
         }
 
@@ -1699,7 +1693,7 @@ public class LoginController extends SpringActionController
         }
         catch (UserManagementException e)
         {
-            errors.reject("setPassword", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            errors.reject("setPassword", "Resetting verification failed. Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             return null;
         }
 
@@ -1803,7 +1797,7 @@ public class LoginController extends SpringActionController
         {
             if (user == null)
             {
-                errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                errors.reject("setPassword", "This user doesn't exist. Make sure you've copied the entire link into your browser's address bar.");
             }
             else if (!user.isActive())
             {
@@ -1815,10 +1809,10 @@ public class LoginController extends SpringActionController
         {
             if (!SecurityManager.loginExists(email))
             {
-                if (SecurityManager.isLdapEmail(email))
+                if (AuthenticationManager.isLdapEmail(email))
                     errors.reject("setPassword", "Your account will use your institution's LDAP authentication server and you do not need to set a separate password.");
                 else
-                    errors.reject("setPassword", "This email address is not associated with an account.  Make sure you've copied the entire link into your browser's address bar.");
+                    errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
             }
             else if (SecurityManager.isVerified(email))
                 errors.reject("setPassword", "This email address has already been verified.");
@@ -1826,7 +1820,7 @@ public class LoginController extends SpringActionController
                 errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
             else
                 // Incorrect verification string
-                errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+                errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
     }
 
@@ -1947,7 +1941,7 @@ public class LoginController extends SpringActionController
             }
             catch (InvalidEmailException e)
             {
-                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
+                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
             }
 
             return success;
