@@ -1,17 +1,15 @@
 package org.labkey.experiment.publish;
 
-import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.query.ExpSampleTypeTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -42,6 +40,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 {
     private SamplesSchema _sampleTypeSchema;
     private ExpSampleType _sampleType;
+    private final String ROW_ID = ExpMaterialTable.Column.RowId.toString();
 
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
     {
@@ -109,12 +108,23 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                     @Override
                     public FieldKey getParticipantIDFieldKey()
                     {
-                        return null;
+                        return FieldKey.fromParts("ParticipantID"); // Rosaline TODO
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey()
+                    public FieldKey getVisitIDFieldKey(TimepointType type)
                     {
-                        return null;
+                        if (type == TimepointType.DATE)
+                        {
+                            return FieldKey.fromParts("Date");
+                        }
+                        else if (type == TimepointType.VISIT)
+                        {
+                            return FieldKey.fromParts("VisitID");
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
                 },
         UserSpecified
@@ -125,14 +135,14 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                     return null;
                 }
                 @Override
-                public FieldKey getVisitIDFieldKey()
+                public FieldKey getVisitIDFieldKey(TimepointType type)
                 {
                     return null;
                 }
             };
 
         public abstract FieldKey getParticipantIDFieldKey();
-        public abstract FieldKey getVisitIDFieldKey();
+        public abstract FieldKey getVisitIDFieldKey(TimepointType type);
     }
 
     @Override
@@ -161,11 +171,10 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return _sampleTypeSchema;
     }
 
-    // Rosaline TODO: validate
     @Override
     protected QuerySettings getQuerySettings(SampleTypePublishConfirmForm form)
     {
-        String queryName = form.getSampleType().getName(); // TODO: Maybe this is wrong?
+        String queryName = form.getSampleType().getName();
         QuerySettings qs = new QuerySettings(form.getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
         qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
         qs.setQueryName(queryName);
@@ -175,7 +184,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return qs;
     }
 
-    // Rosaline temp note: likely just an assay thing and we return false always
     @Override
     protected boolean isMismatchedSpecimenInfo(SampleTypePublishConfirmForm form)
     {
@@ -188,38 +196,34 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType).deleteParameters();
     }
 
-    // TODO
-    // Rosaline temp note, the row id field key for samples
     @Override
     protected FieldKey getObjectIdFieldKey(SampleTypePublishConfirmForm form)
     {
-        return FieldKey.fromParts("exp", "Materials", ExpSampleTypeTable.Column.RowId.toString());
+        return FieldKey.fromParts(ROW_ID);
     }
 
     // TODO
-    // Rosaline temp note: the timepoint and the participantId and the date
+    private void intializeFieldKeys()
+    {
+
+    }
+
     @Override
     protected Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(SampleTypePublishConfirmForm form)
     {
-//        String valueSource = "SampleType"; //Rosaline temp note: form.getDefaultValueSource();????? TODO
         String valueSource = form.getDefaultValueSource();
         DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
 
-
         Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.RunId, FieldKey.fromParts("exp", "Materials", ExpSampleTypeTable.Column.RowId.toString())); //ExpMaterialTable?
-
-//        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, FieldKey.fromParts(ExpSampleTypeTable.Column.Pa));
-//        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT));
-//        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey());
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(TimepointType.VISIT));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(TimepointType.DATE));
 
         return additionalCols;
     }
 
-    // TODO
-    // Rosaline temp note: the hidden form fields we post that attempCopy + actual copy need to know about
     @Override
-    protected Map<String, Object> getHiddenFormFields(SampleTypePublishConfirmForm form)
+    protected Map<String, Object> getHiddenFormFields(SampleTypePublishConfirmForm form) // Rosaline temp note: very similar to Assay
     {
         Map<String, Object> fields = new HashMap<>();
 
@@ -238,6 +242,11 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
+        // Rosaline temp notes:
+        // populates publishErrors should any be found
+        // returns ActionURL of the new dataset that is created
+
+        // should delegate to the sample type service
         return null;
     }
 
