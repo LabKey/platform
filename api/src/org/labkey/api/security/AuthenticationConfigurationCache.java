@@ -220,6 +220,9 @@ public class AuthenticationConfigurationCache
         CACHE.remove(CACHE_KEY);
     }
 
+    /**
+     * Return a collection of all email domains associated with authentication configurations, not including "*" or null
+     */
     public static @NotNull Collection<String> getActiveDomains()
     {
         return CACHE.get(CACHE_KEY).getActiveDomains();

@@ -200,16 +200,10 @@ public class AuthenticationManager
 
     public enum Priority { High, Low }
 
-    // Return a collection of all email domains associated with authentication configurations, not including "*" or null
-    public static @NotNull Collection<String> getActiveDomains()
-    {
-        return AuthenticationConfigurationCache.getActiveDomains();
-    }
-
     public static HtmlString getStandardSendVerificationEmailsMessage()
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of("Send password verification emails to all new users");
-        Collection<String> activeDomains = getActiveDomains();
+        Collection<String> activeDomains = AuthenticationConfigurationCache.getActiveDomains();
 
         if (!activeDomains.isEmpty())
         {
@@ -231,7 +225,7 @@ public class AuthenticationManager
     public static boolean isLdapEmail(ValidEmail email)
     {
         String emailAddress = email.getEmailAddress();
-        return getActiveDomains().stream()
+        return AuthenticationConfigurationCache.getActiveDomains().stream()
             .anyMatch(domain->StringUtils.endsWithIgnoreCase(emailAddress, "@" + domain));
     }
 

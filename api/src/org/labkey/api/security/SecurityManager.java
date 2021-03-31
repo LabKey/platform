@@ -2790,8 +2790,8 @@ public class SecurityManager
 
             if (newUserStatus.isLdapEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system. This user will be authenticated via LDAP.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. This user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP.");
             }
             else if (sendMail)
             {

@@ -1810,7 +1810,7 @@ public class LoginController extends SpringActionController
             if (!SecurityManager.loginExists(email))
             {
                 if (AuthenticationManager.isLdapEmail(email))
-                    errors.reject("setPassword", "Your account will use your institution's LDAP authentication server and you do not need to set a separate password.");
+                    errors.reject("setPassword", "Your account will authenticate using LDAP and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
             }
