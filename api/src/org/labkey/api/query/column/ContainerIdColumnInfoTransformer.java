@@ -2,6 +2,7 @@ package org.labkey.api.query.column;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -27,7 +28,8 @@ public class ContainerIdColumnInfoTransformer implements ConceptURIColumnInfoTra
 
         UserSchema schema = column.getParentTable().getUserSchema();
 
-        if (null == column.getFk() && null != schema && schema.getDbSchema().getScope().isLabKeyScope())
+        // override SchemaForeignKey, but not explicit QFK
+        if ((null == column.getFk() || column.getFk() instanceof BaseColumnInfo.SchemaForeignKey) && null != schema && schema.getDbSchema().getScope().isLabKeyScope())
             column.setFk(new ContainerForeignKey(schema));
         column.setDisplayColumnFactory(ContainerDisplayColumn.FACTORY);
 

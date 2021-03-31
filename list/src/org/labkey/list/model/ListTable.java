@@ -104,6 +104,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 String propertyURI = baseColumn.getPropertyURI();
                 DomainProperty dp = null==propertyURI ? null : domain.getPropertyByURI(propertyURI);
                 PropertyDescriptor pd = null==dp ? null : dp.getPropertyDescriptor();
+                BuiltInColumnTypes builtin = null;
 
                 if (listDef.getKeyName().equalsIgnoreCase(name))
                 {
@@ -140,10 +141,21 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 {
                     continue; // processed at the end
                 }
-                else if (null != BuiltInColumnTypes.findBuiltInType((baseColumn)))
+                else if (null != (builtin = BuiltInColumnTypes.findBuiltInType(baseColumn)))
                 {
-                    var c = wrapColumn(baseColumn);
-                    addColumn(c);
+                    var column = addWrapColumn(baseColumn);
+                    // these columns don't get fixed up from schema.xml like they do for most tables
+                    if (BuiltInColumnTypes.Container==builtin)
+                    {
+                        // TODO: tests expect lower case column name "container"
+                        // column.setFieldKey(new FieldKey(null, builtin.name()));
+                        column.setLabel("Folder");
+                    }
+                    else
+                    {
+                        column.setFieldKey(new FieldKey(null, builtin.name()));
+                        column.setLabel(builtin.label);
+                    }
                 }
                 else if (name.equalsIgnoreCase(DataIntegrationService.Columns.TransformImportHash.getColumnName()))
                 {
@@ -159,16 +171,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     var column = addWrapColumn(baseColumn);
                     column.setHidden(true);
                     column.setUserEditable(false);
-                }
-                else if (name.equalsIgnoreCase("Container"))
-                {
-                    var folderColumn = wrapColumn(baseColumn);
-                    folderColumn.setFk(new ContainerForeignKey(schema));
-                    folderColumn.setUserEditable(false);
-                    folderColumn.setShownInInsertView(false);
-                    folderColumn.setShownInUpdateView(false);
-                    folderColumn.setLabel("Folder");
-                    addColumn(folderColumn);
                 }
                 // MV indicator columns will be handled by their associated value column
                 else if (!baseColumn.isMvIndicatorColumn())
