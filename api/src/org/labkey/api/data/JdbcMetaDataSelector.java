@@ -38,7 +38,7 @@ public class JdbcMetaDataSelector
     public JdbcMetaDataSelector(JdbcMetaDataLocator locator, JdbcMetaDataResultSetFactory factory)
     {
         _locator = locator;
-        _factory = factory;
+        _factory = locator.getScope().getSqlDialect().getJdbcMetaDataResultSetFactory(factory);
     }
 
     private static final int DEADLOCK_RETRIES = 5;

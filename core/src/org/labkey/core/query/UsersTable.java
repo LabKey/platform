@@ -40,7 +40,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.CacheClearingQueryUpdateService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
@@ -62,6 +61,8 @@ import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
@@ -389,7 +390,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return !getMustCheckPermissions() || super.hasPermission(user, perm);
+        if (!getMustCheckPermissions())
+            return true;
+        if (perm == ReadPermission.class && user instanceof User)
+            return _userSchema.getContainer().hasOneOf((User)user, Set.of(ReadPermission.class, SeeUserDetailsPermission.class));
+        else
+            return super.hasPermission(user, perm);
     }
 
     public static SimpleFilter authorizeAndGetProjectMemberFilter(@NotNull Container c, @NotNull User u, String userIdColumnName) throws UnauthorizedException

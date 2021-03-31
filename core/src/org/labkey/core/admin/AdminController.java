@@ -398,20 +398,21 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    private void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action)
     {
-        addAdminNavTrail(root, childTitle, null != action ? new ActionURL(action, getContainer()) : null, getContainer());
+        addAdminNavTrail(root, childTitle, action, getContainer());
     }
 
-    private static void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL url, Container container)
+    private static void addAdminNavTrail(NavTree root, @NotNull Container container)
     {
         if (container.isRoot())
             root.addChild("Admin Console", getShowAdminURL().setFragment("links"));
+    }
 
-        if (null == url)
-            root.addChild(childTitle);
-        else
-            root.addChild(childTitle, url);
+    private static void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container)
+    {
+        addAdminNavTrail(root, container);
+        root.addChild(childTitle, new ActionURL(action, container));
     }
 
     public static ActionURL getShowAdminURL()
@@ -616,16 +617,24 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container)
+        public void addAdminNavTrail(NavTree root, @NotNull Container container)
         {
-            AdminController.addAdminNavTrail(root, childTitle, new ActionURL(action, container), container);
+            AdminController.addAdminNavTrail(root, container);
         }
 
         @Override
-        @Deprecated
-        public void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
+        public void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container)
         {
-            AdminController.addAdminNavTrail(root, childTitle, childURL, ContainerManager.getRoot());
+            AdminController.addAdminNavTrail(root, childTitle, action, container);
+        }
+
+        @Override
+        public void addModulesNavTrail(NavTree root, String childTitle, @NotNull Container container)
+        {
+            if (container.isRoot())
+                addAdminNavTrail(root, "Modules", ModulesAction.class, container);
+
+            root.addChild(childTitle);
         }
 
         @Override
@@ -2284,7 +2293,7 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public static class DumpHeapAction extends SimpleViewAction
+    public class DumpHeapAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2297,7 +2306,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
-            addAdminNavTrail(root, "Heap dump", null, getContainer());
+            addAdminNavTrail(root, "Heap dump", getClass());
         }
     }
 
@@ -10364,7 +10373,7 @@ public class AdminController extends SpringActionController
             assertForAdminPermission(ContainerManager.getRoot(), user,
                     new ShowAdminAction(),
                     controller.new ShowThreadsAction(),
-                    new DumpHeapAction(),
+                    controller.new DumpHeapAction(),
                     controller.new ResetErrorMarkAction(),
                     controller.new ShowErrorsSinceMarkAction(),
                     controller.new ShowAllErrorsAction(),

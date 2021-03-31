@@ -1657,92 +1657,15 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ManageLocationsAction extends FormViewAction<LocationEditForm>
+    public class ManageLocationsAction extends SimpleViewAction<Object>
     {
         @Override
-        public void validateCommand(LocationEditForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, StudyQuerySchema.LOCATION_TABLE_NAME);
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            return queryView;
-        }
 
-        @Override
-        public boolean handlePost(LocationEditForm form, BindException errors)
-        {
-            int[] ids = form.getIds();
-            if (ids != null && ids.length > 0)
-            {
-                Map<Integer, LocationImpl> locationFormLookup = new HashMap<>();
-                for (int i = 0; i < ids.length; i++)
-                {
-                    LocationImpl loc = new LocationImpl(getContainer(), form.getLabels()[i]);
-                    if (form.getDescriptions() != null)
-                        loc.setDescription(form.getDescriptions()[i]);
-
-                    locationFormLookup.put(ids[i], loc);
-                }
-
-                boolean emptyLabel = false;
-                for (LocationImpl location : getStudyThrowIfNull().getLocations())
-                {
-                    LocationImpl formLocation = locationFormLookup.get(location.getRowId());
-                    if (formLocation != null)
-                    {
-                        if (formLocation.getLabel() == null)
-                            emptyLabel = true;
-                        else if (!StringUtils.equals(formLocation.getLabel(), location.getLabel())
-                            || !StringUtils.equals(formLocation.getDescription(), location.getDescription()))
-                        {
-                            location = location.createMutable();
-                            location.setLabel(formLocation.getLabel());
-                            location.setDescription(formLocation.getDescription());
-                            LocationManager.get().updateLocation(getUser(), location);
-                        }
-                    }
-                }
-                if (emptyLabel)
-                {
-                    errors.reject("manageLocations", "Some location labels could not be updated: empty labels are not allowed.");
-                }
-
-            }
-            if (form.getNewId() != null || form.getNewLabel() != null || form.getNewDescription() != null)
-            {
-                if (form.getNewId() == null)
-                    errors.reject("manageLocations", "Unable to create location: an ID is required for all locations.");
-                else if (form.getNewLabel() == null)
-                    errors.reject("manageLocations", "Unable to create location: a label is required for all locations.");
-                else
-                {
-                    try
-                    {
-                        LocationImpl location = new LocationImpl();
-                        location.setLabel(form.getNewLabel());
-                        location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
-                        location.setDescription(form.getNewDescription());
-                        location.setContainer(getContainer());
-                        LocationManager.get().createLocation(getUser(), location);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        errors.reject("manageLocations", "Unable to create location: ID must be an integer.");
-                    }
-                }
-            }
-            return errors.getErrorCount() == 0;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(LocationEditForm form)
-        {
-            return null;
+            return schema.createView(getViewContext(), settings, errors);
         }
 
         @Override
@@ -1827,38 +1750,11 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class LocationEditForm extends BulkEditForm
-    {
-        private String _newDescription;
-        private String[] _descriptions;
-
-        public String getNewDescription()
-        {
-            return _newDescription;
-        }
-
-        public void setNewDescription(String newDescription)
-        {
-            _newDescription = newDescription;
-        }
-
-        public String[] getDescriptions()
-        {
-            return _descriptions;
-        }
-
-        public void setDescriptions(String[] descriptions)
-        {
-            _descriptions = descriptions;
-        }
-    }
-
     public static class LocationForm extends ViewForm
     {
         private int[] _ids;
         private String[] _labels;
         private String _containerFilter;
-
         public String[] getLabels()
         {
             return _labels;

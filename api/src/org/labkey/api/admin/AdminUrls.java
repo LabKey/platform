@@ -67,12 +67,20 @@ public interface AdminUrls extends UrlProvider
     ActionURL getTrackedAllocationsViewerURL();
 
     /**
-     * Displays an "Admin Console" link at the start of the nav trail if invoked in the root container. Otherwise,
-     * childTitle is the start and links to the action, appropriate for actions that are invoked in the context of
-     * both the root and a specific container.
+     * Simply adds an "Admin Console" link to nav trail if invoked in the root container. Otherwise, root is unchanged.
+     */
+    void addAdminNavTrail(NavTree root, @NotNull Container container);
+
+    /**
+     * Adds an "Admin Console" link to the nav trail if invoked in the root container. In all cases, adds childTitle
+     * that links to the action. This ensures appropriate and consistent navtrails whether the action is invoked in the
+     * root or elsewhere.
      */
     void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container);
 
-    @Deprecated // Use the other variant
-    void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
+    /**
+     * Adds "Admin Console / Modules" links to the nav trail if invoked in the root container. Otherwise, just displays
+     * childTitle.
+     */
+    void addModulesNavTrail(NavTree root, String childTitle, @NotNull Container container);
 }
