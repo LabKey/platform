@@ -187,13 +187,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
+    protected final DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
     {
         if (null == errors)
             errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
+        configureDataIteratorContext(context);
         return context;
     }
 
@@ -201,8 +202,10 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
      * Used only for generating  ExistingRecordDataIterator at the moment
      */
-    protected Set<String> getSelectKeys()
+    protected Set<String> getSelectKeys(DataIteratorContext context)
     {
+        if (!context.getAlternateKeys().isEmpty())
+            return context.getAlternateKeys();
         return null;
     }
 
@@ -216,7 +219,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (_enableExistingRecordsDataIterator)
         {
             // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
-            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys());
+            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
         dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
@@ -355,6 +358,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
+        configureDataIteratorContext(context);
         return _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
     }
 
