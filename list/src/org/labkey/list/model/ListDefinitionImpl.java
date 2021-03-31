@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.util.GUID.makeGUID;
 
@@ -377,6 +378,8 @@ public class ListDefinitionImpl implements ListDefinition
         save(user, true);
     }
 
+    private static final ReentrantLock _saveLock = new ReentrantLock();
+
     @Override
     public void save(User user, boolean ensureKey) throws Exception
     {
@@ -386,7 +389,7 @@ public class ListDefinitionImpl implements ListDefinition
             assert getKeyType() != null : "Invalid Key Type for List: " + getName();
         }
 
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_saveLock))
         {
             if (ensureKey)
                 ensureKey();

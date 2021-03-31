@@ -156,8 +156,18 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 else if (null != (builtin = BuiltInColumnTypes.findBuiltInType(baseColumn)))
                 {
                     var column = addWrapColumn(baseColumn);
+                    // these columns don't get fixed up from schema.xml like they do for most tables
                     if (BuiltInColumnTypes.Container==builtin)
+                    {
+                        // TODO: tests expect lower case column name "container"
+                        // column.setFieldKey(new FieldKey(null, builtin.name()));
                         column.setLabel("Folder");
+                    }
+                    else
+                    {
+                        column.setFieldKey(new FieldKey(null, builtin.name()));
+                        column.setLabel(builtin.label);
+                    }
                 }
                 else if (name.equalsIgnoreCase(DataIntegrationService.Columns.TransformImportHash.getColumnName()))
                 {
