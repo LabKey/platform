@@ -3,7 +3,12 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
-import { Alert, EntityInsertPanel, initQueryGridState, SampleTypeDataType } from '@labkey/components';
+import {
+    Alert,
+    EntityInsertPanel,
+    initQueryGridState,
+    SampleTypeDataType
+} from '@labkey/components';
 
 export const SampleInsertPage: FC = memo(() => {
     const [message, setMessage] = useState<string>(undefined);
@@ -26,6 +31,9 @@ export const SampleInsertPage: FC = memo(() => {
                 afterEntityCreation={afterSampleCreation}
                 entityDataType={SampleTypeDataType}
                 importHelpLinkNode={<>Get help with your samples</>}
+                fileImportParameters={{
+                    'importAlias.SampleId': 'Name', // accept both 'SampleId' and 'Name' as name
+                }}
                 nounPlural="samples"
                 nounSingular="sample"
             />
