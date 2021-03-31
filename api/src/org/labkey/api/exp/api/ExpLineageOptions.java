@@ -28,7 +28,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
-    private String _materialRunType;
+    private String _runProtocolLsid;
 
     public ExpLineageOptions()
     {
@@ -114,14 +114,14 @@ public class ExpLineageOptions extends ResolveLsidsForm
         _useObjectIds = useObjectIds;
     }
 
-    public String getMaterialRunType()
+    public String getRunProtocolLsid()
     {
-        return _materialRunType;
+        return _runProtocolLsid;
     }
 
-    public void setMaterialRunType(String materialRunType)
+    public void setRunProtocolLsid(String runProtocolLsid)
     {
-        _materialRunType = materialRunType;
+        _runProtocolLsid = runProtocolLsid;
     }
 
 }
