@@ -925,23 +925,30 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL getPublishHistory(Container c, ExpProtocol protocol)
+    public ActionURL getPublishHistory(Container c, Dataset.PublishSource source, Integer publishSourceId)
     {
-        return getPublishHistory(c, protocol, null);
+        return getPublishHistory(c, source, publishSourceId, null);
     }
 
     @Override
-    public ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+    public ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId, ContainerFilter containerFilter)
     {
-        if (protocol != null)
+        if (source != null && publishSourceId != null)
         {
-            ActionURL url = new ActionURL(PublishController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
-            if (containerFilter != null && containerFilter.getType() != null)
-                url.addParameter("containerFilterName", containerFilter.getType().name());
-            return url;
+            switch (source)
+            {
+                case Assay -> {
+                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("rowId", publishSourceId);
+                    if (containerFilter != null && containerFilter.getType() != null)
+                        url.addParameter("containerFilterName", containerFilter.getType().name());
+                    return url;
+                }
+
+                default -> throw new IllegalArgumentException("No publish history view for : " + source);
+            }
         }
 
-        throw new NotFoundException("Specified protocol is invalid");
+        throw new NotFoundException("Specified publish source is invalid");
     }
 
     @Override

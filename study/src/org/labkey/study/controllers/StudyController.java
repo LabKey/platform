@@ -2682,7 +2682,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setActionType(ActionButton.Action.POST);
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
-                    PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid,
+                    PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid, def.getPublishSource(),
                             NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
 
                         @Override
@@ -2696,14 +2696,14 @@ public class StudyController extends BaseStudyController
                 }
             }
             else
-                view.addView(new HtmlView("The Dataset does not exist."));
+                view.addView(new HtmlView(HtmlString.unsafe("The Dataset does not exist.")));
             return view;
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Copy-to-Study History Details");
+            root.addChild("Link-to-Study History Details");
         }
     }
 
@@ -2767,26 +2767,19 @@ public class StudyController extends BaseStudyController
                 for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
-                    Container sourceContainer;
-                    ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
-                    if (expRun != null && expRun.getContainer() != null)
-                        sourceContainer = expRun.getContainer();
-                    else
-                        continue; // No logging if we can't find a matching run
-
-                    StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
+                    if (sourceContainer != null)
+                        StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);
 
-            // if the recall was initiated from the assay copy to study history view, redirect back to the same view
-            // will need to generalize this to support samples
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getPublishSourceId());
-            if (protocol != null && originalSourceLsid != null)
+            // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
+            if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
-                if (expRun != null && expRun.getContainer() != null)
-                    throw new RedirectException(StudyPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid);
+                if (container != null)
+                    throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }
             return true;
         }

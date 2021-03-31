@@ -88,9 +88,9 @@ public interface StudyPublishService
      */
     Set<Study> getValidPublishTargets(@NotNull User user, @NotNull Class<? extends Permission> permission);
 
-    ActionURL getPublishHistory(Container container, ExpProtocol protocol);
+    ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId);
 
-    ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
+    ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId, ContainerFilter containerFilter);
 
     TimepointType getTimepointType(Container container);
 

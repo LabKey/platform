@@ -22,11 +22,13 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -120,6 +122,17 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                         }
                         return false;
                     }
+
+                    @Override
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
+                    {
+                        // for assays the source lsid is the run
+                        ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
+                        if (expRun != null && expRun.getContainer() != null)
+                            return expRun.getContainer();
+
+                        return null;
+                    }
                 },
         SampleType
                 {
@@ -158,12 +171,24 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         return false;
                     }
+
+                    @Override
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
+                    {
+                        // for sample types the source lsid is the sample type
+                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(sourceLsid);
+                        if (sampleType != null)
+                            return sampleType.getContainer();
+
+                        return null;
+                    }
                 };
 
         public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
         public abstract String getLabel(Integer publishSourceId);
         public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
+        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid);
     }
 
     Set<String> getDefaultFieldNames();
