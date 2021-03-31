@@ -77,7 +77,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-import static org.labkey.api.data.BaseColumnInfo.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 
 /**
  * SimpleTranslator starts with no output columns (except row number), you must call add() method to add columns.

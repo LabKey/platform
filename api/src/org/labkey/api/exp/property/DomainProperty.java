@@ -17,7 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
@@ -140,6 +140,6 @@ public interface DomainProperty extends ImportAliasable
 
     default boolean isUniqueIdField()
     {
-        return BaseColumnInfo.STORAGE_UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
+        return ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
     }
 }

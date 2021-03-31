@@ -656,6 +656,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public boolean isUniqueIdField()
+    {
+        return delegate.isUniqueIdField();
+    }
+
+    @Override
     public String getFriendlyTypeName()
     {
         return delegate.getFriendlyTypeName();

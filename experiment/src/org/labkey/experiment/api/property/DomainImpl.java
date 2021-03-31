@@ -86,7 +86,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.data.BaseColumnInfo.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
 
 public class DomainImpl implements Domain
 {

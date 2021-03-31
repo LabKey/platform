@@ -123,6 +123,8 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     boolean isNumericType();
 
+    boolean isUniqueIdField();
+
     default String getFriendlyTypeName()
     {
         return getFriendlyTypeName(getJavaClass());
