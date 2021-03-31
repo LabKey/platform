@@ -112,7 +112,7 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
             catch (NumberFormatException ex) { /* ok */ }
         }
 
-        return new LineageTableInfo("Foo", schema, objectids, _parents, depth, expType, cpasType);
+        return new LineageTableInfo("Foo", schema, objectids, _parents, depth, expType, cpasType, null);
     }
 
     @Override
