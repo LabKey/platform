@@ -358,6 +358,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
+        configureDataIteratorContext(context);
         return _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
     }
 
