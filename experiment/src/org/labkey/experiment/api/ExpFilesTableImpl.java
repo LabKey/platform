@@ -24,6 +24,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpSchema;
@@ -52,7 +53,14 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
     {
         super(name, schema, null);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
+    }
+
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias, boolean skipTransform)
+    {
         _svc.ensureFileData(this);
+        return super.getFromSQL(alias, skipTransform);
     }
 
     @Override
