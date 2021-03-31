@@ -169,6 +169,7 @@ public class QueryLogging
 
     public void setShouldAudit(boolean shouldAudit)
     {
+        // Commented out until Issue 42791 is resolved
 //        if (_readOnly)
 //            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
         _shouldAudit = shouldAudit;
