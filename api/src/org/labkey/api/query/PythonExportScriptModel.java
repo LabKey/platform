@@ -98,14 +98,14 @@ public class PythonExportScriptModel extends ExportScriptModel
      * Assumes generating server is export script target.
      * @return
      */
-    private String getPythonServerContext()
+    private String getPythonApiWrapper()
     {
         StringBuilder sb = new StringBuilder();
 
         try
         {
             URL baseUrl = new URL(getBaseUrl());
-            sb.append("server_context = labkey.utils.create_server_context(");
+            sb.append("api = APIWrapper(");
             sb.append(PageFlowUtil.jsString(baseUrl.getAuthority())).append(", ");
             sb.append(PageFlowUtil.jsString(getFolderPath().substring(1))).append(", ");
 
@@ -123,7 +123,7 @@ public class PythonExportScriptModel extends ExportScriptModel
 
             // Add comment and example to export script
             return "# Unable to generate labkey request context. Example usage:\n" +
-                "# server_context = labkey.utils.create_server_context(domain, container_path, context_path=None, use_ssl=True)\n";
+                "# api = APIWrapper(domain, container_path, context_path=None, use_ssl=True)\n";
         }
 
         return sb.toString();
@@ -134,7 +134,6 @@ public class PythonExportScriptModel extends ExportScriptModel
         StringBuilder params = new StringBuilder();
         String indent = StringUtils.repeat(" ", _indentSpaces);
 
-        params.append(indent).append("server_context=server_context").append(",\n");
         params.append(indent).append("schema_name=").append(PageFlowUtil.jsString(getSchemaName())).append(",\n");
         params.append(indent).append("query_name=").append(PageFlowUtil.jsString(getQueryName()));
         if (null != getViewName())
@@ -170,12 +169,12 @@ public class PythonExportScriptModel extends ExportScriptModel
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("# This script targets the client api version 0.4.0 and later").append("\n");
-        sb.append("import labkey").append("\n\n");
+        sb.append("# This script targets the Python client API version 2.0.0 and later").append("\n");
+        sb.append("from labkey.api_wrapper import APIWrapper").append("\n\n");
 
         //Generate server context object
-        sb.append(getPythonServerContext()).append("\n");
-        sb.append("my_results = labkey.query.select_rows(\n");
+        sb.append(getPythonApiWrapper()).append("\n");
+        sb.append("my_results = api.query.select_rows(\n");
 
         //Generate query parameters
         sb.append(getStandardScriptParameters()).append("\n");
