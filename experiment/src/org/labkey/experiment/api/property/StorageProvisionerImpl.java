@@ -666,7 +666,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
                 };
                 to.setHidden(from.isHidden());
-                if (from.isUniqueIdField());
+                if (from.isUniqueIdField())
                 {
                     to.setUserEditable(false);
                     to.setHasDbSequence(true);
