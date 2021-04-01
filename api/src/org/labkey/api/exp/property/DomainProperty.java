@@ -46,6 +46,7 @@ public interface DomainProperty extends ImportAliasable
     FacetingBehaviorType getFacetingBehavior();
     boolean isRequired();
     boolean isHidden();
+    boolean isDeleted();
     boolean isShownInInsertView();
     boolean isShownInUpdateView();
     boolean isShownInDetailsView();
