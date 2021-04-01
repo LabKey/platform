@@ -17,6 +17,7 @@
 package org.labkey.core.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.HtmlString;
@@ -45,6 +46,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
         bean.members = members;
         bean.messages = messages;
         bean.isSystemGroup = systemGroup;
+        bean.ldapDomain = AuthenticationManager.getLdapDomain();
         bean.redundantMembers = redundantMembers;
     }
 
@@ -55,6 +57,7 @@ public class GroupView extends JspView<GroupView.GroupBean>
         public Collection<UserPrincipal> members;
         public List<HtmlString> messages;
         public boolean isSystemGroup;
+        public String ldapDomain;
         public Map<UserPrincipal, List<UserPrincipal>> redundantMembers;
 
         public String displayRedundancyReasonHTML(UserPrincipal principal)

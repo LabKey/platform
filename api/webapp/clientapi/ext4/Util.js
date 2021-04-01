@@ -809,25 +809,6 @@
                 config.filterArray = l.filterArray;
             }
 
-            if (l.filterGroups) {
-                var filterArray = [];
-                Ext4.each(l.filterGroups, function (filterGroup) {
-                    Ext4.each(filterGroup.filters, function (filter) {
-                        var columnName = filter.column;
-                        var value = filter.value;
-                        var operand = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator)
-
-                        filterArray.push(LABKEY.Filter.create(columnName, value, operand));
-                    });
-                });
-                if (config.filterArray) {
-                    config.filterArray.concat(filterArray)
-                }
-                else {
-                    config.filterArray = filterArray;
-                }
-            }
-
             if (l.columns) {
                 config.columns = l.columns;
             }

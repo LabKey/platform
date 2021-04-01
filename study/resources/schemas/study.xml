@@ -216,7 +216,6 @@
         <datatype>boolean</datatype>
       </column>
       <column columnName="Label">
-        <required>true</required>
         <description>The long/friendly name of each location.</description>
         <datatype>Varchar</datatype>
         <scale>200</scale>

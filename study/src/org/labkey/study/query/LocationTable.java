@@ -22,14 +22,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
@@ -49,7 +48,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.StudySchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -132,22 +130,6 @@ public class LocationTable extends BaseStudyTable
         public LocationQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
         {
             super(queryTable, dbTable);
-        }
-
-        @Override
-        protected Map<String, Object> insertRow(User user, Container c, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
-        {
-            if (!c.hasPermission(user, AdminPermission.class))
-                throw new UnauthorizedException();
-
-            Map<String, Object> insertedRow;
-            try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
-            {
-                insertedRow = super.insertRow(user, c, row);
-                transaction.addCommitTask(() -> LocationCache.clear(c), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
-                transaction.commit();
-            }
-            return insertedRow;
         }
 
         @Override

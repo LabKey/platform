@@ -40,10 +40,6 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     @NotNull AP getAuthenticationProvider();
     boolean isEnabled();
     @NotNull Map<String, Object> getCustomProperties();
-    default @Nullable String getDomain()
-    {
-        return null;
-    }
 
     /**
      * @return Map of all property names and values that are updateable and appropriate for audit logging

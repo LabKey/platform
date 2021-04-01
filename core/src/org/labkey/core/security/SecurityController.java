@@ -58,7 +58,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
@@ -1790,27 +1789,24 @@ public class SecurityController extends SpringActionController
             if (!loginExists)
                 throw new NotFoundException(emailAddress + " does not seem to have a password");
 
-            List<String> authMethods = new LinkedList<>();
-
-            Collection<LoginFormAuthenticationConfiguration> formConfigs = AuthenticationManager.getActiveConfigurations(LoginFormAuthenticationConfiguration.class);
-            String ldapDetails = formConfigs.stream()
-                .filter(ac->null != ac.getDomain())
-                .filter(ac->!AuthenticationManager.ALL_DOMAINS.equals(ac.getDomain()))
-                .filter(ac->StringUtils.endsWithIgnoreCase(emailAddress, "@" + ac.getDomain()))
-                .map(AuthenticationConfiguration::getDescription)
-                .collect(Collectors.joining(", "));
-            if (!ldapDetails.isBlank())
-                authMethods.add("LDAP (" + ldapDetails + ")");
-
+            // TODO: Use SecurityManager.isLdapEmail() once that method is fixed. See #42435.
+            boolean ldapConfigured = null != AuthenticationManager.getLdapDomain();
             Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationManager.getActiveConfigurations(SSOAuthenticationConfiguration.class);
+
+            List<String> authMethods = new LinkedList<>();
+            String ssoDetails = "";
+
+            if (ldapConfigured)
+                authMethods.add("LDAP");
+
             if (!ssoConfigs.isEmpty())
             {
-                authMethods.add("SSO (" +
+                authMethods.add("SSO");
+                ssoDetails = " (" +
                     ssoConfigs.stream()
                         .map(AuthenticationConfiguration::getDescription)
                         .collect(Collectors.joining(", ")) +
-                    ")"
-                );
+                    ")";
             }
 
             String guidance;
@@ -1818,7 +1814,7 @@ public class SecurityController extends SpringActionController
             if (authMethods.isEmpty())
                 guidance = "have no way to login!";
             else
-                guidance = "be able to login via " + String.join(" or ", authMethods) + " only.";
+                guidance = "be able to login via " + String.join(" or ", authMethods) + ssoDetails + " only.";
 
             return HtmlString.of("Are you sure you want to delete the current password for " + emailAddress + "? Once deleted, this user will " + guidance);
         }

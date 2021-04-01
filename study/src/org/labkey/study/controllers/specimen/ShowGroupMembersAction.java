@@ -17,6 +17,7 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
@@ -234,6 +235,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         private final SpecimenRequestActor _actor;
         private final LocationImpl _location;
         private final User[] _members;
+        private final String _ldapDomain;
         private final ActionURL _returnUrl;
 
         public GroupMembersBean(SpecimenRequestActor actor, LocationImpl location, User[] members, ActionURL returnUrl)
@@ -241,6 +243,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             _actor = actor;
             _location = location;
             _members = members;
+            _ldapDomain = AuthenticationManager.getLdapDomain();
             _returnUrl = returnUrl;
         }
 
@@ -257,6 +260,11 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         public LocationImpl getLocation()
         {
             return _location;
+        }
+
+        public String getLdapDomain()
+        {
+            return _ldapDomain;
         }
 
         public ActionURL getReturnUrl()

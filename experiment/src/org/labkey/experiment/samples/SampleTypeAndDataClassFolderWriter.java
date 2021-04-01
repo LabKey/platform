@@ -29,7 +29,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -85,7 +84,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
     private PHI _exportPhiLevel = PHI.NotPHI;
-    private XarExportContext _xarCtx;
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -117,17 +115,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
-        _xarCtx = ctx.getContext(XarExportContext.class);
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(ctx.getContainer(), ExpSampleType.class, "export"));
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), true))
         {
             // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
             if (StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
-                continue;
-
-            // ignore sample types that are filtered out
-            if (_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
                 continue;
 
             // filter out non sample type material sources
@@ -143,10 +136,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
         for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(ctx.getContainer(), ctx.getUser(), false))
         {
-            // ignore data classes that are filtered out
-            if (_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
-                continue;
-
             dataClasses.add(dataClass);
             typesSelection.addDataClass(dataClass);
             exportTypes = true;
@@ -216,13 +205,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
                     if (!columns.isEmpty())
                     {
-                        SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
-
-                        // filter only to the specific samples
-                        if (_xarCtx != null && _xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
-                            filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedSamples().get(sampleType.getRowId()));
-
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
+                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, SimpleFilter.createContainerFilter(ctx.getContainer()), null);
                         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
                         {
                             tsvWriter.setApplyFormats(false);
@@ -251,13 +234,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
                     if (!columns.isEmpty())
                     {
-                        SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
-
-                        // filter only to the specific samples
-                        if (_xarCtx != null && _xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
-                            filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()));
-
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
+                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, SimpleFilter.createContainerFilter(ctx.getContainer()), null);
                         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
                         {
                             tsvWriter.setApplyFormats(false);

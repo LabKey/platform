@@ -8,7 +8,6 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 
 import java.util.Collection;
@@ -18,7 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -55,8 +53,6 @@ public class AuthenticationConfigurationCache
             }
         };
 
-        private final Collection<String> _activeDomains;
-
         private AuthenticationConfigurationCollections()
         {
             boolean acceptOnlyFicamProviders = AuthenticationManager.isAcceptOnlyFicamProviders();
@@ -75,6 +71,11 @@ public class AuthenticationConfigurationCache
                     })
                     .collect(Collectors.groupingBy(this::getAuthenticationConfigurationFactory));
 
+            // Bit of a hack: LdapProvider sets "ldapDomain" to the first configuration's domain. We should add getDomain()
+            // to AuthenticationConfiguration and collect all email domains, caching them with the collections. This is only
+            // used for administrative messages, so we'll continue to tolerate this approach for a little while longer.
+            AuthenticationManager.setLdapDomain(null);
+
             // Add each group of configurations
             addConfigurations(configurationMap);
 
@@ -84,12 +85,6 @@ public class AuthenticationConfigurationCache
                 .collect(Collectors.toMap(p->p, p->Collections.emptyList()));
 
             addConfigurations(permanentMap);
-
-            _activeDomains = getActive(PrimaryAuthenticationConfiguration.class).stream()
-                .map(AuthenticationConfiguration::getDomain)
-                .filter(Objects::nonNull)
-                .filter(domain->!AuthenticationManager.ALL_DOMAINS.equals(domain))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
         }
 
         // Little helper method simplifies the stream handling above
@@ -156,11 +151,6 @@ public class AuthenticationConfigurationCache
 
             return null != configurations ? configurations : Collections.emptyList();
         }
-
-        private @NotNull Collection<String> getActiveDomains()
-        {
-            return _activeDomains;
-        }
     }
 
     /**
@@ -218,13 +208,5 @@ public class AuthenticationConfigurationCache
     public static void clear()
     {
         CACHE.remove(CACHE_KEY);
-    }
-
-    /**
-     * Return a collection of all email domains associated with authentication configurations, not including "*" or null
-     */
-    public static @NotNull Collection<String> getActiveDomains()
-    {
-        return CACHE.get(CACHE_KEY).getActiveDomains();
     }
 }
