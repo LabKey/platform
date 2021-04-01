@@ -2483,7 +2483,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (options.isForLookup())
                         parents.append(and).append("cpastype = ?\n");
                     else
-                        parents.append(and).append("child_cpastype = ?\n");
+                        parents.append(and).append("child_protocolLsid IN ('NONE', ?)\n");
                     parents.add(options.getRunProtocolLsid());
                 }
 
@@ -2554,7 +2554,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (options.isForLookup())
                         children.append(and).append("cpastype = ?\n");
                     else
-                        children.append(and).append("parent_cpastype = ?\n");
+                        children.append(and).append("parent_protocolLsid IN ('NONE', ?)\n");
                     children.add(options.getRunProtocolLsid());
                 }
 
