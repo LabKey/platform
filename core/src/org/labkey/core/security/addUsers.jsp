@@ -70,7 +70,7 @@
         {
             if (textElem.value != null && textElem.value.length > 0)
             {
-                var target = "<%=h(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()))%>newEmail=" + textElem.value;
+                var target = "<%=h(new UserUrlsImpl().getUserAccessURL(ContainerManager.getRoot()).addParameter("newEmail", null))%>" + textElem.value;
                 window.open(target, "permissions", "height=450,width=500,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no,resizable=yes");
             }
         }
@@ -98,34 +98,27 @@
     <table><%
             if (getErrors("form").hasErrors());
             { %>
-        <tr><td colspan="3"><labkey:errors /></td></tr><%
+        <tr><td><labkey:errors /></td></tr><%
             }
             HtmlString msg = form.getMessage();
             if (!HtmlString.isBlank(msg))
             {
-                %><tr><td colspan="3"><div class="labkey-message"><%=msg%></div></td></tr><%
+                %><tr><td><div class="labkey-message"><%=msg%></div></td></tr><%
             }
         %>
         <tr>
-            <td colspan="3">Add new users. Enter one or more email addresses, each on its own line.</td>
+            <td>Add new users. Enter one or more email addresses, each on its own line.</td>
         </tr>
         <tr>
-            <td colspan="3">
+            <td>
                 <textarea name="newUsers" id="newUsers" cols=70 rows=20></textarea><br/><br/>
             </td>
         <tr>
-            <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck" onclick="enableText();">Clone permissions from user:</td>
-            <td id="auto-completion-div"></td>
-            <td><div id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></div></td>
+            <td><input type=checkbox id="cloneUserCheck" name="cloneUserCheck" onclick="enableText();">Clone permissions from user:<span id="auto-completion-div"></span>
+            <span id=permissions><a href="#blank" style="display:none" onclick="showUserAccess();">permissions</a></span></td>
         </tr>
-        <tr><td colspan="3">
-            <input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail">Send notification emails to all new<%
-            String LDAPDomain = AuthenticationManager.getLdapDomain();
-            if (LDAPDomain != null && LDAPDomain.length() > 0 && !AuthenticationManager.ALL_DOMAINS.equals(LDAPDomain))
-            {
-                %>, non-<%=h(LDAPDomain)%><%
-            }
-            %> users</label><br><br>
+        <tr><td>
+            <br><input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail"><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%></label><br><br>
         </td></tr>
         <tr>
             <td>
