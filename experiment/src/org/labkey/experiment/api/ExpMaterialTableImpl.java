@@ -154,7 +154,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case IsAliquot:
             {
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN RootMaterialLSID IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                        "(CASE WHEN RootMaterialLSID IS NULL THEN FALSE ELSE TRUE END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
