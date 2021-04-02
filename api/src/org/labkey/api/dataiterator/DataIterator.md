@@ -24,6 +24,12 @@ DatasetUpdateService.Config)
 However, often you won't really need to see the values being run through.  Pump is a helper class that will 'run' your 
 DataIterator pipeline for you.
 
+**QueryUpdateService**  
+QueryUpdateService !== DataIterator!  Most implementations of insert/update/mergeRows() are implemented
+using DataIterators, but not all.  No implementations of update/deleteRows() use DataIterators as far as I know.  Think
+of QUS as an extended part of the TableInfo's implementation.  QUS is ultimately responsible for making sure that the
+expected semantics of its table are correctly implemented.
+
 ## Inventory
 
 ### General
