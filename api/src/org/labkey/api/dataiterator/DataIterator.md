@@ -24,6 +24,12 @@ DatasetUpdateService.Config)
 However, often you won't really need to see the values being run through.  Pump is a helper class that will 'run' your 
 DataIterator pipeline for you.
 
+**QueryUpdateService**  
+QueryUpdateService !== DataIterator!  Most implementations of insert/update/mergeRows() are implemented
+using DataIterators, but not all.  No implementations of update/deleteRows() use DataIterators as far as I know.  Think
+of QUS as an extended part of the TableInfo's implementation.  QUS is ultimately responsible for making sure that the
+expected semantics of its table are correctly implemented.
+
 ## Inventory
 
 ### General
@@ -59,7 +65,7 @@ Not a DataIterator obviously.  This class contains lots of useful stuff like ```
 It also can construct various column maps, which can be handy compared the DataIterator.getColumnInfo(int).  It also 
 handles mapping DataIterator columns to columns in a target TableInfo.
 
-**DetailedAuditLogDataIterator**
+**DetailedAuditLogDataIterator**  
 DetailedAuditLogDataIterator handles generating per-row auditing of record modifications.  Overkill, maybe.  Awesome definitely.
 Creating a detailed audit log record requires being able to see the "before" record and the "after" record.  To accomplish this
 DetailedAuditLogDataIterator is paired with ExistingRecordDataIterator.  ExistingRecordDataIterator prefetches the before records
@@ -73,37 +79,37 @@ This is a subclass of CachingDataIterator that will spill rows to disk after som
 EmbargoDataIterator is an upside down and backward version of CachingDataIterator.  Whereas CachingDataIterator caches
 rows as you read them, EmbargoDataIterator caches rows before you read them.  The rows are held back (embargoed) until some
 event happens.  In particular this solves an occasional problem caused by batching updates to the SQL database.  We may want
-to ensure that the database insert/update for a row have happened before continuing.  StatementDataIterator and EmbargoDataIterator
+to ensure that the database insert/update for a row has happened before continuing.  StatementDataIterator and EmbargoDataIterator
 work together to batch updates to the database, but hold on to rows until the batch has actually been submitted.
 
-**ErrorIterator**
+**ErrorIterator**  
 This iterator always errors!  This class helps implements some particular error handling semantics.  For instance, an error
 condition may be encountered in setup that should not be reported unless the input has one or more rows.  Moving on.
 
-**ExistingRecordDataIterator**
+**ExistingRecordDataIterator**  
 see DetailedAuditLogDataIterator.  We may find other uses for this in the future, but for now it is used to help
 implement functionality required by DetailedAuditLogDataIterator.
 
 **FilterDataIterator**  
 Filters rows it does.  Should not renumber rows.  
 
-**HashDataIterator**
+**HashDataIterator**  
 This DataIterator supports DataIntegrationService.createReimportBuilder().  This computes a hash of all the data values
 in the source DataIterator.  This can be used by the reimport functionality to detect source data rows that have changed since they
 were last imported.  This can be very useful improving import performance for large datasets that are imported on a regular schedule, but often have
 many rows that do not change.
 
-**ListOfMapsDataIterator**
+**ListOfMapsDataIterator**  
 This creates a DataIterator from a List<Map>.  Used by APIs and for testing.
 
 **MapDataIterator**  
 This is a marker interface for a DataIterator that implements ```getMap()```.  The developer should use ```DataIteratorUtil.wrapMap()``` 
 if this functionality is required.
 
-**QueryDataIteratorBuilder**
+**QueryDataIteratorBuilder**  
 Executes LabKey SQL or saved query and returns the result as a DataIterator.  see ResultSetDataIterator.
 
-**ResultSetDataIterator**
+**ResultSetDataIterator**  
 This simply wraps a jdbc ResultSet or a org.labkey.api.data.Results with a DataIterator.  see QueryDataIteratorBuilder.
 
 **ScrollableDataIterator**  
@@ -114,7 +120,7 @@ If a scrollable data iterator is required, one can be constructed using ```Scrol
 As much as possible we try to 'stream' data as we import it, that is we try to _not_ require that the
 entire data set is resident in memory at one time.  Please be thoughtful about caching imported data.
 
-**SimpleTranslator**
+**SimpleTranslator**  
 A dubiously named DataIterator base class.  This is an opinionated base class where each column is implemented
 by a ```java.util.function.Supplier```.  This class is particularly useful if you want to append several calculated
 columns to your data stream.  
@@ -150,37 +156,37 @@ same statement repeatedly this can be used.  It can and is used outside of QUS f
 
 see also **ParameterMapStatement**
 
-**TableInsertDataIterator**
+**TableInsertDataIterator**  
 This is a subclass of StatementDataIterator.  Given a target table this class generates the insert/merge statement
 using ```StatementUtils.createStatement()```, then does the StatementDataIterator thing.
 
-**TriggerDataIteratorHelper**
+**TriggerDataIteratorHelper**  
 This constructs the iterators that call TableInfo._target.fireRowTrigger().  It handles generation one iterator for the
 "before" triggers and one for the "after" triggers.
 
 _dev note: today QUS and triggers don't really understand merge.  For insert/import/loadRows(), the QUS will fire "insert"
 triggers.  For updateRows() it will fire the "update" triggers._
 
-**ValidatorIterator**
+**ValidatorIterator**  
 ValidatorIterator passes data through untouched, however, it runs validated.  It has built-in support for a lot of 
 common validations.  You can add your own using the interface ColumnValidator.  ValidatorIterator is typically constructed 
 by StandardDataIteratorBuilder.
 
-**WrapperDataIterator**
+**WrapperDataIterator**  
 This is an abstract base class that passes through every method to its input DataIterator.  This is a handy base class
 for DataIterators that just fire some event on each row, or append exactly one column to an existing DataIterator.  
 There are a lot of subclasses based on this e.g. FilterDataIterator.
 
 ### Test/Debug
 
-**LoggingDataIterator**
+**LoggingDataIterator**  
 LoggingDataIterator.wrap() wraps a DataIterator with a verbose logger.  This is very, very handy when debugging
 your new DataIterator.  You can see where data gets converted, where new columns get added etc.  Use this class liberally.
 It is a noop if logging is not enabled for LoggingDataIterator.class, it will also avoid double wrapping the same DataIterator.
 ```LoggingDatasIterator.wrap(LoggingDataiterator.wrap(di))``` is harmless.  Its more confusing to have too few of these than
 too many.
 
-**StringTestIterator**
+**StringTestIterator**  
 Useful for creating a very simple DataIterator for tests.  ListOfMapsDataIterator is also useful for test data.
 
 ### Experiment/Sample/Dataclass etc.
@@ -201,3 +207,60 @@ has lessened the need to parallelize other parts of the data pipeline.
 
 **RemoveDuplicatesDataIterator**  
 _Not used?_
+
+
+## Logging Example
+Here is an example of an TSV being imported into a List.  Not all the steps are shown, but this is just an example of
+how to look at the output.
+
+
+The first DataIterator shown in this chain is the TabLoader.  Notice that column 0 is the _rowNumber in the
+source file and that all the column values are type String.  Because DataLoader supports MapDataIterator, LoggingDataIterator
+also shows the current row printed as a JSON object.
+````
+DEBUG LoggingDataIterator      2021-04-02T11:38:48,223     http-nio-8080-exec-4 : TabLoader : org.labkey.api.reader.DataLoader$_DataIterator
+                    _rowNumber    Integer| 1
+                          ptid     String| 999320016
+                       boolean     String| 0
+                           dbl     String| 0
+                          date     String| 12/8/2005 12:35
+                       integer     String| -1
+                        string     String| Phasellus scelerisque enim ut odio. Pellentesque ac augue sit amet risus mattis varius. Praesent at odio. In vel 
+{"date":"12/8/2005 12:35","boolean":"0","string":"Phasellus scelerisque enim ut odio. Pellentesque ac augue sit amet risus mattis varius. Praesent at odio. In vel ","ptid":"999320016","integer":"-1","dbl":"0"}
+````
+This SimpleTranslator is constructed by StandardDataIteratorBuilder.  It handles type conversion and adds the builtin columns
+ CreatedBy, ModifiedBy, Created, Modified, and EntityId.
+````
+DEBUG LoggingDataIterator      2021-04-02T11:38:48,224     http-nio-8080-exec-4 : StandardDIB convert : org.labkey.api.dataiterator.SimpleTranslator
+                    _rowNumber    Integer| 1
+                          ptid    Integer| 999320016
+                       boolean    Boolean| false
+                           dbl     Double| 0.0
+                          date       Date| Thu Dec 08 12:35:00 PST 2005
+                       integer    Integer| -1
+                        string     String| Phasellus scelerisque enim ut odio. Pellentesque ac augue sit amet risus mattis varius. Praesent at odio. In vel 
+                     container     String| d0b5141a-ad00-1038-afda-057652905698
+                     CreatedBy    Integer| 1005
+                    ModifiedBy    Integer| 1005
+                       Created NowTimestamp| 2021-04-02 11:38:48.223
+                      Modified NowTimestamp| 2021-04-02 11:38:48.223
+                      EntityId     String| a6925574-7608-1039-a8ba-f0549910ac1b
+````
+And this is the ValidatorIterator, it probably doesn't need its own logger, because as you can see the data is unmodified.
+This iterator only reports errors.
+````
+DEBUG LoggingDataIterator      2021-04-02T11:38:48,224     http-nio-8080-exec-4 : StandardDIB validate : org.labkey.api.dataiterator.ValidatorIterator
+                    _rowNumber    Integer| 1
+                          ptid    Integer| 999320016
+                       boolean    Boolean| false
+                           dbl     Double| 0.0
+                          date       Date| Thu Dec 08 12:35:00 PST 2005
+                       integer    Integer| -1
+                        string     String| Phasellus scelerisque enim ut odio. Pellentesque ac augue sit amet risus mattis varius. Praesent at odio. In vel 
+                     container     String| d0b5141a-ad00-1038-afda-057652905698
+                     CreatedBy    Integer| 1005
+                    ModifiedBy    Integer| 1005
+                       Created NowTimestamp| 2021-04-02 11:38:48.223
+                      Modified NowTimestamp| 2021-04-02 11:38:48.223
+                      EntityId     String| a6925574-7608-1039-a8ba-f0549910ac1b
+````
