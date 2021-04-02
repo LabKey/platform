@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment.xar;
 
-import org.labkey.api.admin.AbstractFolderContext;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderWriter;
@@ -23,9 +23,9 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
@@ -70,7 +70,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             Set<Container> containers = ContainerManager.getAllChildren(c);
             for(Container container: containers)
             {
-                if (getProtocols(container).size() > 0 || getRuns(container).size() > 0)
+                if (getProtocols(container).size() > 0 || getRuns(null, container).size() > 0)
                 {
                     return true;
                 }
@@ -79,12 +79,21 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return false;
         }
 
-        private List<ExpRun> getRuns(Container c)
+        private List<ExpRun> getRuns(@Nullable ImportContext<FolderDocument.Folder> ctx, Container c)
         {
+            XarExportContext xarCtx = null;
+            if (ctx != null)
+                xarCtx = ctx.getContext(XarExportContext.class);
+
             // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
+            // if an additional context has been furnished, filter out runs not included in this export
+            final XarExportContext fxarCtx = xarCtx;
             return ExperimentService.get().getExpRuns(c, null, null).stream()
-                    .filter(run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
-                    && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
+                    .filter(
+                        run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
+                                && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
+                            && (fxarCtx == null || fxarCtx.getIncludedAssayRuns().contains(run.getRowId()))
+                    )
                     .collect(Collectors.toList());
         }
 
@@ -116,7 +125,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
             selection.addProtocolIds(getProtocols(ctx.getContainer()));
 
-            selection.addRuns(getRuns(ctx.getContainer()));
+            selection.addRuns(getRuns(ctx, ctx.getContainer()));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
