@@ -84,19 +84,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption insertOption, Map<Enum, Object> configParameters)
+    public void configureDataIteratorContext(DataIteratorContext context)
     {
-        DataIteratorContext context = super.getDataIteratorContext(errors, insertOption, configParameters);
-        if (insertOption.batch)
+        if (context.getInsertOption().batch)
         {
             context.setMaxRowErrors(100);
             context.setFailFast(false);
         }
 
-        Map<Enum, Object> options = new HashMap<>();
-        options.put(ConfigParameters.TrimStringRight, Boolean.TRUE);
-        context.setConfigParameters(options);
-        return context;
+        context.putConfigParameter(ConfigParameters.TrimStringRight, Boolean.TRUE);
     }
 
     @Override
