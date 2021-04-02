@@ -53,9 +53,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineActionConfig;
-import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -1075,71 +1073,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-/////////////////////////////////////////////////////////////////////////////
-//  Direct access to the PipelineQueue
-
-    public enum StatusParams { allcontainers }
-
-    public static ActionURL urlStatus(Container container, boolean allContainers)
-    {
-        ActionURL url = new ActionURL(StatusAction.class, container);
-        if (allContainers)
-            url.addParameter(StatusParams.allcontainers, "1");
-        return url;
-    }
-
-    /**
-     * Use the current container and the current "allcontainers" value to
-     * produce a URL for the status action.
-     *
-     * @return URL to the status action
-     */
-    private ActionURL urlStatus()
-    {
-        boolean allContainers = (getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null);
-
-        return urlStatus(getContainer(), allContainers);
-    }
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class StatusAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            // Job data is only available from the mini-pipeline.
-            if (PipelineService.get().isEnterprisePipeline())
-                throw new NotFoundException();
-
-            setHelpTopic(getHelpTopic("pipeline/status"));
-
-            PipelineQueue queue = PipelineService.get().getPipelineQueue();
-            return new JspView<>("/org/labkey/pipeline/pipelineStatus.jsp",
-                    new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Pipeline Status");
-        }
-    }
-
-    public class StatusModel
-    {
-        private PipelineJobData _jobData;
-
-        private StatusModel(PipelineJobData jobData)
-        {
-            _jobData = jobData;
-        }
-
-        public PipelineJobData getJobData()
-        {
-            return _jobData;
-        }
-    }
-
     @RequiresPermission(DeletePermission.class)
     public class CancelJobAction extends FormHandlerAction<StatusController.RowIdForm>
     {
@@ -1170,16 +1103,6 @@ public class PipelineController extends SpringActionController
         {
             return _successURL;
         }
-    }
-
-    protected Container getJobDataContainer()
-    {
-        if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class) &&
-                getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null)
-        {
-            return null;
-        }
-        return getContainer();
     }
 
     protected PipeRoot getPipelineRoot(Container c)
@@ -1889,7 +1812,6 @@ public class PipelineController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new UpdateRootPermissionsAction(),
-                controller.new StatusAction(),
                 controller.new SetupAction()
             );
         }
