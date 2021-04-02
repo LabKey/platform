@@ -20,7 +20,6 @@ import org.json.JSONObject;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;

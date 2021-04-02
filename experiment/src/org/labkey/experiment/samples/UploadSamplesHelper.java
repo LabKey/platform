@@ -476,7 +476,7 @@ public abstract class UploadSamplesHelper
                     {
                         if (isAliquot)
                         {
-                            String message = "Data input is not allowed for aliquots";
+                            String message = parentColName + " is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
 
