@@ -112,7 +112,16 @@ public class DataRegionSelection
 
 
     /**
-     * Get selected items from the request parameters (includes only the current page of a data region and no selected items from session state).
+     * Get selected items from the request parameters including both current page's selection and session state
+     * @return an unmodifiable copy of the selected item ids
+     */
+    public static @NotNull Set<String> getSelected(ViewContext context)
+    {
+        return getSelected(context, null, true);
+    }
+
+    /**
+     * Get selected items from the request parameters including both current page's selection and session state
      * @param context Used to get the selection key
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
@@ -123,7 +132,7 @@ public class DataRegionSelection
     }
 
     /**
-     * Tests if selected items are in the request parameters (includes only the current page of a data region and no selected items from session state).
+     * Tests if selected items are in the request parameters or session state
      * @param context Used to get the selection key
      * @return true if there are selected item ids, false if not
      */
@@ -133,7 +142,18 @@ public class DataRegionSelection
     }
 
     /**
-     * Get selected items from the request parameters as integers (includes only the current page of a data region and no selected items from session state).
+     * Get selected items from the request parameters as integers including both current page's selection and session
+     * state and clears the state
+     * @param context Used to get the selection key
+     * @return an unmodifiable copy of the selected item ids
+     */
+    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context)
+    {
+        return asInts(getSelected(context, true));
+    }
+
+    /**
+     * Get selected items from the request parameters as integers including both current page's selection and session state
      * @param context Used to get the selection key
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids

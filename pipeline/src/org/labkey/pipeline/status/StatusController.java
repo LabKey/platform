@@ -874,6 +874,7 @@ public class StatusController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
+            DataRegionSelection.clearAll(getViewContext());
             _successURL = form.getReturnActionURL(firstDetailsURL);
             return true;
         }
