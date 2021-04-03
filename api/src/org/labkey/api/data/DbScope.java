@@ -305,7 +305,7 @@ public class DbScope
     {
         _dbScopeLoader = loader;
 
-        try (Connection conn = getDataSource().getConnection())
+        try (Connection conn = getRawConnection(loader.getDsProps()))
         {
             DatabaseMetaData dbmd = conn.getMetaData();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
