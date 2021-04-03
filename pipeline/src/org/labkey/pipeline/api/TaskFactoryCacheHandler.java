@@ -42,22 +42,27 @@ import java.util.stream.Stream;
  * User: kevink
  * Date: 1/6/14
  */
-/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskFactory>>
+/* package */ class TaskFactoryCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskFactory<?>>>
 {
     private static final Logger LOG = LogManager.getLogger(TaskFactoryCacheHandler.class);
     private static final String TASK_CONFIG_EXTENSION = ".task.xml";
 
     @Override
-    public Map<TaskId, TaskFactory> load(Stream<? extends Resource> resources, Module module)
+    public Map<TaskId, TaskFactory<?>> load(Stream<? extends Resource> resources, Module module)
     {
-        return unmodifiable(resources
+        Object result = unmodifiable(resources
             .filter(getFilter(TASK_CONFIG_EXTENSION))
             .map(resource -> loadTaskConfig(module, resource))
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(TaskFactory::getId, Function.identity())));
+
+        // javac gets confused by the generics with a "inferred type does not conform to lower bound(s)" so assign to
+        // Object and cast it
+        //noinspection unchecked
+        return (Map<TaskId, TaskFactory<?>>) result;
     }
 
-    private @Nullable TaskFactory loadTaskConfig(Module module, Resource resource)
+    private @Nullable TaskFactory<?> loadTaskConfig(Module module, Resource resource)
     {
         TaskId taskId = createTaskId(module, resource.getName());
 
@@ -84,7 +89,7 @@ import java.util.stream.Stream;
         return new TaskId(module.getName(), TaskId.Type.task, name, 0);
     }
 
-    private TaskFactory create(TaskId taskId, Resource taskConfig)
+    private TaskFactory<?> create(TaskId taskId, Resource taskConfig)
     {
         if (taskId.getName() == null)
             throw new IllegalArgumentException("Task factory must by named");
@@ -121,7 +126,7 @@ import java.util.stream.Stream;
         return create(taskId, xtask, taskDir);
     }
 
-    private TaskFactory create(TaskId taskId, TaskType xtask, Path taskDir)
+    private TaskFactory<?> create(TaskId taskId, TaskType xtask, Path taskDir)
     {
         return PipelineJobServiceImpl.get().createTaskFactory(taskId, xtask, taskDir);
     }

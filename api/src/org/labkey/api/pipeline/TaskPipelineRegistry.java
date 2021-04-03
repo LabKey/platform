@@ -35,10 +35,10 @@ public interface TaskPipelineRegistry
     String LOCAL_TASK_PREFIX = "#";
 
     @Nullable
-    TaskPipeline getTaskPipeline(TaskId id);
+    <T extends TaskPipelineSettings> TaskPipeline<T> getTaskPipeline(TaskId id);
 
     @NotNull
-    TaskPipeline getTaskPipeline(String taskIdString);
+    TaskPipeline<?> getTaskPipeline(String taskIdString);
 
     /**
      * Add or replace an existing TaskPipeline definition. Server-specific configuration overrides (usually specified
@@ -53,10 +53,10 @@ public interface TaskPipelineRegistry
      * in a Spring Config.xml file) may replace a TaskPipeline that's built-in to a module with one that adds
      * or remove steps.
      */
-    void addTaskPipeline(TaskPipeline pipeline);
+    void addTaskPipeline(TaskPipeline<?>pipeline);
 
     @NotNull
-    Collection<TaskPipeline> getTaskPipelines(@Nullable Container container);
+    Collection<TaskPipeline<?>> getTaskPipelines(@Nullable Container container);
 
     /**
      * Get a list of task pipelines from the set of active modules in the container and of the given type.
@@ -65,10 +65,10 @@ public interface TaskPipelineRegistry
      * @return The list of pipelines.
      */
     @NotNull
-    <T extends TaskPipeline> Collection<T> getTaskPipelines(@Nullable Container container, @Nullable Class<T> inter);
+    <T extends TaskPipeline<?>> Collection<T> getTaskPipelines(@Nullable Container container, @Nullable Class<T> inter);
 
     @Nullable
-    TaskFactory getTaskFactory(TaskId id);
+    TaskFactory<?> getTaskFactory(TaskId id);
 
     /**
      * Add or replace an existing TaskFactory definition. Server-specific configuration overrides (usually specified
@@ -85,13 +85,13 @@ public interface TaskPipelineRegistry
      * it for the local installation. Examples might include setting server-specific paths to files, setting timeouts
      * or memory limits, etc.
      */
-    void addTaskFactory(TaskFactory factory);
+    void addTaskFactory(TaskFactory<?> factory);
 
     /**
      * Adds a TaskFactory that is locally defined in a TaskPipeline and is not intended to be shared.
      * The factory's id must be prefixed with the pipeline id and LOCAL_TASK_PREFIX.
      */
-    void addLocalTaskFactory(TaskId pipelineId, TaskFactory factory);
+    void addLocalTaskFactory(TaskId pipelineId, TaskFactory<?> factory);
 
     /**
      * Get a list of task factories from the set of active modules in the container.
@@ -99,7 +99,7 @@ public interface TaskPipelineRegistry
      * @return The list of task factories.
      */
     @NotNull
-    Collection<TaskFactory> getTaskFactories(@Nullable Container container);
+    Collection<TaskFactory<?>> getTaskFactories(@Nullable Container container);
 
     String getDefaultExecutionLocation();
 
@@ -120,8 +120,8 @@ public interface TaskPipelineRegistry
      * Create a TaskFactory using the schema type associated with the registered XMLBeanTaskFactoryFactory.
      * The TaskFactory is created, but won't be added to the registry.
      */
-    TaskFactory createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir);
+    TaskFactory<?> createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir);
 
     @NotNull
-    AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline);
+    AbstractFileAnalysisProtocolFactory<?> getProtocolFactory(TaskPipeline<?> taskPipeline);
 }
