@@ -66,11 +66,11 @@ class DbScopeLoader
                         scope = new DbScope(this);
                         scope.getSqlDialect().prepare(scope);
                     }
-                    catch (SQLException | ServletException e)
+                    catch (Throwable t)
                     {
                         // Always log, but callers determine if null DbScope is fatal or not
-                        LOG.error("Cannot connect to DataSource \"" + _dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session.", e);
-                        DbScope.addDataSourceFailure(_dsName, e);
+                        LOG.error("Cannot connect to DataSource \"" + _dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session.", t);
+                        DbScope.addDataSourceFailure(_dsName, t);
                         scope = BAD_SCOPE;
                     }
 
