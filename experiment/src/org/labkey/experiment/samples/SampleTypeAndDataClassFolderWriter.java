@@ -55,8 +55,6 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
-import org.labkey.experiment.api.ExpRunImpl;
-import org.labkey.experiment.api.ExperimentRun;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -76,8 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 
 public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 {
@@ -173,7 +169,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             exportedRuns.addAll(ExperimentService.get().getRunsUsingMaterials(materialsToExport));
 
         if (!datasToExport.isEmpty())
-            exportedRuns.addAll(getRunsForExpData(datasToExport));
+            exportedRuns.addAll(ExperimentService.get().getRunsUsingDatas(datasToExport));
 
         if (!exportedRuns.isEmpty())
         {
@@ -434,45 +430,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         {
             return AliasInsertHelper.getAliases(lsid);
         }
-    }
-
-    /**
-     * Generate a query to get the runIds where the supplied set of ExpData's were used as inputs or outputs
-     * CONSIDER : moving this to ExperimentService on trunk
-     */
-    private List<? extends ExpRun> getRunsForExpData(List<ExpData> datas)
-    {
-        if (datas.isEmpty())
-            return Collections.emptyList();
-
-        TableInfo tinfoProtocolApplication = ExperimentService.get().getTinfoProtocolApplication();
-        TableInfo tinfoDataInput = ExperimentService.get().getTinfoDataInput();
-        TableInfo tinfoData = ExperimentService.get().getTinfoData();
-
-        var ids = datas.stream().map(ExpData::getRowId).collect(Collectors.toList());
-        SQLFragment rowIdSQL = tinfoData.getSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
-
-        SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT pa.RunId\n");
-        sql.append("FROM ").append(tinfoProtocolApplication, "pa").append(",\n\t");
-        sql.append(tinfoDataInput, "di").append("\n");
-        sql.append("WHERE di.TargetApplicationId = pa.RowId ")
-                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
-                .append("AND di.DataId ").append(rowIdSQL).append(")");
-        sql.append("UNION");
-        sql.append("(SELECT pa.RunId\n");
-        sql.append("FROM ").append(tinfoProtocolApplication, "pa").append(",\n\t");
-        sql.append(tinfoData, "d").append("\n");
-        sql.append("WHERE d.SourceApplicationId = pa.RowId AND d.RowId ").append(rowIdSQL).append(")");
-
-        SQLFragment sqlRuns = new SQLFragment("SELECT *\n");
-        sqlRuns.append("FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "er").append("\n");
-        sqlRuns.append("WHERE RowId IN (\n");
-        sqlRuns.append(sql);
-        sqlRuns.append("\n)");
-
-        List<ExperimentRun> runs = new SqlSelector(tinfoData.getSchema(), sqlRuns).getArrayList(ExperimentRun.class);
-        return ExpRunImpl.fromRuns(runs);
     }
 
     private static class DataClassAliasColumnFactory extends AbstractAliasColumnFactory
