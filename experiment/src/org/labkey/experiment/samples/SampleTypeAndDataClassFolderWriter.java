@@ -437,7 +437,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     }
 
     /**
-     * Generate a query to get the runIds where the supplied set of ExpData's were used as inputs
+     * Generate a query to get the runIds where the supplied set of ExpData's were used as inputs or outputs
      * CONSIDER : moving this to ExperimentService on trunk
      */
     private List<? extends ExpRun> getRunsForExpData(List<ExpData> datas)
