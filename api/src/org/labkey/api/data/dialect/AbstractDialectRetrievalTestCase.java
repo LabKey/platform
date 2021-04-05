@@ -96,6 +96,8 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
 
                 allowing(md).getDriverName();
                 will(returnValue(driverName));
+
+                allowing(md).getConnection();
             }
         });
         return md;
