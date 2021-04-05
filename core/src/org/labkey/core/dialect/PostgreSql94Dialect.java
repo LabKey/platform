@@ -28,15 +28,6 @@ import java.util.Set;
  */
 abstract class PostgreSql94Dialect extends PostgreSql93Dialect
 {
-    protected PostgreSql94Dialect()
-    {
-    }
-
-    protected PostgreSql94Dialect(boolean standardConformingStrings)
-    {
-        super(standardConformingStrings);
-    }
-
     @NotNull
     @Override
     protected Set<String> getReservedWords()

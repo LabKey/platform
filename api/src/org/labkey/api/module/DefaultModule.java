@@ -73,7 +73,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -181,15 +180,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 // database. This can be helpful on test and dev machines. See #23730.
                 DbScope scope = DbScope.getLabKeyScope();
 
-                try
-                {
-                    _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
-                    DbScope.addScope(dsName, scope.getDataSource(), scope.getLabKeyProps());
-                }
-                catch (SQLException | ServletException e)
-                {
-                    throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").", e);
-                }
+                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
+                DbScope.addScope(dsName, scope.getDataSource(), scope.getLabKeyProps());
+                if (null == DbScope.getDbScope(dsName)) // Force immediate connection to test
+                    throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").");
             }
             else
             {
