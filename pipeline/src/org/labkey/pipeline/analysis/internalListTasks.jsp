@@ -24,7 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Collection<TaskFactory> factories = PipelineJobService.get().getTaskFactories(null);
+    Collection<TaskFactory<?>> factories = PipelineJobService.get().getTaskFactories(null);
 %>
 
 <labkey:errors />
@@ -44,7 +44,7 @@
         <td><b>Protocol Action Names</b></td>
     </tr>
 
-<% for (TaskFactory factory : factories) { %>
+<% for (TaskFactory<?> factory : factories) { %>
     <tr>
         <td><%=link("details", new ActionURL(AnalysisController.InternalDetailsAction.class, getContainer()).addParameter("taskId", factory.getId().toString()))%></td>
         <td><%=h(factory.getId())%></td>

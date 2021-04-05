@@ -22,6 +22,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.resource.Resource;
@@ -40,19 +41,24 @@ import java.util.stream.Stream;
  * Loads TaskPipeline from file-based modules from a /pipelines/pipeline/&lt;name&gt;.pipeline.xml file.
  * Similar to the ETL DescriptorCache's ScheduledPipelineJobDescriptor, the TaskPipeline may register some locally defined TaskFactories as well.
  */
-/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskPipeline>>
+/* package */ class TaskPipelineCacheHandler implements ModuleResourceCacheHandler<Map<TaskId, TaskPipeline<?>>>
 {
     private static final Logger LOG = LogManager.getLogger(TaskPipelineCacheHandler.class);
     private static final String PIPELINE_CONFIG_EXTENSION = ".pipeline.xml";
 
     @Override
-    public Map<TaskId, TaskPipeline> load(Stream<? extends Resource> resources, Module module)
+    public Map<TaskId, TaskPipeline<?>> load(Stream<? extends Resource> resources, Module module)
     {
-        return unmodifiable(resources
+        Object result = unmodifiable(resources
             .filter(getFilter(PIPELINE_CONFIG_EXTENSION))
             .map(resource -> loadPipelineConfig(module, resource))
             .filter(Objects::nonNull)
             .collect(Collectors.toMap(TaskPipeline::getId, Function.identity())));
+
+        // javac gets confused by the generics with a "inferred type does not conform to lower bound(s)" so assign to
+        // Object and cast it
+        //noinspection unchecked
+        return (Map<TaskId, TaskPipeline<?>>) result;
     }
 
     private @Nullable TaskId createPipelineId(Module module, String filename)
@@ -64,7 +70,7 @@ import java.util.stream.Stream;
         return new TaskId(module.getName(), TaskId.Type.pipeline, name, 0);
     }
 
-    private @Nullable TaskPipeline loadPipelineConfig(Module module, Resource resource)
+    private @Nullable TaskPipeline<?> loadPipelineConfig(Module module, Resource resource)
     {
         TaskId taskId = createPipelineId(module, resource.getName());
 
