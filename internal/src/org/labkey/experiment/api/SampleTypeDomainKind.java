@@ -92,6 +92,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
+        RESERVED_NAMES.add("IsAliquot");
         RESERVED_NAMES.add("AliquotedFrom");
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");

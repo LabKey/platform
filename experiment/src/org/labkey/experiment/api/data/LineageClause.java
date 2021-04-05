@@ -87,6 +87,9 @@ public class LineageClause extends CompareType.CompareClause
 
         SQLFragment tree = LineageHelper.createExperimentTreeSQLLsidSeeds(start, options);
 
+        if (tree == null)
+            return new SQLFragment("(1 = 2)");
+
         SQLFragment sql = new SQLFragment();
         sql.append("(").append(alias).append(") IN (");
         sql.append("SELECT ").append(getLsidColumn()).append(" FROM (");
