@@ -144,24 +144,6 @@
         </init-param>
     </servlet>
 
-    <!-- To display a nice error message in the case of a database error, remove the
-         comments around this servlet and servlet-mapping, and edit the message in the init-param
-         above.
-    <servlet>
-        <servlet-name>SiteDownServlet</servlet-name>
-        <servlet-class>org.labkey.api.view.SiteDownServlet</servlet-class>
-        <init-param>
-            <param-name>message</param-name>
-            <param-value>This LabKey Server is currently down for maintenance.</param-value>
-        </init-param>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>SiteDownServlet</servlet-name>
-        <url-pattern>/*</url-pattern>
-    </servlet-mapping>
-    -->
-
     <!--
         even though there is one webdav tree rooted at "/" we still use two servlet bindings.
         This is because we want /_webdav/* to be resolve BEFORE all other servlet-mappings
