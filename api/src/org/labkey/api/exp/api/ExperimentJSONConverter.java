@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.util.Collection;
@@ -721,6 +722,13 @@ public class ExperimentJSONConverter
 
         jsonObject.put(CPAS_TYPE, material.getCpasType());
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Material");
+
+        boolean isAliquot = !StringUtils.isEmpty(material.getAliquotedFromLSID());
+        boolean isDerivative = false;
+        if (!isAliquot)
+            isDerivative = material.getRunId() != null && material.getRunId() > 0;
+
+        jsonObject.put("materialLineageType", isAliquot ? "Aliquot" : (isDerivative ? "Derivative" : "RootMaterial"));
 
         return jsonObject;
     }

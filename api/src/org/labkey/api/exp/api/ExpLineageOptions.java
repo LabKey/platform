@@ -28,6 +28,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
+    private String _runProtocolLsid;
 
     public ExpLineageOptions()
     {
@@ -111,6 +112,16 @@ public class ExpLineageOptions extends ResolveLsidsForm
     public void setUseObjectIds(boolean useObjectIds)
     {
         _useObjectIds = useObjectIds;
+    }
+
+    public String getRunProtocolLsid()
+    {
+        return _runProtocolLsid;
+    }
+
+    public void setRunProtocolLsid(String runProtocolLsid)
+    {
+        _runProtocolLsid = runProtocolLsid;
     }
 
 }
