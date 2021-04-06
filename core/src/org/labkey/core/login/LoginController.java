@@ -1913,7 +1913,7 @@ public class LoginController extends SpringActionController
                     {
                         SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
 
-                        if (StringUtils.isEmpty(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getSystemEmailAddress()))
+                        if (!LookAndFeelProperties.getInstance(ContainerManager.getRoot()).hasSystemEmailAddress())
                         {
                             // set default "from" address for system emails to first registered user, but don't stomp
                             // over a value that might have been set by a startup property (issue 42865)
