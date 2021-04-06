@@ -49,7 +49,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
+import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.exp.Lsid;
@@ -596,7 +596,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
-            DataIteratorBuilder step1 = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(step0), _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(step0), _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
+            DataIterator step1 = counterDIB.getDataIterator(context);
 
             // Generate names
             if (_dataClass.getNameExpression() != null)
@@ -605,9 +606,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
 //              CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-                step1 = LoggingDataIterator.wrap(new CoerceDataIterator(step0, context, ExpDataClassDataTableImpl.this, false));
+                step1 = LoggingDataIterator.wrap(new CoerceDataIterator(step1, context, ExpDataClassDataTableImpl.this, false));
 
-                step1 = new NameExpressionDataIteratorBuilder(step1,  ExpDataClassDataTableImpl.this);
+                step1 = LoggingDataIterator.wrap(new NameExpressionDataIterator(step1, context, ExpDataClassDataTableImpl.this));
             }
 
             return LoggingDataIterator.wrap(step1.getDataIterator(context));
