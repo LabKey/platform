@@ -1,10 +1,13 @@
-import React, {PureComponent} from "react";
+import React, { PureComponent } from 'react';
 import { FormControl } from 'react-bootstrap';
-import {FileAttachmentForm, LabelHelpTip} from "@labkey/components";
-import FACheckBox from "./FACheckBox";
-import {AuthConfig, AuthConfigField, AuthConfigProvider, InputFieldProps} from "./models";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faFileAlt} from "@fortawesome/free-solid-svg-icons";
+import { FileAttachmentForm, LabelHelpTip } from '@labkey/components';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+import { faFileAlt } from '@fortawesome/free-solid-svg-icons';
+
+import FACheckBox from './FACheckBox';
+import { AuthConfig, AuthConfigField, AuthConfigProvider, InputFieldProps } from './models';
 
 interface TextInputProps extends InputFieldProps {
     requiredFieldEmpty?: boolean;
@@ -18,7 +21,11 @@ export class TextInput extends PureComponent<TextInputProps> {
             <div className="modal__text-input">
                 <span className="modal__field-label">
                     {caption}
-                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
+                    {description && (
+                        <LabelHelpTip title="Tip">
+                            <div> {description} </div>
+                        </LabelHelpTip>
+                    )}
                     {required ? ' *' : null}
                 </span>
 
@@ -31,8 +38,7 @@ export class TextInput extends PureComponent<TextInputProps> {
                         value={value}
                         onChange={onChange}
                         className={
-                            'modal__text-input-field' +
-                            (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
+                            'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')
                         }
                     />
                 ) : (
@@ -57,20 +63,24 @@ export class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
             <div className="modal__field">
                 <span className="modal__field-label">
                     {caption}
-                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
+                    {description && (
+                        <LabelHelpTip title="Tip">
+                            <div> {description} </div>
+                        </LabelHelpTip>
+                    )}
                     {required ? ' *' : null}
                 </span>
 
                 <span className="modal__input">
                     {this.props.canEdit ? (
-                    <FACheckBox
-                        name={name}
-                        checked={value}
-                        canEdit={true}
-                        onClick={() => {
-                            this.props.checkCheckBox(name);
-                        }}
-                    />
+                        <FACheckBox
+                            name={name}
+                            checked={value}
+                            canEdit={true}
+                            onClick={() => {
+                                this.props.checkCheckBox(name);
+                            }}
+                        />
                     ) : (
                         <FACheckBox name={name} checked={value} canEdit={false} onClick={null} />
                     )}
@@ -81,7 +91,7 @@ export class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
 }
 
 interface OptionInputProps extends InputFieldProps {
-    options: {[key: string]: string; };
+    options: { [key: string]: string };
 }
 
 export class Option extends PureComponent<OptionInputProps> {
@@ -91,17 +101,17 @@ export class Option extends PureComponent<OptionInputProps> {
             <div className="modal__option-field">
                 <span className="modal__field-label">
                     {caption}
-                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
+                    {description && (
+                        <LabelHelpTip title="Tip">
+                            <div> {description} </div>
+                        </LabelHelpTip>
+                    )}
                     {required ? ' *' : null}
                 </span>
 
                 {canEdit ? (
                     <div className="modal__option-input">
-                        <FormControl
-                            componentClass="select"
-                            name={name}
-                            onChange={onChange}
-                            value={value}>
+                        <FormControl componentClass="select" name={name} onChange={onChange} value={value}>
                             {Object.keys(options).map(item => (
                                 <option value={item} key={item}>
                                     {options[item]}
@@ -128,21 +138,30 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
     render() {
         const { description, caption, html, authConfig } = this.props;
 
+        // Issue42885: Upon detecting the parameter substitution pattern ('${someVariable}') we attempt to replace it
+        // with the passed dynamic variable value existing on 'authConfig'. If we cannot, we replace the pattern with
+        // the text 'someVariable' itself.
+        let stringTemplatedHtml = html;
         const match = /\${(.*?)}/;
         const matchResults = match.exec(html);
-
-        let stringTemplatedHtml = html;
         if (matchResults) {
             const matchedTemplate = matchResults[0];
-            const matchedString = matchResults[0]
-            const replacementVar = [authConfig.configuration].toString();
-            stringTemplatedHtml = html.replace(matchedTemplate, replacementVar ? replacementVar : matchedString)
+            const matchedString = matchResults[1];
+            const replacementVar = authConfig[matchedString];
+            stringTemplatedHtml = html.replace(
+                matchedTemplate,
+                replacementVar ? replacementVar.toString() : matchedString
+            );
         }
 
         return (
             <div className="modal__fixed-html-field">
                 <span className="modal__field-label">{caption}</span>
-                {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
+                {description && (
+                    <LabelHelpTip title="Tip">
+                        <div> {description} </div>
+                    </LabelHelpTip>
+                )}
 
                 {/* HTML set is text-only information that lives on the server */}
                 <div className="modal__fixed-html-text">
@@ -169,7 +188,11 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
             <div className="modal__compact-file-upload-field">
                 <span className="modal__field-label">
                     {caption}
-                    {description && <LabelHelpTip title="Tip"><div> {description} </div></LabelHelpTip>}
+                    {description && (
+                        <LabelHelpTip title="Tip">
+                            <div> {description} </div>
+                        </LabelHelpTip>
+                    )}
                     {required ? ' *' : null}
                 </span>
 
@@ -211,9 +234,9 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
 interface DynamicFieldsProps {
     fields: AuthConfigField[];
     fieldValues: any;
-    canEdit: boolean,
+    canEdit: boolean;
     modalType: AuthConfigProvider;
-    emptyRequiredFields: String[];
+    emptyRequiredFields: string[];
     authConfig: AuthConfig;
     onChange: (event) => void;
     checkCheckBox: (string) => void;
@@ -223,15 +246,25 @@ interface DynamicFieldsProps {
 
 export class DynamicFields extends PureComponent<DynamicFieldsProps> {
     render() {
-        const { fields, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues, authConfig } = this.props;
-        let stopPoint = fields.findIndex((field) => 'dictateFieldVisibility' in field) + 1;
+        const {
+            fields,
+            emptyRequiredFields,
+            canEdit,
+            onChange,
+            checkCheckBox,
+            onFileChange,
+            onFileRemoval,
+            fieldValues,
+            authConfig,
+        } = this.props;
+        let stopPoint = fields.findIndex(field => 'dictateFieldVisibility' in field) + 1;
         if (stopPoint === 0) {
             stopPoint = fields.length;
         }
         const fieldsToCreate = fieldValues.search ? fields : fields.slice(0, stopPoint);
 
         const allFields = fieldsToCreate.map((field, index) => {
-            const requiredFieldEmpty = (emptyRequiredFields.indexOf(field.name) !== -1);
+            const requiredFieldEmpty = emptyRequiredFields.indexOf(field.name) !== -1;
             const name = fieldValues[field.name];
 
             switch (field.type) {
@@ -335,10 +368,6 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                     return <div> Error: Invalid field type received. </div>;
             }
         });
-        return (
-            <>
-                { allFields }
-            </>
-        );
-    };
+        return <>{allFields}</>;
+    }
 }
