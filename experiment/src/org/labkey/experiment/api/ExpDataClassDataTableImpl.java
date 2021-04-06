@@ -31,7 +31,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
@@ -43,12 +42,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
+import org.labkey.api.dataiterator.CoerceDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -603,6 +602,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (_dataClass.getNameExpression() != null)
             {
                 step0.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());
+
+//              CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
+//              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
+                step1 = LoggingDataIterator.wrap(new CoerceDataIterator(step0, context, ExpDataClassDataTableImpl.this, false));
+
                 step1 = new NameExpressionDataIteratorBuilder(step1,  ExpDataClassDataTableImpl.this);
             }
 
