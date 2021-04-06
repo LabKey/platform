@@ -333,11 +333,11 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
             String sourceLSID = new Lsid("Data", String.valueOf(value.getDataId())).toString();
 
-            dataMap.put(_participantId, publishKey.getParticipantId());
-            dataMap.put(_date, publishKey.getDate()); // are these supposed to be our member variables?
+            dataMap.put("ParticipantID", publishKey.getParticipantId());
+            dataMap.put("Date", publishKey.getDate());
             dataMap.put("SequenceNum", publishKey.getVisitId());
             dataMap.put("SourceLSID", sourceLSID);
-            dataMap.put("rowId", publishKey.getDataId());
+            dataMap.put("RowId", publishKey.getDataId());
 
             Set<Integer> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
             rowIds.add(publishKey.getDataId());
@@ -355,7 +355,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
         return StudyPublishService.get().publishData(getUser(), form.getContainer(), targetStudy, sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
-                dataMaps, "rowId", errors);
+                dataMaps, "RowId", errors);
     }
 
     @Override

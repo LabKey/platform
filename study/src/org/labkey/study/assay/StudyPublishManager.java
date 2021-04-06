@@ -591,7 +591,7 @@ public class StudyPublishManager implements StudyPublishService
                     if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         continue;
                 }
-                assert uri != null : "Expected all properties to already be present in assay type. Couldn't find one for " + entry.getKey();
+                assert uri != null : "Expected all properties to already be present in assay type. Couldn't find one for " + entry.getKey(); //Rosaline: Flagged for ST link update
                 newMap.put(uri, entry.getValue());
             }
             ret.add(newMap);
