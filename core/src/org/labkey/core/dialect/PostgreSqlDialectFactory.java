@@ -28,17 +28,22 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
+import org.labkey.api.data.dialect.PostgreSqlServerType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
+import org.postgresql.jdbc.PgConnection;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -87,19 +92,17 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             databaseProductVersion = StringUtils.left(databaseProductVersion, parenIdx);
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
+        Connection conn = md.getConnection();
+        Map<String, String> parameterStatuses = (conn instanceof PgConnection ? ((PgConnection) conn).getParameterStatuses() : Collections.emptyMap());
+        PostgreSqlServerType serverType = PostgreSqlServerType.getFromParameterStatuses(parameterStatuses);
 
-        // Return the appropriate dialect based on the version
-        return getDialect(versionNumber.getVersionInt(), databaseProductVersion, logWarnings);
-    }
-
-    private @NotNull SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings)
-    {
-        PostgreSqlVersion psv = PostgreSqlVersion.get(version);
+        PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt(), serverType);
 
         if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
             throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
 
         PostgreSql96Dialect dialect = psv.getDialect();
+        dialect.setServerType(serverType);
 
         if (logWarnings)
         {
@@ -128,9 +131,14 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // PostgreSQL dialects are nearly identical, so just test 9.6
+        PostgreSql96Dialect conforming = new PostgreSql96Dialect();
+        conforming.setStandardConformingStrings(true);
+        PostgreSql96Dialect nonconforming = new PostgreSql96Dialect();
+        nonconforming.setStandardConformingStrings(false);
+
         return PageFlowUtil.set(
-            new PostgreSql96Dialect(true),
-            new PostgreSql96Dialect(false)
+            conforming,
+            nonconforming
         );
     }
 

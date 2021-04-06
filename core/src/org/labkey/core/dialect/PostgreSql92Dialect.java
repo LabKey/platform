@@ -41,15 +41,6 @@ import java.util.regex.Pattern;
  */
 abstract class PostgreSql92Dialect extends PostgreSql91Dialect
 {
-    protected PostgreSql92Dialect()
-    {
-    }
-
-    protected PostgreSql92Dialect(boolean standardConformingStrings)
-    {
-        super(standardConformingStrings);
-    }
-
     @NotNull
     @Override
     protected Set<String> getReservedWords()
@@ -79,7 +70,7 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
     protected DialectStringHandler createStringHandler()
     {
         // TODO: Isn't this the wrong setting?  Should we be looking at the "backslash_quote" setting instead?
-        if (_standardConformingStrings)
+        if (getStandardConformingStrings())
             return super.createStringHandler();
         else
             return new PostgreSqlNonConformingStringHandler();
@@ -116,5 +107,4 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
     {
         _inClauseGenerator = getJdbcVersion(scope) >= 4 ? new ArrayParameterInClauseGenerator(scope) : new ParameterMarkerInClauseGenerator();
     }
-
 }

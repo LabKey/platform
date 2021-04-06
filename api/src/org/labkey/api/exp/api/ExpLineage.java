@@ -381,7 +381,6 @@ public class ExpLineage
         if (node != null)
         {
             json = ExperimentJSONConverter.serialize(node, user, settings);
-
             json.put("type", node.getLSIDNamespacePrefix());
         }
 

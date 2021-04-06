@@ -31,7 +31,7 @@ import java.util.Set;
  * Date: 2011-08-26
  * Time: 1:42 PM
  *
- * This iterator is called prepares data for the BeforeTriggerDataIterator.
+ * This iterator prepares data for the BeforeTriggerDataIterator.
  * We do a best attempt at converting to the target type, but to not fail if
  * conversion does not work.
  *

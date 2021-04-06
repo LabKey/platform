@@ -2479,6 +2479,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     parents.add(options.getCpasType());
                 }
 
+                if (options.getRunProtocolLsid() != null && !"NULL".equalsIgnoreCase(options.getRunProtocolLsid()))
+                {
+                    if (options.isForLookup())
+                        parents.append(and).append("cpastype = ?\n");
+                    else
+                        parents.append(and).append("child_protocolLsid IN ('NONE', ?)\n");
+                    parents.add(options.getRunProtocolLsid());
+                }
+
                 if (options.getDepth() != 0)
                 {
                     // convert depth to negative value if it isn't
@@ -2539,6 +2548,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     else
                         children.append(and).append("child_cpastype = ?\n");
                     children.add(options.getCpasType());
+                }
+
+                if (options.getRunProtocolLsid() != null && !"NULL".equalsIgnoreCase(options.getRunProtocolLsid()))
+                {
+                    if (options.isForLookup())
+                        children.append(and).append("cpastype = ?\n");
+                    else
+                        children.append(and).append("parent_protocolLsid IN ('NONE', ?)\n");
+                    children.add(options.getRunProtocolLsid());
                 }
 
                 if (options.getDepth() > 0)

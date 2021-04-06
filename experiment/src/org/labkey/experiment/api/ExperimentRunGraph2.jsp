@@ -36,6 +36,7 @@
     var CONCAT = HtmlString.unsafe(dialect.isPostgreSQL() ? "||" : "+");
 
     assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType) || "Object".equals(expType);
+
 %>
   /* CTE */
     $PARENTS_INNER$ AS
@@ -86,6 +87,11 @@
         WHEN PO.objectId IS NOT NULL
           THEN 'Object'
         END                                                   AS parent_expType,
+        CASE
+        WHEN PR.protocolLsid IS NOT NULL
+          THEN PR.protocolLsid
+        ELSE 'NONE'
+        END                                                   AS parent_protocolLsid,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
         COALESCE(PM.lsid, PD.lsid, PR.lsid, PO.objectUri)     AS parent_lsid,
@@ -104,6 +110,11 @@
         WHEN CO.objectId IS NOT NULL
           THEN 'Object'
         END                                                   AS child_expType,
+        CASE
+          WHEN CR.protocolLsid IS NOT NULL
+        THEN CR.protocolLsid
+          ELSE 'NONE'
+        END                                                   AS child_protocolLsid,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
         COALESCE(CM.lsid, CD.lsid, CR.lsid, CO.objectUri)     AS child_lsid,
@@ -172,6 +183,11 @@
         WHEN PO.objectId IS NOT NULL
           THEN 'Object'
         END                                                   AS parent_expType,
+        CASE
+        WHEN PR.protocolLsid IS NOT NULL
+          THEN PR.protocolLsid
+        ELSE 'NONE'
+        END                                                   AS parent_protocolLsid,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
         COALESCE(PM.lsid, PD.lsid, PR.lsid, PO.objectUri)     AS parent_lsid,
@@ -191,6 +207,11 @@
         WHEN CO.objectId IS NOT NULL
           THEN 'Object'
         END                                                   AS child_expType,
+        CASE
+          WHEN CR.protocolLsid IS NOT NULL
+        THEN CR.protocolLsid
+          ELSE 'NONE'
+        END                                                   AS child_protocolLsid,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
         COALESCE(CM.lsid, CD.lsid, CR.lsid, CO.objectUri)     AS child_lsid,

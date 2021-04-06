@@ -469,11 +469,17 @@ public abstract class UploadSamplesHelper
 
                     if (isEmptyParent)
                     {
-                        if (isMerge)
+                        if (isMerge && !isAliquot)
                             parentDataTypesToRemove.add(namePart);
                     }
                     else
                     {
+                        if (isAliquot)
+                        {
+                            String message = parentColName + " is not allowed for aliquots";
+                            throw new ValidationException(message);
+                        }
+
                         ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
                         if (data != null)
                             parentData.put(data, dataRole(data, user));

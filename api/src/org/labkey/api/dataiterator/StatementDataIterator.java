@@ -489,7 +489,7 @@ public class StatementDataIterator extends AbstractDataIterator
     private void log(String message)
     {
         if (null != _log)
-            _log.debug(message);
+            _log.trace(message);
     }
 
     private void log(String message, Exception e)
