@@ -2,7 +2,7 @@ import React, {PureComponent} from "react";
 import { FormControl } from 'react-bootstrap';
 import {FileAttachmentForm, LabelHelpTip} from "@labkey/components";
 import FACheckBox from "./FACheckBox";
-import { AuthConfigField, AuthConfigProvider, InputFieldProps } from "./models";
+import {AuthConfig, AuthConfigField, AuthConfigProvider, InputFieldProps} from "./models";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileAlt} from "@fortawesome/free-solid-svg-icons";
 
@@ -121,11 +121,23 @@ interface FixedHtmlProps {
     caption: string;
     html?: string;
     description?: string;
+    authConfig: AuthConfig;
 }
 
 export class FixedHtml extends PureComponent<FixedHtmlProps> {
     render() {
-        const { description, caption, html } = this.props;
+        const { description, caption, html, authConfig } = this.props;
+
+        const match = /\${(.*?)}/;
+        const matchResults = match.exec(html);
+
+        let stringTemplatedHtml = html;
+        if (matchResults) {
+            const matchedTemplate = matchResults[0];
+            const matchedString = matchResults[0]
+            const replacementVar = [authConfig.configuration].toString();
+            stringTemplatedHtml = html.replace(matchedTemplate, replacementVar ? replacementVar : matchedString)
+        }
 
         return (
             <div className="modal__fixed-html-field">
@@ -134,7 +146,7 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
 
                 {/* HTML set is text-only information that lives on the server */}
                 <div className="modal__fixed-html-text">
-                    <div dangerouslySetInnerHTML={{ __html: html }} />
+                    <div dangerouslySetInnerHTML={{ __html: stringTemplatedHtml }} />
                 </div>
             </div>
         );
@@ -202,6 +214,7 @@ interface DynamicFieldsProps {
     canEdit: boolean,
     modalType: AuthConfigProvider;
     emptyRequiredFields: String[];
+    authConfig: AuthConfig;
     onChange: (event) => void;
     checkCheckBox: (string) => void;
     onFileChange: (attachment, logoType: string) => void;
@@ -210,7 +223,7 @@ interface DynamicFieldsProps {
 
 export class DynamicFields extends PureComponent<DynamicFieldsProps> {
     render() {
-        const { fields, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues } = this.props;
+        const { fields, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues, authConfig } = this.props;
         let stopPoint = fields.findIndex((field) => 'dictateFieldVisibility' in field) + 1;
         if (stopPoint === 0) {
             stopPoint = fields.length;
@@ -308,12 +321,15 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                     );
 
                 case 'fixedHtml':
-                    return  <FixedHtml
-                        key={index}
-                        caption={field.caption}
-                        html={field.html}
-                        description={field.description}
-                    />;
+                    return (
+                        <FixedHtml
+                            key={index}
+                            caption={field.caption}
+                            html={field.html}
+                            description={field.description}
+                            authConfig={authConfig}
+                        />
+                    );
 
                 default:
                     return <div> Error: Invalid field type received. </div>;

@@ -86,6 +86,19 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       value="CAS Configuration1"
     />
     <DynamicFields
+      authConfig={
+        Object {
+          "autoRedirect": false,
+          "configuration": 143,
+          "description": "CAS Configuration1",
+          "details": "https://www.labkey.org/cas",
+          "enabled": true,
+          "headerLogoUrl": null,
+          "loginLogoUrl": null,
+          "provider": "CAS",
+          "serverUrl": "https://www.labkey.org/cas",
+        }
+      }
       canEdit={true}
       checkCheckBox={[Function]}
       emptyRequiredFields={Array []}
@@ -292,6 +305,19 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       value="CAS Configuration1"
     />
     <DynamicFields
+      authConfig={
+        Object {
+          "autoRedirect": false,
+          "configuration": 143,
+          "description": "CAS Configuration1",
+          "details": "https://www.labkey.org/cas",
+          "enabled": true,
+          "headerLogoUrl": null,
+          "loginLogoUrl": null,
+          "provider": "CAS",
+          "serverUrl": "https://www.labkey.org/cas",
+        }
+      }
       canEdit={false}
       checkCheckBox={[Function]}
       emptyRequiredFields={Array []}
@@ -487,6 +513,18 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       value="Duo 2 Factor Configuration"
     />
     <DynamicFields
+      authConfig={
+        Object {
+          "apiHostname": "Api HostName",
+          "configuration": 127,
+          "description": "Duo 2 Factor Configuration",
+          "details": "Api HostName",
+          "enabled": false,
+          "integrationKey": "Key1",
+          "provider": "Duo 2 Factor",
+          "userIdentifier": "UserID",
+        }
+      }
       canEdit={true}
       checkCheckBox={[Function]}
       emptyRequiredFields={Array []}
@@ -725,6 +763,18 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       value="Duo 2 Factor Configuration"
     />
     <DynamicFields
+      authConfig={
+        Object {
+          "apiHostname": "Api HostName",
+          "configuration": 127,
+          "description": "Duo 2 Factor Configuration",
+          "details": "Api HostName",
+          "enabled": false,
+          "integrationKey": "Key1",
+          "provider": "Duo 2 Factor",
+          "userIdentifier": "UserID",
+        }
+      }
       canEdit={false}
       checkCheckBox={[Function]}
       emptyRequiredFields={Array []}
