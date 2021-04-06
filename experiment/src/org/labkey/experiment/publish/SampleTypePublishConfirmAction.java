@@ -1,22 +1,30 @@
 package org.labkey.experiment.publish;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
@@ -29,9 +37,13 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
@@ -40,6 +52,10 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 {
     private SamplesSchema _sampleTypeSchema;
     private ExpSampleType _sampleType;
+    private String _participantId;
+    private String _visitId;
+    private String _date;
+
     private final String ROW_ID = ExpMaterialTable.Column.RowId.toString();
 
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
@@ -92,9 +108,40 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         _sampleType = sampleType;
     }
 
+    public String getParticipantId()
+    {
+        return _participantId;
+    }
+
+    public void setParticipantId(String participantId)
+    {
+        _participantId = participantId;
+    }
+
+    public String getVisitId()
+    {
+        return _visitId;
+    }
+
+    public void setVisitId(String visitId)
+    {
+        _visitId = visitId;
+    }
+
+    public String getDate()
+    {
+        return _date;
+    }
+
+    public void setDate(String date)
+    {
+        _date = date;
+    }
+
     @Override
     public boolean handlePost(SampleTypePublishConfirmForm form, BindException errors) throws Exception
     {
+        intializeFieldKeys(form.getSampleType());
         return super.handlePost(form, errors);
     }
 
@@ -106,43 +153,32 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         PublishSource
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey()
+                    public FieldKey getParticipantIDFieldKey(String participantId)
                     {
-                        return FieldKey.fromParts("ParticipantID"); // Rosaline TODO
+                        return FieldKey.fromParts(participantId);
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(TimepointType type)
+                    public FieldKey getVisitIDFieldKey(String visitId, String date)
                     {
-                        if (type == TimepointType.DATE)
-                        {
-                            return FieldKey.fromParts("Date");
-                        }
-                        else if (type == TimepointType.VISIT)
-                        {
-                            return FieldKey.fromParts("VisitID");
-                        }
-                        else
-                        {
-                            return null;
-                        }
+                        return FieldKey.fromParts(visitId);
                     }
                 },
         UserSpecified
             {
                 @Override
-                public FieldKey getParticipantIDFieldKey()
+                public FieldKey getParticipantIDFieldKey(String participantId)
                 {
                     return null;
                 }
                 @Override
-                public FieldKey getVisitIDFieldKey(TimepointType type)
+                public FieldKey getVisitIDFieldKey(String visitId, String date)
                 {
                     return null;
                 }
             };
 
-        public abstract FieldKey getParticipantIDFieldKey();
-        public abstract FieldKey getVisitIDFieldKey(TimepointType type);
+        public abstract FieldKey getParticipantIDFieldKey(String participantId);
+        public abstract FieldKey getVisitIDFieldKey(String visitId, String date);
     }
 
     @Override
@@ -202,10 +238,46 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return FieldKey.fromParts(ROW_ID);
     }
 
-    // TODO
-    private void intializeFieldKeys()
+    private void intializeFieldKeys(ExpSampleType sampleType)
     {
+        if (null == _participantId || (null == _visitId && null == _date))
+        {
+            String visitURI = PropertyType.VISIT_CONCEPT_URI;
+            String particpantURI = PropertyType.PARTICIPANT_CONCEPT_URI;
 
+            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), "exp.materials");
+            TableInfo tableInfo = userSchema.getTable(sampleType.getName());
+            List<ColumnInfo> columnInfoList = tableInfo.getColumns(); // TODO Rosaline: prevent npe? An assert? An if? An exception?
+
+            for (ColumnInfo ci : columnInfoList)
+            {
+                String columnURI = ci.getConceptURI();
+                String columnName = ci.getName();
+
+                if (null != columnURI && columnURI.equals(visitURI))
+                {
+                    if (PropertyType.xsdDouble.getURI().equals(ci.getRangeURI()))
+                        _visitId = columnName;
+                    if (PropertyType.xsdDateTime.getURI().equals(ci.getRangeURI()))
+                        _date = columnName;
+                }
+
+                if (null != columnURI && columnURI.equals(particpantURI))
+                { // TODO Rosaline: maybe throw if the rangeURI is not string?
+                    _participantId = columnName;
+                }
+
+                if (columnName.equalsIgnoreCase("participantid") && _participantId == null)
+                    _participantId = columnName;
+
+                if (columnName.equalsIgnoreCase("visitid") && _visitId == null)
+                    _visitId = columnName;
+
+                if (columnName.equalsIgnoreCase("date") && _date == null)
+                    _date = columnName;
+
+            }
+        }
     }
 
     @Override
@@ -215,9 +287,9 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
 
         Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey());
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(TimepointType.VISIT));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(TimepointType.DATE));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_participantId));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_visitId, _date));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(_visitId, _date));
 
         return additionalCols;
     }
@@ -238,16 +310,52 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return fields;
     }
 
-    // TODO
+    // TODO Rosaline: should delegate to the sample type service still?
     @Override
-    protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
+    protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
-        // Rosaline temp notes:
-        // populates publishErrors should any be found
-        // returns ActionURL of the new dataset that is created
+        List<Map<String, Object>> dataMaps = new ArrayList<>();
+        Map<String, Object> dataMap = new HashMap<>();
+        Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
 
-        // should delegate to the sample type service
-        return null;
+        Iterator it = dataKeys.entrySet().iterator();
+        while (it.hasNext())
+        {
+            Map.Entry pair = (Map.Entry)it.next();
+
+            PublishKey value = (PublishKey) pair.getValue();
+            PublishKey publishKey = new PublishKey(value.getTargetStudy(), value.getParticipantId(), value.getDate(), value.getDataId());
+
+            Container targetStudyContainer = targetStudy;
+            if (publishKey.getTargetStudy() != null)
+                targetStudyContainer = publishKey.getTargetStudy();
+            assert targetStudyContainer != null;
+
+            String sourceLSID = new Lsid("Data", String.valueOf(value.getDataId())).toString();
+
+            dataMap.put(_participantId, publishKey.getParticipantId());
+            dataMap.put(_date, publishKey.getDate()); // are these supposed to be our member variables?
+            dataMap.put("SequenceNum", publishKey.getVisitId());
+            dataMap.put("SourceLSID", sourceLSID);
+            dataMap.put("rowId", publishKey.getDataId());
+
+            Set<Integer> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
+            rowIds.add(publishKey.getDataId());
+
+            it.remove();
+        }
+        dataMaps.add(dataMap);
+
+        ExpSampleType sampleType = form._sampleType;
+        StudyPublishService.get().checkForAlreadyCopiedRows(getUser(), Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()), errors, rowIdsByTargetContainer);
+        if (!errors.isEmpty())
+        {
+            return null;
+        }
+
+        return StudyPublishService.get().publishData(getUser(), form.getContainer(), targetStudy, sampleType.getName(),
+                Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
+                dataMaps, "rowId", errors);
     }
 
     @Override
