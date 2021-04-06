@@ -90,6 +90,7 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -107,6 +108,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
@@ -1034,5 +1036,45 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
+    }
+
+    @Override
+    public ExpMaterial getMaterialByName(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("Name"), sampleName);
+        filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
+        Material result = new TableSelector(getTinfoMaterial(), filter, null).getObject(Material.class);
+        return result == null ? null : new ExpMaterialImpl(result);
+    }
+
+    @Override
+    public long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
+    {
+        long max = 0;
+        String aliquotNamePrefix = sampleName + "-";
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
+        filter.addCondition(FieldKey.fromParts("Name"), aliquotNamePrefix, STARTS_WITH);
+
+        TableSelector selector = new TableSelector(getTinfoMaterial(), Collections.singleton("Name"), filter, null);
+        final List<String> aliquotIds = new ArrayList<>();
+        selector.forEach(String.class, fullname -> aliquotIds.add(fullname.replace(aliquotNamePrefix, "")));
+
+        for (String aliquotId : aliquotIds)
+        {
+            try
+            {
+                long id = Long.parseLong(aliquotId);
+                if (id > max)
+                    max = id;
+            }
+            catch (NumberFormatException ignored) {
+                ;
+            }
+        }
+
+        return max;
     }
 }

@@ -140,4 +140,9 @@ public interface SampleTypeService
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
 
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
+
+    ExpMaterial getMaterialByName(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
+
+    // find the max sequence number with '${sampleName}-' prefix
+    long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
 }

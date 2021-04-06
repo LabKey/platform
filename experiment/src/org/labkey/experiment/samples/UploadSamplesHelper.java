@@ -27,12 +27,13 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.dataiterator.CoerceDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -86,6 +87,8 @@ public abstract class UploadSamplesHelper
 {
     private static final Logger _log = LogManager.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
+
+    private static final String ALIQUOT_DB_SEQ_PREFIX = "SampleAliquot";
 
     private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot-specific property [%1$s] value has been ignored for a non-aliquot sample.";
     private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
@@ -735,7 +738,7 @@ public abstract class UploadSamplesHelper
 
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context);
+            DataIterator names = new _GenerateNamesDataIterator(sampletype, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize);
 
             return LoggingDataIterator.wrap(names);
         }
@@ -746,20 +749,29 @@ public abstract class UploadSamplesHelper
     {
         final ExpSampleTypeImpl sampletype;
         final NameGenerator nameGen;
+        final Map<String, DbSequence> aliquotDBSeqeuences = new HashMap();
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
+        final Container _container;
+        final String _sampleTypeLsid;
+        final int _batchSize;
         boolean first = true;
 
         String generatedName = null;
         String generatedLsid = null;
 
-        _GenerateNamesDataIterator(ExpSampleTypeImpl sampletype, MapDataIterator source, DataIteratorContext context)
+        private Map<String, DbSequence> _aliquotSequences = new HashMap<>();
+
+        _GenerateNamesDataIterator(ExpSampleTypeImpl sampletype, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
             super(source, context);
             this.sampletype = sampletype;
             nameGen = sampletype.getNameGenerator();
             nameState = nameGen.createState(true);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
+            _container = sampletype.getContainer();
+            _batchSize = batchSize;
+            _sampleTypeLsid = sampletype.getLSID();
             CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
             skip.addAll("name","lsid", "rootmateriallsid");
             selectAll(skip);
@@ -781,7 +793,14 @@ public abstract class UploadSamplesHelper
             Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
             try
             {
-                generatedName = nameGen.generateName(nameState, map);
+                String aliquotedFrom = (String) map.get("AliquotedFrom");
+                boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+                if (isAliquot)
+                {
+                    generatedName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
+                }
+                else
+                    generatedName = nameGen.generateName(nameState, map);
                 generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
             }
             catch (NameGenerator.DuplicateNameException dup)
@@ -798,6 +817,25 @@ public abstract class UploadSamplesHelper
                 else
                     addRowError("All id columns are required for Sample on row " + e.getRowNumber());
             }
+        }
+
+        private DbSequence getAliquotSequence(String aliquotedFrom)
+        {
+            ExpMaterial parent = SampleTypeService.get().getMaterialByName(aliquotedFrom, _sampleTypeLsid, _container);
+            String seqName = ALIQUOT_DB_SEQ_PREFIX + ":" + aliquotedFrom;
+            if (!_aliquotSequences.containsKey(seqName))
+            {
+                int seqId = parent != null ? parent.getRowId() : 0;
+                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, seqName, seqId, _batchSize);
+                long currentSeqMax = newSequence.current();
+                long currentAliquotMax = SampleTypeService.get().getMaxAliquotId(aliquotedFrom, _sampleTypeLsid, _container);
+                if (currentAliquotMax >= currentSeqMax)
+                    newSequence.ensureMinimum(currentAliquotMax);
+
+                _aliquotSequences.put(seqName, newSequence);
+            }
+
+            return _aliquotSequences.get(seqName);
         }
 
         @Override
