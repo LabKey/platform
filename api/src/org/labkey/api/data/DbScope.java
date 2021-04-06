@@ -71,6 +71,7 @@ import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -107,18 +108,16 @@ public class DbScope
 {
     private static final Logger LOG = LogManager.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
-    private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
+    private static final Map<String, DbScopeLoader> _scopeLoaders = new LinkedHashMap<>();
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
-    private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
+    private static final Map<String, Throwable> _dataSourceFailures = new ConcurrentHashMap<>();
     // Cache for schema metadata XML files, shared across the whole server
     private static final ModuleResourceCache<Map<String, TablesDocument>> SCHEMA_XML_CACHE =
         ModuleResourceCaches.create("Parsed schema XML metadata", new SchemaXmlCacheHandler(), ResourceRootProvider.getStandard(QueryService.MODULE_SCHEMAS_PATH));
 
-    private static DbScope _labkeyScope = null;
+    private static volatile DbScope _labkeyScope = null;
 
-    private final String _dsName;
-    private final String _displayName;
-    private final DataSource _dataSource;
+    private final DbScopeLoader _dbScopeLoader;
     private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
     private final String _databaseProductName;
     private final String _databaseProductVersion;
@@ -128,8 +127,6 @@ public class DbScope
     private final SchemaTableInfoCache _tableCache;
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
-    private final LabKeyDataSourceProperties _labkeyProps;
-    private final DataSourceProperties _dsProps;
     private final boolean _rds;
 
     /**
@@ -239,12 +236,10 @@ public class DbScope
         }
     };
 
-    // Used only for testing
+    // Used only for testing and internal marker
     protected DbScope()
     {
-        _dsName = null;
-        _displayName = null;
-        _dataSource = null;
+        _dbScopeLoader = null;
         _databaseName = null;
         _databaseProductName = null;
         _databaseProductVersion = null;
@@ -252,11 +247,14 @@ public class DbScope
         _driverVersion = null;
         _schemaCache = null;
         _tableCache = null;
-        _labkeyProps = null;
-        _dsProps = null;
         _rds = false;
     }
 
+    // Used only for testing
+    public DbScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
+    {
+        this(new DbScopeLoader(dsName, dataSource, props));
+    }
 
     /**
      *  <p>Special LabKey-specific properties that administrators can add to labkey.xml and associate with a data source. To add support for a new property, simply
@@ -301,28 +299,29 @@ public class DbScope
         }
     }
 
-
     // Standard DbScope constructor. Attempt a (non-pooled) connection to the datasource to gather meta data properties.
     // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
-    public DbScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
+    public DbScope(DbScopeLoader loader) throws ServletException, SQLException
     {
-        try (Connection conn = dataSource.getConnection())
+        _dbScopeLoader = loader;
+
+        try (Connection conn = getRawConnection(loader.getDsProps()))
         {
             DatabaseMetaData dbmd = conn.getMetaData();
-            _dsProps = new DataSourceProperties(dsName, dataSource);
-            Integer maxTotal = _dsProps.getMaxTotal();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
 
             try
             {
-                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, isPrimaryDataSource(dsName));
+                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, isPrimaryDataSource(getDataSourceName()));
                 MemTracker.getInstance().remove(_dialect);
             }
             finally
             {
+                Integer maxTotal = getDataSourceProperties().getMaxTotal();
+
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 LOG.info("Initializing DbScope with the following configuration:" +
-                        "\n    DataSource Name:          " + dsName +
+                        "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
                         "\n    Server URL:               " + dbmd.getURL() +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
                         "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
@@ -332,49 +331,40 @@ public class DbScope
     (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : ""));
             }
 
-            _dsName = dsName;
-            _displayName = null != props.getDisplayName() ? props.getDisplayName() : extractDisplayName(_dsName);
-            _dataSource = dataSource;
-            _databaseName = _dialect.getDatabaseName(_dsProps);
+            _databaseName = _dialect.getDatabaseName(getDataSourceProperties());
             _databaseProductName = dbmd.getDatabaseProductName();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
-            _labkeyProps = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
             _rds = _dialect.isRds(this);
         }
     }
 
-    private static String extractDisplayName(String dsName)
-    {
-        if (dsName.endsWith("DataSource"))
-            return dsName.substring(0, dsName.length() - 10);
-        else
-            return dsName;
-    }
-
-
     public String toString()
     {
         return getDataSourceName();
     }
 
+    private DbScopeLoader getDbScopeLoader()
+    {
+        return _dbScopeLoader;
+    }
 
     public String getDataSourceName()
     {
-        return _dsName;
+        return getDbScopeLoader().getDsName();
     }
 
     public String getDisplayName()
     {
-        return _displayName;
+        return getDbScopeLoader().getDisplayName();
     }
 
     @JsonIgnore
     public DataSource getDataSource()
     {
-        return _dataSource;
+        return getDbScopeLoader().getDataSource();
     }
 
     public @Nullable String getDatabaseName()
@@ -386,7 +376,7 @@ public class DbScope
     {
         try
         {
-            return _dsProps.getUrl();
+            return getDataSourceProperties().getUrl();
         }
         catch (ServletException e)
         {
@@ -417,13 +407,13 @@ public class DbScope
 
     public LabKeyDataSourceProperties getLabKeyProps()
     {
-        return _labkeyProps;
+        return getDbScopeLoader().getLabKeyProps();
     }
 
     @JsonIgnore // this contains password, don't show
     public DataSourceProperties getDataSourceProperties()
     {
-        return _dsProps;
+        return getDbScopeLoader().getDsProps();
     }
 
     /**
@@ -853,7 +843,7 @@ public class DbScope
     {
         try
         {
-            Connection raw = getRawConnection(_dsProps);
+            Connection raw = getRawConnection(getDbScopeLoader().getDsProps());
             return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
@@ -936,7 +926,7 @@ public class DbScope
     @JsonIgnore
     public Class getDelegateClass()
     {
-        try (Connection conn = _dataSource.getConnection())
+        try (Connection conn = getDataSource().getConnection())
         {
             Connection delegate = getDelegate(conn);
             return delegate.getClass();
@@ -961,9 +951,9 @@ public class DbScope
         synchronized (_transaction)
         {
             log.info("Data source " + toString() +
-                    ". Max connections: " + _dsProps.getMaxTotal() +
-                    ", active: " + _dsProps.getNumActive() +
-                    ", idle: " + _dsProps.getNumIdle());
+                    ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
+                    ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
+                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle());
 
             if (_transaction.isEmpty())
             {
@@ -1006,11 +996,11 @@ public class DbScope
 
         try
         {
-            conn = _dataSource.getConnection();
+            conn = getDataSource().getConnection();
         }
         catch (SQLException e)
         {
-            throw new ConfigurationException("Can't create a database connection to " + _dataSource.toString(), e);
+            throw new ConfigurationException("Can't create a database connection to " + getDataSource().toString(), e);
         }
 
         if (!conn.getAutoCommit())
@@ -1359,9 +1349,9 @@ public class DbScope
 
     private static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources)
     {
-        synchronized (_scopes)
+        synchronized (_scopeLoaders)
         {
-            if (!_scopes.isEmpty())
+            if (!_scopeLoaders.isEmpty())
                 throw new IllegalStateException("DbScopes are already initialized");
 
             if (!dataSources.containsKey(labkeyDsName))
@@ -1380,59 +1370,40 @@ public class DbScope
 
             for (String dsName : dsNames)
             {
-                try
+                // Attempt to create databases in data sources required by modules
+                if (moduleDataSources.contains(dsName))
                 {
-                    // Attempt to create databases in data sources required by modules
-                    if (moduleDataSources.contains(dsName))
+                    try
                     {
-                        try
-                        {
-                            ensureDatabase(dsName);
-                        }
-                        catch (Throwable t)
-                        {
-                            // Database creation failed, but the data source may still be usable for external schemas
-                            // (e.g., a MySQL data source), so continue on and attempt to initialize the scope
-                            LOG.info("Failed to create database", t);
-                            addDataSourceFailure(dsName, t);
-                        }
+                        ensureDatabase(dsName);
                     }
-
-                    Map<String, String> dsProperties = new HashMap<>();
-                    ServletContext ctx = ModuleLoader.getServletContext();
-
-                    IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
-                        if (name.startsWith(dsName + ":"))
-                            dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
-                    });
-
-                    LabKeyDataSourceProperties dsPropertiesBean = LabKeyDataSourceProperties.get(dsProperties);
-                    if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())
+                    catch (Throwable t)
                     {
-                        LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
-                        dsPropertiesBean.setLogQueries(false);
+                        // Database creation failed, but the data source may still be usable for external schemas
+                        // (e.g., a MySQL data source), so continue on and attempt to initialize the scope
+                        LOG.info("Failed to create database", t);
+                        addDataSourceFailure(dsName, t);
                     }
-                    addScope(dsName, dataSources.get(dsName), dsPropertiesBean);
                 }
-                catch (Throwable e)
+
+                Map<String, String> dsProperties = new HashMap<>();
+                ServletContext ctx = ModuleLoader.getServletContext();
+
+                IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
+                    if (name.startsWith(dsName + ":"))
+                        dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
+                });
+
+                LabKeyDataSourceProperties dsPropertiesBean = LabKeyDataSourceProperties.get(dsProperties);
+                if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())
                 {
-                    // Server can't start up if it can't connect to the labkey data source
-                    if (dsName.equals(labkeyDsName))
-                    {
-                        // Rethrow a ConfigurationException -- it includes important details about the failure
-                        if (e instanceof ConfigurationException)
-                            throw (ConfigurationException)e;
-
-                        throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.", e);
-                    }
-
-                    // Failure to connect with any other datasource results in an error message, but doesn't halt startup  
-                    LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session.", e);
-                    addDataSourceFailure(dsName, e);
+                    LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
+                    dsPropertiesBean.setLogQueries(false);
                 }
+                addScope(dsName, dataSources.get(dsName), dsPropertiesBean);
             }
 
-            _labkeyScope = _scopes.get(labkeyDsName);
+            _labkeyScope = getDbScope(labkeyDsName);
 
             if (null == _labkeyScope)
                 throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
@@ -1441,14 +1412,13 @@ public class DbScope
         }
     }
 
-    public static void addScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
+    public static void addScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props)
     {
-        DbScope scope = new DbScope(dsName, dataSource, props);
-        scope.getSqlDialect().prepare(scope);
+        DbScopeLoader loader = new DbScopeLoader(dsName, dataSource, props);
 
-        synchronized (_scopes)
+        synchronized (_scopeLoaders)
         {
-            _scopes.put(dsName, scope);
+            _scopeLoaders.put(dsName, loader);
         }
     }
 
@@ -1606,7 +1576,7 @@ public class DbScope
 
 
     // Store the initial failure message for each data source
-    private static void addDataSourceFailure(String dsName, Throwable t)
+    static void addDataSourceFailure(String dsName, Throwable t)
     {
         if (!_dataSourceFailures.containsKey(dsName))
             //noinspection ThrowableResultOfMethodCallIgnored
@@ -1623,10 +1593,7 @@ public class DbScope
 
     public static DbScope getLabKeyScope()
     {
-        synchronized (_scopes)
-        {
-            return _labkeyScope;
-        }
+        return _labkeyScope;
     }
 
 
@@ -1639,30 +1606,52 @@ public class DbScope
     @Nullable
     public static DbScope getDbScope(String dsName)
     {
-        synchronized (_scopes)
+        DbScopeLoader loader;
+
+        synchronized (_scopeLoaders)
         {
-            return _scopes.get(dsName);
+            loader = _scopeLoaders.get(dsName);
+        }
+
+        return null != loader ? loader.get() : null;
+    }
+
+    private static @NotNull Collection<DbScopeLoader> getLoaders()
+    {
+        synchronized (_scopeLoaders)
+        {
+            return new LinkedList<>(_scopeLoaders.values());
         }
     }
 
-    public static Collection<DbScope> getDbScopes()
+    /**
+     * Ensures that initialization has been attempted on all DbScopes and returns those that were successfully initialized
+     * @return A collection of DbScopes
+     */
+    public static @NotNull Collection<DbScope> getDbScopes()
     {
-        synchronized (_scopes)
-        {
-            return new ArrayList<>(_scopes.values());
-        }
+        return getLoaders().stream()
+            .map(DbScopeLoader::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns all DbScopes that have been successfully initialized, ignoring those that haven't been initialized yet
+     * @return A collection of initialized DbScopes
+     */
+    private static @NotNull Collection<DbScope> getInitializedDbScopes()
+    {
+        return getLoaders().stream()
+            .map(DbScopeLoader::getIfPresent)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     }
 
     /** Shuts down any connections associated with DbScopes that have been handed out to the current thread */
     public static void closeAllConnectionsForCurrentThread()
     {
-        Collection<DbScope> scopes;
-        synchronized (_scopes)
-        {
-            scopes = new ArrayList<>(_scopes.values());
-        }
-
-        for (DbScope scope : scopes)
+        for (DbScope scope : getInitializedDbScopes())
         {
             TransactionImpl t = scope.getCurrentTransactionImpl();
             int count = 0;
