@@ -33,7 +33,7 @@ public class SampleDatasetTable extends DatasetTableImpl
 
         TableInfo sampleResultTable = getSamplesTable();
         ExpObject publishSource = _dsd.resolvePublishSource();
-        if (sampleResultTable != null && publishSource instanceof ExpProtocol)
+        if (sampleResultTable != null && publishSource instanceof ExpSampleType)
         {
             for (final ColumnInfo columnInfo : sampleResultTable.getColumns())
             {
@@ -109,7 +109,7 @@ public class SampleDatasetTable extends DatasetTableImpl
                 return null;
 
             ExpSampleType sampleType = (ExpSampleType)source;
-            UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), SamplesSchema.SCHEMA_NAME);
+            UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
             if (userSchema != null)
                 _sampleResultTable = userSchema.getTable(sampleType.getName());
         }
