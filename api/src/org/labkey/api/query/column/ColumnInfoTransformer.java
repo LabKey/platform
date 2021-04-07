@@ -15,13 +15,13 @@
  */
 package org.labkey.api.query.column;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.MutableColumnInfo;
 
 import java.util.function.UnaryOperator;
 
 /**
  * Created by adam on 1/17/2016.
  */
-public interface ColumnInfoTransformer extends UnaryOperator<ColumnInfo>
+public interface ColumnInfoTransformer extends UnaryOperator<MutableColumnInfo>
 {
 }

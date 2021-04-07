@@ -2365,7 +2365,6 @@ internal/src/org/labkey/api/util/wiki_markup.properties -text
 internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
-internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
 internal/src/org/labkey/api/webdav/FileSystemBatchAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemResource.java -text

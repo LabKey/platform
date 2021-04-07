@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -69,6 +70,18 @@ public interface ComplianceService
     }
 
     /**
+     * Get the compliance folder settings.
+     * @throws org.labkey.api.view.UnauthorizedException if the user doesn't have sufficient permissions.
+     */
+    ComplianceFolderSettings getFolderSettings(@NotNull Container container, @NotNull User user) throws UnauthorizedException;
+
+    /**
+     * Update the compliance folder settings.
+     * @throws org.labkey.api.view.UnauthorizedException if the user doesn't have sufficient permissions.
+     */
+    void setFolderSettings(@NotNull Container container, @NotNull User user, @NotNull ComplianceFolderSettings settings);
+
+    /**
      * CRD operations for signed snapshots
      */
     Integer insertSignedSnapshot(Container container, User user, SignedSnapshot snapshot, ByteArrayAttachmentFile file) throws IOException;
@@ -110,9 +123,16 @@ public interface ComplianceService
         {
             return null;
         }
-        public String getPHIBanner(ViewContext viewContext)
+
+        @Override
+        public ComplianceFolderSettings getFolderSettings(@NotNull Container container, @NotNull User user) throws UnauthorizedException
         {
             return null;
+        }
+
+        @Override
+        public void setFolderSettings(@NotNull Container container, @NotNull User user, @NotNull ComplianceFolderSettings settings)
+        {
         }
 
         @Override

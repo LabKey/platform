@@ -61,7 +61,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
@@ -1030,12 +1029,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
     public boolean canAccessPhi(User user)
     {
-        ComplianceService complianceService = ComplianceService.get();
         if (canRead(user))
         {
             DatasetSchemaTableInfo table = getTableInfo(user);
             if (null != table)
-                return table.getMaxContainedPhi().isLevelAllowed(complianceService.getMaxAllowedPhi(getContainer(), user));
+                return table.canUserAccessPhi();
         }
         return false;
     }
@@ -1292,7 +1290,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         TableInfo _storage;
         TableInfo _template;
-        private final PHI _maxContainedPhi;       // Max PHI of properites in dataset
+        final PHI _maxAllowed;
 
 
         private ColumnInfo getStorageColumn(String name)
@@ -1321,7 +1319,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
-            PHI maxContainedPhi = PHI.NotPHI;
+            _maxAllowed = ComplianceService.get().getMaxAllowedPhi(_container, user);
 
             // ParticipantId
 
@@ -1419,9 +1417,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             for (DomainProperty p : properties)
             {
-                if (maxContainedPhi.getRank() < p.getPHI().getRank())
-                    maxContainedPhi = p.getPHI();
-
                 if (null != getColumn(p.getName()))
                 {
                     BaseColumnInfo builtin = (BaseColumnInfo)getColumn(p.getName());
@@ -1480,8 +1475,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                     wrapped.setMvColumnName(mvColumn.getFieldKey());
                 }
             }
-
-            _maxContainedPhi = maxContainedPhi;
 
             // If we have an extra key, and it's server-managed, make it non-editable
             if (def.getKeyManagementType() != KeyManagementType.None)
@@ -1626,9 +1619,19 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             return m;
         }
 
-        public PHI getMaxContainedPhi()
+        @Override
+        public PHI getUserMaxAllowedPhiLevel()
         {
-            return _maxContainedPhi;
+            return _maxAllowed;
+        }
+
+        /**
+         * Return true if the current user is allowed the maximum phi level set across all columns.
+         */
+        @Override
+        public boolean canUserAccessPhi()
+        {
+            return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
         }
 
         @Override
