@@ -35,7 +35,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -55,11 +54,9 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
@@ -543,17 +540,6 @@ public class DatasetQueryView extends StudyQueryView
                     getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
-    }
-
-    private PHI getMaxContainedPhi()
-    {
-        TableInfo tableInfo = getTable();
-        if (tableInfo instanceof DatasetTableImpl)
-        {
-            if (((DatasetTableImpl)tableInfo).getRealTable() instanceof DatasetDefinition.DatasetSchemaTableInfo)
-                return ((DatasetDefinition.DatasetSchemaTableInfo)((DatasetTableImpl)tableInfo).getRealTable()).getMaxContainedPhi();
-        }
-        return PHI.NotPHI;
     }
 
     private boolean hasSourceLsids()

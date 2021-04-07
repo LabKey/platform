@@ -56,7 +56,26 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             abbreviation: 'Calc',
             label: 'Calculated',
             description: 'This column contains a calculated expression'
-        }
+        },
+        phi: {
+            enumeration: {
+                PHI: {
+                    abbreviation: 'PHI',
+                    label: 'Full PHI',
+                    description: 'This column contains PHI',
+                },
+                Limited: {
+                    abbreviation: 'LimPHI',
+                    label: 'Limited PHI',
+                    description: 'This column contains PHI',
+                },
+                Restricted: {
+                    abbreviation: 'ResPHI',
+                    label: 'Restricted PHI',
+                    description: 'This column contains PHI',
+                }
+            },
+        },
     },
 
     tableCols : [{
@@ -144,7 +163,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         for (attrName in this.attrMap) {
             if (this.attrMap.hasOwnProperty(attrName)) {
                 attr = this.attrMap[attrName];
-                if (attr.negate ? !col[attrName] : col[attrName]) {
+                let value = col[attrName];
+                if (attr.enumeration && attr.enumeration[value]) {
+                    attrs[value] = attr.enumeration[value];
+                }
+                else if (attr.negate ? !value : value) {
                     if (attr.trump) {
                         return this.formatAttribute(attr);
                     }

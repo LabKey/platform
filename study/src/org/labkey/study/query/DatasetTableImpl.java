@@ -487,7 +487,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     @Override
-    public Set<FieldKey> getPHIDataLoggingColumns()
+    public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
     {
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         Set<FieldKey> loggingColumns = new HashSet<>(1);
@@ -504,7 +504,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     @Override
-    public String getPHILoggingComment()
+    protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
         return "PHI accessed in dataset. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
     }

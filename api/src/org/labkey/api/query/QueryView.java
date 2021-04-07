@@ -2111,16 +2111,22 @@ public class QueryView extends WebPartView<Object>
                     .collect(Collectors.toList()));
         }
 
+        TableInfo table = getTable();
+        if (table instanceof FilteredTable && ((FilteredTable) table).hasRulesOmittedColumns())
+        {
+            rgn.addMessageSupplier(x -> List.of(new DataRegion.Message("PHI protected columns have been omitted", DataRegion.MessageType.WARNING, DataRegion.MessagePart.header)));
+        }
+
         // Allow region to specify header lock, optionally override
         if (rgn.getAllowHeaderLock())
             rgn.setAllowHeaderLock(getSettings().getAllowHeaderLock());
 
-        rgn.setTable(getTable());
+        rgn.setTable(table);
 
         if (isShowConfiguredButtons())
         {
             // We first apply the button bar config from the table:
-            ButtonBarConfig tableBarConfig = getTable() == null ? null : getTable().getButtonBarConfig();
+            ButtonBarConfig tableBarConfig = table == null ? null : table.getButtonBarConfig();
             if (tableBarConfig != null)
                 rgn.addButtonBarConfig(tableBarConfig);
             // Then any overriding button bar config (from javascript) is applied:
@@ -2128,7 +2134,6 @@ public class QueryView extends WebPartView<Object>
                 rgn.addButtonBarConfig(_buttonBarConfig);
         }
 
-        TableInfo table = getTable();
         if (table != null && table.getAggregateRowConfig() != null)
         {
             rgn.setAggregateRowConfig(table.getAggregateRowConfig());

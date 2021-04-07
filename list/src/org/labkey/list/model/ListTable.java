@@ -22,14 +22,11 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
@@ -57,7 +54,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -74,20 +70,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI;
 
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
     private final ListDefinition _list;
     private static final Logger LOG = LogManager.getLogger(ListTable.class);
-    private final boolean _allowMaxPhi;
-    private final PHI _maxUserPhi;
+    private final boolean _canAccessPhi;
 
     public ListTable(ListQuerySchema schema, @NotNull ListDefinition listDef, @NotNull Domain domain)
     {
@@ -95,8 +85,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         setName(listDef.getName());
         setDescription(listDef.getDescription());
         _list = listDef;
-        _maxUserPhi = ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
-        _allowMaxPhi = isMaxPhiAllowed();
         List<ColumnInfo> defaultColumnsCandidates = new ArrayList<>();
 
         assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
@@ -280,13 +268,15 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             addColumn(entityId);
         }
 
+        _canAccessPhi = canUserAccessPhi();
+
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(_userSchema.getContainer()), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
 
         if (null != colKey)
             setDetailsURL(new DetailsURL(_list.urlDetails(null, _userSchema.getContainer()), Collections.singletonMap("pk", colKey.getAlias())));
 
-        if (!listDef.getAllowUpload() || !_allowMaxPhi)
+        if (!listDef.getAllowUpload() || !_canAccessPhi)
             setImportURL(LINK_DISABLER);
         else
         {
@@ -294,10 +284,10 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
             setImportURL(new DetailsURL(importURL));
         }
 
-        if (!listDef.getAllowDelete() || !_allowMaxPhi)
+        if (!listDef.getAllowDelete() || !_canAccessPhi)
             setDeleteURL(LINK_DISABLER);
 
-        if (!_allowMaxPhi)
+        if (!_canAccessPhi)
         {
             setInsertURL(LINK_DISABLER);
             setUpdateURL(LINK_DISABLER);
@@ -326,39 +316,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         return true;
     }
 
-    @Override
-    public Set<FieldKey> getPHIDataLoggingColumns()
-    {
-        if (getUserSchema().getUser().isServiceUser())
-            return Collections.emptySet();
-        else
-        {
-            Set<FieldKey> loggingColumns = new LinkedHashSet<>();
-            if (!getRealTable().getColumns().isEmpty()) // it shouldn't be, as it should at least have the standard tracking columns even on initial creation
-            {
-                if (_list != null && _list.getKeyName() != null && getRealTable().getColumn(_list.getKeyName()) != null)
-                    loggingColumns.add(getRealTable().getColumn(_list.getKeyName()).getFieldKey());
-                // Also log any participantId columns, but only if the user is allowed to see them. Otherwise the value wouldn't be in the SELECT list to log.
-                loggingColumns.addAll(getRealTable().getColumns().stream()
-                        .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(_maxUserPhi))
-                        .map(ColumnInfo::getFieldKey).collect(Collectors.toSet()));
-            }
-            return loggingColumns;
-        }
-    }
-
-    @Override
-    public String getPHILoggingComment()
-    {
-/*        return getPHIDataLoggingColumns().stream().map(FieldKey::getName)                        // TODO; restore map if we can get it to work again
-                .collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));         */
-        List<String> names = new ArrayList<>();
-        getPHIDataLoggingColumns().forEach(fieldKey -> {
-            names.add(fieldKey.getName());
-        });
-        return names.stream().collect(Collectors.joining(", ", "PHI accessed in list. Data shows ", "."));
-    }
-
     /**
      * For logging, replace the provisioned table name with the nicer name
      */
@@ -379,19 +336,6 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         var col = super.addWrapColumn(column);
         col.getColumnLogging().setOriginalTableName(getName());
         return col;
-    }
-
-    /**
-     * Return true if the user is allowed the maximum phi level set across all list columns
-     */
-    private boolean isMaxPhiAllowed()
-    {
-        final PHI[] maxPHI = {PHI.NotPHI};
-        getRealTable().getColumns().stream()
-                .max(Comparator.comparing(ColumnRenderProperties::getPHI))
-                .ifPresent(c -> maxPHI[0] = c.getPHI());
-
-        return maxPHI[0].isLevelAllowed(_maxUserPhi);
     }
 
     private String findTitleColumn(ListDefinition listDef, ColumnInfo colKey)
@@ -423,9 +367,9 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         boolean gate = true;
         if (InsertPermission.class.equals(perm) || UpdatePermission.class.equals(perm))
-            gate = _allowMaxPhi;
+            gate = _canAccessPhi;
         else if (DeletePermission.class.equals(perm))
-            gate = _allowMaxPhi && _list.getAllowDelete();
+            gate = _canAccessPhi && _list.getAllowDelete();
         return gate && _list.getContainer().hasPermission(user, perm);
     }
 
