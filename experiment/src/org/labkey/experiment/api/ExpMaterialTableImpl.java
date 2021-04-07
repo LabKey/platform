@@ -148,13 +148,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case RootMaterialLSID:
-                return wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+                columnInfo.setSqlTypeName("lsidtype");
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
+                return columnInfo;
+            }
             case AliquotedFromLSID:
-                return wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+                columnInfo.setSqlTypeName("lsidtype");
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
+                return columnInfo;
+            }
             case IsAliquot:
             {
+                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN RootMaterialLSID IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
