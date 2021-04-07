@@ -55,7 +55,6 @@ public class SampleTypeContentsView extends QueryView
         return deriveButton;
     }
 
-    // Rosaline temp note: V similar to ResultsQueryView's createDataView
     @Override
     public DataView createDataView()
     {
@@ -81,7 +80,7 @@ public class SampleTypeContentsView extends QueryView
         ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(container);
         view.getDataRegion().addHiddenFormField("rowId", String.valueOf(rowId));
 
-        linkToStudyURL.deleteParameters(); //Rosaline temp note: this code is similar to ResultsQueryView, populateButtonBar
+        linkToStudyURL.deleteParameters();
 
 //        TODO: containerFilterName
 //        if (getTable().getContainerFilter() != null && getTable().getContainerFilter().getType() != null)

@@ -19,7 +19,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
@@ -73,7 +72,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             _rowId = rowId;
         }
 
-        // Rosaline temp note: Parts v similar to assay case here
         public ExpSampleType getSampleType()
         {
             if (_sampleType == null)
@@ -96,6 +94,52 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         {
             _sampleType = sampleType;
         }
+    }
+
+    /**
+     * Names need to match those found in PublishConfirmForm.DefaultValueSource
+     */
+    public enum DefaultValueSource
+    {
+        PublishSource
+                {
+                    @Override
+                    public FieldKey getParticipantIDFieldKey(String participantId)
+                    {
+                        return FieldKey.fromParts(participantId);
+                    }
+                    @Override
+                    public FieldKey getVisitIDFieldKey(String visitId, String date)
+                    {
+                        return FieldKey.fromParts(visitId);
+                    }
+                },
+        UserSpecified
+                {
+                    @Override
+                    public FieldKey getParticipantIDFieldKey(String participantId)
+                    {
+                        return null;
+                    }
+                    @Override
+                    public FieldKey getVisitIDFieldKey(String visitId, String date)
+                    {
+                        return null;
+                    }
+                };
+
+        public abstract FieldKey getParticipantIDFieldKey(String participantId);
+        public abstract FieldKey getVisitIDFieldKey(String visitId, String date);
+    }
+
+    public SamplesSchema getSampleTypeSchema()
+    {
+        return _sampleTypeSchema;
+    }
+
+    public void setSampleTypeSchema(SamplesSchema sampleTypeSchema)
+    {
+        _sampleTypeSchema = sampleTypeSchema;
     }
 
     public ExpSampleType getSampleType()
@@ -138,107 +182,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         _date = date;
     }
 
-    @Override
-    public boolean handlePost(SampleTypePublishConfirmForm form, BindException errors) throws Exception
-    {
-        intializeFieldKeys(form.getSampleType());
-        return super.handlePost(form, errors);
-    }
-
-    /**
-     * Names need to match those found in PublishConfirmForm.DefaultValueSource
-     */
-    public enum DefaultValueSource
-    {
-        PublishSource
-                {
-                    @Override
-                    public FieldKey getParticipantIDFieldKey(String participantId)
-                    {
-                        return FieldKey.fromParts(participantId);
-                    }
-                    @Override
-                    public FieldKey getVisitIDFieldKey(String visitId, String date)
-                    {
-                        return FieldKey.fromParts(visitId);
-                    }
-                },
-        UserSpecified
-            {
-                @Override
-                public FieldKey getParticipantIDFieldKey(String participantId)
-                {
-                    return null;
-                }
-                @Override
-                public FieldKey getVisitIDFieldKey(String visitId, String date)
-                {
-                    return null;
-                }
-            };
-
-        public abstract FieldKey getParticipantIDFieldKey(String participantId);
-        public abstract FieldKey getVisitIDFieldKey(String visitId, String date);
-    }
-
-    @Override
-    public void validateCommand(SampleTypePublishConfirmForm form, Errors errors)
-    {
-        super.validateCommand(form, errors);
-        _sampleType = form.getSampleType();
-    }
-
-    @Override
-    public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
-    {
-        if (form.getDefaultValueSource().equals("Assay"))
-            form.setDefaultValueSource("SampleType");
-
-        if (_sampleType == null)
-            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>Could not resolve the source Sample Type.</span>"));
-
-        return super.getView(form, reshow, errors);
-    }
-
-    @Override
-    protected SamplesSchema getUserSchema(SampleTypePublishConfirmForm form)
-    {
-        _sampleTypeSchema = (SamplesSchema) QueryService.get().getUserSchema(form.getUser(), getContainer(), SamplesSchema.SCHEMA_SAMPLES);
-        return _sampleTypeSchema;
-    }
-
-    @Override
-    protected QuerySettings getQuerySettings(SampleTypePublishConfirmForm form)
-    {
-        String queryName = form.getSampleType().getName();
-        QuerySettings qs = new QuerySettings(form.getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
-        qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
-        qs.setQueryName(queryName);
-
-        getUserSchema(form);
-
-        return qs;
-    }
-
-    @Override
-    protected boolean isMismatchedSpecimenInfo(SampleTypePublishConfirmForm form)
-    {
-        return false;
-    }
-
-    @Override
-    protected ActionURL getPublishHandlerURL(SampleTypePublishConfirmForm form)
-    {
-        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType).deleteParameters();
-    }
-
-    @Override
-    protected FieldKey getObjectIdFieldKey(SampleTypePublishConfirmForm form)
-    {
-        return FieldKey.fromParts(ROW_ID);
-    }
-
-    private void intializeFieldKeys(ExpSampleType sampleType)
+    private void initializeFieldKeys(ExpSampleType sampleType)
     {
         if (null == _participantId || (null == _visitId && null == _date))
         {
@@ -281,6 +225,58 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
+    public void validateCommand(SampleTypePublishConfirmForm form, Errors errors)
+    {
+        super.validateCommand(form, errors);
+        _sampleType = form.getSampleType();
+    }
+
+    @Override
+    public boolean handlePost(SampleTypePublishConfirmForm form, BindException errors) throws Exception
+    {
+        initializeFieldKeys(form.getSampleType());
+        return super.handlePost(form, errors);
+    }
+
+    @Override
+    protected SamplesSchema getUserSchema(SampleTypePublishConfirmForm form)
+    {
+        _sampleTypeSchema = (SamplesSchema) QueryService.get().getUserSchema(form.getUser(), getContainer(), SamplesSchema.SCHEMA_SAMPLES);
+        return _sampleTypeSchema;
+    }
+
+    @Override
+    protected QuerySettings getQuerySettings(SampleTypePublishConfirmForm form)
+    {
+        String queryName = form.getSampleType().getName();
+        QuerySettings qs = new QuerySettings(form.getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
+        qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
+        qs.setQueryName(queryName);
+
+        getUserSchema(form);
+
+        return qs;
+    }
+
+    @Override
+    protected boolean isMismatchedSpecimenInfo(SampleTypePublishConfirmForm form)
+    {
+        return false;
+    }
+
+    @Override
+    protected ActionURL getPublishHandlerURL(SampleTypePublishConfirmForm form)
+    {
+        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType).deleteParameters();
+    }
+
+    @Override
+    protected FieldKey getObjectIdFieldKey(SampleTypePublishConfirmForm form)
+    {
+        return FieldKey.fromParts(ROW_ID);
+    }
+
+    @Override
     protected Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(SampleTypePublishConfirmForm form)
     {
         String valueSource = form.getDefaultValueSource();
@@ -311,6 +307,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     // TODO Rosaline: should delegate to the sample type service still?
+
     @Override
     protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
@@ -356,6 +353,18 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         return StudyPublishService.get().publishData(getUser(), form.getContainer(), targetStudy, sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                 dataMaps, "RowId", errors);
+    }
+
+    @Override
+    public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
+    {
+        if (form.getDefaultValueSource().equals("Assay"))
+            form.setDefaultValueSource("SampleType");
+
+        if (_sampleType == null)
+            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>Could not resolve the source Sample Type.</span>"));
+
+        return super.getView(form, reshow, errors);
     }
 
     @Override

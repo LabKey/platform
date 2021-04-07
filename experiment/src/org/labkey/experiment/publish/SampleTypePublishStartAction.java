@@ -77,9 +77,6 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
             _rowId = rowId;
         }
 
-        // Rosaline Temp Note
-        // For current case, the page showSampleType of some rowId: getShowSampleTypeURL
-        // We shouldn't need it -- only gets triggered if _sampleTypeIds is true
         @Override
         public @Nullable ActionURL getReturnActionURL()
         {
@@ -104,14 +101,10 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         return url;
     }
 
-    // Rosaline Temp Note
-    // How we identify data -- row ids from sample type result domain
-    // taking the form that gets passed from the startUrl which will either have the rowIds of the samples selected,
-    // or the sample type id, and then the goal is to turn it into a list of object ids, that we pass back.
     @Override
     protected List<Integer> getDataIDs(SampleTypePublishStartForm form)
     {
-        // Rosaline TODO in later story: Support  SampleType-level links
+        // Rosaline TODO in later story: Support SampleType-level links
         if (_ids.isEmpty())
         {
             _ids = getCheckboxIds(getViewContext());
@@ -120,20 +113,23 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         return _ids;
     }
 
-    // Rosaline Temp Note
-    // list of sample types
     @Override
     protected List<Integer> getBatchIds()
     {
         return _sampleTypeIds;
     }
 
-    // Rosaline Temp Note
-    // Double-check this
     @Override
     protected String getBatchNoun()
     {
         return "Sample Type";
+    }
+
+    @Override
+    public ModelAndView getView(SampleTypePublishStartForm form, BindException errors)
+    {
+        getDataIDs(form);
+        return super.getView(form, errors);
     }
 
     @Override
@@ -143,16 +139,5 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType)); // need ExpSampleType
         root.addChild("Link to Study: Choose Target");
-    }
-
-    @Override
-    public ModelAndView getView(SampleTypePublishStartForm form, BindException errors)
-    {
-        // Rosaline Temp Note: Do we also need to do this line below from assay? Check it out
-        // If the TargetStudy column is on the result domain, redirect past the choose target study page directly to the confirm page.
-
-        getDataIDs(form);
-
-        return super.getView(form, errors);
     }
 }
