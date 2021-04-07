@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.2.2",
-    "@labkey/components": "2.22.1-fb-filesForSampleAndSource.0",
+    "@labkey/components": "2.22.1-fb-filesForSampleAndSource.1",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.0.2"
   },
