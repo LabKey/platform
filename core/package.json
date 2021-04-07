@@ -54,7 +54,7 @@
     "@labkey/api": "1.2.1",
     "@labkey/components": "2.20.1",
     "@labkey/eslint-config-react": "0.0.8",
-    "@labkey/themes": "1.0.2"
+    "@labkey/themes": "1.1.0"
   },
   "devDependencies": {
     "@labkey/build": "2.1.0",
