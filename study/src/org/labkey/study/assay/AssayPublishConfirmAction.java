@@ -190,7 +190,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     protected FieldKey getObjectIdFieldKey(AssayPublishConfirmForm form)
     {
-        return form.getProvider().getTableMetadata(_protocol).getResultRowIdFieldKey(); // it's just name-> "RowId"????
+        return form.getProvider().getTableMetadata(_protocol).getResultRowIdFieldKey();
     }
 
     @Override

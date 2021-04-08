@@ -104,7 +104,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     @Override
     protected List<Integer> getDataIDs(SampleTypePublishStartForm form)
     {
-        // Rosaline TODO in later story: Support SampleType-level links
+        // TODO in later story within epic: Support SampleType-level links
         if (_ids.isEmpty())
         {
             _ids = getCheckboxIds(getViewContext());
@@ -137,7 +137,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     {
         setHelpTopic(new HelpTopic("linkSampleData"));
         root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
-        root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType)); // need ExpSampleType
+        root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         root.addChild("Link to Study: Choose Target");
     }
 }

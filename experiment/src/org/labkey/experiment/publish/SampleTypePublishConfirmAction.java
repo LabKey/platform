@@ -292,7 +292,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         setHelpTopic(new HelpTopic("linkSampleData"));
         root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         if (_sampleType != null)
-            root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType)); // need ExpSampleType
+            root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         if (_targetStudyName != null)
             root.addChild("Copy to " + _targetStudyName + ": Verify Results");
     }
