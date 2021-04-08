@@ -141,18 +141,9 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
         // Issue42885: Upon detecting the parameter substitution pattern ('${someVariable}') we attempt to replace it
         // with the passed dynamic variable value existing on 'authConfig'. If we cannot, we replace the pattern with
         // the text 'someVariable' itself.
-        let stringTemplatedHtml = html;
-        const match = /\${(.*?)}/;
-        const matchResults = match.exec(html);
-        if (matchResults) {
-            const matchedTemplate = matchResults[0];
-            const matchedString = matchResults[1];
-            const replacementVar = authConfig[matchedString];
-            stringTemplatedHtml = html.replace(
-                matchedTemplate,
-                replacementVar ? replacementVar.toString() : matchedString
-            );
-        }
+        const stringTemplatedHtml = html.replace(/\${(.*?)}/g, (match, value) => {
+            return encodeURI(authConfig[value] ? authConfig[value].toString() : value);
+        });
 
         return (
             <div className="modal__fixed-html-field">
