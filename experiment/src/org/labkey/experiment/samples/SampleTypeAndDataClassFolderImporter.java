@@ -103,9 +103,13 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
                     if (file.startsWith(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX))
+                    {
                         sampleTypeDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.SAMPLE_TYPE_PREFIX.length())), file);
+                    }
                     else if (file.startsWith(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX))
+                    {
                         dataClassDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.DATA_CLASS_PREFIX.length())), file);
+                    }
                 }
             }
 
@@ -222,10 +226,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                 if (dataFileMap.containsKey(fileName))
                 {
                     String dataFileName = dataFileMap.get(fileName);
-                    log.info("Importing data file: " + dataFileName);
                     TableInfo tinfo = userSchema.getTable(tableName);
                     if (tinfo != null)
                     {
+                        log.info("Importing data file: " + dataFileName);
                         try (InputStream is = dir.getInputStream(dataFileName))
                         {
                             if (null != is)
@@ -264,13 +268,21 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                             }
                         }
                     }
+                    else
+                    {
+                        log.error("Failed to find table '" + schemaName + "." + tableName + "' to import data file: " + dataFileName);
+                    }
                 }
                 else
+                {
                     log.error("Unable to import TSV data for table " + tableName + ". File not found.");
+                }
             }
         }
         else
+        {
             log.error("Could not find " + schemaName + " schema.");
+        }
     }
 
     @Override

@@ -10,7 +10,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -54,7 +53,6 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -203,7 +201,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
-        // write out the sample rows that aren't participating in the derivation protocol
+        // write out the sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
         if (userSchema != null)
         {
@@ -238,7 +236,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
-        // write out the sample rows that aren't participating in the derivation protocol
+        // write out the DataClass rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
         if (userSchema != null)
         {

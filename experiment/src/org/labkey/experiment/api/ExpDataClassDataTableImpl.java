@@ -31,9 +31,9 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -48,7 +48,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -64,7 +63,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
-import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
@@ -305,11 +303,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         //TODO: may need to expose ExpData.Run as well
 
+        FieldKey lsidFieldKey = FieldKey.fromParts(Column.LSID.name());
+
         // Add the domain columns
         Collection<MutableColumnInfo> cols = new ArrayList<>(20);
         Set<String> skipCols = CaseInsensitiveHashSet.of("lsid", "rowid", "name", "classid");
         for (ColumnInfo col : extTable.getColumns())
         {
+            // Don't include PHI columns in full text search index
+            // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
+            if (schema.getUser().isSearchUser() && !col.getPHI().isLevelAllowed(PHI.NotPHI))
+                continue;
+
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
             String colName = col.getName();
             if (skipCols.contains(colName))
@@ -335,10 +340,26 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (col.isHidden())
                 wrapped.setHidden(true);
 
-            if (wrapped.isMvEnabled())
+            // Copy the property descriptor settings to the wrapped column.
+            // NOTE: The column must be configured before calling .addColumn() where the PHI ComplianceTableRules will be applied to the column.
+            String propertyURI = col.getPropertyURI();
+            DomainProperty dp = propertyURI != null ? _dataClass.getDomain().getPropertyByURI(propertyURI) : null;
+            PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
+            if (dp != null && pd != null)
             {
-                DomainProperty dp = _dataClass.getDomain().getPropertyByName(wrapped.getName());
-                if (dp != null)
+                PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey);
+                wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
+
+                if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                {
+                    wrapped.setURL(StringExpressionFactory.createURL(
+                            new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
+                                    .addParameter("lsid", "${LSID}")
+                                    .addParameter("name", "${" + col.getName() + "}")
+                    ));
+                }
+
+                if (wrapped.isMvEnabled())
                 {
                     // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
                     // it with a "MVIndicator" suffix (no underscore)
@@ -352,38 +373,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
                 }
             }
+
             addColumn(wrapped);
             cols.add(wrapped);
-        }
-
-        HashMap<String,DomainProperty> properties = new HashMap<>();
-        for (DomainProperty dp : getDomain().getProperties())
-            properties.put(dp.getPropertyURI(), dp);
-
-        FieldKey lsidFieldKey = FieldKey.fromParts(Column.LSID.name());
-        for (var col : cols)
-        {
-            String propertyURI = col.getPropertyURI();
-            if (null != propertyURI)
-            {
-                DomainProperty dp = properties.get(propertyURI);
-                PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
-
-                if (null != dp && null != pd)
-                {
-                    PropertyColumn.copyAttributes(_userSchema.getUser(), col, dp, getContainer(), lsidFieldKey);
-                    col.setFieldKey(FieldKey.fromParts(dp.getName()));
-
-                    if (pd.getPropertyType() == PropertyType.ATTACHMENT)
-                    {
-                        col.setURL(StringExpressionFactory.createURL(
-                                new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, schema.getContainer())
-                                    .addParameter("lsid", "${LSID}")
-                                    .addParameter("name", "${" + col.getName() + "}")
-                        ));
-                    }
-                }
-            }
 
             if (isVisibleByDefault(col))
                 defaultVisible.add(FieldKey.fromParts(col.getName()));
@@ -412,8 +404,17 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         rowIdCol.setURL(url);
         nameCol.setURL(url);
 
-        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
-        setDeleteURL(new DetailsURL(deleteUrl));
+        if (canUserAccessPhi())
+        {
+            ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
+            setDeleteURL(new DetailsURL(deleteUrl));
+        }
+        else
+        {
+            setImportURL(LINK_DISABLER);
+            setInsertURL(LINK_DISABLER);
+            setUpdateURL(LINK_DISABLER);
+        }
 
         setTitleColumn("Name");
         setDefaultVisibleColumns(defaultVisible);
@@ -676,8 +677,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             aliasColumns(_columnMapping, keys);
 
-            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(ExpDataTable.Column.RowId.name()));
-            String lsid = (String)JdbcType.VARCHAR.convert(keys.get(ExpDataTable.Column.LSID.name()));
+            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
+            String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
             if (null==rowid && null==lsid)
             {
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid'", keys);

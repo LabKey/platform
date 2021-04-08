@@ -31,8 +31,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.query.column.ColumnInfoTransformer;
-import org.labkey.api.query.column.MutableColumnInfoTransformer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.triggers.ScriptTriggerFactory;
 import org.labkey.api.data.triggers.Trigger;
@@ -54,6 +52,7 @@ import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -695,17 +694,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
 
-    public ColumnInfo transformColumn(MutableColumnInfo existing, @Nullable ColumnInfoTransformer t)
+    protected ColumnInfo transformColumn(MutableColumnInfo existing, @Nullable ColumnInfoTransformer t)
     {
         checkLocked();
         existing.checkLocked();
         if (null == t)
             return existing;
-        ColumnInfo updated;
-        if (t instanceof MutableColumnInfoTransformer)
-            updated = ((MutableColumnInfoTransformer) t).applyMutable(existing);
-        else
-            updated = t.apply(existing);
+        MutableColumnInfo updated = t.apply(existing);
         return replaceColumn(updated, existing);
     }
 
