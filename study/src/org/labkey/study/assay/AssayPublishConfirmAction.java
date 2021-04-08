@@ -50,19 +50,8 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
 
     public static class AssayPublishConfirmForm extends PublishConfirmForm
     {
-        private Integer _rowId;
         private ExpProtocol _protocol;
         private AssayProvider _provider;
-
-        public Integer getRowId()
-        {
-            return _rowId;
-        }
-
-        public void setRowId(Integer rowId)
-        {
-            _rowId = rowId;
-        }
 
         ExpProtocol getProtocol()
         {
@@ -236,22 +225,6 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.TargetStudy, tableMetadata.getTargetStudyFieldKey());
         }
         return additionalCols;
-    }
-
-    @Override
-    protected Map<String, Object> getHiddenFormFields(AssayPublishConfirmForm form)
-    {
-        Map<String, Object> fields = new HashMap<>();
-
-        fields.put("rowId", _protocol.getRowId());
-        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-        if (returnURL == null)
-        {
-            returnURL = getViewContext().getActionURL().toString();
-        }
-        fields.put(ActionURL.Param.returnUrl.name(), returnURL);
-
-        return fields;
     }
 
     /**

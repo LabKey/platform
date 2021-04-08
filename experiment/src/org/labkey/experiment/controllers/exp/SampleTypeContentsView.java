@@ -6,6 +6,7 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
@@ -19,7 +20,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -82,12 +82,9 @@ public class SampleTypeContentsView extends QueryView
 
         linkToStudyURL.deleteParameters();
 
-//        TODO: containerFilterName
-//        if (getTable().getContainerFilter() != null && getTable().getContainerFilter().getType() != null)
-//            publishURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
-        linkToStudyURL.addParameter("containerFilterName", "Current");
-
-        //_source.getRowId()
+        ContainerFilter containerFilter = view.getDataRegion().getTable().getContainerFilter();
+        if (containerFilter != null && containerFilter.getType() != null)
+            linkToStudyURL.addParameter("containerFilterName", containerFilter.getType().name());
 
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);

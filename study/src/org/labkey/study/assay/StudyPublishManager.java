@@ -384,7 +384,7 @@ public class StudyPublishManager implements StudyPublishService
             if (!errors.isEmpty())
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
-            convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+            convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris, publishSource.getKey().name());
 
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
@@ -571,7 +571,7 @@ public class StudyPublishManager implements StudyPublishService
         return true;
     }
 
-    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, String> propertyNamesToUris)
+    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, String> propertyNamesToUris, String publishSourceTypeName)
     {
         List<Map<String, Object>> ret = new ArrayList<>(dataMaps.size());
         for (Map<String, Object> dataMap : dataMaps)
@@ -591,7 +591,8 @@ public class StudyPublishManager implements StudyPublishService
                     if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         continue;
                 }
-                assert uri != null : "Expected all properties to already be present in assay type. Couldn't find one for " + entry.getKey(); //Rosaline: Flagged for ST link update
+
+                assert uri != null : String.format("Expected all properties to already be present in %s type. Couldn't find one for " + entry.getKey(), publishSourceTypeName);
                 newMap.put(uri, entry.getValue());
             }
             ret.add(newMap);

@@ -22,6 +22,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -51,26 +52,15 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 {
     private SamplesSchema _sampleTypeSchema;
     private ExpSampleType _sampleType;
-    private String _participantId;
-    private String _visitId;
-    private String _date;
+    private FieldKey _participantId;
+    private FieldKey _visitId;
+    private FieldKey _date;
 
     private final String ROW_ID = ExpMaterialTable.Column.RowId.toString();
 
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
     {
-        private Integer _rowId;
         private ExpSampleType _sampleType;
-
-        public Integer getRowId()
-        {
-            return _rowId;
-        }
-
-        public void setRowId(Integer rowId)
-        {
-            _rowId = rowId;
-        }
 
         public ExpSampleType getSampleType()
         {
@@ -104,82 +94,32 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         PublishSource
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey(String participantId)
+                    public FieldKey getParticipantIDFieldKey(FieldKey participantId)
                     {
-                        return FieldKey.fromParts(participantId);
+                        return participantId;
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(String visitId, String date)
+                    public FieldKey getVisitIDFieldKey(FieldKey visitId)
                     {
-                        return FieldKey.fromParts(visitId);
+                        return visitId;
                     }
                 },
         UserSpecified
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey(String participantId)
+                    public FieldKey getParticipantIDFieldKey(FieldKey participantId)
                     {
                         return null;
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(String visitId, String date)
+                    public FieldKey getVisitIDFieldKey(FieldKey visitId)
                     {
                         return null;
                     }
                 };
 
-        public abstract FieldKey getParticipantIDFieldKey(String participantId);
-        public abstract FieldKey getVisitIDFieldKey(String visitId, String date);
-    }
-
-    public SamplesSchema getSampleTypeSchema()
-    {
-        return _sampleTypeSchema;
-    }
-
-    public void setSampleTypeSchema(SamplesSchema sampleTypeSchema)
-    {
-        _sampleTypeSchema = sampleTypeSchema;
-    }
-
-    public ExpSampleType getSampleType()
-    {
-        return _sampleType;
-    }
-
-    public void setSampleType(ExpSampleType sampleType)
-    {
-        _sampleType = sampleType;
-    }
-
-    public String getParticipantId()
-    {
-        return _participantId;
-    }
-
-    public void setParticipantId(String participantId)
-    {
-        _participantId = participantId;
-    }
-
-    public String getVisitId()
-    {
-        return _visitId;
-    }
-
-    public void setVisitId(String visitId)
-    {
-        _visitId = visitId;
-    }
-
-    public String getDate()
-    {
-        return _date;
-    }
-
-    public void setDate(String date)
-    {
-        _date = date;
+        public abstract FieldKey getParticipantIDFieldKey(FieldKey participantId);
+        public abstract FieldKey getVisitIDFieldKey(FieldKey visitId);
     }
 
     private void initializeFieldKeys(ExpSampleType sampleType)
@@ -191,34 +131,37 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
             UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), "exp.materials");
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
-            List<ColumnInfo> columnInfoList = tableInfo.getColumns(); // TODO Rosaline: prevent npe? An assert? An if? An exception?
+            if (tableInfo == null)
+                throw new IllegalStateException(String.format("Sample Type %s not found", sampleType.getName()));
+            List<ColumnInfo> columnInfoList = tableInfo.getColumns();
 
             for (ColumnInfo ci : columnInfoList)
             {
                 String columnURI = ci.getConceptURI();
                 String columnName = ci.getName();
+                FieldKey fieldKey = ci.getFieldKey();
 
                 if (null != columnURI && columnURI.equals(visitURI))
                 {
                     if (PropertyType.xsdDouble.getURI().equals(ci.getRangeURI()))
-                        _visitId = columnName;
+                        _visitId = fieldKey;
                     if (PropertyType.xsdDateTime.getURI().equals(ci.getRangeURI()))
-                        _date = columnName;
+                        _date = fieldKey;
                 }
 
                 if (null != columnURI && columnURI.equals(particpantURI))
-                { // TODO Rosaline: maybe throw if the rangeURI is not string?
-                    _participantId = columnName;
+                {
+                    _participantId = fieldKey;
                 }
 
                 if (columnName.equalsIgnoreCase("participantid") && _participantId == null)
-                    _participantId = columnName;
+                    _participantId = fieldKey;
 
                 if (columnName.equalsIgnoreCase("visitid") && _visitId == null)
-                    _visitId = columnName;
+                    _visitId = fieldKey;
 
                 if (columnName.equalsIgnoreCase("date") && _date == null)
-                    _date = columnName;
+                    _date = fieldKey;
 
             }
         }
@@ -284,51 +227,28 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
         Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_participantId));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_visitId, _date));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(_visitId, _date));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_visitId));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(_visitId));
 
         return additionalCols;
     }
 
     @Override
-    protected Map<String, Object> getHiddenFormFields(SampleTypePublishConfirmForm form) // Rosaline temp note: very similar to Assay
-    {
-        Map<String, Object> fields = new HashMap<>();
-
-        fields.put("rowId", _sampleType.getRowId());
-        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-        if (returnURL == null)
-        {
-            returnURL = getViewContext().getActionURL().toString();
-        }
-        fields.put(ActionURL.Param.returnUrl.name(), returnURL);
-
-        return fields;
-    }
-
-    // TODO Rosaline: should delegate to the sample type service still?
-
-    @Override
     protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
-        Map<String, Object> dataMap = new HashMap<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
 
-        Iterator it = dataKeys.entrySet().iterator();
-        while (it.hasNext())
+        for (PublishKey publishKey : dataKeys.values())
         {
-            Map.Entry pair = (Map.Entry)it.next();
-
-            PublishKey value = (PublishKey) pair.getValue();
-            PublishKey publishKey = new PublishKey(value.getTargetStudy(), value.getParticipantId(), value.getDate(), value.getDataId());
+            Map<String, Object> dataMap = new HashMap<>();
 
             Container targetStudyContainer = targetStudy;
             if (publishKey.getTargetStudy() != null)
                 targetStudyContainer = publishKey.getTargetStudy();
             assert targetStudyContainer != null;
 
-            String sourceLSID = new Lsid("Data", String.valueOf(value.getDataId())).toString();
+            String sourceLSID = new Lsid("Data", String.valueOf(publishKey.getDataId())).toString();
 
             dataMap.put("ParticipantID", publishKey.getParticipantId());
             dataMap.put("Date", publishKey.getDate());
@@ -339,9 +259,8 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             Set<Integer> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
             rowIds.add(publishKey.getDataId());
 
-            it.remove();
+            dataMaps.add(dataMap);
         }
-        dataMaps.add(dataMap);
 
         ExpSampleType sampleType = form._sampleType;
         StudyPublishService.get().checkForAlreadyCopiedRows(getUser(), Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()), errors, rowIdsByTargetContainer);
@@ -370,7 +289,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     public void addNavTrail(NavTree root)
     {
-        // Rosaline TODO in later story: add help topic
+        setHelpTopic(new HelpTopic("linkSampleData"));
         root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType)); // need ExpSampleType

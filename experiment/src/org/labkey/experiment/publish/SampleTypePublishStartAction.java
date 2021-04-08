@@ -5,6 +5,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewForm;
@@ -46,7 +47,6 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        // TODO: double-check what these do on Assay
         public String getContainerFilterName()
         {
             return _containerFilterName;
@@ -135,7 +135,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     @Override
     public void addNavTrail(NavTree root)
     {
-        // Rosaline TODO in later story: add help topic
+        setHelpTopic(new HelpTopic("linkSampleData"));
         root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType)); // need ExpSampleType
         root.addChild("Link to Study: Choose Target");

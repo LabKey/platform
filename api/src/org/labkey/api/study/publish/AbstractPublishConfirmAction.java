@@ -188,14 +188,27 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(FORM form);
 
     /**
-     * Returns the hidden form fields that need to be included on the data region form
-     */
-    protected abstract Map<String, Object> getHiddenFormFields(FORM form);
-
-    /**
      * Perform the copy to study operation
      */
     protected abstract ActionURL copyToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
+
+    /**
+     * Returns the hidden form fields that need to be included on the data region form
+     */
+    protected Map<String, Object> getHiddenFormFields(PublishConfirmForm form)
+    {
+        Map<String, Object> fields = new HashMap<>();
+
+        fields.put("rowId", form.getRowId());
+        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+        if (returnURL == null)
+        {
+            returnURL = getViewContext().getActionURL().toString();
+        }
+        fields.put(ActionURL.Param.returnUrl.name(), returnURL);
+
+        return fields;
+    }
 
     /**
      * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
