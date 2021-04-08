@@ -279,9 +279,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        // delete the default "Unspecified" SampleType TODO: move to an upgrade script in 19.2
-        SampleTypeServiceImpl.get().deleteDefaultSampleType();
-
         // TODO move to an upgrade script
         ExperimentUpgradeCode.upgradeMaterialSource(null);
 
@@ -520,7 +517,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return list;
     }
 
-
     @Override
     @NotNull
     public Set<Class> getIntegrationTests()
@@ -546,7 +542,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
         return list;
     }
-
 
     @NotNull
     @Override
@@ -579,7 +574,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME);
     }
 
-
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
@@ -608,7 +602,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
         }, SearchService.PRIORITY.bulk);
     }
-
 
     @Override
     public void indexDeleted()
