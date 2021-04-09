@@ -143,7 +143,9 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
         // with the passed dynamic variable value existing on 'authConfig'. If we cannot, we replace the pattern with
         // the text 'someVariable' itself.
         const stringTemplatedHtml = html.replace(/\${(.*?)}/g, (match, value) => {
-            return Utils.encodeHtml(authConfig[value] ? authConfig[value].toString() : value);
+            return Utils.encodeHtml(
+                authConfig[value] !== undefined && authConfig[value] !== null ? authConfig[value].toString() : value
+            );
         });
 
         return (
