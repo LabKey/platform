@@ -216,6 +216,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                         canEdit={canEdit}
                         emptyRequiredFields={emptyRequiredFields}
                         modalType={modalType}
+                        authConfig={authConfig}
                         onChange={this.onChange}
                         checkCheckBox={this.checkCheckBox}
                         onFileChange={this.onFileChange}
