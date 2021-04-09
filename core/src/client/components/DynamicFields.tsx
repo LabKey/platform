@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { FormControl } from 'react-bootstrap';
 import { FileAttachmentForm, LabelHelpTip } from '@labkey/components';
+import { Utils } from '@labkey/api';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -142,7 +143,7 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
         // with the passed dynamic variable value existing on 'authConfig'. If we cannot, we replace the pattern with
         // the text 'someVariable' itself.
         const stringTemplatedHtml = html.replace(/\${(.*?)}/g, (match, value) => {
-            return encodeURI(authConfig[value] ? authConfig[value].toString() : value);
+            return (authConfig[value] ? authConfig[value].toString() : value);
         });
 
         return (
@@ -156,7 +157,7 @@ export class FixedHtml extends PureComponent<FixedHtmlProps> {
 
                 {/* HTML set is text-only information that lives on the server */}
                 <div className="modal__fixed-html-text">
-                    <div dangerouslySetInnerHTML={{ __html: stringTemplatedHtml }} />
+                    <div dangerouslySetInnerHTML={{ __html: Utils.encodeHtml(stringTemplatedHtml) }} />
                 </div>
             </div>
         );
