@@ -30,6 +30,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
@@ -1196,19 +1197,45 @@ public class IssueManager
         return def.save(user);
     }
 
+    public static void deleteIssueDefsForDomain(User user, Domain domain)
+    {
+        if (domain != null)
+        {
+            try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                String issueListDefName = IssuesListDefTable.nameFromLabel(domain.getName());
+                ContainerFilter containerFilter = IssueListDef.getContainerFilter(domain, user);
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), issueListDefName);
+
+                if (containerFilter != null)
+                    filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container")));
+                else
+                    filter.addCondition(FieldKey.fromParts("container"), domain.getContainer());
+
+                List<IssueListDef> issueListDefList = new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), filter, null).getArrayList(IssueListDef.class);
+                for (IssueListDef def : issueListDefList)
+                {
+                    Container defContainer = ContainerManager.getForId(def.getContainerId());
+                    _deleteIssueListDef(def, defContainer, user, false);
+                }
+                transaction.commit();
+            }
+        }
+    }
+
     public static void deleteIssueListDef(int rowId, Container c, User user)
     {
         IssueListDef def = getIssueListDef(c, rowId);
         if (def == null)
             throw new IllegalArgumentException("Can't find IssueDef with rowId " + rowId);
 
-        _deleteIssueListDef(def, c, user);
+        _deleteIssueListDef(def, c, user, true);
     }
 
-    private static void _deleteIssueListDef(IssueListDef def, Container c, User user)
+    private static void _deleteIssueListDef(IssueListDef def, Container c, User user, boolean deleteDomain)
     {
         Domain d = def.getDomain(user);
-        if (d == null)
+        if (d == null && deleteDomain)
             throw new IllegalArgumentException("Unable to find the domain for this IssueDef");
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -1218,18 +1245,21 @@ public class IssueManager
             truncateIssueList(def, c, user);
             Table.delete(issueDefTable, def.getRowId());
 
-            // if there are no other containers referencing this domain, then it's safe to delete
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
-            SimpleFilter.FilterClause filterClause = IssueListDef.createFilterClause(def, user);
-
-            if (filterClause != null)
-                filter.addClause(filterClause);
-            else
-                filter.addCondition(FieldKey.fromParts("container"), c);
-
-            if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
+            if (deleteDomain)
             {
-                d.getDomainKind().deleteDomain(user, d);
+                // if there are no other containers referencing this domain, then it's safe to delete
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), def.getName());
+                SimpleFilter.FilterClause filterClause = IssueListDef.createFilterClause(def, user);
+
+                if (filterClause != null)
+                    filter.addClause(filterClause);
+                else
+                    filter.addCondition(FieldKey.fromParts("container"), c);
+
+                if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
+                {
+                    d.getDomainKind().deleteDomain(user, d);
+                }
             }
             IssueListDefCache.uncache(c);
             transaction.commit();

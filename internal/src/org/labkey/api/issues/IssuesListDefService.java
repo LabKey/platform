@@ -191,5 +191,12 @@ public interface IssuesListDefService
      * @param container
      */
     void uncache(Container container);
+
+    /**
+     * Deletes all issue list definitions including associated data that is using the specified domain. This method
+     * is generally used in preparation to dropping the domain, but won't delete the domain.
+     * @param domain The domain to clean up
+     */
+    void deleteIssueDefsForDomain(User user, Domain domain);
 }
 
