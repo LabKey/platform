@@ -600,21 +600,28 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // Table Counters
             ExpDataClassDataTableImpl queryTable = ExpDataClassDataTableImpl.this;
             var counterDIB = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(step0), _dataClass.getContainer(), queryTable, ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId());
-            DataIterator step1 = counterDIB.getDataIterator(context);
+            DataIterator di;
 
             // Generate names
             if (_dataClass.getNameExpression() != null)
             {
                 step0.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR), (Supplier) () -> _dataClass.getNameExpression());
 
+                // Don't create CounterDataIterator until 'nameExpression' has been added
+                di = LoggingDataIterator.wrap(counterDIB.getDataIterator(context));
+
 //              CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-                step1 = LoggingDataIterator.wrap(new CoerceDataIterator(step1, context, ExpDataClassDataTableImpl.this, false));
+                di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
-                step1 = LoggingDataIterator.wrap(new NameExpressionDataIterator(step1, context, ExpDataClassDataTableImpl.this));
+                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this));
+            }
+            else
+            {
+                di = counterDIB.getDataIterator(context);
             }
 
-            return LoggingDataIterator.wrap(step1.getDataIterator(context));
+            return LoggingDataIterator.wrap(di.getDataIterator(context));
         }
     }
 
