@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -34,6 +35,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 
 import java.sql.Connection;
 import java.util.Set;
@@ -46,6 +49,12 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
         super(name, rootTable, schema, cf);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return isAllowedPermission(perm) && getContainer().hasPermission(user, perm) && canUserAccessPhi();
     }
 
     protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)
@@ -212,6 +221,12 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
 
     @Override
     public boolean isAlwaysInsertExpObject()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportTableRules()
     {
         return true;
     }

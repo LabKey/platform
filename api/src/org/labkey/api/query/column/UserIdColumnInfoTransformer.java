@@ -17,7 +17,7 @@ public class UserIdColumnInfoTransformer implements ConceptURIColumnInfoTransfor
     }
 
     @Override
-    public MutableColumnInfo applyMutable(MutableColumnInfo column)
+    public MutableColumnInfo apply(MutableColumnInfo column)
     {
         if (column.getJdbcType() != JdbcType.INTEGER)
         {

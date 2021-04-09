@@ -37,6 +37,7 @@ public class QueryLogging
     private boolean _hasBeenValidated = false;
     private final boolean _readOnly;
     private final boolean _metadataQuery;
+    private final String _debugName;
     private boolean _shouldAudit = true;
     private SelectQueryAuditProvider _selectQueryAuditProvider = null;
 
@@ -44,20 +45,22 @@ public class QueryLogging
     {
         _readOnly = false;
         _metadataQuery = false;
+        _debugName = "custom";
     }
 
-    private QueryLogging(boolean validated, boolean metadataQuery)
+    private QueryLogging(boolean validated, boolean metadataQuery, String debugName)
     {
         _readOnly = true;
         _hasBeenValidated = validated;
         _metadataQuery = metadataQuery;
+        _debugName = debugName;
     }
 
     public void setQueryLogging(User user, Container container, String comment, Set<ColumnLogging> columnLoggings,
                                 Set<ColumnInfo> dataLoggingColumns, SelectQueryAuditProvider selectQueryAuditProvider)
     {
         if (_readOnly)
-            throw new IllegalStateException("This QueryLogging instance is read-only.");
+            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
         _user = user;
         _container = container;
         _comment = comment;
@@ -124,25 +127,25 @@ public class QueryLogging
     public void setQueryId(@Nullable Long queryId)
     {
         if (_readOnly)
-            throw new IllegalStateException("This QueryLogging instance is read-only.");
+            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
         _queryId = queryId;
     }
 
-    private static final QueryLogging _emptyQueryLogging = new QueryLogging(false, false);
-    private static final QueryLogging _noValidationNeededQueryLogging = new QueryLogging(true, false);
-    private static final QueryLogging _metadataQueryLogging = new QueryLogging(false, true);
+    private static final QueryLogging EMPTY_QUERY_LOGGING = new QueryLogging(false, false, "EMPTY_QUERY_LOGGING");
+    private static final QueryLogging NO_VALIDATION_NEEDED_QUERY_LOGGING = new QueryLogging(true, false, "NO_VALIDATION_NEEDED_QUERY_LOGGING");
+    private static final QueryLogging METADATA_QUERY_LOGGING = new QueryLogging(false, true, "METADATA_QUERY_LOGGING");
 
     public static QueryLogging emptyQueryLogging()
     {
-        return _emptyQueryLogging;
+        return EMPTY_QUERY_LOGGING;
     }
 
     public static QueryLogging noValidationNeededQueryLogging()
     {
-        return _noValidationNeededQueryLogging;
+        return NO_VALIDATION_NEEDED_QUERY_LOGGING;
     }
 
-    public static QueryLogging metadataQueryLogging() { return _metadataQueryLogging; }
+    public static QueryLogging metadataQueryLogging() { return METADATA_QUERY_LOGGING; }
 
     @NotNull
     public SelectQueryAuditEvent getSelectQueryAuditEvent()
@@ -154,6 +157,8 @@ public class QueryLogging
 
     public void setSelectQueryAuditEvent(SelectQueryAuditEvent selectQueryAuditEvent)
     {
+        if (_readOnly)
+            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
         _selectQueryAuditEvent = selectQueryAuditEvent;
     }
 
@@ -164,6 +169,9 @@ public class QueryLogging
 
     public void setShouldAudit(boolean shouldAudit)
     {
+        // Commented out until Issue 42791 is resolved
+//        if (_readOnly)
+//            throw new IllegalStateException("This QueryLogging instance is read-only: " + _debugName);
         _shouldAudit = shouldAudit;
     }
 

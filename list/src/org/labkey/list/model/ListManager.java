@@ -386,9 +386,17 @@ public class ListManager implements SearchService.DocumentProvider
 
             Runnable r = () ->
             {
-                //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
-                ListDefinition list = ListService.get().getList(def.lookupContainer(), def.getListId());
-                indexList(task, list, designChange, false);
+                Container c = def.lookupContainer();
+                if (c == null || ContainerManager.isDeleting(c))
+                {
+                    LOG.info("List container has been deleted or is being deleted; not indexing list '" + def.getName() + "");
+                }
+                else
+                {
+                    //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
+                    ListDefinition list = ListService.get().getList(c, def.getListId());
+                    indexList(task, list, designChange, false);
+                }
             };
 
             task.addRunnable(r, SearchService.PRIORITY.item);

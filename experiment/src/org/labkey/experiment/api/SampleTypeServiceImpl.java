@@ -47,14 +47,11 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -441,58 +438,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
     }
 
-
     public DbScope.Transaction ensureTransaction()
     {
         return getExpSchema().getScope().ensureTransaction();
     }
-
-
-    public void deleteDefaultSampleType()
-    {
-        SQLFragment sql = new SQLFragment()
-                .append("SELECT ms.rowId, dd.domainId\n")
-                .append("FROM ").append(ExperimentService.get().getTinfoSampleType(), "ms").append("\n")
-                .append("INNER JOIN ").append(OntologyManager.getTinfoDomainDescriptor(), "dd").append("\n")
-                .append("ON ms.lsid = dd.domainUri\n")
-                .append("WHERE ms.lsid = ?").add(getDefaultSampleTypeLsid());
-        SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), sql);
-
-        Map<String, Object> row = ss.getMap();
-        if (row != null)
-        {
-            try (DbScope.Transaction tx = ensureTransaction())
-            {
-                Integer rowId = (Integer) row.get("rowId");
-                Integer domainId = (Integer) row.get("domainId");
-
-                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, rowId);
-
-                Domain d = PropertyService.get().getDomain(domainId);
-                if (d != null)
-                {
-                    d.delete(null);
-                }
-
-                Table.delete(getTinfoMaterialSource(), rowId);
-
-                tx.commit();
-                LOG.info("Deleted the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleType");
-            }
-            catch (DomainNotFoundException e)
-            {
-                LOG.info("Failed to delete the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleType, domain not found");
-            }
-        }
-    }
-
 
     @Override
     public Lsid getSampleTypeLsid(String sourceName, Container container)
     {
         return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleType.class, sourceName));
     }
-
 
     /**
      * Delete all exp.Material from the SampleType. If container is not provided,
