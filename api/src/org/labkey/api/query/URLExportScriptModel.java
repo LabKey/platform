@@ -83,6 +83,7 @@ public class URLExportScriptModel extends ExportScriptModel
             return "This is a temporary query that does not support stable URLs";
 
         ActionURL url = DetailsURL.fromString("/query/executeQuery.view").getActionURL();
+        //noinspection ConstantConditions
         url.addParameter("schemaName", getSchemaName());
         url.addParameter("query.queryName", _view.getTable().getPublicName());
         url.setContainer(_view.getContainer());
@@ -107,11 +108,7 @@ public class URLExportScriptModel extends ExportScriptModel
     @Override
     public String getScriptExportText()
     {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("The following URL can be used to reload the query, preserving any filters, sorts, or custom sets of columns:\n\n");
-        sb.append(getURL());
-
-        return sb.toString();
+        return "The following URL can be used to reload the query, preserving any filters, sorts, or custom sets of columns:\n\n" +
+                getURL();
     }
 }
