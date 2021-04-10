@@ -103,6 +103,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 {
     private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
+    /**
+     * Source column index used for output columns without an missing value indicator
+     * or when the missing value column isn't present in the source DataIterator.
+     */
+    static final int NO_MV_INDEX = 0;
+
     private DataIterator _data;
     protected Object[] _row = null;
     private Container _mvContainer;
@@ -732,7 +738,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         MissingValueConvertColumn(String fieldName, int index,JdbcType to)
         {
             super(fieldName, index, to);
-            indicator = 0;
+            indicator = NO_MV_INDEX;
         }
 
         MissingValueConvertColumn(String fieldName, int index, int indexIndicator, @Nullable JdbcType to)
@@ -748,7 +754,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (value instanceof MvFieldWrapper)
                 return value;
 
-            Object mv = 0==indicator ? null : _data.get(indicator);
+            Object mv = NO_MV_INDEX ==indicator ? null : _data.get(indicator);
 
             if (value instanceof String && StringUtils.isEmpty((String)value))
                 value = null;
@@ -797,11 +803,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         @Nullable PropertyType pt;
 
-        PropertyConvertColumn(String fieldName, int fromIndex, int mvIndex, boolean supportsMisisngValue, @Nullable PropertyType pt, @Nullable JdbcType type)
+        PropertyConvertColumn(String fieldName, int fromIndex, int mvIndex, boolean supportsMissingValue, @Nullable PropertyType pt, @Nullable JdbcType type)
         {
             super(fieldName, fromIndex, mvIndex, type != null ? type : pt != null ? pt.getJdbcType() : null);
             this.pt = pt;
-            this.supportsMissingValue = supportsMisisngValue;
+            this.supportsMissingValue = supportsMissingValue;
         }
 
         @Override
@@ -1252,7 +1258,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, boolean useOriginalValueOnRemapFailure)
     {
-        return createConvertColumn(col, fromIndex, fromIndex, null, col.getPropertyType(), col.getJdbcType(), useOriginalValueOnRemapFailure);
+        return createConvertColumn(col, fromIndex, NO_MV_INDEX, null, col.getPropertyType(), col.getJdbcType(), useOriginalValueOnRemapFailure);
     }
 
     private SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable JdbcType type, boolean useOriginalValueOnRemapFailure)
