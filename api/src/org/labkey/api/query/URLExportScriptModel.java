@@ -20,8 +20,10 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 
+import java.net.URLEncoder;
 import java.util.List;
 
 /**
@@ -52,7 +54,9 @@ public class URLExportScriptModel extends ExportScriptModel
     @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
-        return "query." + FieldKey.fromString(name) + "~" + operator.getPreferredUrlKey() + "=" + value;
+        return "query." + URLEncoder.encode(FieldKey.fromString(name).toString(), StringUtilsLabKey.DEFAULT_CHARSET) +
+                "~" + URLEncoder.encode(operator.getPreferredUrlKey(), StringUtilsLabKey.DEFAULT_CHARSET) + "=" +
+                URLEncoder.encode(value, StringUtilsLabKey.DEFAULT_CHARSET);
     }
 
     @Override
