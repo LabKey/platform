@@ -398,7 +398,7 @@ public class SearchController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            new AdminAction(getPageConfig()).addNavTrail(root);
+//            new AdminAction(getPageConfig()).setViewContext(getViewContext()).addNavTrail(root);
             root.addChild("Index Contents");
         }
     }
