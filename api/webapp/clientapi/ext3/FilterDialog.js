@@ -24,7 +24,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     modal: true,
 
-    resizable: false,
+    resizable: true,
 
     // 24846
     width: Ext.isGecko ? 425 : 410,
@@ -351,6 +351,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             })
         }
 
+        // // default view
+        // views.push({
+        //     xtype: 'filter-view-ontology',
+        //     column: this.column,
+        //     fieldKey: this.fieldKey, // should not have to hand this in bc the column should supply correctly
+        //     dataRegionName: this.dataRegionName,
+        //     jsonType : this.jsonType,
+        //     filters: filters,
+        //     scope: this
+        // });
+
         return views;
     }
 });
@@ -365,7 +376,7 @@ LABKEY.FilterDialog.ViewPanel = Ext.extend(Ext.form.FormPanel, {
 
     initComponent : function() {
         if (!this['dataRegionName']) {
-            console.error('dataRegionName is requied for a LABKEY.FilterDialog.ViewPanel');
+            console.error('dataRegionName is required for a LABKEY.FilterDialog.ViewPanel');
             return;
         }
         LABKEY.FilterDialog.ViewPanel.superclass.initComponent.call(this);
@@ -413,6 +424,8 @@ Ext.ns('LABKEY.FilterDialog.View');
 LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     supportsMultipleFilters: true,
+
+    CONCEPT_CODE_CONCEPT_URI: 'http://www.labkey.org/types#conceptCode',
 
     itemDefaults: {
         border: false,
@@ -525,6 +538,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         return true;
     },
 
+
     generateFilterDisplays : function(quantity) {
         var idx = this.nextIndex(), items = [], i=0;
 
@@ -538,9 +552,38 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 items: [this.getComboConfig(idx), this.getInputConfig(idx)],
                 scope: this
             });
+
+            if (this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI) {
+                const id = LABKEY.Utils.generateUUID();
+                items.push({
+                    xtype: 'panel',
+                    layout: 'form',
+                    id: id,
+                    border: false,
+                    defaults: this.itemDefaults,
+                    items: [{
+                        value: 'a',
+                        scope: this
+                    }],
+                    scope: this
+                });
+
+                const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
+                // const conceptFilterScript = 'core/gen/conceptFilter';
+                LABKEY.requiresScript(conceptFilterScript, () => this.loadConceptPickers(id), this);
+            }
+
             idx++;
         }
+
+
         return items;
+    },
+
+    loadConceptPickers: function(divId) {
+        LABKEY.App.loadApp('conceptFilter', divId, {
+            ontologyId: this.column.sourceOntology
+        });
     },
 
     getComboConfig : function(idx) {
@@ -1343,6 +1386,110 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 });
 
 Ext.reg('filter-view-faceted', LABKEY.FilterDialog.View.Faceted);
+
+
+// LABKEY.FilterDialog.View.Ontology = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
+//
+//     initComponent : function() {
+//
+//         Ext.apply(this, {
+//             title  : 'Choose Concept',
+//             border : false,
+//             height : 200,
+//             id: 'waffle-taco-div',
+//             bodyStyle: 'overflow-x: hidden; overflow-y: auto',
+//             bubbleEvents: ['add', 'remove', 'clientvalidation'],
+//             defaults : {
+//                 border : false
+//             },
+//             // items: [{
+//             //     layout: 'hbox',
+//             //     style: 'padding-bottom: 5px; overflow-x: hidden',
+//             //     defaults: {
+//             //         border: false
+//             //     },
+//             //     items: [{
+//             //         xtype: 'container',
+//             //         id: 'waffle-taco-div',
+//             //         text: 'There are more than a [bazillion] values. Showing a partial list.'
+//             //     }]
+//             // }]
+//         });
+//
+//         LABKEY.FilterDialog.View.Ontology.superclass.initComponent.call(this);
+//
+//         // this.on('activate', this.onViewReady, this, {single: true});
+//     },
+//
+//     formatValue : function(val) {
+//         return val;
+//     },
+//
+//     // copied from Ext 4 Ext.Array.difference
+//     difference : function(arrayA, arrayB) {
+//         var clone = arrayA.slice(),
+//                 ln = clone.length,
+//                 i, j, lnB;
+//
+//         for (i = 0,lnB = arrayB.length; i < lnB; i++) {
+//             for (j = 0; j < ln; j++) {
+//                 if (clone[j] === arrayB[i]) {
+//                     clone.splice(j, 1);
+//                     j--;
+//                     ln--;
+//                 }
+//             }
+//         }
+//
+//         return clone;
+//     },
+//
+//     constructFilter : function(selected, unselected) {
+//         var filter = null;
+//         return filter;
+//     },
+//
+//     // get array of values from the selected store item array
+//     selectedToValues : function(valueArray) {
+//         return valueArray.map(function (i) { return i.get('value'); });
+//     },
+//
+//     // Implement interface LABKEY.FilterDialog.ViewPanel
+//     getFilters : function() {
+//         var grid = Ext.getCmp(this.gridID);
+//         var filters = [];
+//         return filters;
+//     },
+//
+//     // Implement interface LABKEY.FilterDialog.ViewPanel
+//     setFilters : function(filterArray) {
+//         if (Ext.isArray(filterArray)) {
+//             this.filters = filterArray;
+//             this.onViewReady();
+//         }
+//     },
+//
+//     getGridConfig : function(idx) {
+//         var me = this;
+//
+//         return {};
+//     },
+//
+//     loadConceptPicker: function() {
+//         // LABKEY.App.loadApp('conceptFilter', 'waffle-taco-div');
+//     },
+//
+//     onViewReady : function() {
+//     },
+//
+//     onPanelRender : function(panel) {
+//         var toAdd = [];
+//         panel.add(toAdd);
+//     },
+// });
+
+
+// Ext.reg('filter-view-ontology', LABKEY.FilterDialog.View.Ontology);
 
 Ext.ns('LABKEY.ext');
 
