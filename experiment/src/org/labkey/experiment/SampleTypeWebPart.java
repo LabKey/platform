@@ -115,6 +115,7 @@ public class SampleTypeWebPart extends QueryView
         bar.add(showAllButton);
 
         ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(getContainer());
+        linkToStudyURL.addParameter("sampleTypeIds", true);
         ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         bar.add(linkToStudyButton);

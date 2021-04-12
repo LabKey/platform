@@ -71,16 +71,14 @@ public class SampleTypeContentsView extends QueryView
         }
 
         view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+        view.getDataRegion().addHiddenFormField("rowId", String.valueOf(_source.getRowId()));
 
         return view;
     }
 
-    public static ActionButton getLinkToStudyButton(DataView view, int rowId, Container container)
+    private ActionButton getLinkToStudyButton(DataView view, Container container)
     {
         ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(container);
-        view.getDataRegion().addHiddenFormField("rowId", String.valueOf(rowId));
-
-        linkToStudyURL.deleteParameters();
 
         ContainerFilter containerFilter = view.getDataRegion().getTable().getContainerFilter();
         if (containerFilter != null && containerFilter.getType() != null)
@@ -168,7 +166,7 @@ public class SampleTypeContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
-        bar.add(getLinkToStudyButton(view, _source.getRowId(), getContainer()));
+        bar.add(getLinkToStudyButton(view, getContainer()));
 
         // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();

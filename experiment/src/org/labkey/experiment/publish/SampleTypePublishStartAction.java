@@ -97,15 +97,14 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     @Override
     protected ActionURL getSuccessUrl(SampleTypePublishStartForm form)
     {
-        ActionURL url = urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType);
-        return url;
+        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType);
     }
 
     @Override
     protected List<Integer> getDataIDs(SampleTypePublishStartForm form)
     {
         // TODO in later story within epic: Support SampleType-level links
-        if (_ids.isEmpty())
+        if (_ids.isEmpty() && !form.isSampleTypeIds())
         {
             _ids = getCheckboxIds(getViewContext());
             _sampleType = SampleTypeService.get().getSampleType(form.getContainer(), form.getRowId());
@@ -137,7 +136,8 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     {
         setHelpTopic(new HelpTopic("linkSampleData"));
         root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
-        root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
+        if (_sampleType != null)
+            root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         root.addChild("Link to Study: Choose Target");
     }
 }

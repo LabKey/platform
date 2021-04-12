@@ -50,7 +50,6 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 @RequiresPermission(InsertPermission.class)
 public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction<SampleTypePublishConfirmAction.SampleTypePublishConfirmForm>
 {
-    private SamplesSchema _sampleTypeSchema;
     private ExpSampleType _sampleType;
     private FieldKey _participantId;
     private FieldKey _visitId;
@@ -118,6 +117,8 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                     }
                 };
 
+        // In order to match PublishConfirmForm.DefaultValueSource, we use trivial implementations
+        // of functions here that simply return what they are given
         public abstract FieldKey getParticipantIDFieldKey(FieldKey participantId);
         public abstract FieldKey getVisitIDFieldKey(FieldKey visitId);
     }
@@ -129,7 +130,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             String visitURI = PropertyType.VISIT_CONCEPT_URI;
             String particpantURI = PropertyType.PARTICIPANT_CONCEPT_URI;
 
-            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), "exp.materials");
+            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
             if (tableInfo == null)
                 throw new IllegalStateException(String.format("Sample Type %s not found", sampleType.getName()));
@@ -143,9 +144,9 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
                 if (null != columnURI && columnURI.equals(visitURI))
                 {
-                    if (PropertyType.xsdDouble.getURI().equals(ci.getRangeURI()))
+                    if (ci.getJdbcType().isReal())
                         _visitId = fieldKey;
-                    if (PropertyType.xsdDateTime.getURI().equals(ci.getRangeURI()))
+                    if (ci.getJdbcType().isDateOrTime())
                         _date = fieldKey;
                 }
 
@@ -184,8 +185,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     protected SamplesSchema getUserSchema(SampleTypePublishConfirmForm form)
     {
-        _sampleTypeSchema = (SamplesSchema) QueryService.get().getUserSchema(form.getUser(), getContainer(), SamplesSchema.SCHEMA_SAMPLES);
-        return _sampleTypeSchema;
+        return (SamplesSchema) QueryService.get().getUserSchema(form.getUser(), getContainer(), SamplesSchema.SCHEMA_SAMPLES);
     }
 
     @Override
@@ -195,8 +195,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         QuerySettings qs = new QuerySettings(form.getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, queryName);
         qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
         qs.setQueryName(queryName);
-
-        getUserSchema(form);
 
         return qs;
     }
@@ -248,7 +246,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                 targetStudyContainer = publishKey.getTargetStudy();
             assert targetStudyContainer != null;
 
-            String sourceLSID = new Lsid("Data", String.valueOf(publishKey.getDataId())).toString();
+            String sourceLSID = new Lsid("Data", _sampleType.getLSID()).toString();
 
             dataMap.put("ParticipantID", publishKey.getParticipantId());
             dataMap.put("Date", publishKey.getDate());
@@ -271,15 +269,12 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
         return StudyPublishService.get().publishData(getUser(), form.getContainer(), targetStudy, sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
-                dataMaps, "RowId", errors);
+                dataMaps, ROW_ID, errors);
     }
 
     @Override
     public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
     {
-        if (form.getDefaultValueSource().equals("Assay"))
-            form.setDefaultValueSource("SampleType");
-
         if (_sampleType == null)
             return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>Could not resolve the source Sample Type.</span>"));
 
