@@ -136,34 +136,42 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                 throw new IllegalStateException(String.format("Sample Type %s not found", sampleType.getName()));
             List<ColumnInfo> columnInfoList = tableInfo.getColumns();
 
+            // Firstly attempt to use column type to determine participant, visit, and date fields
             for (ColumnInfo ci : columnInfoList)
             {
                 String columnURI = ci.getConceptURI();
-                String columnName = ci.getName();
                 FieldKey fieldKey = ci.getFieldKey();
 
                 if (null != columnURI && columnURI.equals(visitURI))
                 {
-                    if (ci.getJdbcType().isReal())
+                    if (ci.getJdbcType().isReal() && _visitId == null)
                         _visitId = fieldKey;
-                    if (ci.getJdbcType().isDateOrTime())
+                    if (ci.getJdbcType().isDateOrTime() && _date == null)
                         _date = fieldKey;
                 }
 
-                if (null != columnURI && columnURI.equals(particpantURI))
+                if (null != columnURI && columnURI.equals(particpantURI) && _participantId == null)
                 {
                     _participantId = fieldKey;
                 }
+            }
 
-                if (columnName.equalsIgnoreCase("participantid") && _participantId == null)
-                    _participantId = fieldKey;
+            // Secondly attempt to use column name as a fallback to determine participant, visit, and date fields
+            if (_participantId == null || _visitId == null || _date == null) {
+                for (ColumnInfo ci : columnInfoList)
+                {
+                    String columnName = ci.getName();
+                    FieldKey fieldKey = ci.getFieldKey();
 
-                if (columnName.equalsIgnoreCase("visitid") && _visitId == null)
-                    _visitId = fieldKey;
+                    if (columnName.equalsIgnoreCase("participantid") && _participantId == null)
+                        _participantId = fieldKey;
 
-                if (columnName.equalsIgnoreCase("date") && _date == null)
-                    _date = fieldKey;
+                    if (columnName.equalsIgnoreCase("visitid") && _visitId == null)
+                        _visitId = fieldKey;
 
+                    if (columnName.equalsIgnoreCase("date") && _date == null)
+                        _date = fieldKey;
+                }
             }
         }
     }
