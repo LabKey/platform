@@ -264,7 +264,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                 targetStudyContainer = publishKey.getTargetStudy();
             assert targetStudyContainer != null;
 
-            String sourceLSID = new Lsid("Data", _sampleType.getLSID()).toString();
+            String sourceLSID = sampleType.getLSID();
 
             dataMap.put("ParticipantID", publishKey.getParticipantId());
             dataMap.put("Date", publishKey.getDate());
