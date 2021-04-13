@@ -3785,7 +3785,10 @@ public class QueryController extends SpringActionController
         public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
         {
             _json = apiSaveRowsForm.getJsonObject();
-            if (_json == null)
+
+            // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
+            // we'll instead look for that data in the request param directly
+            if (_json == null && getViewContext().getRequest() != null && getViewContext().getRequest().getParameter("json") != null)
                 _json = new JSONObject(getViewContext().getRequest().getParameter("json"));
         }
 
@@ -3856,7 +3859,9 @@ public class QueryController extends SpringActionController
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
                     rowMap.putAll(jsonObj);
-                    addRowAttachments(rowMap, idx);
+                    if (allowRowAttachments())
+                        addRowAttachments(rowMap, idx);
+
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
                 }
@@ -3974,6 +3979,11 @@ public class QueryController extends SpringActionController
             return response;
         }
 
+        protected boolean allowRowAttachments()
+        {
+            return false;
+        }
+
         private void addRowAttachments(Map<String, Object> rowMap, int rowIndex)
         {
             if (getFileMap() != null)
@@ -3983,7 +3993,7 @@ public class QueryController extends SpringActionController
                     // allow for the fileMap key to include the row index for defining which row to attach this file to
                     // ex: "FileField::0", "FieldField::1"
                     String fieldKey = fileEntry.getKey();
-                    int delimIndex = fieldKey.indexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                    int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
                     if (delimIndex > -1)
                     {
                         String fieldRowIndex = fieldKey.substring(delimIndex + 2);
@@ -4035,6 +4045,12 @@ public class QueryController extends SpringActionController
                 return null;
             return new ApiSimpleResponse(response);
         }
+
+        @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
+        }
     }
 
     @RequiresAnyOf({ReadPermission.class, InsertPermission.class}) //will check below
@@ -4049,6 +4065,12 @@ public class QueryController extends SpringActionController
                 return null;
 
             return new ApiSimpleResponse(response);
+        }
+
+        @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
         }
     }
 
