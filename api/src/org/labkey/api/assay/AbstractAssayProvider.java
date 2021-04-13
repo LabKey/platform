@@ -1518,7 +1518,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         StudyPublishService svc = StudyPublishService.get();
 
         if (AuditLogService.get().isViewable() && null != svc)
-            result.add(new NavTree("view link-to-study history", svc.getPublishHistory(viewContext.getContainer(),
+            result.add(new NavTree("view link to study history", svc.getPublishHistory(viewContext.getContainer(),
                     Dataset.PublishSource.Assay, protocol.getRowId(), containerFilter)));
 
         return result;

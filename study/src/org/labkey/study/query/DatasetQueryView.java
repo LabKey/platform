@@ -433,8 +433,8 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (publishSource != null)
                 {
+//                    TODO : Consider deleting this code. Do we ever add the assay import buttons to the dataset query view?
 //                    ExpProtocol protocol = (ExpProtocol)publishSource;
-//                    do we ever add the assay import buttons to the dataset query view?
 //                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
                     if (user.hasRootAdminPermission() || canDelete)

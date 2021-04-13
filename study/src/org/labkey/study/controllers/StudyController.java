@@ -2696,7 +2696,7 @@ public class StudyController extends BaseStudyController
                 }
             }
             else
-                view.addView(new HtmlView(HtmlString.unsafe("The Dataset does not exist.")));
+                view.addView(new HtmlView(HtmlString.of("The Dataset does not exist.")));
             return view;
         }
 

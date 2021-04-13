@@ -21,9 +21,9 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
      */
     public enum DefaultValueSource
     {
-        PublishSource,  // the publish source results table
-        Specimen,       // for assays only, specimen linked to assay results
-        UserSpecified,  // user specified from the confirm view
+        PublishSource,  // The publish source results table.
+        Specimen,       // For assays only, specimen linked to assay results.
+        UserSpecified,  // Values that a user might provide from the confirm view.
     }
 
     private void convertStringArrayParam(PropertyValue pv)
