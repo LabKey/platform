@@ -267,6 +267,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (null == k)
                 return null;
 
+            // Don't attempt to convert List or Map values
+            if (k instanceof Map || k instanceof List)
+                return k;
+
             List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>>> maps = getMaps();
 
             if (_pkColumnLookupMap != null)
