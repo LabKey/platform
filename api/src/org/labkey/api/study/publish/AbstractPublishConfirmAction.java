@@ -30,6 +30,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -182,6 +183,11 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract FieldKey getObjectIdFieldKey(FORM form);
 
     /**
+     * The PublishSource enum which represents the source data
+     */
+    protected abstract Dataset.PublishSource getPublishSource(FORM form);
+
+    /**
      * Generate the map of field keys which will be added to publish results query view to represent the subject,
      * timepoint editable columns etc.
      */
@@ -233,7 +239,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         settings.setSelectionKey(form.getDataRegionSelectionKey());
         if (form.getContainerFilterName() != null)
             settings.setContainerFilterName(form.getContainerFilterName());
-        PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, errors, getObjectIdFieldKey(form),
+        PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, errors,
+                getPublishSource(form),
+                getObjectIdFieldKey(form),
                 _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids,
                 mismatched,
                 showSpecimenMatchColumn(form),

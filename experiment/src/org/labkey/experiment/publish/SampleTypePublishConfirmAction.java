@@ -7,6 +7,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.ui.PropertyType;
@@ -220,6 +221,12 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
+    protected Dataset.PublishSource getPublishSource(SampleTypePublishConfirmForm form)
+    {
+        return Dataset.PublishSource.SampleType;
+    }
+
+    @Override
     protected FieldKey getObjectIdFieldKey(SampleTypePublishConfirmForm form)
     {
         return FieldKey.fromParts(ROW_ID);
@@ -235,6 +242,9 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_participantId));
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_visitId));
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(_visitId));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SourceId, FieldKey.fromParts(
+                ExpMaterialProtocolInputTable.Column.SampleSet.name(),
+                ExpMaterialProtocolInputTable.Column.RowId.name()));
 
         return additionalCols;
     }

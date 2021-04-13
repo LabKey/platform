@@ -17,6 +17,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
@@ -188,6 +189,12 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     }
 
     @Override
+    protected Dataset.PublishSource getPublishSource(AssayPublishConfirmForm form)
+    {
+        return Dataset.PublishSource.Assay;
+    }
+
+    @Override
     protected FieldKey getObjectIdFieldKey(AssayPublishConfirmForm form)
     {
         return form.getProvider().getTableMetadata(_protocol).getResultRowIdFieldKey();
@@ -204,7 +211,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
 
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.RunId, tableMetadata.getRunRowIdFieldKeyFromResults());
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SourceId, tableMetadata.getRunRowIdFieldKeyFromResults());
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ObjectId, tableMetadata.getResultRowIdFieldKey());
 
         // TODO : can we transition away from using the defaultValueSource and just query the tableMetadata
