@@ -1,4 +1,4 @@
-package org.labkey.study.publish;
+package org.labkey.api.study.publish;
 
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.view.ActionURL;

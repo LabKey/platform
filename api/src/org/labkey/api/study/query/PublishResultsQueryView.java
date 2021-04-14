@@ -36,10 +36,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -49,6 +46,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.CompletionType;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -57,10 +55,10 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitImpl;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
-import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
+import org.labkey.api.study.assay.StudyParticipantVisitResolver;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -76,7 +74,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -98,6 +95,7 @@ public class PublishResultsQueryView extends QueryView
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final boolean _mismatched;
+    private final boolean _showSpecimenMatch;
     private final TimepointType _timepointType;
     private final Map<Object, String> _reshowVisits;
     private final Map<Object, String> _reshowDates;
@@ -108,10 +106,12 @@ public class PublishResultsQueryView extends QueryView
     private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
     private Map<String, Object> _hiddenFormFields;
     private Set<String> _hiddenColumnCaptions;
+    private FieldKey _objectIdFieldKey;
+    private Dataset.PublishSource _publishSource;
 
     public enum ExtraColFieldKeys
     {
-        RunId,                  // for assays the source run for the result row
+        SourceId,               // the source ID for the published rows, eg. runId or sampleId
         ObjectId,               // the identifier for the result row
         ParticipantId,
         VisitId,
@@ -125,6 +125,7 @@ public class PublishResultsQueryView extends QueryView
     }
 
     public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
+                                   Dataset.PublishSource publishSource,
                                    FieldKey objectIdFieldKey,
                                    List<Integer> objectIds,
                                    @Nullable Container targetStudyContainer,
@@ -133,6 +134,7 @@ public class PublishResultsQueryView extends QueryView
                                    Map<Object, String> reshowDates,
                                    Map<Object, String> reshowPtids,
                                    boolean mismatched,
+                                   boolean showSpecimenMatch,
                                    boolean includeTimestamp,
                                    Map<ExtraColFieldKeys, FieldKey> additionalColumns,
                                    Map<String, Object> hiddenFormFields,
@@ -141,12 +143,15 @@ public class PublishResultsQueryView extends QueryView
         super(schema, settings, errors);
         _targetStudyContainer = targetStudyContainer;
         _mismatched = mismatched;
+        _showSpecimenMatch = showSpecimenMatch;
         if (_targetStudyContainer != null)
             _timepointType = StudyPublishService.get().getTimepointType(_targetStudyContainer);
         else
             _timepointType = null;
+        _publishSource = publishSource;
+        _objectIdFieldKey = objectIdFieldKey;
         _filter = new SimpleFilter();
-        _filter.addInClause(objectIdFieldKey, objectIds);
+        _filter.addInClause(_objectIdFieldKey, objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         _reshowDates = reshowDates;
@@ -287,10 +292,11 @@ public class PublishResultsQueryView extends QueryView
 
     public static class ResolverHelper
     {
+        private final Dataset.PublishSource _publishSource;
         private final Container _targetStudyContainer;
         private final User _user;
 
-        private final ColumnInfo _runIdCol;
+        private final ColumnInfo _sourceIdCol;
         private final ColumnInfo _objectIdCol;
         private final ColumnInfo _ptidCol;
         private final ColumnInfo _visitIdCol;
@@ -310,16 +316,18 @@ public class PublishResultsQueryView extends QueryView
 
         public ResolverHelper(Container targetStudyContainer,
                               User user,
-                              ColumnInfo runIdCol, ColumnInfo objectIdCol,
+                              Dataset.PublishSource publishSource,
+                              ColumnInfo sourceIdCol, ColumnInfo objectIdCol,
                               ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo dateCol,
                               ColumnInfo specimenIDCol, ColumnInfo assayMatchCol,
                               ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo specimenDateCol,
                               ColumnInfo targetStudyCol)
         {
+            _publishSource = publishSource;
             _targetStudyContainer = targetStudyContainer;
             _user = user;
 
-            _runIdCol = runIdCol;
+            _sourceIdCol = sourceIdCol;
             _objectIdCol = objectIdCol;
             _ptidCol = ptidCol;
             _visitIdCol = visitIdCol;
@@ -347,16 +355,17 @@ public class PublishResultsQueryView extends QueryView
 
         public ParticipantVisitResolver getResolver(RenderContext ctx)
         {
-            Integer runId = (Integer)_runIdCol.getValue(ctx);
-            if (runId != null && !_resolvers.containsKey(runId))
+            Integer sourceId = _sourceIdCol != null ? (Integer)_sourceIdCol.getValue(ctx) : null;
+            if (sourceId != null && !_resolvers.containsKey(sourceId))
             {
-                ExpRun run = ExperimentService.get().getExpRun(runId);
-
-                ParticipantVisitResolver resolver = new StudyParticipantVisitResolverType().createResolver(run, _targetStudyContainer, getUser());
-                if (resolver != null)
-                    _resolvers.put(runId, resolver);
+                ExpObject expObject = _publishSource.resolvePublishSource(sourceId);
+                if (expObject != null)
+                {
+                    ParticipantVisitResolver resolver = new StudyParticipantVisitResolver(expObject.getContainer(), _targetStudyContainer, getUser());
+                    _resolvers.put(sourceId, resolver);
+                }
             }
-            return _resolvers.get(runId);
+            return _resolvers.get(sourceId);
         }
 
         private ParticipantVisit resolve(RenderContext ctx)
@@ -661,7 +670,7 @@ public class PublishResultsQueryView extends QueryView
 
         public void addQueryColumns(Set<ColumnInfo> set)
         {
-            if (_runIdCol != null) { set.add(_runIdCol); }
+            if (_sourceIdCol != null) { set.add(_sourceIdCol); }
             if (_ptidCol != null) { set.add(_ptidCol); }
             if (_visitIdCol != null) { set.add(_visitIdCol); }
             if (_dateCol != null) { set.add(_dateCol); }
@@ -911,7 +920,9 @@ public class PublishResultsQueryView extends QueryView
         fieldKeys.remove(null);
         
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys, selectColumns);
-        ColumnInfo objectIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ObjectId));
+        ColumnInfo objectIdCol = colInfos.get(_objectIdFieldKey);
+        if (_additionalColumns.containsKey(ExtraColFieldKeys.ObjectId))
+            objectIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ObjectId));
         ColumnInfo ptidCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ParticipantId));
         if (ptidCol == null)
         {
@@ -920,7 +931,7 @@ public class PublishResultsQueryView extends QueryView
             ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
         }
 
-        ColumnInfo runIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.RunId));
+        ColumnInfo sourceIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SourceId));
         ColumnInfo visitIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.VisitId));
         ColumnInfo dateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.Date));
         if (dateCol == null)
@@ -944,7 +955,8 @@ public class PublishResultsQueryView extends QueryView
 
         ResolverHelper resolverHelper = new ResolverHelper(
                 _targetStudyContainer, getUser(),
-                runIdCol, objectIdCol, ptidCol, visitIDCol, dateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
+                _publishSource,
+                sourceIdCol, objectIdCol, ptidCol, visitIDCol, dateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
         resolverHelper.setReshow(_reshowVisits, _reshowDates, _reshowPtids, _reshowTargetStudies);
 
         TargetStudyInputColumn targetStudyInputColumn = null;
@@ -991,8 +1003,13 @@ public class PublishResultsQueryView extends QueryView
             c.setCaption("Specimen Match - hidden");
         }
 
-        columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
-        columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
+        if (_showSpecimenMatch)
+            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
+
+        if (sourceIdCol != null && objectIdCol != null)
+            columns.add(new SourceDataLinkDisplayColumn(null, resolverHelper, _publishSource, sourceIdCol, objectIdCol));
+        else
+            throw new IllegalStateException("Both sourceId and objectId columns are required for the view");
 
         ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, ptidCol);
         columns.add(participantColumn);

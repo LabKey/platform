@@ -24,6 +24,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.remoteapi.query.Filter;
 
+import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -433,6 +434,7 @@ public class CopyConfig
         _saveState = saveState;
     }
 
+    @NotNull
     public Set<String> getAlternateKeys()
     {
         return Collections.unmodifiableSet(_alternateKeys);
