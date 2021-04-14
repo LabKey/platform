@@ -35,7 +35,7 @@ public class ExperimentListenerImpl implements ExperimentListener
         List<ValidationException> errors = new ArrayList<>();
         List<String> copyToStudyErrors = new ArrayList<>();
 
-        StudyPublishService.get().autoCopyResults(protocol, run, user, container, copyToStudyErrors);
+        StudyPublishService.get().autoLinkResults(protocol, run, user, container, copyToStudyErrors);
 
         // copy results data to the target study if the protocol is configured to auto copy
         for (String error : copyToStudyErrors)

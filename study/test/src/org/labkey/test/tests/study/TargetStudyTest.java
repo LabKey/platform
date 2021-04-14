@@ -221,7 +221,7 @@ public class TargetStudyTest extends AbstractAssayTest
     {
         DataRegionTable table = new DataRegionTable("Data", this);
         table.checkAllOnPage();
-        clickButton("Copy to Study");
+        clickButton("Link to Study");
 
         log("** Check TargetStudy dropdowns");
         final String study1OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")";
@@ -252,7 +252,7 @@ public class TargetStudyTest extends AbstractAssayTest
         assertTextNotPresent("You must specify a Target Study for all selected rows.");
 
         log("** Copy to studies");
-        clickButton("Copy to Study");
+        clickButton("Link to Study");
 
         beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/dataset.view?datasetId=5001");
         DataRegionTable dataset = new DataRegionTable("Dataset", this);

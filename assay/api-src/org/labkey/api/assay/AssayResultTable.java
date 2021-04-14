@@ -21,7 +21,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -242,7 +241,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         if (includeCopiedToStudyColumns)
         {
-            Set<String> studyColumnNames = schema.addCopiedToStudyColumns(this, false);
+            Set<String> studyColumnNames = schema.addLinkedToStudyColumns(this, false);
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));

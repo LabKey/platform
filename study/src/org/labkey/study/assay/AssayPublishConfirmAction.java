@@ -185,7 +185,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     protected ActionURL getPublishHandlerURL(AssayPublishConfirmForm form)
     {
-        return PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyConfirmURL(getContainer(), _protocol).deleteParameters();
+        return PageFlowUtil.urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _protocol).deleteParameters();
     }
 
     @Override
@@ -253,9 +253,9 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     }
 
     @Override
-    protected ActionURL copyToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
+    protected ActionURL linkToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
-        return form.getProvider().copyToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
+        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
     }
 
     @Override

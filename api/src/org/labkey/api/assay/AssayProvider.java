@@ -161,7 +161,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors);
+    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 

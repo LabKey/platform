@@ -40,7 +40,7 @@ public class AutoCopyToStudyTest extends BaseWebDriverTest
     @Override
     protected @Nullable String getProjectName()
     {
-        return "Auto Copy To Study Test";
+        return "Auto Link To Study Test";
     }
 
     @Override

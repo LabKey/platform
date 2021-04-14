@@ -117,7 +117,7 @@ public class PublishController extends SpringActionController
         {
             root.addChild("Assay List", urlProvider(AssayUrls.class).getBeginURL(getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
-            root.addChild("Copy-to-Study History");
+            root.addChild("Link to Study History");
         }
     }
 
@@ -247,7 +247,7 @@ public class PublishController extends SpringActionController
                         if (run != null)
                         {
                             List<String> errors = new ArrayList<>();
-                            _statusUrl = StudyPublishManager.getInstance().autoCopyResults(
+                            _statusUrl = StudyPublishManager.getInstance().autoLinkResults(
                                     protocol,
                                     provider,
                                     run,
@@ -271,7 +271,7 @@ public class PublishController extends SpringActionController
                 error("Failure", t);
                 finalStatus = TaskStatus.error;
             }
-            info("Auto copy to study complete");
+            info("Auto link to study complete");
             setStatus(finalStatus);
         }
     }

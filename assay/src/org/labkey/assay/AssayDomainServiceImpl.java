@@ -276,7 +276,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
-        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
         if (autoCopyValue != null)
         {
             Container autoCopyTarget = ContainerManager.getForId(autoCopyValue.getStringValue());
@@ -521,11 +521,11 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
 
                     if (autoCopyTargetContainerId != null)
                     {
-                        props.put(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
+                        props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
                     }
                     else
                     {
-                        props.remove(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+                        props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
                     }
                     protocol.setObjectProperties(props);
 

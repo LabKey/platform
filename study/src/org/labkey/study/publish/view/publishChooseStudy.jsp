@@ -119,7 +119,7 @@
                             window.location = response.returnUrl;
                     }),
                     failure: LABKEY.Utils.getCallbackWrapper(function(response) {
-                        LABKEY.Utils.alert('Error', 'Unable to auto copy the data : ' + response.exception);
+                        LABKEY.Utils.alert('Error', 'Unable to auto link the data : ' + response.exception);
                     },
                     this, true)
                 });
@@ -150,7 +150,7 @@
     if (bean.isInsufficientPermissions())
     {
 %>
-<span class="labkey-error"><h4>WARNING: You do not have permissions to copy to one or more of the selected <%=h(bean.getBatchNoun())%>'s associated studies.</h4></span>
+<span class="labkey-error"><h4>WARNING: You do not have permissions to link to one or more of the selected <%=h(bean.getBatchNoun())%>'s associated studies.</h4></span>
 <%
     }
 %>
@@ -159,10 +159,10 @@
     <%
         if (unambiguous)
         {
-            HtmlString label = HtmlString.unsafe("All data is marked for copying to study <b>" + h(firstStudy.getLabel()) + "</b> in folder <b>" + h(firstStudy.getContainer().getPath()) + "</b>.");
+            HtmlString label = HtmlString.unsafe("All data is marked for linking to study <b>" + h(firstStudy.getLabel()) + "</b> in folder <b>" + h(firstStudy.getContainer().getPath()) + "</b>.");
     %>
     <labkey:input type="displayfield" value="<%=label%>"/>
-    <labkey:input type="checkbox" label="Copy to a different study" id="chooseStudy" onChange="toggleStudies();"/>
+    <labkey:input type="checkbox" label="Link to a different study" id="chooseStudy" onChange="toggleStudies();"/>
     <%
         }
     %>
@@ -171,15 +171,15 @@
     <%
         if (!bean.getBatchIds().isEmpty())
         {
-            String autoCopyLabel = "Auto copy data from " +
+            String autoLinkLabel = "Auto link data from " +
                     StringUtilsLabKey.pluralize(bean.getBatchIds().size(), bean.getBatchNoun()) + " (" +
                     StringUtilsLabKey.pluralize(bean.getIds().size(), "row") + ")";
 
-            String autoCopyTip = "Selecting this checkbox will skip the confirmation step and run the copy to study process in a pipeline job. Any " +
+            String autoLinkTip = "Selecting this checkbox will skip the confirmation step and run the link to study process in a pipeline job. Any " +
                     bean.getBatchNoun() + " data missing valid subject IDs and timepoints will be ignored.";
     %>
-    <labkey:input type="checkbox" label="<%= autoCopyLabel %>" id="autoCopy" forceSmallContext="true"
-                  contextContent="<%= autoCopyTip %>"/>
+    <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoCopy" forceSmallContext="true"
+                  contextContent="<%= autoLinkTip %>"/>
     <%
         }
     %>

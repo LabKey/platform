@@ -3,7 +3,6 @@ package org.labkey.experiment.publish;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -41,7 +40,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -250,7 +248,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
-    protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
+    protected ActionURL linkToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
@@ -279,7 +277,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         }
 
         ExpSampleType sampleType = form._sampleType;
-        StudyPublishService.get().checkForAlreadyCopiedRows(getUser(), Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()), errors, rowIdsByTargetContainer);
+        StudyPublishService.get().checkForAlreadyLinkedRows(getUser(), Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()), errors, rowIdsByTargetContainer);
         if (!errors.isEmpty())
         {
             return null;

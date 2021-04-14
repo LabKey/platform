@@ -84,7 +84,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public String getLabel()
     {
-        return "Copy-to-Study Assay events";
+        return "Link to Study Assay events";
     }
 
     @Override

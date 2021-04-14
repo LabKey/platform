@@ -1272,7 +1272,7 @@ public class XarExporter
                                 queueDomain(domain);
                             }
 
-                            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
                                 Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
                                 if (autoCopyContainer != null)

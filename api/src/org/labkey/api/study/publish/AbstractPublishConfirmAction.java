@@ -194,9 +194,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(FORM form);
 
     /**
-     * Perform the copy to study operation
+     * Perform the link to study operation
      */
-    protected abstract ActionURL copyToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
+    protected abstract ActionURL linkToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
 
     /**
      * Returns the hidden form fields that need to be included on the data region form
@@ -262,7 +262,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
-        ActionButton publishButton = new ActionButton(publishURL, "Copy to Study");
+        ActionButton publishButton = new ActionButton(publishURL, "Link to Study");
         publishButton.setScript("return assayPublish_onCopyToStudy(this)", true);
         buttons.add(publishButton);
 
@@ -449,7 +449,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         if (errors.getErrorCount() == 0 && !form.isValidate())
         {
             List<String> publishErrors = new ArrayList<>();
-            _successURL  = copyToStudy(form, targetStudy, publishData, publishErrors);
+            _successURL  = linkToStudy(form, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), form .getDataRegionSelectionKey());

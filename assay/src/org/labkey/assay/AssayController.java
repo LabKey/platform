@@ -1685,8 +1685,8 @@ public class AssayController extends SpringActionController
                 if (getContainer().isProject() || getContainer().equals(ContainerManager.getSharedContainer()))
                 {
                     containersInfo.add(Map.of(
-                            "id", StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getId(),
-                            "name", StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getName(),
+                            "id", StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER.getId(),
+                            "name", StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER.getName(),
                             "path", "(Assay import folder)"));
                 }
 

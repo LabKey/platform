@@ -132,7 +132,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         {
             // These columns cause an UnauthorizedException if the user has permission to see the dataset
             // this run has been copied to, but not the run folder, because the column joins to the exp.Data query
-            // which doesn't know anything about the extra permission the user has been granted by the copy to study linkage.
+            // which doesn't know anything about the extra permission the user has been granted by the link to study.
             // We don't need to show it in the details view, so just skip it.
             if (!ExpRunTable.Column.DataOutputs.name().equalsIgnoreCase(runColumn.getName()) &&
                 !ExpRunTable.Column.JobId.name().equalsIgnoreCase(runColumn.getName()) &&

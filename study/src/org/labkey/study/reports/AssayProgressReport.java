@@ -314,7 +314,7 @@ public class AssayProgressReport extends AbstractReport
                 throw new IllegalStateException("Specimen status : " + status.getValue() + " is not a valid status code");
         }
 
-        // results available (copied to study)
+        // results available (linked to study)
         SpecimenStatus available = SpecimenStatus.getForName(SPECIMEN_AVAILABLE);
         for (ParticipantVisit visit : _copiedToStudyData.get(assay.getAssayName()))
         {
