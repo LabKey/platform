@@ -132,6 +132,12 @@
             </table>
 
             <br/><br/>
+
+            <%=  new Button.ButtonBuilder("Done")
+                        .href(cancelLink)
+                        .build()
+            %>
+
         <% } else { %>
 
             <% if (ModuleLoader.getInstance().hasModule("professional")) { %>
@@ -154,13 +160,4 @@
             }
         %>
     </labkey:panel>
-
-    <% if (numberOfTransforms == 1) { %>
-        <%=  new Button.ButtonBuilder("Done")
-                .href(cancelLink)
-                .build()
-        %>
-    <%
-        }
-    %>
 </div>
