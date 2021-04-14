@@ -268,12 +268,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
-        // Cannot edit default sample type
         ExpSampleType st = getSampleType(domain);
-        if (st == null || SampleTypeService.get().getDefaultSampleTypeLsid().equals(domain.getTypeURI()))
-        {
+        if (st == null)
             return false;
-        }
+
         return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
     }
 
