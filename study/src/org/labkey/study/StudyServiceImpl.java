@@ -21,14 +21,10 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -43,8 +39,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
@@ -84,7 +78,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.assay.StudyPublishManager;
-import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -278,31 +271,11 @@ public class StudyServiceImpl implements StudyService
 */
 
     @Override
-    public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
-    {
-        String assayName = def.getLabel();
-        ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
-        if (protocol != null)
-            assayName = protocol.getName();
-
-        AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(), rowCount + " row(s) were recalled to the assay: " + assayName);
-
-        if (protocol != null)
-            event.setProtocol(protocol.getRowId());
-        event.setTargetStudy(def.getStudy().getContainer().getId());
-        event.setDatasetId(def.getDatasetId());
-
-        AuditLogService.get().addEvent(user, event);
-    }
-
-
-    @Override
     public void addStudyAuditEvent(Container container, User user, String comment)
     {
         AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, container, comment);
         AuditLogService.get().addEvent(user, event);
     }
-
 
     public static void addDatasetAuditEvent(User u, Container c, Dataset def, String comment, UploadLog ul /*optional*/)
     {
@@ -395,80 +368,6 @@ public class StudyServiceImpl implements StudyService
             {
                 if (studyRef.equals(study.getLabel()))
                     result.add(study);
-            }
-        }
-
-        return result;
-    }
-
-    @Override
-    public Set<DatasetDefinition> getDatasetsForPublishSource(Integer publishSourceId, Dataset.PublishSource publishSource)
-    {
-        TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("publishSourceId"), publishSourceId);
-        filter.addCondition(FieldKey.fromParts("publishSourceType"), publishSource.name());
-
-        Set<DatasetDefinition> result = new HashSet<>();
-        Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
-        for (Map<String, Object> row : rows)
-        {
-            String containerId = (String)row.get("container");
-            int datasetId = ((Number)row.get("datasetid")).intValue();
-            Container container = ContainerManager.getForId(containerId);
-            result.add(getDataset(container, datasetId));
-        }
-        return result;
-    }
-
-    @Override
-    public Set<Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
-    {
-        // Cache the datasets for a specific protocol (assay design)
-        Map<ExpProtocol, Set<DatasetDefinition>> protocolDatasets = new HashMap<>();
-        // Remember all of the run RowIds for a given protocol (assay design)
-        Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
-
-        // Go through the runs and figure out what protocols they belong to, and what datasets they could have been copied to
-        for (ExpRun run : runs)
-        {
-            ExpProtocol protocol = run.getProtocol();
-            Set<DatasetDefinition> datasets = protocolDatasets.get(protocol);
-            if (datasets == null)
-            {
-                datasets = getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay);
-                protocolDatasets.put(protocol, datasets);
-            }
-            List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
-            if (protocolRunIds == null)
-            {
-                protocolRunIds = new ArrayList<>();
-                allProtocolRunIds.put(protocol, protocolRunIds);
-            }
-            protocolRunIds.add(run.getRowId());
-        }
-
-        // All of the datasets that have rows backed by data in the specified runs
-        Set<Dataset> result = new HashSet<>();
-
-        for (Map.Entry<ExpProtocol, Set<DatasetDefinition>> entry : protocolDatasets.entrySet())
-        {
-            for (DatasetDefinition dataset : entry.getValue())
-            {
-                // Don't enforce permissions for the current user - we still want to tell them if the data
-                // has been copied even if they can't see the dataset.
-                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, false);
-                TableInfo tableInfo = schema.getTable(dataset.getName());
-                AssayProvider provider = AssayService.get().getProvider(entry.getKey());
-                if (provider != null)
-                {
-                    AssayTableMetadata tableMetadata = provider.getTableMetadata(entry.getKey());
-                    SimpleFilter filter = new SimpleFilter();
-                    filter.addInClause(tableMetadata.getRunRowIdFieldKeyFromResults(), allProtocolRunIds.get(entry.getKey()));
-                    if (new TableSelector(tableInfo, filter, null).exists())
-                    {
-                        result.add(dataset);
-                    }
-                }
             }
         }
 

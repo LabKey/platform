@@ -28,8 +28,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.model.ViewCategory;
@@ -122,9 +124,14 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    public void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user)
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
                     {
-                        StudyService.get().addAssayRecallAuditEvent(def, rowCount, sourceContainer, user);
+                        // for assays the source lsid is the run
+                        ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
+                        if (expRun != null && expRun.getContainer() != null)
+                            return expRun.getContainer();
+
+                        return null;
                     }
                 },
         SampleType
@@ -147,6 +154,15 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     @Override
                     public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
                     {
+                        if (publishSourceId != null)
+                        {
+                            ExpSampleType sampleType = (ExpSampleType)resolvePublishSource(publishSourceId);
+                            if (sampleType != null)
+                            {
+                                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(sampleType);
+                                return new ActionButton("View Source Sample Type", url);
+                            }
+                        }
                         return null;
                     }
 
@@ -157,8 +173,14 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    public void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user)
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
                     {
+                        // for sample types the source lsid is the sample type
+                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(sourceLsid);
+                        if (sampleType != null)
+                            return sampleType.getContainer();
+
+                        return null;
                     }
                 };
 
@@ -166,7 +188,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         public abstract String getLabel(Integer publishSourceId);
         public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
-        public abstract void addRecallAuditEvent(Integer publishSourceId, Dataset def, int rowCount, Container sourceContainer, User user);
+        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid);
     }
 
     Set<String> getDefaultFieldNames();
