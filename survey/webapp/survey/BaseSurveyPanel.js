@@ -1064,8 +1064,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     leavePage : function(pageId) {
-        if (this.returnURL)
-            window.location = this.returnURL;
+        if (this.returnUrl)
+            window.location = this.returnUrl;
         else if (pageId)
             window.location = LABKEY.ActionURL.buildURL('project', 'begin', null, { pageId: pageId });
         else
