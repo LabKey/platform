@@ -1904,4 +1904,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (null != _adminWarning)
             warnings.add(_adminWarning);
     }
+
+    @Override
+    public boolean isProcedureExists(DbScope scope, String schema, String name)
+    {
+        // Don't bother querying LabKey for stored procedures
+        return getServerType() != PostgreSqlServerType.LabKey && super.isProcedureExists(scope, schema, name);
+    }
 }
