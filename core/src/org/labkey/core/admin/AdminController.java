@@ -583,6 +583,12 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public ActionURL getFolderTypeURL(Container c)
+        {
+            return new ActionURL(FolderTypeAction.class, c);
+        }
+
+        @Override
         public ActionURL getExportFolderURL(Container c)
         {
             return new ActionURL(ExportFolderAction.class, c);

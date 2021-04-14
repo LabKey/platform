@@ -347,6 +347,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getUploadSpecimensURL(Container c)
+        {
+            return new ActionURL(ShowUploadSpecimensAction.class, c);
+        }
+
+        @Override
         public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
         {
             ActionURL url = new ActionURL(InsertSpecimenQueryRowAction.class, c);
