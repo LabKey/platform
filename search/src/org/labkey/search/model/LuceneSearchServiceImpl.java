@@ -89,7 +89,6 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileStream.FileFileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MinorConfigurationException;
@@ -535,20 +534,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 boolean tooBig = isTooBig(fs, type);
 
-                if ("text/html".equals(type))
-                {
-                    String html;
-                    if (tooBig)
-                        html = "<html><body></body></html>";
-                    else
-                        html = PageFlowUtil.getStreamContentsAsString(is);
-
-                    body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
-
-                    if (null == title)
-                        logBadDocument("Null title", r);
-                }
-                else if (type.startsWith("text/") && !type.contains("xml") && !StringUtils.equals(type, "text/comma-separated-values"))
+                // Consider: Remove special handling for text files? Just delegate to Tika instead?
+                if (type.startsWith("text/") && !type.contains("xml") && !type.contains("html") && !StringUtils.equals(type, "text/comma-separated-values"))
                 {
                     if (tooBig)
                         body = "";
@@ -2136,5 +2123,4 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             /* pass */
         }
     }
-
 }
