@@ -426,18 +426,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
     }
 
-    @Override
-    public String getDefaultSampleTypeLsid()
-    {
-        return new Lsid.LsidBuilder("SampleSource", "Default").toString();
-    }
-
-    @Override
-    public String getDefaultSampleTypeMaterialLsidPrefix()
-    {
-        return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
-    }
-
     public DbScope.Transaction ensureTransaction()
     {
         return getExpSchema().getScope().ensureTransaction();

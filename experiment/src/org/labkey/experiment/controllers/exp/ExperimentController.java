@@ -3440,12 +3440,6 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
-            String defaultSampleType = SampleTypeService.get().getDefaultSampleTypeLsid();
-            if (sampleTypes.stream().anyMatch(ss -> defaultSampleType.equals(ss.getLSID())))
-            {
-                throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "You cannot delete the default sample type."));
-            }
-
             if (!ensureCorrectContainer(sampleTypes))
             {
                 throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "To delete a sample type, you must be in its folder or project."));
