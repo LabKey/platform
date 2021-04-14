@@ -40,6 +40,7 @@ import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.pages.study.DeleteMultipleVisitsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.core.webdav.WebDavUploadHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -220,7 +221,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     @Test
     public void testFailForUndefinedVisitsReload() throws IOException
     {
-        _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsReload");
+        String folderName = "testFailForUndefinedVisitsReload";
+        _containerHelper.createSubfolder(getProjectName(), folderName);
 
         // import the full archive and verify the defined visits
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 1, false);
@@ -234,7 +236,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         attemptStudyReloadNow("Error: Could not find file studyload.txt in the pipeline root for Study 001", true);
 
         // change pipeline root and then attempt reload again
-        setPipelineRoot(EXPLODED_FOLDER_ARCHIVE.getAbsolutePath());
+        new WebDavUploadHelper(getProjectName() + "/" + folderName).uploadDirectoryContents(EXPLODED_FOLDER_ARCHIVE);
         goToModule("Pipeline");
         clickButton("Process and Import Data");
         _fileBrowserHelper.uploadFile(EXPLODED_FOLDER_STUDYLOAD_TXT, null, null, true);
@@ -264,7 +266,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void attemptStudyReloadNow(String expectedMsg, boolean failForUndefinedVisits) throws IOException
     {
-        Connection cn = createDefaultConnection(false);
+        Connection cn = createDefaultConnection();
         PostCommand reloadStudy = new PostCommand("study", "checkForReload");
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("failForUndefinedVisits", failForUndefinedVisits ? "true" : "false");

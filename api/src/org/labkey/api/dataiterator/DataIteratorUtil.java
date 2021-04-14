@@ -261,7 +261,7 @@ public class DataIteratorUtil
                 }
                 if (count > 1)
                 {
-                    setupError.addGlobalError("Two columns mapped to target column: " + e.getKey().toString());
+                    setupError.addGlobalError("Two columns mapped to target column " + e.getKey().toString() + ". Check the column names and import aliases for your data.");
                     break;
                 }
             }
