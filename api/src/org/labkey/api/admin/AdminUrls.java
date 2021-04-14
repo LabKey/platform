@@ -44,6 +44,7 @@ public interface AdminUrls extends UrlProvider
 
     // URLs to key Folder Management tabs
     ActionURL getManageFoldersURL(Container c);
+    ActionURL getFolderTypeURL(Container c);
     ActionURL getMissingValuesURL(Container c);
     ActionURL getModulePropertiesURL(Container c);
     ActionURL getNotificationsURL(Container c);

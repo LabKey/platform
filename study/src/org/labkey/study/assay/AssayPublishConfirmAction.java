@@ -17,6 +17,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
@@ -31,8 +32,8 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.publish.AbstractPublishConfirmAction;
-import org.labkey.study.publish.PublishConfirmForm;
+import org.labkey.api.study.publish.AbstractPublishConfirmAction;
+import org.labkey.api.study.publish.PublishConfirmForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -50,19 +51,8 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
 
     public static class AssayPublishConfirmForm extends PublishConfirmForm
     {
-        private Integer _rowId;
         private ExpProtocol _protocol;
         private AssayProvider _provider;
-
-        public Integer getRowId()
-        {
-            return _rowId;
-        }
-
-        public void setRowId(Integer rowId)
-        {
-            _rowId = rowId;
-        }
 
         ExpProtocol getProtocol()
         {
@@ -96,9 +86,12 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         }
     }
 
+    /**
+     * Names need to match those found in PublishConfirmForm.DefaultValueSource
+     */
     public enum DefaultValueSource
     {
-        Assay
+        PublishSource
                 {
                     @Override
                     public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
@@ -184,9 +177,21 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     }
 
     @Override
+    protected boolean showSpecimenMatchColumn(AssayPublishConfirmForm form)
+    {
+        return true;
+    }
+
+    @Override
     protected ActionURL getPublishHandlerURL(AssayPublishConfirmForm form)
     {
         return PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyConfirmURL(getContainer(), _protocol).deleteParameters();
+    }
+
+    @Override
+    protected Dataset.PublishSource getPublishSource(AssayPublishConfirmForm form)
+    {
+        return Dataset.PublishSource.Assay;
     }
 
     @Override
@@ -206,7 +211,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
 
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.RunId, tableMetadata.getRunRowIdFieldKeyFromResults());
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SourceId, tableMetadata.getRunRowIdFieldKeyFromResults());
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ObjectId, tableMetadata.getResultRowIdFieldKey());
 
         // TODO : can we transition away from using the defaultValueSource and just query the tableMetadata
@@ -227,22 +232,6 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.TargetStudy, tableMetadata.getTargetStudyFieldKey());
         }
         return additionalCols;
-    }
-
-    @Override
-    protected Map<String, Object> getHiddenFormFields(AssayPublishConfirmForm form)
-    {
-        Map<String, Object> fields = new HashMap<>();
-
-        fields.put("rowId", _protocol.getRowId());
-        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-        if (returnURL == null)
-        {
-            returnURL = getViewContext().getActionURL().toString();
-        }
-        fields.put(ActionURL.Param.returnUrl.name(), returnURL);
-
-        return fields;
     }
 
     /**

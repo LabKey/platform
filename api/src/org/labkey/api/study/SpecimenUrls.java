@@ -47,6 +47,7 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getSubmitRequestURL(Container c, String id);
     ActionURL getTypeParticipantReportURL(Container c);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+    ActionURL getUploadSpecimensURL(Container c);
 
     void addSpecimenNavTrail(NavTree root, String childTitle, Container c);
 }
