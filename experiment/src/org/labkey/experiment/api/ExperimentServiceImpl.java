@@ -191,9 +191,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
 
-    @Deprecated
-    private static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
-
     public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
@@ -1200,8 +1197,6 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public String generateLSID(Container container, Class<? extends ExpObject> clazz, @NotNull String name)
     {
-        if (clazz == ExpSampleType.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
-            throw new IllegalArgumentException("Default 'Unspecified' SampleType is not supported");
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 

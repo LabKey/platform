@@ -355,10 +355,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public ExpSampleTypeImpl getSampleTypeByType(@NotNull String lsid, Container hint)
     {
-        // Default sample type has been removed -- see LabKey/platform#2140
-        if (getDefaultSampleTypeLsid().equals(lsid))
-            throw new IllegalArgumentException("Default SampleType is not supported: " + lsid);
-
         Container c = hint;
         String id = sampleTypeCache.get(lsid);
         if (null != id && (null == hint || !id.equals(hint.getId())))
@@ -428,13 +424,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("LSID"), lsid);
         return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
-    }
-
-    /** The default 'Unspecified' SampleType is no longer supported. */
-    @Deprecated
-    public String getDefaultSampleTypeLsid()
-    {
-        return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
     public DbScope.Transaction ensureTransaction()

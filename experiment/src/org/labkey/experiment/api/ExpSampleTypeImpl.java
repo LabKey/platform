@@ -559,9 +559,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public void save(User user)
     {
-        if (SampleTypeServiceImpl.get().getDefaultSampleTypeLsid().equals(getLSID()))
-            throw new IllegalStateException("Can't create or update the default SampleType");
-
         boolean isNew = _object.getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoSampleType(), true);
         if (isNew)
