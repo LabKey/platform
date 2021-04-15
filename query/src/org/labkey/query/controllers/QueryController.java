@@ -37,6 +37,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -70,7 +71,6 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -86,7 +86,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
-import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -159,6 +158,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -206,6 +206,7 @@ import static org.labkey.api.util.DOM.cl;
 public class QueryController extends SpringActionController
 {
     private static final Logger LOG = LogManager.getLogger(QueryController.class);
+    private static final String ROW_ATTACHMENT_INDEX_DELIM = "::";
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -3778,6 +3779,24 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
+        private JSONObject _json;
+
+        @Override
+        public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
+        {
+            _json = apiSaveRowsForm.getJsonObject();
+
+            // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
+            // we'll instead look for that data in the request param directly
+            if (_json == null && getViewContext().getRequest() != null && getViewContext().getRequest().getParameter("json") != null)
+                _json = new JSONObject(getViewContext().getRequest().getParameter("json"));
+        }
+
+        protected JSONObject getJsonObject()
+        {
+            return _json;
+        }
+
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
             JSONObject response = new JSONObject();
@@ -3840,6 +3859,9 @@ public class QueryController extends SpringActionController
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
                     rowMap.putAll(jsonObj);
+                    if (allowRowAttachments())
+                        addRowAttachments(rowMap, idx);
+
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
                 }
@@ -3957,6 +3979,36 @@ public class QueryController extends SpringActionController
             return response;
         }
 
+        protected boolean allowRowAttachments()
+        {
+            return false;
+        }
+
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex)
+        {
+            if (getFileMap() != null)
+            {
+                for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())
+                {
+                    // allow for the fileMap key to include the row index for defining which row to attach this file to
+                    // ex: "FileField::0", "FieldField::1"
+                    String fieldKey = fileEntry.getKey();
+                    int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                    if (delimIndex > -1)
+                    {
+                        String fieldRowIndex = fieldKey.substring(delimIndex + 2);
+                        if (!fieldRowIndex.equals(rowIndex+""))
+                            continue;
+
+                        fieldKey = fieldKey.substring(0, delimIndex);
+                    }
+
+                    SpringAttachmentFile file = new SpringAttachmentFile(fileEntry.getValue());
+                    rowMap.put(fieldKey, file.isEmpty() ? null : file);
+                }
+            }
+        }
+
         protected boolean isSuccessOnValidationError()
         {
             return getRequestedApiVersion() >= 13.2;
@@ -3988,10 +4040,16 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.update, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.update, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
+        }
+
+        @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
         }
     }
 
@@ -4002,11 +4060,17 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.insert, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
 
             return new ApiSimpleResponse(response);
+        }
+
+        @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
         }
     }
 
@@ -4017,7 +4081,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.importRows, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4032,7 +4096,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.delete, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.delete, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4065,7 +4129,7 @@ public class QueryController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            JSONObject json = apiSaveRowsForm.getJsonObject();
+            JSONObject json = getJsonObject();
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
