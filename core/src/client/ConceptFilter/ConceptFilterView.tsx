@@ -1,15 +1,17 @@
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
 import { OntologyBrowserFilterPanel, } from '@labkey/components';
+import classNames from 'classnames';
 
 import './ConceptFilterView.scss';
-import { NameAndLinkingOptions } from '@labkey/components/dist/internal/components/domainproperties/NameAndLinkingOptions';
-import { ConceptModel } from '@labkey/components/dist/internal/components/ontology/models';
-// import { ActionButton } from '@labkey/components/dist/internal/components/buttons/ActionButton';
+
+type FilterValueListener = (newValue: string) => void;
 
 export interface AppContext {
-    onConceptSelect: () => void;
     ontologyId: string;
-    selectedCode?: string;
+    initFilterValue?: string;
+    subscribeFilterValue: (FilterValueListener) => void;
+    unsubscribeFilterValue: (FilterValueListener) => void; //TODO change property name
+    onFilterChange: (filterValue: string) => void;
 }
 
 interface Props {
@@ -18,18 +20,27 @@ interface Props {
 
 export const ConceptFilterView: FC<Props> = memo(props => {
     const {context} = props;
-    const {onConceptSelect, ontologyId, selectedCode} = context;
-    const [hidden, setHidden] = useState<boolean>(true);
-    const [selectedConcept, setSelectedConcept] = useState<ConceptModel>();
+    const {initFilterValue, onFilterChange, ontologyId, subscribeFilterValue, unsubscribeFilterValue } = context;
+    const [filterValue, setFilterValue] = useState(initFilterValue);
+    const [collapsed, setHidden] = useState<boolean>(true);
 
     const clickHandler = useCallback(() => {
-        setHidden(!hidden);
-    },[hidden, setHidden]);
+        setHidden(!collapsed);
+    },[collapsed, setHidden]);
+
+    useEffect(() => {
+        const handleValueChange = (newValue: string) => {
+            setFilterValue(newValue);
+        };
+        subscribeFilterValue(handleValueChange);
+        return () => unsubscribeFilterValue(handleValueChange);
+
+    },[setFilterValue, subscribeFilterValue, unsubscribeFilterValue]);
 
     return (
         <div className="concept-filter-view">
-            <a onClick={clickHandler}>{hidden ? 'Find Concepts by tree' : 'Close Browser'}</a>
-            {!hidden && <OntologyBrowserFilterPanel ontologyId={ontologyId} onConceptSelection={onConceptSelect} selectedConcept={selectedConcept}  /> }
+            <a className={classNames('show-toggle', {collapsed})} onClick={clickHandler}>{collapsed ? 'Find Concepts By Tree' : 'Close Browser'}</a>
+            {!collapsed && <OntologyBrowserFilterPanel ontologyId={ontologyId} filterValue={filterValue} onFilterChange={onFilterChange} /> }
         </div>
     );
 });

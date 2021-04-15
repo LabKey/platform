@@ -24,7 +24,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     modal: true,
 
-    resizable: true,
+    resizable: false,
 
     // 24846
     width: Ext.isGecko ? 425 : 410,
@@ -63,7 +63,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 handler: this.closeDialog,
                 scope: this
             }],
-
+            width: this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI ?
+                    (Ext.isGecko ? 513 : 498) :
+                    // 24846
+                    (Ext.isGecko ? 425 : 410),
             // listeners
             listeners: {
                 destroy: function() {
@@ -351,19 +354,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             })
         }
 
-        // // default view
-        // views.push({
-        //     xtype: 'filter-view-ontology',
-        //     column: this.column,
-        //     fieldKey: this.fieldKey, // should not have to hand this in bc the column should supply correctly
-        //     dataRegionName: this.dataRegionName,
-        //     jsonType : this.jsonType,
-        //     filters: filters,
-        //     scope: this
-        // });
-
         return views;
-    }
+    },
+    CONCEPT_CODE_CONCEPT_URI: 'http://www.labkey.org/types#conceptCode'
 });
 
 LABKEY.FilterDialog.ViewPanel = Ext.extend(Ext.form.FormPanel, {
@@ -440,11 +433,12 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             bodyStyle: 'padding: 5px;',
             bubbleEvents: ['add', 'remove', 'clientvalidation'],
             defaults: { border: false },
-            items: this.generateFilterDisplays(2)
+            items: this.generateFilterDisplays(2),
         });
 
         this.combos = [];
         this.inputs = [];
+        this.updateConceptFilters = {};
 
         LABKEY.FilterDialog.View.Default.superclass.initComponent.call(this);
 
@@ -478,7 +472,9 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                         }
                     }
 
-                    this.inputs[f].setValue(filter.getURLParameterValue());
+                    const inputValue = filter.getURLParameterValue();
+                    this.inputs[f].setValue(inputValue);
+                    this.updateConceptFilters?.[f]?.(inputValue);
                 }
             }
         }
@@ -554,35 +550,56 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             });
 
             if (this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI) {
-                const id = LABKEY.Utils.generateUUID();
+                const divId = LABKEY.Utils.generateUUID();
+                const index = i;
                 items.push({
                     xtype: 'panel',
                     layout: 'form',
-                    id: id,
+                    id: divId,
                     border: false,
                     defaults: this.itemDefaults,
                     items: [{
                         value: 'a',
                         scope: this
                     }],
+                    listeners: {
+                        render: () => {
+                            const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
+                            // const conceptFilterScript = 'core/gen/conceptFilter';
+                            LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId, index, scope:this});
+                        }
+                    },
                     scope: this
                 });
-
-                const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                // const conceptFilterScript = 'core/gen/conceptFilter';
-                LABKEY.requiresScript(conceptFilterScript, () => this.loadConceptPickers(id), this);
             }
 
             idx++;
         }
 
-
         return items;
     },
 
-    loadConceptPickers: function(divId) {
+    loadConceptPickers: function(ctx = this) {
+        const { divId, index, scope} = ctx;
+        const {inputs} = scope;
+        const targetInput = inputs?.[index];
+
         LABKEY.App.loadApp('conceptFilter', divId, {
-            ontologyId: this.column.sourceOntology
+            ontologyId: scope.column.sourceOntology,
+            initFilterValue: targetInput?.getValue(),
+            onFilterChange: (filterValue) => {
+                const inputField = targetInput;
+                if (!targetInput.disabled) {
+                    inputField?.setValue(filterValue);
+                }
+            },
+            subscribeFilterValue: (listener) => {
+                if (scope.updateConceptFilters)
+                    scope.updateConceptFilters[index] = listener;
+            },
+            unsubscribeFilterValue: () => {
+                scope.updateConceptFilters?.remove(index);
+            }
         });
     },
 
@@ -653,7 +670,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         //in either case, this means we should disable all other filters
         if(selectedValue == '' || !filter.isDataValueRequired()){
             //Disable all subsequent combos
-            Ext.each(combos, function(combo, idx){
+            Ext.each(combos, function(combo, idx) {
                 //we enable the next combo in the series
                 if(combo.filterIndex == this.filterIndex + 1){
                     combo.setValue();
@@ -754,6 +771,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 change : function(input, newVal, oldVal) {
                     if (oldVal != newVal) {
                         this.changed = true;
+                        this.updateConceptFilters?.[idx]?.(newVal);
                     }
                 },
                 scope : this
@@ -1387,7 +1405,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
 Ext.reg('filter-view-faceted', LABKEY.FilterDialog.View.Faceted);
 
-
+//TODO clean this up, keeping for the moment as example
 // LABKEY.FilterDialog.View.Ontology = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 //
 //     initComponent : function() {
@@ -1509,3 +1527,7 @@ LABKEY.ext.BooleanTextField = Ext.extend(Ext.form.TextField, {
 
 Ext.reg('labkey-booleantextfield', LABKEY.ext.BooleanTextField);
 
+//TODO may be appropriate to move the one off stuff to this then switch based on conceptURI property.
+LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Default, {
+
+});
