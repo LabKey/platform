@@ -132,6 +132,7 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
@@ -189,6 +190,8 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
+import org.labkey.experiment.publish.SampleTypePublishConfirmAction;
+import org.labkey.experiment.publish.SampleTypePublishStartAction;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
@@ -264,7 +267,11 @@ import static org.labkey.api.util.DOM.cl;
 public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ExperimentController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
+            ExperimentController.class,
+            SampleTypePublishStartAction.class,
+            SampleTypePublishConfirmAction.class
+    );
     private static final String GUEST_DIRECTORY_NAME = "guest";
 
     public ExperimentController()
@@ -709,7 +716,7 @@ public class ExperimentController extends SpringActionController
             }
 
             ActionURL linkToStudyHistoryURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
-            ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
+            ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link-to-Study History", ActionButton.Action.LINK);
             linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
 
@@ -2879,9 +2886,9 @@ public class ExperimentController extends SpringActionController
 
             List<Pair<SecurableResource, ActionURL>> permissionDatasetRows = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<>();
-            if (StudyService.get() != null)
+            if (StudyPublishService.get() != null)
             {
-                for (Dataset dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForAssayRuns(runs, getUser()))
                 {
                     ActionURL url = urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
                     if (dataset.canDelete(getUser()))
@@ -3132,7 +3139,7 @@ public class ExperimentController extends SpringActionController
                     {
                         noun = "Protocol";
                     }
-                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
+                    for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
                         Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))
@@ -3440,12 +3447,6 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
-            String defaultSampleType = SampleTypeService.get().getDefaultSampleTypeLsid();
-            if (sampleTypes.stream().anyMatch(ss -> defaultSampleType.equals(ss.getLSID())))
-            {
-                throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "You cannot delete the default sample type."));
-            }
-
             if (!ensureCorrectContainer(sampleTypes))
             {
                 throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "To delete a sample type, you must be in its folder or project."));
@@ -6352,6 +6353,21 @@ public class ExperimentController extends SpringActionController
             url.addParameter("schemaName", "samples");
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
+            return url;
+        }
+
+        @Override
+        public ActionURL getLinkToStudyURL(Container container)
+        {
+            return new ActionURL(SampleTypePublishStartAction.class, container);
+        }
+
+        @Override
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
             return url;
         }
     }

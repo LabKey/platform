@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.publish;
+package org.labkey.api.study.publish;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -30,12 +30,11 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -166,6 +165,14 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract boolean isMismatchedSpecimenInfo(FORM form);
 
     /**
+     * Show the column to indicate whether there are specimens which match the subject/timepoint combination
+     */
+    protected boolean showSpecimenMatchColumn(FORM form)
+    {
+        return false;
+    }
+
+    /**
      * Returns the publish URL
      */
     protected abstract ActionURL getPublishHandlerURL(FORM form);
@@ -176,20 +183,38 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract FieldKey getObjectIdFieldKey(FORM form);
 
     /**
+     * The PublishSource enum which represents the source data
+     */
+    protected abstract Dataset.PublishSource getPublishSource(FORM form);
+
+    /**
      * Generate the map of field keys which will be added to publish results query view to represent the subject,
      * timepoint editable columns etc.
      */
     protected abstract Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(FORM form);
 
     /**
-     * Returns the hidden form fields that need to be included on the data region form
-     */
-    protected abstract Map<String, Object> getHiddenFormFields(FORM form);
-
-    /**
      * Perform the copy to study operation
      */
     protected abstract ActionURL copyToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
+
+    /**
+     * Returns the hidden form fields that need to be included on the data region form
+     */
+    protected Map<String, Object> getHiddenFormFields(PublishConfirmForm form)
+    {
+        Map<String, Object> fields = new HashMap<>();
+
+        fields.put("rowId", form.getRowId());
+        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+        if (returnURL == null)
+        {
+            returnURL = getViewContext().getActionURL().toString();
+        }
+        fields.put(ActionURL.Param.returnUrl.name(), returnURL);
+
+        return fields;
+    }
 
     /**
      * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
@@ -214,9 +239,12 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         settings.setSelectionKey(form.getDataRegionSelectionKey());
         if (form.getContainerFilterName() != null)
             settings.setContainerFilterName(form.getContainerFilterName());
-        PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, errors, getObjectIdFieldKey(form),
+        PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, errors,
+                getPublishSource(form),
+                getObjectIdFieldKey(form),
                 _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids,
                 mismatched,
+                showSpecimenMatchColumn(form),
                 form.isIncludeTimestamp(),
                 getAdditionalColumns(form),
                 getHiddenFormFields(form),
@@ -249,7 +277,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
         {
-            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.PublishSource.toString());
             publishURL.replaceParameter("includeTimestamp", "true");
             ActionButton includeTimeButton = new ActionButton(publishURL, "Display DateTime");
             includeTimeButton.setScript("return assayPublish_onCopyToStudy(this)", true);
@@ -259,7 +287,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         if (mismatched)
         {
             publishURL.deleteParameter("validate");
-            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.PublishSource.toString());
             ActionButton fromAssayButton = new ActionButton(publishURL, "Reset with Assay Data");
             buttons.add(fromAssayButton);
 

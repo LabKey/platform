@@ -78,7 +78,7 @@ public class PublishController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
+    public class PublishAssayHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
 

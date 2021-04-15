@@ -174,6 +174,7 @@ public class DataIteratorContext
         return _dontUpdateColumnNames;
     }
 
+    @NotNull
     public Set<String> getAlternateKeys()
     {
         return _alternateKeys;

@@ -51,8 +51,8 @@
     }
   },
   "dependencies": {
-    "@labkey/api": "1.2.1",
-    "@labkey/components": "2.22.5-fb-issue42527-1.0",
+    "@labkey/api": "1.3.0",
+    "@labkey/components": "2.23.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.1.0"
   },
