@@ -55,6 +55,7 @@ public interface ProvenanceService
     String DATA_OUTPUTS = "dataOutputs";
     String PROPERTIES = "properties";
 
+    @NotNull
     static ProvenanceService get()
     {
         ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);

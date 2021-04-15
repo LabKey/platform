@@ -59,6 +59,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -375,10 +376,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // call pvs to delete assay result rows provenance
                 ProvenanceService pvs = ProvenanceService.get();
-                if (null != pvs)
-                {
-                    pvs.deleteAssayResultProvenance(assayResultLsidSql);
-                }
+                pvs.deleteAssayResultProvenance(assayResultLsidSql);
 
                 int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
                 LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " ontology objects for assay result lsids");
@@ -456,7 +454,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
-            if (pvs != null || provider.isPlateMetadataEnabled(protocol))
+            if (provider.isPlateMetadataEnabled(protocol))
             {
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
@@ -525,7 +523,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     private void addAssayResultRowsProvenance(Container container, ExpRun run, List<Map<String, Object>> insertedData, Map<Integer, String> rowIdToLsid)
     {
-        ProvenanceService pvs = ProvenanceService.get();
+        ProvenanceService pvs = ServiceRegistry.get().getService(ProvenanceService.class);
         if (pvs == null)
             return;
 
@@ -1068,9 +1066,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             var provenanceInputs = map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
             if (null != provenanceInputs)
             {
-                if (pvs == null)
-                    throw new ExperimentException("Provenance service not available");
-
                 if (provenanceInputs instanceof JSONArray)
                 {
                     JSONArray inputJSONArr = (JSONArray) provenanceInputs;

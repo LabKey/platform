@@ -581,10 +581,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private void deleteProtocolApplicationProvenance()
     {
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs != null)
-        {
-            pvs.deleteRunProvenance(getRowId());
-        }
+        pvs.deleteRunProvenance(getRowId());
     }
 
     private void deleteAppParametersAndInputs()

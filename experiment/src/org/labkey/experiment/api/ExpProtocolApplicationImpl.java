@@ -371,8 +371,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
 
             ProvenanceService pvs = ProvenanceService.get();
-            if (pvs != null)
-                pvs.deleteProvenance(getRowId());
+            pvs.deleteProvenance(getRowId());
 
             Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
         }
@@ -506,7 +505,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public void addProvenanceInput(Set<String> lsids)
     {
         ProvenanceService pvs = ProvenanceService.get();
-        if (null != pvs && !lsids.isEmpty())
+        if (!lsids.isEmpty())
         {
             pvs.addProvenanceInputs(this.getContainer(), this, lsids);
         }
@@ -516,7 +515,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public void addProvenanceMapping(Set<Pair<String, String>> lsidPairs)
     {
         ProvenanceService pvs = ProvenanceService.get();
-        if (null != pvs && !lsidPairs.isEmpty())
+        if (!lsidPairs.isEmpty())
         {
             pvs.addProvenance(this.getContainer(), this, lsidPairs);
         }
@@ -526,9 +525,6 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public Set<Pair<String, String>> getProvenanceMapping()
     {
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs == null)
-            return Collections.emptySet();
-
         return pvs.getProvenanceObjectUris(getRowId());
     }
 }

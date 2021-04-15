@@ -440,7 +440,7 @@ public class ExpGeneratorHelper
             }
 
             // add in any provenance mappings and prov object inputs and outputs
-            if (pvs != null && protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
+            if (protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
             {
                 if (!action.getProvenanceMap().isEmpty())
                     pvs.addProvenance(container, stepApp, action.getProvenanceMap());

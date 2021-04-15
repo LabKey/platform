@@ -37,6 +37,7 @@ import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.springframework.util.StringUtils;
@@ -401,7 +402,7 @@ public class ExperimentJSONConverter
 
     public static void serializeRunLevelProvenanceProperties(@NotNull JSONObject obj, ExpRun run)
     {
-        ProvenanceService svc = ProvenanceService.get();
+        ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
         if (svc == null)
             return;
 
@@ -440,7 +441,7 @@ public class ExperimentJSONConverter
     // }
     public static void provenanceMap(@NotNull JSONObject obj, ExpProtocolApplication app)
     {
-        ProvenanceService svc = ProvenanceService.get();
+        ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
         if (svc == null)
             return;
 
