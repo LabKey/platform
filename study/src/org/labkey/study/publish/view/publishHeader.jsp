@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.publish.AbstractPublishConfirmAction" %>
+<%@ page import="org.labkey.api.study.publish.AbstractPublishConfirmAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

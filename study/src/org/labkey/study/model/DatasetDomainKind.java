@@ -59,6 +59,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.query.DatasetFactory;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -739,7 +740,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == dsd)
             return null;
 
-        return new DatasetTableImpl(schema, null, dsd);
+        return DatasetFactory.createDataset(schema, null, dsd);
     }
 
     @Override

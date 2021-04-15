@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.NullPreventingSet;
+import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.ontology.Concept;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
@@ -676,6 +677,10 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" " + _displayClass);
         }
+        if (isPhiProtected())
+        {
+            out.write(" labkey-phi-protected");
+        }
         out.write("\""); // end of "class"
 
         StringBuilder tooltip = new StringBuilder();
@@ -711,6 +716,13 @@ public abstract class DisplayColumn extends RenderColumn
                         conceptDisplay = concept.getLabel() + " (" + conceptDisplay + ")";
                 }
                 tooltip.append("\nConcept Annotation: " + conceptDisplay);
+            }
+
+            if (isPhiProtected())
+            {
+                if (tooltip.length() > 0)
+                    tooltip.append("\n");
+                tooltip.append("(PHI protected data removed)");
             }
         }
 
@@ -819,6 +831,11 @@ public abstract class DisplayColumn extends RenderColumn
                         filteredColSet.contains(this.getColumnInfo().getDisplayField().getFieldKey())));
         }
         return false;
+    }
+
+    private boolean isPhiProtected()
+    {
+        return getColumnInfo() instanceof PhiTransformedColumnInfo;
     }
 
     private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort sort, boolean filtered)

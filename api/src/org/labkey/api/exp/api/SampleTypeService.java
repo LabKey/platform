@@ -117,9 +117,6 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, int rowId);
 
-    String getDefaultSampleTypeLsid();
-    String getDefaultSampleTypeMaterialLsidPrefix();
-
     Lsid getSampleTypeLsid(String name, Container container);
 
     /**

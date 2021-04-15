@@ -29,6 +29,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
@@ -720,16 +722,21 @@ public abstract class UploadSamplesHelper
 
 //            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-            DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampletype));
+            DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampletype, materialTable));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);
             addGenId.setDebugName("add genId");
-            addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
+            Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");
+            materialTable.getColumns().stream().filter(ColumnInfo::isUniqueIdField).forEach(columnInfo -> {
+                idColNames.add(columnInfo.getName());
+            });
+            addGenId.selectAll(idColNames);
 
             ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
             addGenId.addSequenceColumn(genIdCol, sampletype.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampletype.getRowId(), batchSize);
+            addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
@@ -861,12 +868,13 @@ public abstract class UploadSamplesHelper
     static class _SamplesCoerceDataIterator extends SimpleTranslator
     {
         private final ExpSampleTypeImpl _sampleType;
-        public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType)
+
+        public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
             setDebugName("Coerce before trigger script - samples");
-            init(sampleType.getTinfo(), context.getInsertOption().useImportAliases);
+            init(materialTable, context.getInsertOption().useImportAliases);
         }
 
         void init(TableInfo target, boolean useImportAliases)
@@ -934,10 +942,10 @@ public abstract class UploadSamplesHelper
                     {
                         if (isPropertyField)
                         {
-                            _addConvertColumn(name, i, to.getJdbcType(), derivationDataColInd, propertyFields.get(name));
+                            _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), derivationDataColInd, propertyFields.get(name));
                         }
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), false);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
                     }
                 }
                 else
@@ -952,14 +960,21 @@ public abstract class UploadSamplesHelper
             }
         }
 
-        private void _addConvertColumn(String name, int fromIndex, JdbcType toType, int derivationDataColInd, boolean isAliquotField)
+        private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
         {
             var col = new BaseColumnInfo(getInput().getColumnInfo(fromIndex));
             col.setName(name);
             col.setJdbcType(toType);
+            if (toFk != null)
+                col.setFk(toFk);
 
-            SimpleConvertColumn c = getConvertColumn(col, fromIndex, false);
-            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, name), String.format(INVALID_NONALIQUOT_PROPERTY, name));
+            _addConvertColumn(col, fromIndex, derivationDataColInd, isAliquotField);
+        }
+
+        private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
+        {
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, true);
+            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
         }

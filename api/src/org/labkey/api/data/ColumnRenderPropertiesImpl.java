@@ -47,6 +47,9 @@ import java.util.regex.Pattern;
  */
 public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderProperties
 {
+    public static final String STORAGE_UNIQUE_ID_CONCEPT_URI = "http://www.labkey.org/types#storageUniqueId";
+    public static final String STORAGE_UNIQUE_ID_SEQUENCE_PREFIX = "org.labkey.api.StorageUniqueId";
+
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;
     protected int _inputLength = -1;
@@ -510,6 +513,12 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
                 col.isAutoIncrement(),
                 col.isLookup(),
                 col.isHidden());
+    }
+
+    @Override
+    public boolean isUniqueIdField()
+    {
+        return STORAGE_UNIQUE_ID_CONCEPT_URI.equals(getConceptURI());
     }
 
     public static boolean inferIsMeasure(String name, String label, boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)

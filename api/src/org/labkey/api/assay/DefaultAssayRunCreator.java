@@ -32,6 +32,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -86,7 +87,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -263,9 +263,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
         }
 
-        addInputMaterials(context, inputMaterials, resolverType);
+        // TODO: Share these RemapCache and materialCache instances with AbstractAssayTsvDataHandler.checkData and ExpressionMatrixDataHandler.importFile
+        // Cache of resolved alternate lookup keys -> rowId
+        final RemapCache cache = new RemapCache(true);
+        // Cache of rowId -> ExpMaterial
+        final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+
+        addInputMaterials(context, inputMaterials, resolverType, cache, materialCache);
         addInputDatas(context, inputDatas, resolverType);
-        addOutputMaterials(context, outputMaterials, resolverType);
+        addOutputMaterials(context, outputMaterials, resolverType, cache, materialCache);
         addOutputDatas(context, inputDatas, outputDatas, resolverType);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
@@ -538,10 +544,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     // See also AbstractAssayTsvDataHandler.resolveSampleNames
-    protected void addInputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addInputMaterials(AssayRunUploadContext<ProviderType> context,
+                                     Map<ExpMaterial, String> inputMaterials,
+                                     ParticipantVisitResolverType resolverType,
+                                     @NotNull RemapCache cache,
+                                     @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ExperimentException, ValidationException
     {
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
-        addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers);
+        addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers, cache, materialCache);
 
         // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
@@ -565,14 +576,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             String value = entry.getValue();
             if (pt.getJdbcType().isText())
             {
-                addMaterialByName(context, inputMaterials, value, role, searchContainers, st);
+                addMaterialByName(context, inputMaterials, value, role, searchContainers, st, cache, materialCache);
             }
             else if (pt.getJdbcType().isInteger())
             {
                 try
                 {
                     int sampleRowId = Integer.parseInt(value);
-                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, st);
+                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, st, materialCache);
                 }
                 catch (NumberFormatException ex)
                 {
@@ -721,15 +732,26 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return data;
     }
 
-    protected void addOutputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> outputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addOutputMaterials(AssayRunUploadContext<ProviderType> context,
+                                      Map<ExpMaterial, String> outputMaterials,
+                                      ParticipantVisitResolverType resolverType,
+                                      @NotNull RemapCache cache,
+                                      @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ExperimentException, ValidationException
     {
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
-        addMaterials(context, outputMaterials, context.getOutputMaterials(), searchContainers);
+        addMaterials(context, outputMaterials, context.getOutputMaterials(), searchContainers, cache, materialCache);
     }
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpMaterial objects
-    protected void addMaterials(AssayRunUploadContext<ProviderType> context, @NotNull Map<ExpMaterial, String> resolved, @NotNull Map<?, String> unresolved, @NotNull Set<Container> searchContainers) throws ExperimentException
+    protected void addMaterials(AssayRunUploadContext<ProviderType> context,
+                                @NotNull Map<ExpMaterial, String> resolved,
+                                @NotNull Map<?, String> unresolved,
+                                @NotNull Set<Container> searchContainers,
+                                @NotNull RemapCache cache,
+                                @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ExperimentException, ValidationException
     {
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
@@ -744,40 +766,32 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             else if (o instanceof Integer)
             {
-                addMaterialById(context, resolved, (Integer)o, role, searchContainers, null);
+                addMaterialById(context, resolved, (Integer)o, role, searchContainers, null, materialCache);
             }
             else if (o instanceof String)
             {
-                addMaterialByName(context, resolved, (String)o, role, searchContainers, null);
+                addMaterialByName(context, resolved, (String)o, role, searchContainers, null, cache, materialCache);
             }
             else
-                throw new ExperimentException("Unable to resolve sample: " + String.valueOf(o));
+                throw new ExperimentException("Unable to resolve sample: " + o);
         }
     }
 
-    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, String sampleName, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType st) throws ExperimentException
+    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context,
+                                     Map<ExpMaterial, String> resolved,
+                                     String sampleName,
+                                     String role,
+                                     @NotNull Set<Container> searchContainers,
+                                     @Nullable ExpSampleType st,
+                                     @NotNull RemapCache cache,
+                                     @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException
     {
-        // First, attempt to resolve by LSID
-        ExpMaterial material = ExperimentService.get().getExpMaterial(sampleName);
-
+        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), null, null, sampleName, cache, materialCache);
         if (material == null)
         {
-            // Next, attempt to resolve by name
-            List<? extends ExpMaterial> matches = ExperimentService.get().getExpMaterials(context.getContainer(), context.getUser(), Collections.singleton(sampleName), st, false, false);
-            if (matches.size() == 0)
-            {
-                Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-                logger.warn("No sample found for sample name '" + sampleName + "'");
-            }
-            else if (matches.size() == 1)
-            {
-                material = matches.get(0);
-            }
-            else
-            {
-                Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-                logger.warn("More than one sample found for sample name '" + sampleName + "'");
-            }
+            Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
+            logger.warn("No sample found for sample name '" + sampleName + "'");
         }
 
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
@@ -787,9 +801,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addMaterialById(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, Integer sampleRowId, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType st)
+    protected void addMaterialById(AssayRunUploadContext<ProviderType> context,
+                                   Map<ExpMaterial, String> resolved,
+                                   Integer sampleRowId,
+                                   String role,
+                                   @NotNull Set<Container> searchContainers,
+                                   @Nullable ExpSampleType st,
+                                   @NotNull Map<Integer, ExpMaterial> materialCache)
     {
-        ExpMaterial material = ExperimentService.get().getExpMaterial(sampleRowId);
+        final Container c = context.getContainer();
+        final User user = context.getUser();
+        ExpMaterial material = materialCache.computeIfAbsent(sampleRowId, (x) -> ExperimentService.get().getExpMaterial(c, user, sampleRowId, null));
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
         {
             if (st == null || st.getLSID().equals(material.getCpasType()))

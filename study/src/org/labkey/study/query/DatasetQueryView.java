@@ -35,7 +35,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -43,7 +42,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -55,11 +53,9 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
@@ -437,8 +433,8 @@ public class DatasetQueryView extends StudyQueryView
             {
                 if (publishSource != null)
                 {
-                    ExpProtocol protocol = (ExpProtocol)publishSource;
-//                  do we ever add the assay import buttons to the dataset query view?
+//                    TODO : Consider deleting this code. Do we ever add the assay import buttons to the dataset query view?
+//                    ExpProtocol protocol = (ExpProtocol)publishSource;
 //                    bar.addAll(AssayService.get().getImportButtons(protocol, getUser(), getContainer(), true));
 
                     if (user.hasRootAdminPermission() || canDelete)
@@ -449,8 +445,8 @@ public class DatasetQueryView extends StudyQueryView
                         deleteRows.setRequiresSelection(true, "Recall selected row of this dataset?", "Recall selected rows of this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
                         // Dataset permissions mean user might not have delete permissions in the folder. We checked for
-                    // delete permissions above so just require read (which we know user must have in the folder)
-                    deleteRows.setDisplayPermission(ReadPermission.class);
+                        // delete permissions above so just require read (which we know user must have in the folder)
+                        deleteRows.setDisplayPermission(ReadPermission.class);
                         bar.add(deleteRows);
                     }
                 }
@@ -543,17 +539,6 @@ public class DatasetQueryView extends StudyQueryView
                     getContainer()).addReturnURL(getViewContext().getActionURL()));
         }
         return button;
-    }
-
-    private PHI getMaxContainedPhi()
-    {
-        TableInfo tableInfo = getTable();
-        if (tableInfo instanceof DatasetTableImpl)
-        {
-            if (((DatasetTableImpl)tableInfo).getRealTable() instanceof DatasetDefinition.DatasetSchemaTableInfo)
-                return ((DatasetDefinition.DatasetSchemaTableInfo)((DatasetTableImpl)tableInfo).getRealTable()).getMaxContainedPhi();
-        }
-        return PHI.NotPHI;
     }
 
     private boolean hasSourceLsids()

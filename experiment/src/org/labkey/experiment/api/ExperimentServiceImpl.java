@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -101,6 +102,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -139,7 +141,22 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
@@ -175,7 +192,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
 
-    public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
     public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
@@ -656,94 +672,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 .stream()
                 .map(ExpMaterialImpl::new)
                 .collect(toList());
-    }
-
-    @Override
-    @NotNull
-    public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Set<String> sampleNames, @Nullable ExpSampleType sampleType, boolean throwIfMissing, boolean createIfMissing)
-            throws ExperimentException
-    {
-        if (throwIfMissing && createIfMissing)
-            throw new IllegalArgumentException("Either throwIfMissing or createIfMissing can be true; not both.");
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addInClause(FieldKey.fromParts("Name"), sampleNames);
-        if (sampleType != null)
-            filter.addCondition(FieldKey.fromParts("CpasType"), sampleType.getLSID());
-
-        // SampleType may live in different container
-        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
-        filter.addClause(clause);
-
-        Set<String> selectNames = new LinkedHashSet<>();
-        selectNames.add("Name");
-        selectNames.add("RowId");
-        TableSelector sampleTableSelector = new TableSelector(getTinfoMaterial(), selectNames, filter, null);
-        Map<String, Integer> sampleMap = sampleTableSelector.getValueMap();
-
-        List<ExpMaterialImpl> resolvedSamples = getExpMaterials(sampleMap.values());
-
-        if (sampleMap.size() < sampleNames.size())
-        {
-            Set<String> missingSamples = new HashSet<>(sampleNames);
-            missingSamples.removeAll(sampleMap.keySet());
-            if (throwIfMissing)
-                throw new ExperimentException("No samples found for: " + StringUtils.join(missingSamples, ", "));
-
-            if (createIfMissing)
-                resolvedSamples.addAll(createExpMaterials(container, user, sampleType, missingSamples));
-        }
-
-        return resolvedSamples;
-    }
-
-    // Insert new materials into the given sample type or the default (unspecified) sample type if none is provided.
-    private List<ExpMaterialImpl> createExpMaterials(Container container, User user, @Nullable ExpSampleType sampleType, Set<String> sampleNames)
-    {
-        List<ExpMaterialImpl> materials = new ArrayList<>(sampleNames.size());
-
-        try (DbScope.Transaction transaction = ensureTransaction())
-        {
-            final String cpasType;
-            final String materialLsidPrefix;
-            if (sampleType != null)
-            {
-                cpasType = sampleType.getLSID();
-                materialLsidPrefix = sampleType.getMaterialLSIDPrefix();
-            }
-            else
-            {
-                cpasType = SampleTypeServiceImpl.get().getDefaultSampleTypeLsid();
-                materialLsidPrefix = SampleTypeServiceImpl.get().getDefaultSampleTypeMaterialLsidPrefix();
-            }
-
-            // Create materials directly using Name.
-            for (String name : sampleNames)
-            {
-                List<ExpMaterialImpl> existingMaterials = getExpMaterialsByName(name, container, user);
-                if (existingMaterials.size() > 0)
-                {
-                    ExpMaterialImpl material = existingMaterials.get(0);
-                    materials.add(material);
-                }
-                else
-                {
-                    Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(materialLsidPrefix + "test");
-                    lsid.setObjectId(name);
-                    String materialLsid = lsid.toString();
-
-                    ExpMaterialImpl material = createExpMaterial(container, materialLsid, name);
-                    material.setCpasType(cpasType);
-                    material.save(user);
-
-                    materials.add(material);
-                }
-            }
-
-            transaction.commit();
-            return materials;
-        }
     }
 
     @Override
@@ -1270,8 +1198,6 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public String generateLSID(Container container, Class<? extends ExpObject> clazz, @NotNull String name)
     {
-        if (clazz == ExpSampleType.class && name.equals(DEFAULT_MATERIAL_SOURCE_NAME) && ContainerManager.getSharedContainer().equals(container))
-            return SampleTypeService.get().getDefaultSampleTypeLsid();
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 
@@ -3551,14 +3477,14 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (protocol != null)
                     {
                         protocolImpl = protocol.getImplementation();
-                        StudyService studyService = StudyService.get();
-                        if (studyService != null)
+                        StudyPublishService publishService = StudyPublishService.get();
+                        if (publishService != null)
                         {
                             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(protocol);
                             if (svc != null)
                                 svc.deleteExclusionsForRun(protocol, runId);
 
-                            for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
+                            for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
                                 if (!dataset.canDelete(user))
                                 {
@@ -3578,7 +3504,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                     dataset.deleteDatasetRows(user, lsids);
 
                                     // Add an audit event to the copy to study history
-                                    studyService.addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
+                                    publishService.addRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
                                 }
                             }
                         }
@@ -3716,7 +3642,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 StudyService studyService = StudyService.get();
                 if (studyService != null)
                 {
-                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
+                    for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
                         dataset.delete(user);
                     }
