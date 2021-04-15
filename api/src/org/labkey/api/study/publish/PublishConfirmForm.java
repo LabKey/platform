@@ -1,4 +1,4 @@
-package org.labkey.study.publish;
+package org.labkey.api.study.publish;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -16,11 +16,14 @@ import java.util.stream.Collectors;
 
 public class PublishConfirmForm extends ViewForm implements DataRegionSelection.DataSelectionKeyForm, HasBindParameters
 {
+    /**
+     * Controls the source of the subject and timepoint values for the publish results query view
+     */
     public enum DefaultValueSource
     {
-        Assay,
-        Specimen,
-        UserSpecified,
+        PublishSource,  // The publish source results table.
+        Specimen,       // For assays only, specimen linked to assay results.
+        UserSpecified,  // Values that a user might provide from the confirm view.
     }
 
     private void convertStringArrayParam(PropertyValue pv)
@@ -46,6 +49,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
         return BaseViewAction.springBindParameters(this, "form", pvs);
     }
 
+    private Integer _rowId;
     private String[] _targetStudy;
     private String[] _participantId;
     private String[] _visitId;
@@ -57,7 +61,17 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     private boolean _includeTimestamp;
     private String _dataRegionSelectionKey;
     private String _containerFilterName;
-    private String _defaultValueSource = DefaultValueSource.Assay.name();
+    private String _defaultValueSource = DefaultValueSource.PublishSource.name();
+
+    public Integer getRowId()
+    {
+        return _rowId;
+    }
+
+    public void setRowId(Integer rowId)
+    {
+        _rowId = rowId;
+    }
 
     @Override
     public String getDataRegionSelectionKey()

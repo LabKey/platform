@@ -211,7 +211,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Confirm Delete");
 
         // Be sure that we have a special audit record
-        clickAndWait(Locator.linkWithText("view copy-to-study history"));
+        clickAndWait(Locator.linkWithText("view link to study history"));
         assertTextPresent("3 row(s) were recalled to the assay: ");
 
         // Verify that the deleted run data is gone from the dataset
@@ -581,7 +581,7 @@ public class AssayTest extends AbstractAssayTest
         // test recall
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
-        waitAndClickAndWait(Locator.linkWithText("view copy-to-study history"));
+        waitAndClickAndWait(Locator.linkWithText("view link to study history"));
 
         // Set a filter so that we know we're recalling SecondRun
         DataRegionTable region = new DataRegionTable("query", this);
@@ -602,7 +602,7 @@ public class AssayTest extends AbstractAssayTest
 
         // verify audit entry was adjusted
         doAndWaitForPageToLoad(() -> region.detailsLink(region.getRowIndex("Assay/Protocol", TEST_ASSAY)).click());
-        assertTextPresent("All rows that were previously copied in this event have been recalled");
+        assertTextPresent("All rows that were previously linked in this event have been recalled");
 
         stopImpersonating();
     }

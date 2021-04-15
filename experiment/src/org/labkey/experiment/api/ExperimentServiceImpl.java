@@ -102,6 +102,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -3476,14 +3477,14 @@ public class ExperimentServiceImpl implements ExperimentService
                     if (protocol != null)
                     {
                         protocolImpl = protocol.getImplementation();
-                        StudyService studyService = StudyService.get();
-                        if (studyService != null)
+                        StudyPublishService publishService = StudyPublishService.get();
+                        if (publishService != null)
                         {
                             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(protocol);
                             if (svc != null)
                                 svc.deleteExclusionsForRun(protocol, runId);
 
-                            for (Dataset dataset : studyService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
+                            for (Dataset dataset : publishService.getDatasetsForAssayRuns(Collections.singletonList(run), user))
                             {
                                 if (!dataset.canDelete(user))
                                 {
@@ -3503,7 +3504,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                     dataset.deleteDatasetRows(user, lsids);
 
                                     // Add an audit event to the copy to study history
-                                    studyService.addAssayRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
+                                    publishService.addRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
                                 }
                             }
                         }
@@ -3641,7 +3642,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 StudyService studyService = StudyService.get();
                 if (studyService != null)
                 {
-                    for (Dataset dataset : StudyService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
+                    for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
                         dataset.delete(user);
                     }
