@@ -532,32 +532,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     return false;
                 }
 
-                boolean tooBig = isTooBig(fs, type);
+                Metadata metadata = new Metadata();
+                metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
+                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
 
-                // Consider: Remove special handling for text files? Just delegate to Tika instead?
-                if (type.startsWith("text/") && !type.contains("xml") && !type.contains("html") && !StringUtils.equals(type, "text/comma-separated-values"))
-                {
-                    if (tooBig)
-                        body = "";
-                    else
-                        body = PageFlowUtil.getStreamContentsAsString(is);
-                }
-                else
-                {
-                    Metadata metadata = new Metadata();
-                    metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
-                    metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                    ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                parse(r, fs, is, handler, metadata, isTooBig(fs, type));
 
-                    parse(r, fs, is, handler, metadata, tooBig);
+                body = handler.toString();
 
-                    body = handler.toString();
+                if (StringUtils.isBlank(title))
+                    title = metadata.get(TikaCoreProperties.TITLE);
 
-                    if (StringUtils.isBlank(title))
-                        title = metadata.get(TikaCoreProperties.TITLE);
-
-                    keywordsMed.append(getInterestingMetadataProperties(metadata));
-                }
+                keywordsMed.append(getInterestingMetadataProperties(metadata));
 
                 fs.closeInputStream();
             }
@@ -1459,7 +1446,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if (null != categories)
             {
-                Iterator itr = categories.iterator();
+                Iterator<SearchCategory> itr = categories.iterator();
 
                 if (requireCategories)
                 {
