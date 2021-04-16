@@ -64,7 +64,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 scope: this
             }],
             width: this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI ?
-                    (Ext.isGecko ? 513 : 498) :
+                    (Ext.isGecko ? 533 : 518) :
                     // 24846
                     (Ext.isGecko ? 425 : 410),
             // listeners
@@ -438,7 +438,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
         this.combos = [];
         this.inputs = [];
-        this.updateConceptFilters = {};
+        this.updateConceptFilters = [];
 
         LABKEY.FilterDialog.View.Default.superclass.initComponent.call(this);
 
@@ -474,7 +474,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
                     const inputValue = filter.getURLParameterValue();
                     this.inputs[f].setValue(inputValue);
-                    this.updateConceptFilters?.[f]?.(inputValue);
+                    this.updateConceptFilters[f]?.setValue(inputValue);
                 }
             }
         }
@@ -582,30 +582,48 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     loadConceptPickers: function(ctx = this) {
         const { divId, index, scope} = ctx;
         const {inputs} = scope;
+        const targetCombo = scope.combos?.[index];
         const targetInput = inputs?.[index];
 
         LABKEY.App.loadApp('conceptFilter', divId, {
             ontologyId: scope.column.sourceOntology,
             initFilterValue: targetInput?.getValue(),
+            initFilterType: targetCombo?.getFilterType?.(),
             onFilterChange: (filterValue) => {
+                // push values selected in tree to the target input control
                 const inputField = targetInput;
                 if (!targetInput.disabled) {
                     inputField?.setValue(filterValue);
+                    inputField?.validate();
                 }
             },
             subscribeFilterValue: (listener) => {
-                if (scope.updateConceptFilters)
-                    scope.updateConceptFilters[index] = listener;
+                if(!scope.updateConceptFilters[index]) {
+                    scope.updateConceptFilters[index] = {};
+                }
+                scope.updateConceptFilters[index].setValue = listener;
             },
             unsubscribeFilterValue: () => {
-                scope.updateConceptFilters?.remove(index);
+                if (scope.updateConceptFilters[index]) scope.updateConceptFilters[index].setValue = undefined;
+            },
+            subscribeFilterTypeChanged: (listener) => {
+                if(!scope.updateConceptFilters[index]) {
+                    scope.updateConceptFilters[index] = {};
+                }
+                scope.updateConceptFilters[index].setFilterType = listener;
+            },
+            unsubscribeFilterTypeChanged: () => {
+                if (scope.updateConceptFilters[index]) scope.updateConceptFilters[index].setFilterType = undefined;
             }
         });
     },
 
     getComboConfig : function(idx) {
-
         var val = idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.jsonType).getURLSuffix() : '';
+        //Override the default for Concepts unless it is blank
+        if (this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI && val !== '')
+            val = LABKEY.Filter.Types.EQUAL.getURLSuffix();
+
         return {
             xtype: 'combo',
             itemId: 'filterComboBox' + idx,
@@ -651,6 +669,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
         var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
         var selectedValue = filter ? filter.getURLSuffix() : '';
+        this.updateConceptFilters?.[idx]?.setFilterType(filter);
 
         var combos = this.combos;
         var inputFields = this.inputs;
@@ -659,6 +678,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
             inputField.disable();
             inputField.setValue();
+            inputField.blur();
         }
         else {
             inputField.enable();
@@ -771,7 +791,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 change : function(input, newVal, oldVal) {
                     if (oldVal != newVal) {
                         this.changed = true;
-                        this.updateConceptFilters?.[idx]?.(newVal);
+                        this.updateConceptFilters[idx]?.setValue(newVal);
                     }
                 },
                 scope : this
@@ -792,6 +812,9 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         var comboRecord = Ext.data.Record.create(fields);
 
         var filters = LABKEY.Filter.getFilterTypesForType(this.jsonType, this.column.mvEnabled);
+        if (this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI)
+            filters = this.getConceptFilterTypes()   //Use a limited set of filter types for concepts
+
         for (var i=0; i<filters.length; i++)
         {
             var filter = filters[i];
@@ -809,6 +832,20 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         }
 
         return store;
+    },
+
+    getConceptFilterTypes: function() {
+        return [
+            LABKEY.Filter.Types.HAS_ANY_VALUE,
+            LABKEY.Filter.Types.EQUAL,
+            LABKEY.Filter.Types.NEQ_OR_NULL,
+            LABKEY.Filter.Types.ISBLANK,
+            LABKEY.Filter.Types.NONBLANK,
+            LABKEY.Filter.Types.IN,
+            LABKEY.Filter.Types.NOT_IN,
+            LABKEY.Filter.Types.ONTOLOGY_IN_SUBTREE,
+            LABKEY.Filter.Types.ONTOLOGY_NOT_IN_SUBTREE
+        ];
     },
 
     setFilters : function(filterArray) {
