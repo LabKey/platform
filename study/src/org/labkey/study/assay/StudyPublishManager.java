@@ -451,8 +451,8 @@ public class StudyPublishManager implements StudyPublishService
             return;
 
         // If provenance module is not present, do nothing
-        ProvenanceService pvs = ServiceRegistry.get().getService(ProvenanceService.class);
-        if (pvs == null)
+        ProvenanceService pvs = ProvenanceService.get();
+        if (!pvs.isProvenanceSupported())
             return;
 
         AssayProvider provider = AssayService.get().getProvider(protocol);

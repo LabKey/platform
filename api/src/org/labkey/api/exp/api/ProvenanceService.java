@@ -67,6 +67,11 @@ public interface ProvenanceService
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
     }
 
+    /**
+     * Determines whether the provider returned supports provenance;
+     */
+    boolean isProvenanceSupported();
+
     void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
 
     void addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs);

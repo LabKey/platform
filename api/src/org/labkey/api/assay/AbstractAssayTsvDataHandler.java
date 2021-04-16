@@ -523,8 +523,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     private void addAssayResultRowsProvenance(Container container, ExpRun run, List<Map<String, Object>> insertedData, Map<Integer, String> rowIdToLsid)
     {
-        ProvenanceService pvs = ServiceRegistry.get().getService(ProvenanceService.class);
-        if (pvs == null)
+        ProvenanceService pvs = ProvenanceService.get();
+        if (!pvs.isProvenanceSupported())
             return;
 
         Set<Pair<String, String>> provPairs = new HashSet<>(insertedData.size());

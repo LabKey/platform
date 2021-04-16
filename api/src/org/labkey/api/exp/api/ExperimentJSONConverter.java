@@ -402,8 +402,8 @@ public class ExperimentJSONConverter
 
     public static void serializeRunLevelProvenanceProperties(@NotNull JSONObject obj, ExpRun run)
     {
-        ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
-        if (svc == null)
+        ProvenanceService svc = ProvenanceService.get();
+        if (!svc.isProvenanceSupported())
             return;
 
         // Include provenance inputs of the run in this format:
@@ -441,8 +441,8 @@ public class ExperimentJSONConverter
     // }
     public static void provenanceMap(@NotNull JSONObject obj, ExpProtocolApplication app)
     {
-        ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
-        if (svc == null)
+        ProvenanceService svc = ProvenanceService.get();
+        if (!svc.isProvenanceSupported())
             return;
 
         var outputSet = svc.getProvenanceObjectUris(app.getRowId());
