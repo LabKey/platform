@@ -874,9 +874,13 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
                 table.addColumn(studyCopiedColumn);
 
-                visibleColumnNames.add(studyCopiedColumn.getName());
+                // Issue 42937: limit default visible columns to 3 for a given assay protocol
+                if (datasetIndex > 3)
+                    visibleColumnNames.clear();
+                else
+                    visibleColumnNames.add(studyCopiedColumn.getName());
             }
-            if (setVisibleColumns)
+            if (setVisibleColumns && visibleColumnNames.size() > 0)
             {
                 List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
                 for (String columnName : visibleColumnNames)
