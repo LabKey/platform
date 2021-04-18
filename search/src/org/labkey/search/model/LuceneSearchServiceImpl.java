@@ -97,6 +97,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -535,10 +536,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 Metadata metadata = new Metadata();
                 metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
+                if ("text/plain".equals(r.getContentType())) // Tika sometimes guesses the wrong charset... suggest UTF-8
+                    metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
+
                 ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
-
                 parse(r, fs, is, handler, metadata, isTooBig(fs, type));
-
                 body = handler.toString();
 
                 if (StringUtils.isBlank(title))
