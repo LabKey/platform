@@ -270,7 +270,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(getTableMetadata(protocol).getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
-                    // Remember which rows we're planning to copy, partitioned by the target study
+                    // Remember which rows we're planning to link, partitioned by the target study
                     Set<Integer> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
                     if (rowIds == null)
                     {
