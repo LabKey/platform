@@ -175,7 +175,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             OntologyObject objectToDelete = OntologyManager.getOntologyObject(container, objectLsid);
             ProvenanceService pvs = ProvenanceService.get();
 
-            if (null != objectToDelete && null != pvs)
+            if (null != objectToDelete)
             {
                 pvs.deleteObjectProvenance(objectToDelete.getObjectId());
                 OntologyManager.deleteOntologyObject(objectLsid, container, false);

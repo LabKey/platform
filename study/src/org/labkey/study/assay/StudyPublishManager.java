@@ -74,6 +74,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
@@ -451,7 +452,7 @@ public class StudyPublishManager implements StudyPublishService
 
         // If provenance module is not present, do nothing
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs == null)
+        if (!pvs.isProvenanceSupported())
             return;
 
         AssayProvider provider = AssayService.get().getProvider(protocol);

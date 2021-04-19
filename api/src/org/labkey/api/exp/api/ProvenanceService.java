@@ -55,6 +55,7 @@ public interface ProvenanceService
     String DATA_OUTPUTS = "dataOutputs";
     String PROPERTIES = "properties";
 
+    @NotNull
     static ProvenanceService get()
     {
         ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
@@ -65,6 +66,11 @@ public interface ProvenanceService
     {
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
     }
+
+    /**
+     * Determines whether the provider returned supports provenance;
+     */
+    boolean isProvenanceSupported();
 
     void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
 

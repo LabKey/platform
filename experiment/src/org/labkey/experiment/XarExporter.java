@@ -470,27 +470,24 @@ public class XarExporter
         }
 
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs != null)
+        var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
+        if (!provURIs.isEmpty())
         {
-            var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
-            if (!provURIs.isEmpty())
+            ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
+            for (Pair<String, String> pair : provURIs)
             {
-                ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
-                for (Pair<String, String> pair : provURIs)
+                if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
+                    continue;
+
+                var objectRefs = xProvMap.addNewObjectRefs();
+                if (!StringUtils.isEmpty(pair.first))
                 {
-                    if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
-                        continue;
+                    objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
+                }
 
-                    var objectRefs = xProvMap.addNewObjectRefs();
-                    if (!StringUtils.isEmpty(pair.first))
-                    {
-                        objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
-                    }
-
-                    if (!StringUtils.isEmpty(pair.second))
-                    {
-                        objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
-                    }
+                if (!StringUtils.isEmpty(pair.second))
+                {
+                    objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
                 }
             }
         }
