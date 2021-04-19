@@ -33,6 +33,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,6 +44,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /**
  * User: matthewb
@@ -317,6 +321,14 @@ public class QueryPivot extends QueryRelation
         {
             parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
         }
+        catch (DataIntegrityViolationException x)
+        {
+            // catch data error generating column list
+            Throwable cause = x.getCause() != null ? x.getCause() : x;
+            String causeMessage = defaultIfBlank(cause.getLocalizedMessage(), x.getLocalizedMessage());
+            var qex = new QueryException("An error occurred while generating the pivot query column list: " + causeMessage, cause);
+            getParseErrors().add(qex);
+        }
         catch (UnauthorizedException e)
         {
             parseError("Pivot query unauthorized.", null);
@@ -338,7 +350,7 @@ public class QueryPivot extends QueryRelation
 
     String toName(String s)
     {
-        return StringUtils.defaultString(s, "NULL");
+        return defaultString(s, "NULL");
     }
 
 
