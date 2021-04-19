@@ -276,14 +276,14 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
-        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
-        if (autoCopyValue != null)
+        ObjectProperty autoLinkValue = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
+        if (autoLinkValue != null)
         {
-            Container autoCopyTarget = ContainerManager.getForId(autoCopyValue.getStringValue());
-            if (autoCopyTarget != null)
+            Container autoLinkTarget = ContainerManager.getForId(autoLinkValue.getStringValue());
+            if (autoLinkTarget != null)
             {
-                result.setAutoCopyTargetContainer(convertToGWTContainer(autoCopyTarget));
-                result.setAutoCopyTargetContainerId(autoCopyTarget.getId());
+                result.setAutoLinkTargetContainer(convertToGWTContainer(autoLinkTarget));
+                result.setAutoLinkTargetContainerId(autoLinkTarget.getId());
             }
         }
 
@@ -511,17 +511,17 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     provider.setPlateMetadataEnabled(protocol, assay.isPlateMetadata());
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
-                    // get the autoCopyTargetContainer from either the id on the assay object entityId
-                    String autoCopyTargetContainerId = assay.getAutoCopyTargetContainer() != null ? assay.getAutoCopyTargetContainer().getEntityId() : assay.getAutoCopyTargetContainerId();
-                    // verify that the autoCopyTargetContainerId is valid
-                    if (autoCopyTargetContainerId != null && ContainerManager.getForId(autoCopyTargetContainerId) == null)
+                    // get the autoLinkTargetContainer from either the id on the assay object entityId
+                    String autoLinkTargetContainerId = assay.getAutoLinkTargetContainer() != null ? assay.getAutoLinkTargetContainer().getEntityId() : assay.getAutoLinkTargetContainerId();
+                    // verify that the autoLinkTargetContainerId is valid
+                    if (autoLinkTargetContainerId != null && ContainerManager.getForId(autoLinkTargetContainerId) == null)
                     {
-                        throw new AssayException("No such auto-copy target container id: " + autoCopyTargetContainerId);
+                        throw new AssayException("No such auto-link target container id: " + autoLinkTargetContainerId);
                     }
 
-                    if (autoCopyTargetContainerId != null)
+                    if (autoLinkTargetContainerId != null)
                     {
-                        props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
+                        props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoLinkTargetContainerId));
                     }
                     else
                     {

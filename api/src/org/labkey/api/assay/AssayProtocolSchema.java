@@ -810,7 +810,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
-     * had data copied into them.
+     * had data linked into them.
      * @return The names of the added columns that should be visible
      */
     public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)

@@ -1274,9 +1274,9 @@ public class XarExporter
 
                             if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
-                                Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
-                                if (autoCopyContainer != null)
-                                    simpleValue.setStringValue(autoCopyContainer.getPath());
+                                Container autoLinkContainer = ContainerManager.getForId(value.getStringValue());
+                                if (autoLinkContainer != null)
+                                    simpleValue.setStringValue(autoLinkContainer.getPath());
                             }
                         }
                         break;

@@ -94,7 +94,7 @@ public class TargetStudyTest extends AbstractAssayTest
         assertNotNull(_study1ContainerId);
 
         uploadRuns();
-        copyToStudy();
+        linkToStudy();
     }
 
 
@@ -217,7 +217,7 @@ public class TargetStudyTest extends AbstractAssayTest
         }
     }
 
-    protected void copyToStudy()
+    protected void linkToStudy()
     {
         DataRegionTable table = new DataRegionTable("Data", this);
         table.checkAllOnPage();
@@ -251,7 +251,7 @@ public class TargetStudyTest extends AbstractAssayTest
         clickButton("Re-Validate");
         assertTextNotPresent("You must specify a Target Study for all selected rows.");
 
-        log("** Copy to studies");
+        log("** Link to studies");
         clickButton("Link to Study");
 
         beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/dataset.view?datasetId=5001");

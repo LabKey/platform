@@ -87,7 +87,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     private static final String RUN_ID_ALIAS = "Run";
 
-    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
+    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeLinkedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema, cf);
         _protocol = _userSchema.getProtocol();
@@ -239,7 +239,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         SQLFragment qcFragment = qcService.getDataTableCondition(_protocol, getContainer(), getUserSchema().getUser());
         addCondition(qcFragment);
 
-        if (includeCopiedToStudyColumns)
+        if (includeLinkedToStudyColumns)
         {
             Set<String> studyColumnNames = schema.addLinkedToStudyColumns(this, false);
             for (String columnName : studyColumnNames)

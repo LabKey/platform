@@ -91,16 +91,16 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
         assayRuns.checkAllOnPage();
 
         assayRuns.clickHeaderButton("Link to Study");
-        waitForElement(Locator.checkboxById("autoCopy"));
-        checkCheckbox(Locator.checkboxById("autoCopy"));
+        waitForElement(Locator.checkboxById("autoLink"));
+        checkCheckbox(Locator.checkboxById("autoLink"));
         clickButton("Next");
 
-        waitForText("Automatic copying of assay data to study");
+        waitForText("Automatic linkage of assay data to study");
         assertTrue("expect to be in pipeline-status for Lab 1", getDriver().getCurrentUrl().contains("pipeline-status"));
 
         clickButton("Show Grid");
         waitForPipelineJobsToComplete(1, false);
-        clickAndWait(Locator.linkWithText("Automatic copying of assay data to study"));
+        clickAndWait(Locator.linkWithText("Automatic linkage of assay data to study"));
         DataRegionTable dataSet = new DataRegionTable("Dataset", this);
         List<String> specimenIds = new ArrayList<>(Arrays.asList("AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1"));
         if (_studyHelper.isSpecimenModulePresent())
@@ -109,7 +109,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
             specimenIds.addAll(0, Arrays.asList("AAA07XMC-02", "AAA07XMC-04", "AAA07XK5-05", "AAA07XSF-02"));
         }
 
-        assertEquals("expected copied rows should be for ", specimenIds, dataSet.getColumnDataAsText("Specimen ID"));
+        assertEquals("expected linked rows should be for ", specimenIds, dataSet.getColumnDataAsText("Specimen ID"));
     }
 
     /**

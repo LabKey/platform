@@ -93,11 +93,11 @@
 
         handleNext = function(){
 
-            var autoCopy = $("input[id='autoCopy']");
-            if (autoCopy.prop('checked')){
+            var autoLink = $("input[id='autoLink']");
+            if (autoLink.prop('checked')){
 
                 var data = {};
-                $('#copyForm').serializeArray().map(function(x){
+                $('#linkForm').serializeArray().map(function(x){
                     if (!data[x.name]) {
                         data[x.name] = x.value;
                     } else {
@@ -110,7 +110,7 @@
                 });
 
                 LABKEY.Ajax.request({
-                    url : LABKEY.ActionURL.buildURL('publish', 'autoCopyRun.api', null),
+                    url : LABKEY.ActionURL.buildURL('publish', 'autoLinkRun.api', null),
                     method : 'POST',
                     jsonData : data,
                     success: LABKEY.Utils.getCallbackWrapper(function(response)
@@ -127,7 +127,7 @@
             }
             else {
                 // submit the form to the standard confirm page
-                $('#copyForm').submit();
+                $('#linkForm').submit();
             }
         };
 
@@ -155,7 +155,7 @@
     }
 %>
 
-<labkey:form method="POST" id="copyForm" layout="horizontal" action="<%=postURL%>">
+<labkey:form method="POST" id="linkForm" layout="horizontal" action="<%=postURL%>">
     <%
         if (unambiguous)
         {
@@ -178,7 +178,7 @@
             String autoLinkTip = "Selecting this checkbox will skip the confirmation step and run the link to study process in a pipeline job. Any " +
                     bean.getBatchNoun() + " data missing valid subject IDs and timepoints will be ignored.";
     %>
-    <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoCopy" forceSmallContext="true"
+    <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoLink" forceSmallContext="true"
                   contextContent="<%= autoLinkTip %>"/>
     <%
         }

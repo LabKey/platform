@@ -33,12 +33,12 @@ public class ExperimentListenerImpl implements ExperimentListener
     public void afterResultDataCreated(Container container, User user, ExpRun run, ExpProtocol protocol) throws BatchValidationException
     {
         List<ValidationException> errors = new ArrayList<>();
-        List<String> copyToStudyErrors = new ArrayList<>();
+        List<String> linkToStudyErrors = new ArrayList<>();
 
-        StudyPublishService.get().autoLinkResults(protocol, run, user, container, copyToStudyErrors);
+        StudyPublishService.get().autoLinkResults(protocol, run, user, container, linkToStudyErrors);
 
-        // copy results data to the target study if the protocol is configured to auto copy
-        for (String error : copyToStudyErrors)
+        // link results data to the target study if the protocol is configured to auto link
+        for (String error : linkToStudyErrors)
         {
             errors.add(new ValidationException(error));
         }

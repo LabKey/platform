@@ -122,13 +122,13 @@ public class PublishController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class AutoCopyRunAction extends MutatingApiAction<AutoCopyRunForm>
+    public class AutoLinkRunAction extends MutatingApiAction<AutoLinkRunForm>
     {
         @Override
-        public Object execute(AutoCopyRunForm form, BindException errors) throws Exception
+        public Object execute(AutoLinkRunForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            String jobGuid = startAutoCopyPipelineJob(form);
+            String jobGuid = startAutoLinkPipelineJob(form);
             Integer jobId = null;
 
             if (null != jobGuid)
@@ -143,7 +143,7 @@ public class PublishController extends SpringActionController
             return response;
         }
 
-        private String startAutoCopyPipelineJob(AutoCopyRunForm form)
+        private String startAutoLinkPipelineJob(AutoLinkRunForm form)
         {
             Container c = getContainer();
             ViewBackgroundInfo vbi = new ViewBackgroundInfo(c, getUser(), null);
@@ -157,7 +157,7 @@ public class PublishController extends SpringActionController
 
             try
             {
-                PipelineJob job = new AutoCopyPipelineJob(vbi, root, form);
+                PipelineJob job = new AutoLinkPipelineJob(vbi, root, form);
                 PipelineService.get().queueJob(job);
                 return job.getJobGUID();
             }
@@ -169,7 +169,7 @@ public class PublishController extends SpringActionController
 
     }
 
-    public static class AutoCopyRunForm extends ProtocolIdForm
+    public static class AutoLinkRunForm extends ProtocolIdForm
     {
         private List<Integer> _runId;
         private Container _targetStudy;
@@ -195,7 +195,7 @@ public class PublishController extends SpringActionController
         }
     }
 
-    private static class AutoCopyPipelineJob extends PipelineJob
+    private static class AutoLinkPipelineJob extends PipelineJob
     {
         private Container _targetStudyContainer;
         private Integer _protocolId;
@@ -203,16 +203,16 @@ public class PublishController extends SpringActionController
         private ActionURL _statusUrl;
 
         // For serialization
-        protected AutoCopyPipelineJob() {}
+        protected AutoLinkPipelineJob() {}
 
-        public AutoCopyPipelineJob(ViewBackgroundInfo info, @NotNull PipeRoot pipeRoot, AutoCopyRunForm form)
+        public AutoLinkPipelineJob(ViewBackgroundInfo info, @NotNull PipeRoot pipeRoot, AutoLinkRunForm form)
         {
             super(null, info, pipeRoot);
             _targetStudyContainer = form.getTargetStudy();
             _protocolId = form.getProtocol().getRowId();
             _runIds = form.getRunId();
 
-            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_copy_to_study", "log")));
+            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")));
         }
 
         @Override
@@ -224,7 +224,7 @@ public class PublishController extends SpringActionController
         @Override
         public String getDescription()
         {
-            return  "Automatic copying of assay data to study";
+            return  "Automatic linkage of assay data to study";
         }
 
         @Override
@@ -236,13 +236,13 @@ public class PublishController extends SpringActionController
             {
                 if (_targetStudyContainer != null)
                 {
-                    info("Starting copy of data to study in folder: " + _targetStudyContainer.getPath());
+                    info("Starting linkage of data to study in folder: " + _targetStudyContainer.getPath());
 
                     ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                     AssayProvider provider = AssayService.get().getProvider(protocol);
                     _runIds.forEach((runId) -> {
 
-                        info("Starting copy for run : " + runId);
+                        info("Starting linkage for run : " + runId);
                         ExpRun run = ExperimentService.get().getExpRun(runId);
                         if (run != null)
                         {

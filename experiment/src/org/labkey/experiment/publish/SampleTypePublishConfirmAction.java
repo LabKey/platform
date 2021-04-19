@@ -305,6 +305,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         if (_targetStudyName != null)
-            root.addChild("Copy to " + _targetStudyName + ": Verify Results");
+            root.addChild("Link to " + _targetStudyName + ": Verify Results");
     }
 }

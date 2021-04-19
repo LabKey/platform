@@ -281,6 +281,6 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         if (_protocol != null)
             root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         if (_targetStudyName != null)
-            root.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
+            root.addChild("Link to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
     }
 }

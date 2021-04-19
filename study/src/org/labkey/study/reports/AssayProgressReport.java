@@ -87,7 +87,7 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_UNUSABLE = "unusable";
     public static final String SPECIMEN_RESULTS_UNEXPECTED = "unexpected";
 
-    private final SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
+    private final SetValuedMap<String, ParticipantVisit> _linkedToStudyData = new HashSetValuedHashMap<>();
 
     public enum SpecimenStatus
     {
@@ -185,7 +185,7 @@ public class AssayProgressReport extends AbstractReport
 
         Map<Integer, Map<String, Object>> assayData = new LinkedHashMap<>();
 
-        _copiedToStudyData.clear();
+        _linkedToStudyData.clear();
 
         // assay expectations from the assay schedule
         List<AssayExpectation> assayExpectations = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), TableSelector.ALL_COLUMNS, SimpleFilter.createContainerFilter(context.getContainer()), new Sort(FieldKey.fromParts("AssayName"))).getArrayList(AssayExpectation.class);
@@ -316,7 +316,7 @@ public class AssayProgressReport extends AbstractReport
 
         // results available (linked to study)
         SpecimenStatus available = SpecimenStatus.getForName(SPECIMEN_AVAILABLE);
-        for (ParticipantVisit visit : _copiedToStudyData.get(assay.getAssayName()))
+        for (ParticipantVisit visit : _linkedToStudyData.get(assay.getAssayName()))
         {
             heatmap.put(visit.getKey(), PageFlowUtil.map("iconcls", available.getIconClass(),
                     "tooltip", available.getDescription(),
@@ -350,7 +350,7 @@ public class AssayProgressReport extends AbstractReport
                             Visit visit = StudyManager.getInstance().getVisitForRowId(study, visitId);
                             if (visit != null)
                             {
-                                _copiedToStudyData.put(assay.getAssayName(), new ParticipantVisit(ptid, visitId));
+                                _linkedToStudyData.put(assay.getAssayName(), new ParticipantVisit(ptid, visitId));
                             }
                         }
                     });

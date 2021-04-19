@@ -128,7 +128,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
             for (Integer id : ids)
                 inputs.add(Pair.of(DataRegion.SELECT_CHECKBOX_NAME, id.toString()));
 
-            // Copy url parameters to hidden inputs
+            // Link url parameters to hidden inputs
             ActionURL url = urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _protocol);
             for (Pair<String, String> parameter : url.getParameters())
                 inputs.add(parameter);
