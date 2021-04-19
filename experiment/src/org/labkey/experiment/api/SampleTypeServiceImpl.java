@@ -982,16 +982,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ExpMaterial getMaterialByName(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Name"), sampleName);
-        filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
-        Material result = new TableSelector(getTinfoMaterial(), filter, null).getObject(Material.class);
-        return result == null ? null : new ExpMaterialImpl(result);
-    }
-
-    @Override
     public long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
     {
         long max = 0;

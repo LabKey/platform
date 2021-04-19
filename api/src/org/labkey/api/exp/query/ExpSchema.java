@@ -441,7 +441,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.Materials.toString(), ContainerFilter.EVERYTHING);
+                return getTable(TableType.Materials.toString(), cf);
             }
         };
     }

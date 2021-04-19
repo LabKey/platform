@@ -756,11 +756,9 @@ public abstract class UploadSamplesHelper
     {
         final ExpSampleTypeImpl sampletype;
         final NameGenerator nameGen;
-        final Map<String, DbSequence> aliquotDBSeqeuences = new HashMap();
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final Container _container;
-        final String _sampleTypeLsid;
         final int _batchSize;
         boolean first = true;
 
@@ -778,7 +776,6 @@ public abstract class UploadSamplesHelper
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             _container = sampletype.getContainer();
             _batchSize = batchSize;
-            _sampleTypeLsid = sampletype.getLSID();
             CaseInsensitiveHashSet skip = new CaseInsensitiveHashSet();
             skip.addAll("name","lsid", "rootmateriallsid");
             selectAll(skip);
@@ -828,14 +825,14 @@ public abstract class UploadSamplesHelper
 
         private DbSequence getAliquotSequence(String aliquotedFrom)
         {
-            ExpMaterial parent = SampleTypeService.get().getMaterialByName(aliquotedFrom, _sampleTypeLsid, _container);
+            ExpMaterial parent = this.sampletype.getSample(_container, aliquotedFrom);
             String seqName = ALIQUOT_DB_SEQ_PREFIX + ":" + aliquotedFrom;
             if (!_aliquotSequences.containsKey(seqName))
             {
                 int seqId = parent != null ? parent.getRowId() : 0;
                 DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, seqName, seqId, _batchSize);
                 long currentSeqMax = newSequence.current();
-                long currentAliquotMax = SampleTypeService.get().getMaxAliquotId(aliquotedFrom, _sampleTypeLsid, _container);
+                long currentAliquotMax = SampleTypeService.get().getMaxAliquotId(aliquotedFrom, this.sampletype.getLSID(), _container);
                 if (currentAliquotMax >= currentSeqMax)
                     newSequence.ensureMinimum(currentAliquotMax);
 
