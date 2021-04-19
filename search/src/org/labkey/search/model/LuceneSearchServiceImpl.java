@@ -536,7 +536,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 Metadata metadata = new Metadata();
                 metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                if ("text/plain".equals(r.getContentType())) // Tika sometimes guesses the wrong charset... suggest UTF-8
+
+                // Tika guesses content encoding of "IBM500" for short text documents, so suggest UTF-8. Seems related
+                // to https://issues.apache.org/jira/browse/TIKA-2771
+                if ("text/plain".equals(r.getContentType()))
                     metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
                 ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
