@@ -25,6 +25,12 @@ import java.util.Set;
 public class DefaultProvenanceProvider implements ProvenanceService
 {
     @Override
+    public boolean isProvenanceSupported()
+    {
+        return false;
+    }
+
+    @Override
     public void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs)
     {
 

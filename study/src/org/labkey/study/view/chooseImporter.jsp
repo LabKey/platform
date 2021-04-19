@@ -34,6 +34,12 @@
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, c);
     int numberOfTransforms = specimenTransforms.size();
     int rowNumber = 0;
+
+    String selected = SpecimenService.get().getActiveSpecimenImporter(c);
+    HtmlString manageFoldersLink = h(urlProvider(AdminUrls.class).getFolderTypeURL(c));
+    HtmlString labkeyEditionsLink = h("https://www.labkey.com/products-services/labkey-server/labkey-server-editions-feature-comparison/");
+    HtmlString contactUsLink = h("https://www.labkey.com/about/contact/");
+    HtmlString manuallyImportSpecimensLink = h(urlProvider(SpecimenUrls.class).getUploadSpecimensURL(c));
 %>
 
 <style type="text/css">
@@ -46,9 +52,6 @@
 <labkey:errors/>
 
 <div>
-    <%
-        String selected = SpecimenService.get().getActiveSpecimenImporter(c);
-    %>
     <% if (numberOfTransforms > 1) { %>
         <p>
             Activate automatic import of specimen data from an external source on this page. In order to prevent automated reloads from overwriting specimen data upon manual or scheduled imports, only one specimen import mechanism may be active at a time for a given container.
@@ -59,10 +62,12 @@
     <p>
         Learn more about <%=helpLink("externalSpecimens", "Automated External Specimen Imports")%>.
     </p>
+
     <br/>
 
     <labkey:panel id="overview" className="lk-sg-section">
         <h4 class="labkey-page-section-header">Configure Specimen Import</h4>
+
         <% if (numberOfTransforms > 1) { %>
             <labkey:form method="post">
                 <table class="labkey-data-region-legacy labkey-show-borders">
@@ -128,15 +133,14 @@
 
             <br/><br/>
 
-        <% } else {
-            HtmlString manageFoldersLink = h(urlProvider(AdminUrls.class).getFolderTypeURL(c));
-            HtmlString labkeyEditionsLink = h("https://www.labkey.com/products-services/labkey-server/labkey-server-editions-feature-comparison/");
-            HtmlString contactUsLink = h("https://www.labkey.com/about/contact/");
-            HtmlString manuallyImportSpecimensLink = h(urlProvider(SpecimenUrls.class).getUploadSpecimensURL(c));
-        %>
-
-            <% if (ModuleLoader.getInstance().hasModule("professional")) {
+            <%=  new Button.ButtonBuilder("Done")
+                        .href(cancelLink)
+                        .build()
             %>
+
+        <% } else { %>
+
+            <% if (ModuleLoader.getInstance().hasModule("professional")) { %>
                 <div class="alert alert-warning">
                     External Specimen Import is not currently available for this folder.
                     To use External import, <a href=<%=manageFoldersLink%>> enable the Professional Module </a> for this folder.
@@ -156,13 +160,4 @@
             }
         %>
     </labkey:panel>
-
-    <% if (numberOfTransforms == 1) { %>
-        <%=  new Button.ButtonBuilder("Done")
-                .href(cancelLink)
-                .build()
-        %>
-    <%
-        }
-    %>
 </div>
