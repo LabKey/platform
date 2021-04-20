@@ -236,7 +236,7 @@ public class PublishController extends SpringActionController
             {
                 if (_targetStudyContainer != null)
                 {
-                    info("Starting linkage of data to study in folder: " + _targetStudyContainer.getPath());
+                    info("Starting link of data to study in folder: " + _targetStudyContainer.getPath());
 
                     ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                     AssayProvider provider = AssayService.get().getProvider(protocol);

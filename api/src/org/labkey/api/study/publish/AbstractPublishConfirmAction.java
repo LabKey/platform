@@ -307,12 +307,12 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     }
 
     private void attemptLinkage(FORM form, BindException errors,
-                                Set<Integer> selectedObjects, List<Integer> allObjects,
-                                Container targetStudy,
-                                Map<Object, String> postedTargetStudies,
-                                Map<Object, String> postedVisits,
-                                Map<Object, String> postedDates,
-                                Map<Object, String> postedPtids)
+                            Set<Integer> selectedObjects, List<Integer> allObjects,
+                            Container targetStudy,
+                            Map<Object, String> postedTargetStudies,
+                            Map<Object, String> postedVisits,
+                            Map<Object, String> postedDates,
+                            Map<Object, String> postedPtids)
             throws RedirectException
     {
         Map<Integer, PublishKey> publishData = new LinkedHashMap<>();
