@@ -454,7 +454,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
-            if (provider.isPlateMetadataEnabled(protocol))
+            if (pvs.isProvenanceSupported() || provider.isPlateMetadataEnabled(protocol))
             {
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
