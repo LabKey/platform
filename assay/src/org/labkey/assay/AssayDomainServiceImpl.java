@@ -282,8 +282,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
             Container autoLinkTarget = ContainerManager.getForId(autoLinkValue.getStringValue());
             if (autoLinkTarget != null)
             {
-                result.setAutoLinkTargetContainer(convertToGWTContainer(autoLinkTarget));
-                result.setAutoLinkTargetContainerId(autoLinkTarget.getId());
+                result.setAutoCopyTargetContainer(convertToGWTContainer(autoLinkTarget));
+                result.setAutoCopyTargetContainerId(autoLinkTarget.getId());
             }
         }
 
@@ -512,7 +512,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
                     // get the autoLinkTargetContainer from either the id on the assay object entityId
-                    String autoLinkTargetContainerId = assay.getAutoLinkTargetContainer() != null ? assay.getAutoLinkTargetContainer().getEntityId() : assay.getAutoLinkTargetContainerId();
+                    String autoLinkTargetContainerId = assay.getAutoCopyTargetContainer() != null ? assay.getAutoCopyTargetContainer().getEntityId() : assay.getAutoCopyTargetContainerId();
                     // verify that the autoLinkTargetContainerId is valid
                     if (autoLinkTargetContainerId != null && ContainerManager.getForId(autoLinkTargetContainerId) == null)
                     {

@@ -65,8 +65,8 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowTransformationScript;
     private boolean _allowPlateMetadata;
 
-    private GWTContainer _autoLinkTargetContainer;
-    private String _autoLinkTargetContainerId;
+    private GWTContainer _autoCopyTargetContainer;
+    private String _autoCopyTargetContainerId;
     private boolean _saveScriptFiles;
     private boolean _editableRuns;
     private boolean _editableResults;
@@ -223,24 +223,24 @@ public class GWTProtocol implements IsSerializable
         _selectedDetectionMethod = detectionMethod;
     }
 
-    public GWTContainer getAutoLinkTargetContainer()
+    public GWTContainer getAutoCopyTargetContainer()
     {
-        return _autoLinkTargetContainer;
+        return _autoCopyTargetContainer;
     }
 
-    public void setAutoLinkTargetContainer(GWTContainer autoLinkTargetContainer)
+    public void setAutoCopyTargetContainer(GWTContainer autoLinkTargetContainer)
     {
-        _autoLinkTargetContainer = autoLinkTargetContainer;
+        _autoCopyTargetContainer = autoLinkTargetContainer;
     }
 
-    public String getAutoLinkTargetContainerId()
+    public String getAutoCopyTargetContainerId()
     {
-        return _autoLinkTargetContainerId;
+        return _autoCopyTargetContainerId;
     }
 
-    public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
+    public void setAutoCopyTargetContainerId(String autoLinkTargetContainerId)
     {
-        _autoLinkTargetContainerId = autoLinkTargetContainerId;
+        _autoCopyTargetContainerId = autoLinkTargetContainerId;
     }
 
     public boolean isSaveScriptFiles()
