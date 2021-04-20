@@ -36,6 +36,38 @@
                     </property>
                     <property name="helpText" value="The selected Pipeline task can only be initiated on Excel and .tsv files.
                         It will not create new lists, but can reload existing lists' data and infer non-key column changes." />
+
+                    <property name="customFields">
+                        <list>
+                            <bean class="org.labkey.api.formSchema.RadioField">
+                                <constructor-arg value="action"/>
+                                <constructor-arg value="Action"/>
+                                <constructor-arg value="true" />
+                                <constructor-arg value="replace" />
+                                <constructor-arg>
+                                    <list>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="merge"/>
+                                            <constructor-arg index="1" value="Merge"/>
+                                        </bean>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="replace"/>
+                                            <constructor-arg index="1" value="Replace"/>
+                                        </bean>
+                                    </list>
+                                </constructor-arg>
+                                <constructor-arg value="Choose Merge to merge values in file with existing list, Replace to replace existing values."/>
+                            </bean>
+
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg value="allowDomainUpdates"/>
+                                <constructor-arg value="Allow Domain Updates"/>
+                                <constructor-arg value="true"/>
+                                <constructor-arg value="true"/>
+                                <constructor-arg value="Enable to allow domain updates"/>
+                            </bean>
+                        </list>
+                    </property>
                 </bean>
             </list>
         </property>
