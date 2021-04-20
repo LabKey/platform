@@ -317,7 +317,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 }
                 default -> {
                     if (!canInsert(user))
-                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
                 }
             }
         }
