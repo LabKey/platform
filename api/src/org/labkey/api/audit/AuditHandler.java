@@ -2,6 +2,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -14,6 +15,7 @@ import org.labkey.api.util.Pair;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -40,27 +42,30 @@ public interface AuditHandler
         return modifiedRow;
     }
 
-    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> existingRow, Set<String> extraFieldsToInclude)
-    {
-        return getOldAndNewRecordForMerge(row, existingRow, extraFieldsToInclude, TableInfo.defaultExcludedDetailedUpdateAuditFields);
-    }
-
-    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> existingRow, Set<String> extraFieldsToInclude, Set<String> excludedFromDetailDiff)
+    static Pair<Map<String, Object>, Map<String, Object>> getOldAndNewRecordForMerge(@NotNull Map<String, Object> row, @NotNull Map<String, Object> existingRow, Set<String> extraFieldsToInclude, Set<String> excludedFromDetailDiff, TableInfo table)
     {
         // record modified fields
         Map<String, Object> originalRow = new HashMap<>();
         Map<String, Object> modifiedRow = new HashMap<>();
 
+        List<ColumnInfo> columns = table == null ? Collections.emptyList() : table.getColumns();
         // Iterate through existingRow keys since these have the casing we want
         // and we won't convert sample type and data class names into lower case.
         for (Map.Entry<String, Object> entry : existingRow.entrySet())
         {
             String key = entry.getKey();
-            boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(key);
-            if (!excludedFromDetailDiff.contains(key) && row.containsKey(key))
+            String nameFromAlias = columns
+                    .stream()
+                    .filter(column -> column.getAlias().equalsIgnoreCase(key))
+                    .map((ColumnInfo::getName))
+                    .findFirst()
+                    .orElse(key);
+
+            boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
+            if (!excludedFromDetailDiff.contains(nameFromAlias) && row.containsKey(nameFromAlias))
             {
                 Object oldValue = entry.getValue();
-                Object newValue = row.get(key);
+                Object newValue = row.get(nameFromAlias);
                 // compare dates using string values to allow for both Date and Timestamp types
                 if (newValue instanceof Date && oldValue != null)
                 {
@@ -69,8 +74,8 @@ public interface AuditHandler
                     String oldString = oldValue instanceof Date ? formatter.format((Date) oldValue) : oldValue.toString();
                     if (!newString.equals(oldString) || isExtraAuditField)
                     {
-                        originalRow.put(key, oldValue);
-                        modifiedRow.put(key, newValue);
+                        originalRow.put(nameFromAlias, oldValue);
+                        modifiedRow.put(nameFromAlias, newValue);
                     }
                 }
                 else if (newValue instanceof Number && oldValue != null)
@@ -85,29 +90,29 @@ public interface AuditHandler
                         // If values differ than include in difference maps
                         if (!newVal.equals(oldVal) || isExtraAuditField)
                         {
-                            originalRow.put(key, oldValue);
-                            modifiedRow.put(key, newValue);
+                            originalRow.put(nameFromAlias, oldValue);
+                            modifiedRow.put(nameFromAlias, newValue);
                         }
                     }
                     catch (ParseException e)
                     {
                         // If a parsing error occurred e.g. one value was NaN, then include values in difference maps
-                        originalRow.put(key, oldValue);
-                        modifiedRow.put(key, newValue);
+                        originalRow.put(nameFromAlias, oldValue);
+                        modifiedRow.put(nameFromAlias, newValue);
                     }
                 }
                 else if (!Objects.equals(oldValue, newValue) || isExtraAuditField)
                 {
-                    originalRow.put(key, oldValue);
-                    modifiedRow.put(key, newValue);
+                    originalRow.put(nameFromAlias, oldValue);
+                    modifiedRow.put(nameFromAlias, newValue);
                 }
             }
             else if (isExtraAuditField)
             {
                 // persist extra fields desired for audit details even if no change is made, so that extra field values is available after record is deleted
                 // for example, a display label/id is desired in audit log for the record updated.
-                originalRow.put(key, entry.getValue());
-                modifiedRow.put(key, entry.getValue());
+                originalRow.put(nameFromAlias, entry.getValue());
+                modifiedRow.put(nameFromAlias, entry.getValue());
             }
         }
         return new Pair<>(originalRow, modifiedRow);
