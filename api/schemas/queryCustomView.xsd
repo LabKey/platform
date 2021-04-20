@@ -128,6 +128,7 @@
             <xsd:enumeration value="exp:parentof"/>
             <xsd:enumeration value="concept:subclassof"/>
             <xsd:enumeration value="concept:insubtree"/>
+            <xsd:enumeration value="concept:notinsubtree"/>
             <xsd:enumeration value="q"/>
             <xsd:enumeration value="where"/>
         </xsd:restriction>
