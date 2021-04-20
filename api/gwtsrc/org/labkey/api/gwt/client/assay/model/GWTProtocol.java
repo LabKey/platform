@@ -228,9 +228,9 @@ public class GWTProtocol implements IsSerializable
         return _autoCopyTargetContainer;
     }
 
-    public void setAutoCopyTargetContainer(GWTContainer autoLinkTargetContainer)
+    public void setAutoCopyTargetContainer(GWTContainer autoCopyTargetContainer)
     {
-        _autoCopyTargetContainer = autoLinkTargetContainer;
+        _autoCopyTargetContainer = autoCopyTargetContainer;
     }
 
     public String getAutoCopyTargetContainerId()
@@ -238,9 +238,9 @@ public class GWTProtocol implements IsSerializable
         return _autoCopyTargetContainerId;
     }
 
-    public void setAutoCopyTargetContainerId(String autoLinkTargetContainerId)
+    public void setAutoCopyTargetContainerId(String autoCopyTargetContainerId)
     {
-        _autoCopyTargetContainerId = autoLinkTargetContainerId;
+        _autoCopyTargetContainerId = autoCopyTargetContainerId;
     }
 
     public boolean isSaveScriptFiles()
