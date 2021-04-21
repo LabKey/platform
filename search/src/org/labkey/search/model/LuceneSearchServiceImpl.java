@@ -538,7 +538,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
 
                 // Tika guesses content encoding of "IBM500" for short text and html documents, so suggest UTF-8. Seems
-                // related to https://issues.apache.org/jira/browse/TIKA-2771
+                // related to https://issues.apache.org/jira/browse/TIKA-2771. This is just a hint, but I hope that's
+                // sufficient. If not, TikaCoreProperties.CONTENT_TYPE_OVERRIDE is an option to force UTF-8.
                 if (r.getContentType().startsWith("text"))
                     metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
