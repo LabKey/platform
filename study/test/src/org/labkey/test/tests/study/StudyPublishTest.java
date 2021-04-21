@@ -374,7 +374,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            new DatasetPropertiesPage(getDriver()).clickViewData();
+            DataRegionTable dataTable = new DatasetPropertiesPage(getDriver()).clickViewData().getDataRegion();
+            assertTrue("Expect > 0 records", dataTable.getDataRowCount() > 0 );
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -383,7 +384,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            new DatasetPropertiesPage(getDriver()).clickViewData();
+            DataRegionTable dataTable = new DatasetPropertiesPage(getDriver()).clickViewData().getDataRegion();
+            assertTrue("Expect > 0 records", dataTable.getDataRowCount() > 0 );
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
