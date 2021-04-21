@@ -30,6 +30,13 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.CheckboxField;
+import org.labkey.api.formSchema.Field;
+import org.labkey.api.formSchema.FormSchema;
+import org.labkey.api.formSchema.Option;
+import org.labkey.api.formSchema.SelectField;
+import org.labkey.api.formSchema.TextField;
+import org.labkey.api.formSchema.TextareaField;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -53,6 +60,8 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
+import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
@@ -532,6 +541,43 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public PipelineStatusFile.JobStore getJobStore()
     {
         return _jobStore;
+    }
+
+    @Override
+    public FormSchema getFormSchema(Container container)
+    {
+        List<Option<String>> typeOptions = new ArrayList<>();
+        for (PipelineTriggerType pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
+        {
+            typeOptions.add(new Option<>(pipelineTriggerType.getName(), pipelineTriggerType.getName()));
+        }
+
+        List<Option<String>> taskOptions = new ArrayList<>();
+        List<FileAnalysisTaskPipeline> tasks = getTaskPipelines(container)
+                .stream()
+                .filter(FileAnalysisTaskPipeline.class::isInstance)
+                .map(FileAnalysisTaskPipeline.class::cast)
+                .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
+                .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription()))
+                .collect(Collectors.toList());
+
+        for (FileAnalysisTaskPipeline task : tasks)
+            taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
+
+        String usernameHelpText = "The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions.";
+        String assayProviderHelpText = "Use this provider for running assay import runs.";
+
+        List<Field> fields = List.of(
+                new TextField("name", "Name", null, true, ""),
+                new TextareaField("description", "Description", null, false, ""),
+                new SelectField<>("type", "Type", null, true, typeOptions.get(0).getValue(), typeOptions),
+                new SelectField<>("task", "Pipeline Task", null, true, null, taskOptions),
+                new TextField("pipelineUsername", "Run as Username", null, false, null, usernameHelpText),
+                new TextField("pipelineAssayProvider", "Assay Provider", null, false, null, assayProviderHelpText),
+                new CheckboxField("enabled", "Enable this Trigger", false, true)
+        );
+
+        return new FormSchema(fields);
     }
 
     public void setJobStore(PipelineStatusFile.JobStore jobStore)
