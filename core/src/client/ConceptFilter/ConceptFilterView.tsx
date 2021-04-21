@@ -17,6 +17,7 @@ export interface AppContext {
     onFilterChange: (filterValue: string) => void;
     subscribeFilterTypeChanged: (listener: FilterChangeListener) => void;
     unsubscribeFilterTypeChanged: (listener: FilterChangeListener) => void;
+    loadListener: () => void;
 }
 
 interface Props {
@@ -25,7 +26,17 @@ interface Props {
 
 export const ConceptFilterView: FC<Props> = memo(props => {
     const {context} = props;
-    const {initFilterValue, initFilter, onFilterChange, ontologyId, subscribeFilterValue, unsubscribeFilterValue, subscribeFilterTypeChanged, unsubscribeFilterTypeChanged } = context;
+    const {
+        initFilterValue,
+        initFilter,
+        onFilterChange,
+        ontologyId,
+        subscribeFilterValue,
+        unsubscribeFilterValue,
+        subscribeFilterTypeChanged,
+        unsubscribeFilterTypeChanged,
+        loadListener,
+    } = context;
     const [filterValue, setFilterValue] = useState(initFilterValue);
     const [filter, setFilter] = useState(initFilter);
     const [collapsed, setHidden] = useState<boolean>(true);
@@ -51,6 +62,10 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         return () => unsubscribeFilterTypeChanged(handleFilterChange);
 
     },[setFilter, subscribeFilterValue, unsubscribeFilterValue]);
+
+    useEffect(() => {
+        loadListener();
+    },[]);
 
     //No need to show the filter tree if a value can't be set.
     if (!filter?.isDataValueRequired())

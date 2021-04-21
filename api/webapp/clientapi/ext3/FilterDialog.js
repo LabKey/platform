@@ -609,6 +609,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     scope.updateConceptFilters[index] = {};
                 }
                 scope.updateConceptFilters[index].setValue = listener;
+                this.changed = true;
             },
             unsubscribeFilterValue: () => {
                 if (scope.updateConceptFilters[index]) scope.updateConceptFilters[index].setValue = undefined;
@@ -618,12 +619,13 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     scope.updateConceptFilters[index] = {};
                 }
                 scope.updateConceptFilters[index].setFilterType = listener;
+                this.changed = true;
             },
             unsubscribeFilterTypeChanged: () => {
                 if (scope.updateConceptFilters[index]) scope.updateConceptFilters[index].setFilterType = undefined;
             },
             loadListener: () => {
-                scope.onViewReady();
+                scope.onViewReady();  // TODO be a little more targeted, but this ensures the filtertype & filterValue parameters get set because the Ext elements get rendered & set async
             },
         });
     },
