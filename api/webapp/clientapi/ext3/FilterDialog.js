@@ -555,8 +555,8 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 }],
                 listeners: {
                     render: () => {
-                        const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                        // const conceptFilterScript = 'core/gen/conceptFilter';
+                        // const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
+                        const conceptFilterScript = 'core/gen/conceptFilter';
                         LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId, index, scope:this});
                     }
                 },
