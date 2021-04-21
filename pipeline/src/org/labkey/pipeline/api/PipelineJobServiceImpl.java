@@ -566,14 +566,17 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         String usernameHelpText = "The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions.";
         String assayProviderHelpText = "Use this provider for running assay import runs.";
+        String baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
+        String usernameHref = baseHref + "runasusername";
+        String assayProviderHref = baseHref + "assayprovider";
 
         List<Field> fields = List.of(
                 new TextField("name", "Name", null, true, ""),
                 new TextareaField("description", "Description", null, false, ""),
                 new SelectField<>("type", "Type", null, true, typeOptions.get(0).getValue(), typeOptions),
                 new SelectField<>("task", "Pipeline Task", null, true, null, taskOptions),
-                new TextField("pipelineUsername", "Run as Username", null, false, null, usernameHelpText),
-                new TextField("pipelineAssayProvider", "Assay Provider", null, false, null, assayProviderHelpText),
+                new TextField("pipelineUsername", "Run as Username", null, false, null, usernameHelpText, usernameHref),
+                new TextField("pipelineAssayProvider", "Assay Provider", null, false, null, assayProviderHelpText, assayProviderHref),
                 new CheckboxField("enabled", "Enable this Trigger", false, true)
         );
 
