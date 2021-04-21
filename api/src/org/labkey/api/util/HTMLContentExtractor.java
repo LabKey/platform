@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
+// Warning: This is not an efficient parser. See Issue 42948.
 public abstract class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
 {
     private StringBuilder _text = new StringBuilder();
@@ -89,6 +90,7 @@ public abstract class HTMLContentExtractor extends HTMLEditorKit.ParserCallback
     }
 
     // Extract readable text between <body> </body>
+    // Warning: This is not an efficient parser. See Issue 42948.
     public static class GenericHTMLExtractor extends HTMLContentExtractor
     {
         public GenericHTMLExtractor(String html)

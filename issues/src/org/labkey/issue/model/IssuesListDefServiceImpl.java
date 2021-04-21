@@ -299,4 +299,10 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     {
         IssueListDefCache.uncache(container);
     }
+
+    @Override
+    public void deleteIssueDefsForDomain(User user, Domain domain)
+    {
+        IssueManager.deleteIssueDefsForDomain(user, domain);
+    }
 }

@@ -32,6 +32,7 @@ import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -67,11 +68,13 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
@@ -90,6 +93,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.PublishController;
 import org.labkey.study.model.DatasetDefinition;
@@ -97,6 +101,7 @@ import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -117,7 +122,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.labkey.study.query.DatasetTableImpl.ASSAY_RESULT_LSID;
+import static org.labkey.study.query.AssayDatasetTable.ASSAY_RESULT_LSID;
 
 /**
  * Manages the copy-to-study operation that links assay rows into datasets in the target study, creating the dataset
@@ -221,22 +226,22 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String assayName,
+    public ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
                                  Pair<Dataset.PublishSource, Integer> publishSource,
                                  List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
-        return publishData(user, sourceContainer, targetContainer, assayName, publishSource, dataMaps, types, null, errors);
+        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, types, null, errors);
     }
 
     @Override
-    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName,
+    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
                                  Pair<Dataset.PublishSource, Integer> publishSource,
                                  List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
-        return publishData(user, sourceContainer, targetContainer, assayName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
+        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
     }
 
-    private ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String assayName,
+    private ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
                                   Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
@@ -255,10 +260,10 @@ public class StudyPublishManager implements StudyPublishService
                 pd.setFormat("0.###");
             propertyDescriptors.add(pd);
         }
-        return publishData(user, sourceContainer, targetContainer, assayName, publishSource, dataMaps, propertyDescriptors, keyPropertyName, errors);
+        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, propertyDescriptors, keyPropertyName, errors);
     }
 
-    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName,
+    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
                                   Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -282,12 +287,12 @@ public class StudyPublishManager implements StudyPublishService
         {
             Container targetStudy = entry.getKey();
             List<Map<String, Object>> maps = entry.getValue();
-            url = _publishData(user, sourceContainer, targetStudy, assayName, publishSource, maps, columns, keyPropertyName, errors);
+            url = _publishData(user, sourceContainer, targetStudy, sourceName, publishSource, maps, columns, keyPropertyName, errors);
         }
         return url;
     }
 
-    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName,
+    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, String sourceName,
                                    Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -327,7 +332,7 @@ public class StudyPublishManager implements StudyPublishService
                 else if (publishSource.second == null &&
                         publishSource.first == Dataset.PublishSource.Assay &&
                         dsd.getTypeURI() != null &&
-                        dsd.getTypeURI().equals(DatasetDomainKind.generateDomainURI(assayName, dsd.getEntityId(), targetStudy.getContainer())))
+                        dsd.getTypeURI().equals(DatasetDomainKind.generateDomainURI(sourceName, dsd.getEntityId(), targetStudy.getContainer())))
                 {
                     // No protocol, but we've got a type uri match. This is used when creating a study
                     // from a study design
@@ -337,7 +342,7 @@ public class StudyPublishManager implements StudyPublishService
             }
             if (dataset == null)
             {
-                dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, assayName))
+                dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, sourceName))
                         .setStudy(targetStudy)
                         .setKeyPropertyName(keyPropertyName)
                         .setPublishSourceId(publishSource.second)
@@ -380,7 +385,7 @@ public class StudyPublishManager implements StudyPublishService
             if (!errors.isEmpty())
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
-            convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+            convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris, publishSource.getKey().name());
 
             // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
             // in 'ensurePropertyDescriptors'.
@@ -399,7 +404,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 ExpObject expSource = publishSource.first.resolvePublishSource(publishSource.second);
                 if (expSource instanceof ExpProtocol)
-                    createProvenanceRun(user, targetContainer, assayName, (ExpProtocol)expSource, errors, dataset, lsids);
+                    createProvenanceRun(user, targetContainer, sourceName, (ExpProtocol)expSource, errors, dataset, lsids);
             }
             if (!errors.isEmpty())
                 return null;
@@ -447,7 +452,7 @@ public class StudyPublishManager implements StudyPublishService
 
         // If provenance module is not present, do nothing
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs == null)
+        if (!pvs.isProvenanceSupported())
             return;
 
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -567,7 +572,7 @@ public class StudyPublishManager implements StudyPublishService
         return true;
     }
 
-    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, String> propertyNamesToUris)
+    private List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, String> propertyNamesToUris, String publishSourceTypeName)
     {
         List<Map<String, Object>> ret = new ArrayList<>(dataMaps.size());
         for (Map<String, Object> dataMap : dataMaps)
@@ -587,7 +592,8 @@ public class StudyPublishManager implements StudyPublishService
                     if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         continue;
                 }
-                assert uri != null : "Expected all properties to already be present in assay type. Couldn't find one for " + entry.getKey();
+
+                assert uri != null : String.format("Expected all properties to already be present in %s type. Couldn't find one for " + entry.getKey(), publishSourceTypeName);
                 newMap.put(uri, entry.getValue());
             }
             ret.add(newMap);
@@ -921,23 +927,30 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL getPublishHistory(Container c, ExpProtocol protocol)
+    public ActionURL getPublishHistory(Container c, Dataset.PublishSource source, Integer publishSourceId)
     {
-        return getPublishHistory(c, protocol, null);
+        return getPublishHistory(c, source, publishSourceId, null);
     }
 
     @Override
-    public ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
+    public ActionURL getPublishHistory(Container container, Dataset.PublishSource source, Integer publishSourceId, ContainerFilter containerFilter)
     {
-        if (protocol != null)
+        if (source != null && publishSourceId != null)
         {
-            ActionURL url = new ActionURL(PublishController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
-            if (containerFilter != null && containerFilter.getType() != null)
-                url.addParameter("containerFilterName", containerFilter.getType().name());
-            return url;
+            switch (source)
+            {
+                case Assay -> {
+                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("rowId", publishSourceId);
+                    if (containerFilter != null && containerFilter.getType() != null)
+                        url.addParameter("containerFilterName", containerFilter.getType().name());
+                    return url;
+                }
+
+                default -> throw new IllegalArgumentException("No publish history view for : " + source);
+            }
         }
 
-        throw new NotFoundException("Specified protocol is invalid");
+        throw new NotFoundException("Specified publish source is invalid");
     }
 
     @Override
@@ -1122,5 +1135,107 @@ public class StudyPublishManager implements StudyPublishService
             return ExperimentService.get().insertSimpleProtocol(baseProtocol, user);
         }
         return protocol;
+    }
+
+    @Override
+    public Set<DatasetDefinition> getDatasetsForPublishSource(Integer publishSourceId, Dataset.PublishSource publishSource)
+    {
+        TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("publishSourceId"), publishSourceId);
+        filter.addCondition(FieldKey.fromParts("publishSourceType"), publishSource.name());
+
+        Set<DatasetDefinition> result = new HashSet<>();
+        Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
+        for (Map<String, Object> row : rows)
+        {
+            String containerId = (String)row.get("container");
+            int datasetId = ((Number)row.get("datasetid")).intValue();
+            Container container = ContainerManager.getForId(containerId);
+            result.add(StudyServiceImpl.INSTANCE.getDataset(container, datasetId));
+        }
+        return result;
+    }
+
+    @Override
+    public Set<Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user)
+    {
+        // Cache the datasets for a specific protocol (assay design)
+        Map<ExpProtocol, Set<DatasetDefinition>> protocolDatasets = new HashMap<>();
+        // Remember all of the run RowIds for a given protocol (assay design)
+        Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
+
+        // Go through the runs and figure out what protocols they belong to, and what datasets they could have been copied to
+        for (ExpRun run : runs)
+        {
+            ExpProtocol protocol = run.getProtocol();
+            Set<DatasetDefinition> datasets = protocolDatasets.get(protocol);
+            if (datasets == null)
+            {
+                datasets = StudyPublishManager.getInstance().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay);
+                protocolDatasets.put(protocol, datasets);
+            }
+            List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
+            if (protocolRunIds == null)
+            {
+                protocolRunIds = new ArrayList<>();
+                allProtocolRunIds.put(protocol, protocolRunIds);
+            }
+            protocolRunIds.add(run.getRowId());
+        }
+
+        // All of the datasets that have rows backed by data in the specified runs
+        Set<Dataset> result = new HashSet<>();
+
+        for (Map.Entry<ExpProtocol, Set<DatasetDefinition>> entry : protocolDatasets.entrySet())
+        {
+            for (DatasetDefinition dataset : entry.getValue())
+            {
+                // Don't enforce permissions for the current user - we still want to tell them if the data
+                // has been copied even if they can't see the dataset.
+                UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, false);
+                TableInfo tableInfo = schema.getTable(dataset.getName());
+                AssayProvider provider = AssayService.get().getProvider(entry.getKey());
+                if (provider != null)
+                {
+                    AssayTableMetadata tableMetadata = provider.getTableMetadata(entry.getKey());
+                    SimpleFilter filter = new SimpleFilter();
+                    filter.addInClause(tableMetadata.getRunRowIdFieldKeyFromResults(), allProtocolRunIds.get(entry.getKey()));
+                    if (new TableSelector(tableInfo, filter, null).exists())
+                    {
+                        result.add(dataset);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
+    {
+        Dataset.PublishSource source = def.getPublishSource();
+        switch (source)
+        {
+            case Assay -> {
+                String assayName = def.getLabel();
+                ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
+                if (protocol != null)
+                    assayName = protocol.getName();
+
+                AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(), rowCount + " row(s) were recalled to the assay: " + assayName);
+
+                if (protocol != null)
+                    event.setProtocol(protocol.getRowId());
+                event.setTargetStudy(def.getStudy().getContainer().getId());
+                event.setDatasetId(def.getDatasetId());
+
+                AuditLogService.get().addEvent(user, event);
+            }
+
+            case SampleType -> {
+                // This will be implemented once publish and recall audit logging are completed.
+            }
+        }
     }
 }

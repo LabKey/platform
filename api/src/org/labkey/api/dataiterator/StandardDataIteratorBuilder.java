@@ -136,7 +136,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         // Add translator/validator for ontology import features
         if (null != OntologyService.get())
-            dib = OntologyService.get().getConceptLookupDataIteratorBuilder(_inputBuilder, _target);
+            dib = OntologyService.get().getConceptLookupDataIteratorBuilder(dib, _target);
 
         DataIterator input = dib.getDataIterator(context);
 
@@ -209,7 +209,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             if (null != to && _convertTypes)
             {
                 if (!unusedCols.containsKey(to.target.getFieldKey()))
-                    setupError.addGlobalError("Two columns mapped to target column: " + to.target.getName());
+                    setupError.addGlobalError("Two columns mapped to target column " + to.target.getName() + ". Check the column names and import aliases for your data.");
                 unusedCols.remove(to.target.getFieldKey());
                 to.indexFrom = i;
                 Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());

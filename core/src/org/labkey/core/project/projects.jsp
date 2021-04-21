@@ -117,7 +117,7 @@
     List<Container> containers = set.stream()
         .map(ContainerManager::getForId)
         .filter(Objects::nonNull)
-        .sorted(Comparator.comparingInt(Container::getSortOrder).thenComparing(this::displayName))
+        .sorted(Comparator.comparingInt(Container::getSortOrder).thenComparing((c1, c2) -> String.CASE_INSENSITIVE_ORDER.compare(displayName(c1), displayName(c2))))
         .collect(Collectors.toList());
 
     if (containers.isEmpty())

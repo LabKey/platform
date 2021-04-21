@@ -597,6 +597,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _conceptURI = conceptURI;
+        if (STORAGE_UNIQUE_ID_CONCEPT_URI.equals(conceptURI))
+        {
+            _hasDbSequence = true;
+            _shownInInsertView = false;
+            _isUserEditable = false;
+        }
     }
 
     @Override

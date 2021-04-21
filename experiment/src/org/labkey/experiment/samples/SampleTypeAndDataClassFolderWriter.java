@@ -29,7 +29,9 @@ import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarExportContext;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -112,6 +114,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         XarExportSelection runsSelection = new XarExportSelection();
         Set<ExpSampleType> sampleTypes = new HashSet<>();
         Set<ExpDataClass> dataClasses = new HashSet<>();
+        List<ExpMaterial> materialsToExport = new ArrayList<>();
+        List<ExpData> datasToExport = new ArrayList<>();
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
@@ -133,8 +137,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
             if (sampleTypeLsid.getNamespacePrefix().equals(lsid.getNamespacePrefix()))
             {
+                Set<Integer> includedSamples = _xarCtx != null ? _xarCtx.getIncludedSamples().get(sampleType.getRowId()) : null;
                 sampleTypes.add(sampleType);
                 typesSelection.addSampleType(sampleType);
+                materialsToExport.addAll(sampleType.getSamples(ctx.getContainer()).stream()
+                        .filter(m -> includedSamples == null || includedSamples.contains(m.getRowId()))
+                        .collect(Collectors.toList()));
                 exportTypes = true;
             }
         }
@@ -145,8 +153,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             if (_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
                 continue;
 
+            Set<Integer> includedDatas = _xarCtx != null ? _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()) : null;
             dataClasses.add(dataClass);
             typesSelection.addDataClass(dataClass);
+            datasToExport.addAll(dataClass.getDatas().stream()
+                    .filter(d -> includedDatas == null || includedDatas.contains(d.getRowId()))
+                    .collect(Collectors.toList()));
             exportTypes = true;
         }
 
@@ -156,12 +168,14 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 || run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
                 .collect(Collectors.toList());
 
+        // get the list of runs with the materials or data we expect to export, these will be the sample derivation
+        // protocol runs to track the lineage
         Set<ExpRun> exportedRuns = new HashSet<>();
-        for (ExpRun run : runs)
-        {
-            if (exportRun(run, sampleTypes, dataClasses))
-                exportedRuns.add(run);
-        }
+        if (!materialsToExport.isEmpty())
+            exportedRuns.addAll(ExperimentService.get().getRunsUsingMaterials(materialsToExport));
+
+        if (!datasToExport.isEmpty())
+            exportedRuns.addAll(ExperimentService.get().getRunsUsingDatas(datasToExport));
 
         if (!exportedRuns.isEmpty())
         {
@@ -269,31 +283,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 }
             }
         }
-    }
-
-    /**
-     * Checks whether the material inputs or outputs for the run are samples
-     * from the set of specified sample types. Will return true if either the
-     * inputs or outputs are from the set of sample types.
-     */
-    private boolean exportRun(ExpRun run, Set<ExpSampleType> sampleTypes, Set<ExpDataClass> dataClasses)
-    {
-        if (run.getMaterialInputs().keySet().stream().anyMatch(mat -> sampleTypes.contains(mat.getSampleType())))
-        {
-            return true;
-        }
-
-        if (run.getMaterialOutputs().stream().anyMatch(mat -> sampleTypes.contains(mat.getSampleType())))
-        {
-            return true;
-        }
-
-        if (run.getDataInputs().keySet().stream().anyMatch(data -> dataClasses.contains(data.getDataClass(null))))
-        {
-            return true;
-        }
-
-        return run.getDataOutputs().stream().anyMatch(data -> dataClasses.contains(data.getDataClass(null)));
     }
 
     private Collection<ColumnInfo> getColumnsToExport(ImportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)

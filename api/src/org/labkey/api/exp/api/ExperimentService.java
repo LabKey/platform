@@ -260,23 +260,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     List<? extends ExpMaterial> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType);
 
-    /**
-     * Get materials with the given names, optionally within the provided sample type.
-     * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
-     * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
-     * will be ignored.
-     *
-     * @param container       Samples will be found within this container, project, or shared container.
-     * @param user            Samples will only be resolved within containers that the user has ReadPermission.
-     * @param sampleNames     The set of samples to be resolved by name.
-     * @param sampleType      Optional sample type that the samples must live in.
-     * @param throwIfMissing  Throw ExperimentException if any of the sampleNames do not exist.
-     * @param createIfMissing Create missing samples in the given <code>sampleType</code>.
-     * @return Resolved samples
-     * @throws ExperimentException
-     */
-    @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleType sampleType, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
-
     /* This version of createExpMaterial() takes name from lsid.getObjectId() */
     ExpMaterial createExpMaterial(Container container, Lsid lsid);
 

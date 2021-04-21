@@ -154,6 +154,12 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public boolean isDeleted()
+    {
+        return _deleted;
+    }
+
+    @Override
     public boolean isShownInInsertView()
     {
         return _pd.isShownInInsertView();
