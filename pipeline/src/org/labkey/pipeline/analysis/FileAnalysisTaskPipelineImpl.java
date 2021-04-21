@@ -22,6 +22,11 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.CheckboxField;
+import org.labkey.api.formSchema.Field;
+import org.labkey.api.formSchema.FormSchema;
+import org.labkey.api.formSchema.NumberField;
+import org.labkey.api.formSchema.TextField;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -83,6 +88,31 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _helpText;
     /** Whether to allow the task to move files during file analysis. Default is true */
     private Boolean _moveAvailable = true;
+
+    /** Below are variables used to generate a FormSchema so we can instruct the client how to render a form */
+    private static final String _baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
+    private static final String _locationHelpText = "This can be an absolute path on the server's file system or a relative path under the container's pipeline root.";
+    private static final String _locationHref = _baseHref + "location";
+    private static final String _filePatternHelpText = "A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties.";
+    private static final String _filePatternHref = _baseHref + "filepattern";
+    private static final String _quietHelpText = "Number of seconds to wait after file activity before executing a job (minimum is 1).";
+    private static final String _quietHref = _baseHref + "quietperiod";
+    private static final String _containerMoveHelpText = "Move the file to this container before analysis. This must be a relative or absolute container path.";
+    private static final String _containerMoveHref = _baseHref + "moveto";
+    private static final String _directoryMoveHelpText = "Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory.";
+    private static final String _directoryMoveHref = _baseHref + "subdirectory";
+    private static final String _copyHelpText = "Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder.";
+    private static final String _copyHref = _baseHref + "copyto";
+    private static final List<Field> _defaultFields = List.of(
+            new TextField("location", "Location to Watch", "./", false, null, _locationHelpText, _locationHref),
+            new CheckboxField("recursive", "Include Child Folders", false, false),
+            new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, _filePatternHelpText, _filePatternHref),
+            new NumberField("quiet", "Quiet Period (Seconds)", null, true, 1.0, _quietHelpText, _quietHref),
+            new TextField("containerMove", "Move to Container", "/Other Project/Subfolder A", false, null, _containerMoveHelpText, _containerMoveHref),
+            new TextField("directoryMove", "Move to Subdirectory", "My Watched Files/Move", false, null, _directoryMoveHelpText, _directoryMoveHref),
+            new TextField("copy", "Copy File To", null, false, null, _copyHelpText, _copyHref)
+    );
+    private List<Field> _customFields;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -172,6 +202,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         if (settings.isMoveAvailable() != null)
             _moveAvailable = settings.isMoveAvailable();
+
+        if (settings.getCustomFields() != null)
+            _customFields = settings.getCustomFields();
 
         return this;
     }
@@ -302,6 +335,16 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return _initialFileTypesRequired;
     }
 
+    public List<Field> getCustomFields()
+    {
+        return _customFields;
+    }
+
+    public void setCustomFields(List<Field> customFields)
+    {
+        _customFields = customFields;
+    }
+
     /**
      * Creates TaskPipeline from a file-based module <code>&lt;name>.pipeline.xml</code> config file
      * and registers any local TaskFactory definitions and this TaskPipeline with the PipelineJobService.
@@ -315,7 +358,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             throw new IllegalArgumentException("Task pipeline must by named");
 
         if (pipelineTaskId.getType() != TaskId.Type.pipeline)
-            throw new IllegalArgumentException("Task pipeline must by of type 'pipeline'");
+            throw new IllegalArgumentException("Task pipeline must be of type 'pipeline'");
 
         if (pipelineTaskId.getModuleName() == null)
             throw new IllegalArgumentException("Task pipeline must be defined by a module");
@@ -475,6 +518,22 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     {
         String taskName = pipelineTaskId.getName() + TaskPipelineRegistry.LOCAL_TASK_PREFIX + name;
         return new TaskId(pipelineTaskId.getModuleName(), TaskId.Type.task, taskName, pipelineTaskId.getVersion());
+    }
+
+    public FormSchema getFormSchema()
+    {
+        List<Field> fields = new ArrayList<>(_defaultFields);
+
+        if (!isMoveAvailable())
+        {
+            // Don't include moveToContainer or moveToSubdirectory if move is unavailable.
+            fields.subList(4, 6).clear();
+        }
+
+        if (getCustomFields() != null)
+            fields.addAll(getCustomFields());
+
+        return new FormSchema(fields);
     }
 
     /*
