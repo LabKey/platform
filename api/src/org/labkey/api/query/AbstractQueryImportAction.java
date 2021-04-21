@@ -190,12 +190,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected boolean canInsert(User user)
     {
-        return _target.hasPermission(user, InsertPermission.class);
+        return _target != null
+                ? _target.hasPermission(user, InsertPermission.class)
+                : getContainer().hasPermission(user, InsertPermission.class);
     }
 
     protected boolean canUpdate(User user)
     {
-        return _target.hasPermission(user, UpdatePermission.class);
+        return _target != null
+                ? _target.hasPermission(user, UpdatePermission.class)
+                : getContainer().hasPermission(user, UpdatePermission.class);
     }
 
     public ModelAndView getDefaultImportView(FORM form, BindException errors)

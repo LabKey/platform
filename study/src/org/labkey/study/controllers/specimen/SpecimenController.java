@@ -5330,6 +5330,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, RequestSpecimensPermission.class);
+        }
+
+        @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
             List<String> errorList = new LinkedList<>();
