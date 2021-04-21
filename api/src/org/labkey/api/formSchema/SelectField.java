@@ -18,6 +18,10 @@ package org.labkey.api.formSchema;
 
 import java.util.List;
 
+/**
+ * Used to render a <select> element in the client.
+ * @param <T>
+ */
 public class SelectField<T> extends AbstractField<T>
 {
     public static final String TYPE = "select";

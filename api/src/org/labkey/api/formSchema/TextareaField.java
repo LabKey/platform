@@ -16,6 +16,9 @@
 
 package org.labkey.api.formSchema;
 
+/**
+ * Used to render a textarea in the client.
+ */
 public class TextareaField extends AbstractField<String>
 {
     public static final String TYPE = "textarea";

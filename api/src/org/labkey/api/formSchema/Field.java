@@ -16,6 +16,11 @@
 
 package org.labkey.api.formSchema;
 
+/**
+ * Fields are used by FormSchema to represent the various input fields rendered in forms on the client.
+ *
+ * @param <T>: The type of the value used by getDefaultValue
+ */
 public interface Field<T>
 {
     /**

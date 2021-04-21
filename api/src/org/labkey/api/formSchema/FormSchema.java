@@ -18,6 +18,10 @@ package org.labkey.api.formSchema;
 
 import java.util.List;
 
+/**
+ * Class used to instruct the client how to render a form. LabKey provides a React component that can render forms
+ * given a FormSchema, but any client can use a FormSchema to render a form.
+ */
 public class FormSchema
 {
     private final List<Field> _fields; // The fields to render on the client

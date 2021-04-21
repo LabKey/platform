@@ -16,6 +16,9 @@
 
 package org.labkey.api.formSchema;
 
+/**
+ * Used to render a checkbox input in the client.
+ */
 public class CheckboxField extends AbstractField<Boolean>
 {
     public static final String TYPE = "checkbox";

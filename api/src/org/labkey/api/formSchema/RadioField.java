@@ -18,6 +18,10 @@ package org.labkey.api.formSchema;
 
 import java.util.List;
 
+/**
+ * Used to render a group of radio inputs in the client.
+ * @param <T>
+ */
 public class RadioField<T> extends AbstractField<T>
 {
     public static final String TYPE = "radio";

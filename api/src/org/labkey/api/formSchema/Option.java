@@ -16,8 +16,11 @@
 
 package org.labkey.api.formSchema;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+/**
+ * Used for SelectField and RadioField classes. Options are used to define the values that users see in a form. The
+ * value attribute is what will be sent to the server, the label attribute is what is rendered for the user.
+ * @param <T>
+ */
 public class Option<T>
 {
     private final T _value;
@@ -29,14 +32,12 @@ public class Option<T>
         _label = label;
     }
 
-    @JsonProperty("value")
-    T getValue()
+    public T getValue()
     {
         return _value;
     }
 
-    @JsonProperty("label")
-    String getLabel()
+    public String getLabel()
     {
         return _label;
     }

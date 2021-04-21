@@ -16,6 +16,9 @@
 
 package org.labkey.api.formSchema;
 
+/**
+ * Used to render a text input in the client.
+ */
 public class TextField extends AbstractField<String>
 {
     public static final String TYPE = "text";
