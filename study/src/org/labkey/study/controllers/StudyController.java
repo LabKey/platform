@@ -7280,6 +7280,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, ManageStudyPermission.class);
+        }
+
+        @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
             if (null == _study)
