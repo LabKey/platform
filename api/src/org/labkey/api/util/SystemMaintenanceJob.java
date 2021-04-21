@@ -90,8 +90,10 @@ public class SystemMaintenanceJob implements org.quartz.Job, Callable<String>
             }
             else
             {
-                // If the task can't be disabled or isn't disabled now then include it
-                if (!task.canDisable() || !disabledTasks.contains(task.getName()))
+                // If the task can't be disabled or isn't disabled now, then include it.
+                // Also, skip over any of the non-configurable tasks.
+                boolean taskEnabled = !task.canDisable() || !disabledTasks.contains(task.getName());
+                if (taskEnabled && task.isConfigurable())
                 {
                     tasksToRun.add(task);
                 }
