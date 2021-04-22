@@ -59,7 +59,8 @@ public interface AuditHandler
                     .filter(column -> column.getAlias().equalsIgnoreCase(key))
                     .map((ColumnInfo::getName))
                     .findFirst()
-                    .orElse(key);
+                    .orElse(key)
+                    .toLowerCase();
 
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
             if (!excludedFromDetailDiff.contains(nameFromAlias) && row.containsKey(nameFromAlias))
