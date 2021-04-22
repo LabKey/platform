@@ -32,8 +32,9 @@ public class AssayDatasetTable extends DatasetTableImpl
     /**
      * The assay result LSID column is added to the dataset for assays that support it.
      * @see AssayTableMetadata#getResultLsidFieldKey()
+     * @deprecated Use {@link DatasetTableImpl#SOURCE_ROW_LSID}
      */
-    public static final String ASSAY_RESULT_LSID = "AssayResultLsid";
+    public static final String LEGACY_ASSAY_RESULT_LSID = "AssayResultLsid";
 
     private List<FieldKey> _defaultVisibleColumns = null;
     private TableInfo _assayResultTable;
@@ -57,8 +58,8 @@ public class AssayDatasetTable extends DatasetTableImpl
                 String name = columnInfo.getName();
                 if (assayResultLsid != null && columnInfo.getFieldKey().equals(assayResultLsid))
                 {
-                    // add the assay result lsid column as "AssayResultLsid" so it won't collide with the dataset's LSID column
-                    name = ASSAY_RESULT_LSID;
+                    // add the assay result lsid column as "SourceRowLsid" so it won't collide with the dataset's LSID column
+                    name = SOURCE_ROW_LSID;
                 }
 
                 if (!getColumnNameSet().contains(name))
@@ -124,6 +125,10 @@ public class AssayDatasetTable extends DatasetTableImpl
         var result = super.resolveColumn(name);
         if (result != null)
             return result;
+
+        // backwards compatibility
+        if (name.equalsIgnoreCase(LEGACY_ASSAY_RESULT_LSID))
+            return super.resolveColumn(SOURCE_ROW_LSID);
 
         // Be backwards compatible with the old field keys for these properties.
         // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,

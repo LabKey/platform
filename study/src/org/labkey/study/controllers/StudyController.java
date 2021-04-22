@@ -67,8 +67,6 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
@@ -2744,36 +2742,30 @@ public class StudyController extends BaseStudyController
 
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
-            // Need to handle this by groups of source lsids -- each assay container needs logging
-            MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
-
-            if (originalSourceLsid != null)
+            // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
+            MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
+            List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
+            for (Map<String,Object> row : data)
             {
-                sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
-            }
-            else
-            {
-                List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
-                for (Map<String,Object> row : data)
+                String sourceLSID = (String)row.get("sourcelsid");
+                String datasetRowLsid = (String)row.get("lsid");
+                Integer sourceRowId = (Integer)row.get("rowId");
+                if (sourceLSID != null && datasetRowLsid != null)
                 {
-                    Object sourceLSID = row.get("sourcelsid");
-                    Object lsid = row.get("lsid");
-                    if (sourceLSID != null && lsid != null)
-                    {
-                        sourceLsid2datasetLsid.put(sourceLSID.toString(), lsid.toString());
-                    }
+                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, sourceRowId));
                 }
             }
 
             Dataset.PublishSource publishSource = def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
             {
-                for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
+                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : sourceLsidToLsidPair.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
+                    Collection<Pair<String, Integer>> pairs = entry.getValue();
                     Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
                     if (sourceContainer != null)
-                        StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
+                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);
