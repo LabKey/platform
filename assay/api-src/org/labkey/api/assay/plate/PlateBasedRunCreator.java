@@ -145,7 +145,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 try
                 {
                     ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
-                    originalMaterial = pv.getMaterial();
+                    originalMaterial = pv.getMaterial(true);
                     Map<DomainProperty, String> wellgroupProperties = materialProperties.get(entry.getKey());
                     if (specimenIDProperty != null)
                         wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
@@ -165,7 +165,10 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                     continue;
                 }
             }
-            originalMaterials.put(key, originalMaterial);
+            if (originalMaterial != null)
+            {
+                originalMaterials.put(key, originalMaterial);
+            }
         }
         if (resolverErrors.length() > 0)
             throw new ExperimentException(resolverErrors.toString());

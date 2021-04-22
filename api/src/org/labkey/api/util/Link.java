@@ -28,6 +28,7 @@ import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.onclick;
 import static org.labkey.api.util.DOM.Attribute.rel;
 import static org.labkey.api.util.DOM.Attribute.target;
+import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.at;
 
 public class Link extends DisplayElement implements HasHtmlString
@@ -58,6 +59,7 @@ public class Link extends DisplayElement implements HasHtmlString
                 .at(target, lb.target)
                 .at(lb.usePost, onclick, PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage), lb.onClick)
                 .at(rel, lb.rel)
+                .at(title, lb.title)
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),

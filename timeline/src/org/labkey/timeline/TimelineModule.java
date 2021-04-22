@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class TimelineModule extends CodeOnlyModule
 {
@@ -60,29 +61,31 @@ public class TimelineModule extends CodeOnlyModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY)
-        {
-            @Override
-            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        return List.of(
+            new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY)
             {
-                TimelineSettings settings = new TimelineSettings();
-                try
+                @Override
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
-                    BeanUtils.populate(settings, webPart.getPropertyMap());
+                    TimelineSettings settings = new TimelineSettings();
+                    try
+                    {
+                        BeanUtils.populate(settings, webPart.getPropertyMap());
+                    }
+                    catch (InvocationTargetException | IllegalAccessException e)
+                    {
+                        throw new UnexpectedException(e);
+                    }
+                    settings.setDivId("TimelineWebPart." + webPart.getIndex());
+                    return new TimelineView(settings);
                 }
-                catch (InvocationTargetException | IllegalAccessException e)
-                {
-                    throw new UnexpectedException(e);
-                }
-                settings.setDivId("TimelineWebPart." + webPart.getIndex());
-                return new TimelineView(settings);
-            }
 
-            @Override
-            public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
-            {
-                return new JspView<>("/org/labkey/timeline/view/customizeTimeline.jsp", webPart);
+                @Override
+                public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
+                {
+                    return new JspView<>("/org/labkey/timeline/view/customizeTimeline.jsp", webPart);
+                }
             }
-        }));
+        );
     }
 }

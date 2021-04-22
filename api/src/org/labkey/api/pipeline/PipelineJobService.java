@@ -122,7 +122,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
     List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
 
     /** Registers a remote execution engine. Intended for calling during module startup */
-    void registerRemoteExecutionEngine(RemoteExecutionEngine engine);
+    void registerRemoteExecutionEngine(RemoteExecutionEngine<?> engine);
 
     /**
      * @param exeRel if relative, interpreted based on either the installPath or tools directory

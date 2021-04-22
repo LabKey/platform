@@ -29,6 +29,7 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -41,13 +42,12 @@ public class StudyFolderType extends MultiPortalFolderType
 {
     public static final String NAME = "Study";
 
-    private static final List<FolderTab> PAGES = Arrays.asList(
-            new StudyFolderTabs.OverviewPage("Overview"),
-            new StudyFolderTabs.ParticipantsPage("Participants"),
-            new StudyFolderTabs.DataAnalysisPage("Clinical and Assay Data"),
-            new StudyFolderTabs.SpecimensPage("Specimen Data"),
-            new StudyFolderTabs.ManagePage("Manage")
-        );
+    private static final List<FolderTab> PAGES = List.of
+    (
+        new StudyFolderTabs.OverviewPage("Overview"),
+        new StudyFolderTabs.ParticipantsPage("Participants"),
+        new StudyFolderTabs.DataAnalysisPage("Clinical and Assay Data")
+    );
 
     StudyFolderType(StudyModule module, Set<Module> activeModules)
     {
@@ -92,9 +92,15 @@ public class StudyFolderType extends MultiPortalFolderType
         return study != null && study.getLabel() != null ? study.getLabel() : ctx.getContainer().getTitle();
     }
 
+    private static final StudyFolderTabs.ManagePage MANAGE_PAGE = new StudyFolderTabs.ManagePage("Manage");
+
     @Override
     public List<FolderTab> getDefaultTabs()
     {
-        return PAGES;
+        List<FolderTab> tabs = new LinkedList<>(PAGES);
+        StudyServiceImpl.getStudyTabProviders().forEach(p->p.addStudyTabs(tabs)); // Other modules can add study tabs (e.g., "Specimen Data")
+        tabs.add(MANAGE_PAGE);
+
+        return tabs;
     }
 }

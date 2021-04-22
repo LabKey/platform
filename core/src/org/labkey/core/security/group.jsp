@@ -18,6 +18,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.PrincipalType" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
@@ -53,7 +54,7 @@
 
     ActionURL completionUrl = urlFor(CompleteMemberAction.class);
     completionUrl.addParameter("groupId", bean.group.getUserId());
-    URLHelper returnURL = getActionURL().clone().deleteParameter("returnUrl");
+    URLHelper returnURL = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
 %>
 <style type="text/css">
     .lowlight {
@@ -298,12 +299,7 @@ else
 <div id="add-members">
 <span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
     <labkey:autoCompleteTextArea name="names" url="<%=completionUrl%>" rows="8" cols="70"/>
-    <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
-if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.ldapDomain))
-{
-    %>, non-<%= h(bean.ldapDomain) %><%
-}
-%> users.<br><br>
+    <input type="checkbox" name="sendEmail" value="true" checked><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%><br><br>
 <span style="font-weight:bold">Include a message</span> with the new user mail (optional):<br>
     <textarea rows="8" cols="72" name="mailPrefix"></textarea><br>
 <input type="hidden" name="group" value="<%= h(bean.groupName) %>">

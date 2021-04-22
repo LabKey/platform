@@ -19,9 +19,16 @@ package org.labkey.mothership;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.AbstractMethodInfo;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -39,7 +46,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.mothership.query.MothershipSchema;
@@ -47,8 +53,8 @@ import org.labkey.mothership.view.ExceptionListWebPart;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -68,7 +74,7 @@ public class MothershipModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -82,15 +88,15 @@ public class MothershipModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Collections.singletonList(
-                new BaseWebPartFactory("Exception List", false, false)
+        return List.of(
+            new BaseWebPartFactory("Exception List", false, false)
+            {
+                @Override
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, Portal.@NotNull WebPart webPart)
                 {
-                    @Override
-                    public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, Portal.@NotNull WebPart webPart) throws WebPartConfigurationException
-                    {
-                        return new ExceptionListWebPart(portalCtx.getUser(), portalCtx.getContainer(), null);
-                    }
+                    return new ExceptionListWebPart(portalCtx.getUser(), portalCtx.getContainer(), null);
                 }
+            }
         );
     }
 

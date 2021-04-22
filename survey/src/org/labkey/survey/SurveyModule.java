@@ -62,10 +62,10 @@ import org.labkey.survey.query.SurveyTableDomainKind;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,7 +82,7 @@ public class SurveyModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class SurveyModule extends DefaultModule
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new SurveyDesignWebPartFactory(),
             new SurveysWebPartFactory()
         );

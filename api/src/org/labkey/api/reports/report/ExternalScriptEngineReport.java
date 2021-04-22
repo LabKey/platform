@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipeRoot;
@@ -34,6 +35,8 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -94,8 +97,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         final VBox view = new VBox();
 
         // todo: pass inputParameters down from upper layers like we do for
-        // executeScript API below.  Currently they are still taken off the
-        // URL under the covers
+        // executeScript API below. Currently they are still taken off the URL under the covers
         renderReport(context, null, new Renderer<HttpView>()
         {
             @Override
@@ -157,7 +159,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     {
         try
         {
-            return renderReport(context, null, new Renderer<Thumbnail>()
+            return renderReport(context, null, new Renderer<>()
             {
                 @Override
                 public void handleValidationError(String error)
@@ -222,21 +224,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 runScript(context, outputSubst, createInputDataFile(context), inputParameters);
             }
-            catch (ScriptException e)
-            {
-                boolean continueOn = renderer.handleRuntimeException(e);
-
-                if (!continueOn)
-                    return null;
-            }
-            catch (ValidationException e)
-            {
-                boolean continueOn = renderer.handleRuntimeException(e);
-
-                if (!continueOn)
-                    return null;
-            }
-            catch (NamedParameterNotProvided e)
+            catch (ScriptException | NamedParameterNotProvided | ValidationException e)
             {
                 boolean continueOn = renderer.handleRuntimeException(e);
 
@@ -319,21 +307,16 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                     boundFiles.add(file.getName());
             }
 
-            File[] additionalFiles = reportDir.listFiles(new FilenameFilter()
-            {
-                @Override
-                public boolean accept(File dir, String name)
-                {
-                    if (boundFiles.contains(name))
-                        return false;
-                    else if ("input_data.tsv".equalsIgnoreCase(name))
-                        return false;
-                    else if ("script.r".equalsIgnoreCase(name))
-                        return false;
-                    else if ("script.rout".equalsIgnoreCase(name))
-                        return false;
-                    return true;
-                }
+            File[] additionalFiles = reportDir.listFiles((dir, name) -> {
+                if (boundFiles.contains(name))
+                    return false;
+                else if ("input_data.tsv".equalsIgnoreCase(name))
+                    return false;
+                else if ("script.r".equalsIgnoreCase(name))
+                    return false;
+                else if ("script.rout".equalsIgnoreCase(name))
+                    return false;
+                return true;
             });
 
             for (File file : additionalFiles)
@@ -353,10 +336,14 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     protected Object runScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException
     {
         RConnectionHolder rh = null;
-        try
+        try (TransformSession session = SecurityManager.createTransformSession(context))
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
+
+            Map<String, String> paramMap = new HashMap<>();
+            DefaultDataTransformer.addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
+            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
             if (engine instanceof RserveScriptEngine)
             {
@@ -401,7 +388,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
             return engine.eval(createScript(engine, context, outputSubst, inputDataTsv, inputParameters));
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             throw new ScriptException(e);
         }
@@ -486,10 +473,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                 try
                 {
-                    for (ParamReplacement param : ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)))
-                    {
-                        replacements.add(param);
-                    }
+                    replacements.addAll(ParamReplacementSvc.get().fromFile(new File(cacheDir, SUBSTITUTION_MAP)));
                     return !replacements.isEmpty();
                 }
                 catch (Exception e)
@@ -515,8 +499,8 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         ActionURL cachedURL = _cachedReportURLMap.get(getDescriptor().getReportId());
         if (cachedURL != null)
         {
-            Map cur = PageFlowUtil.mapFromQueryString(getCacheURL(url).getQueryString());
-            Map prev = PageFlowUtil.mapFromQueryString(cachedURL.getQueryString());
+            Map<String, String> cur = PageFlowUtil.mapFromQueryString(getCacheURL(url).getQueryString());
+            Map<String, String> prev = PageFlowUtil.mapFromQueryString(cachedURL.getQueryString());
 
             return !cur.equals(prev);
         }
@@ -575,16 +559,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     {
         if (DEFAULT_PERL_PATH == null)
         {
-            DEFAULT_PERL_PATH = getDefaultAppPath(new FilenameFilter()
-            {
-                @Override
-                public boolean accept(File dir, String name)
-                {
-                    if ("perl.exe".equalsIgnoreCase(name) || "perl".equalsIgnoreCase(name))
-                        return true;
-                    return false;
-                }
-            });
+            DEFAULT_PERL_PATH = getDefaultAppPath((dir, name) -> "perl.exe".equalsIgnoreCase(name) || "perl".equalsIgnoreCase(name));
         }
         return DEFAULT_PERL_PATH;
     }

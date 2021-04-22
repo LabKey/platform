@@ -500,6 +500,18 @@ public class QueryUnion extends QueryRelation
         }
 
         @Override
+        String getPrincipalConceptCode()
+        {
+            return null; // CONSIDER: check that all match
+        }
+
+        @Override
+        String getConceptURI()
+        {
+            return null; // CONSIDER: check that all match
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _first.copyColumnAttributesTo(to);

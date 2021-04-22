@@ -59,6 +59,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -87,7 +88,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * User: jeckels
@@ -281,114 +283,128 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     @Override
     public void beforeDeleteData(List<ExpData> data, User user) throws ExperimentException
     {
+        // Group data by source run
+        Map<ExpRun, List<ExpData>> grouping = new HashMap<>();
         for (ExpData d : data)
         {
+            String protocolLsid;
+            Container runContainer;
+
             ExpProtocolApplication sourceApplication = d.getSourceApplication();
             if (sourceApplication != null)
             {
                 ExpRun run = sourceApplication.getRun();
                 if (run != null)
                 {
-                    ExpProtocol protocol = run.getProtocol();
-                    AssayProvider provider = AssayService.get().getProvider(protocol);
-                    FieldKey assayResultLsidFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
+                    var dataForRun = grouping.computeIfAbsent(run, x -> new ArrayList<>());
+                    dataForRun.add(d);
+                }
+            }
+        }
 
-                    SQLFragment assayResultLsidSql = null;
+        for (Map.Entry<ExpRun, List<ExpData>> entry : grouping.entrySet())
+        {
+            ExpRun run = entry.getKey();
+            List<ExpData> dataForRun = entry.getValue();
+            List<Integer> dataIds = dataForRun.stream().map(ExpData::getRowId).collect(toList());
 
-                    Domain domain;
-                    if (provider != null && assayResultLsidFieldKey != null)
+            ExpProtocol protocol = run.getProtocol();
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            FieldKey assayResultLsidFieldKey = provider != null ? provider.getTableMetadata(protocol).getResultLsidFieldKey() : null;
+
+            SQLFragment assayResultLsidSql = null;
+
+            Domain domain;
+            if (provider != null && assayResultLsidFieldKey != null)
+            {
+                domain = provider.getResultsDomain(protocol);
+
+                AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+                TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
+                if (assayDataTable != null)
+                {
+                    ColumnInfo lsidCol = assayDataTable.getColumn(assayResultLsidFieldKey);
+                    ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
+                    if (lsidCol == null || dataIdCol == null)
+                        throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
+
+                    // select the assay results LSID column for all rows referenced by the data
+                    assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
+                            .append(" FROM ").append(assayDataTable.getFromSQL("X"))
+                            .append(" WHERE ").append(dataIdCol.getValueSql("X")).appendInClause(dataIds, assayDataTable.getSqlDialect());
+                }
+            }
+            else
+            {
+                // Be tolerant of the AssayProvider no longer being available. See if we have the default
+                // results/data domain for TSV-style assays
+                try
+                {
+                    domain = AbstractAssayProvider.getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA) ;
+                }
+                catch (IllegalStateException ignored)
+                {
+                    domain = null;
+                    // Be tolerant of not finding a domain anymore, if the provider has gone away
+                }
+
+                // TODO: create assayResultLsidSql when provider no longer exists
+            }
+
+            // delete the assay result row exp.objects
+            if (assayResultLsidSql != null)
+            {
+                if (LOG.isDebugEnabled())
+                {
+                    SQLFragment t = new SQLFragment("SELECT o.*")
+                            .append(" FROM ").append(OntologyManager.getTinfoObject(), "o")
+                            .append(" WHERE Container = ?").add(run.getContainer())
+                            .append(" AND ObjectURI IN (")
+                            .append(assayResultLsidSql)
+                            .append(")");
+                    SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), t);
+                    try (TableResultSet rs = ss.getResultSet())
                     {
-                        domain = provider.getResultsDomain(protocol);
-
-                        AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
-                        TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
-                        if (assayDataTable != null)
-                        {
-                            ColumnInfo lsidCol = assayDataTable.getColumn(assayResultLsidFieldKey);
-                            ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
-                            if (lsidCol == null || dataIdCol == null)
-                                throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
-
-                            // select the assay results LSID column for all rows referenced by the data
-                            assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
-                                    .append(" FROM ").append(assayDataTable.getFromSQL("X"))
-                                    .append(" WHERE ").append(dataIdCol.getValueSql("X")).append(" = ").append(d.getRowId());
-                        }
+                        LOG.debug("objects that will be deleted:");
+                        ResultSetUtil.logData(rs, LOG);
                     }
-                    else
+                    catch (SQLException x)
                     {
-                        // Be tolerant of the AssayProvider no longer being available. See if we have the default
-                        // results/data domain for TSV-style assays
-                        try
-                        {
-                            domain = AbstractAssayProvider.getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
-                        }
-                        catch (IllegalStateException ignored)
-                        {
-                            domain = null;
-                            // Be tolerant of not finding a domain anymore, if the provider has gone away
-                        }
-
-                        // TODO: create assayResultLsidSql when provider no longer exists
+                        throw new RuntimeSQLException(x);
                     }
+                }
 
-                    // delete the assay result row exp.objects
-                    if (assayResultLsidSql != null)
+                // call pvs to delete assay result rows provenance
+                ProvenanceService pvs = ProvenanceService.get();
+                pvs.deleteAssayResultProvenance(assayResultLsidSql);
+
+                int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
+                LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " ontology objects for assay result lsids");
+            }
+
+            if (domain != null && domain.getStorageTableName() != null)
+            {
+                SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
+                deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
+                deleteSQL.append(".");
+                deleteSQL.append(domain.getStorageTableName());
+                deleteSQL.append(" WHERE DataId ").appendInClause(dataIds, ExperimentService.get().getSchema().getSqlDialect());
+
+                try
+                {
+                    int count = new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
+                    LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " assay result rows");
+                }
+                catch (BadSqlGrammarException x)
+                {
+                    // (18035) presumably this is an optimistic concurrency problem and the table is gone
+                    // postgres returns 42P01 in this case... SQL Server?
+                    if (SqlDialect.isObjectNotFoundException(x))
                     {
-                        if (LOG.isDebugEnabled())
-                        {
-                            SQLFragment t = new SQLFragment("SELECT o.*")
-                                    .append(" FROM ").append(OntologyManager.getTinfoObject(), "o")
-                                    .append(" WHERE Container = ?").add(run.getContainer())
-                                    .append(" AND ObjectURI IN (")
-                                    .append(assayResultLsidSql)
-                                    .append(")");
-                            SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), t);
-                            try (TableResultSet rs = ss.getResultSet())
-                            {
-                                ResultSetUtil.logData(rs, LOG);
-                            }
-                            catch (SQLException x)
-                            {
-                                throw new RuntimeSQLException(x);
-                            }
-                        }
-
-                        // call pvs to delete assay result rows provenance
-                        ProvenanceService pvs = ProvenanceService.get();
-                        if (null != pvs)
-                        {
-                            pvs.deleteAssayResultProvenance(assayResultLsidSql);
-                        }
-
-                        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
+                        // CONSIDER: unfortunately we can't swallow this exception, because Postgres leaves
+                        // the connection in an unusable state
                     }
-
-                    if (domain != null && domain.getStorageTableName() != null)
-                    {
-                        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ");
-                        deleteSQL.append(domain.getDomainKind().getStorageSchemaName());
-                        deleteSQL.append(".");
-                        deleteSQL.append(domain.getStorageTableName());
-                        deleteSQL.append(" WHERE DataId = ?");
-                        deleteSQL.add(d.getRowId());
-
-                        try
-                        {
-                            new SqlExecutor(DbSchema.get(domain.getDomainKind().getStorageSchemaName())).execute(deleteSQL);
-                        }
-                        catch (BadSqlGrammarException x)
-                        {
-                            // (18035) presumably this is an optimistic concurrency problem and the table is gone
-                            // postgres returns 42P01 in this case... SQL Server?
-                            if (SqlDialect.isObjectNotFoundException(x))
-                            {
-                                // CONSIDER: unfortunately we can't swallow this exception, because Postgres leaves
-                                // the connection in an unusable state
-                            }
-                            throw x;
-                        }
-                    }
+                    throw x;
                 }
             }
         }
@@ -438,7 +454,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
-            if (pvs != null || provider.isPlateMetadataEnabled(protocol))
+            if (pvs.isProvenanceSupported() || provider.isPlateMetadataEnabled(protocol))
             {
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
@@ -496,7 +512,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (rowIdCol == null)
             throw new IllegalStateException("Assay results table RowId column required to attach provenance");
 
-        List<Integer> rowIds = insertedData.stream().map(row -> (Integer)row.get("rowId")).collect(Collectors.toList());
+        List<Integer> rowIds = insertedData.stream().map(row -> (Integer)row.get("rowId")).collect(toList());
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
         filter.addCondition(rowIdCol, rowIds, CompareType.IN);
@@ -508,7 +524,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     private void addAssayResultRowsProvenance(Container container, ExpRun run, List<Map<String, Object>> insertedData, Map<Integer, String> rowIdToLsid)
     {
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs == null)
+        if (!pvs.isProvenanceSupported())
             return;
 
         Set<Pair<String, String>> provPairs = new HashSet<>(insertedData.size());
@@ -1038,7 +1054,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (resolveMaterials)
             {
-                ExpMaterial material = participantVisit.getMaterial();
+                ExpMaterial material = participantVisit.getMaterial(false);
                 if (material != null)
                 {
                     materialInputs.putIfAbsent(material, null);
@@ -1050,9 +1066,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             var provenanceInputs = map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
             if (null != provenanceInputs)
             {
-                if (pvs == null)
-                    throw new ExperimentException("Provenance service not available");
-
                 if (provenanceInputs instanceof JSONArray)
                 {
                     JSONArray inputJSONArr = (JSONArray) provenanceInputs;
@@ -1126,7 +1139,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     @Override
     public void deleteData(ExpData data, Container container, User user)
     {
-        OntologyManager.deleteOntologyObjects(container, data.getLSID());
     }
 
     @Override

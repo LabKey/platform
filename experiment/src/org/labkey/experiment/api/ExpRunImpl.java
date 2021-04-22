@@ -304,12 +304,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public String urlFlag(boolean flagged)
-    {
-        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
-    }
-
-    @Override
     public void save(User user) throws BatchValidationException
     {
         try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
@@ -543,11 +537,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
 
+        deleteProtocolApplicationProvenance();
+
         svc.beforeDeleteData(user, getContainer(), datasToDelete);
 
         deleteInputObjects(svc, dialect);
-
-        deleteProtocolApplicationProvenance();
 
         deleteAppParametersAndInputs();
 
@@ -587,10 +581,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private void deleteProtocolApplicationProvenance()
     {
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs != null)
-        {
-            pvs.deleteRunProvenance(getRowId());
-        }
+        pvs.deleteRunProvenance(getRowId());
     }
 
     private void deleteAppParametersAndInputs()

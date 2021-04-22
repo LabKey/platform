@@ -19,19 +19,18 @@ package org.labkey.api.jsp.taglib;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 
 public class ButtonTag extends SimpleTagBase
 {
     private String _text;
-    private String _href;
+    private URLHelper _href;
     private String _onclick;
-    private String _action;
     private String _name;
     private String _id;
     private Boolean _submit = true;
+    private Boolean _enabled;
 
     @Override
     public void doTag() throws IOException
@@ -43,30 +42,22 @@ public class ButtonTag extends SimpleTagBase
             button.href(_href).onClick(_onclick);
         else
         {
-            if (_onclick != null && _action != null)
-                throw new IllegalArgumentException("onclick and action cannot both be set");
-
             String onClickScript = "";
             if (_onclick != null)
                 onClickScript = _onclick;
-            if (_action != null)
-                onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';");
 
             button.submit(_submit).onClick(onClickScript).name(_name);
         }
 
-        getOut().print(button);
-    }
+        if (_enabled != null)
+            button.enabled(_enabled.booleanValue());
 
-    public void setHref(String href)
-    {
-        _href = href;
+        getOut().print(button);
     }
 
     public void setHref(URLHelper url)
     {
-        if (null != url)
-            _href = url.toString();
+        _href = url;
     }
 
     public void setText(String text)
@@ -77,11 +68,6 @@ public class ButtonTag extends SimpleTagBase
     public void setOnclick(String onclick)
     {
         _onclick = onclick;
-    }
-
-    public void setAction(ActionURL action)
-    {
-        _action = action.toString();
     }
 
     public void setName(String name)
@@ -97,5 +83,10 @@ public class ButtonTag extends SimpleTagBase
     public void setSubmit(Boolean submit)
     {
         _submit = submit;
+    }
+
+    public void setEnabled(Boolean enabled)
+    {
+        _enabled = enabled;
     }
 }

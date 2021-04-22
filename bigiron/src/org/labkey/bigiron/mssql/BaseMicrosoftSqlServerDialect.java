@@ -18,15 +18,33 @@ package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Constraint;
+import org.labkey.api.data.DatabaseMetaDataWrapper;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.InlineInClauseGenerator;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MetadataSqlSelector;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlScanner;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableChange;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.bigiron.ClrAssemblyManager;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -317,12 +335,17 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
+    private static final Pattern DROP_IF_EXISTS = Pattern.compile(
+        "drop(aggregate|assembly|database|default|function|index|procedure|role|rule|schema|securitypolicy|sequence|synonym|table|trigger|type|user|view)ifexists"
+    );
 
     @Override
     protected void checkSqlScript(String lowerNoComments, String lowerNoCommentsNoWhiteSpace, Collection<String> errors)
     {
         if (lowerNoComments.startsWith("use ") || lowerNoComments.contains("\nuse "))
             errors.add("USE statements are prohibited");
+        if (DROP_IF_EXISTS.matcher(lowerNoCommentsNoWhiteSpace).find())
+            errors.add("DROP xxx IF EXISTS statements are prohibited since they're not supported on SQL Server 2012. Instead, use EXEC core.fn_dropifexists.");
     }
 
 
@@ -802,13 +825,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return new SQLFragment("DATEDIFF(" + partName + ", ").append(value2).append(", ").append(value1).append(")");
     }
 
-
     @Override
     public String getDateTimeToDateCast(String expression)
     {
         return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
     }
 
+    @Override
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
@@ -1192,7 +1215,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
             // If the set of columns is larger than 900 bytes, creating an index will succeed, but fail when trying to insert
             List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
-            long bytes = specs.stream().collect(Collectors.summingLong(this::columnStorageSize));
+            long bytes = specs.stream().mapToLong(this::columnStorageSize).sum();
 
             if (bytes <= MAX_INDEX_SIZE)
             {
@@ -1431,11 +1454,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             if(mode == TableChange.IndexSizeMode.Auto)
             {
                 List<PropertyStorageSpec> specs = change.toSpecs(Arrays.asList(index.columnNames));
-                bytes = specs.stream().collect(Collectors.summingInt(spec -> {
+                bytes = specs.stream().mapToInt(spec -> {
                     // Use the old scale if we're in the process of resizing the column
                     Integer oldScale = change.getColumnResizes().get(spec.getName());
                     return columnStorageSize(spec, oldScale);
-                }));
+                }).sum();
             }
 
             String nameIndex = nameIndex(change.getTableName(), index.columnNames, false);
@@ -1928,13 +1951,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
         sb.append("CALL ").append(procSchema).append(".").append(procName);
         if (paramCount > 0)
-            sb.append("(");
-        for (int i = 0; i < paramCount; i++)
         {
-            sb.append("?,");
-        }
-        if (paramCount > 0)
+            sb.append("(");
+            sb.append(StringUtils.repeat("?", ", ", paramCount));
             sb.append(")");
+        }
 
         return sb.toString();
     }
@@ -2224,8 +2245,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public Collection<String> getScriptWarnings(String name, String sql)
     {
+        sql = new SqlScanner(sql).stripComments().toString();
+        sql = sql.replaceAll("\\[.+?]", "");  // Remove all bracketed strings -- these might contain keywords like BEGIN or END
+
         // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
-        // statement or end of the script. These will cause major problems if they are missed during script consolidation.
+        // statement. These will cause major problems if they are missed during script consolidation.
 
         // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
         String[] tokens = sql

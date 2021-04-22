@@ -19,11 +19,6 @@ package org.labkey.api.study.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -33,6 +28,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -40,43 +36,45 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.CompletionType;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.ParticipantVisitImpl;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
-import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
+import org.labkey.api.study.assay.StudyParticipantVisitResolver;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.HttpView;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -86,108 +84,85 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
  * Date: Jul 30, 2007
  * Time: 10:07:07 AM
  */
-public class PublishResultsQueryView extends ResultsQueryView
+public class PublishResultsQueryView extends QueryView
 {
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
-    private final DefaultValueSource _defaultValueSource;
     private final boolean _mismatched;
+    private final boolean _showSpecimenMatch;
     private final TimepointType _timepointType;
     private final Map<Object, String> _reshowVisits;
     private final Map<Object, String> _reshowDates;
     private final Map<Object, String> _reshowPtids;
     private final Map<Object, String> _reshowTargetStudies;
     private final boolean _includeTimestamp;
-
     private List<ActionButton> _buttons = null;
+    private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
+    private Map<String, Object> _hiddenFormFields;
+    private Set<String> _hiddenColumnCaptions;
+    private FieldKey _objectIdFieldKey;
+    private Dataset.PublishSource _publishSource;
 
-    public enum DefaultValueSource
+    public enum ExtraColFieldKeys
     {
-        Assay
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-            {
-                return tableMetadata.getParticipantIDFieldKey();
-            }
-            @Override
-            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-            {
-                return tableMetadata.getVisitIDFieldKey(type);
-            }
-        },
-        Specimen
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-            {
-                return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
-            }
-            @Override
-            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-            {
-                if (type == TimepointType.VISIT)
-                {
-                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "Visit");
-                }
-                else
-                {
-                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "DrawTimestamp");
-                }
-            }
-        },
-        UserSpecified
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-            {
-                return null;
-            }
-            @Override
-            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-            {
-                return null;
-            }
-        };
-
-        public abstract FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata);
-        public abstract FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type);
+        SourceId,               // the source ID for the published rows, eg. runId or sampleId
+        ObjectId,               // the identifier for the result row
+        ParticipantId,
+        VisitId,
+        Date,
+        SpecimenId,             // legacy specimen match columns
+        SpecimenMatch,
+        SpecimenPtid,
+        SpecimenVisit,
+        SpecimenDate,
+        TargetStudy             // for assays the run level target study value
     }
 
-    public PublishResultsQueryView(AssayProvider provider, ExpProtocol protocol, AssayProtocolSchema schema, QuerySettings settings,
+    public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
+                                   Dataset.PublishSource publishSource,
+                                   FieldKey objectIdFieldKey,
                                    List<Integer> objectIds,
                                    @Nullable Container targetStudyContainer,
                                    Map<Object, String> reshowTargetStudies,
                                    Map<Object, String> reshowVisits,
                                    Map<Object, String> reshowDates,
                                    Map<Object, String> reshowPtids,
-                                   DefaultValueSource defaultValueSource,
                                    boolean mismatched,
-                                   boolean includeTimestamp)
+                                   boolean showSpecimenMatch,
+                                   boolean includeTimestamp,
+                                   Map<ExtraColFieldKeys, FieldKey> additionalColumns,
+                                   Map<String, Object> hiddenFormFields,
+                                   Set<String> hiddenColumnCaptions)
     {
-        super(protocol, schema, settings);
+        super(schema, settings, errors);
         _targetStudyContainer = targetStudyContainer;
-        _defaultValueSource = defaultValueSource;
         _mismatched = mismatched;
+        _showSpecimenMatch = showSpecimenMatch;
         if (_targetStudyContainer != null)
-            _timepointType = AssayPublishService.get().getTimepointType(_targetStudyContainer);
+            _timepointType = StudyPublishService.get().getTimepointType(_targetStudyContainer);
         else
             _timepointType = null;
+        _publishSource = publishSource;
+        _objectIdFieldKey = objectIdFieldKey;
         _filter = new SimpleFilter();
-        _filter.addInClause(provider.getTableMetadata(protocol).getResultRowIdFieldKey(), objectIds);
+        _filter.addInClause(_objectIdFieldKey, objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         _reshowDates = reshowDates;
         _reshowTargetStudies = reshowTargetStudies;
         _includeTimestamp = includeTimestamp;
-        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
+        _additionalColumns = additionalColumns;
+        _hiddenFormFields = hiddenFormFields;
+        _hiddenColumnCaptions = hiddenColumnCaptions;
 
+        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
         getSettings().setMaxRows(Table.ALL_ROWS);
         getSettings().setShowRows(ShowRows.ALL);
     }
@@ -196,9 +171,12 @@ public class PublishResultsQueryView extends ResultsQueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
+        DataRegion dataRegion = view.getDataRegion();
+
         if (_targetStudyContainer != null)
-            view.getDataRegion().addHiddenFormField("targetStudy", _targetStudyContainer.getId());
-        view.getDataRegion().addHiddenFormField("attemptPublish", "true");
+            dataRegion.addHiddenFormField("targetStudy", _targetStudyContainer.getId());
+
+        dataRegion.addHiddenFormField("attemptPublish", "true");
         if (_filter != null)
         {
             view.getRenderContext().setBaseFilter(_filter);
@@ -208,7 +186,13 @@ public class PublishResultsQueryView extends ResultsQueryView
             view.getRenderContext().setBaseFilter(new SimpleFilter());
         }
         if (getSettings().getContainerFilterName() != null)
-            view.getDataRegion().addHiddenFormField("containerFilterName", getSettings().getContainerFilterName());
+            dataRegion.addHiddenFormField("containerFilterName", getSettings().getContainerFilterName());
+
+        // add any action specified form fields
+        for (Map.Entry<String, Object> entry : _hiddenFormFields.entrySet())
+        {
+            dataRegion.addHiddenFormField(entry.getKey(), String.valueOf(entry.getValue()));
+        }
 
         ButtonBar bbar = new ButtonBar();
         if (_buttons != null)
@@ -216,7 +200,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             for (ActionButton button : _buttons)
                 bbar.add(button);
         }
-        view.getDataRegion().setButtonBar(bbar);
+        dataRegion.setButtonBar(bbar);
 
         return view;
     }
@@ -225,7 +209,8 @@ public class PublishResultsQueryView extends ResultsQueryView
     protected DataRegion createDataRegion()
     {
         DataRegion dr = new DataRegion();
-        initializeDataRegion(dr);
+        configureDataRegion(dr);
+
         dr.setShowFilters(false);
         dr.setSortable(false);
         dr.setShowPagination(true);
@@ -245,11 +230,10 @@ public class PublishResultsQueryView extends ResultsQueryView
                 dr.removeColumns(captionMatchColName);
             dr.addDisplayColumn(idx++, extra);
         }
-        Set<String> hiddenColNames = getHiddenColumnCaptions();
         for (Iterator<DisplayColumn> it = dr.getDisplayColumns().iterator(); it.hasNext();)
         {
             DisplayColumn current = it.next();
-            for (String hiddenColName : hiddenColNames)
+            for (String hiddenColName : _hiddenColumnCaptions)
             {
                 if (current.getCaption().endsWith(hiddenColName))
                 {
@@ -264,14 +248,6 @@ public class PublishResultsQueryView extends ResultsQueryView
         dr.setShowRecordSelectors(true);
         dr.setShowSelectMessage(false);
         return dr;
-    }
-
-    protected Set<String> getHiddenColumnCaptions()
-    {
-        HashSet<String> hidden = new HashSet<>(Collections.singleton("Assay Match"));
-        if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
-            hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
-        return hidden;
     }
 
     private static Date convertObjectToDate(Container container, Object dateObject)
@@ -317,11 +293,11 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     public static class ResolverHelper
     {
-        private final ExpProtocol _protocol;
+        private final Dataset.PublishSource _publishSource;
         private final Container _targetStudyContainer;
         private final User _user;
 
-        private final ColumnInfo _runIdCol;
+        private final ColumnInfo _sourceIdCol;
         private final ColumnInfo _objectIdCol;
         private final ColumnInfo _ptidCol;
         private final ColumnInfo _visitIdCol;
@@ -332,27 +308,27 @@ public class PublishResultsQueryView extends ResultsQueryView
         private final ColumnInfo _specimenVisitCol;
         private final ColumnInfo _specimenDateCol;
         private final ColumnInfo _targetStudyCol;
-        private Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
+        private final Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
 
         private Map<Object, String> _reshowVisits;
         private Map<Object, String> _reshowDates;
         private Map<Object, String> _reshowPtids;
         private Map<Object, String> _reshowTargetStudies;
 
-        public ResolverHelper(ExpProtocol protocol,
-                              Container targetStudyContainer,
+        public ResolverHelper(Container targetStudyContainer,
                               User user,
-                              ColumnInfo runIdCol, ColumnInfo objectIdCol,
+                              Dataset.PublishSource publishSource,
+                              ColumnInfo sourceIdCol, ColumnInfo objectIdCol,
                               ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo dateCol,
                               ColumnInfo specimenIDCol, ColumnInfo assayMatchCol,
                               ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo specimenDateCol,
                               ColumnInfo targetStudyCol)
         {
-            _protocol = protocol;
+            _publishSource = publishSource;
             _targetStudyContainer = targetStudyContainer;
             _user = user;
 
-            _runIdCol = runIdCol;
+            _sourceIdCol = sourceIdCol;
             _objectIdCol = objectIdCol;
             _ptidCol = ptidCol;
             _visitIdCol = visitIdCol;
@@ -380,16 +356,18 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         public ParticipantVisitResolver getResolver(RenderContext ctx)
         {
-            Integer runId = (Integer)_runIdCol.getValue(ctx);
-            if (runId != null && !_resolvers.containsKey(runId))
+            Integer sourceId = _sourceIdCol != null ? (Integer)_sourceIdCol.getValue(ctx) : null;
+            if (sourceId != null && !_resolvers.containsKey(sourceId))
             {
-                ExpRun run = ExperimentService.get().getExpRun(runId);
-
-                ParticipantVisitResolver resolver = new StudyParticipantVisitResolverType().createResolver(run, _targetStudyContainer, getUser());
-                if (resolver != null)
-                    _resolvers.put(runId, resolver);
+                // resolving ptid/timepoint by specimen ID is only supported for Assays
+                if (_publishSource == Dataset.PublishSource.Assay)
+                {
+                    ExpRun run = ExperimentService.get().getExpRun(sourceId);
+                    if (run != null)
+                        _resolvers.put(sourceId,  new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                }
             }
-            return _resolvers.get(runId);
+            return _resolvers.get(sourceId);
         }
 
         private ParticipantVisit resolve(RenderContext ctx)
@@ -514,7 +492,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         private boolean isValidPtidVisit(Container container, String participantId, Double visit) throws SQLException
         {
-            if (container == null)
+            if (container == null || SpecimenService.get() == null)
                 return false;
 
             if (_validPtidVisits == null)
@@ -535,7 +513,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         private boolean isValidPtidDate(Container container, String participantId, Date drawDate) throws SQLException
         {
-            if (container == null)
+            if (container == null || SpecimenService.get() == null)
                 return false;
 
             if (_validPtidDates == null)
@@ -694,7 +672,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         public void addQueryColumns(Set<ColumnInfo> set)
         {
-            if (_runIdCol != null) { set.add(_runIdCol); }
+            if (_sourceIdCol != null) { set.add(_sourceIdCol); }
             if (_ptidCol != null) { set.add(_ptidCol); }
             if (_visitIdCol != null) { set.add(_visitIdCol); }
             if (_dateCol != null) { set.add(_dateCol); }
@@ -707,14 +685,14 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     public static abstract class InputColumn extends SimpleDisplayColumn
     {
-        private static String RENDERED_REQUIRES_COMPLETION = InputColumn.class.getName() + "-requiresScript";
+        private static final String RENDERED_REQUIRES_COMPLETION = InputColumn.class.getName() + "-requiresScript";
 
         protected boolean _editable;
         protected String _formElementName;
-        private String _completionBase;
+        private final ActionURL _completionBase;
         protected final ResolverHelper _resolverHelper;
 
-        public InputColumn(String caption, boolean editable, String formElementName, String completionBase, ResolverHelper resolverHelper)
+        public InputColumn(String caption, boolean editable, String formElementName, @Nullable ActionURL completionBase, ResolverHelper resolverHelper)
         {
             _editable = editable;
             _formElementName = formElementName;
@@ -731,7 +709,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 _resolverHelper.addQueryColumns(set);
         }
 
-        protected String getCompletionBase(RenderContext ctx)
+        protected @Nullable ActionURL getCompletionBase(RenderContext ctx)
         {
             return _completionBase;
         }
@@ -741,7 +719,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         {
             if (_editable)
             {
-                String completionBase = getCompletionBase(ctx);
+                ActionURL completionBase = getCompletionBase(ctx);
                 if (completionBase != null)
                 {
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
@@ -767,8 +745,8 @@ public class PublishResultsQueryView extends ResultsQueryView
                         ctx.put(RENDERED_REQUIRES_COMPLETION, true);
                     }
 
-                    String inputId = "input-tag-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-                    String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+                    String inputId = "input-tag-" + UniqueID.getRequestScopedUID(ctx.getRequest());
+                    String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
                     String value = PageFlowUtil.filter(getValue(ctx));
 
                     StringBuilder sb = new StringBuilder();
@@ -816,10 +794,10 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
 
         @Override
-        protected String getCompletionBase(RenderContext ctx)
+        protected ActionURL getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
+            return PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(c, CompletionType.ParticipantId);
         }
 
         @Override
@@ -838,10 +816,10 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
 
         @Override
-        protected String getCompletionBase(RenderContext ctx)
+        protected ActionURL getCompletionBase(RenderContext ctx)
         {
             Container c = rowTargetStudy(_resolverHelper, ctx);
-            return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.VisitId);
+            return PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(c, CompletionType.VisitId);
         }
 
         @Override
@@ -851,11 +829,11 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
     }
 
-    private class DateDataInputColumn extends DataInputColumn
+    private static class DateDataInputColumn extends DataInputColumn
     {
-        private boolean _includeTimestamp;
+        private final boolean _includeTimestamp;
 
-        public DateDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol, boolean includeTimestamp)
+        public DateDataInputColumn(@Nullable ActionURL completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol, boolean includeTimestamp)
         {
             super(AbstractAssayProvider.DATE_PROPERTY_CAPTION, "date",
                     true, completionBase, resolverHelper, dateCol);
@@ -936,80 +914,51 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
     }
 
-    Pair<ExpProtocol.AssayDomainTypes, DomainProperty> _targetStudyDomainProperty = null;
-
     protected List<DisplayColumn> getExtraColumns(Collection<ColumnInfo> selectColumns)
     {
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
         List<DisplayColumn> columns = new ArrayList<>();
-
-        _targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
-
-        AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
-        FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
-        FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
-        FieldKey assayPTIDFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
-        //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
-        //support PARTICIPANT_CONCEPT_URI
-        boolean found = false;
-        if (assayPTIDFieldKey != null)
-        {
-            for (ColumnInfo c : selectColumns)
-            {
-                if (assayPTIDFieldKey.equals(c.getFieldKey()))
-                {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (!found)
-        {
-            for (ColumnInfo c : selectColumns)
-            {
-                if (PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
-                {
-                    assayPTIDFieldKey = c.getFieldKey();
-                    break;
-                }
-            }
-        }
-        FieldKey assayVisitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT);
-        FieldKey assayDateFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE);
-        FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
-        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
-        FieldKey specimenPTIDFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID");
-        FieldKey specimenVisitFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum");
-        FieldKey specimenDateFieldKey = new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp");
-        Set<FieldKey> fieldKeys = new HashSet<>(Arrays.asList(runIdFieldKey, objectIdFieldKey, assayPTIDFieldKey, assayVisitIDFieldKey, assayDateFieldKey, specimenIDFieldKey, matchFieldKey, specimenPTIDFieldKey, specimenVisitFieldKey, specimenDateFieldKey));
-
-        // Add the TargetStudy FieldKey only if it exists on the Result domain.
-        FieldKey targetStudyFieldKey = null;
-        if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first == ExpProtocol.AssayDomainTypes.Result)
-        {
-            targetStudyFieldKey = tableMetadata.getTargetStudyFieldKey();
-            fieldKeys.add(targetStudyFieldKey);
-        }
-
-        // In case the assay definition doesn't have all the fields
+        Set<FieldKey> fieldKeys = new HashSet<>(_additionalColumns.values());
+        // remove any null values
         fieldKeys.remove(null);
         
         Map<FieldKey, ColumnInfo> colInfos = QueryService.get().getColumns(getTable(), fieldKeys, selectColumns);
-        ColumnInfo objectIdCol = colInfos.get(objectIdFieldKey);
-        ColumnInfo assayPTIDCol = colInfos.get(assayPTIDFieldKey);
-        ColumnInfo runIdCol = colInfos.get(runIdFieldKey);
-        ColumnInfo assayVisitIDCol = colInfos.get(assayVisitIDFieldKey);
-        ColumnInfo assayDateCol = colInfos.get(assayDateFieldKey);
-        ColumnInfo specimenIDCol = colInfos.get(specimenIDFieldKey);
-        ColumnInfo matchCol = colInfos.get(matchFieldKey);
-        ColumnInfo specimenPTIDCol = colInfos.get(specimenPTIDFieldKey);
-        ColumnInfo specimenVisitCol = colInfos.get(specimenVisitFieldKey);
-        ColumnInfo specimenDateCol = colInfos.get(specimenDateFieldKey);
-        ColumnInfo targetStudyCol = colInfos.get(targetStudyFieldKey);
+        ColumnInfo objectIdCol = colInfos.get(_objectIdFieldKey);
+        if (_additionalColumns.containsKey(ExtraColFieldKeys.ObjectId))
+            objectIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ObjectId));
+        ColumnInfo ptidCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.ParticipantId));
+        if (ptidCol == null)
+        {
+            //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
+            //support PARTICIPANT_CONCEPT_URI
+            ptidCol = selectColumns.stream().filter(c -> PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI())).findFirst().orElse(null);
+        }
+
+        ColumnInfo sourceIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SourceId));
+        ColumnInfo visitIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.VisitId));
+        ColumnInfo dateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.Date));
+        if (dateCol == null)
+        {
+            // issue 41982 : look for an alternate date column if the standard assay date field does not exist
+            // TODO : consider pushing this into the assay specific part of the action
+            List<ColumnInfo> dateCols = selectColumns.stream()
+                    .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
+                            (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
+                    .collect(Collectors.toList());
+
+            if (dateCols.size() == 1)
+                dateCol = dateCols.get(0);
+        }
+        ColumnInfo specimenIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenId));
+        ColumnInfo matchCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenMatch));
+        ColumnInfo specimenPTIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenPtid));
+        ColumnInfo specimenVisitCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenVisit));
+        ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenDate));
+        ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.TargetStudy));
 
         ResolverHelper resolverHelper = new ResolverHelper(
-                _protocol, _targetStudyContainer, getUser(),
-                runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, assayDateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
+                _targetStudyContainer, getUser(),
+                _publishSource,
+                sourceIdCol, objectIdCol, ptidCol, visitIDCol, dateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
         resolverHelper.setReshow(_reshowVisits, _reshowDates, _reshowPtids, _reshowTargetStudies);
 
         TargetStudyInputColumn targetStudyInputColumn = null;
@@ -1056,17 +1005,21 @@ public class PublishResultsQueryView extends ResultsQueryView
             c.setCaption("Specimen Match - hidden");
         }
 
-        columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
+        if (_showSpecimenMatch)
+            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
 
-        columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
+        if (sourceIdCol != null && objectIdCol != null)
+            columns.add(new SourceDataLinkDisplayColumn(null, resolverHelper, _publishSource, sourceIdCol, objectIdCol));
+        else
+            throw new IllegalStateException("Both sourceId and objectId columns are required for the view");
 
-        ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, assayPTIDCol);
+        ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, ptidCol);
         columns.add(participantColumn);
 
         // UNDONE: If selected ids contain studies of different timepoint types, include both Date and Visit columns and enable and disable the inputs when the study picker changes.
         // For now, just include both Date and Visit columns if the target study isn't known yet.
-        VisitIDDataInputColumn visitIDInputColumn = new VisitIDDataInputColumn(resolverHelper, assayVisitIDCol);
-        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, assayDateCol, _includeTimestamp);
+        VisitIDDataInputColumn visitIDInputColumn = new VisitIDDataInputColumn(resolverHelper, visitIDCol);
+        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, dateCol, _includeTimestamp);
         if (_timepointType == null || _timepointType == TimepointType.VISIT)
         {
             columns.add(visitIDInputColumn);

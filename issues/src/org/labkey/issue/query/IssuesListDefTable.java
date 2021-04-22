@@ -46,6 +46,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -107,10 +108,16 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         return null;
     }
 
+    @Override
+    public String getPublicName()
+    {
+        return IssuesQuerySchema.TableType.IssueListDef.name();
+    }
+
     private void addAllColumns()
     {
         setDescription("Contains one row for each issue list");
-        setName("Issue List Definitions");
+        setTitle("Issue List Definitions");
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
 
@@ -126,8 +133,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 Collections.singletonMap("issueDefName", "name"));
         labelCol.setURL(url);
 
-        var containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
-        ContainerForeignKey.initColumn(containerCol, getUserSchema());
+        addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
 
         List<Pair<String, String>> inputValues = new ArrayList<>();
         for (IssuesListDefProvider provider : IssuesListDefService.get().getEnabledIssuesListDefProviders(getContainer()))
@@ -210,9 +216,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         addColumn(domainContainer);
 
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Created")));
-        UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("CreatedBy"))));
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Modified")));
-        UserIdForeignKey.initColumn(addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("ModifiedBy"))));
     }
 
     @Nullable

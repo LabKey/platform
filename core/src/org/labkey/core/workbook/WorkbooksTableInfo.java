@@ -26,10 +26,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.ConvertHelper;
-import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -43,7 +41,6 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -70,7 +67,6 @@ import org.labkey.core.query.CoreQuerySchema;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -184,7 +180,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected boolean hasPermission(User user, Class<? extends Permission> acl)
+        public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
         {
             return getQueryTable().hasPermission(user, acl);
         }
@@ -193,12 +189,6 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        }
-
-        @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        {
-            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -511,127 +501,6 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
 
             Object o = getInputColumnValue(inputColumn);
             return o == null ? null : String.valueOf(o);
-        }
-    }
-
-    private class _WorkbookDataIteratorBuilder implements DataIteratorBuilder
-    {
-        DataIteratorContext _context;
-        final DataIteratorBuilder _in;
-
-        _WorkbookDataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
-        {
-            _context = context;
-            _in = in;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
-
-            final SimpleTranslator it = new SimpleTranslator(input, context);
-
-            final Map<String, Integer> inputCols = new HashMap<>();
-            final Map<String, Integer> outputCols = new HashMap<>();
-
-            for (int c = 1; c <= input.getColumnCount(); c++)
-            {
-                ColumnInfo col = input.getColumnInfo(c);
-                if ("container".equalsIgnoreCase(col.getName()))
-                    inputCols.put("container", c);
-//                if ("parent".equalsIgnoreCase(col.getName()))
-//                    inputCols.put("parent", c);
-                else if ("sortOrder".equalsIgnoreCase(col.getName()))
-                    inputCols.put("sortOrder", c);
-                else if ("name".equalsIgnoreCase(col.getName()))
-                    inputCols.put("name", c);
-            }
-
-            if (!inputCols.containsKey("parent"))
-                throw new IllegalArgumentException("parent container required");
-
-            // parent container
-            outputCols.put("parent", it.addColumn(new BaseColumnInfo("parent", JdbcType.VARCHAR), (Callable) () ->
-            {
-                int parentInputCol = inputCols.get("container");
-                Object parentContainerVal = it.getInputColumnValue(parentInputCol);
-                Container parentContainer = ConvertHelper.convert(parentContainerVal, Container.class);
-                // XXX: how do we signal field errors?
-                if (parentContainer == null)
-                    throw new Exception("Container was missing or not found");
-
-                if (parentContainer.canHaveChildren())
-                    throw new Exception("Parent container must be a normal container!");
-
-                return parentContainer.getEntityId();
-            }));
-
-            // sort order (depends on parent container column)
-            outputCols.put("sortOrder", it.addColumn(new BaseColumnInfo("sortOrder", JdbcType.INTEGER), (Callable) () ->
-            {
-                int parentOutputCol = outputCols.get("parent");
-                String parentEntityId = it.get(parentOutputCol).toString();
-                Container parentContainer = ContainerManager.getForId(parentEntityId);
-                return DbSequenceManager.get(parentContainer, ContainerManager.WORKBOOK_DBSEQUENCE_NAME).next();
-            }));
-
-            // name column
-            outputCols.put("name", it.addColumn(new BaseColumnInfo("name", JdbcType.VARCHAR), (Callable) () ->
-            {
-                int nameInputCol = inputCols.get("name");
-                Object nameVal = it.getInputColumnValue(nameInputCol);
-                String name;
-                if (nameVal != null)
-                {
-                    name = ConvertHelper.convert(nameVal, String.class);
-                }
-                else
-                {
-                    Object sortOrderOutputCol = outputCols.get("sortOrder");
-                    assert sortOrderOutputCol != null;
-                    name = String.valueOf(sortOrderOutputCol);
-                }
-
-                StringBuilder error = new StringBuilder();
-                if (!Container.isLegalName(name, false, error))
-                    throw new Exception(error.toString());
-
-                return name;
-            }));
-
-            // title column
-            it.addColumn(new BaseColumnInfo("title", JdbcType.VARCHAR), (Callable) () ->
-            {
-                int titleInputCol = inputCols.get("title");
-                Object titleVal = it.getInputColumnValue(titleInputCol);
-                String title = ConvertHelper.convert(titleVal, String.class);
-                StringBuilder error = new StringBuilder();
-                if (!Container.isLegalName(title, false, error))
-                    throw new Exception(error.toString());
-
-                return title;
-            });
-
-
-            // description
-            it.addColumn("description", inputCols.get("description"));
-
-
-            // type
-            it.addConstantColumn("type", JdbcType.VARCHAR, WorkbookContainerType.NAME);
-
-
-            // UNDONE: folder type column
-
-            DataIteratorBuilder dib = TableInsertDataIterator.create(it, getRealTable(), context);
-
-            // UNDONE: all the security and caching stuff that ContainerManager.createContainer() does.
-
-            return LoggingDataIterator.wrap(dib.getDataIterator(context));
         }
     }
 }

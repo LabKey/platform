@@ -24,7 +24,6 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.data.xml.OntologyType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -448,6 +447,7 @@ public class TableXmlUtils
                             continue;
                         }
 
+/* TODO
                         if (merge && (null != xmlCol.getOntology()))
                         {
                             OntologyType o = mc.addNewOntology();
@@ -456,6 +456,7 @@ public class TableXmlUtils
                             if (null != xmlCol.getOntology().getSource())
                                 o.setSource(xmlCol.getOntology().getSource());
                         }
+*/
 
                         if (!rlTmp.getResults().isEmpty())
                         {

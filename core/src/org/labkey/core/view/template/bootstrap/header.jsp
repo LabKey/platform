@@ -40,6 +40,8 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
 <%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -47,6 +49,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
+        dependencies.add("core/ProductNavigationHeader.js");
     }
 %>
 <%
@@ -63,6 +66,8 @@
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 
     final NavTree optionsMenu = PopupAdminView.createNavTree(context);
+    boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
+    boolean isSMHostedOnly = !hasPremiumModule && ModuleLoader.getInstance().hasModule("SampleManagement");
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
@@ -168,6 +173,21 @@
                     })
                 }(jQuery)
             </script>
+<%
+    }
+
+    // only show the product navigation menu item if we are on a premium LK server or LKSM hosted only
+    if (isRealUser && c.hasPermission(user, ReadPermission.class) && (hasPremiumModule || isSMHostedOnly))
+    {
+%>
+            <li class="dropdown dropdown-rollup" id="headerProductDropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <i class="fa fa-th-large" style="font-size: 18px; padding-top: 2px;"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <div id="headerProductDropdown-content"></div>
+                </ul>
+            </li>
 <%
     }
 

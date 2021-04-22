@@ -18,15 +18,18 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission"%>
+<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
+<%@ page import="org.labkey.api.specimen.view.SpecimenWebPart" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.SpecimenManager" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
-<%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowCreateSpecimenRequestAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ViewRequestsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
@@ -55,9 +58,9 @@
             var details = values[i];
             innerHTML += '<tr class="labkey-header">';
             if (details.group)
-                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>"></a></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" width=9 height=9></a></td>';
             else
-                innerHTML += '<td class="labkey-nav-tree-node"><img width="9" src="<%=getWebappURL("_.gif")%>"></td>';
+                innerHTML += '<td class="labkey-nav-tree-node"><img src="<%=getWebappURL("_.gif")%>" width=9 height=1></td>';
 
             var nextByGroup = '';
             innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
@@ -88,7 +91,7 @@
         {
             var html = '<i>No specimens found.</i>';
             <% if (isAdmin && !c.isDataspace()) {%>
-                var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+                var importUrl = LABKEY.ActionURL.buildURL('specimen', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
                 html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
             <% } %>
             document.getElementById(names.content).innerHTML = html;
@@ -136,7 +139,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;width:auto" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
+                        <a  style="color:#000000;width:auto" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
                             <span>View All Specimens</span></a><a style="width:auto"
                                onmouseover="return showHelpDivDelay(this, 'Vial Viewing Options', 'Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.');"
                                onmouseout="return hideHelpDivDelay();"
@@ -151,11 +154,11 @@
                         <table class="labkey-nav-tree-child">
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimensAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
                                 </td>
                             </tr>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimensAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -168,7 +171,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
+                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
                             <span>Search Specimens</span>
                         </a>
                     </td>
@@ -206,7 +209,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
+                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span>Specimen Reports</span>
                         </a>
                     </td>
@@ -217,7 +220,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(new ActionURL(SpecimenController.AutoReportListAction.class, c))%>">View Available Reports</a></td>
+                                    <a href="<%=h(new ActionURL(AutoReportListAction.class, c))%>">View Available Reports</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -226,7 +229,7 @@
                 </tbody>
             </table>
 <%
-    if (SpecimenManager.getInstance().isSampleRequestEnabled(c))
+    if (SettingsManager.get().isSpecimenRequestEnabled(c))
     {
 %>
             <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
@@ -234,7 +237,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
-                            <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
+                            <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span>Specimen Requests</span>
                         </a>
                     </td>
@@ -245,11 +248,11 @@
                             <tbody>
                             <% if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class,c))%>">Create New Request</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(ShowCreateSpecimenRequestAction.class,c))%>">Create New Request</a></td>
                             </tr>
                             <% } %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ViewRequestsAction.class,c))%>">View Current Requests</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(ViewRequestsAction.class,c))%>">View Current Requests</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -277,7 +280,7 @@
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
-                            <img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
+                            <img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
                             <span id="<%=h(groupHeading1)%>"></span>
                         </a>
                     </td>
@@ -296,7 +299,7 @@
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
-                            <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
+                            <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span id="<%=h(groupHeading2)%>"></span>
                         </a>
                     </td>
@@ -317,7 +320,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
+                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span>Administration</span>
                         </a>
                     </td>
@@ -347,7 +350,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(new ActionURL(StudyController.ManageStudyAction.class,c))%>">Study Settings</a></td>
+                                    <a href="<%=h(urlProvider(StudyUrls.class).getManageStudyURL(c))%>">Study Settings</a></td>
                             </tr>
                             </tbody>
                         </table>

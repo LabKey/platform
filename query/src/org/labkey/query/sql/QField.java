@@ -32,7 +32,7 @@ import java.util.HashSet;
 
 public class QField extends QInternalExpr
 {
-    static HashSet<Class> _legalReferants = new HashSet<Class>(Arrays.asList(
+    static HashSet<Class> _legalReferants = new HashSet<>(Arrays.asList(
             QuerySelect.SelectColumn.class, QJoin.class, QWhere.class, QOrder.class, QGroupBy.class));
 
     QueryRelation _table;

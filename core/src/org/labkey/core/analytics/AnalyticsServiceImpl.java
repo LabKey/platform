@@ -220,6 +220,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
         if (!showTrackingScript(context))
             return "";
 
+        ActionURL url = context.getActionURL();
+        if (null == url)
+            return "";
+
         boolean isSecure = context.getActionURL().getScheme().startsWith("https");
         String gaJS = (isSecure ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
 

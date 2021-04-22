@@ -160,6 +160,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public String getRootMaterialLSID()
+    {
+        return _object.getRootMaterialLSID();
+    }
+
+    @Override
+    public String getAliquotedFromLSID()
+    {
+        return _object.getAliquotedFromLSID();
+    }
+
+    @Override
     @NotNull
     public Collection<String> getAliases()
     {

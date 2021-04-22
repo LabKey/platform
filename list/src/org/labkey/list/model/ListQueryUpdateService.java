@@ -81,25 +81,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     {
         super(queryTable, dbTable, createMVMapping(queryTable.getList().getDomain()));
         _list = (ListDefinitionImpl) list;
-        setAttachmentParentFactory(new ListItemAttachmentParentFactory());
     }
 
     @Override
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption insertOption, Map<Enum, Object> configParameters)
+    public void configureDataIteratorContext(DataIteratorContext context)
     {
-        DataIteratorContext context = super.getDataIteratorContext(errors, insertOption, configParameters);
-        if (insertOption.batch)
+        if (context.getInsertOption().batch)
         {
             context.setMaxRowErrors(100);
             context.setFailFast(false);
         }
 
-        Map<Enum, Object> options = new HashMap<>();
-        options.put(ConfigParameters.TrimStringRight, Boolean.TRUE);
-        context.setConfigParameters(options);
-        return context;
+        context.putConfigParameter(ConfigParameters.TrimStringRight, Boolean.TRUE);
     }
 
+    @Override
+    protected @Nullable AttachmentParentFactory getAttachmentParentFactory()
+    {
+        return new ListItemAttachmentParentFactory();
+    }
 
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> listRow) throws InvalidKeyException
@@ -133,13 +133,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         return ret;
-    }
-
-
-    @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-    {
-        throw new IllegalStateException("Method not used by ListQueryUpdateService");
     }
 
 

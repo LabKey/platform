@@ -18,14 +18,28 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.sql.SQLException;
@@ -40,13 +54,141 @@ import java.util.Set;
  * User: kevink
  * Date: May 27, 2009
  */
-public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T>
+public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 {
     enum DataSharing
     {
         NONE,
         ALL,
         PTID
+    }
+
+    /**
+     * Provides information about the published source for a dataset
+     */
+    enum PublishSource {
+        Assay
+                {
+                    @Override
+                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    {
+                        if (publishSourceId != null)
+                            return ExperimentService.get().getExpProtocol(publishSourceId);
+                        return null;
+                    }
+
+                    @Override
+                    public String getLabel(Integer publishSourceId)
+                    {
+                        if (publishSourceId != null)
+                        {
+                            ExpProtocol protocol = ExperimentService.get().getExpProtocol(publishSourceId);
+                            if (protocol != null)
+                                return protocol.getName();
+                        }
+                        return "";
+                    }
+
+                    @Override
+                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
+                    {
+                        if (publishSourceId != null)
+                        {
+                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            if (protocol != null)
+                            {
+                                ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
+                                        protocol.getContainer(),
+                                        protocol,
+                                        cf);
+                                return new ActionButton("View Source Assay", url);
+                            }
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasUsefulDetailsPage(Integer publishSourceId)
+                    {
+                        if (publishSourceId != null)
+                        {
+                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            if (protocol != null)
+                            {
+                                AssayProvider provider = AssayService.get().getProvider(protocol);
+                                if (provider != null)
+                                    return provider.hasUsefulDetailsPage();
+                            }
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
+                    {
+                        // for assays the source lsid is the run
+                        ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
+                        if (expRun != null && expRun.getContainer() != null)
+                            return expRun.getContainer();
+
+                        return null;
+                    }
+                },
+        SampleType
+                {
+                    @Override
+                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    {
+                        return SampleTypeService.get().getSampleType(publishSourceId);
+                    }
+
+                    @Override
+                    public String getLabel(Integer publishSourceId)
+                    {
+                        ExpSampleType sampleType =  SampleTypeService.get().getSampleType(publishSourceId);
+                        if (sampleType != null)
+                            return sampleType.getName();
+                        return "";
+                    }
+
+                    @Override
+                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
+                    {
+                        if (publishSourceId != null)
+                        {
+                            ExpSampleType sampleType = (ExpSampleType)resolvePublishSource(publishSourceId);
+                            if (sampleType != null)
+                            {
+                                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(sampleType);
+                                return new ActionButton("View Source Sample Type", url);
+                            }
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasUsefulDetailsPage(Integer publishSourceId)
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
+                    {
+                        // for sample types the source lsid is the sample type
+                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(sourceLsid);
+                        if (sampleType != null)
+                            return sampleType.getContainer();
+
+                        return null;
+                    }
+                };
+
+        public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
+        public abstract String getLabel(Integer publishSourceId);
+        public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
+        public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
+        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid);
     }
 
     Set<String> getDefaultFieldNames();
@@ -91,12 +233,19 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
     Date getModified();
 
     /**
-     * @return true if this dataset is backed by assay data within LabKey Server. Note that if a dataset happens
-     * to contain assay data but isn't linked to an assay provider in the server (ie., when importing a study archive), this method will return false.
+     * @return true if this dataset is backed by published data (assay, sample type etc). Note that if a dataset happens
+     * to contain published data but isn't linked to the publish source in the server (ie., when importing a study archive), this method will return false.
      */
-    boolean isAssayData();
+    boolean isPublishedData();
 
-    ExpProtocol getAssayProtocol();
+    @Nullable
+    PublishSource getPublishSource();
+
+    @Nullable
+    ExpObject resolvePublishSource();
+
+    @Nullable
+    Integer getPublishSourceId();
 
     Study getStudy();
 
@@ -122,30 +271,40 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     void save(User user) throws SQLException;
 
+    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
+
     /**
      * @return whether the user has permission to read rows from this dataset
      */
-    public boolean canRead(UserPrincipal user);
+    boolean canRead(UserPrincipal user);
 
     /**
-     * @return whether the user has permission to write to the dataset
+     * @return whether the user has permission to update the dataset
      */
-    public boolean canWrite(UserPrincipal user);
+    boolean canUpdate(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to delete from the dataset
+     */
+    boolean canDelete(UserPrincipal user);
+
+    /**
+     * @return whether the user has permission to insert rows into the dataset
+     */
+    boolean canInsert(UserPrincipal user);
 
     /**
      * @return whether the user has permission to delete the entire dataset. Use canWrite() to check if user can delete
      * rows from the dataset.
      */
-    public boolean canDeleteDefinition(UserPrincipal user);
+    boolean canDeleteDefinition(UserPrincipal user);
 
     /**
      * Does the user have admin permissions for this dataset
-     * @param user
-     * @return
      */
-    public boolean canUpdateDefinition(User user);
+    boolean canUpdateDefinition(User user);
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
+    Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
 
@@ -188,7 +347,7 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @param lsid The row LSID
      * @return A map of the dataset row columns, null if no record found
      */
-    public Map<String, Object> getDatasetRow(User u, String lsid);
+    Map<String, Object> getDatasetRow(User u, String lsid);
 
     /**
      * Fetches a set of rows from a dataset given a collection of LSIDs
@@ -196,19 +355,18 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @param lsids The row LSIDs
      * @return An array of maps of the dataset row columns
      */
-    @NotNull
-    public List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids);
+    @NotNull List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids);
 
     /**
      * Deletes the specified rows from the dataset.
      * @param u user performing the delete
      * @param lsids keys of the dataset rows
      */
-    public void deleteDatasetRows(User u, Collection<String> lsids);
+    void deleteDatasetRows(User u, Collection<String> lsids);
 
     // constants for dataset types
-    public static final String TYPE_STANDARD = "Standard";
-    public static final String TYPE_PLACEHOLDER = "Placeholder";
+    String TYPE_STANDARD = "Standard";
+    String TYPE_PLACEHOLDER = "Placeholder";
 
     enum KeyType
     {
@@ -233,10 +391,10 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
         // Don't rename enums without updating the values in the database too
         None(""), RowId("rowid", "true"), GUID("entityid", "guid");
 
-        private String _serializationName;
-        private String[] _serializationAliases;
+        private final String _serializationName;
+        private final String[] _serializationAliases;
 
-        private KeyManagementType(String serializationName, String... serializationAliases)
+        KeyManagementType(String serializationName, String... serializationAliases)
         {
             _serializationName = serializationName;
             _serializationAliases = serializationAliases;

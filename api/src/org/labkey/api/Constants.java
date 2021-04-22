@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * This class provides a single place to update system-wide constants used for sizing caches and other purposes.
+ * This class provides a single place to update system-wide constants that specify versions, cache sizes, and other key settings.
  *
  * Created by adam on 10/22/2016.
  */
@@ -40,7 +40,7 @@ public class Constants
      */
     public static double getEarliestUpgradeVersion()
     {
-        return 18.2;
+        return 19.1;
     }
 
     /**
@@ -49,7 +49,7 @@ public class Constants
      */
     public static String getDocumentationVersion()
     {
-        return "20.11";
+        return "21.3";
     }
 
     /**
@@ -58,7 +58,7 @@ public class Constants
      */
     public static double getLowestSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     /**
@@ -160,7 +160,7 @@ public class Constants
         {
             double lowest = getLowestSchemaVersion();
             double expected = Math.round(Year.now().getValue() / 100.0);
-            assertEquals("It's time to update Constants.getLowestSchemaVersion()!", expected, lowest, 0.0);
+            assertTrue("It's time to update Constants.getLowestSchemaVersion() to " + expected + "!", expected <= lowest);
         }
 
         @Test

@@ -16,11 +16,9 @@
 
 package org.labkey.api.data;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,8 +30,8 @@ import java.util.Set;
  */
 public interface Filter
 {
-    SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos);
-    SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap);
+    SQLFragment getSQLFragment(SqlDialect dialect, String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap);
+
     boolean isEmpty();
     Set<FieldKey> getWhereParamFieldKeys();
 

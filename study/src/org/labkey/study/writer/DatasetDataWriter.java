@@ -31,7 +31,7 @@ import org.labkey.api.data.IndexInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
@@ -106,18 +106,22 @@ public class DatasetDataWriter implements InternalStudyWriter
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
             SimpleFilter filter = new SimpleFilter();
-            if (def.isAssayData())
+            if (def.isPublishedData())
             {
-                // Try to find the protocol and provider
-                ExpProtocol protocol = def.getAssayProtocol();
-                if (protocol != null)
+                Dataset.PublishSource publishSource = def.getPublishSource();
+                if (publishSource == Dataset.PublishSource.Assay)
                 {
-                    AssayProvider provider = AssayService.get().getProvider(protocol);
-                    if (provider != null)
+                    // Try to find the protocol and provider
+                    ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
+                    if (protocol != null)
                     {
-                        // Assuming they're still around, filter out rows where the source assay run has been deleted,
-                        // thus orphaning the dataset row and pulling out all of its real data
-                        filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), null, CompareType.NONBLANK);
+                        AssayProvider provider = AssayService.get().getProvider(protocol);
+                        if (provider != null)
+                        {
+                            // Assuming they're still around, filter out rows where the source assay run has been deleted,
+                            // thus orphaning the dataset row and pulling out all of its real data
+                            filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), null, CompareType.NONBLANK);
+                        }
                     }
                 }
             }
@@ -141,8 +145,8 @@ public class DatasetDataWriter implements InternalStudyWriter
 
             if (ctx.isDataspaceProject())
                 DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
-            Results rs = QueryService.get().select(ti, columns, filter, sort, null, false);
-            writeResultsToTSV(rs, vf, def.getFileName());
+            ResultsFactory factory = ()->QueryService.get().select(ti, columns, filter, sort, null, false);
+            writeResultsToTSV(factory, vf, def.getFileName());
         }
     }
 
@@ -152,10 +156,10 @@ public class DatasetDataWriter implements InternalStudyWriter
         return false;
     }
 
-    private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws IOException
+    private void writeResultsToTSV(ResultsFactory factory, VirtualFile vf, String fileName) throws IOException
     {
-        // NOTE: TSVGridWriter.close() closes PrintWriter and ResultSet
-        try (TSVGridWriter tsvWriter = new TSVGridWriter(rs))
+        // NOTE: TSVGridWriter generates and closes Results
+        try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
             tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
@@ -240,7 +244,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         ColumnInfo sequenceColumn = null; String sequenceURI = DatasetDefinition.getSequenceNumURI();
         ColumnInfo qcStateColumn = null; String qcStateURI = DatasetDefinition.getQCStateURI();
 
-        if (def.isAssayData())
+        if (def.isPublishedData())
         {
             inColumns = new ArrayList<>(QueryService.get().getColumns(tinfo, tinfo.getDefaultVisibleColumns(), inColumns).values());
         }
@@ -314,7 +318,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                     // For assay datasets only, include both the display value and raw value for FKs if they differ
                     // Don't do this for the Participant and SequenceNum columns, since we know that their lookup targets
                     // will be available. See issue 15141
-                    if (def.isAssayData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
+                    if (def.isPublishedData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
                     {
                         boolean foundMatch = false;
                         for (ColumnInfo existingColumns : inColumns)
@@ -360,7 +364,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         if (tinfo == null)
             return Collections.emptyList();
 
-        SchemaTableInfo schemaTableInfo = StorageProvisioner.getSchemaTableInfo(tinfo.getDomain());
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(tinfo.getDomain());
         Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
         Collection<IndexInfo> outIndices = new LinkedHashSet<>(allIndices.size());
 

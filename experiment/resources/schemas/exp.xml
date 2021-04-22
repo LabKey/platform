@@ -302,6 +302,8 @@
           <description>Contains the time this material was last updated in the search index</description>
       </column>
       <column columnName="ObjectId"/>
+      <column columnName="RootMaterialLSID"/>
+      <column columnName="AliquotedFromLSID"/>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>
@@ -353,6 +355,7 @@
       <column columnName="NameExpression"/>
       <column columnName="LabelColor"/>
       <column columnName="MetricUnit"/>
+      <column columnName="AutoLinkTargetContainer"/>
       <column columnName="CreatedBy">
         <fk>
           <fkColumnName>UserId</fkColumnName>
@@ -459,7 +462,11 @@
       <column columnName="RedactedText"/>
       <column columnName="MvIndicatorStorageColumnName"/>
       <column columnName="TextExpression"/>
+      <column columnName="SourceOntology"/>
+      <column columnName="ConceptImportColumn"/>
+      <column columnName="ConceptLabelColumn"/>
       <column columnName="PrincipalConceptCode"/>
+      <column columnName="DerivationDataScope"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">
@@ -936,6 +943,8 @@
       <column columnName="Container"/>
       <column columnName="LastIndexed"/>
       <column columnName="ObjectId"/>
+      <column columnName="RootMaterialLSID"/>
+      <column columnName="AliquotedFromLSID"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">

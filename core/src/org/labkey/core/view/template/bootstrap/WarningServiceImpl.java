@@ -137,10 +137,10 @@ public class WarningServiceImpl implements WarningService
                 html.append(messages.get(0));
             else
             {
-                html.append(HtmlString.unsafe("<ul>"));
+                html.startTag("ul");
                 for (HtmlString msg : messages)
-                    html.append(HtmlString.unsafe("<li>")).append(msg).append(HtmlString.unsafe("</li>"));
-                html.append(HtmlString.unsafe("</ul>"));
+                    html.startTag("li").append(msg).endTag("li");
+                html.endTag("ul");
             }
         }
     }

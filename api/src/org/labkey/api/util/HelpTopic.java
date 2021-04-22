@@ -35,7 +35,7 @@ public class HelpTopic
 {
     // @JavaRuntimeVersion
     // Update the below constant whenever we add support for a new major Java version so we always point at the current docs.
-    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/13/docs/api/java.base/";
+    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/";
 
     private static final String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
     private static final String DOCUMENTATION_FOLDER_NAME = Constants.getDocumentationVersion();

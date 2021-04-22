@@ -51,6 +51,11 @@ public class DefaultAuditProvider implements AuditLogService, AuditLogService.Re
         return null;
     }
 
+    @Override
+    public <K extends AuditTypeEvent> void addEvents(User user, List<K> events)
+    {
+    }
+
     @Nullable
     @Override
     public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId)

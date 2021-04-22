@@ -23,7 +23,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UserManagementPermission" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -77,7 +76,7 @@
     }
 
     span.closeicon {
-        background-image: url(<%=getContextPath()%>/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif);
+        background-image: url(<%=getWebappURL("/ext-4.2.1/resources/ext-theme-classic-sandbox/images/tools/tool-sprites.gif")%>);
     }
 
     td.tree-node-selected {

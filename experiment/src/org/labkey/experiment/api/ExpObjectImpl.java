@@ -133,13 +133,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
             throw new IllegalArgumentException("PropertyType resource is NYI in this method");
-        OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, this);
-    }
-
-    @Override
-    public String urlFlag(boolean flagged)
-    {
-        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
+        OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, this, false);
     }
 
     @Override

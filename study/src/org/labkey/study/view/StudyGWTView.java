@@ -30,20 +30,15 @@ public class StudyGWTView extends GWTView
 {
     public StudyGWTView(Class<? extends EntryPoint> clss, Map<String, String> properties)
     {
-        this(clss.getName(), properties);
-    }
-
-    public StudyGWTView(String clss, Map<String, String> properties)
-    {
         super("gwt.StudyApplication", properties);
         for (StudyApplication.GWTModule m : StudyApplication.GWTModule.values())
         {
-            if (m.className.equals(clss))
+            if (m.className.equals(clss.getName()))
             {
                 getModelBean().getProperties().put("GWTModule", m.getClass().getSimpleName());
                 return;
             }
         }
-        throw new IllegalArgumentException(clss);
+        throw new IllegalArgumentException(clss.getName());
     }
 }

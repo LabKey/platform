@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -28,7 +29,7 @@
 <labkey:errors/>
 <span>
 <labkey:form action="<%=urlFor(ShowGroupMembersAction.class)%>" method="POST">
-    <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
+    <%=generateReturnUrlFormField(bean.getReturnUrl())%>
 <%
     if (bean.getMembers() == null || bean.getMembers().length <= 0)
     {
@@ -68,14 +69,7 @@
         <labkey:autoCompleteTextArea name="names"
                                      url="<%=bean.getCompleteUsersPrefix()%>"
                                      rows="8" cols="30"/><br>
-        <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all
-        new<%
-            if (bean.getLdapDomain() != null && bean.getLdapDomain().length() > 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.getLdapDomain()))
-            {
-        %>, non-<%= h(bean.getLdapDomain()) %>
-        <%
-            }
-        %> users<br><br>
+        <input type="checkbox" name="sendEmail" value="true" checked><%=AuthenticationManager.getStandardSendVerificationEmailsMessage()%><br><br>
         <input type="hidden" name="id" value="<%= bean.getActor().getRowId() %>">
 
         <%

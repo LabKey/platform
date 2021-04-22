@@ -1,0 +1,6 @@
+StudyPHIExportTest
+StudyExportTest
+JUnitTest
+AncillaryStudyTest
+StudyDemoModeTest
+StudyPublishTest

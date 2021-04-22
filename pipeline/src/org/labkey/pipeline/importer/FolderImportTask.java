@@ -127,8 +127,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         }
         catch (PipelineJobException | DirectoryNotDeletedException e)
         {
-            job.error(e.getMessage());
-            job.info("Error StackTrace", e);
+            job.error(e.getMessage(), e);
         }
         catch (Exception e)
         {

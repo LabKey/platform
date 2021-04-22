@@ -221,10 +221,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
                 // TODO: check Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
                 if (schemaNode.length > 0) {
-                    Ext4.each(schemaNode[0].childNodes, comparison);
-                }
-                if (!queryNode && schemaNode.length > 1) {
-                    Ext4.each(schemaNode[1].childNodes, comparison);
+                    Ext4.each(schemaNode, comparison);
                 }
 
                 if (!queryNode) {
@@ -247,7 +244,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
         return this.getComponent('lk-sb-tree');
     },
 
-    expandSchema : function(schemaName, callback, scope) {
+    expandSchema : function(schemaName, callback, scope, selectInTree) {
         if (!(schemaName instanceof LABKEY.SchemaKey)) {
             schemaName = LABKEY.SchemaKey.fromString(schemaName);
         }
@@ -256,9 +253,12 @@ Ext4.define('LABKEY.query.browser.Browser', {
             schemaNode = this.getSchemaNode(tree, schemaName);
 
         if (schemaNode) {
-            schemaNode.expand(false, function (schemaNode) {
+            schemaNode.expand(false, function (x) {
                 if (Ext4.isFunction(callback)) {
-                    callback.call((scope || this), true, schemaNode);
+                    callback.call((scope || this), true, x);
+                }
+                if (selectInTree) {
+                    tree.getSelectionModel().select(schemaNode, false, true);
                 }
             });
         }
@@ -469,7 +469,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
         this.selectQueryTask.delay(100);
     },
 
-    selectSchema : function(schemaName) {
+    selectSchema : function(schemaName, selectInTree) {
         this.expandSchema(schemaName, function(success, schemaNode) {
             if (success === true) {
                 if (Ext4.isArray(schemaNode)) {
@@ -482,7 +482,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
                     this.getTree().getSelectionModel().select(schemaNode.parentNode);
                 }
             }
-        }, this);
+        }, this, selectInTree);
     },
 
     showPanel : function(queryId, node) {
@@ -502,6 +502,11 @@ Ext4.define('LABKEY.query.browser.Browser', {
 
     showQueryDetails : function(schemaName, queryName) {
         this.showPanel(this.buildQueryPanelId(schemaName, queryName));
+    },
+
+    showChildSchemaDetails : function(schemaName, childSchemaName) {
+        this.selectSchema(schemaName + "." + childSchemaName, true);
+        this.showPanel(this.sspPrefix + schemaName + '.' + childSchemaName);
     }
 });
 
@@ -561,6 +566,7 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
                 autoScroll: true,
                 listeners: {
                     queryclick: browser.showQueryDetails,
+                    schemaclick: browser.showChildSchemaDetails,
                     scope: browser
                 },
                 closable: true

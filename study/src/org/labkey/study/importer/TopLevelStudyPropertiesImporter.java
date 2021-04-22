@@ -39,7 +39,7 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(StudyImportContext ctx, VirtualFile studyDir, BindException errors) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
@@ -116,6 +116,9 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
                 study.setAlternateIdDigits(studyXml.getAlternateIdDigits());
 
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
+
+            // Issue 39822: update participant visits after importing study details like start date
+            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), study.getDatasets());
 
             ctx.getLogger().info("Done importing " + getDescription());
         }

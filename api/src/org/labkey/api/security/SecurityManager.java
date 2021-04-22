@@ -30,6 +30,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
@@ -60,15 +62,12 @@ import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -78,6 +77,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -93,12 +93,14 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
@@ -111,6 +113,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -147,11 +151,12 @@ public class SecurityManager
     static final String ADD_GROUP_TO_ITSELF_ERROR_MESSAGE = "Can't add a group to itself";
     static final String ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a group to a system group";
     static final String ADD_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a system group to another group";
-    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE =  "Can't add a project group to a group in a different project";
-    static final String PROJECT_TO_SITE_ERROR_MESSAGE =  "Can't add a project group to a site group";
+    static final String DIFFERENT_PROJECTS_ERROR_MESSAGE = "Can't add a project group to a group in a different project";
+    static final String PROJECT_TO_SITE_ERROR_MESSAGE = "Can't add a project group to a site group";
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
+    public static final String API_KEY = "apikey";
 
     private static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
@@ -388,14 +393,14 @@ public class SecurityManager
         @Override
         public void userDeletedFromSite(User user)
         {
-            // This clears the cache of security policies.  It does not remove the policies themselves.
+            // This clears the cache of security policies. It does not remove the policies themselves.
             SecurityPolicyManager.removeAll();
         }
 
         @Override
         public void userAccountDisabled(User user)
         {
-            // This clears the cache of security policies.  It does not remove the policies themselves.
+            // This clears the cache of security policies. It does not remove the policies themselves.
             SecurityPolicyManager.removeAll();
         }
 
@@ -411,7 +416,6 @@ public class SecurityManager
             // do nothing
         }
     }
-
 
     private static @Nullable Pair<String, String> getBasicCredentials(HttpServletRequest request)
     {
@@ -436,7 +440,6 @@ public class SecurityManager
         return ret;
     }
 
-
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
     private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Pair<String, String> basicCredentials)
     {
@@ -444,7 +447,7 @@ public class SecurityManager
         {
             String rawEmail = basicCredentials.getKey();
             String password = basicCredentials.getValue();
-            if (rawEmail.toLowerCase().equals("guest"))
+            if (rawEmail.equalsIgnoreCase("guest"))
                 return User.guest;
             new ValidEmail(rawEmail);  // validate email address
 
@@ -456,12 +459,10 @@ public class SecurityManager
         }
     }
 
-
     public static boolean isBasicAuthentication(HttpServletRequest request)
     {
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
-
 
     public static User getSessionUser(HttpSession session)
     {
@@ -474,7 +475,6 @@ public class SecurityManager
 
         return sessionUser;
     }
-
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
     {
@@ -574,7 +574,6 @@ public class SecurityManager
         return null == u || u.isGuest() ? null : new Pair<>(u, request);
     }
 
-
     /**
      * Determine if an API key is present, checking basic auth first, then "apikey" header, and then the special "transform"
      * cookie and parameters. Return the API key if it's present; otherwise return null.
@@ -587,20 +586,24 @@ public class SecurityManager
         String apiKey;
 
         // Prefer Basic auth
-        if (null != basicCredentials && "apikey".equals(basicCredentials.getKey()))
+        if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
         {
             apiKey = basicCredentials.getValue();
         }
         else
         {
             // Support "apikey" header for backward compatibility. We might stop supporting this at some point.
-            apiKey = request.getHeader("apikey");
-
+            apiKey = request.getHeader(API_KEY);
             if (null == apiKey)
             {
+                // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
                 // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
                 apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-                if (null == apiKey)
+                if (null != apiKey)
+                {
+                    _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                }
+                else
                 {
                     // Support as a GET parameter as well, not just as a cookie, to support authentication
                     // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
@@ -621,24 +624,99 @@ public class SecurityManager
         return apiKey;
     }
 
-
     public static final int SECONDS_PER_DAY = 60*60*24;
+
+    public static abstract class TransformSession implements Closeable
+    {
+        private final String _apikey;
+
+        protected TransformSession(String apiKey)
+        {
+            _apikey = apiKey;
+        }
+
+        public String getApiKey()
+        {
+            return _apikey;
+        }
+    }
+
+    private static final class HttpSessionTransformSession extends TransformSession
+    {
+        /** Creates http session apiKey */
+        private HttpSessionTransformSession(@NotNull HttpServletRequest req, @NotNull HttpSession session)
+        {
+            super(SessionApiKeyManager.get().createKey(req, session));
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            SessionApiKeyManager.get().invalidateKey(getApiKey());
+        }
+    }
+
+    private static final class DatabaseTransformSession extends TransformSession
+    {
+        /** Creates database apiKey */
+        private DatabaseTransformSession(@NotNull User user)
+        {
+            super(ApiKeyManager.get().createKey(user, SECONDS_PER_DAY));
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            ApiKeyManager.get().deleteKey(getApiKey());
+        }
+    }
 
     /**
      * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
-     * Callers should call {@see endTransformSession} when finished, typically in a finally block.
-     * @return the apikey for the newly started session
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     *
+     * This form is intended for background jobs. Prefer using the other form of this method that accepts an
+     * HttpSession instead to avoid these limitations:
+     * <ul>
+     *     <li>inserts the apikey into the database so requires a {@link MutatingApiAction} or
+     *     {@link SpringActionController#ignoreSqlUpdates()}</li>
+     *     <li>can't be used when impersonating -- see Issue 34580</li>
+     * </ul>
+     *
+     * @return a TransformSession representing the newly created session
      */
-    public static @NotNull String beginTransformSession(@NotNull User user)
+    public static @NotNull TransformSession createTransformSession(@NotNull User user)
     {
-        return ApiKeyManager.get().createKey(user, SECONDS_PER_DAY);
+        return new DatabaseTransformSession(user);
     }
 
-    public static void endTransformSession(@NotNull String apikey)
+    /**
+     * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     *
+     * This form creates a apiKey tied to the user's http session.
+     *
+     * @return a TransformSession representing the newly created session
+     */
+    public static @NotNull TransformSession createTransformSession(@NotNull HttpServletRequest req, @NotNull HttpSession session)
     {
-        ApiKeyManager.get().deleteKey(apikey);
+        return new HttpSessionTransformSession(req, session);
     }
 
+    /**
+     * Works like a standard HTTP session but intended for transform scripts and other API-style usage.
+     * Callers must call this in a try-with-resources block to ensure the session is closed (e.g., API key is deleted).
+     * @param context A ViewContext or AssayRunUploadContext
+     * @return a TransformSession representing the newly created session
+     */
+    public static @NotNull <T extends ContainerUser & HasHttpRequest> TransformSession createTransformSession(@NotNull T context)
+    {
+        HttpServletRequest request = context.getRequest();
+        if (request != null && !ViewServlet.isMockRequest(request) && request.getSession() != null)
+            return createTransformSession(request, request.getSession());
+        else
+            return createTransformSession(context.getUser());
+    }
 
     public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)
     {
@@ -656,14 +734,12 @@ public class SecurityManager
         return newSession;
     }
 
-
     public static URLHelper logoutUser(HttpServletRequest request, User user, @Nullable URLHelper returnURL)
     {
         URLHelper ret = AuthenticationManager.logout(user, request, returnURL);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
         SessionHelper.clearSession(request, true);
         return ret;
     }
-
 
     public static void impersonateUser(ViewContext viewContext, User impersonatedUser, ActionURL returnURL)
     {
@@ -676,13 +752,11 @@ public class SecurityManager
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnURL));
     }
 
-
     public static void impersonateGroup(ViewContext viewContext, Group group, ActionURL returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         impersonate(viewContext, new GroupImpersonationContextFactory(project, viewContext.getUser(), group, returnURL));
     }
-
 
     public static void impersonateRoles(ViewContext viewContext, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
     {
@@ -695,7 +769,6 @@ public class SecurityManager
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
     }
 
-
     private static void impersonate(ViewContext viewContext, ImpersonationContextFactory factory)
     {
         // Tell the factory to start impersonating
@@ -707,7 +780,6 @@ public class SecurityManager
         session.setAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY, factory);
     }
 
-
     public static void stopImpersonating(HttpServletRequest request, ImpersonationContextFactory factory)
     {
         factory.stopImpersonating(request);
@@ -717,7 +789,6 @@ public class SecurityManager
         session.removeAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
     }
 
-
     public static void setValidators(HttpSession session, List<AuthenticationValidator> validators)
     {
         if (validators.isEmpty())
@@ -726,12 +797,10 @@ public class SecurityManager
             session.setAttribute(AUTHENTICATION_VALIDATORS_KEY, validators);
     }
 
-
     public static @Nullable List<AuthenticationValidator> getValidators(HttpSession session)
     {
         return (List<AuthenticationValidator>)session.getAttribute(AUTHENTICATION_VALIDATORS_KEY);
     }
-
 
     private static final String passwordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     public static final int tempPasswordLength = 32;
@@ -746,7 +815,6 @@ public class SecurityManager
         return tempPassword.toString();
     }
 
-
     public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
@@ -758,7 +826,7 @@ public class SecurityManager
         if (provider == null)
             return defaultUrl;
 
-        ResetPasswordProvider urlProvider =  AuthenticationManager.getResetPasswordProvider(provider);
+        ResetPasswordProvider urlProvider = AuthenticationManager.getResetPasswordProvider(provider);
         if (urlProvider == null)
             return defaultUrl;
 
@@ -778,13 +846,11 @@ public class SecurityManager
         return (null == getVerification(email));
     }
 
-
     public static boolean verify(ValidEmail email, String verification)
     {
         String dbVerification = getVerification(email);
         return (dbVerification != null && dbVerification.equals(verification));
     }
-
 
     public static void setVerification(ValidEmail email, @Nullable String verification) throws UserManagementException
     {
@@ -793,12 +859,10 @@ public class SecurityManager
             throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
     }
 
-
     public static String getVerification(ValidEmail email)
     {
         return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()).getObject(String.class);
     }
-
 
     public static class NewUserStatus
     {
@@ -819,7 +883,7 @@ public class SecurityManager
 
         public boolean isLdapEmail()
         {
-            return SecurityManager.isLdapEmail(_email);
+            return AuthenticationManager.isLdapEmail(_email);
         }
 
         public String getVerification()
@@ -942,7 +1006,7 @@ public class SecurityManager
 
                 try
                 {
-                    Map returnMap = Table.insert(currentUser, core.getTableInfoPrincipals(), fieldsIn);
+                    Map<String, Object> returnMap = Table.insert(currentUser, core.getTableInfoPrincipals(), fieldsIn);
                     userId = (Integer) returnMap.get("UserId");
                 }
                 catch (RuntimeSQLException e)
@@ -1008,7 +1072,6 @@ public class SecurityManager
         }
     }
 
-
     private static String displayNameFromEmail(ValidEmail email, Integer userId)
     {
         String displayName;
@@ -1040,7 +1103,6 @@ public class SecurityManager
         }
         return displayName;
     }
-
 
     public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
     {
@@ -1082,7 +1144,7 @@ public class SecurityManager
         }
     }
 
-    // Create record for non-LDAP login, saving email address and hashed password.  Return verification token.
+    // Create record for non-LDAP login, saving email address and hashed password. Return verification token.
     public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
@@ -1108,7 +1170,6 @@ public class SecurityManager
         return verification;
     }
 
-
     public static void setPassword(ValidEmail email, String password) throws UserManagementException
     {
         String crypt = Crypt.BCrypt.digestWithPrefix(password);
@@ -1125,7 +1186,6 @@ public class SecurityManager
         if (1 != rows)
             throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
     }
-
 
     private static final int MAX_HISTORY = 10;
 
@@ -1147,7 +1207,6 @@ public class SecurityManager
         }
     }
 
-
     public static boolean matchesPreviousPassword(String password, User user)
     {
         List<String> history = getCryptHistory(user.getEmail());
@@ -1161,13 +1220,11 @@ public class SecurityManager
         return false;
     }
 
-
     public static Date getLastChanged(User user)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT LastChanged FROM " + core.getTableInfoLogins() + " WHERE Email=?", user.getEmail()));
         return selector.getObject(Date.class);
     }
-
 
     // Look up email in Logins table and return the corresponding password hash
     public static String getPasswordHash(ValidEmail email)
@@ -1175,14 +1232,12 @@ public class SecurityManager
         return getPasswordHash(email.getEmailAddress());
     }
 
-
     // Look up email in Logins table and return the corresponding password hash
     private static String getPasswordHash(String email)
     {
         SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
     }
-
 
     public static boolean matchPassword(String password, String hash)
     {
@@ -1198,25 +1253,21 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash);
     }
 
-
     // Used only in the case of email change... current email address might be invalid
     static boolean loginExists(String email)
     {
         return (null != getPasswordHash(email));
     }
 
-
     public static boolean loginExists(ValidEmail email)
     {
         return (null != getPasswordHash(email));
     }
 
-
     public static Group createGroup(Container c, String name)
     {
         return createGroup(c, name, PrincipalType.GROUP);
     }
-
 
     public static Group createGroup(Container c, String name, PrincipalType type)
     {
@@ -1242,7 +1293,6 @@ public class SecurityManager
         return createGroup(c, name, type, ownerId);
     }
 
-
     public static Group createGroup(Container c, String name, PrincipalType type, String ownerId)
     {
         String containerId = (null == c || c.isRoot()) ? null : c.getId();
@@ -1267,14 +1317,11 @@ public class SecurityManager
         return group;
     }
 
-
     // Case-insensitive existence check -- disallows groups that differ only by case
     private static boolean groupExists(Container c, String groupName, String ownerId)
     {
         return null != getGroupId(c, groupName, ownerId, false, true);
-
     }
-
 
     public static Group renameGroup(Group group, String newName, User currentUser)
     {
@@ -1293,14 +1340,12 @@ public class SecurityManager
         GroupCache.uncache(group.getUserId());
 
         return getGroup(getGroupId(c, newName));
-
     }
 
     public static void deleteGroup(Group group)
     {
         deleteGroup(group.getUserId());
     }
-
 
     static void deleteGroup(int groupId)
     {
@@ -1352,7 +1397,6 @@ public class SecurityManager
         SecurityPolicyManager.notifyPolicyChanges(resources);
     }
 
-
     public static void deleteGroups(Container c, @Nullable PrincipalType type)
     {
         if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
@@ -1400,7 +1444,6 @@ public class SecurityManager
         }
     }
 
-
     public static void deleteMember(Group group, UserPrincipal principal)
     {
         int groupId = group.getUserId();
@@ -1408,7 +1451,6 @@ public class SecurityManager
             "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId());
         fireDeletePrincipalFromGroup(groupId, principal);
     }
-
 
     // Returns a list of errors
     public static List<String> addMembers(Group group, Collection<? extends UserPrincipal> principals)
@@ -1430,13 +1472,11 @@ public class SecurityManager
         return errors;
     }
 
-
     // Add a single user/group to a single group
     public static void addMember(Group group, UserPrincipal principal) throws InvalidGroupMembershipException
     {
         addMember(group, principal, null);
     }
-
 
     // Internal only; used by junit test
     static void addMember(Group group, UserPrincipal principal, @Nullable Runnable afterAddRunnable) throws InvalidGroupMembershipException
@@ -1452,14 +1492,13 @@ public class SecurityManager
             afterAddRunnable.run();
 
         // If we added a group then check for circular relationship... we check this above, but it's possible that
-        // another thread concurrently made a change that introduced a cycle.  If so, revert the add.
+        // another thread concurrently made a change that introduced a cycle. If so, revert the add.
         if (principal instanceof Group && hasCycle(group))
         {
             deleteMember(group, principal);
             throw new InvalidGroupMembershipException(CIRCULAR_GROUP_ERROR_MESSAGE);
         }
     }
-
 
     // Internal only; used by junit test
     static void addMemberWithoutValidation(Group group, UserPrincipal principal)
@@ -1478,7 +1517,6 @@ public class SecurityManager
 
         fireAddPrincipalToGroup(group, principal);
     }
-
 
     // True if current group relationships cycle through root. Does NOT detect all cycles in the group graph nor even
     // in the subgraph represented by root, just the ones that that link back to root itself.
@@ -1507,8 +1545,7 @@ public class SecurityManager
         return false;
     }
 
-
-    // TODO: getAddMemberError() now uses the cache (see #14383), but this is still an n^2 algorithm.  Better would be for this
+    // TODO: getAddMemberError() now uses the cache (see #14383), but this is still an n^2 algorithm. Better would be for this
     // method to validate an entire collection of candidates at once, and switch getAddMemberError() to call getValidPrincipals()
     // with a singleton.
     public static <K extends UserPrincipal> Collection<K> getValidPrincipals(Group group, Collection<K> candidates)
@@ -1524,7 +1561,6 @@ public class SecurityManager
 
         return valid;
     }
-
 
     // Return an error message if principal can't be added to the group, otherwise return null
     public static String getAddMemberError(Group group, UserPrincipal principal)
@@ -1578,7 +1614,6 @@ public class SecurityManager
         return null;
     }
 
-
     // Site groups are first (if included) followed by project groups. Each list is sorted by name (case-insensitive).
     public static @NotNull List<Group> getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
@@ -1601,7 +1636,7 @@ public class SecurityManager
         return null != principal ? principal : getGroup(id);
     }
 
-    /** This will preferentially return project users/groups.  If no principal is found at the project level and includeSiteGroups=true, it will check site groups */
+    /** This will preferentially return project users/groups. If no principal is found at the project level and includeSiteGroups=true, it will check site groups */
     @Nullable
     public static UserPrincipal getPrincipal(String name, Container container, boolean includeSiteGroups)
     {
@@ -1671,12 +1706,12 @@ public class SecurityManager
     }
 
     // Returns comma-separated list of group names this user belongs to in this container
-    public static String getGroupList(Container c, User u)
+    public static HtmlString getGroupList(Container c, User u)
     {
         Container proj = c.getProject();
 
         if (null == proj || u == null)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         int[] groupIds = u.getGroups();
 
@@ -1703,9 +1738,8 @@ public class SecurityManager
             }
         }
 
-        return groupList.toString();
+        return HtmlString.of(groupList.toString());
     }
-
 
     /** Returns the requested direct members of this group (non-recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
@@ -1716,7 +1750,6 @@ public class SecurityManager
 
         return principals;
     }
-
 
     /** Returns the members of this group dictated by memberType, including those in subgroups (recursive) */
     public static @NotNull <P extends UserPrincipal> Set<P> getAllGroupMembers(Group group, MemberType<P> memberType)
@@ -1766,7 +1799,6 @@ public class SecurityManager
         return members;
     }
 
-
     private static <P extends UserPrincipal> void addMembers(Collection<P> principals, int[] ids, MemberType<P> memberType)
     {
         for (int id : ids)
@@ -1776,7 +1808,6 @@ public class SecurityManager
                 principals.add(principal);
         }
     }
-
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
     public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
@@ -1816,8 +1847,8 @@ public class SecurityManager
     /**
      * With groups-in-groups, a user/group can have multiple pathways of membership to another group
      * (i.e. a is a member of b which is a member of d, and a is a member of c which is a member of d)
-     * store each memberhip pathway as a list of groups and return the set of memberships
-     * @param principal The user/group to check memberhip
+     * store each membership pathway as a list of groups and return the set of memberships
+     * @param principal The user/group to check membership
      * @param group The root group to find membership pathways for the provided principal
      * @return Set of membership pathways (each as a list of groups)
      */
@@ -1835,7 +1866,7 @@ public class SecurityManager
     }
 
     /**
-     * Recursive function to check for memberhip pathways between two principals
+     * Recursive function to check for membership pathways between two principals
      * @param principal User/Group to check if it has a pathway to the given group
      * @param group Group to check if the user/group is a member
      * @param visited List of groups/users for the given pathway
@@ -1903,7 +1934,6 @@ public class SecurityManager
         return sb.toString();
     }    
 
-
     // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
     // TODO: Also redundant with getFolderUserids()
     // TODO: Cache this set
@@ -1915,7 +1945,6 @@ public class SecurityManager
         Selector selector = new SqlSelector(core.getSchema(), sql);
         return new HashSet<>(selector.getCollection(Integer.class));
     }
-
 
     // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
     public static SQLFragment getProjectUsersSQL(Container c)
@@ -1968,7 +1997,6 @@ public class SecurityManager
         return projectUsers;
     }
 
-
     public static Collection<Integer> getFolderUserids(Container c)
     {
         Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
@@ -1992,10 +2020,9 @@ public class SecurityManager
         // - users who have a direct role assignment in the policy for the specified folder
 
         Set<Integer> userIds = new HashSet<>();
-        Set<Group> groupsToExpand = new HashSet<>();
 
         // Add all project groups
-        groupsToExpand.addAll(getGroups(project, false));
+        Set<Group> groupsToExpand = new HashSet<>(getGroups(project, false));
 
         // Look for users and site groups that have direct assignment to the container
         for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
@@ -2029,10 +2056,9 @@ public class SecurityManager
         return userIds;
     }
 
-
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
-        // No cache right now, but performance seems fine.  After the user list and policy are cached, no other queries occur.
+        // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
         Collection<User> allUsers = UserManager.getActiveUsers();
         List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
@@ -2056,7 +2082,6 @@ public class SecurityManager
 
         return users;
     }
-
 
     /** Returns both users and groups, but direct members only (not recursive) */
     public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
@@ -2109,7 +2134,6 @@ public class SecurityManager
         return members;
     }
 
-
     /** Returns both users and groups, but direct members only (not recursive) */
     public static String[] getGroupMemberNames(Integer groupId)
     {
@@ -2120,7 +2144,6 @@ public class SecurityManager
             names[i++] = member.getValue();
         return names;
     }
-
 
     /** Takes string such as "/test/subfolder/Users" and returns groupId */
     public static Integer getGroupId(String extraPath)
@@ -2147,13 +2170,11 @@ public class SecurityManager
         return getGroupId(c, group);
     }
 
-
     /** Takes Container (or null for root) and group name; returns groupId */
     public static Integer getGroupId(@Nullable Container c, String group)
     {
         return getGroupId(c, group, null, true);
     }
-
 
     /** Takes Container (or null for root) and group name; returns groupId */
     public static Integer getGroupId(@Nullable Container c, String group, boolean throwOnFailure)
@@ -2161,15 +2182,13 @@ public class SecurityManager
         return getGroupId(c, group, null, throwOnFailure);
     }
 
-
     public static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
     {
         return getGroupId(c, groupName, ownerId, throwOnFailure, false);
     }
 
-
     // This is temporary... in CPAS 1.5 on PostgreSQL it was possible to create two groups in the same container that differed only
-    // by case (this was not possible on SQL Server).  In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
+    // by case (this was not possible on SQL Server). In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
     // retrieve group IDs in a case-sensitive manner.
     // TODO: For CPAS 1.7: this should always be case-insensitive (we will clean up the database by renaming duplicate groups)
     private static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
@@ -2209,14 +2228,6 @@ public class SecurityManager
         return groupId;
     }
 
-    // TODO: Update to iterate through all configurations
-    public static boolean isLdapEmail(ValidEmail email)
-    {
-        String ldapDomain = AuthenticationManager.getLdapDomain();
-        return AuthenticationManager.ALL_DOMAINS.equals(ldapDomain) || ldapDomain != null && email.getEmailAddress().endsWith("@" + ldapDomain.toLowerCase());
-    }
-
-
     public interface ViewFactory
     {
         HttpView createView(ViewContext context);
@@ -2232,7 +2243,6 @@ public class SecurityManager
     {
         return VIEW_FACTORIES;
     }
-
 
     public interface TermsOfUseProvider
     {
@@ -2256,7 +2266,6 @@ public class SecurityManager
     {
         return TERMS_OF_USE_PROVIDERS;
     }
-
 
     public static class TestCase extends Assert
     {
@@ -2362,7 +2371,7 @@ public class SecurityManager
                     try
                     {
                         addMember(newGroup, groupA);
-                        fail("Should have thrown error when attempting to create circular group.  Chain is lenght: " + count);
+                        fail("Should have thrown error when attempting to create circular group. Chain is length: " + count);
                     }
                     catch (InvalidGroupMembershipException e)
                     {
@@ -2434,12 +2443,12 @@ public class SecurityManager
 
                 SecurityManager.setVerification(email, null);
 
-                String password = createTempPassword();
+                String password = generateStrongPassword(user);
                 SecurityManager.setPassword(email, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
-                assertNotNull("login", user2);
-                assertEquals("login", user, user2);
+                assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
+                assertEquals(user, user2);
             }
             finally
             {
@@ -2447,6 +2456,21 @@ public class SecurityManager
             }
         }
 
+        private String generateStrongPassword(User user)
+        {
+            String password;
+
+            // Check and loop until password is valid for this user. These randomly generated passwords will often
+            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
+            // rules disallow.
+            do
+            {
+                password = createTempPassword() + "Az9!";
+            }
+            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
+
+            return password;
+        }
 
         @Test
         public void testACLS()
@@ -2640,23 +2664,21 @@ public class SecurityManager
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
             // prepare test UserRole properties
-            ConfigProperty testUserRoleProp =  new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
+            ConfigProperty testUserRoleProp = new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
 
             // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp =  new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
+            ConfigProperty testGroupRoleProp = new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
 
             // prepare test UserRole properties
-            ConfigProperty testUserGroupProp =  new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
+            ConfigProperty testUserGroupProp = new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
 
             // set these test startup properties to be used by the entire server
             ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
         }
-
     }
-
 
     public static List<ValidEmail> normalizeEmails(String[] rawEmails, List<String> invalidEmails)
     {
@@ -2768,13 +2790,13 @@ public class SecurityManager
 
             if (newUserStatus.isLdapEmail())
             {
-                message.append(newUser.getEmail()).append(" added as a new user to the system.  This user will be authenticated via LDAP.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  This user will be authenticated via LDAP.");
+                message.append(newUser.getEmail()).append(" added as a new user to the system and NOT emailed since this user will be authenticated via LDAP.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system NOT emailed since this user will be authenticated via LDAP.");
             }
             else if (sendMail)
             {
                 message.append(email.getEmailAddress()).append(" added as a new user to the system and emailed successfully.");
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Verification email was sent successfully.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Verification email was sent successfully.");
             }
             else
             {
@@ -2795,7 +2817,7 @@ public class SecurityManager
         }
         catch (ConfigurationException e)
         {
-            message.append(HtmlString.unsafe("<br>"));
+            message.append(HtmlString.BR);
             message.append(email.getEmailAddress());
             message.append(HtmlString.unsafe(" was added successfully, but could not be emailed due to a failure:<br><pre>"));
             message.append(e.getMessage());
@@ -2805,7 +2827,7 @@ public class SecurityManager
             User newUser = UserManager.getUser(email);
 
             if (null != newUser)
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system.  Sending the verification email failed.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Sending the verification email failed.");
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -2860,14 +2882,14 @@ public class SecurityManager
             try
             {
                 SecurityManager.sendRegistrationEmail(context, email, null, newUserStatus, extraParameters, registrationProviderName, true);
-                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration.  Verification email was sent successfully.");
+                UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system via self-registration. Verification email was sent successfully.");
             }
             catch (ConfigurationException e)
             {
                 User createdUser = UserManager.getUser(email);
 
                 if (null != createdUser)
-                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system via self-registration.  Sending the verification email failed.");
+                    UserManager.addToUserHistory(createdUser, createdUser.getEmail() + " was added to the system via self-registration. Sending the verification email failed.");
                 throw e;
             }
         }
@@ -2889,7 +2911,7 @@ public class SecurityManager
             builder.append(HtmlString.unsafe("</p>"));
             builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
             builder.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
-            builder.append(HtmlString.unsafe(".<br>"));
+            builder.append(".").append(HtmlString.BR);
         }
         else
         {
@@ -2945,22 +2967,6 @@ public class SecurityManager
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
 
         SecurityPolicyManager.savePolicy(policy);
-    }
-
-    public static boolean containsOnlyAdminPermissions(Container c)
-    {
-        SecurityPolicy policy = c.getPolicy();
-
-        for (RoleAssignment ra : policy.getAssignments())
-        {
-            Role role = ra.getRole();
-            Set<Class<? extends Permission>> permissions = role.getPermissions();
-            if (!(role instanceof ProjectAdminRole) && !(role instanceof FolderAdminRole)
-                && !(permissions.contains(SiteAdminPermission.class) && !permissions.contains(ApplicationAdminPermission.class)))
-                return false;
-        }
-
-        return true;
     }
 
     public static void setInheritPermissions(Container c)
@@ -3035,15 +3041,23 @@ public class SecurityManager
         {
             super(name);
 
-            _replacements.add(new ReplacementParam<String>("verificationURL", String.class, "Link for a user to set a password"){
+            _replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
+            {
                 @Override
-                public String getValue(Container c) {return _verificationUrl;}
+                public String getValue(Container c)
+                {
+                    return _verificationUrl;
+                }
             });
-            _replacements.add(new ReplacementParam<String>("emailAddress", String.class, "The email address of the user performing the operation"){
+            _replacements.add(new ReplacementParam<>("emailAddress", String.class, "The email address of the user performing the operation")
+            {
                 @Override
-                public String getValue(Container c) {return _originatingUser == null ? null : _originatingUser.getEmail();}
+                public String getValue(Container c)
+                {
+                    return _originatingUser == null ? null : _originatingUser.getEmail();
+                }
             });
-            _replacements.add(new ReplacementParam<String>("recipient", String.class, "The email address on the 'to:' line")
+            _replacements.add(new ReplacementParam<>("recipient", String.class, "The email address on the 'to:' line")
             {
                 @Override
                 public String getValue(Container c)
@@ -3083,12 +3097,12 @@ public class SecurityManager
                 "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
         protected static final String DEFAULT_BODY =
                 "^optionalMessage^\n\n" +
-                "You now have an account on the ^organizationName^ ^siteShortName^ web site.  We are sending " +
+                "You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending " +
                 "you this message to verify your email address and to allow you to create a password that will provide secure " +
-                "access to your data on the web site.  To complete the registration process, simply click the link below or " +
-                "copy it to your browser's address bar.  You will then be asked to choose a password.\n\n" +
+                "access to your data on the web site. To complete the registration process, simply click the link below or " +
+                "copy it to your browser's address bar. You will then be asked to choose a password.\n\n" +
                 "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^.  If you have any questions don't hesitate to " +
+                "The ^siteShortName^ home page is ^homePageURL^. If you have any questions don't hesitate to " +
                 "contact the ^siteShortName^ team at ^systemEmail^.";
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
@@ -3131,7 +3145,7 @@ public class SecurityManager
         protected static final String DEFAULT_BODY =
                 "We have reset your password on the ^organizationName^ ^siteShortName^ web site. " +
                 "To sign in to the system you will need " +
-                "to specify a new password.  Click the link below or copy it to your browser's address bar.  You will then be " +
+                "to specify a new password. Click the link below or copy it to your browser's address bar. You will then be " +
                 "asked to enter a new password.\n\n" +
                 "^verificationURL^\n\n" +
                 "The ^siteShortName^ home page is ^homePageURL^.";
@@ -3173,15 +3187,12 @@ public class SecurityManager
     {
         int id = group.getUserId();
 
-        switch(id)
+        return switch (id)
         {
-            case Group.groupAdministrators:
-                return "Site Administrators";
-            case Group.groupUsers:
-                return "All Site Users";
-            default:
-                return group.getName();
-        }
+            case Group.groupAdministrators -> "Site Administrators";
+            case Group.groupUsers -> "All Site Users";
+            default -> group.getName();
+        };
     }
 
     public static boolean canSeeUserDetails(Container c, User user)
@@ -3192,7 +3203,7 @@ public class SecurityManager
     public static boolean canSeeAuditLog(User user)
     {
         //
-        // Only returns true if the user has the site permission.  If the user is an admin, then the permission
+        // Only returns true if the user has the site permission. If the user is an admin, then the permission
         // check on the current container filter will return true
         //
         return user.hasRootPermission(CanSeeAuditLogPermission.class);
@@ -3262,56 +3273,61 @@ public class SecurityManager
         }
     }
 
+    // We let admins delete passwords (i.e., entries in the logins table), see #42691
+    public static void adminDeletePassword(ValidEmail email, User user)
+    {
+        new SqlExecutor(CoreSchema.getInstance().getScope()).execute("DELETE FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress());
+        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " deleted the password.");
+    }
+
     public static void populateUserGroupsWithStartupProps()
     {
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS);
-        startupProps.stream()
-                .forEach(prop -> {
-                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                    String[] groups = prop.getValue().split(",");
-                    for (String groupName : groups)
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS).forEach(prop -> {
+            User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+            String[] groups = prop.getValue().split(",");
+            for (String groupName : groups)
+            {
+                groupName = StringUtils.trimToNull(groupName);
+                if (null != groupName)
+                {
+                    Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
+                    if (null == group)
                     {
-                        groupName = StringUtils.trimToNull(groupName);
-                        if (null != groupName)
+                        try
                         {
-                            Group group = GroupManager.getGroup(rootContainer, groupName, GroupEnumType.SITE);
-                            if (null == group)
+                            group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                        }
+                        catch (IllegalArgumentException e)
+                        {
+                            throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
+                        }
+                    }
+                    try
+                    {
+                        String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
+                        if (null == canUserBeAddedToGroup)
+                        {
+                            SecurityManager.addMember(group, user);
+                        }
+                        else
+                        {
+                            // ok if the user is already a member of this group, but everything else throw an exception
+                            if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
                             {
-                                try
-                                {
-                                    group = SecurityManager.createGroup(rootContainer, groupName, PrincipalType.GROUP);
-                                }
-                                catch (IllegalArgumentException e)
-                                {
-                                    throw new ConfigurationException("The group specified in startup properties scope UserGroups did not exist. User: " + prop.getName() + "Group: " + groupName, e);
-                                }
-                            }
-                            try
-                            {
-                                String canUserBeAddedToGroup = SecurityManager.getAddMemberError(group, user);
-                                if (null == canUserBeAddedToGroup)
-                                {
-                                    SecurityManager.addMember(group, user);
-                                }
-                                else
-                                {
-                                    // ok if the user is already a member of this group, but everything else throw an exception
-                                    if (!"Principal is already a member of this group".equals(canUserBeAddedToGroup))
-                                    {
-                                        throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
-                                    }
-                                }
-                            }
-                            catch (InvalidGroupMembershipException e)
-                            {
-                                throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                                throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName + " because: " + canUserBeAddedToGroup);
                             }
                         }
                     }
-                });
+                    catch (InvalidGroupMembershipException e)
+                    {
+                        throw new ConfigurationException("Startup properties UserGroups misconfigured. Could not add the user: " + prop.getName() + ", to group: " + groupName, e);
+                    }
+                }
+            }
+        });
     }
 
 
@@ -3320,71 +3336,66 @@ public class SecurityManager
         // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES);
-        startupProps.stream()
-                .forEach(prop -> {
-                    Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
-                    if (null == group)
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES).forEach(prop -> {
+            Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
+            if (null == group)
+            {
+                try
+                {
+                    group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
+                }
+            }
+            String[] roles = prop.getValue().split(",");
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+            for (String roleName : roles)
+            {
+                roleName = StringUtils.trimToNull(roleName);
+                if (null != roleName)
+                {
+                    Role role = RoleManager.getRole(roleName);
+                    if (null == role)
                     {
-                        try
-                        {
-                            group = SecurityManager.createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
-                        }
-                        catch (IllegalArgumentException e)
-                        {
-                            throw new ConfigurationException("Could not add group specified in startup properties GroupRoles: " + prop.getName(), e);
-                        }
+                        // Issue 36611: The provisioner startup properties break deployment of older products
+                        _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                        continue;
                     }
-                    String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
-                    for (String roleName : roles)
-                    {
-                        roleName = StringUtils.trimToNull(roleName);
-                        if (null != roleName)
-                        {
-                            Role role = RoleManager.getRole(roleName);
-                            if (null == role)
-                            {
-                                // Issue 36611: The provisioner startup properties break deployment of older products
-                                _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
-                                continue;
-                            }
-                            policy.addRoleAssignment(group, role);
-                        }
-                    }
-                    SecurityPolicyManager.savePolicy(policy);
-                });
+                    policy.addRoleAssignment(group, role);
+                }
+            }
+            SecurityPolicyManager.savePolicy(policy);
+        });
     }
-
 
     public static void populateUserRolesWithStartupProps()
     {
         // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
-        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES);
-        startupProps.stream()
-                .forEach(prop -> {
-                    User user = getExistingOrCreateUser(prop.getName(), rootContainer);
-                    String[] roles = prop.getValue().split(",");
-                    MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
-                    for (String roleName : roles)
+        ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES).forEach(prop -> {
+            User user = getExistingOrCreateUser(prop.getName(), rootContainer);
+            String[] roles = prop.getValue().split(",");
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
+            for (String roleName : roles)
+            {
+                roleName = StringUtils.trimToNull(roleName);
+                if (null != roleName)
+                {
+                    Role role = RoleManager.getRole(roleName);
+                    if (null == role)
                     {
-                        roleName = StringUtils.trimToNull(roleName);
-                        if (null != roleName)
-                        {
-                            Role role = RoleManager.getRole(roleName);
-                            if (null == role)
-                            {
-                                // Issue 36611: The provisioner startup properties break deployment of older products
-                                _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
-                                continue;
-                            }
-                            policy.addRoleAssignment(user, role);
-                        }
+                        // Issue 36611: The provisioner startup properties break deployment of older products
+                        _log.error("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                        continue;
                     }
-                    SecurityPolicyManager.savePolicy(policy);
-                });
+                    policy.addRoleAssignment(user, role);
+                }
+            }
+            SecurityPolicyManager.savePolicy(policy);
+        });
     }
 
     private static User getExistingOrCreateUser (String email, Container rootContainer)

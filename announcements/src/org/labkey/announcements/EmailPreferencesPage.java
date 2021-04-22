@@ -17,13 +17,14 @@
 package org.labkey.announcements;
 
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.view.ActionURL;
 
 abstract public class EmailPreferencesPage extends JspBase
 {
     public String message;
     public int emailPreference;
     public String srcIdentifier;
-    public String srcURL;
+    public ActionURL returnUrl;
     public String conversationName;
     public boolean hasMemberList;
     public int notificationType;

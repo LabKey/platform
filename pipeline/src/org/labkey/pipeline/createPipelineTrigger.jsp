@@ -276,7 +276,7 @@
                 </div>
 
                 <labkey:input type="hidden" name="rowId" value="<%=bean.getRowId()%>"/>
-                <labkey:input type="hidden" name="returnUrl" value="<%=bean.getReturnUrl()%>"/>
+                <%=generateReturnUrlFormField(bean.getReturnActionURL())%>
 
                 <br/>
                 <%= button("Save").primary(true).id("btnSubmit") %>

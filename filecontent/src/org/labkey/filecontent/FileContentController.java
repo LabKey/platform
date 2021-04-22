@@ -87,6 +87,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -489,6 +490,7 @@ public class FileContentController extends SpringActionController
             part.setFrame(WebPartView.FrameType.NONE);
             part.getModelBean().setAutoResize(true);
             part.getModelBean().setShowDetails(true);
+            getPageConfig().setHelpTopic(new HelpTopic("fileSharing"));
             return part;
         }
 
@@ -760,7 +762,7 @@ public class FileContentController extends SpringActionController
 
                     if (containsFileWebPart(c))
                     {
-                        ActionURL config = PageFlowUtil.urlProvider(AdminUrls.class).getFileRootsURL(c);
+                        ActionURL config = urlProvider(AdminUrls.class).getFileRootsURL(c);
 
                         node.put("configureURL", config.getEncodedLocalURIString());
                         node.put("browseURL", browse.getEncodedLocalURIString());
@@ -1266,12 +1268,13 @@ public class FileContentController extends SpringActionController
                             ColumnInfo displayColumn = column.getDisplayField();
 
                             Map<String, Object> map = new HashMap<>();
-                            map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
+                            if (displayColumn != null)
+                                map.put("displayValue", data.get(displayColumn.getAlias()));
+                            map.put("value", data.get(column.getAlias()));
                             StringExpression url = column.getEffectiveURL();
                             if (null != url)
                                 map.put("url", url.eval(data));
 
-                            // Display value for a lookup has already been handled by Exp.Data
                             row.put(property, map);
                         }
                     }
@@ -1583,7 +1586,7 @@ public class FileContentController extends SpringActionController
             FileContentController controller = new FileContentController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new SendFileAction(),
                 controller.new FrameAction(),
                 controller.new BeginAction(),

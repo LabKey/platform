@@ -283,7 +283,7 @@ public class ExpLineage
 
         assert parentClazz == ExpMaterial.class || parentClazz == ExpData.class;
 
-        // walk from start through edges looking for all sample children, stopping at first datas found
+        // walk from start through edges looking for all sample children, stopping at first ones found
         Set<T> parents = new HashSet<>();
         Queue<Identifiable> stack = new LinkedList<>();
         Set<Identifiable> seen = new HashSet<>();
@@ -308,7 +308,8 @@ public class ExpLineage
                         seen.add(parent);
                     }
                 }
-                else if (parent instanceof ExpData || parent instanceof ExpMaterial)
+                else if ((parentClazz == ExpMaterial.class && parent instanceof ExpMaterial) ||
+                         (parentClazz == ExpData.class && parent instanceof ExpData))
                 {
                     parents.add((T) parent);
                 }
@@ -380,7 +381,6 @@ public class ExpLineage
         if (node != null)
         {
             json = ExperimentJSONConverter.serialize(node, user, settings);
-
             json.put("type", node.getLSIDNamespacePrefix());
         }
 

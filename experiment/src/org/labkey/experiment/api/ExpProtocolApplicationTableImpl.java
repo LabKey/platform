@@ -38,7 +38,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
 {
     public ExpProtocolApplicationTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocolApplication(), schema, cf);
 
     }
 

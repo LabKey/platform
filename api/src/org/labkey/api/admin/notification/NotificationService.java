@@ -74,6 +74,11 @@ public interface NotificationService
     List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
 
     /*
+     * Returns a list of notifications for a specific user based on the specified type labels (e.g, 'Pipeline').
+     */
+    List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly);
+
+    /*
      * Returns a notification based on the notification's RowId.
      */
     Notification getNotification(int rowId);
@@ -134,6 +139,10 @@ public interface NotificationService
      * send event to browser
      */
     void sendServerEvent(int userId, Enum e);
+
+    void sendServerEvent(List<Integer> userIds, Enum e);
+
+    void sendServerEvent(List<Integer> userIds, Class clazz);
     /**
      * cleanly close any websockets associated with the userId
      * If session is provided, only WebSockets associated with the HttpSession will close.

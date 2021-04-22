@@ -32,6 +32,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
@@ -55,8 +56,10 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -71,6 +74,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -81,6 +85,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * <code>AnalysisController</code>
@@ -592,13 +602,13 @@ public class AnalysisController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/pipeline/analysis/internalListPipelines.jsp", null, errors);
+            return new JspView<>("/org/labkey/pipeline/analysis/internalListPipelines.jsp", null, errors);
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Internal List Pipelines");
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Internal List Pipelines", getClass(), getContainer());
         }
     }
 
@@ -633,47 +643,30 @@ public class AnalysisController extends SpringActionController
             TaskFactory factory = null;
             TaskPipeline pipeline = null;
 
-            Map<String, Object> map;
+            Map<String, Object> map = Collections.emptyMap();
             TaskId taskId = TaskId.valueOf(id);
-            if (taskId.getType() == TaskId.Type.task)
+            if (taskId.getType() == TaskId.Type.task || taskId.getType() == null)
             {
                 factory = PipelineJobService.get().getTaskFactory(taskId);
                 map = BeanUtils.describe(factory);
             }
-            else
+
+            if (factory == null)
             {
                 pipeline = PipelineJobService.get().getTaskPipeline(taskId);
                 map = BeanUtils.describe(pipeline);
             }
 
-            StringBuilder sb = new StringBuilder();
             if (map.isEmpty())
             {
-                sb.append("no task or pipeline found");
+                return new HtmlView(HtmlString.of("no task or pipeline found"));
             }
-            else
-            {
-                sb.append("<table>");
-                for (Map.Entry<String, Object> entry : map.entrySet())
-                {
-                    sb.append("<tr>");
-                    sb.append("<td>").append(PageFlowUtil.filter(entry.getKey())).append("</td>");
-                    sb.append("<td>").append(PageFlowUtil.filter(entry.getValue())).append("</td>");
-                    sb.append("</tr>");
-                }
-                sb.append("</table>");
+            // Sort the properties alphabetically
+            map = new TreeMap<>(map);
 
-                if (pipeline != null)
-                {
-                    String svg = generateGraph(pipeline);
-                    if (svg != null)
-                        sb.append(svg);
-                }
-            }
-
-            return new HtmlView(sb.toString());
-
-            //return new JspView("/org/labkey/pipeline/analysis/internalDetails.jsp", null, errors);
+            return new HtmlView(DOM.DIV(
+                    DOM.TABLE(at(cl("labkey-data-region-legacy", "labkey-show-borders")), map.entrySet().stream().map(e -> TR(TD(e.getKey()), TD(e.getValue())))),
+                    generateGraph(pipeline)));
         }
 
         @Override
@@ -683,8 +676,14 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private String generateGraph(TaskPipeline pipeline)
+    @Nullable
+    private DOM.Renderable generateGraph(@Nullable TaskPipeline pipeline)
     {
+        if (pipeline == null)
+        {
+            return null;
+        }
+
         File svgFile = null;
         try
         {
@@ -694,7 +693,7 @@ public class AnalysisController extends SpringActionController
             DotRunner runner = new DotRunner(dir, dot);
             runner.addSvgOutput(svgFile);
             runner.execute();
-            return PageFlowUtil.getFileContentsAsString(svgFile);
+            return HtmlString.unsafe(PageFlowUtil.getFileContentsAsString(svgFile));
         }
         catch (Exception e)
         {

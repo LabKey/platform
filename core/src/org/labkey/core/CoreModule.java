@@ -45,7 +45,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
@@ -75,7 +74,7 @@ import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
@@ -100,7 +99,6 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConfigProperty;
@@ -184,8 +182,8 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
+import org.labkey.core.dialect.PostgreSqlInClauseTest;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
@@ -243,7 +241,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -344,7 +341,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
         VcsService.setInstance(new VcsServiceImpl());
-        ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
+        LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
 
         try
         {
@@ -398,7 +395,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         registerHealthChecks();
 
         ContextListener.addNewInstallCompleteListener(() -> sendSystemReadyEmail(UserManager.getAppAdmins()));
-    }
+   }
 
     private void registerHealthChecks()
     {
@@ -489,7 +486,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new AlwaysAvailableWebPartFactory("Contacts")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), CoreQuerySchema.NAME);
                     QuerySettings settings = new QuerySettings(ctx, QueryView.DATAREGIONNAME_DEFAULT);
@@ -507,7 +504,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new BaseWebPartFactory("FolderNav")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     FolderNavigationForm form = getForm(portalCtx);
 
@@ -535,7 +532,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new BaseWebPartFactory("Workbooks")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
                     WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, schema);
@@ -554,9 +551,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new BaseWebPartFactory("Workbook Description")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
+                    JspView<?> view = new JspView<>("/org/labkey/core/workbook/workbookDescription.jsp");
                     view.setTitle("Workbook Description");
                     view.setFrame(WebPartView.FrameType.NONE);
                     return view;
@@ -568,10 +565,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return false;
                 }
             },
-            new AlwaysAvailableWebPartFactory("Projects")
+            new AlwaysAvailableWebPartFactory("Projects", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
 
@@ -587,10 +584,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
             },
-            new AlwaysAvailableWebPartFactory("Subfolders")
+            new AlwaysAvailableWebPartFactory("Subfolders", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     if (webPart.getPropertyMap().isEmpty())
                     {
@@ -616,14 +613,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull final ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     String title = "My Menu";
                     if (form.getTitle() != null && !form.getTitle().equals(""))
                         title = form.getTitle();
 
-                    WebPartView view;
+                    WebPartView<?> view;
                     if (form.isChoiceListQuery())
                     {
                         view = MenuViewFactory.createMenuQueryView(portalCtx, title, form);
@@ -637,7 +634,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
 
                 @Override
-                public HttpView getEditView(WebPart webPart, ViewContext context)
+                public HttpView<?> getEditView(WebPart webPart, ViewContext context)
                 {
                     CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     JspView<CustomizeMenuForm> view = new JspView<>("/org/labkey/core/admin/customizeMenu.jsp", form);
@@ -649,7 +646,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new BaseWebPartFactory("MenuProjectNav")
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/menuProjectNav.jsp", webPart);
                     view.setTitle("Menu Project Navigation");
@@ -693,18 +690,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ContainerManager.getHomeContainer();
             ContainerManager.getSharedContainer();
         });
-
-        if (moduleContext.getInstalledVersion() < 18.30)
-        {
-            new CoreUpgradeCode().purgeDeveloperRole();
-        }
-
-        // Force LabKeyJspWriter to throw exceptions for unsafe operations, dev mode only.
-        // We'll remove this after 20.11, along with the experimental feature.
-        if (moduleContext.getInstalledVersion() < 20.002)
-        {
-            LabKeyJspWriter.turnOnExperimentalFeature(moduleContext.getUpgradeUser());
-        }
     }
 
 
@@ -894,7 +879,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
         // populate script engine definitions values read from startup properties as appropriate for not bootstrap
         if (svc instanceof ScriptEngineManagerImpl)
             ((ScriptEngineManagerImpl)svc).populateScriptEngineDefinitionsWithStartupProps();
@@ -939,10 +924,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
-                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
-                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
-                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",
@@ -962,10 +943,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
-                false);
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_STRICT_RETURN_URL,
-                "Check for return URL parameter casing as 'returnUrl'",
-                "Raise an error if the return URL parameter is capitalized incorrectly. It should be 'returnUrl' and not 'returnURL'.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL,
                 "No Question Marks in URLs",
@@ -1087,7 +1064,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ModulePropertiesTestCase.class,
             NotificationServiceImpl.TestCase.class,
             PortalJUnitTest.class,
-            PostgreSql92Dialect.TestCase.class,
+            PostgreSqlInClauseTest.class,
             ProductRegistry.TestCase.class,
             RadeoxRenderer.RadeoxRenderTest.class,
             SchemaXMLTestCase.class,
@@ -1129,7 +1106,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @NotNull
     public Collection<String> getSchemaNames()
     {
-        return Arrays.asList
+        return List.of
         (
             CoreSchema.getInstance().getSchemaName(),       // core
             PropertySchema.getInstance().getSchemaName(),   // prop

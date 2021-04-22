@@ -97,7 +97,7 @@ public class DomainUtil
 
     public static String getFormattedDefaultValue(User user, DomainProperty property, Object defaultValue, boolean validateOnly)
     {
-        if (defaultValue == null)
+        if (defaultValue == null || (defaultValue instanceof String && StringUtils.isBlank((String)defaultValue)))
             return "[none]";
         if (defaultValue instanceof Date)
         {
@@ -250,6 +250,7 @@ public class DomainUtil
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
         d.setQueryName(domainKind.getMetaDataTableName());
+        d.setDomainKindName(domainKind.getKindName());
         if (null != domain.getTemplateInfo())
         {
             TemplateInfo t = domain.getTemplateInfo();
@@ -275,6 +276,7 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
@@ -284,9 +286,11 @@ public class DomainUtil
     public static GWTDomain<GWTPropertyDescriptor> getTemplateDomainForDomainKind(DomainKind kind)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
+        gwtDomain.setDomainKindName(kind.getKindName());
         gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
         gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
         gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+        gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
@@ -330,6 +334,11 @@ public class DomainUtil
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
+        gwtProp.setPrincipalConceptCode(prop.getPrincipalConceptCode());
+        gwtProp.setSourceOntology(prop.getSourceOntology());
+        gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
+        gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
+        gwtProp.setDerivationDataScope(prop.getDerivationDataScope());
 
         List<GWTPropertyValidator> validators = new ArrayList<>();
         for (IPropertyValidator pv : prop.getValidators())

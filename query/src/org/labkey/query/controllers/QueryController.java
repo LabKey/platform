@@ -37,6 +37,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -65,6 +66,7 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresAllOf;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -84,7 +86,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
-import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -157,6 +158,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
@@ -185,6 +187,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
@@ -203,6 +206,7 @@ import static org.labkey.api.util.DOM.cl;
 public class QueryController extends SpringActionController
 {
     private static final Logger LOG = LogManager.getLogger(QueryController.class);
+    private static final String ROW_ATTACHMENT_INDEX_DELIM = "::";
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
             ValidateQueryAction.class,
@@ -671,7 +675,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration ", null);
+            requireNonNull(urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration", getClass(), getContainer());
         }
     }
 
@@ -905,7 +909,7 @@ public class QueryController extends SpringActionController
     public class SourceQueryAction extends SimpleViewAction<SourceForm>
     {
         public SourceForm _form;
-        public QuerySchema _baseSchema;
+        public UserSchema _schema;
         public QueryDefinition _queryDef;
 
 
@@ -918,20 +922,23 @@ public class QueryController extends SpringActionController
             if (StringUtils.isEmpty(target.getQueryName()))
                 throw new NotFoundException("query name not specified");
 
-            _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
-            if (null == _baseSchema)
+            QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
+            if (null == querySchema)
                 throw new NotFoundException("schema not found: " + _form.getSchemaKey().toDisplayString());
+            if (!(querySchema instanceof UserSchema))
+                throw new NotFoundException("Could not find the schema '" + _form.getSchemaName() + "' in the folder '" + getContainer().getPath() + "'");
+            _schema = (UserSchema)querySchema;
         }
 
 
         @Override
         public ModelAndView getView(SourceForm form, BindException errors)
         {
-            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+            _queryDef = _schema.getQueryDef(form.getQueryName());
             if (null == _queryDef)
-                _queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
+                _queryDef = _schema.getQueryDefForTable(form.getQueryName());
             if (null == _queryDef)
-                throw new NotFoundException("Query not found: " + form.getQueryName());
+                throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
             try
             {
@@ -943,7 +950,7 @@ public class QueryController extends SpringActionController
                         form.ff_metadataText = form.getDefaultMetadataText();
                 }
 
-                for (QueryException qpe : _queryDef.getParseErrors(_baseSchema))
+                for (QueryException qpe : _queryDef.getParseErrors(_schema))
                 {
                     errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
                 }
@@ -1004,19 +1011,22 @@ public class QueryController extends SpringActionController
     @Action(ActionType.Configure.class)
     public static class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
-        private QuerySchema _baseSchema;
+        private UserSchema _schema;
 
         @Override
-        public void validateForm(SourceForm target, Errors errors)
+        public void validateForm(SourceForm form, Errors errors)
         {
-            if (StringUtils.isEmpty(target.getSchemaName()))
+            if (StringUtils.isEmpty(form.getSchemaName()))
                 throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
-            if (StringUtils.isEmpty(target.getQueryName()))
+            if (StringUtils.isEmpty(form.getQueryName()))
                 throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
 
-            _baseSchema = DefaultSchema.get(getUser(), getContainer(), target.getSchemaKey());
-            if (null == _baseSchema)
-                throw new NotFoundException("Schema not found: " + target.getSchemaKey().toDisplayString());
+            QuerySchema querySchema = DefaultSchema.get(getUser(), getContainer(), form.getSchemaKey());
+            if (null == querySchema)
+                throw new NotFoundException("schema not found: " + form.getSchemaKey().toDisplayString());
+            if (!(querySchema instanceof UserSchema))
+                throw new NotFoundException("Could not find the schema '" + form.getSchemaName() + "' in the folder '" + getContainer().getPath() + "'");
+            _schema = (UserSchema)querySchema;
 
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             List<XmlValidationError> xmlErrors = new ArrayList<>();
@@ -1024,9 +1034,9 @@ public class QueryController extends SpringActionController
             try
             {
                 // had a couple of real-world failures due to null pointers in this code, so it's time to be paranoid
-                if(target.ff_metadataText != null)
+                if (form.ff_metadataText != null)
                 {
-                    TablesDocument tablesDoc = TablesDocument.Factory.parse(target.ff_metadataText, options);
+                    TablesDocument tablesDoc = TablesDocument.Factory.parse(form.ff_metadataText, options);
                     if (tablesDoc != null)
                     {
                         tablesDoc.validate(options);
@@ -1123,59 +1133,66 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SourceForm form, BindException errors)
         {
-            var queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+            var queryDef = _schema.getQueryDef(form.getQueryName());
             if (null == queryDef)
-                queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
+                queryDef = _schema.getQueryDefForTable(form.getQueryName());
             if (null == queryDef)
-                throw new NotFoundException("Query not found: " + form.getQueryName());
-
-            if (!queryDef.canEdit(getUser()))
-                throw new UnauthorizedException("Edit permissions are required.");
+                throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             try
             {
-                queryDef.setSql(form.ff_queryText);
-
-                if (queryDef.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
+                if (form.ff_queryText != null)
                 {
-                    if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
-                    {
-                        // delete the query in order to reset the metadata over a built-in query, but don't
-                        // fire the listener because we haven't actually deleted the table. See issue 40365
-                        queryDef.delete(getUser(), false);
-                    }
+                    if (!queryDef.isSqlEditable())
+                        throw new UnauthorizedException("Query SQL is not editable.");
+
+                    if (!queryDef.canEdit(getUser()))
+                        throw new UnauthorizedException("Edit permissions are required.");
+
+                    queryDef.setSql(form.ff_queryText);
+                }
+
+                String metadataText = StringUtils.trimToNull(form.ff_metadataText);
+                if (queryDef.isMetadataEditable())
+                {
+                    if (!Objects.equals(metadataText, queryDef.getMetadataXml()) && !queryDef.canEditMetadata(getUser()))
+                        throw new UnauthorizedException("Edit metadata permissions are required.");
+
+                    queryDef.setMetadataXml(metadataText);
                 }
                 else
                 {
-                    queryDef.setMetadataXml(form.ff_metadataText);
-                    queryDef.save(getUser(), getContainer());
+                    if (metadataText != null)
+                        throw new UnsupportedOperationException("Query metadata is not editable.");
+                }
 
-                    // the query was successfully saved, validate the query but return any errors in the success response
-                    List<QueryParseException> parseErrors = new ArrayList<>();
-                    List<QueryParseException> parseWarnings = new ArrayList<>();
-                    queryDef.validateQuery(_baseSchema, parseErrors, parseWarnings);
-                    if (!parseErrors.isEmpty())
+                queryDef.save(getUser(), getContainer());
+
+                // the query was successfully saved, validate the query but return any errors in the success response
+                List<QueryParseException> parseErrors = new ArrayList<>();
+                List<QueryParseException> parseWarnings = new ArrayList<>();
+                queryDef.validateQuery(_schema, parseErrors, parseWarnings);
+                if (!parseErrors.isEmpty())
+                {
+                    JSONArray errorArray = new JSONArray();
+
+                    for (QueryException e : parseErrors)
                     {
-                        JSONArray errorArray = new JSONArray();
-
-                        for (QueryException e : parseErrors)
-                        {
-                            errorArray.put(e.toJSON(form.ff_queryText));
-                        }
-                        response.put("parseErrors", errorArray);
+                        errorArray.put(e.toJSON(form.ff_queryText));
                     }
-                    else if (!parseWarnings.isEmpty())
+                    response.put("parseErrors", errorArray);
+                }
+                else if (!parseWarnings.isEmpty())
+                {
+                    JSONArray errorArray = new JSONArray();
+
+                    for (QueryException e : parseWarnings)
                     {
-                        JSONArray errorArray = new JSONArray();
-
-                        for (QueryException e : parseWarnings)
-                        {
-                            errorArray.put(e.toJSON(form.ff_queryText));
-                        }
-                        response.put("parseWarnings", errorArray);
+                        errorArray.put(e.toJSON(form.ff_queryText));
                     }
+                    response.put("parseWarnings", errorArray);
                 }
             }
             catch (SQLException e)
@@ -1333,6 +1350,8 @@ public class QueryController extends SpringActionController
             QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
+            if (null == ti)
+                throw new NotFoundException();
 
             DbScope scope = ti.getSchema().getScope();
 
@@ -1615,7 +1634,7 @@ public class QueryController extends SpringActionController
         @Override
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls, form.getRenameColumns());
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls, form.getRenameColumnMap());
         }
     }
 
@@ -1626,7 +1645,7 @@ public class QueryController extends SpringActionController
         @Override
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx, form.getRenameColumns());
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx, form.getRenameColumnMap());
         }
     }
 
@@ -1745,7 +1764,7 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumns(), form.getFilenamePrefix());
+            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumnMap(), form.getFilenamePrefix());
         }
     }
 
@@ -1779,7 +1798,7 @@ public class QueryController extends SpringActionController
             this.excludeColumn = excludeColumn;
         }
 
-        public Map<String, String> getRenameColumns()
+        public Map<String, String> getRenameColumnMap()
         {
             if (renameColumns != null)
                 return renameColumns;
@@ -1798,7 +1817,6 @@ public class QueryController extends SpringActionController
 
             return renameColumns;
         }
-
     }
 
     @SuppressWarnings({"unused", "WeakerAccess"})
@@ -1841,7 +1859,7 @@ public class QueryController extends SpringActionController
         @Override
         void _export(ExportRowsTsvForm form, QueryView view) throws Exception
         {
-            view.exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType(), form.getRenameColumns());
+            view.exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType(), form.getRenameColumnMap());
         }
     }
 
@@ -1947,7 +1965,13 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Must provide queryName.");
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), "queryMetadataEditor");
+            if (!queryForm.getQueryDef().isMetadataEditable())
+                throw new UnauthorizedException("Query metadata is not editable");
+
+            if (!queryForm.canEditMetadata())
+                throw new UnauthorizedException("You do not have permission to edit the query metadata");
+
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("queryMetadataEditor"));
         }
 
         @Override
@@ -2279,6 +2303,8 @@ public class QueryController extends SpringActionController
                     return false;
                 }
 
+                // Issue 40895: update queryName in xml metadata
+                updateXmlMetadata(queryDef);
 				queryDef.setName(form.rename);
 				// update form so getSuccessURL() works
 				_form = new PropertiesForm(form.getSchemaName(), form.rename);
@@ -2291,6 +2317,30 @@ public class QueryController extends SpringActionController
             queryDef.setIsHidden(form.hidden);
             queryDef.save(getUser(), getContainer());
             return true;
+        }
+
+        private void updateXmlMetadata(QueryDefinition queryDef) throws XmlException
+        {
+            if (null != queryDef.getMetadataXml())
+            {
+                TablesDocument doc = TablesDocument.Factory.parse(queryDef.getMetadataXml());
+                if (null != doc)
+                {
+                    for (TableType tableType : doc.getTables().getTableArray())
+                    {
+                        if (tableType.getTableName().equalsIgnoreCase(queryDef.getName()))
+                        {
+                            // update tableName in xml
+                            tableType.setTableName(_form.rename);
+                        }
+                    }
+                    XmlOptions xmlOptions = new XmlOptions();
+                    xmlOptions.setSavePrettyPrint();
+                    // Don't use an explicit namespace, making the XML much more readable
+                    xmlOptions.setUseDefaultNamespace();
+                    queryDef.setMetadataXml(doc.xmlText(xmlOptions));
+                }
+            }
         }
 
         @Override
@@ -2898,7 +2948,6 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
-            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
@@ -3122,7 +3171,6 @@ public class QueryController extends SpringActionController
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
             }
-            response.setFormat(getResponseFormat());
             response.includeStyle(form.isIncludeStyle());
 
             return response;
@@ -3166,6 +3214,8 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
             TableInfo table = form.getQueryView().getTable();
+            if (null == table)
+                throw new NotFoundException();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
@@ -3581,7 +3631,16 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                return qus.getRows(user, container, insertedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    return qus.getRows(user, container, insertedRows);
+                }
+                else
+                {
+                    return insertedRows;
+                }
             }
         },
         insertWithKeys(InsertPermission.class, QueryService.AuditAction.INSERT)
@@ -3605,7 +3664,12 @@ public class QueryController extends SpringActionController
                 List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
-                updatedRows = qus.getRows(user, container, updatedRows);
+                // Issue 42519: Submitter role not able to insert
+                // as per the definition of submitter, should allow insert without read
+                if (qus.hasPermission(user, ReadPermission.class))
+                {
+                    updatedRows = qus.getRows(user, container, updatedRows);
+                }
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
                 {
@@ -3715,6 +3779,24 @@ public class QueryController extends SpringActionController
         public static final String PROP_COMMAND = "command";
         private static final String PROP_ROWS = "rows";
 
+        private JSONObject _json;
+
+        @Override
+        public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
+        {
+            _json = apiSaveRowsForm.getJsonObject();
+
+            // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
+            // we'll instead look for that data in the request param directly
+            if (_json == null && getViewContext().getRequest() != null && getViewContext().getRequest().getParameter("json") != null)
+                _json = new JSONObject(getViewContext().getRequest().getParameter("json"));
+        }
+
+        protected JSONObject getJsonObject()
+        {
+            return _json;
+        }
+
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
             JSONObject response = new JSONObject();
@@ -3777,6 +3859,9 @@ public class QueryController extends SpringActionController
                 {
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
                     rowMap.putAll(jsonObj);
+                    if (allowRowAttachments())
+                        addRowAttachments(rowMap, idx);
+
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
                 }
@@ -3894,6 +3979,36 @@ public class QueryController extends SpringActionController
             return response;
         }
 
+        protected boolean allowRowAttachments()
+        {
+            return false;
+        }
+
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex)
+        {
+            if (getFileMap() != null)
+            {
+                for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())
+                {
+                    // allow for the fileMap key to include the row index for defining which row to attach this file to
+                    // ex: "FileField::0", "FieldField::1"
+                    String fieldKey = fileEntry.getKey();
+                    int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                    if (delimIndex > -1)
+                    {
+                        String fieldRowIndex = fieldKey.substring(delimIndex + 2);
+                        if (!fieldRowIndex.equals(rowIndex+""))
+                            continue;
+
+                        fieldKey = fieldKey.substring(0, delimIndex);
+                    }
+
+                    SpringAttachmentFile file = new SpringAttachmentFile(fileEntry.getValue());
+                    rowMap.put(fieldKey, file.isEmpty() ? null : file);
+                }
+            }
+        }
+
         protected boolean isSuccessOnValidationError()
         {
             return getRequestedApiVersion() >= 13.2;
@@ -3925,25 +4040,37 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.update, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.update, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
         }
+
+        @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
+        }
     }
 
-    @RequiresPermission(ReadPermission.class) //will check below
+    @RequiresAnyOf({ReadPermission.class, InsertPermission.class}) //will check below
     @ApiVersion(8.3)
     public static class InsertRowsAction extends BaseSaveRowsAction
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.insert, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.insert, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
 
             return new ApiSimpleResponse(response);
+        }
+
+        @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
         }
     }
 
@@ -3954,7 +4081,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.importRows, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.importRows, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -3969,7 +4096,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
-            JSONObject response = executeJson(apiSaveRowsForm.getJsonObject(), CommandType.delete, true, errors);
+            JSONObject response = executeJson(getJsonObject(), CommandType.delete, true, errors);
             if (response == null || errors.hasErrors())
                 return null;
             return new ApiSimpleResponse(response);
@@ -4002,7 +4129,7 @@ public class QueryController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            JSONObject json = apiSaveRowsForm.getJsonObject();
+            JSONObject json = getJsonObject();
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
@@ -5129,7 +5256,7 @@ public class QueryController extends SpringActionController
                 // dirty the view then save the deleted session view back in session state
                 view.setName(view.getName());
                 view.save(getUser(), getViewContext().getRequest());
-                
+
                 throw e;
             }
         }
@@ -5433,7 +5560,7 @@ public class QueryController extends SpringActionController
     public static class SetCheckAction extends MutatingApiAction<SetCheckForm>
     {
         @Override
-        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        public ApiResponse execute(final SetCheckForm form, BindException errors) throws Exception
         {
             String[] ids = form.getId(getViewContext().getRequest());
             List<String> selection = new ArrayList<>();
@@ -5446,9 +5573,16 @@ public class QueryController extends SpringActionController
                 }
             }
 
-            int count = DataRegionSelection.setSelected(
+            int count;
+            if (form.getQueryName() != null && form.isValidateIds() && form.isChecked())
+            {
+                selection = DataRegionSelection.getValidatedIds(selection, form);
+            }
+
+            count = DataRegionSelection.setSelected(
                     getViewContext(), form.getKey(),
                     selection, form.isChecked());
+
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -5459,6 +5593,7 @@ public class QueryController extends SpringActionController
     {
         protected String[] ids;
         protected boolean checked;
+        protected boolean validateIds;
 
         public String[] getId(HttpServletRequest request)
         {
@@ -5483,6 +5618,17 @@ public class QueryController extends SpringActionController
         {
             this.checked = checked;
         }
+
+        public boolean isValidateIds()
+        {
+            return validateIds;
+        }
+
+        public void setValidateIds(boolean validateIds)
+        {
+            this.validateIds = validateIds;
+        }
+
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5507,6 +5653,31 @@ public class QueryController extends SpringActionController
             int count = DataRegionSelection.setSelected(
                     getViewContext(), form.getKey(),
                     selection, true);
+            return new DataRegionSelection.SelectionResponse(count);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class SetSnapshotSelectionAction extends MutatingApiAction<SetCheckForm>
+    {
+        @Override
+        public ApiResponse execute(final SetCheckForm form, BindException errors)
+        {
+            String[] ids = form.getId(getViewContext().getRequest());
+            List<String> selection = new ArrayList<>();
+            if (ids != null)
+            {
+                for (String id : ids)
+                {
+                    if (StringUtils.isNotBlank(id))
+                        selection.add(id);
+                }
+            }
+
+            DataRegionSelection.clearAll(getViewContext(), form.getKey(), true);
+            int count = DataRegionSelection.setSelected(
+                getViewContext(), form.getKey(),
+                selection, true, true);
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -5743,7 +5914,6 @@ public class QueryController extends SpringActionController
         protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
         {
             Map<String, Object> qinfo = new HashMap<>();
-            qinfo.put("name", qdef.getName());
             qinfo.put("hidden", qdef.isHidden());
             qinfo.put("snapshot", qdef.isSnapshot());
             qinfo.put("inherit", qdef.canInherit());
@@ -5751,7 +5921,8 @@ public class QueryController extends SpringActionController
             boolean canEdit = qdef.canEdit(getUser());
             qinfo.put("canEdit", canEdit);
             qinfo.put("canEditSharedViews", getContainer().hasPermission(getUser(), EditSharedViewPermission.class));
-            qinfo.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
+            // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between cabability and the permission check?
+            qinfo.put("isMetadataOverrideable", qdef.isMetadataEditable() && qdef.canEditMetadata(getUser()));
 
             if (isUserDefined)
                 qinfo.put("moduleName", qdef.getModuleName());
@@ -5766,6 +5937,7 @@ public class QueryController extends SpringActionController
                 qinfo.put("viewDataUrl", viewDataUrl);
 
             String title = qdef.getName();
+            String name = qdef.getName();
             try
             {
                 //get the table info if the user requested column info
@@ -5804,8 +5976,8 @@ public class QueryController extends SpringActionController
                         if (columns.size() > 0)
                             qinfo.put("columns", columns);
                     }
-                    if (table instanceof DatasetTable)
-                        title = table.getTitle();
+                    name = table.getPublicName();
+                    title = table.getTitle();
                 }
             }
             catch(Exception e)
@@ -5814,6 +5986,7 @@ public class QueryController extends SpringActionController
             }
 
             qinfo.put("title", title);
+            qinfo.put("name", name);
             return qinfo;
         }
     }
@@ -6255,11 +6428,11 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException();
 
             TableSelector selector = new TableSelector(queryExportAuditTable,
-                    PageFlowUtil.set(
-                            QueryExportAuditProvider.COLUMN_NAME_SCHEMA_NAME,
-                            QueryExportAuditProvider.COLUMN_NAME_QUERY_NAME,
-                            QueryExportAuditProvider.COLUMN_NAME_DETAILS_URL),
-                    new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_ROW_ID), form.getRowId()), null);
+                PageFlowUtil.set(
+                    QueryExportAuditProvider.COLUMN_NAME_SCHEMA_NAME,
+                    QueryExportAuditProvider.COLUMN_NAME_QUERY_NAME,
+                    QueryExportAuditProvider.COLUMN_NAME_DETAILS_URL),
+                new SimpleFilter(FieldKey.fromParts(AbstractAuditTypeProvider.COLUMN_NAME_ROW_ID), form.getRowId()), null);
 
             Map<String, Object> result = selector.getMap();
             if (result == null)
@@ -6386,7 +6559,7 @@ public class QueryController extends SpringActionController
             // null as the success URL; returning null here causes the base action to stop pestering the action.
             if (reshow && !errors.hasErrors())
                 return null;
-            
+
             return new JspView<>("/org/labkey/query/view/exportTables.jsp", form, errors);
         }
 
@@ -6532,7 +6705,7 @@ public class QueryController extends SpringActionController
         String sourceDataSource;
         String targetSchema;
         String pathInScript;
-        String outputDir; 
+        String outputDir;
 
         public String getSourceSchema()
         {
@@ -6603,7 +6776,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws Exception
+        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws SQLException, IOException
         {
             StringBuilder importScript = new StringBuilder();
 
@@ -6632,13 +6805,14 @@ public class QueryController extends SpringActionController
                     if (DatabaseTableType.TABLE.equals(table.getTableType()))
                     {
                         String tableName = table.getName();
-                        try (Results results = new TableSelector(table).getResults(false))
+                        try (var factory = new StashingResultsFactory(()->new TableSelector(table).getResults(false)))
                         {
+                            Results results = factory.get();
                             if (results.isBeforeFirst()) // only export tables with data
                             {
                                 File outputFile = new File(form.getOutputDir(), tableName + ".tsv.gz");
                                 GZIPOutputStream outputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile), 64 * 1024), 64 * 1024);
-                                try (TSVGridWriter tsv = new TSVGridWriter(results))
+                                try (TSVGridWriter tsv = new TSVGridWriter(factory))
                                 {
                                     tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
                                     tsv.setApplyFormats(false);
@@ -6907,7 +7081,7 @@ public class QueryController extends SpringActionController
             QueryController controller = new QueryController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 new BrowseAction(),
                 new BeginAction(),
                 controller.new SchemaAction(),
@@ -6930,7 +7104,6 @@ public class QueryController extends SpringActionController
                 controller.new ImportAction(),
                 new ExportSqlAction(),
                 new UpdateRowsAction(),
-                new InsertRowsAction(),
                 new ImportRowsAction(),
                 new DeleteRowsAction(),
                 new TableInfoAction(),
@@ -6946,6 +7119,10 @@ public class QueryController extends SpringActionController
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction()
             );
+
+
+            // submitter should be allowed for InsertRows
+            assertForReadPermission(user, true, new InsertRowsAction());
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,

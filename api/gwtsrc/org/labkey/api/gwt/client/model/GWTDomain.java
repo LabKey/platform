@@ -37,11 +37,13 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private int domainId;
     private String name;
     private String domainURI;
+    private String domainKindName;
     private String description;
     private String container;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
     private boolean allowFlagProperties;
+    private boolean allowTimepointProperties;
     private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
@@ -77,11 +79,13 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.domainId = src.domainId;    
         this.name = src.name;
         this.domainURI = src.domainURI;
+        this.domainKindName = src.domainKindName;
         this.description = src.description;
         this.container = src.container;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.allowFlagProperties = src.allowFlagProperties;
+        this.allowTimepointProperties = src.allowTimepointProperties;
         this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
@@ -205,6 +209,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.domainURI = domainURI;
     }
 
+    public String getDomainKindName()
+    {
+        return domainKindName;
+    }
+
+    public void setDomainKindName(String domainKindName)
+    {
+        this.domainKindName = domainKindName;
+    }
+
     public String getDescription()
     {
         return description;
@@ -283,6 +297,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowFlagProperties(boolean allowFlagProperties)
     {
         this.allowFlagProperties = allowFlagProperties;
+    }
+
+    public boolean isAllowTimepointProperties()
+    {
+        return allowTimepointProperties;
+    }
+
+    public void setAllowTimepointProperties(boolean allowTimepointProperties)
+    {
+        this.allowTimepointProperties = allowTimepointProperties;
     }
 
     /**

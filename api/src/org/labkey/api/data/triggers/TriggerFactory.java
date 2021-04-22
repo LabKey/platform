@@ -16,6 +16,7 @@
 package org.labkey.api.data.triggers;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 
@@ -29,5 +30,5 @@ import java.util.Map;
 public interface TriggerFactory
 {
     @NotNull
-    Collection<Trigger> createTrigger(Container c, TableInfo table, Map<String, Object> extraContext);
+    Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext);
 }

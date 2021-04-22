@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
@@ -49,7 +50,7 @@ import static java.util.Collections.emptyMap;
  * User: brittp
  * Date: Jul 11, 2007
 */
-public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser
+public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
 {
     @NotNull
     ExpProtocol getProtocol();
@@ -143,6 +144,26 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     void uploadComplete(ExpRun run) throws ExperimentException;
 
+    default String getJobDescription()
+    {
+        return null;
+    }
+
+    default String getJobNotificationProvider()
+    {
+        return null;
+    }
+
+    default String getPipelineJobGUID()
+    {
+        return null;
+    }
+
+    default void setPipelineJobGUID(String jobGUID)
+    {
+
+    }
+
     @Nullable
     Logger getLogger();
 
@@ -183,6 +204,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected List<Map<String, Object>> _rawData;
         protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
+        protected String _jobDescription;
+        protected String _jobNotificationProvider;
 
         public Factory(
                 @NotNull ExpProtocol protocol,
@@ -314,6 +337,18 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
         {
             _rawPlateMetadata = rawPlateMetadata;
+            return self();
+        }
+
+        public FACTORY setJobDescription(String jobDescription)
+        {
+            _jobDescription = jobDescription;
+            return self();
+        }
+
+        public FACTORY setJobNotificationProvider(String jobNotificationProvider)
+        {
+            _jobNotificationProvider = jobNotificationProvider;
             return self();
         }
 

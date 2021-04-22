@@ -352,7 +352,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
 
     public void addWarning(String warning)
     {
-        _warnings.add(HtmlString.unsafe(PageFlowUtil.filter(warning, true)));
+        _warnings.add(HtmlString.of(warning, true));
     }
 
     /* expect only simple formatting (e.g. <br>) */

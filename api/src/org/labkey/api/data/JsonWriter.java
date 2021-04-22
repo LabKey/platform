@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
@@ -154,11 +155,14 @@ public class JsonWriter
         props.put("recommendedVariable", cinfo != null && cinfo.isRecommendedVariable());
         props.put("defaultScale", cinfo != null ? cinfo.getDefaultScale().name() : DefaultScaleType.LINEAR.name());
         props.put("phi", cinfo != null ? cinfo.getPHI().name() : PHIType.NotPHI.name());
+        props.put("phiProtected", cinfo instanceof PhiTransformedColumnInfo);
         props.put("excludeFromShifting", cinfo != null && cinfo.isExcludeFromShifting());
         props.put("sortable", dc.isSortable());
 
         props.put("conceptURI", cinfo == null ? null : cinfo.getConceptURI());
         props.put("rangeURI", cinfo == null ? null : cinfo.getRangeURI());
+
+        props.put("derivationDataScope", cinfo == null ? null : cinfo.getDerivationDataScope());
 
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
@@ -274,8 +278,18 @@ public class JsonWriter
         if (dc instanceof IMultiValuedDisplayColumn)
             props.put("multiValue", true);
 
-        if (null != cinfo && StringUtils.isNotBlank(cinfo.getPrincipalConceptCode()))
-            props.put("principalConceptCode", cinfo.getPrincipalConceptCode());
+        if (null != cinfo)
+        {
+            // CONSIDER: Is it better to serialize flat or nested as in the TableInfo.xsd document?
+            if (StringUtils.isNoneBlank(cinfo.getSourceOntology()))
+                props.put("sourceOntology", cinfo.getSourceOntology());
+            if (StringUtils.isNoneBlank(cinfo.getConceptImportColumn()))
+                props.put("conceptImportColumn", cinfo.getConceptImportColumn());
+            if (StringUtils.isNoneBlank(cinfo.getConceptLabelColumn()))
+                props.put("conceptLabelColumn", cinfo.getConceptLabelColumn());
+            if (StringUtils.isNotBlank(cinfo.getPrincipalConceptCode()))
+                props.put("principalConceptCode", cinfo.getPrincipalConceptCode());
+        }
 
         return props;
     }

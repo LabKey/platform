@@ -457,6 +457,18 @@ public class QueryPivot extends QueryRelation
         }
 
         @Override
+        String getPrincipalConceptCode()
+        {
+            return _s.getPrincipalConceptCode();
+        }
+
+        @Override
+        String getConceptURI()
+        {
+            return _s.getConceptURI();
+        }
+
+        @Override
         void copyColumnAttributesTo(BaseColumnInfo to)
         {
             _s.copyColumnAttributesTo(to);
@@ -604,6 +616,18 @@ public class QueryPivot extends QueryRelation
             boolean isHidden()
             {
                 return agg.isHidden();
+            }
+
+            @Override
+            String getPrincipalConceptCode()
+            {
+                return agg.getPrincipalConceptCode();
+            }
+
+            @Override
+            String getConceptURI()
+            {
+                return agg.getConceptURI();
             }
 
             @Override

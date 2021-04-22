@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.moduleeditor.api.ModuleEditorService" %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
@@ -28,8 +29,8 @@
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.core.admin.AdminController"%>
+<%@ page import="org.labkey.api.view.NavTree"%>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
@@ -169,7 +170,7 @@
                         } %>
                         <table class="labkey-data-region-legacy labkey-show-borders">
                             <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr><%
-                            boolean sourcePathMatched = module instanceof DefaultModule && ((DefaultModule)module).isSourcePathMatched();
+                            boolean sourcePathMatched = ModuleEditorService.get().canEditSourceModule(module);
                             boolean enlistmentIdMatched = module instanceof DefaultModule && ((DefaultModule)module).isSourceEnlistmentIdMatched();
 
                             Map<String, String> properties = module.getProperties();

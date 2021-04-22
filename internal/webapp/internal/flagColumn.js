@@ -20,14 +20,6 @@ Ext4.define('LABKEY.internal.FlagColumn', {
 
     dialogTitle: 'Review',
 
-    imgClassFlagged: '',
-
-    imgClassUnflagged: '',
-
-    imgSrcFlagged: LABKEY.contextPath + '/experiment/flagDefault.gif',
-
-    imgSrcUnflagged: LABKEY.contextPath + '/experiment/unflagDefault.gif',
-
     imgTitle: 'Flag for review',
 
     translatePrimaryKey: undefined,
@@ -46,16 +38,16 @@ Ext4.define('LABKEY.internal.FlagColumn', {
         Ext4.QuickTips.init();
 
         var clickedComment,
-            flagImages = Ext4.DomQuery.select('img[flagId="' + flagId + '"');
+            flagIcons = Ext4.DomQuery.select('i[flagId="' + flagId + '"');
 
-        if (Ext4.isEmpty(flagImages)) {
+        if (Ext4.isEmpty(flagIcons)) {
             return;
         }
 
-        var img = flagImages[0];
+        var flag = flagIcons[0];
 
-        if (img.title != this.imgTitle) {
-            clickedComment = img.title;
+        if (flag.title != this.imgTitle) {
+            clickedComment = flag.title;
         }
 
         var checkedLsids = [],
@@ -99,39 +91,31 @@ Ext4.define('LABKEY.internal.FlagColumn', {
                         success: function(response, options) {
                             var comment = options.params.comment,
                                 lsid,
-                                flagImages,
+                                flagIcons,
                                 el;
 
                             for (var i=0; i < lsids.length; i++) {
                                 lsid = lsids[i];
-                                flagImages = Ext4.DomQuery.select("img[flagId='" + lsid + "']");
-                                if (!Ext4.isEmpty(flagImages)) {
-                                    el = Ext4.get(flagImages[0]);
+                                flagIcons = Ext4.DomQuery.select("i[flagId='" + lsid + "']");
+                                for (var j = 0; j < flagIcons.length; j++) {
+                                    el = Ext4.get(flagIcons[j]);
                                     if (comment) {
-                                        el.set({
-                                            src: this.imgSrcFlagged,
-                                            title: comment
-                                        });
-                                        if (this.imgClassUnflagged) {
-                                            el.removeCls(this.imgClassUnflagged);
+                                        el.set({title: comment});
+                                        if (this.flagDisabledCls && this.flagEnabledCls) {
+                                            el.replaceCls(this.flagDisabledCls, this.flagEnabledCls);
                                         }
-                                        el.addCls(this.imgClassFlagged);
                                     }
                                     else {
-                                        el.set({
-                                            src: this.imgSrcUnflagged,
-                                            title: this.imgTitle
-                                        });
-                                        if (this.imgClassFlagged) {
-                                            el.removeCls(this.imgClassFlagged);
+                                        el.set({title: this.imgTitle});
+                                        if (this.flagDisabledCls && this.flagEnabledCls) {
+                                            el.replaceCls(this.flagEnabledCls, this.flagDisabledCls);
                                         }
-                                        el.addCls(this.imgClassUnflagged);
                                     }
                                 }
                             }
                         },
                         failure: function() {
-                            alert('Failure!'); // TODO: We can do better than this
+                            alert('Error: unable to update flag comment for ' + lsids + '.');
                         },
                         scope: this
                     });

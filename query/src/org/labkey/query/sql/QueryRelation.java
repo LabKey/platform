@@ -258,7 +258,8 @@ public abstract class QueryRelation
         abstract String getAlias();
         abstract QueryRelation getTable();
         abstract boolean isHidden();
-
+        abstract String getPrincipalConceptCode();    // used to implement Table.column() method
+        abstract String getConceptURI();
 
         @NotNull
         public abstract JdbcType getJdbcType();
@@ -271,7 +272,7 @@ public abstract class QueryRelation
             return new SQLFragment(tableName + "." + columnName);
         }
 
-        abstract void copyColumnAttributesTo(BaseColumnInfo to);
+        abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);
 
         // the sql representing this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()

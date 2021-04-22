@@ -71,7 +71,7 @@
     properties.putAll(me.getModelBean().getPropertyMap());
 
     String containerTypes = properties.get("containerTypes");
-    String noun = !isBlank(containerTypes) && !"project".equals(containerTypes) ? "Subfolder" : "Project";
+    String noun = !isBlank(containerTypes) && !"project".equalsIgnoreCase(containerTypes) ? "Subfolder" : "Project";
     String containerPath = properties.get("containerPath");
 
     Container target;
@@ -79,7 +79,7 @@
     {
         hasPermission = true;
         target = getContainer();
-        if ("project".equals(containerTypes))
+        if ("project".equalsIgnoreCase(containerTypes))
             target = target.isRoot() ? ContainerManager.getHomeContainer() : target.getProject();
     }
     else
@@ -117,7 +117,7 @@
     List<Container> containers = set.stream()
         .map(ContainerManager::getForId)
         .filter(Objects::nonNull)
-        .sorted(Comparator.comparingInt(Container::getSortOrder).thenComparing(this::displayName))
+        .sorted(Comparator.comparingInt(Container::getSortOrder).thenComparing((c1, c2) -> String.CASE_INSENSITIVE_ORDER.compare(displayName(c1), displayName(c2))))
         .collect(Collectors.toList());
 
     if (containers.isEmpty())

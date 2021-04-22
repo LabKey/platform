@@ -37,12 +37,13 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -56,11 +57,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 abstract public class ExpTableImpl<C extends Enum>
         extends FilteredTable<UserSchema>
         implements ExpTable<C>
 {
-    private final ExpObjectImpl _objectType;
     private final Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
     private ExpSchema _expSchema = null;
@@ -68,10 +70,9 @@ abstract public class ExpTableImpl<C extends Enum>
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
 
-    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
+    protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
         super(rootTable, schema, cf);
-        _objectType = objectType;
         setName(name);
         _allowablePermissions.add(DeletePermission.class);
         _allowablePermissions.add(ReadPermission.class);
@@ -157,7 +158,8 @@ abstract public class ExpTableImpl<C extends Enum>
         Set<String> set = new LinkedHashSet(result.getImportAliasSet());
         set.add("container");
         result.setImportAliasesSet(set);
-        ContainerForeignKey.initColumn(result, _userSchema, url);
+        if (null != url)
+            result.setURL(new DetailsURL(url));
         return result;
     }
 
@@ -217,17 +219,9 @@ abstract public class ExpTableImpl<C extends Enum>
     public MutableColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         var ret = wrapColumn(name, userIdColumn);
-        UserIdQueryForeignKey.initColumn(getUserSchema(), ret, true);
-        ret.setShownInInsertView(false);
-        ret.setShownInUpdateView(false);
-        ret.setUserEditable(false);
+        if (isBlank(ret.getConceptURI()))
+            ret.setConceptURI(BuiltInColumnTypes.USERID_CONCEPT_URI);
         return ret;
-    }
-
-    public String urlFlag(boolean flagged)
-    {
-        assert _objectType != null : "No ExpObject configured for ExpTable type: " + getClass();
-        return _objectType.urlFlag(flagged);
     }
 
     protected ColumnInfo getLSIDColumn()
@@ -239,7 +233,7 @@ abstract public class ExpTableImpl<C extends Enum>
     protected MutableColumnInfo createFlagColumn(String alias)
     {
         var ret = wrapColumn(alias, getLSIDColumn());
-        ret.setFk(new FlagForeignKey(_userSchema, urlFlag(true), urlFlag(false)));
+        ret.setFk(new FlagForeignKey(_userSchema));
         ret.setDisplayColumnFactory(FlagColumnRenderer::new);
         ret.setDescription("Contains a reference to a user-editable comment about this row");
         ret.setNullable(true);

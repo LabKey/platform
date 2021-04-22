@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.BaseAuthenticationConfiguration;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.PasswordRule;
 
 import java.util.Map;
 

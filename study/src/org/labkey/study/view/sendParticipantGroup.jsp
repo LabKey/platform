@@ -37,7 +37,7 @@
     String subjectNounPlural = s.getSubjectNounPlural();
 
     ActionURL returnUrl = bean.getReturnActionURL(bean.getDefaultUrl(container));
-    String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(container);
+    ActionURL completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURL(container);
     ActionURL sendGroupUrl = bean.getSendGroupUrl(container);
 
     String messageSubject = bean.getMessageSubject() != null ? bean.getMessageSubject()
@@ -78,7 +78,7 @@
 
     <input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>">
     <input type="hidden" name="label" value="<%=h(bean.getLabel())%>">
-    <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
+    <%=generateReturnUrlFormField(bean)%>
     
     <%= button("Submit").submit(true) %>
     <%= button("Cancel").href(returnUrl) %>

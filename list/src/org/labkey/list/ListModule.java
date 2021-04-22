@@ -17,6 +17,7 @@
 package org.labkey.list;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -24,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
@@ -79,7 +81,7 @@ public class ListModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.002;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -93,10 +95,10 @@ public class ListModule extends SpringModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> result = new ArrayList<>();
-        result.add(ListsWebPart.FACTORY);
-        result.add(new SingleListWebPartFactory());
-        return result;
+        return List.of(
+            ListsWebPart.FACTORY,
+            new SingleListWebPartFactory()
+        );
     }
 
     @Override
@@ -205,5 +207,11 @@ public class ListModule extends SpringModule
             ListManager.TestCase.class,
             ListWriter.TestCase.class
         );
+    }
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new ListManager.ListUpgradeCode();
     }
 }

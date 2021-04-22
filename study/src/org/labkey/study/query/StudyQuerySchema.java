@@ -19,12 +19,9 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -41,10 +38,18 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.model.ParticipantGroup;
+import org.labkey.api.study.writer.AbstractContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -57,7 +62,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -82,7 +86,6 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
 import org.labkey.study.query.studydesign.StudyTreatmentTable;
 import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
-import org.labkey.study.writer.AbstractContext;
 import org.springframework.validation.BindException;
 
 import java.util.Arrays;
@@ -118,6 +121,8 @@ public class StudyQuerySchema extends UserSchema
     public static final String STUDY_TABLE_NAME = "Study";
     public static final String PROPERTIES_TABLE_NAME = "StudyProperties";
     public static final String STUDY_SNAPSHOT_TABLE_NAME = "StudySnapshot";
+
+    // study design tables that appear in study folders
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
     public static final String VISIT_TABLE_NAME = "Visit";
@@ -129,7 +134,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
-    // extensible study data tables
+    // extensible study design tables
     public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
     public static final String PRODUCT_TABLE_NAME = "Product";
     public static final String PRODUCT_ANTIGEN_TABLE_NAME = "ProductAntigen";
@@ -137,7 +142,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String TREATMENT_PRODUCT_MAP_TABLE_NAME = "TreatmentProductMap";
     public static final String TREATMENT_VISIT_MAP_TABLE_NAME = "TreatmentVisitMap";
 
-    // study design tables
+    // study design tables that appear in all folders (?)
     public static final String STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME = "StudyDesignImmunogenTypes";
     public static final String STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME = "StudyDesignChallengeTypes";
     public static final String STUDY_DESIGN_GENES_TABLE_NAME = "StudyDesignGenes";
@@ -158,7 +163,7 @@ public class StudyQuerySchema extends UserSchema
     private Map<Integer, List<Double>> _datasetSequenceMap;
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
     public static final String QCSTATE_TABLE_NAME = "QCState";
-    private Set<String> _tableNames;
+    protected Set<String> _tableNames;
 
     private ParticipantGroup _sessionParticipantGroup;
 
@@ -181,7 +186,7 @@ public class StudyQuerySchema extends UserSchema
     /**
      * This c-tor is for nested study schemas
      */
-    private StudyQuerySchema(SchemaKey path, String description, @Nullable StudyImpl study, Container c, User user, boolean mustCheckPermissions)
+    protected StudyQuerySchema(SchemaKey path, String description, @Nullable StudyImpl study, Container c, User user, boolean mustCheckPermissions)
     {
         super(path, description, user, c, StudySchema.getInstance().getSchema(), null);
         _study = study;
@@ -230,11 +235,6 @@ public class StudyQuerySchema extends UserSchema
         if (StringUtils.equalsIgnoreCase("Specimens",name))
             return new SpecimenSchema(this);
         return super.getSchema(name);
-    }
-
-    private DbSchema getStudyDesignSchema()
-    {
-        return DbSchema.get(STUDY_DESIGN_SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 
     public String getSubjectColumnName()
@@ -305,18 +305,29 @@ public class StudyQuerySchema extends UserSchema
                     names.add(VISIT_ALIASES);
                 }
 
-                names.add(SPECIMEN_EVENT_TABLE_NAME);
-                names.add(SPECIMEN_DETAIL_TABLE_NAME);
-                names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-                names.add("SpecimenVialCount");
-                names.add(SIMPLE_SPECIMEN_TABLE_NAME);
-                names.add("SpecimenRequest");
-                names.add("SpecimenRequestStatus");
-                names.add("VialRequest");
-                names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
-                names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
-                names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
-                names.add("SpecimenComment");
+                if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
+                {
+                    names.add(SPECIMEN_EVENT_TABLE_NAME);
+                    names.add(SPECIMEN_DETAIL_TABLE_NAME);
+                    names.add(SPECIMEN_SUMMARY_TABLE_NAME);
+                    names.add("SpecimenVialCount");
+                    names.add(SIMPLE_SPECIMEN_TABLE_NAME);
+                    names.add("SpecimenRequest");
+                    names.add("SpecimenRequestStatus");
+                    names.add("VialRequest");
+                    names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
+                    names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
+                    names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
+                    names.add("SpecimenComment");
+
+                    // specimen report pivots
+                    names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
+                    names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+                    names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+
+                    names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
+                }
+
                 names.add(VISIT_MAP_TABLE_NAME);
 
                 names.add("DataSets");
@@ -332,17 +343,6 @@ public class StudyQuerySchema extends UserSchema
                 names.add(studyService.getSubjectGroupMapTableName(getContainer()));
                 names.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
 
-                // specimen report pivots
-                names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
-                names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
-                names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
-
-                names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
-
-                // assay schedule tables
-                names.add(ASSAY_SPECIMEN_TABLE_NAME);
-                names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
-
                 // Add only datasets that the user can read
                 User user = getUser();
                 for (DatasetDefinition dsd : _study.getDatasets())
@@ -353,17 +353,19 @@ public class StudyQuerySchema extends UserSchema
                     names.add(dsd.getName());
                 }
 
-                // study designs
+                // study design tables
                 names.add(PRODUCT_TABLE_NAME);
                 names.add(PRODUCT_ANTIGEN_TABLE_NAME);
                 names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
                 names.add(TREATMENT_TABLE_NAME);
                 names.add(TREATMENT_VISIT_MAP_TABLE_NAME);
-
                 names.add(OBJECTIVE_TABLE_NAME);
                 names.add(PERSONNEL_TABLE_NAME);
                 names.add(VISIT_TAG_TABLE_NAME);
                 names.add(VISIT_TAG_MAP_TABLE_NAME);
+                names.add(ASSAY_SPECIMEN_TABLE_NAME);
+                names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+
                 names.add(STUDY_SNAPSHOT_TABLE_NAME);
             }
             _tableNames = Collections.unmodifiableSet(names);
@@ -409,7 +411,7 @@ public class StudyQuerySchema extends UserSchema
     {
         try
         {
-            DatasetTableImpl ret = new DatasetTableImpl(this, cf, definition);
+            DatasetTableImpl ret = DatasetFactory.createDataset(this, cf, definition);
             ret.afterConstruct();
             return ret;
         }
@@ -714,31 +716,28 @@ public class StudyQuerySchema extends UserSchema
         if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
-            Domain domain;
-            try (var ignore= SpringActionController.ignoreSqlUpdates())
-            {
-                domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
-            }
+            Domain domain = domainKind.getDomain(getContainer(), PRODUCT_TABLE_NAME);
+
             return StudyProductTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), PRODUCT_ANTIGEN_TABLE_NAME);
 
             return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
             return StudyTreatmentProductTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), TREATMENT_TABLE_NAME);
 
             return StudyTreatmentTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
@@ -748,15 +747,15 @@ public class StudyQuerySchema extends UserSchema
         }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByPrimaryType(this, cf);
+            return new SpecimenPivotByPrimaryType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByDerivativeType(this, cf);
+            return new SpecimenPivotByDerivativeType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
         {
-            return new SpecimenPivotByRequestingLocation(this, cf);
+            return new SpecimenPivotByRequestingLocation(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -765,7 +764,7 @@ public class StudyQuerySchema extends UserSchema
         if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
-            Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
+            Domain domain = domainKind.getDomain(getContainer(), PERSONNEL_TABLE_NAME);
 
             // TODO ContainerFilter
             return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : null);
@@ -823,7 +822,7 @@ public class StudyQuerySchema extends UserSchema
         {
             try
             {
-                return new DatasetTableImpl(this, cf, dsd);
+                return DatasetFactory.createDataset(this, cf, dsd);
             }
             catch (UnauthorizedException e)
             {
@@ -907,7 +906,7 @@ public class StudyQuerySchema extends UserSchema
 
                 if (null != def)
                 {
-                    DatasetTableImpl datasetTable = new DatasetTableImpl(this, null, def);
+                    DatasetTableImpl datasetTable = DatasetFactory.createDataset(this, null, def);
 
                     String aliasName = study.getParticipantAliasProperty();
                     String sourceName = study.getParticipantAliasSourceProperty();
@@ -1177,8 +1176,8 @@ public class StudyQuerySchema extends UserSchema
         return new TablePackage(tableInfo, container, isProjectLevel);
     }
 
-    private static Set<String> _dataspaceProjectLevelTables = new HashSet<>();
-    private static Set<String> _dataspaceFolderLevelTables = new HashSet<>();
+    private static final Set<String> _dataspaceProjectLevelTables = new HashSet<>();
+    private static final Set<String> _dataspaceFolderLevelTables = new HashSet<>();
     static
     {
         _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
@@ -1266,71 +1265,6 @@ public class StudyQuerySchema extends UserSchema
 
                 _tableNames = Collections.unmodifiableSet(names);
             }
-            return _tableNames;
-        }
-    }
-
-    private class SpecimenSchema extends StudyQuerySchema
-    {
-        final StudyQuerySchema _parentSchema;
-
-        SpecimenSchema(StudyQuerySchema parent)
-        {
-            super(new SchemaKey(parent.getSchemaPath(), "Specimens"), "Specimen repository", parent.getStudy(), parent.getContainer(), parent.getUser(), parent._mustCheckPermissions);
-            _parentSchema = parent;
-            setSessionParticipantGroup(parent.getSessionParticipantGroup());
-        }
-
-        @Override
-        public Set<String> getSubSchemaNames()
-        {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public QuerySchema getSchema(String name)
-        {
-            return _parentSchema.getSchema(name);
-        }
-
-        @Override
-        public Set<String> getTableNames()
-        {
-            if (_tableNames == null)
-            {
-                Set<String> names = new LinkedHashSet<>();
-
-                if (_study != null)
-                {
-                    StudyService studyService = StudyService.get();
-                    if (null == studyService)
-                        throw new IllegalStateException("No StudyService!");
-
-                    names.add(LOCATION_TABLE_NAME);
-                    names.add(SPECIMEN_EVENT_TABLE_NAME);
-                    names.add(SPECIMEN_DETAIL_TABLE_NAME);
-                    names.add(SPECIMEN_SUMMARY_TABLE_NAME);
-                    names.add("SpecimenVialCount");
-                    names.add(SIMPLE_SPECIMEN_TABLE_NAME);
-                    names.add("SpecimenRequest");
-                    names.add("SpecimenRequestStatus");
-                    names.add("VialRequest");
-                    names.add(SPECIMEN_ADDITIVE_TABLE_NAME);
-                    names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
-                    names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
-                    names.add("SpecimenComment");
-
-                    // CONSIDER: show under queries instead of tables?
-                    // specimen report pivots
-                    names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
-                    names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
-                    names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
-
-                    names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
-                }
-                _tableNames = Collections.unmodifiableSet(names);
-            }
-
             return _tableNames;
         }
     }

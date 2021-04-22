@@ -16,9 +16,7 @@
 
 package org.labkey.mothership;
 
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.JsonPathException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -27,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -43,6 +42,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -52,9 +52,9 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MothershipReport;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DetailsView;
@@ -84,6 +84,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -102,7 +103,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -141,7 +142,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateAction extends FormHandlerAction<SoftwareReleaseForm>
+    public static class UpdateAction extends FormHandlerAction<SoftwareReleaseForm>
     {
         @Override
         public void validateCommand(SoftwareReleaseForm target, Errors errors)
@@ -164,13 +165,13 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowReleasesAction extends SimpleViewAction
+    public static class ShowReleasesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASE_TABLE_NAME);
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("BuildTime"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
@@ -185,7 +186,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowExceptionsAction extends SimpleViewAction
+    public static class ShowExceptionsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -201,13 +202,13 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowInstallationsAction extends SimpleViewAction
+    public static class ShowInstallationsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
-            QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), "serverInstallations", MothershipSchema.SERVER_INSTALLATION_TABLE_NAME);
             settings.setSchemaName(schema.getSchemaName());
             settings.getBaseSort().insertSortColumn(FieldKey.fromParts("LastPing"), Sort.SortDirection.DESC);
 
@@ -255,14 +256,14 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class EditUpgradeMessageAction extends SimpleViewAction
+    public static class EditUpgradeMessageAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             UpgradeMessageForm form = new UpgradeMessageForm();
 
-            form.setCurrentRevision(MothershipManager.get().getCurrentRevision(getContainer()));
+            form.setCurrentBuildDate(MothershipManager.get().getCurrentBuildDate(getContainer()));
             form.setMessage(MothershipManager.get().getUpgradeMessage(getContainer()));
             form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
@@ -289,7 +290,7 @@ public class MothershipController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeMessageForm form, BindException errors)
         {
-            MothershipManager.get().setCurrentRevision(getContainer(), form.getCurrentRevision());
+            MothershipManager.get().setCurrentBuildDate(getContainer(), form.getCurrentBuildDate());
             MothershipManager.get().setUpgradeMessage(getContainer(), form.getMessage());
             MothershipManager.get().setCreateIssueURL(getContainer(), form.getCreateIssueURL());
             MothershipManager.get().setIssuesContainer(getContainer(), form.getIssuesContainer());
@@ -305,7 +306,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
+    public static class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
     {
         @Override
         public ModelAndView getView(ServerSessionForm form, BindException errors)
@@ -380,7 +381,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
+    public static class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
     {
         @Override
         public ModelAndView getView(ExceptionStackTraceForm form, BindException errors) throws Exception
@@ -399,7 +400,7 @@ public class MothershipController extends SpringActionController
             {
                 throw new NotFoundException();
             }
-            ExceptionStackTraceUpdateView updateView = new ExceptionStackTraceUpdateView(form, getViewContext().getActionURL(), getContainer(), errors);
+            ExceptionStackTraceUpdateView updateView = new ExceptionStackTraceUpdateView(form, getContainer(), errors);
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
@@ -413,7 +414,7 @@ public class MothershipController extends SpringActionController
             return new VBox(updateView, summaryGridView, constructCreateIssueForm(stackTrace));
         }
 
-        private JspView constructCreateIssueForm(ExceptionStackTrace stackTrace) throws IOException
+        private JspView<Map<String, String>> constructCreateIssueForm(ExceptionStackTrace stackTrace) throws IOException
         {
             // Moved from CreateIssueDisplayColumn. Instead of piggybacking off the ExceptionStackTraceForm,
             // we now have a separate hidden form on the page to have control over exactly which fields
@@ -481,7 +482,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
+    public static class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
     {
         @Override
         public void validateCommand(ExceptionStackTraceForm target, Errors errors)
@@ -524,13 +525,28 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    public static class ErrorCodeForm
+    {
+        private String errorCode;
+
+        public String getErrorCode()
+        {
+            return errorCode;
+        }
+
+        public void setErrorCode(String errorCode)
+        {
+            this.errorCode = errorCode;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class JumpToErrorCodeAction extends SimpleRedirectAction
+    public static class JumpToErrorCodeAction extends SimpleRedirectAction<ErrorCodeForm>
     {
         @Override
-        public URLHelper getRedirectURL(Object o)
+        public URLHelper getRedirectURL(ErrorCodeForm form)
         {
-            String errorCode = StringUtils.trimToNull((String)getProperty("errorCode"));
+            String errorCode = StringUtils.trimToNull(form.getErrorCode());
             ActionURL url;
             if (errorCode != null)
             {
@@ -575,7 +591,7 @@ public class MothershipController extends SpringActionController
     public class ReportExceptionAction extends MutatingApiAction<ExceptionForm>
     {
         @Override
-        public Object execute(ExceptionForm form, BindException errors) throws Exception
+        public Object execute(ExceptionForm form, BindException errors)
         {
             try
             {
@@ -651,7 +667,7 @@ public class MothershipController extends SpringActionController
 
     @SuppressWarnings("UnusedDeclaration")
     @RequiresPermission(ReadPermission.class)
-    public class ThrowExceptionAction extends SimpleViewAction
+    public static class ThrowExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -664,6 +680,22 @@ public class MothershipController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
+        }
+    }
+
+    @CSRF(CSRF.Method.NONE)
+    @RequiresSiteAdmin
+    public static class SelfReportMetricsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            MothershipReport report = UsageReportingLevel.generateReport(UsageReportingLevel.MEDIUM, MothershipReport.Target.local);
+            if (report != null)
+            {
+                report.run();
+            }
+            return Collections.singletonMap("status", "success");
         }
     }
 
@@ -721,12 +753,10 @@ public class MothershipController extends SpringActionController
 
     private String getUpgradeMessage(@NotNull SoftwareRelease release)
     {
-        // We still key off the SVN revision to determine if a build is current, though we should soon
-        // migrate to looking at the version number we're assigning for maintenance releases or SNAPSHOT, etc
-        int currentRevision = MothershipManager.get().getCurrentRevision(getContainer());
-        Integer reportedRevision = release.getSVNRevision();
+        Date currentBuildDate = MothershipManager.get().getCurrentBuildDate(getContainer());
+        Date reportedBuildDate = release.getBuildTime();
 
-        if (reportedRevision != null && reportedRevision.intValue() < currentRevision)
+        if (reportedBuildDate != null && currentBuildDate != null && reportedBuildDate.before(currentBuildDate))
         {
             return MothershipManager.get().getUpgradeMessage(getContainer());
         }
@@ -933,12 +963,6 @@ public class MothershipController extends SpringActionController
             _serverHostName = serverHostName;
         }
 
-        private String getJsonProperty(DocumentContext dc, String jsonPath)
-        {
-            Object val = dc.read(jsonPath);
-            return val == null || "".equals(val) ? null : val.toString();
-        }
-
         public Pair<ServerSession, SoftwareRelease> toSession(Container container)
         {
             String vcsUrl = null;
@@ -953,23 +977,38 @@ public class MothershipController extends SpringActionController
                 try
                 {
                     // Capture the Core module's info to put into mothership.SoftwareRelease
-                    DocumentContext dc = JsonPath.parse(getJsonMetrics());
-                    vcsUrl = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsUrl");
-                    vcsBranch = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsBranch");
-                    vcsTag = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsTag");
-                    vcsRevision = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsRevision");
-                    buildNumber = getJsonProperty(dc, "$.modules.Core.buildInfo.buildNumber");
-                    String buildTimeString = getJsonProperty(dc, "$.modules.Core.buildInfo.buildTime");
-                    if (buildTimeString != null)
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, Object> parsed = mapper.readValue(getJsonMetrics(), Map.class);
+                    Object modulesObject = parsed.get("modules");
+                    if (modulesObject instanceof Map)
                     {
-                        try
+                        Object coreObject = ((Map)modulesObject).get("Core");
+                        if (coreObject instanceof Map)
                         {
-                            buildTime = new Date(DateUtil.parseDateTime(container, buildTimeString));
+                            Object buildInfoObject = ((Map)coreObject).get("buildInfo");
+                            if (buildInfoObject instanceof Map)
+                            {
+                                Map<String, Object> buildInfo = (Map<String, Object>) buildInfoObject;
+                                vcsUrl = Objects.toString(buildInfo.get("vcsUrl"), null);
+                                vcsBranch = Objects.toString(buildInfo.get("vcsBranch"), null);
+                                vcsTag = Objects.toString(buildInfo.get("vcsTag"), null);
+                                vcsRevision = Objects.toString(buildInfo.get("vcsRevision"), null);
+                                buildNumber = Objects.toString(buildInfo.get("buildNumber"), null);
+                                String buildTimeString = Objects.toString(buildInfo.get("buildTime"), null);
+                                if (buildTimeString != null)
+                                {
+                                    try
+                                    {
+                                        buildTime = new Date(DateUtil.parseDateTime(container, buildTimeString));
+                                    }
+                                    catch (ConversionException ignored) {}
+                                }
+                            }
+
                         }
-                        catch (ConversionException ignored) {}
                     }
                 }
-                catch (JsonPathException ignored) {}
+                catch (IOException ignored) {}
             }
 
             // For older servers that are submitting data, fall back to form-based values where they used to be POSTed
@@ -1365,7 +1404,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowConfigurationExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowConfigurationExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1381,7 +1420,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowNotFoundExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowNotFoundExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1397,7 +1436,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowPermissionExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowPermissionExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1413,7 +1452,7 @@ public class MothershipController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class ThrowExecutionExceptionAction extends SimpleViewAction<Object>
+    public static class ThrowExecutionExceptionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -1484,7 +1523,7 @@ public class MothershipController extends SpringActionController
 
     public static class ExceptionStackTraceUpdateView extends UpdateView
     {
-        public ExceptionStackTraceUpdateView(ExceptionStackTraceForm form, ActionURL url, Container c, BindException errors)
+        public ExceptionStackTraceUpdateView(ExceptionStackTraceForm form, Container c, BindException errors)
         {
             super(new DataRegion(), form, errors);
 
@@ -1519,7 +1558,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form, errors);
 
-            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME, null, true, true);
+            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATION_TABLE_NAME, null, true, true);
             getDataRegion().setTable(serverInstallationTable);
 
             Collection<FieldKey> requestedColumns = new ArrayList<>();
@@ -1674,19 +1713,19 @@ public class MothershipController extends SpringActionController
 
     public static class UpgradeMessageForm
     {
-        private int _currentRevision;
+        private Date _currentBuildDate;
         private String _message;
         private String _createIssueURL;
         private String _issuesContainer;
 
-        public int getCurrentRevision()
+        public Date getCurrentBuildDate()
         {
-            return _currentRevision;
+            return _currentBuildDate;
         }
 
-        public void setCurrentRevision(int currentRevision)
+        public void setCurrentBuildDate(Date currentBuildDate)
         {
-            _currentRevision = currentRevision;
+            _currentBuildDate = currentBuildDate;
         }
 
         public String getMessage()

@@ -117,7 +117,7 @@ public class CoreWarningProvider implements WarningProvider
             HtmlStringBuilder html = HtmlStringBuilder.of("The maximum amount of heap memory allocated to LabKey Server is too low (less than 2GB). LabKey recommends ");
             html.append(new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least 2 gigabytes (-Xmx2G) on test/evaluation servers and at least 4 gigabytes (-Xmx4G) on production servers"));
             html.append(".");
-            warnings.add(html.getHtmlString());
+            warnings.add(html);
         }
     }
 
@@ -191,7 +191,7 @@ public class CoreWarningProvider implements WarningProvider
                 int count = ConnectionWrapper.getActiveConnectionCount();
                 HtmlStringBuilder html = HtmlStringBuilder.of(new LinkBuilder(count + " DB connection" + (count == 1 ? "" : "s") + " in use.").href(PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()).clearClasses());
                 html.append(" " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".");
-                warnings.add(html.getHtmlString());
+                warnings.add(html);
             }
         }
     }
@@ -202,7 +202,7 @@ public class CoreWarningProvider implements WarningProvider
         HtmlStringBuilder html = HtmlStringBuilder.of(prefix + " ");
         html.append(new LinkBuilder(linkText).href(url).clearClasses());
         html.append(".");
-        warnings.add(html.getHtmlString());
+        warnings.add(html);
     }
 
     // Standard warning with a link to a LabKey documentation page
@@ -212,6 +212,6 @@ public class CoreWarningProvider implements WarningProvider
         HelpTopic topic = new HelpTopic(helpTopic);
         html.append(topic.getSimpleLinkHtml(helpText));
         html.append(" for more information.");
-        warnings.add(html.getHtmlString());
+        warnings.add(html);
     }
 }

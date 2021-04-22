@@ -43,7 +43,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
 {
     private ExpProtocol _protocol;
     private ExpData _data;
-    private Object _dataRowId;
+    private int _dataRowId;
 
     @Override
     public ModelAndView getView(DataDetailsForm form, BindException errors)

@@ -25,6 +25,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,7 @@ public class QMethodCall extends QExpr
             builder.appendStringLiteral("Unrecognized method " + getField().getFieldKey());
             return;
         }
+        ArrayList<Pair<SQLFragment,Boolean>> argumentsEx = new ArrayList<>();
         List<SQLFragment> arguments = new ArrayList<>();
         for (QNode n : getLastChild().children())
         {
@@ -61,6 +63,7 @@ public class QMethodCall extends QExpr
                     query.getParseErrors().add(qpe);
                 return;
             }
+            argumentsEx.add(new Pair<>(sqlf,expr.isConstant()));
             arguments.add(sqlf);
         }
         QNode first = getFirstChild();
@@ -68,7 +71,7 @@ public class QMethodCall extends QExpr
         if (first instanceof QField && null != ((QField)first).getTable())
         {
             // table.method()
-            builder.append(method.getSQL(((QField)first).getRelationColumn().getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(method.getSQL(((QField)first).getTable().getAlias(), builder.getDbSchema(), arguments.toArray(new SQLFragment[arguments.size()])));
         }
         else if (method instanceof AbstractQueryMethodInfo)
         {
@@ -78,7 +81,7 @@ public class QMethodCall extends QExpr
         else
         {
             // regular method info
-            builder.append(method.getSQL(builder.getDialect(), arguments.toArray(new SQLFragment[arguments.size()])));
+            builder.append(method.getSQL(builder.getDialect(), argumentsEx));
         }
     }
 

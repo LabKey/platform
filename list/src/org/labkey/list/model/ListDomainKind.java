@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
@@ -33,6 +34,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -73,7 +75,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,7 +104,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 new PropertyStorageSpec("modified", JdbcType.TIMESTAMP),
                 new PropertyStorageSpec("modifiedBy", JdbcType.INTEGER),
                 new PropertyStorageSpec("lastIndexed", JdbcType.TIMESTAMP),
-                new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false));
+                new PropertyStorageSpec("container", JdbcType.GUID).setNullable(false),
+                new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR,  256));
     }
 
     public void setListDefinition(ListDefinitionImpl list)
@@ -229,7 +231,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        Set<String> properties = new LinkedHashSet<>();
+        Set<String> properties = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec pss : BASE_PROPERTIES)
         {
             properties.add(pss.getName());
@@ -689,4 +691,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return type.equals(getDefaultKeyType().getPropertyType());
     }
 
+    public void ensureBaseProperties(Domain d)
+    {
+        var props = getBaseProperties(d);
+    }
 }

@@ -4,8 +4,6 @@ import { ActionURL } from '@labkey/api';
 import { getErrorHeading, getImage, getInstruction, getSubHeading, getViewDetails } from './ErrorType';
 import { ErrorDetails } from './model';
 
-import './errorHandler.scss';
-
 export interface AppContext {
     errorDetails: ErrorDetails;
 }
@@ -55,9 +53,11 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
                                 <button className="btn btn-primary error-backButton" onClick={this.onBackClick}>
                                     Back
                                 </button>
-                                <button className="btn btn-default error-details-btn" onClick={this.onViewDetailsClick}>
-                                    {viewDetailsBtnText}
-                                </button>
+                                {!errorDetails.hideViewDetails &&
+                                    <button className="btn btn-default error-details-btn" onClick={this.onViewDetailsClick}>
+                                        {viewDetailsBtnText}
+                                    </button>
+                                }
                             </div>
                         </div>
                         <div className="col-lg-3 col-md-4 hidden-xs hidden-sm">{getImage(errorDetails)}</div>

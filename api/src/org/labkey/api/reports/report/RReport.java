@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
+import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
@@ -30,9 +31,10 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngine;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -71,6 +73,7 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,7 +124,7 @@ public class RReport extends ExternalScriptEngineReport
 
     public static boolean isEnabled()
     {
-        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         return !mgr.getEngineDefinitions(ExternalScriptEngineDefinition.Type.R).isEmpty();
     }
 
@@ -131,7 +134,7 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public ScriptEngine getScriptEngine(Container c)
     {
-        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         Container srcContainer = c;
 
         if (getDescriptor().isInherited(c))
@@ -140,7 +143,7 @@ public class RReport extends ExternalScriptEngineReport
             // was defined in
             srcContainer = ContainerManager.getForId(getContainerId()) != null ? ContainerManager.getForId(getContainerId()) : c;
         }
-        return mgr.getEngineByExtension(srcContainer, "r", LabkeyScriptEngineManager.EngineContext.report);
+        return mgr.getEngineByExtension(srcContainer, "r", LabKeyScriptEngineManager.EngineContext.report);
     }
 
     @Nullable
@@ -415,24 +418,15 @@ public class RReport extends ExternalScriptEngineReport
                 labkey.append("labkey.remote.pipeline.root <- \"").append(remotePath).append("\"\n");
             }
 
-            // session information
+            // The ${apikey} token will be replaced by the value in the map stashed in script context bindings ExternalScriptEngine.PARAM_REPLACEMENT_MAP
+            // CONSIDER: Should we use: labkey.setDefaults(apiKey=\"${apikey}\")
+            labkey.append("labkey.apiKey <- \"${" + SecurityManager.API_KEY + "}\"\n");
+
+            // session information - deprecate for ${apiKey} or labkey.apiKey ?
             if (context.getRequest() != null)
             {
-                String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, null);
+                String session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), CSRFUtil.SESSION_COOKIE_NAME, "");
                 String sessionName = CSRFUtil.SESSION_COOKIE_NAME;
-                if (session == null)
-                {
-                    // Issue 26957 - R report running as pipeline job doesn't inherit user when making Rlabkey calls
-                    session = PageFlowUtil.getCookieValue(context.getRequest().getCookies(), SecurityManager.TRANSFORM_SESSION_ID, null);
-                    if (session != null)
-                    {
-                        sessionName = SecurityManager.TRANSFORM_SESSION_ID;
-                    }
-                    else
-                    {
-                        session = "";
-                    }
-                }
 
                 labkey.append("labkey.sessionCookieName = \"").append(sessionName).append("\"\n");
                 labkey.append("labkey.sessionCookieContents = \"");
@@ -591,7 +585,7 @@ public class RReport extends ExternalScriptEngineReport
     {
         RScriptEngine rengine = (RScriptEngine) engine;
         String remotePath = inputFile == null ? null : rengine.getRemotePath(inputFile);
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath, isRStudio);
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath, isRStudio, null);
     }
 
     @Override
@@ -729,7 +723,7 @@ public class RReport extends ExternalScriptEngineReport
 
                 return output != null ? output.toString() : "";
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new ScriptException(e);
             }
@@ -930,7 +924,7 @@ public class RReport extends ExternalScriptEngineReport
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
             ViewContext context = HttpView.currentContext();
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(context.getContainer(), "r");
+            RScriptEngine r = (RScriptEngine)LabKeyScriptEngineManager.get().getEngineByExtension(context.getContainer(), "r");
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "print('hello world')\n\nprint('line 3')\n";
             String post = report.concatScriptProlog(r, context, pre, null, (Map)params);
@@ -951,7 +945,7 @@ public class RReport extends ExternalScriptEngineReport
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "html");
             ViewContext context = HttpView.currentContext();
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(context.getContainer(), "r");
+            RScriptEngine r = (RScriptEngine)LabKeyScriptEngineManager.get().getEngineByExtension(context.getContainer(), "r");
             //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Html);
             //assertEquals(RReportDescriptor.KnitrFormat.Html, r.getKnitrFormat());
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
@@ -973,7 +967,7 @@ public class RReport extends ExternalScriptEngineReport
             RReport report = new RReport();
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "markdown");
             ViewContext context = HttpView.currentContext();
-            RScriptEngine r = (RScriptEngine)ServiceRegistry.get().getService(LabkeyScriptEngineManager.class).getEngineByExtension(context.getContainer(), "r");
+            RScriptEngine r = (RScriptEngine)LabKeyScriptEngineManager.get().getEngineByExtension(context.getContainer(), "r");
             //r.getBindings(ScriptContext.ENGINE_SCOPE).put(RScriptEngine.KNITR_FORMAT, RReportDescriptor.KnitrFormat.Markdown);
             Map<String,String> params = PageFlowUtil.map("a", "1", "b", "2");
             String pre = "---\n" +

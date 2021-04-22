@@ -105,7 +105,7 @@ public interface QueryDefinition
      * Use skipSuggestedColumns=TRUE to skip adding suggested/referenced columns.
      * Issue 36275: ODBC/Tableau generates select query containing columns from referenced table
      */
-    @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns);
+    @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns);
 
     String getSql();
     String getMetadataXml();
@@ -120,12 +120,19 @@ public interface QueryDefinition
     void setContainerFilter(ContainerFilter containerFilter);
     ContainerFilter getContainerFilter();
 
+    /**
+     * Returns true if the user has permission to edit the metadata for this query in the current container (not the definition container.)
+     * @see #isSqlEditable()
+     */
     boolean canEdit(User user);
 
-    default boolean canDelete(User user)
-    {
-        return canEdit(user);
-    }
+    /**
+     * Returns true if the user has permission to edit the metadata for this query in the current container (not the definition container.)
+     * @see #isMetadataEditable()
+     */
+    boolean canEditMetadata(User user);
+
+    boolean canDelete(User user);
 
     /**
      * Save a new QueryDefinition or update an existing QueryDefinition.
@@ -156,12 +163,23 @@ public interface QueryDefinition
     void setSchema(@NotNull UserSchema schema);
 
     /**
-     * Returns whether this is a table-based query definition (versus a custom query).
+     * Return true if this user-defined custom query definition (as oppossed to a generated wrapper over a built-in table or linked schema query.)
      */
-    boolean isTableQueryDefinition();
+    boolean isUserDefined();
     Collection<String> getDependents(User user);
 
+    /**
+     * Returns true if the sql source for this query is editable.
+     * This is a capability check, not a permissions check.
+     * @see #canEdit(User)
+     */
     boolean isSqlEditable();
+
+    /**
+     * Returns true if the metadata for this query is editable.
+     * This is a capability check, not a permissions check.
+     * @see #canEditMetadata(User)
+     */
     boolean isMetadataEditable();
     ViewOptions getViewOptions();
     void setMetadataTableMap(Map<String, TableType> metadataTableMap);

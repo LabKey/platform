@@ -80,7 +80,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
@@ -130,7 +129,7 @@ public class PropertyController extends SpringActionController
 
     public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
 
-    private static PropertyService _propertyService = PropertyService.get();
+    private static final PropertyService _propertyService = PropertyService.get();
 
     public PropertyController()
     {
@@ -197,7 +196,7 @@ public class PropertyController extends SpringActionController
 
                 // re-fetch the domain so that we can redirect using the saved domainId
                 _domain = PropertyService.get().getDomain(getContainer(), domainURI);
-                ActionURL redirectURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain);
+                ActionURL redirectURL = urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain);
                 URLHelper returnURL = getViewContext().getActionURL().getReturnURL();
                 if (returnURL != null)
                     redirectURL.addReturnURL(returnURL);
@@ -211,7 +210,7 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("domainDesigner"));
         }
 
         @Override
@@ -817,14 +816,16 @@ public class PropertyController extends SpringActionController
                 throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
             }
 
-            return getInferDomainResponse(loader, form.getNumLinesToInclude());
+            return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.getDomainKindName());
         }
 
-        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude) throws IOException
+        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude, String domainKindName) throws IOException
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
+            List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
+            Set reservedNames = domainKindName == null ? Collections.emptySet() : PropertyService.get().getDomainKindByName(domainKindName).getReservedPropertyNames(null);
 
             if (loader != null)
             {
@@ -834,8 +835,11 @@ public class PropertyController extends SpringActionController
                     GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
                     prop.setContainer(getContainer().getId());
                     prop.setMvEnabled(col.isMvEnabled());
+                    if (reservedNames.contains(col.getColumnName()))
+                        reservedFields.add(prop);
+                    else
+                        fields.add(prop);
 
-                    fields.add(prop);
                 }
 
                 if (numLinesToInclude != null)
@@ -845,6 +849,7 @@ public class PropertyController extends SpringActionController
             }
 
             response.put("fields", fields);
+            response.put("reservedFields", reservedFields);
             return response;
         }
     }
@@ -854,6 +859,7 @@ public class PropertyController extends SpringActionController
         // TODO should -1 allow you to get all data?
         private Integer _numLinesToInclude;
         private Object _file;
+        private String _domainKindName;
 
         public Integer getNumLinesToInclude()
         {
@@ -873,6 +879,16 @@ public class PropertyController extends SpringActionController
         public void setFile(Object file)
         {
             _file = file;
+        }
+
+        public String getDomainKindName()
+        {
+            return _domainKindName;
+        }
+
+        public void setDomainKindName(String domainKindName)
+        {
+            _domainKindName = domainKindName;
         }
     }
 

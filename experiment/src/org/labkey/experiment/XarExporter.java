@@ -60,8 +60,9 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -145,9 +146,10 @@ public class XarExporter
     AssayProvider.XarCallbacks assayCallbacks = null;
 
 
-    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, URLRewriter urlRewriter, User user)
     {
-        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer);
+        // UNDONE: Is it ok to share the relativizedLSIDs across XarExporters and tsv writers?
+        _relativizedLSIDs = relativizedLSIDs;
         _urlRewriter = urlRewriter;
         _user = user;
 
@@ -155,9 +157,19 @@ public class XarExporter
         _archive = _document.addNewExperimentArchive();
     }
 
+    public XarExporter(LSIDRelativizer lsidRelativizer, URLRewriter urlRewriter, User user)
+    {
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), urlRewriter, user);
+    }
+
     public XarExporter(LSIDRelativizer lsidRelativizer, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
     {
-        this(lsidRelativizer, selection.createURLRewriter(), user);
+        this(new LSIDRelativizer.RelativizedLSIDs(lsidRelativizer), selection, user, xarXmlFileName, log);
+    }
+
+    public XarExporter(LSIDRelativizer.RelativizedLSIDs relativizedLSIDs, XarExportSelection selection, User user, String xarXmlFileName, Logger log) throws ExperimentException
+    {
+        this(relativizedLSIDs, selection.createURLRewriter(), user);
         _log = log;
 
         selection.addContent(this);
@@ -393,6 +405,8 @@ public class XarExporter
                     dataLSID.setDataFileUrl(url);
                 }
             }
+            else
+                dataLSID.setCpasType(data.getCpasType());
         }
 
         List<Material> inputMaterial = ExperimentServiceImpl.get().getMaterialInputReferencesForApplication(application.getRowId());
@@ -439,8 +453,9 @@ public class XarExporter
             {
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
                 // include a file path in the export, though.  We use "Data" + rowId of the data object as the file name
-                // to ensure that the path won't collide with other output data from exported runs in the xar archive.
-                if (data.getDataFileUrl() == null && data.isFinalRunOutput())
+                // to ensure that the path won't collide with other output data from exported runs in the xar archive,
+                // but we don't want to include data classes as part of this behavior.
+                if (data.getDataFileUrl() == null && data.isFinalRunOutput() && (data.getDataClass(null) == null))
                     data.setDataFileURI(run.getFilePathRootPath().resolve("Data" + data.getRowId()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
@@ -455,27 +470,24 @@ public class XarExporter
         }
 
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs != null)
+        var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
+        if (!provURIs.isEmpty())
         {
-            var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
-            if (!provURIs.isEmpty())
+            ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
+            for (Pair<String, String> pair : provURIs)
             {
-                ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
-                for (Pair<String, String> pair : provURIs)
+                if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
+                    continue;
+
+                var objectRefs = xProvMap.addNewObjectRefs();
+                if (!StringUtils.isEmpty(pair.first))
                 {
-                    if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
-                        continue;
+                    objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
+                }
 
-                    var objectRefs = xProvMap.addNewObjectRefs();
-                    if (!StringUtils.isEmpty(pair.first))
-                    {
-                        objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
-                    }
-
-                    if (!StringUtils.isEmpty(pair.second))
-                    {
-                        objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
-                    }
+                if (!StringUtils.isEmpty(pair.second))
+                {
+                    objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
                 }
             }
         }
@@ -513,7 +525,7 @@ public class XarExporter
     }
 
     private String relativizeLSIDPropertyValue(String value, SimpleTypeNames.Enum type)
-    {
+    {// NOTE: this is interesting - we fixup LSID values in the xar xml
         if (type == SimpleTypeNames.STRING &&
             value != null &&
             value.indexOf("urn:lsid:") == 0)
@@ -535,6 +547,11 @@ public class XarExporter
         xMaterial.setName(material.getName());
 
         Map<String, ObjectProperty> objectProperties = material.getObjectProperties();
+        Collection<String> aliases = material.getAliases();
+        if (!aliases.isEmpty())
+        {
+            xMaterial.setAlias(String.join(",", aliases));
+        }
         PropertyCollectionType materialProperties = getProperties(objectProperties, material.getContainer());
         if (materialProperties != null)
         {
@@ -542,30 +559,35 @@ public class XarExporter
         }
     }
 
-    private void addSampleType(String cpasType)
+    private void addSampleType(String cpasType) throws ExperimentException
     {
-        if (_sampleSetLSIDs.contains(cpasType))
-        {
-            return;
-        }
-        _sampleSetLSIDs.add(cpasType);
         ExpSampleType sampleType = SampleTypeService.get().getSampleType(cpasType);
         addSampleType(sampleType);
     }
 
-    public void addSampleType(ExpSampleType sampleType)
+    public void addSampleType(ExpSampleType sampleType) throws ExperimentException
     {
-        if (sampleType == null)
+        final String PLACEHOLDER_SUFFIX = "sfx";
+
+        if (sampleType == null || _sampleSetLSIDs.contains(sampleType.getLSID()))
         {
             return;
         }
+
+        _sampleSetLSIDs.add(sampleType.getLSID());
+
         if (_archive.getSampleSets() == null)
         {
             _archive.addNewSampleSets();
         }
         SampleSetType xSampleSet = _archive.getSampleSets().addNewSampleSet();
         xSampleSet.setAbout(_relativizedLSIDs.relativize(sampleType.getLSID()));
-        xSampleSet.setMaterialLSIDPrefix(_relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix()));
+
+        // we need to temporarily fake up a full Lsid in order to relativize properly
+        String materialPrefix = _relativizedLSIDs.relativize(sampleType.getMaterialLSIDPrefix() + PLACEHOLDER_SUFFIX);
+        if (materialPrefix.endsWith(PLACEHOLDER_SUFFIX))
+            materialPrefix = materialPrefix.substring(0, materialPrefix.length() - PLACEHOLDER_SUFFIX.length());
+        xSampleSet.setMaterialLSIDPrefix(materialPrefix);
         xSampleSet.setName(sampleType.getName());
         if (sampleType.getDescription() != null)
         {
@@ -601,8 +623,54 @@ public class XarExporter
             xSampleSet.setMetricUnit(sampleType.getMetricUnit());
         }
 
+        try
+        {
+            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            if (!aliasMap.isEmpty())
+            {
+                SampleSetType.ParentImportAlias parentImportAlias = xSampleSet.addNewParentImportAlias();
+                for (Map.Entry<String, String> entry : aliasMap.entrySet())
+                {
+                    ImportAlias importAlias = parentImportAlias.addNewAlias();
+                    importAlias.setName(entry.getKey());
+                    importAlias.setValue(entry.getValue());
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
+
         Domain domain = sampleType.getDomain();
         queueDomain(domain);
+    }
+
+    public void addDataClass(ExpDataClass dataClass)
+    {
+        if (_archive.getDataClasses() == null)
+        {
+            _archive.addNewDataClasses();
+        }
+
+        DataClassType dataClassType = _archive.getDataClasses().addNewDataClass();
+        dataClassType.setAbout(_relativizedLSIDs.relativize(dataClass.getLSID()));
+
+        dataClassType.setName(dataClass.getName());
+
+        if (dataClass.getDescription() != null)
+            dataClassType.setDescription(dataClass.getDescription());
+
+        if (dataClass.getNameExpression() != null)
+            dataClassType.setNameExpression(dataClass.getNameExpression());
+
+        if (dataClass.getCategory() != null)
+            dataClassType.setCategory(dataClass.getCategory());
+
+        if (dataClass.getSampleType() != null)
+            dataClassType.setSampleType(dataClass.getSampleType().getName());
+
+        queueDomain(dataClass.getDomain());
     }
 
     // Return the "name" portion of the propertyURI after the hash
@@ -725,8 +793,9 @@ public class XarExporter
         if (domainProp.getRangeURI().equals("http://www.w3.org/2001/XMLSchema#string"))
             xProp.setScale(domainProp.getScale());
 
-        if (null != domainProp.getPrincipalConceptCode())
-            xProp.setPrincipalConceptCode(domainProp.getPrincipalConceptCode());
+        OntologyService os = OntologyService.get();
+        if (null != os)
+            os.writeXml(domainProp, xProp);
 
         ConditionalFormat.convertToXML(domainProp.getConditionalFormats(), xProp);
 
@@ -1203,7 +1272,7 @@ public class XarExporter
                                 queueDomain(domain);
                             }
 
-                            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
                                 Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
                                 if (autoCopyContainer != null)

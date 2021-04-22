@@ -17,11 +17,11 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CustomParticipantView;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.StudyDocument;
@@ -56,7 +56,7 @@ public class StudyViewsImporter implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            StudyImpl study = ctx.getStudy();
+            Study study = ctx.getStudy();
             StudyDocument.Study.StudyViews viewsXml = ctx.getXml().getStudyViews();
 
             ctx.getLogger().info("Loading " + getDescription());

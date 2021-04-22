@@ -17,6 +17,7 @@
 package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -47,6 +48,7 @@ public class XarExportSelection implements Serializable
     private final List<Integer> _dataIds = new ArrayList<>();
     private final List<Integer> _sampleTypeIds = new ArrayList<>();
     private final List<Integer> _protocolIds = new ArrayList<>();
+    private final List<Integer> _dataClassIds = new ArrayList<>();
 
     private boolean _includeXarXml = true;
     private Set<String> _roles;
@@ -78,6 +80,11 @@ public class XarExportSelection implements Serializable
         {
             _protocolIds.add(protocolId);
         }
+    }
+
+    public void addProtocolIds(Collection<Integer> protocolIds)
+    {
+        _protocolIds.addAll(protocolIds);
     }
 
     public boolean isIncludeXarXml()
@@ -135,6 +142,11 @@ public class XarExportSelection implements Serializable
         {
             exporter.addExpData(ExperimentServiceImpl.get().getExpData(dataId));
         }
+
+        for (int dataClassId : _dataClassIds)
+        {
+            exporter.addDataClass(ExperimentService.get().getDataClass(dataClassId));
+        }
     }
 
     public URLRewriter createURLRewriter()
@@ -145,5 +157,10 @@ public class XarExportSelection implements Serializable
     public void addSampleType(ExpSampleType sampleType)
     {
         _sampleTypeIds.add(sampleType.getRowId());
+    }
+
+    public void addDataClass(ExpDataClass dataClass)
+    {
+        _dataClassIds.add(dataClass.getRowId());
     }
 }

@@ -18,6 +18,8 @@ package org.labkey.assay;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -60,8 +62,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -87,6 +90,8 @@ import java.util.Set;
  */
 public class AssayDomainServiceImpl extends DomainEditorServiceBase implements AssayDomainService
 {
+    public static final Logger LOG = LogManager.getLogger(AssayDomainServiceImpl.class);
+
     public AssayDomainServiceImpl(ViewContext context)
     {
         super(context);
@@ -145,6 +150,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
+            gwtDomain.setDomainKindName("Assay");
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomain.setProvisioned(domain.isProvisioned());
             gwtDomains.add(gwtDomain);
@@ -270,7 +276,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
-        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+        ObjectProperty autoCopyValue = protocol.getObjectProperties().get(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
         if (autoCopyValue != null)
         {
             Container autoCopyTarget = ContainerManager.getForId(autoCopyValue.getStringValue());
@@ -480,7 +486,20 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                             throw new AssayException("The selected detection method could not be found.");
                     }
 
-                    provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                    ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                    if (scriptValidation.hasErrors())
+                    {
+                        for (var error : scriptValidation.getErrors())
+                        {
+                            if (error.getSeverity() == ValidationException.SEVERITY.ERROR)
+                                throw scriptValidation;
+
+                            // TODO: return warnings back to client
+                            HelpTopic help = error.getHelp();
+                            LOG.log(error.getSeverity().getLevel(), error.getMessage()
+                                    + (help != null ? "\n  For more information: " + help.getHelpTopicHref() : ""));
+                        }
+                    }
 //
 //                    provider.setDetectionMethods(protocol, assay.getAvailableDetectionMethods());
 
@@ -502,11 +521,11 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
 
                     if (autoCopyTargetContainerId != null)
                     {
-                        props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
+                        props.put(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
                     }
                     else
                     {
-                        props.remove(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
+                        props.remove(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
                     }
                     protocol.setObjectProperties(props);
 

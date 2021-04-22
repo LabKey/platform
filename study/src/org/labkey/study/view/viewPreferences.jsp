@@ -81,7 +81,7 @@
     HtmlString getLabel(Pair<String, String> view, String defaultView)
     {
         if (StringUtils.equals(view.getValue(), defaultView))
-            return HtmlStringBuilder.of(HtmlString.unsafe("<b>")).append(view.getKey()).append(HtmlString.unsafe("</b>")).getHtmlString();
+            return HtmlStringBuilder.of().startTag("b").append(view.getKey()).endTag("b").getHtmlString();
 
         return h(view.getKey());
     }

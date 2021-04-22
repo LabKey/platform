@@ -187,7 +187,7 @@ public class ExperimentRunListView extends QueryView
             String javascript = view.getDataRegion().getJavascriptFormReference() + ".method = \"POST\";\n " +
                     view.getDataRegion().getJavascriptFormReference() + ".action = " + PageFlowUtil.jsString(url + "&noPost=true") + ";\n " +
                     view.getDataRegion().getJavascriptFormReference() + ".submit();";
-            addToExperimentButton.addMenuItem("Create new run group...", null, javascript);
+            addToExperimentButton.addMenuItem("Create new run group...", javascript);
 
             List<? extends ExpExperiment> experiments = ExperimentService.get().getExperiments(c, getViewContext().getUser(), true, false);
             if (experiments.size() > 0)
@@ -198,7 +198,7 @@ public class ExperimentRunListView extends QueryView
             for (ExpExperiment exp : experiments)
             {
                 ActionURL addRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getAddRunsToExperimentURL(getContainer(), exp);
-                addToExperimentButton.addMenuItem(exp.getName(), null, "if (verifySelected(" + view.getDataRegion().getJavascriptFormReference() + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference() + ".submit(); }");
+                addToExperimentButton.addMenuItem(exp.getName(), "if (verifySelected(" + view.getDataRegion().getJavascriptFormReference() + ", \"" + addRunUrl.getLocalURIString() + "\", \"post\", \"run\")) { " + view.getDataRegion().getJavascriptFormReference() + ".submit(); }");
             }
             bar.add(addToExperimentButton);
         }
@@ -240,7 +240,7 @@ public class ExperimentRunListView extends QueryView
                         NavTree btn;
                         if (!c.isContainerFor(ContainerType.DataType.assayData))
                         {
-                            btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")");
+                            btn = new NavTree(protocol.getName() + " (" + provider.getLabel() + ")");
                             btn.setScript("Ext4.create('LABKEY.ext.ImportWizardWin', {" +
                                 "controller: '" + provider.getImportURL(c, protocol).getController() + "'," +
                                 "action: '" + provider.getImportURL(c, protocol).getAction() + "'," +
@@ -249,7 +249,7 @@ public class ExperimentRunListView extends QueryView
                         }
                         else
                         {
-                            btn = new NavTree(protocol.getName() + " (" + provider.getName() + ")", provider.getImportURL(getContainer(), protocol));
+                            btn = new NavTree(protocol.getName() + " (" + provider.getLabel() + ")", provider.getImportURL(getContainer(), protocol));
                         }
 
                         addRunsButton.addMenuItem(btn);

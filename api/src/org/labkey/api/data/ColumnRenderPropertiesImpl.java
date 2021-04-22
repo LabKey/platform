@@ -47,6 +47,9 @@ import java.util.regex.Pattern;
  */
 public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderProperties
 {
+    public static final String STORAGE_UNIQUE_ID_CONCEPT_URI = "http://www.labkey.org/types#storageUniqueId";
+    public static final String STORAGE_UNIQUE_ID_SEQUENCE_PREFIX = "org.labkey.api.StorageUniqueId";
+
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;
     protected int _inputLength = -1;
@@ -94,8 +97,13 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected CrosstabMember _crosstabColumnMember;
 
     // OntologyService related annotations
+    protected String _sourceOntology = null;
+    protected String _conceptImportColumn = null;
+    protected String _conceptLabelColumn = null;
     protected String _principalConceptCode = null;
 
+    // used by exp material to distinguish aliquot vs meta fields
+    protected String _derivationDataScope = null;
 
     abstract public void checkLocked();
     private boolean _checkLocked()
@@ -158,7 +166,11 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._rangeURI = _rangeURI;
         to._propertyType = _propertyType;
         to._defaultValueType = _defaultValueType;
+        to._sourceOntology = _sourceOntology;
         to._principalConceptCode = _principalConceptCode;
+        to._conceptImportColumn = _conceptImportColumn;
+        to._conceptLabelColumn = _conceptLabelColumn;
+        to._derivationDataScope = _derivationDataScope;
     }
 
     @Override
@@ -501,6 +513,12 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
                 col.isAutoIncrement(),
                 col.isLookup(),
                 col.isHidden());
+    }
+
+    @Override
+    public boolean isUniqueIdField()
+    {
+        return STORAGE_UNIQUE_ID_CONCEPT_URI.equals(getConceptURI());
     }
 
     public static boolean inferIsMeasure(String name, String label, boolean isNumeric, boolean isAutoIncrement, boolean isLookup, boolean isHidden)
@@ -847,6 +865,42 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
+    public String getSourceOntology()
+    {
+        return _sourceOntology;
+    }
+
+    @Override
+    public void setSourceOntology(String sourceOntology)
+    {
+        _sourceOntology = sourceOntology;
+    }
+
+    @Override
+    public String getConceptImportColumn()
+    {
+        return _conceptImportColumn;
+    }
+
+    @Override
+    public void setConceptImportColumn(String conceptImportColumn)
+    {
+        _conceptImportColumn = conceptImportColumn;
+    }
+
+    @Override
+    public String getConceptLabelColumn()
+    {
+        return _conceptLabelColumn;
+    }
+
+    @Override
+    public void setConceptLabelColumn(String conceptLabelColumn)
+    {
+        _conceptLabelColumn = conceptLabelColumn;
+    }
+
+    @Override
     public String getPrincipalConceptCode()
     {
         return _principalConceptCode;
@@ -858,4 +912,17 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         assert _checkLocked();
         _principalConceptCode = code;
     }
+
+    @Override
+    public String getDerivationDataScope()
+    {
+        return _derivationDataScope;
+    }
+
+    @Override
+    public void setDerivationDataScope(String scope)
+    {
+        _derivationDataScope = scope;
+    }
+
 }

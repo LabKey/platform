@@ -47,13 +47,12 @@ import org.labkey.wiki.query.WikiSchema;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -91,9 +90,11 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(new WikiWebPartFactory(),
-                new WikiTOCFactory(),
-                new MenuWikiWebPartFactory()));
+        return List.of(
+            new WikiWebPartFactory(),
+            new WikiTOCFactory(),
+            new MenuWikiWebPartFactory()
+        );
     }
 
     @Override

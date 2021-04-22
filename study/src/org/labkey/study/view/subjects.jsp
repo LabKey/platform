@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyFolderTabs" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -35,7 +36,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ParticipantAction" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
-<%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -98,7 +98,7 @@
     var $h = Ext4.util.Format.htmlEncode;
     var first = true;
 
-    const _urlTemplate = new URL(<%= q(subjectUrl.getURIString())%>);
+    const _urlTemplate = <%=jsURL(subjectUrl)%>;
     const _singularNoun = <%= q(singularNoun) %>;
     const _pluralNoun = <%= q(pluralNoun) %>;
     const _divId = <%= q(divId) %>;

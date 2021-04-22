@@ -19,7 +19,6 @@ package org.labkey.api.view;
 import com.google.gwt.core.client.EntryPoint;
 import org.labkey.api.compliance.ComplianceService;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

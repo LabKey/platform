@@ -28,6 +28,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -49,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -202,6 +204,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(ScriptsForm form, BindException errors) throws Exception
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             StringBuilder html = new StringBuilder("<table>");
 
             if (AppProps.getInstance().isDevMode())
@@ -312,12 +316,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "SQL Scripts", getURL());
-        }
-
-        public ActionURL getURL()
-        {
-            return new ActionURL(SqlScriptController.ScriptsAction.class, ContainerManager.getRoot());
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "SQL Scripts", getClass(), ContainerManager.getRoot());
         }
     }
 
@@ -361,6 +360,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             ArrayList<SqlScript> scriptsWithErrors = new ArrayList<>();
             Map<SqlScript, String> errorMessages = new HashMap<>();
 
@@ -448,9 +449,10 @@ public class SqlScriptController extends SpringActionController
                     else if (includeSingleScripts)
                     {
                         String filename = consolidator.getFilename();
+                        SqlScript script = scripts.get(0);
 
                         // Skip if the single script in this range is the consolidation script
-                        if (!scripts.get(0).getDescription().equalsIgnoreCase(filename))
+                        if (!script.getDescription().equalsIgnoreCase(filename) && 0.0 != script.getFromVersion())
                             consolidators.add(consolidator);
                     }
                 }
@@ -475,6 +477,8 @@ public class SqlScriptController extends SpringActionController
         @Override
         public final ModelAndView getView(K form, BindException errors)
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
 
@@ -516,7 +520,7 @@ public class SqlScriptController extends SpringActionController
         {
             html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
             html.append(form.getIncludeSingleScripts() ? " checked" : "");
-            html.append("/>Include single scripts</td></tr>\n");
+            html.append("/>Include single scripts that don't start with 0.00</td></tr>\n");
         }
 
         @Override
@@ -813,14 +817,7 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptConsolidator consolidator = getConsolidator(form);
             consolidator.saveScript();
-
-            // Consider deleting the old scripts when consolidating bootstrap scripts, #38810
-            if (0.0 == form.getFromVersion())
-            {
-                // ...but only if there are no incremental scripts involved
-                if (consolidator.getScripts().stream().noneMatch(SqlScript::isIncremental))
-                    deleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
-            }
+            deleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
 
             return true;
         }
@@ -885,11 +882,13 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class OrphanedScriptsAction extends SimpleViewAction<Void>
+    public class OrphanedScriptsAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Void form, BindException errors) throws IOException
+        public ModelAndView getView(Object form, BindException errors) throws IOException
         {
+            setHelpTopic(new HelpTopic("sqlScripts#admin"));
+
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
             Map<SqlScript, SqlScript> successors = new HashMap<>();
@@ -902,7 +901,7 @@ public class SqlScriptController extends SpringActionController
 
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
                 Collection<DbSchema> schemas = provider.getSchemas();
-                Set<String> allFiles = new HashSet<>();
+                Set<String> allFiles = new CaseInsensitiveHashSet();
 
                 // If module advertises no schemas then still look in the labkey dialect directory for spurious scripts
                 if (schemas.isEmpty())

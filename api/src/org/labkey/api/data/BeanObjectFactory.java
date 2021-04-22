@@ -46,7 +46,7 @@ import java.util.Map;
 
 public class BeanObjectFactory<K> implements ObjectFactory<K> // implements ResultSetHandler
 {
-    private static Logger _log = LogManager.getLogger(BeanObjectFactory.class);
+    private static final Logger _log = LogManager.getLogger(BeanObjectFactory.class);
 
     private Class<K> _class;
 
@@ -224,9 +224,9 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         }
         catch (InvocationTargetException x)
         {
-            assert false : x;
-            if (x.getTargetException() instanceof RuntimeException)
-                throw (RuntimeException)x.getTargetException();
+            if (null != x.getTargetException())
+                throw UnexpectedException.wrap(x.getTargetException());
+            throw UnexpectedException.wrap(x);
         }
         fixupMap(m, bean);
         return m;

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.JavaScriptExportScriptModel;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
@@ -125,7 +125,7 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public ScriptEngine getScriptEngine(Container c)
     {
-        LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
         return mgr.getEngineByExtension(c, "js");
     }
 

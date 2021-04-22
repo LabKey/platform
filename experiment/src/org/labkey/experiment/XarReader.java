@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -67,14 +68,19 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.exp.xar.XarReaderRegistry;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
@@ -105,6 +111,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -112,16 +119,18 @@ import java.util.Set;
 
 public class XarReader extends AbstractXarImporter
 {
-    private Set<String> _experimentLSIDs = new HashSet<>();
-    private Map<String, Integer> _propertyIdMap = new HashMap<>();
+    private final Set<String> _experimentLSIDs = new HashSet<>();
+    private final Map<String, Integer> _propertyIdMap = new HashMap<>();
 
-    private List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
+    private final List<DeferredDataLoad> _deferredDataLoads = new ArrayList<>();
 
     private boolean _reloadExistingRuns = false;
     private boolean _useOriginalFileUrl = false;
     private boolean _strictValidateExistingSampleType = true;
 
-    private List<ExpRun> _loadedRuns = new ArrayList<>();
+    private final List<ExpRun> _loadedRuns = new ArrayList<>();
+    private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
+    private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -131,7 +140,8 @@ public class XarReader extends AbstractXarImporter
 
     public static final String ORIGINAL_URL_PROPERTY = "terms.fhcrc.org#Data.OriginalURL";
     public static final String ORIGINAL_URL_PROPERTY_NAME = "OriginalURL";
-    private List<String> _processedRunsLSIDs = new ArrayList<>();
+    private final List<String> _processedRunsLSIDs = new ArrayList<>();
+    private AuditBehaviorType _auditBehaviorType = null;
 
     public XarReader(XarSource source, PipelineJob job)
     {
@@ -153,9 +163,10 @@ public class XarReader extends AbstractXarImporter
         _strictValidateExistingSampleType = strictValidateExistingSampleType;
     }
 
-    public void parseAndLoad(boolean reloadExistingRuns) throws ExperimentException
+    public void parseAndLoad(boolean reloadExistingRuns, @Nullable AuditBehaviorType auditBehaviorType) throws ExperimentException
     {
         _reloadExistingRuns = reloadExistingRuns;
+        _auditBehaviorType = auditBehaviorType;
         parseAndLoad();
     }
 
@@ -298,7 +309,16 @@ public class XarReader extends AbstractXarImporter
             {
                 for (SampleSetType sampleSet : sampleSets.getSampleSetArray())
                 {
-                    loadSampleType(sampleSet);
+                    _loadedSampleTypes.add(loadSampleType(sampleSet));
+                }
+            }
+
+            ExperimentArchiveType.DataClasses dataClasses = _experimentArchive.getDataClasses();
+            if (dataClasses != null)
+            {
+                for (DataClassType dataClass : dataClasses.getDataClassArray())
+                {
+                    _loadedDataClasses.add(loadDataClass(dataClass));
                 }
             }
 
@@ -488,6 +508,17 @@ public class XarReader extends AbstractXarImporter
             materialSource.setMetricUnit(sampleSet.getMetricUnit());
         }
 
+        SampleSetType.ParentImportAlias parentImportAlias = sampleSet.getParentImportAlias();
+        if (parentImportAlias != null)
+        {
+            Map<String, String> aliasMap = new LinkedHashMap<>();
+            for (ImportAlias importAlias : parentImportAlias.getAliasArray())
+            {
+                aliasMap.put(importAlias.getName(), importAlias.getValue());
+            }
+            materialSource.setImportAliasMap(aliasMap);
+        }
+
         if (existingMaterialSource != null)
         {
             if (_strictValidateExistingSampleType)
@@ -518,6 +549,62 @@ public class XarReader extends AbstractXarImporter
         materialSource.save(getUser());
 
         return materialSource;
+    }
+
+    private ExpDataClass loadDataClass(DataClassType dataClassType) throws XarFormatException, ExperimentException
+    {
+        String lsid = LsidUtils.resolveLsidFromTemplate(dataClassType.getAbout(), getRootContext(), "DataClass");
+        ExpDataClass existingDataClass = ExperimentService.get().getDataClass(lsid);
+
+        getLog().debug("Importing DataClass with LSID '" + lsid + "'");
+        DataClass bean = new DataClass();
+        bean.setContainer(getContainer());
+        bean.setName(dataClassType.getName());
+        bean.setLSID(lsid);
+        ExpDataClass dataClass = new ExpDataClassImpl(bean);
+
+        if (dataClassType.getDescription() != null)
+            dataClass.setDescription(dataClassType.getDescription());
+
+        if (dataClassType.getNameExpression() != null)
+            dataClass.setNameExpression(dataClassType.getNameExpression());
+
+        if (dataClassType.getCategory() != null)
+            dataClass.setCategory(dataClassType.getCategory());
+
+        if (dataClassType.getSampleType() != null)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), dataClassType.getSampleType());
+            if (sampleType != null)
+                dataClass.setSampleType(sampleType.getRowId());
+            else
+                getLog().warn("DataClass Sample Type : '" + dataClassType.getSampleType() + "' was not found.");
+        }
+
+        if (existingDataClass != null)
+        {
+            if (_strictValidateExistingSampleType)
+            {
+                List<IdentifiableEntity.Difference> diffs = new ArrayList<>();
+                IdentifiableEntity.diff(dataClassType.getName(), existingDataClass.getName(), "Name", diffs);
+                IdentifiableEntity.diff(dataClassType.getDescription(), existingDataClass.getDescription(), "Description", diffs);
+                IdentifiableEntity.diff(dataClassType.getNameExpression(), existingDataClass.getNameExpression(), "Name Expression", diffs);
+                IdentifiableEntity.diff(dataClassType.getCategory(), existingDataClass.getCategory(), "Category", diffs);
+
+                if (!diffs.isEmpty())
+                {
+                    getLog().error("The DataClass specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    for (IdentifiableEntity.Difference diff : diffs)
+                    {
+                        getLog().error(diff.toString());
+                    }
+                    throw new XarFormatException("DataClass with LSID '" + lsid + "' does not match existing DataClass");
+                }
+            }
+            return existingDataClass;
+        }
+        dataClass.save(getUser());
+        return dataClass;
     }
 
     private Domain loadDomain(DomainDescriptorType xDomain) throws ExperimentException
@@ -742,6 +829,16 @@ public class XarReader extends AbstractXarImporter
         return _loadedRuns;
     }
 
+    public List<ExpSampleType> getSampleTypes()
+    {
+        return _loadedSampleTypes;
+    }
+
+    public List<ExpDataClass> getDataClasses()
+    {
+        return _loadedDataClasses;
+    }
+
     private void loadExperimentRun(ExperimentRunType a, List<ExpMaterial> startingMaterials, List<Data> startingData) throws SQLException, ExperimentException
     {
         XarContext runContext = new XarContext(getRootContext());
@@ -793,8 +890,6 @@ public class XarReader extends AbstractXarImporter
                 ap.getXarCallbacks(getUser(),getContainer()).beforeXarImportRun(a);
             }
         }
-
-        TableInfo tiExperimentRun = ExperimentServiceImpl.get().getTinfoExperimentRun();
 
         ExperimentRun run = ExperimentServiceImpl.get().getExperimentRun(pRunLSID.toString());
 
@@ -898,6 +993,7 @@ public class XarReader extends AbstractXarImporter
         _processedRunsLSIDs.add(runLSID);
         ExpRun loadedRun = ExperimentService.get().getExpRun(runLSID);
         assert loadedRun != null;
+        XarReaderRegistry.get().postProcessImportedRun(getContainer(), getUser(), loadedRun, getLog());
         _loadedRuns.add(loadedRun);
         getLog().debug("Finished loading ExperimentRun with LSID '" + runLSID + "'");
     }
@@ -1055,7 +1151,7 @@ public class XarReader extends AbstractXarImporter
             ExpData data = _xarSource.getData(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
             {
-                _xarSource.addData(experimentRun.getLSID(), data);
+                _xarSource.addData(experimentRun.getLSID(), data, null);
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId());
@@ -1145,6 +1241,17 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterialImpl mi = new ExpMaterialImpl(m);
                 mi.save(getUser());
                 mi.setProperties(getUser(), props);
+
+                if (_auditBehaviorType == AuditBehaviorType.DETAILED)
+                {
+                    SampleTypeServiceImpl service = SampleTypeServiceImpl.get();
+                    service.addAuditEvent(getUser(), getContainer(), service.getCommentDetailed(QueryService.AuditAction.INSERT, false), mi, null);
+                }
+                if (xbMaterial.isSetAlias())
+                {
+                    AliasInsertHelper.handleInsertUpdate(getContainer(), getUser(), mi.getLSID(),
+                            ExperimentService.get().getTinfoMaterialAliasMap(), xbMaterial.getAlias());
+                }
             }
             catch (ValidationException vex)
             {
@@ -1246,8 +1353,23 @@ public class XarReader extends AbstractXarImporter
         checkDataCpasType(declaredType);
 
         String dataLSID = LsidUtils.resolveLsidFromTemplate(xbData.getAbout(), context, declaredType, new AutoFileLSIDReplacer(xbData.getDataFileUrl(), getContainer(), _xarSource));
-
         ExpDataImpl expData = ExperimentServiceImpl.get().getExpData(dataLSID);
+        ExpDataClassImpl expDataClass = ExperimentServiceImpl.get().getDataClass(declaredType);
+        if (expData == null && expDataClass != null)
+        {
+            // Try resolving it by name within the data class in case we have it under a different LSID
+            ExpDataImpl data = expDataClass.getData(getContainer(), xbData.getName());
+            if (data != null)
+            {
+                // Remember this as an alternate LSID during import
+                _xarSource.addData(null, data, dataLSID);
+                if (experimentRun != null)
+                {
+                    _xarSource.addData(experimentRun.getLSID(), data, dataLSID);
+                }
+                expData = data;
+            }
+        }
 
         if (expData != null)
         {
@@ -1298,11 +1420,19 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-           // TODO: Allow creating the Data in a DataClass
             Data data = new Data();
             data.setLSID(dataLSID);
             data.setName(trimString(xbData.getName()));
             data.setCpasType(declaredType);
+            ExpDataClass currentDataClass = null;
+            for (ExpDataClass dataClass : _loadedDataClasses)
+            {
+                if (dataClass.getLSID().equals(declaredType))
+                {
+                    currentDataClass = dataClass;
+                    data.setClassId(dataClass.getRowId());
+                }
+            }
 
             // This existing hack is that newData has the source URL, but the dest container
             // We change to set it with the source container here -- Handler must change the container along with the dataFileURL (Dave 2/15/18)
@@ -1336,6 +1466,16 @@ public class XarReader extends AbstractXarImporter
 
             expData = new ExpDataImpl(data);
             expData.save(getUser());
+            if (_auditBehaviorType == AuditBehaviorType.DETAILED && currentDataClass != null)
+            {
+                UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), ExpSchema.SCHEMA_EXP_DATA.toString());
+                TableInfo dataTable = userSchema.getTable(currentDataClass.getName());
+                if (dataTable != null)
+                {
+                    Map<String, Object> row = BeanObjectFactory.Registry.getFactory(Data.class).toMap(data, null);
+                    dataTable.getAuditHandler().addAuditEvent(getUser(), getContainer(), dataTable, _auditBehaviorType, null, QueryService.AuditAction.INSERT, Collections.singletonList(row), null);
+                }
+            }
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)
@@ -1360,11 +1500,11 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            getLog().warn("No data file found for " + expData.getName() + ", unable to import. (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
+            getLog().info("No data file found for " + expData.getName() + ". (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
         }
 
 
-        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);
+        _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData, null);
         getLog().debug("Finished loading Data with LSID '" + dataLSID + "'");
         return expData.getDataObject();
     }
@@ -1480,7 +1620,7 @@ public class XarReader extends AbstractXarImporter
                 value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
             }
 
-            if (AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
+            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
             {
                 Container autoCopyContainer = ContainerManager.getForPath(value);
                 if (autoCopyContainer != null)

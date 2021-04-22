@@ -134,7 +134,7 @@ public class QueryTable extends QueryRelation
         if (null != m)
         {
             // TODO: _selectAllColumns is a fix for not knowing which columns the method might depend on
-            // TODO: proper fix is to add MethodInfo.getDependantFiekdKeys()
+            // TODO: proper fix is to add MethodInfo.getDependantFieldKeys()
             _selectAllColumns = true;
             _generateSelectSQL = Boolean.TRUE; // don't optimize, see getAlias()
         }
@@ -158,6 +158,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    /** This method does not mark returned columns as selected */
     @Override
     protected Map<String,RelationColumn> getAllColumns()
     {
@@ -470,6 +471,18 @@ public class QueryTable extends QueryRelation
         boolean isHidden()
         {
             return _col.isHidden();
+        }
+
+        @Override
+        String getPrincipalConceptCode()
+        {
+            return _col.getPrincipalConceptCode();
+        }
+
+        @Override
+        String getConceptURI()
+        {
+            return _col.getConceptURI();
         }
 
         @Override

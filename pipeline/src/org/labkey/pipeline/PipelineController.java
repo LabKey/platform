@@ -35,10 +35,10 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -53,9 +53,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineActionConfig;
-import org.labkey.api.pipeline.PipelineJobData;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -116,7 +114,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -125,8 +122,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class PipelineController extends SpringActionController
 {
@@ -176,7 +171,7 @@ public class PipelineController extends SpringActionController
     {
         ActionURL url = new ActionURL(SetupAction.class, c);
         if (returnURL != null)
-            url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+            url.addReturnURL(returnURL);
         if (rootSet)
             url.addParameter(Params.rootset, "1");
         if (overrideRoot)
@@ -388,8 +383,15 @@ public class PipelineController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
-            root.addChild("Data Processing Pipeline Setup");
+            if (getContainer().isRoot())
+            {
+                urlProvider(AdminUrls.class).addAdminNavTrail(root, "Data Processing Pipeline Setup", getClass(), getContainer());
+            }
+            else
+            {
+                root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
+                root.addChild("Data Processing Pipeline Setup");
+            }
         }
     }
 
@@ -409,6 +411,7 @@ public class PipelineController extends SpringActionController
             BrowseWebPart wp = new BrowseWebPart(path);
             wp.getModelBean().setAutoResize(true);
             wp.setFrame(WebPartView.FrameType.NONE);
+            getPageConfig().setHelpTopic(new HelpTopic("fileSharing"));
             return wp;
         }
 
@@ -1070,71 +1073,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-/////////////////////////////////////////////////////////////////////////////
-//  Direct access to the PipelineQueue
-
-    public enum StatusParams { allcontainers }
-
-    public static ActionURL urlStatus(Container container, boolean allContainers)
-    {
-        ActionURL url = new ActionURL(StatusAction.class, container);
-        if (allContainers)
-            url.addParameter(StatusParams.allcontainers, "1");
-        return url;
-    }
-
-    /**
-     * Use the current container and the current "allcontainers" value to
-     * produce a URL for the status action.
-     *
-     * @return URL to the status action
-     */
-    private ActionURL urlStatus()
-    {
-        boolean allContainers = (getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null);
-        
-        return urlStatus(getContainer(), allContainers);
-    }
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class StatusAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            // Job data is only available from the mini-pipeline.
-            if (PipelineService.get().isEnterprisePipeline())
-                throw new NotFoundException();
-            
-            setHelpTopic(getHelpTopic("pipeline/status"));
-
-            PipelineQueue queue = PipelineService.get().getPipelineQueue();
-            return new JspView<>("/org/labkey/pipeline/pipelineStatus.jsp",
-                    new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Pipeline Status");
-        }
-    }
-
-    public class StatusModel
-    {
-        private PipelineJobData _jobData;
-
-        private StatusModel(PipelineJobData jobData)
-        {
-            _jobData = jobData;
-        }
-
-        public PipelineJobData getJobData()
-        {
-            return _jobData;
-        }
-    }
-
     @RequiresPermission(DeletePermission.class)
     public class CancelJobAction extends FormHandlerAction<StatusController.RowIdForm>
     {
@@ -1165,16 +1103,6 @@ public class PipelineController extends SpringActionController
         {
             return _successURL;
         }
-    }
-
-    protected Container getJobDataContainer()
-    {
-        if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class) &&
-                getViewContext().getRequest().getParameter(StatusParams.allcontainers.toString()) != null)
-        {
-            return null;
-        }
-        return getContainer();
     }
 
     protected PipeRoot getPipelineRoot(Container c)
@@ -1438,11 +1366,11 @@ public class PipelineController extends SpringActionController
             Container c = getContainer();
             if (_importContainers.size() == 1 && _importContainers.get(0).equals(c))
             {
-                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+                return urlProvider(PipelineStatusUrls.class).urlBegin(c);
             }
             else
             {
-                ActionURL url = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
+                ActionURL url = urlProvider(PipelineStatusUrls.class).urlBegin(c.getProject());
                 url.addParameter("StatusFiles.containerFilterName", ContainerFilter.Type.CurrentAndSubfolders.name());
                 return url;
             }
@@ -1621,22 +1549,17 @@ public class PipelineController extends SpringActionController
             URLHelper url;
 
             PipelineService.get().saveTriggerConfig(getContainer(), getUser(), form);
-            if (form.getReturnUrl() != null)
+            if (form.getReturnActionURL() != null)
             {
-                try
-                {
-                    url = new URLHelper(form.getReturnUrl());
-                }
-                catch (URISyntaxException e)
-                {
-                    url = getContainer().getStartURL(getUser());
-                }
+                url = form.getReturnActionURL();
             }
             else
+            {
                 url = getContainer().getStartURL(getUser());
+            }
 
             response.put("success", true);
-            response.put("returnUrl", url.toString());
+            response.put(ActionURL.Param.returnUrl.name(), url.toString());
 
             return response;
         }
@@ -1682,6 +1605,11 @@ public class PipelineController extends SpringActionController
             urlForm.setReturnUrl(returnUrl);
         }
 
+        public ActionURL getReturnActionURL()
+        {
+            return urlForm.getReturnActionURL();
+        }
+
         public String getPipelineTask()
         {
             return _pipelineTask;
@@ -1698,7 +1626,7 @@ public class PipelineController extends SpringActionController
 
     public static void registerAdminConsoleLinks()
     {
-        ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
+        ActionURL url = urlProvider(PipelineUrls.class).urlSetup(ContainerManager.getRoot());
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "pipeline email notification", url, AdminOperationsPermission.class);
     }
 
@@ -1722,7 +1650,7 @@ public class PipelineController extends SpringActionController
             ActionURL url = new ActionURL(BrowseAction.class, container);
 
             if (null != returnUrl)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+                url.addReturnURL(returnUrl);
 
             if (path != null)
                 url.addParameter(Params.path, path);
@@ -1796,7 +1724,7 @@ public class PipelineController extends SpringActionController
                 url.addParameter("pipelineTask", pipelineId);
 
             if (returnUrl != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
+                url.addReturnURL(returnUrl);
 
             return url;
         }
@@ -1815,11 +1743,23 @@ public class PipelineController extends SpringActionController
 
             return url;
         }
+
+        @Override
+        public ActionURL statusDetails(Container container)
+        {
+            return new ActionURL(StatusController.DetailsAction.class, container);
+        }
+
+        @Override
+        public ActionURL statusList(Container container)
+        {
+            return new ActionURL(StatusController.DetailsAction.class, container);
+        }
     }
 
     public static ActionURL urlBegin(Container container)
     {
-        return new ActionURL(BeginAction.class, container); 
+        return new ActionURL(BeginAction.class, container);
     }
 
 
@@ -1844,7 +1784,7 @@ public class PipelineController extends SpringActionController
             PipelineController controller = new PipelineController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new BeginAction(),
                 controller.new BrowseAction(),
                 controller.new ActionsAction(),
@@ -1872,7 +1812,6 @@ public class PipelineController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new UpdateRootPermissionsAction(),
-                controller.new StatusAction(),
                 controller.new SetupAction()
             );
         }

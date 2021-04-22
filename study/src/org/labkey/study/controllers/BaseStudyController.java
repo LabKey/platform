@@ -23,23 +23,23 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.security.User;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.study.CohortFilter;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
@@ -61,11 +61,6 @@ public abstract class BaseStudyController extends SpringActionController
     public static ActionURL getStudyOverviewURL(Container c)
     {
         return new ActionURL(StudyController.OverviewAction.class, c);
-    }
-
-    protected ActionURL getStudyOverviewURL()
-    {
-        return getStudyOverviewURL(getContainer());
     }
 
     protected SpecimenUtils getUtils()
@@ -254,9 +249,9 @@ public abstract class BaseStudyController extends SpringActionController
 
     public static class StudyJspView<T> extends JspView<T>
     {
-        public StudyJspView(StudyImpl study, String name, T bean, BindException errors)
+        public StudyJspView(StudyImpl study, String jspPath, T bean, BindException errors)
         {
-            super("/org/labkey/study/view/" + name, bean, errors);
+            super(jspPath, bean, errors);
             if (getPage() instanceof BaseStudyPage)
                 ((BaseStudyPage)getPage()).init(study);
         }

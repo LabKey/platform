@@ -722,7 +722,7 @@ starAtom
 
 // level 0 - the basic element of an expression
 primaryExpression
-	:   identPrimary
+	:   id=identPrimary
 	|   constant
 	|   OPEN! ( expression | subQuery) CLOSE!
 	|   PARAM^ (NUM_INT)?
@@ -734,7 +734,7 @@ primaryExpression
 // the method looks ahead to find keywords after DOT and turns them into identifiers.
 identPrimary
 	: dottedIdentifier
-        ( options { greedy=true; } : op=OPEN^ {$op.setType(METHOD_CALL);} exprList CLOSE! )?
+        ( options { greedy=true; } : op=OPEN^ {$op.setType(METHOD_CALL);} paramList CLOSE! )?
     | escapeFn
 	| aggregate
 	| cast
@@ -790,7 +790,22 @@ exprList
 
 exprListFragment
     : (expression (COMMA! expression)*)?
-    ; 
+    ;
+
+// same as exprList except support named params T.findColumn(name='name')
+// does not yet support mixed named/unnamed
+// named parameters are returned as annotations (rather than parse tree)
+paramList
+	: list=paramListTree {((SupportsAnnotations)list.getTree()).setAnnotations(getAnnotations());}
+ 	;
+
+paramListTree
+	: paramListFragment -> ^(EXPR_LIST paramListFragment?)
+ 	;
+
+paramListFragment
+    : ( (expression | at_annotation!) (COMMA! (expression | at_annotation!))* )?
+    ;
 
 
 constantExprList

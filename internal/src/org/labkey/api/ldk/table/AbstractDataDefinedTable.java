@@ -116,6 +116,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
     protected Set<String> getDistinctValues()
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_filterColumn), _filterValue, CompareType.EQUAL);
+        filter.addCondition(FieldKey.fromParts("Container"), getContainer().getEntityId().toString());
         TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_valueColumn), filter, null);
         String[] existing = ts.getArray(String.class);
 
@@ -130,7 +131,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 
     protected class UpdateService extends SimpleQueryUpdateService
     {
-        private ValuesManager _vm;
+        private final ValuesManager _vm;
 
         public UpdateService(SimpleUserSchema.SimpleTable ti)
         {
@@ -198,7 +199,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 
     protected class ValuesManager
     {
-        private Set<String> _distinctValues;
+        private final Set<String> _distinctValues;
 
         public ValuesManager()
         {
@@ -230,12 +231,15 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
 
     protected class _DataIteratorBuilder implements DataIteratorBuilder
     {
-        DataIteratorContext _context;
         final DataIteratorBuilder _in;
 
-        public _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
+        public _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext unused)
         {
-            _context = context;
+            _in = in;
+        }
+
+        public _DataIteratorBuilder(@NotNull DataIteratorBuilder in)
+        {
             _in = in;
         }
 

@@ -5,9 +5,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public interface MutableColumnInfo extends MutableColumnRenderProperties, ColumnInfo
 {
@@ -106,4 +109,85 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
     void setHasDbSequence(boolean b);
 
     void setIsRootDbSequence(boolean b);
+
+
+    // helpers
+    // TODO: fix up OORIndicator
+
+    default void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        checkLocked();
+        if (null==parent && (null == remap || remap.isEmpty()))
+            return;
+
+        // TODO should mvColumnName be a fieldkey so we can reparent etc?
+        if (null != getMvColumnName())
+        {
+            FieldKey r = null==remap ? null : remap.get(getMvColumnName());
+            if (null != r && r.getParent()==null)
+                setMvColumnName(r);
+        }
+
+        remapUrlFieldKeys(parent, remap);
+        remapTextExpressionFieldKeys(parent, remap);
+        remapForeignKeyFieldKeys(parent, remap);
+        remapSortFieldKeys(parent, remap);
+        remapDisplayColumnFactory(parent, remap);
+    }
+
+
+    default void remapUrlFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        StringExpression se = getURL();
+        if (se instanceof StringExpressionFactory.FieldKeyStringExpression && se != AbstractTableInfo.LINK_DISABLER)
+        {
+            StringExpressionFactory.FieldKeyStringExpression remapped = ((StringExpressionFactory.FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
+            setURL(remapped);
+        }
+    }
+
+    default void remapTextExpressionFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        StringExpression se = getTextExpression();
+        if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            StringExpressionFactory.FieldKeyStringExpression remapped = ((StringExpressionFactory.FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
+            setTextExpression(remapped);
+        }
+    }
+
+
+    default void remapForeignKeyFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        ForeignKey fk = getFk();
+        if (fk == null)
+            return;
+        ForeignKey remappedFk = fk.remapFieldKeys(parent, remap);
+        setFk(remappedFk);
+    }
+
+
+    default void remapSortFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        if (getSortFieldKeys() == null)
+            return;
+
+        List<FieldKey> remappedKeys = new ArrayList<>();
+        for (FieldKey key : getSortFieldKeys())
+        {
+            remappedKeys.add(FieldKey.remap(key, parent, remap));
+        }
+
+        setSortFieldKeys(remappedKeys);
+    }
+
+    default void remapDisplayColumnFactory(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        DisplayColumnFactory factory = getDisplayColumnFactory();
+        if (DEFAULT_FACTORY == factory || !(factory instanceof RemappingDisplayColumnFactory))
+            return;
+
+        RemappingDisplayColumnFactory remapped = ((RemappingDisplayColumnFactory) factory).remapFieldKeys(parent, remap);
+        setDisplayColumnFactory(remapped);
+    }
 }

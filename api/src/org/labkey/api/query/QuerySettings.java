@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
@@ -35,7 +36,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportIdentifier;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
@@ -306,11 +306,15 @@ public class QuerySettings
         if (returnURL == null)
         {
             returnURL = _getParameter("returnURL");
-            if (returnURL != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
-                throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+            if (returnURL != null)
+                ReturnUrlForm.throwBadParam();
         }
         if (returnURL == null)
+        {
             returnURL = _getParameter(QueryParam.srcURL.toString());
+            if (returnURL != null)
+                ReturnUrlForm.throwBadParam("srcURL");
+        }
         if (returnURL != null)
         {
             try
@@ -321,7 +325,7 @@ public class QuerySettings
             }
             catch (URISyntaxException | IllegalArgumentException use)
             {
-                throw new BadRequestException(String.format(parseError, "returnUrl", returnURL), use);
+                throw new BadRequestException(String.format(parseError, ActionURL.Param.returnUrl, returnURL), use);
             }
         }
 

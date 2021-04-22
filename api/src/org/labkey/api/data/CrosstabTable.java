@@ -388,10 +388,10 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         if(null != getAggregateFilter())
         {
             sql.append("\n");
-            if(getOrAggFilters())
+            if (getOrAggFilters())
                 addOrAggFilterJoin(sql, filterColMap, AGG_FILTERED_ALIAS);
             else
-                sql.append(getAggregateFilter().getSQLFragment(getSqlDialect(), filterColMap));
+                sql.append(getAggregateFilter().getSQLFragment(getSqlDialect(), AGG_FILTERED_ALIAS, filterColMap));
         }
 
     } //addPivotQuery()
@@ -485,7 +485,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         //now add the agg filters
         sql.append("\n");
-        sql.append(getAggregateFilter().getSQLFragment(getSqlDialect(), filterColMap));
+        sql.append(getAggregateFilter().getSQLFragment(getSqlDialect(), AGG_OR_ALIAS, filterColMap));
 
         //end the inner-join table
         //aliased as ROWMEMS_ALIAS

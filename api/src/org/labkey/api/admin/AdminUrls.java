@@ -16,6 +16,7 @@
 
 package org.labkey.api.admin;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
@@ -23,6 +24,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * User: jgarms
@@ -42,6 +44,7 @@ public interface AdminUrls extends UrlProvider
 
     // URLs to key Folder Management tabs
     ActionURL getManageFoldersURL(Container c);
+    ActionURL getFolderTypeURL(Container c);
     ActionURL getMissingValuesURL(Container c);
     ActionURL getModulePropertiesURL(Container c);
     ActionURL getNotificationsURL(Container c);
@@ -64,7 +67,21 @@ public interface AdminUrls extends UrlProvider
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();
 
-    void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
-    @Deprecated // use addAdminNavTrail above
-    NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
+    /**
+     * Simply adds an "Admin Console" link to nav trail if invoked in the root container. Otherwise, root is unchanged.
+     */
+    void addAdminNavTrail(NavTree root, @NotNull Container container);
+
+    /**
+     * Adds an "Admin Console" link to the nav trail if invoked in the root container. In all cases, adds childTitle
+     * that links to the action. This ensures appropriate and consistent navtrails whether the action is invoked in the
+     * root or elsewhere.
+     */
+    void addAdminNavTrail(NavTree root, String childTitle, @NotNull Class<? extends Controller> action, @NotNull Container container);
+
+    /**
+     * Adds "Admin Console / Modules" links to the nav trail if invoked in the root container. Otherwise, just displays
+     * childTitle.
+     */
+    void addModulesNavTrail(NavTree root, String childTitle, @NotNull Container container);
 }

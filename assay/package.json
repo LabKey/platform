@@ -5,22 +5,16 @@
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "start": "cross-env NODE_ENV=development LK_MODULE=assay webpack-dev-server --config ../webpack/watch.config.js",
-    "build-dev": "npm run clean && cross-env NODE_ENV=development LK_MODULE=assay webpack --config ../webpack/dev.config.js --progress --profile --colors",
-    "build-prod": "npm run clean && cross-env NODE_ENV=production LK_MODULE=assay webpack --config ../webpack/prod.config.js --progress --profile --colors",
-    "clean": "rimraf resources/web/assay/gen && rimraf resources/views/*.*"
+    "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=assay webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start-link": "cross-env LINK=true npm run start",
+    "build-dev": "npm run clean && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=assay webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
+    "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=assay webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
+    "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "0.97.0"
+    "@labkey/components": "2.23.1"
   },
   "devDependencies": {
-    "@hot-loader/react-dom": "16.13.0",
-    "@types/react": "16.9.44",
-    "cross-env": "7.0.2",
-    "react-hot-loader": "4.12.21",
-    "rimraf": "3.0.2",
-    "webpack": "4.44.1",
-    "webpack-cli": "3.3.12",
-    "webpack-dev-server": "3.11.0"
+    "@labkey/build": "2.1.0"
   }
 }

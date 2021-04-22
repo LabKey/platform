@@ -28,13 +28,13 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JavaScriptDisplayColumn;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -71,7 +71,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         rowIdColumn.setKeyField(true);
 
         var source = new AliasedColumn(this, "Source", _rootTable.getColumn("source"));
-        ContainerForeignKey.initColumn(source, getUserSchema());
+        source.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
         addColumn(source);
 
         addColumn(new AliasedColumn(this, "Type", _rootTable.getColumn(FieldKey.fromParts("type"))));
@@ -83,7 +83,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, false, true){
+                return new ContainerDisplayColumn(colInfo, false){
                     @Override
                     public String renderURL(RenderContext ctx)
                     {
@@ -132,7 +132,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         });
 
         ComplianceService complianceService = ComplianceService.get();
-        String maxAllowedPhi = (null != complianceService ? complianceService.getMaxAllowedPhi(getContainer(), schema.getUser()).name() : PHI.Restricted.name());
+        String maxAllowedPhi = complianceService.getMaxAllowedPhi(getContainer(), schema.getUser()).name();
 
         AliasedColumn republishCol = new AliasedColumn("Republish", wrapColumn(_rootTable.getColumn("RowId")));
         republishCol.setDisplayColumnFactory(new DisplayColumnFactory()

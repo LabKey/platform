@@ -18,6 +18,8 @@ package org.labkey.api.action;
 
 import org.labkey.api.view.UnauthorizedException;
 
+import javax.annotation.Nullable;
+
 /**
  * Interface for {@link Action} classes that want to handle permission checks
  * in a way that's more complex than allowed by the standard
@@ -28,4 +30,12 @@ import org.labkey.api.view.UnauthorizedException;
 public interface PermissionCheckable
 {
     void checkPermissions() throws UnauthorizedException;
+
+    /**
+     * @return  the preferred response format. Primarily utilized so that API actions can return JSON for
+     * 401, 404, 500, and other error conditions. Null indicates no preference, which will typically result in an HTML
+     * response
+     */
+    @Nullable
+    default ApiResponseWriter.Format getDefaultResponseFormat() { return null; }
 }

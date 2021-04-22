@@ -37,6 +37,7 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.HashDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
@@ -58,6 +59,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -74,7 +76,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     {
         return DataLoaderService.get();
     }
-    
+
     // if a conversion error occurs, the original field value is returned
     public static final Object ERROR_VALUE_USE_ORIGINAL = new Object();
     private static final Logger _log = LogManager.getLogger(DataLoader.class);
@@ -145,6 +147,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return _includeBlankLines;
     }
 
+
+
     /** When false (the default), lines that have no values will be skipped. When true, a row of null values is returned instead. */
     public void setIncludeBlankLines(boolean includeBlankLines)
     {
@@ -162,6 +166,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         ensureInitialized(renamedColumns);
 
         return _columns;
+    }
+
+    public ColumnDescriptor[] getActiveColumns() throws IOException
+    {
+        ArrayList<ColumnDescriptor> active = new ArrayList<>();
+        for (ColumnDescriptor column : getColumns())
+            if (column.load)
+                active.add(column);
+        return active.toArray(new ColumnDescriptor[active.size()]);
     }
 
     protected void ensureInitialized(@NotNull Map<String, String> renamedColumns) throws IOException
@@ -443,6 +456,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @Override
     public abstract CloseableIterator<Map<String, Object>> iterator();
 
+    /**
+     * Returns an iterator over the data, requests that Loader adds row hash for each row.
+     * The loader is _not_ required to support this functionality, but the idea is that the
+     * loader is closer to the raw data, and may be able to do a more reliable/reproducible job.
+     * If supported, the value should be added to the returned with a key of HashDataIterator.HASH_COLUMN_NAME
+     */
+    public CloseableIterator<Map<String, Object>> iterator(boolean includeRowHash)
+    {
+        return iterator();
+    }
 
     /**
      * Returns a list of T records, one for each non-header row of the file.
@@ -470,22 +493,20 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         private Object[] _fields = null;
         private Map<String, Object> _values = null;
         private int _lineNum = 0;
-        private boolean _closed = false;
-
+        private boolean _generateInputRowHash;
 
         protected DataLoaderIterator(int lineNum) throws IOException
         {
+            this(lineNum, false);
+        }
+
+        protected DataLoaderIterator(int lineNum, boolean generateInputRowHash) throws IOException
+        {
             _lineNum = lineNum;
+            _generateInputRowHash = generateInputRowHash;
 
             // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
-            ColumnDescriptor[] allColumns = getColumns();
-            ArrayList<ColumnDescriptor> active = new ArrayList<>(allColumns.length);
-
-            for (ColumnDescriptor column : allColumns)
-                if (column.load)
-                    active.add(column);
-
-            _activeColumns = active.toArray(new ColumnDescriptor[active.size()]);
+            _activeColumns = getActiveColumns();
             ArrayListMap.FindMap<String> colMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
 
             for (int i = 0; i < _activeColumns.length; i++)
@@ -493,6 +514,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 if (!_activeColumns[i].isMvIndicator())
                     colMap.put(_activeColumns[i].name, i);
             }
+
+            if (_generateInputRowHash)
+                colMap.put(HashDataIterator.HASH_COLUMN_NAME, colMap.size());
 
             _factory = new RowMapFactory<>(colMap);
 
@@ -537,11 +561,19 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     }
                     _lineNum++;
 
+                    String hash = _generateInputRowHash ? HashDataIterator.calculateRowHash(_fields,0,_fields.length) : null;
+
                     _values = convertValues();
+                    if (null == _values)
+                        return false;
+
                     if (_values == Collections.EMPTY_MAP && !isIncludeBlankLines())
                         continue;
 
-                    return _values != null;
+                    if (_generateInputRowHash)
+                        _values.put(HashDataIterator.HASH_COLUMN_NAME, hash);
+
+                    return true;
                 }
             }
             catch (IOException e)
@@ -791,18 +823,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         @Override
         public void close() throws IOException
         {
-            _closed = true;
-        }
-
-
-        @Override
-        protected void finalize() throws Throwable
-        {
-            super.finalize();
-            // assert _closed;  TODO: Uncomment to force all callers to close iterator.
         }
     }
 
+
+
+    /* since we don't test this, let's not allow getDataIterator() to be called twice */
+    boolean hasGetDataIteratorBeenCalled = false;
 
     /**
      * It might be nice to go one level lower in the parser
@@ -814,6 +841,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     @Nullable
     public DataIterator getDataIterator(final DataIteratorContext context)
     {
+        if (hasGetDataIteratorBeenCalled)
+            throw new IllegalStateException();
+        hasGetDataIteratorBeenCalled = true;
         setInferTypes(false);
         try
         {
@@ -829,7 +859,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     /** Actually create an instance of DataIterator to use, which might be subclass-specific */
     protected DataIterator createDataIterator(DataIteratorContext context) throws IOException
     {
-        return new _DataIterator(context, getColumns(), isScrollable());
+        return new _DataIterator(context, getActiveColumns(), isScrollable());
     }
 
     protected class _DataIterator implements ScrollableDataIterator, MapDataIterator
@@ -874,7 +904,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 }
                 IOUtils.closeQuietly(_it);
             }
-            _it = iterator();
+            _it = iterator(_context.getConfigParameterBoolean(HashDataIterator.Option.generateInputHash));
             _rowNumber = 0;
         }
 
@@ -912,6 +942,20 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 if (nextRow instanceof ArrayListMap)
                 {
                     _row = (ArrayListMap)nextRow;
+                    if (_rowNumber == 0)
+                    {
+                        // verify that map returned by iterator matches ColumnDescriptor list
+                        _findMap = _row.getFindMap();
+                        for (int i=0 ; i<_columns.length ; i++)
+                        {
+                            String columnName = _columns[i].getColumnName();
+                            Integer I = _findMap.get(columnName);
+                            assert null != I;
+                            // the found map index I should match the columns index.
+                            // UNLESS there are duplicate column names.  Someone else 'downstream' will (hopefully) sort that out
+                            assert I == i || Arrays.stream(_columns).anyMatch(col -> columnName.equalsIgnoreCase(col.getColumnName()));
+                        }
+                    }
                 }
                 else
                 {

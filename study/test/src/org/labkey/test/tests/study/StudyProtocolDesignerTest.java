@@ -124,7 +124,10 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest
     {
         testVaccineDesign();
         testTreatmentSchedule();
-        testManageTreatmentsSingleTable();
+        if (_containerHelper.getAllModules().contains("viscstudies"))
+        {
+            testManageTreatmentsSingleTable();
+        }
         verifyTreatmentSchedule();
         testAssaySchedule();
         testExportImport();

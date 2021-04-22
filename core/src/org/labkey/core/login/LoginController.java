@@ -33,6 +33,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
@@ -46,35 +47,18 @@ import org.labkey.api.module.AllowedOutsideImpersonationProject;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationConfigurationCache;
-import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.CSRF;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.IgnoresTermsOfUse;
-import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
-import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.TokenAuthenticationManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -136,7 +120,6 @@ import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
  * User: adam
@@ -171,13 +154,6 @@ public class LoginController extends SpringActionController
 
     public static class LoginUrlsImpl implements LoginUrls
     {
-        @Override
-        public void addAuthenticationNavTrail(NavTree root)
-        {
-            root.addChild("Admin Console", AdminController.getShowAdminURL());
-            root.addChild("Authentication", getConfigureURL());
-        }
-
         @Override
         public ActionURL getConfigureURL()
         {
@@ -690,15 +666,15 @@ public class LoginController extends SpringActionController
                 {
                     response.put("user", User.getUserProps(user, getContainer()));
                     if (!StringUtils.isEmpty(redirectUrl.getURIString()))
-                        response.put("returnUrl", redirectString);
+                        response.put(ActionURL.Param.returnUrl.name(), redirectString);
                     else
-                        response.put("returnUrl", StringUtils.defaultIfEmpty(form.getReturnUrl(),  AppProps.getInstance().getHomePageActionURL().getPath()));
+                        response.put(ActionURL.Param.returnUrl.name(), StringUtils.defaultIfEmpty(form.getReturnUrl(),  AppProps.getInstance().getHomePageActionURL().getPath()));
                 }
                 else
                 {
                     // AuthenticationResult returned by AuthenticationManager.handleAuthentication indicated that a secondary authentication is needed
                     // in the ajax response inform js handler to load page from secondary authenticator url
-                    response.put("returnUrl", redirectString);
+                    response.put(ActionURL.Param.returnUrl.name(), redirectString);
                 }
             }
             else if (!errors.hasErrors())
@@ -714,7 +690,7 @@ public class LoginController extends SpringActionController
 
                     response = new ApiSimpleResponse();
                     response.put("success", false);
-                    response.put("returnUrl", redirectString);
+                    response.put(ActionURL.Param.returnUrl.name(), redirectString);
                     AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
                 }
             }
@@ -736,8 +712,10 @@ public class LoginController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("full", DbLoginManager.getPasswordRule().getFullRuleHTML());
-            response.put("summary", DbLoginManager.getPasswordRule().getSummaryRuleHTML());
+            PasswordRule passwordRule = DbLoginManager.getPasswordRule();
+
+            response.put("full", passwordRule.getFullRuleHTML());
+            response.put("summary", passwordRule.getSummaryRuleHTML());
             return response;
         }
     }
@@ -772,7 +750,7 @@ public class LoginController extends SpringActionController
             {
                 AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), "Changed password.", false, errors);
                 if (result != null)
-                    response.put("returnUrl", result.getRedirectURL());
+                    response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
             }
 
             response.put("success", !errors.hasErrors());
@@ -800,7 +778,7 @@ public class LoginController extends SpringActionController
                 {
                     AuthenticationResult result = attemptSetPassword(email, form.getReturnURLHelper(), "Verified and chose a password.", true, errors);
                     if (result != null)
-                        response.put("returnUrl", result.getRedirectURL());
+                        response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
                 }
             }
 
@@ -849,12 +827,6 @@ public class LoginController extends SpringActionController
             return Pair.of(false, "Reset Password failed: " + rawEmail + " is not a valid email address.");
         }
 
-        if (SecurityManager.isLdapEmail(email))
-        {
-            // ldap authentication users must reset through their ldap administrator
-            return Pair.of(false, "Reset Password failed: " + email + " is an LDAP email address. Please contact your LDAP administrator to reset the password for this account.");
-        }
-
         // Every case below this point should result in the same, generic message being displayed to the user to avoid revealing any details about accounts, #33907
 
         final User user = UserManager.getUser(email);
@@ -868,7 +840,7 @@ public class LoginController extends SpringActionController
         if (!SecurityManager.loginExists(email))
         {
             _log.error("Password reset attempted for an account that doesn't have a password: " + email);
-            return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via a single sign-on provider. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
+            return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via LDAP or single sign-on. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
         }
 
         if (!user.isActive())
@@ -1116,7 +1088,7 @@ public class LoginController extends SpringActionController
         // regarding 'server upgrade' and 'server startup' is executed regardless of the custom login action the user specified.
         String loginController = "login";
         String loginAction = "login";
-        String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomLogin());
+        String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(getContainer()).getCustomLogin());
         WebPartView view = null;
         if (null != customLogin)
         {
@@ -1173,7 +1145,7 @@ public class LoginController extends SpringActionController
 
         if (null != cookies)
         {
-            // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @.  See #6736.
+            // Starting in LabKey 9.1, the cookie value is URL encoded to allow for special characters like @. See #6736.
             String encodedEmail = PageFlowUtil.getCookieValue(cookies, "email", null);
 
             if (null != encodedEmail)
@@ -1709,7 +1681,7 @@ public class LoginController extends SpringActionController
         }
         catch (UserManagementException e)
         {
-            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ".  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ". Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             return null;
         }
 
@@ -1721,7 +1693,7 @@ public class LoginController extends SpringActionController
         }
         catch (UserManagementException e)
         {
-            errors.reject("setPassword", "Resetting verification failed.  Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
+            errors.reject("setPassword", "Resetting verification failed. Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
             return null;
         }
 
@@ -1825,7 +1797,7 @@ public class LoginController extends SpringActionController
         {
             if (user == null)
             {
-                errors.reject("setPassword", "This user doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
+                errors.reject("setPassword", "This user doesn't exist. Make sure you've copied the entire link into your browser's address bar.");
             }
             else if (!user.isActive())
             {
@@ -1837,10 +1809,10 @@ public class LoginController extends SpringActionController
         {
             if (!SecurityManager.loginExists(email))
             {
-                if (SecurityManager.isLdapEmail(email))
-                    errors.reject("setPassword", "Your account will use your institution's LDAP authentication server and you do not need to set a separate password.");
+                if (AuthenticationManager.isLdapEmail(email))
+                    errors.reject("setPassword", "Your account will authenticate using LDAP and you do not need to set a separate password.");
                 else
-                    errors.reject("setPassword", "This email address is not associated with an account.  Make sure you've copied the entire link into your browser's address bar.");
+                    errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
             }
             else if (SecurityManager.isVerified(email))
                 errors.reject("setPassword", "This email address has already been verified.");
@@ -1848,7 +1820,7 @@ public class LoginController extends SpringActionController
                 errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
             else
                 // Incorrect verification string
-                errors.reject("setPassword", "Verification failed.  Make sure you've copied the entire link into your browser's address bar.");
+                errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
     }
 
@@ -1941,10 +1913,14 @@ public class LoginController extends SpringActionController
                     {
                         SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
 
-                        //set default "from" address for system emails to first registered user
-                        WriteableLookAndFeelProperties laf = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
-                        laf.setSystemEmailAddress(newUserBean.getEmail());
-                        laf.save();
+                        if (!LookAndFeelProperties.getInstance(ContainerManager.getRoot()).hasSystemEmailAddress())
+                        {
+                            // set default "from" address for system emails to first registered user, but don't stomp
+                            // over a value that might have been set by a startup property (issue 42865)
+                            WriteableLookAndFeelProperties laf = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
+                            laf.setSystemEmailAddress(newUserBean.getEmail());
+                            laf.save();
+                        }
 
                         //set default domain to user email domain
                         String userEmailAddress = newUserBean.getEmail().getEmailAddress();
@@ -1969,7 +1945,7 @@ public class LoginController extends SpringActionController
             }
             catch (InvalidEmailException e)
             {
-                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address.  Please enter an email address in this form: user@domain.tld");
+                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
             }
 
             return success;
@@ -2398,14 +2374,14 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("AuthenticationConfiguration"));
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            getUrls().addAuthenticationNavTrail(root);
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Authentication Configuration", getClass(), getContainer());
         }
     }
 

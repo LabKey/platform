@@ -25,7 +25,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -40,9 +39,9 @@ import java.util.Map;
 
 /**
  * User: brittp
-* Date: Jul 26, 2007
-* Time: 7:23:37 PM
-*/
+ * Date: Jul 26, 2007
+ * Time: 7:23:37 PM
+ */
 @RequiresPermission(InsertPermission.class)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
@@ -68,8 +67,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         ctx.setContainer(getContainer());
         ctx.setBaseFilter(filter);
 
-        Results results = dr.getResults(ctx);
-        try (ExcelWriter xl = new ExcelWriter(results, dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx))
+        try (ExcelWriter xl = new ExcelWriter(()->dr.getResults(ctx), dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx))
         {
             xl.write(getViewContext().getResponse());
         }

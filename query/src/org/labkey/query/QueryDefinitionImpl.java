@@ -16,7 +16,6 @@
 
 package org.labkey.query;
 
-import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,6 +80,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown"})
 public abstract class QueryDefinitionImpl implements QueryDefinition
@@ -167,7 +167,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public void delete(User user, boolean fireChangeEvent)
     {
-        if (!canEdit(user))
+        if (!canDelete(user))
         {
             throw new IllegalArgumentException("Access denied");
         }
@@ -187,7 +187,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     {
         if (!getDefinitionContainer().equals(getContainer()))
             return false;
-        return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
+        return getDefinitionContainer().hasPermissions(user, Set.of(EditQueriesPermission.class, UpdatePermission.class));
+    }
+
+    @Override
+    public boolean canEditMetadata(User user)
+    {
+        return canEdit(user);
+    }
+
+    @Override
+    public boolean canDelete(User user)
+    {
+        return canEdit(user);
     }
 
     @Override
@@ -406,10 +418,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             getTable(queryExceptions, true);
             for (QueryException e : queryExceptions)
             {
-                if (e instanceof MetadataParseWarning)
-                    warnings.add((MetadataParseWarning)e);
-                else
+                if (!(e instanceof MetadataParseWarning))
                     errors.add(wrapParseException(e, true));
+                else if  (null != warnings)
+                    warnings.add((MetadataParseWarning) e);
             }
         }
         return errors.isEmpty();
@@ -441,20 +453,20 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public final Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata)
     {
-        return getQuery(schema, errors, parent, includeMetadata, false, false);
+        return getQuery(schema, errors, parent, includeMetadata, false);
     }
+
     /*
      * I find it very strange that only the xml errors get added to the "errors" list, while
      * the parse errors remain in the getParseErrors() list
      */
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns)
     {
         Query query = new Query(schema, getName(), parent);
 
         query.setDebugName(getSchemaName() + "." + getName());
         query.setContainerFilter(getContainerFilter());
         query.setMetadataTableMap(_metadataTableMap);
-        query.setAllowDuplicateColumns(allowDuplicateColumns);
         String sql = getSql();
         if (sql != null)
         {
@@ -515,12 +527,12 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata)
     {
-        return getTable(schema, errors, includeMetadata, false, false);
+        return getTable(schema, errors, includeMetadata, false);
     }
 
     @Nullable
     @Override
-    public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
+    public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns)
     {
         // CONSIDER: define UserSchema.equals() ?
         if (schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
@@ -539,7 +551,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 // Occasionally called with a get, but simple table creation is not a serious vector for CSRF attacks
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
-                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
+                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns);
                 }
 
                 if (null == table)
@@ -563,14 +575,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Nullable
     public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
-        return createTable(schema, errors, includeMetadata, query, false, false);
+        return createTable(schema, errors, includeMetadata, query, false);
     }
 
     /**
      * @param query a Query object to reuse, if available. Otherwise, a new one will be created behind the scenes
      */
     @Nullable
-    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
+    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns)
     {
         if (errors == null)
         {
@@ -578,7 +590,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         if (query == null)
         {
-            query = getQuery(schema, errors, null, includeMetadata, skipSuggestedColumns, allowDuplicateColumns);
+            query = getQuery(schema, errors, null, includeMetadata, skipSuggestedColumns);
         }
         TableInfo ret = query.getTableInfo();
         if (null != ret)
@@ -989,12 +1001,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes = new ArrayList<>();
         _dirty = true;
         return _queryDef;
-    }
-
-    @Override
-    public boolean isTableQueryDefinition()
-    {
-        return false;
     }
 
     @Override

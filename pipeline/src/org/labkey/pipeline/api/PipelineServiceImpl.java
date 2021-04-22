@@ -28,6 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NormalContainerType;
@@ -42,6 +44,7 @@ import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobNotificationProvider;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -105,6 +108,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.labkey.api.pipeline.PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider.DEFAULT_PIPELINE_JOB_NOTIFICATION_PROVIDER;
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
 
 public class PipelineServiceImpl implements PipelineService
@@ -116,7 +120,16 @@ public class PipelineServiceImpl implements PipelineService
     private static final String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
     private static final String KEY_PREFERENCES = "pipelinePreferences";
 
+    public static final List<String> INACTIVE_JOB_STATUSES = Arrays.asList(
+            PipelineJob.TaskStatus.cancelled.toString(),
+            PipelineJob.TaskStatus.cancelling.toString(),
+            PipelineJob.TaskStatus.complete.toString(),
+            PipelineJob.TaskStatus.error.toString()
+    );
+
     private final Map<String, PipelineProvider> _mapPipelineProviders = new ConcurrentSkipListMap<>();
+    private final Map<String, PipelineJobNotificationProvider> _jobNotificationProviders = new ConcurrentCaseInsensitiveSortedMap<>();
+
     private final List<PipelineProviderSupplier> _suppliers = new CopyOnWriteArrayList<>();
     private final PipelineQueue _queue;
 
@@ -128,6 +141,8 @@ public class PipelineServiceImpl implements PipelineService
     public PipelineServiceImpl()
     {
         registerPipelineProviderSupplier(new StandardPipelineProviderSupplier());
+
+        registerPipelineJobNotificationProvider(new PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider());
 
         ConnectionFactory factory = null;
         try
@@ -163,6 +178,12 @@ public class PipelineServiceImpl implements PipelineService
         _mapPipelineProviders.put(provider.getName(), provider);
         for (String alias : aliases)
             _mapPipelineProviders.put(alias, provider);
+    }
+
+    @Override
+    public void registerPipelineJobNotificationProvider(PipelineJobNotificationProvider provider)
+    {
+        _jobNotificationProviders.put(provider.getName(), provider);
     }
 
     @Nullable
@@ -302,7 +323,7 @@ public class PipelineServiceImpl implements PipelineService
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
-        
+
         PipelineManager.setPipelineRoot(user, container, roots, type, searchable);
     }
 
@@ -363,6 +384,32 @@ public class PipelineServiceImpl implements PipelineService
         return null;
     }
 
+    @Nullable
+    @Override
+    public PipelineJobNotificationProvider getPipelineJobNotificationProvider(@Nullable String name)
+    {
+        if (StringUtils.isEmpty(name))
+            return getDefaultPipelineJobNotificationProvider();
+
+        return _jobNotificationProviders.get(name);
+    }
+
+    public PipelineJobNotificationProvider getDefaultPipelineJobNotificationProvider()
+    {
+        return _jobNotificationProviders.get(DEFAULT_PIPELINE_JOB_NOTIFICATION_PROVIDER);
+    }
+
+    @Nullable
+    @Override
+    public PipelineJobNotificationProvider getPipelineJobNotificationProvider(@Nullable String name, PipelineJob job)
+    {
+        PipelineJobNotificationProvider provider = getPipelineJobNotificationProvider(name);
+        if (provider != null && !provider.useDefaultJobNotification(job))
+            return provider;
+
+        return getDefaultPipelineJobNotificationProvider();
+    }
+
     @Override
     public boolean isEnterprisePipeline()
     {
@@ -377,11 +424,21 @@ public class PipelineServiceImpl implements PipelineService
     }
 
     @Override
-    public void queueJob(PipelineJob job) throws PipelineValidationException
+    public void queueJob(PipelineJob job, @Nullable String jobNotificationProvider) throws PipelineValidationException
     {
         // Test serialization by serializing and deserializating every job
         PipelineJob deserializedJob = PipelineJob.deserializeJob(PipelineJob.serializeJob(job, false));
         getPipelineQueue().addJob(deserializedJob);
+
+        PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(jobNotificationProvider, job);
+        if (notificationProvider != null)
+            notificationProvider.onJobQueued(job);
+    }
+
+    @Override
+    public void queueJob(PipelineJob job) throws PipelineValidationException
+    {
+        queueJob(job, null);
     }
 
     @Override
@@ -510,7 +567,7 @@ public class PipelineServiceImpl implements PipelineService
     {
         if (user.isGuest())
             return;
-        if (sequenceDbPath == null || sequenceDbPath.equals("/")) 
+        if (sequenceDbPath == null || sequenceDbPath.equals("/"))
             sequenceDbPath = "";
         String fullPath = sequenceDbPath + sequenceDb;
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container,
@@ -886,6 +943,15 @@ public class PipelineServiceImpl implements PipelineService
     public void deleteStatusFile(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         PipelineStatusManager.deleteStatus(c, u, deleteExpRuns, rowIds);
+    }
+
+    @Override
+    public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerName);
+        filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
+
+        return new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("Description"), filter, null).getMapCollection();
     }
 
     public static class TestCase extends Assert

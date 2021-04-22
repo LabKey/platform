@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
@@ -165,12 +164,14 @@
                     });
                 }
                 else {
-                    LABKEY.requiresScript(['Ext4', 'SignSnapshotPanel.js'], function() {
-                        Ext4.onReady(function() {
-                            Ext4.create('LABKEY.Query.SignSnapshotPanel', {
-                                emailInput: '<%=h(model.getEmail())%>',
-                                params: exportParams,
-                                url: exportUrl
+                    LABKEY.requiresExt4Sandbox(function() {
+                        LABKEY.requiresScript('SignSnapshotPanel.js', function() {
+                            Ext4.onReady(function() {
+                                Ext4.create('LABKEY.Query.SignSnapshotPanel', {
+                                    emailInput: <%=q(model.getEmail())%>,
+                                    params: exportParams,
+                                    url: exportUrl
+                                });
                             });
                         });
                     });

@@ -73,9 +73,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,6 +99,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
     private static final Logger _log = LogManager.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
+
     static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
@@ -181,15 +180,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 // database. This can be helpful on test and dev machines. See #23730.
                 DbScope scope = DbScope.getLabKeyScope();
 
-                try
-                {
-                    _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
-                    DbScope.addScope(dsName, scope.getDataSource(), scope.getLabKeyProps());
-                }
-                catch (SQLException | ServletException e)
-                {
-                    throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").", e);
-                }
+                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
+                DbScope.addScope(dsName, scope.getDataSource(), scope.getLabKeyProps());
+                if (null == DbScope.getDbScope(dsName)) // Force immediate connection to test
+                    throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").");
             }
             else
             {
@@ -220,7 +214,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         synchronized(INSTANTIATED_MODULES)
         {
-            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            Pair<Class<?>, String> reg = new Pair<>(getClass(), getName());
             INSTANTIATED_MODULES.remove(reg);
         }
     }
@@ -264,6 +258,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         else _resourcePath = "/" + getClass().getPackage().getName().replaceAll("\\.", "/");
     }
 
+    // Note: First controller registered in a module is special: getTabURL() treats it as the "default controller", e.g.
     protected void addController(String primaryName, Class<? extends Controller> cl, String... aliases)
     {
         if (!Controller.class.isAssignableFrom(cl))
@@ -416,9 +411,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         Map<String, Class<? extends Controller>> map = getControllerNameToClass();
 
-        // Handle modules that have no controllers (e.g., BigIron)
+        // Some modules have no controllers (e.g., BigIron)
         if (!map.isEmpty())
         {
+            // Note: First registered controller is special -- its BeginAction becomes the tab URL for the module
             Map.Entry<String, Class<? extends Controller>> entry = map.entrySet().iterator().next();
             Controller controller = getController(null, entry.getValue());
             if (controller instanceof SpringActionController)
@@ -1319,7 +1315,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected Collection<String> getInternalJarFilenames()
     {
-        return Arrays.asList(_name + ".jar", _name + "_api.jar", _name + "_jsp.jar", "schemas.jar");
+        return List.of(_name + ".jar", _name + "_api.jar", _name + "_jsp.jar", "schemas.jar");
     }
 
     protected ApplicationContext _applicationContext = null;

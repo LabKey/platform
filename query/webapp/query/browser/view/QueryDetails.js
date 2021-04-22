@@ -56,7 +56,26 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             abbreviation: 'Calc',
             label: 'Calculated',
             description: 'This column contains a calculated expression'
-        }
+        },
+        phi: {
+            enumeration: {
+                PHI: {
+                    abbreviation: 'PHI',
+                    label: 'Full PHI',
+                    description: 'This column contains PHI',
+                },
+                Limited: {
+                    abbreviation: 'LimPHI',
+                    label: 'Limited PHI',
+                    description: 'This column contains PHI',
+                },
+                Restricted: {
+                    abbreviation: 'ResPHI',
+                    label: 'Restricted PHI',
+                    description: 'This column contains PHI',
+                }
+            },
+        },
     },
 
     tableCols : [{
@@ -144,7 +163,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         for (attrName in this.attrMap) {
             if (this.attrMap.hasOwnProperty(attrName)) {
                 attr = this.attrMap[attrName];
-                if (attr.negate ? !col[attrName] : col[attrName]) {
+                let value = col[attrName];
+                if (attr.enumeration && attr.enumeration[value]) {
+                    attrs[value] = attr.enumeration[value];
+                }
+                else if (attr.negate ? !value : value) {
                     if (attr.trump) {
                         return this.formatAttribute(attr);
                     }
@@ -560,11 +583,18 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             }]
         }];
 
-        if (queryDetails.isUserDefined && queryDetails.moduleName) {
+        if (queryDetails.isUserDefined) {
             children.push({
                 tag: 'span',
                 style: 'cursor: default;',
-                html: 'Defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module'
+                html: 'LabKey SQL query' + (queryDetails.moduleName ? ' defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module' : '')
+            });
+        }
+        else {
+            children.push({
+                tag: 'span',
+                style: 'cursor: default;',
+                html: 'Built-in table'
             });
         }
 
@@ -617,15 +647,20 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         }
 
         if (queryDetails.isUserDefined) {
-            if (queryDetails.canEdit && !queryDetails.isInherited) {
-                children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
-                children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
-                if (queryDetails.canDelete)
+            if (!queryDetails.isInherited) {
+                if (queryDetails.canEdit) {
+                    children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
+                    children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
+                }
+                else {
+                    children.push(this.formatQueryLink('viewQuerySource', params, 'view source'));
+                }
+                if (queryDetails.canDelete) {
                     children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
-                children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
-            }
-            else {
-                children.push(this.formatQueryLink('viewQuerySource', params, 'view source'));
+                }
+                if (queryDetails.isMetadataOverrideable) {
+                    children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
+                }
             }
         }
         else {

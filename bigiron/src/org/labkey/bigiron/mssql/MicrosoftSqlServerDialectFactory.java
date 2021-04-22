@@ -16,13 +16,14 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -56,6 +57,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     private String getProductName()
     {
         return PRODUCT_NAME;
+    }
+
+    public MicrosoftSqlServerDialectFactory()
+    {
+        // jTDS JDBC driver should not be present in <tomcat>/lib
+        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("jtds.jar"));
     }
 
     @Override
@@ -175,7 +182,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             badProductName("SQL Server", 1.0, 14.0, "", null);
             badProductName("sqlserver", 1.0, 14.0, "", null);
 
-            // < 10.5 should result in bad version error
+            // < 10.0 should result in bad version error
             badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
 
             String driverName = "jTDS Type 4 JDBC Driver for MS SQL Server and Sybase";

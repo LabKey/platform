@@ -168,6 +168,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    public String getLabel()
+    {
+        // Hack because there are many subclasses where we want to keep showing their name in the UI, but we want to
+        // show "Standard" instead of "General" for direct uses of TsvAssayProvider
+        return getClass().equals(TsvAssayProvider.class) ? "Standard" : super.getLabel();
+    }
+
+    @Override
     public AssaySaveHandler getSaveHandler()
     {
         AssaySaveHandler saveHandler = new TsvAssaySaveHandler();
@@ -341,6 +349,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
+                    plateTemplate.setLookupContainer(protocol.getContainer().getId());
                     plateTemplate.setRequired(true);
                     plateTemplate.setShownInUpdateView(false);
 

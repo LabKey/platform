@@ -122,7 +122,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
 
             MoveRunsXarSource xarSource = new MoveRunsXarSource(bOut.toString(), experimentRun.getFilePathRootPath(), job);
             XarReader reader = new XarReader(xarSource, job);
-            reader.parseAndLoad(false);
+            reader.parseAndLoad(false, null);
 
             List<String> runLSIDs = reader.getProcessedRunsLSIDs();
             assert runLSIDs.size() == 1 : "Expected a single run to be loaded";

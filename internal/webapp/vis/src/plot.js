@@ -1630,6 +1630,7 @@ boxPlot.render();
  * @param {Object} [config.properties.mouseOverFnScope] (Optional) The scope to use for the call to mouseOverFn.
  * @param {Function} [config.properties.pointClickFn] (Optional) The function to call on data point click. The parameters to
  *                  that function will be the click event and the row of data for the selected point.
+ * @param {String} [config.properties.lineColor] (Optional) The color to be used for the trend line connecting data points.
  */
 (function(){
     LABKEY.vis.TrendingLinePlotType = {
@@ -2180,7 +2181,8 @@ boxPlot.render();
                     geom: new LABKEY.vis.Geom.Path({
                         opacity: .6,
                         size: 2,
-                        dashed: config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM && !negativeCusum
+                        dashed: config.qcPlotType == LABKEY.vis.TrendingLinePlotType.CUSUM && !negativeCusum,
+                        color: config.properties.lineColor
                     }),
                     aes: {}
                 };
@@ -2202,7 +2204,9 @@ boxPlot.render();
                     }
                     pathLayerConfig.data = seriesDataArr;
 
-                    pathLayerConfig.aes.pathColor = config.properties.groupBy;
+                    if (!config.properties.lineColor) {
+                        pathLayerConfig.aes.pathColor = config.properties.groupBy;
+                    }
                     pathLayerConfig.aes.group = config.properties.groupBy;
                 }
                 else

@@ -17,8 +17,10 @@ package org.labkey.api.inventory;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.FieldKey;
@@ -28,6 +30,7 @@ import org.labkey.api.services.ServiceRegistry;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -37,6 +40,24 @@ public interface InventoryService
 {
     String PRODUCT_ID = "freezerManager";
 
+    Set<String> INVENTORY_STATUS_COLUMN_NAMES = new CaseInsensitiveHashSet(
+            "FreezeThawCount",
+            "CheckedOutBy",
+            "CheckedOut",
+            "DisplayUnit", // this is the name of the column, not the display name of "Units"
+            "StorageRow",
+            "StorageCol",
+            "StorageLocation",
+            "EnteredStorage",
+            "StorageStatus",
+            "StoredAmountDisplay",
+            "StoredAmount",
+            "Units",
+            "StorageComment"
+    );
+
+    String EXPERIMENTAL_FM_BIOLOGICS = "experimental-freezermanager-biologics";
+
     static void setInstance(InventoryService impl)
     {
         ServiceRegistry.get().registerService(InventoryService.class, impl);
@@ -44,10 +65,15 @@ public interface InventoryService
 
     static InventoryService get() { return ServiceRegistry.get().getService(InventoryService.class); }
 
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows);
 
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
-    List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container);
+    List<FieldKey> addInventoryStatusColumns(@Nullable String sampleTypeMetricUnit, ExpMaterialTable table, Container container, User user);
+
+    DataIteratorBuilder getPersistStorageItemDataIteratorBuilder(DataIteratorBuilder data, Container container, User user, String metricUnit);
+
+    @NotNull
+    String getWellLabel(int boxId, int row, Integer col);
 }

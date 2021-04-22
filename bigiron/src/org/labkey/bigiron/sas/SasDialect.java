@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.ResultSetMetaDataWrapper;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.RuntimeSQLException;
@@ -35,6 +36,7 @@ import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -339,7 +341,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         }
     }
 
-    /**     /** SAS doesn't support transactions, so do a no-op transaction */
+    /** SAS/SHARE doesn't support transactions, so do a no-op transaction */
     private static class SasTransaction implements DbScope.Transaction
     {
         private final boolean _shouldClose;
@@ -441,6 +443,11 @@ public abstract class SasDialect extends SimpleSqlDialect
         return TABLE_RESOLVER;
     }
 
+    @Override
+    public JdbcMetaDataResultSetFactory getJdbcMetaDataResultSetFactory(JdbcMetaDataResultSetFactory jdbcMetaDataResultSetFactory)
+    {
+        return new SasJdbcMetaDataResultSetFactory(jdbcMetaDataResultSetFactory);
+    }
 
     // This class fixes three problems with the ResultSets returned by the SAS JDBC driver:
     // - Their ResultSetMetaData don't meet the JDBC 4.0 specifications (the SasResultSetMetaData we return fixes this)
@@ -489,6 +496,24 @@ public abstract class SasDialect extends SimpleSqlDialect
         public String getColumnLabel(int column) throws SQLException
         {
             return super.getColumnName(column);
+        }
+    }
+
+    // Should address Issue 42497, ensuring that SAS/SHARE JDBC metadata result sets get wrapped with SasResultSetWrapper
+    // to avoid throwing when calling getRow(), etc.
+    private static class SasJdbcMetaDataResultSetFactory implements JdbcMetaDataResultSetFactory
+    {
+        private final JdbcMetaDataResultSetFactory _factory;
+
+        public SasJdbcMetaDataResultSetFactory(JdbcMetaDataResultSetFactory factory)
+        {
+            _factory = factory;
+        }
+
+        @Override
+        public ResultSet getResultSet(DatabaseMetaData dbmd, JdbcMetaDataLocator locator) throws SQLException
+        {
+            return new SasResultSetWrapper(_factory.getResultSet(dbmd, locator));
         }
     }
 }

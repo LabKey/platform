@@ -64,7 +64,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     private final Marshaller _marshaller;
 
     private ApiResponseWriter.Format _reqFormat = null;
-    private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
     private ObjectMapper _requestObjectMapper;
@@ -107,6 +106,12 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     }
 
     @Override
+    public ApiResponseWriter.Format getDefaultResponseFormat()
+    {
+        return ApiResponseWriter.Format.JSON;
+    }
+
+    @Override
     protected String getCommandClassMethodName()
     {
         return "execute";
@@ -127,7 +132,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         }
         throw new BadRequestException("Method Not Allowed: " + getViewContext().getRequest().getMethod(), null, HttpServletResponse.SC_METHOD_NOT_ALLOWED);
     }
-
 
     @Override
     public void setViewContext(ViewContext context)
@@ -158,15 +162,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
             FORM form = pair.first;
             BindException errors = pair.second;
-
-            if ("xml".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
-            {
-                _respFormat = ApiResponseWriter.Format.XML;
-            }
-            else if ("json_compact".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
-            {
-                _respFormat = ApiResponseWriter.Format.JSON_COMPACT;
-            }
 
             if (form != null)
             {
@@ -565,15 +560,10 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     protected ApiResponseWriter createResponseWriter() throws IOException
     {
         // Let the response format dictate how we write the response. Typically JSON, but not always.
-        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getResponseObjectMapper());
+        ApiResponseWriter writer = ApiResponseWriter.getResponseFormat(getViewContext().getRequest(), ApiResponseWriter.Format.JSON).createWriter(getViewContext().getResponse(), getContentTypeOverride(), getResponseObjectMapper());
         if (_marshaller == Marshaller.Jackson)
             writer.setSerializeViaJacksonAnnotations(true);
         return writer;
-    }
-
-    public ApiResponseWriter.Format getResponseFormat()
-    {
-        return _respFormat;
     }
 
     public ApiResponseWriter.Format getRequestFormat()

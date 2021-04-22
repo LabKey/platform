@@ -120,12 +120,24 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Returns an encoded URL to a resource in the webapp directory by prefixing a resource path with the context path
      * and encoding it.
      *
-     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and not prefixed paths.
-     * @return Properly encoded URL in an HtmlString
+     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and non-prefixed paths.
+     * @return HtmlString containing a properly encoded URL
      */
     public HtmlString getWebappURL(String path)
     {
         return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
+    }
+
+    /**
+     * Returns a well-formed, single-line JavaScript include tag, of the form:<br><br>
+     * {@code <script src="/<contextpath>/<path>" type="text/javascript"></script>}
+     *
+     * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and non-prefixed paths.
+     * @return HtmlString containing a well-formed {@code <script>} include tag
+     */
+    public static HtmlString getScriptTag(String path)
+    {
+        return PageFlowUtil.getScriptTag(path);
     }
 
     /**
@@ -266,6 +278,28 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public String u(String str)
     {
         return PageFlowUtil.encode(str);
+    }
+
+    /**
+     * Creates a JavaScript URL object for the passed in ActionURL.
+     * Returns the JavaScript fragment:<br>
+     * <br>
+     * <code>new URL(url.getURLString());</code><br>
+     * <br>
+     * Using the browser native URL object is preferred over manually constructing a url string to avoid
+     * URL encoding issues. Example usage:<br>
+     * <br>
+     * <code>
+     *     // in a script block of a JSP<br>
+     *     let url = <%=jsURL(new ActionURL(...))>;<br>
+     *     url.searchParams.set('icecream?', 'salt &amp; straw');<br>
+     *     window.location.href = url;
+     * </code>
+     */
+    public JavaScriptFragment jsURL(@NotNull URLHelper url)
+    {
+        // Issue 42605: Apply path relative to current location
+        return JavaScriptFragment.unsafe("new URL(" + q(url) + ", window.location.origin)");
     }
 
 
@@ -461,9 +495,19 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
     }
 
+    public HtmlString helpPopup(String title, HtmlString helpText)
+    {
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true));
+    }
+
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+    }
+
+    public HtmlString helpPopup(String title, HtmlString helpText, int width)
+    {
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText.toString(), true, width));
     }
 
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)

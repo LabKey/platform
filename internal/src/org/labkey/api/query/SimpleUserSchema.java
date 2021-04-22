@@ -35,7 +35,6 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
@@ -44,7 +43,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.UserSchemaCustomizer;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -243,7 +242,7 @@ public class SimpleUserSchema extends UserSchema
 
         protected boolean acceptColumn(ColumnInfo col)
         {
-            if(getColumn(col.getName()) != null)
+            if (getColumn(col.getName()) != null)
             {
                 _log.warn("'" + col.getName() + "' column already exists in '" + col.getParentTable() + "' table. Duplicate column won't be displayed.");
                 return false;
@@ -313,7 +312,6 @@ public class SimpleUserSchema extends UserSchema
                (_userSchema.getDbSchema().getScope().isLabKeyScope()))
             {
                 wrap.setLabel("Folder");
-                ContainerForeignKey.initColumn(wrap, _userSchema);
             }
             else if (col.getFk() != null)
             {
@@ -547,7 +545,7 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
         {
-            return TableInsertDataIterator.create(data, this, null, context);
+            return new TableInsertDataIteratorBuilder(data, this);
         }
 
         @Override

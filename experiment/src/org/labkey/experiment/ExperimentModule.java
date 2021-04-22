@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +35,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -46,6 +48,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
@@ -58,6 +61,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
@@ -66,6 +70,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -91,11 +96,14 @@ import org.labkey.experiment.api.property.LookupValidator;
 import org.labkey.experiment.api.property.PropertyServiceImpl;
 import org.labkey.experiment.api.property.RangeValidator;
 import org.labkey.experiment.api.property.RegExValidator;
+import org.labkey.experiment.api.property.StorageProvisionerImpl;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
+import org.labkey.experiment.samples.SampleTypeAndDataClassFolderImporter;
+import org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
@@ -111,6 +119,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI;
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 /**
@@ -133,7 +142,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 20.011;
+        return 21.003;
     }
 
     @Nullable
@@ -153,6 +162,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         SampleTypeService.setInstance(new SampleTypeServiceImpl());
         PropertyService.setInstance(new PropertyServiceImpl());
         DefaultValueService.setInstance(new DefaultValueServiceImpl());
+        StorageProvisioner.setInstance(StorageProvisionerImpl.get());
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
@@ -175,14 +185,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentService.get().registerExperimentDataHandler(new DefaultExperimentDataHandler());
         ExperimentService.get().registerProtocolInputCriteria(new FilterProtocolInputCriteria.Factory());
 
-        AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_LEGACY_LINEAGE, "Legacy lineage query",
-                "This feature will restore the legacy lineage queries used on the Material and Data details pages", false);
-
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
 
-        //AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
-        //        "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, "Sample aliquot",
+                "Support creation of sample aliquot", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -274,9 +281,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        // delete the default "Unspecified" SampleType TODO: move to an upgrade script in 19.2
-        SampleTypeServiceImpl.get().deleteDefaultSampleType();
-
         // TODO move to an upgrade script
         ExperimentUpgradeCode.upgradeMaterialSource(null);
 
@@ -413,6 +417,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
+            folderRegistry.addFactories(new SampleTypeAndDataClassFolderWriter.Factory(), new SampleTypeAndDataClassFolderImporter.Factory());
         }
 
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
@@ -460,6 +465,32 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 results.put("dataClassCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
+
+                results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
+                results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
+                results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
+                results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
+
+                results.put("uniqueIdColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
+                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE D.conceptURI = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
+
+                results.put("fileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithFileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+
+                results.put("attachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
 
                 return results;
             });
@@ -509,23 +540,30 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return list;
     }
 
-
     @Override
     @NotNull
     public Set<Class> getIntegrationTests()
     {
         return Set.of(
             DomainPropertyImpl.TestCase.class,
-            ExpDataClassDataTestCase.class,
             ExpDataTableImpl.TestCase.class,
-            ExpSampleTypeTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
             LineageTest.class,
             OntologyManager.TestCase.class,
+            StorageProvisionerImpl.TestCase.class,
             UniqueValueCounterTestCase.class
         );
+    }
+
+    @Override
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
+    {
+        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpDataClassDataTestCase.jsp"));
+        list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
+        return list;
     }
 
     @NotNull
@@ -559,7 +597,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME);
     }
 
-
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
@@ -588,7 +625,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
         }, SearchService.PRIORITY.bulk);
     }
-
 
     @Override
     public void indexDeleted()

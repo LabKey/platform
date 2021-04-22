@@ -109,15 +109,14 @@ public class AssayTest extends AbstractAssayTest
         ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", SAMPLE_FIELD_TEST_ASSAY)
                 .setDescription(TEST_ASSAY_DESC);
 
-        String sampleFieldName = "SampleField";
         assayDesignerPage.goToBatchFields().removeAllFields(false); //remove preset batch fields
 
         DomainFormPanel resultsPanel = assayDesignerPage.goToResultsFields().removeAllFields(false); //remove preset result fields
-        click(Locator.tag("span").withText("manually define fields"));
-        resultsPanel.addField(sampleFieldName)
+
+        String sampleFieldName = "SampleField";
+        resultsPanel.manuallyDefineFields(sampleFieldName)
                 .setType(FieldDefinition.ColumnType.Sample)
                 .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
-        resultsPanel.removeField(""); //remove field added by manual definition link
 
         log("Save initial assay design with sample field set to 'All Samples'");
         assayDesignerPage.clickFinish();
@@ -204,7 +203,7 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         DataRegionTable assayRuns = new DataRegionTable("Runs", this);
         assayRuns.checkCheckbox(0);
-        assayRuns.clickHeaderButton("Delete");
+        assayRuns.clickHeaderButtonAndWait("Delete");
         // Make sure that it shows that the data is part of study datasets
         assertTextPresent(TEST_RUN3, "2 dataset(s)", TEST_ASSAY);
         assertTextNotPresent("FirstRun");
@@ -212,7 +211,7 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Confirm Delete");
 
         // Be sure that we have a special audit record
-        clickAndWait(Locator.linkWithText("view copy-to-study history"));
+        clickAndWait(Locator.linkWithText("view link to study history"));
         assertTextPresent("3 row(s) were recalled to the assay: ");
 
         // Verify that the deleted run data is gone from the dataset
@@ -265,8 +264,8 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.name("quf_Flags"), "This Flag Has Been Edited");
         clickButton("Submit");
         assertTextPresent("EditedSpecimenID", "601.5", "514801");
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
+        assertElementPresent(Locator.xpath("//i[contains(@class, 'lk-flag-enabled')][@title='This Flag Has Been Edited']"), 1);
+        assertElementPresent(Locator.xpath("//i[contains(@class, 'lk-flag-disabled')][@title='Flag for review']"), 9);
 
         // Try a delete
         dataTable.checkCheckbox(table.getRowIndex("Specimen ID", "EditedSpecimenID"));
@@ -512,7 +511,7 @@ public class AssayTest extends AbstractAssayTest
         //select all the data rows and click publish
         DataRegionTable table = new DataRegionTable("Data", this);
         table.checkAllOnPage();
-        table.clickHeaderButton("Copy to Study");
+        table.clickHeaderButtonAndWait("Copy to Study");
 
         //the target study selected before was Study2, but the PI is not an editor there
         //so ensure that system has correctly caught this fact and now asks the PI to
@@ -582,7 +581,7 @@ public class AssayTest extends AbstractAssayTest
         // test recall
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
-        waitAndClickAndWait(Locator.linkWithText("view copy-to-study history"));
+        waitAndClickAndWait(Locator.linkWithText("view link to study history"));
 
         // Set a filter so that we know we're recalling SecondRun
         DataRegionTable region = new DataRegionTable("query", this);
@@ -603,7 +602,7 @@ public class AssayTest extends AbstractAssayTest
 
         // verify audit entry was adjusted
         doAndWaitForPageToLoad(() -> region.detailsLink(region.getRowIndex("Assay/Protocol", TEST_ASSAY)).click());
-        assertTextPresent("All rows that were previously copied in this event have been recalled");
+        assertTextPresent("All rows that were previously linked in this event have been recalled");
 
         stopImpersonating();
     }
@@ -640,7 +639,7 @@ public class AssayTest extends AbstractAssayTest
         //select all the data rows and click publish
         DataRegionTable table = new DataRegionTable("Data", getDriver());
         table.checkAll();
-        table.clickHeaderButton("Copy to Study");
+        table.clickHeaderButtonAndWait("Copy to Study");
 
         checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
@@ -665,7 +664,7 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
         DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
-        copyStudy.clickHeaderButton("Re-Validate");
+        copyStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
@@ -678,7 +677,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='BAQ00051-08'] and following-sibling::td[text()='8.0']]"));
         assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='BAQ00051-11'] and following-sibling::td[text()='9.0']]"));
 
-        copyStudy.clickHeaderButton("Copy to Study");
+        copyStudy.clickHeaderButtonAndWait("Copy to Study");
 
         log("Verifying that the data was published");
         assertTextPresent(
@@ -741,7 +740,7 @@ public class AssayTest extends AbstractAssayTest
         //select all the data rows and click publish
         DataRegionTable table = new DataRegionTable("Data", getDriver());
         table.checkAll();
-        table.clickHeaderButton("Copy to Study");
+        table.clickHeaderButtonAndWait("Copy to Study");
 
         checkCheckbox(Locator.xpath("//input[@id='chooseStudy']"));
 
@@ -766,7 +765,7 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.xpath("(//input[@name='participantId'])[4]"), "new4");
 
         DataRegionTable copyStudy = new DataRegionTable("Data", getDriver());
-        copyStudy.clickHeaderButton("Re-Validate");
+        copyStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
         assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td/a[text()='AAA07XMC-02']]"));
@@ -779,7 +778,7 @@ public class AssayTest extends AbstractAssayTest
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-08']]"));
         assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-11']]"));
 
-        copyStudy.clickHeaderButton("Copy to Study");
+        copyStudy.clickHeaderButtonAndWait("Copy to Study");
 
         log("Verifying that the data was published");
         assertTextPresent(
@@ -904,7 +903,7 @@ public class AssayTest extends AbstractAssayTest
 
         region = new DataRegionTable("Data", this);
         region.checkAll();
-        region.clickHeaderButton("Copy to Study");
+        region.clickHeaderButtonAndWait("Copy to Study");
         clickButton("Next");
 
         verifySpecimensPresent(0, 0, 3);

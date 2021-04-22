@@ -29,18 +29,22 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
 import org.labkey.query.sql.Query;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -52,13 +56,13 @@ import java.util.Map;
  */
 public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 {
-    private LinkedSchema _schema;
     private String _extraMetadata;
 
-    public LinkedSchemaQueryDefinition(LinkedSchema schema, QueryDefinition query)
+    public LinkedSchemaQueryDefinition(LinkedSchema schema, QueryDefinition query, String extraMetadata)
     {
         super(schema.getUser(), schema.getContainer(), ((QueryDefinitionImpl)query).getQueryDef());
         _schema = schema;
+        _extraMetadata = extraMetadata;
     }
 
     @Override
@@ -73,19 +77,25 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
         return _schema.getSchemaPath();
     }
 
+    @Override
+    public void setSchema(@NotNull UserSchema schema)
+    {
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+    }
+
     @NotNull
     @Override
-    public UserSchema getSchema()
+    public LinkedSchema getSchema()
     {
-        return _schema;
+        return (LinkedSchema)_schema;
     }
 
     @Override
-    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
+    public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns)
     {
         // Parse/resolve the wrapped query in the context of the original source schema
-        UserSchema sourceSchema = _schema.getSourceSchema();
-        return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns, allowDuplicateColumns);
+        UserSchema sourceSchema = getSchema().getSourceSchema();
+        return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns);
     }
 
     @Override
@@ -93,17 +103,18 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     {
         // First, apply original wrapped query-def's metadata from files (using original schema name and container)
         // Second, super.applyQueryMetadata() will also apply orignal wrapped query-def's metadata stored in the database (using original schema name and container)
-        UserSchema sourceSchema = _schema.getSourceSchema();
+        LinkedSchema linkedSchema = getSchema();
+        UserSchema sourceSchema = linkedSchema.getSourceSchema();
         super.applyQueryMetadata(sourceSchema, errors, query, ret);
 
         // Third, remove column URLs and some lookups using LinkedTableInfo
-        ret = new LinkedTableInfo(_schema, ret).init();
+        ret = new LinkedTableInfo(linkedSchema, ret).init();
         ret.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
 
         // Fourth, apply linked schema metadata (either from template or from the linked schema instance)
-        TableType metadata = _schema.getXbTable(getName());
-        if (metadata != null || (_schema._namedFilters != null && _schema._namedFilters.size() > 0))
-            super.applyQueryMetadata(schema, errors, metadata, _schema._namedFilters, ret);
+        TableType metadata = linkedSchema.getXbTable(getName());
+        if (metadata != null || (linkedSchema._namedFilters != null && linkedSchema._namedFilters.size() > 0))
+            super.applyQueryMetadata(schema, errors, metadata, linkedSchema._namedFilters, ret);
 
         // Fifth, lookup any XML metadata that has been stored in the database (in linked schema container)
         ret.overlayMetadata(getName(), schema, errors);
@@ -127,13 +138,58 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     @Override
     public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container)
     {
-        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+        return save(user, container, true);
     }
 
     @Override
     public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
     {
-        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+        if (!getContainer().equals(container))
+            throw new UnauthorizedException("Can only be saved in the linked schema container");
+
+        if (!_dirty)
+            return null;
+
+        QueryDef qdef = QueryManager.get().getQueryDef(container, getSchemaName(), getName(), false);
+        if (_extraMetadata == null)
+        {
+            if (qdef != null)
+            {
+                // delete the query in order to reset the metadata over a built-in query, but don't
+                // fire the listener because we haven't actually deleted the table. See issue 40365
+                QueryManager.get().delete(qdef);
+            }
+        }
+        else
+        {
+            if (qdef == null)
+            {
+                qdef = new QueryDef();
+                qdef.setSchema(getSchemaName());
+                qdef.setContainer(container.getId());
+                qdef.setName(this.getName());
+            }
+            assert qdef.getSql() == null : "metadata only querydef should not have sql";
+            qdef.setMetaData(_extraMetadata);
+            if (qdef.getQueryDefId() == 0)
+                QueryManager.get().insert(user, qdef);
+            else
+                QueryManager.get().update(user, qdef);
+        }
+
+        if (fireChangeEvent)
+        {
+            // Fire change event for each property change.
+            for (QueryChangeListener.QueryPropertyChange change : _changes)
+            {
+                QueryService.get().fireQueryChanged(user, container, null, _queryDef.getSchemaPath(), change.getProperty(), Collections.singleton(change));
+            }
+        }
+
+        Collection<QueryChangeListener.QueryPropertyChange> changes = _changes;
+        _changes = null;
+        _dirty = false;
+        return changes;
     }
 
     @Override
@@ -149,27 +205,45 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
+    public void setName(String name)
+    {
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+    }
+
+    @Override
+    public void setDefinitionContainer(Container container)
+    {
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+    }
+
+    @Override
     public void setCanInherit(boolean f)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
     public void setIsHidden(boolean f)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
     public void setIsTemporary(boolean temporary)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+    }
+
+    @Override
+    public void setIsSnapshot(boolean f)
+    {
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
     public void setDescription(String description)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
@@ -181,24 +255,70 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     @Override
     public void setSql(String sql)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
+    }
+
+    @Override
+    public String getMetadataXml()
+    {
+        return _extraMetadata;
     }
 
     @Override
     public void setMetadataXml(String xml)
     {
-        _extraMetadata = xml;
+        if (xml == null && _extraMetadata == null)
+            return;
+
+        if (_extraMetadata == null || !_extraMetadata.equals(xml))
+        {
+            _dirty = true;
+            _extraMetadata = xml;
+        }
     }
 
     public void setContainer(Container container)
     {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Linked schema queries are read-only!");
     }
 
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
         // Container filter is pre-defined by linked schema
+    }
+
+    @Override
+    public boolean canEdit(User user)
+    {
+        return false;
+    }
+
+    // True if the user is allowed to edit metadata in the current container (not the source definition container)
+    @Override
+    public boolean canEditMetadata(User user)
+    {
+        return getContainer().hasPermissions(user, Set.of(EditQueriesPermission.class, UpdatePermission.class));
+    }
+
+    @Override
+    public boolean canDelete(User user)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean canInherit()
+    {
+        return false;
+    }
+
+    // Linked query defs are similar to table custom query defs in that they are generated wrappers over the source
+    // schema's custom query so we will consider these as not user defined.
+    @Override
+    public boolean isUserDefined()
+    {
+        return false;
     }
 
     @Override
@@ -210,7 +330,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     @Override
     public boolean isMetadataEditable()
     {
-        return false;
+        return true;
     }
 
     @Override

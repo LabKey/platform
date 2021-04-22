@@ -23,7 +23,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.study.StudySchema;
+import org.labkey.api.specimen.SpecimenSchema;
 
 /**
  * User: jeckels
@@ -33,7 +33,7 @@ public class VialTable extends BaseStudyTable
 {
     public VialTable(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), cf, true);
+        super(schema, SpecimenSchema.get().getTableInfoVial(schema.getContainer()), cf, true);
 
         addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
 

@@ -21,9 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
@@ -41,12 +38,12 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
@@ -60,41 +57,43 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.writer.StudyArchiveDataTypes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,18 +104,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
 
-    /**
-     * The assay result LSID column is added to the dataset for assays that support it.
-     * @see AssayTableMetadata#getResultLsidFieldKey()
-     */
-    public static final String ASSAY_RESULT_LSID = "AssayResultLsid";
-
-    private static final Logger LOG = LogManager.getLogger(DatasetTableImpl.class);
-
-    private final @NotNull DatasetDefinition _dsd;
+    protected static final Logger LOG = LogManager.getLogger(DatasetTableImpl.class);
+    protected final @NotNull DatasetDefinition _dsd;
 
     private TableInfo _fromTable;
-    private TableInfo _assayResultTable;
 
     public DatasetTableImpl(@NotNull final StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
@@ -296,13 +287,23 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     if (!col.isMvIndicatorColumn() && null != dp && (pd.getLookupQuery() != null || pd.getConceptURI() != null))
                         col.setFk(PdLookupForeignKey.create(schema, pd));
 
-                    if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    if (pd != null)
                     {
-                        col.setDisplayColumnFactory(colInfo -> {
-                            DataColumn dc = new DataColumn(colInfo);
-                            dc.setPreserveNewlines(true);
-                            return dc;
-                        });
+                        if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+                        {
+                            col.setDisplayColumnFactory(colInfo -> {
+                                DataColumn dc = new DataColumn(colInfo);
+                                dc.setPreserveNewlines(true);
+                                return dc;
+                            });
+                        }
+                        else if (pd.getPropertyType() == PropertyType.FILE_LINK)
+                        {
+                            col.setDisplayColumnFactory(new FileLinkDisplayColumn.Factory(pd, getContainer(),
+                                    SchemaKey.fromParts("study"),
+                                    dsd.getName(),
+                                    FieldKey.fromParts("lsid")));
+                        }
                     }
                 }
                 if (isVisibleByDefault(col))
@@ -412,35 +413,21 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
 
-        if (_dsd.isAssayData())
-        {
-            TableInfo assayResultTable = getAssayResultTable();
-            if (assayResultTable != null)
-            {
-                ExpProtocol protocol = _dsd.getAssayProtocol();
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                AssayTableMetadata tableMeta = provider.getTableMetadata(protocol);
-                FieldKey assayResultLsid = tableMeta.getResultLsidFieldKey();
-
-                for (final ColumnInfo columnInfo : assayResultTable.getColumns())
-                {
-                    String name = columnInfo.getName();
-                    if (assayResultLsid != null && columnInfo.getFieldKey().equals(assayResultLsid))
-                    {
-                        // add the assay result lsid column as "AssayResultLsid" so it won't collide with the dataset's LSID column
-                        name = ASSAY_RESULT_LSID;
-                    }
-
-                    if (!getColumnNameSet().contains(name))
-                    {
-                        ExprColumn wrappedColumn = wrapAssayColumn(columnInfo, name);
-                        addColumn(wrappedColumn);
-                    }
-                }
-            }
-        }
-
         addFolderColumn();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
+    {
+        Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(super.getUniqueIndices());
+        String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+
+        if (getColumn(subjectColName) != null)
+        {
+            ret.put("uq_dataset_subject", Pair.of(IndexType.Unique, Arrays.asList(getColumn(subjectColName))));
+        }
+        return Collections.unmodifiableMap(ret);
     }
 
     @Override
@@ -450,7 +437,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     @Override
-    public Set<FieldKey> getPHIDataLoggingColumns()
+    public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
     {
         String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         Set<FieldKey> loggingColumns = new HashSet<>(1);
@@ -467,56 +454,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     @Override
-    public String getPHILoggingComment()
+    protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
         return "PHI accessed in dataset. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
     }
-
-    List<FieldKey> _assayDefaultVisibleColumns = null;
-
-    @Override
-    public List<FieldKey> getDefaultVisibleColumns()
-    {
-        if (!_dsd.isAssayData())
-            return super.getDefaultVisibleColumns();
-        else if (null != _assayDefaultVisibleColumns)
-            return _assayDefaultVisibleColumns;
-
-        // compute default visible columns for assay dataset
-        List<FieldKey> defaultVisibleCols = new ArrayList<>(super.getDefaultVisibleColumns());
-        TableInfo assayResultTable = getAssayResultTable();
-        if (null != assayResultTable)
-        {
-            for (FieldKey fieldKey : assayResultTable.getDefaultVisibleColumns())
-            {
-                if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
-                {
-                    defaultVisibleCols.add(fieldKey);
-                }
-            }
-
-            // Remove the target study column from the dataset version of the table - it's already scoped to the
-            // relevant study so don't clutter the UI with it
-            for (FieldKey fieldKey : defaultVisibleCols)
-            {
-                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(fieldKey.getName()))
-                {
-                    defaultVisibleCols.remove(fieldKey);
-                    break;
-                }
-            }
-            ExpProtocol protocol = _dsd.getAssayProtocol();
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            if (null != provider)
-            {
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
-            }
-        }
-        _assayDefaultVisibleColumns = Collections.unmodifiableList(defaultVisibleCols);
-        return _assayDefaultVisibleColumns;
-    }
-
 
     @Override
     public boolean hasContainerColumn()
@@ -552,34 +493,22 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         return getColumn("Folder");
     }
 
-    /** Wrap a column in our underlying assay data table with one that puts it in the dataset table */
-    private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo, final String name)
-    {
-        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
-        {
-            @Override
-            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-            {
-                super.declareJoins(parentAlias, map);
-                columnInfo.declareJoins(getAssayResultAlias(parentAlias), map);
-            }
-        };
-        wrappedColumn.copyAttributesFrom(columnInfo);
-
-        // When copying a column, the hidden bit is not propagated, so we need to do it manually
-        if (columnInfo.isHidden())
-            wrappedColumn.setHidden(true);
-
-        ForeignKey fk = wrappedColumn.getFk();
-        if (fk != null && fk instanceof SpecimenForeignKey)
-            ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
-        return wrappedColumn;
-    }
-
     @Override
     public Dataset getDataset()
     {
         return _dsd;
+    }
+
+    @Override
+    public DataIterator getPrimaryKeyDataIterator(DataIterator dit, DataIteratorContext context)
+    {
+        // this needs to return the LSID for the dataset, OR the separate PK parts (ParticipantId,SequenceNum,extra)
+        // easiest thing to do is just use DataSetDataIterator
+        StudyImportContext sic = new StudyImportContext(getUserSchema().getUser(), getUserSchema().getContainer(), Set.of(StudyArchiveDataTypes.DATASET_DATA), () -> LOG);
+        DatasetDataIteratorBuilder builder = new DatasetDataIteratorBuilder((DatasetDefinition) getDataset(), getUserSchema().getUser(), false, null, sic);
+        // why isn't this part of the constructor?
+        builder.setInput(dit);
+        return builder.getDataIterator(context);
     }
 
     @Override
@@ -597,94 +526,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         FieldKey fieldKey = null;
 
-        // Be backwards compatible with the old field keys for these properties.
-        // We used to flatten all of the different domains/tables on the assay side into a row in the dataset,
-        // so transform to do a lookup instead
-        ExpProtocol protocol = _dsd.getAssayProtocol();
-        if (protocol != null)
-        {
-            // First, if it's Properties,
-            if ("Properties".equalsIgnoreCase(name))
-            {
-                // Hook up a column that joins back to this table so that the columns formerly under the Properties
-                // node when this was OntologyManager-backed can still be queried there
-                var wrapped = wrapColumn("Properties", getRealTable().getColumn("_key"));
-                wrapped.setIsUnselectable(true);
-                LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "_key", null)
-                {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return new DatasetTableImpl(getUserSchema(), getLookupContainerFilter(), _dsd);
-                    }
-
-                    @Override
-                    public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
-                    {
-                        return super.createLookupColumn(parent, displayField);
-                    }
-                };
-                fk.setPrefixColumnCaption(false);
-                wrapped.setFk(fk);
-                return wrapped;
-            }
-
-            // Second, see the if the assay table can resolve the column
-            TableInfo assayTable = getAssayResultTable();
-            if (null != assayTable)
-            {
-                result = getAssayResultTable().getColumn(name);
-                if (result != null)
-                {
-                    return wrapAssayColumn(result, result.getName());
-                }
-            }
-
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata(protocol).getRunFieldKeyFromResults();
-            if (name.toLowerCase().startsWith("run"))
-            {
-                String runProperty = name.substring("run".length()).trim();
-                if (runProperty.length() > 0 && runFieldKey != null)
-                {
-                    fieldKey = new FieldKey(runFieldKey, runProperty);
-                }
-            }
-            else if (name.toLowerCase().startsWith("batch"))
-            {
-                String batchPropertyName = name.substring("batch".length()).trim();
-                if (batchPropertyName.length() > 0 && runFieldKey != null)
-                {
-                    fieldKey = new FieldKey(new FieldKey(runFieldKey, "Batch"), batchPropertyName);
-                }
-            }
-            else if (name.toLowerCase().startsWith("analyte"))
-            {
-                String analytePropertyName = name.substring("analyte".length()).trim();
-                if (analytePropertyName.length() > 0)
-                {
-                    fieldKey = FieldKey.fromParts("Analyte", analytePropertyName);
-                    Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                    result = columns.get(fieldKey);
-                    if (result != null)
-                    {
-                        return result;
-                    }
-                    fieldKey = FieldKey.fromParts("Analyte", "Properties", analytePropertyName);
-                }
-            }
-            else if (!"SpecimenLsid".equalsIgnoreCase(name))
-            {
-                // Try looking for it as a NAb specimen property
-                fieldKey = FieldKey.fromParts("SpecimenLsid", "Property", name);
-                Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(this, Collections.singleton(fieldKey));
-                result = columns.get(fieldKey);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-        }
         if (fieldKey == null && !"Properties".equalsIgnoreCase((name)) && !"SpecimenLsid".equalsIgnoreCase(name) && !"Analyte".equalsIgnoreCase(name))
         {
             fieldKey = FieldKey.fromParts("Properties", name);
@@ -709,12 +550,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         return _dsd.getDomain();
     }
 
-    private String getAssayResultAlias(String mainAlias)
-    {
-        return mainAlias + "_AR";
-    }
-
-
     @Override
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
     {
@@ -738,14 +573,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
 
     @NotNull
-    private SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
+    protected SQLFragment _getFromSQL(String alias, boolean includeParticipantVisit)
     {
         ParticipantGroup group = getUserSchema().getSessionParticipantGroup();
-        DatasetDefinition.DataSharing sharing = ((DatasetDefinition)getDataset()).getDataSharingEnum();
+        DatasetDefinition.DataSharing sharing = getDataset().getDataSharingEnum();
 
         final SQLFragment sqlf;
 
-        if (!includeParticipantVisit && !_dsd.isAssayData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
+        if (!includeParticipantVisit && !_dsd.isPublishedData() && sharing == DatasetDefinition.DataSharing.NONE && group == null)
         {
             sqlf = super.getFromSQL(alias, true);
         }
@@ -847,24 +682,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
 
             sqlf.append(") AS ").append(alias);
-
-            if (_dsd.isAssayData())
-            {
-                // Join in Assay-side data to make it appear as if it's in the dataset table itself
-                String assayResultAlias = getAssayResultAlias(alias);
-                TableInfo assayResultTable = getAssayResultTable();
-                // Check if assay design has been deleted
-                if (assayResultTable != null)
-                {
-                    sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
-                    sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().get(0)).append(" = ");
-                    sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
-                }
-            }
-            sqlf.appendComment("</DatasetTableImpl>", d);
         }
 
-        return getTransformedFromSQL(sqlf);
+        return sqlf;
     }
 
 
@@ -872,7 +692,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        return _getFromSQL(alias, true);
+        SQLFragment sql = _getFromSQL(alias, true);
+        sql.appendComment("</DatasetTableImpl>", getSqlDialect());
+
+        return getTransformedFromSQL(sql);
     }
 
 
@@ -885,29 +708,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             includePV = true;
         else if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE && cols.contains(new FieldKey(null, "Day")))
             includePV = true;
-        return _getFromSQL(alias, includePV);
-    }
 
+        SQLFragment sql = _getFromSQL(alias, includePV);
+        sql.appendComment("</DatasetTableImpl>", getSqlDialect());
 
-    private TableInfo getAssayResultTable()
-    {
-        if (_assayResultTable == null)
-        {
-            ExpProtocol protocol = _dsd.getAssayProtocol();
-            if (protocol == null)
-            {
-                return null;
-            }
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            if (provider == null)
-            {
-                // Provider must have been in a module that's no longer available
-                return null;
-            }
-            AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), protocol.getContainer(), protocol, getContainer());
-            _assayResultTable = schema.createDataTable(ContainerFilter.EVERYTHING, false);
-        }
-        return _assayResultTable;
+        return getTransformedFromSQL(sql);
     }
 
     @Override
@@ -1010,9 +815,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "SequenceNum", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid", "DSRowID");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
-        // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default
+        // If this is a server-managed key, or a published data dataset, don't include the key column in the default
         // set of visible columns
-        if ((_dsd.getKeyManagementType() != Dataset.KeyManagementType.None || _dsd.isAssayData()) &&
+        if ((_dsd.getKeyManagementType() != Dataset.KeyManagementType.None || _dsd.isPublishedData()) &&
                 col.getName().equals(_dsd.getKeyPropertyName()))
             return false;
         // for backwards compatibility "Date" is not in default visible columns for visit-based study
@@ -1066,7 +871,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         User user = _userSchema.getUser();
         Dataset def = getDatasetDefinition();
-        if (!user.hasRootAdminPermission() && !def.canWrite(user))
+        if (!user.hasRootAdminPermission() && !def.canInsert(user))
             return null;
         return new DatasetUpdateService(this);
     }
@@ -1075,12 +880,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // OK to edit these in Dataspace project and in any folder
-        Dataset def = getDatasetDefinition();
-        if (ReadPermission.class.isAssignableFrom(perm))
-            return def.canRead(user);
-        if (InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm) || DeletePermission.class.isAssignableFrom(perm))
-            return def.canWrite(user);
-        return def.getPolicy().hasPermission(user, perm);
+        return getDatasetDefinition().hasPermission(user, perm);
     }
 
     @Override
@@ -1103,30 +903,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     {
         super.setContainerFilter(filter);
     }
-
-    @Override
-    public Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden)
-    {
-        Map<FieldKey, ColumnInfo> columns = super.getExtendedColumns(includeHidden);
-
-        if (_dsd.isAssayData())
-        {
-            TableInfo assayResultTable = getAssayResultTable();
-            if (assayResultTable != null)
-            {
-                columns = new LinkedHashMap<>(columns);
-                Map<FieldKey, ColumnInfo> assayColumns = assayResultTable.getExtendedColumns(includeHidden);
-                // Add the assay column but only if it's not already on the dataset side, see issue 27787
-                for (Map.Entry<FieldKey, ColumnInfo> entry : assayColumns.entrySet())
-                {
-                    columns.putIfAbsent(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-
-        return columns;
-    }
-
 
     // TODO see BaseStudyTable.addWrapParticipantColumn(), do we need both?
     class ParticipantForeignKey extends LookupForeignKey
@@ -1193,7 +969,6 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
     }
 
-
     @NotNull
     @Override
     public List<ColumnInfo> getAlternateKeyColumns()
@@ -1226,4 +1001,34 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             }
         }
         return cols;
-    }}
+    }
+
+    interface AliasSupplier<K>
+    {
+        K get(K parent);
+    }
+
+    /** Wrap a column in our underlying publish source results table with one that puts it in the dataset table */
+    protected ExprColumn wrapPublishSourceColumn(final ColumnInfo columnInfo, final String name, AliasSupplier<String> supplier)
+    {
+        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(supplier.get(ExprColumn.STR_TABLE_ALIAS)), columnInfo.getJdbcType())
+        {
+            @Override
+            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+            {
+                super.declareJoins(parentAlias, map);
+                columnInfo.declareJoins(supplier.get(parentAlias), map);
+            }
+        };
+        wrappedColumn.copyAttributesFrom(columnInfo);
+
+        // When copying a column, the hidden bit is not propagated, so we need to do it manually
+        if (columnInfo.isHidden())
+            wrappedColumn.setHidden(true);
+
+        ForeignKey fk = wrappedColumn.getFk();
+        if (fk instanceof SpecimenForeignKey)
+            ((SpecimenForeignKey) fk).setTargetStudyOverride(_dsd.getContainer());
+        return wrappedColumn;
+    }
+}

@@ -48,13 +48,13 @@ public class TsvProviderSchema extends AssayProviderSchema
         public PlateTemplateTable(TsvProviderSchema schema, ContainerFilter cf)
         {
             super(AssayDbSchema.getInstance().getTableInfoPlate(), schema, cf);
+            // Issue 40917
+            setName(PLATE_TEMPLATE_TABLE);
 
             var column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Lsid")));
             column.setKeyField(true);
 
-            var containerCol = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
-            ContainerForeignKey.initColumn(containerCol, schema);
-
+            addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Type")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));

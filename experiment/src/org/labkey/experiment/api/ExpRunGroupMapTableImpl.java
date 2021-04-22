@@ -51,7 +51,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
 {
     public ExpRunGroupMapTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, null, cf);
+        super(name, ExperimentServiceImpl.get().getTinfoRunList(), schema, cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(DeletePermission.class);
     }
@@ -119,8 +119,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         ret.add(false);
         ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container"), getExpSchema().getContainer()));
         ret.append(") X ");
-        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
         ret.append("\n").append(filterFrag).append(") ").append(alias);
 
         return ret;

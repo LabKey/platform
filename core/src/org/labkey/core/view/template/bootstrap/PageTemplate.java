@@ -145,7 +145,7 @@ public class PageTemplate extends JspView<PageConfig>
         User user = context.getUser();
         User authenticatedUser = user;
         User impersonatedUser = null;
-        if (authenticatedUser.isImpersonated())
+        if (null != user && authenticatedUser.isImpersonated())
         {
             impersonatedUser = user;
             authenticatedUser = user.getImpersonatingUser();

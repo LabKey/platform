@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.SchemaKey;
@@ -37,7 +38,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -318,7 +318,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public void setPkVals(String s)
     {
-        setPkVals(s.split(","));
+        //Issue 42042: Lists with text primary key don't handle commas in key value when viewing row details
+        if (getPkNamesList().size() == 1)
+            set(getPkNamesList().get(0), s);
+        else
+            setPkVals(s.split(","));
     }
 
     public void setPkVals(String[] s)
@@ -837,8 +841,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (null == pvReturn)
         {
             pvReturn = params.getPropertyValue("returnURL");
-            if (pvReturn != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
-                throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
+            if (pvReturn != null)
+                ReturnUrlForm.throwBadParam();
         }
         if (null != pvReturn)
         {

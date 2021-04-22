@@ -60,4 +60,10 @@ public class DateProperty implements IPropertyWrapper, IsSerializable
     {
         return String.valueOf(d);
     }
+
+    @Override
+    public int hashCode()
+    {
+        return null==d ? 0 : d.hashCode();
+    }
 }

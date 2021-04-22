@@ -16,13 +16,11 @@
 
 package org.labkey.list.view;
 
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
-import org.labkey.list.controllers.ListController;
 
 public class ListDefinitionForm extends ViewForm
 {
@@ -59,14 +57,7 @@ public class ListDefinitionForm extends ViewForm
     // alias to support both returnUrl and srcURL parameters
     public void setSrcURL(String srcUrl)
     {
-        setReturnUrl(srcUrl);
-    }
-
-    // TODO: Remove -- only override of this method
-    @Override
-    public URLHelper getDefaultReturnURLHelper()
-    {
-            return new ActionURL(ListController.BeginAction.class, getContainer());
+        ReturnUrlForm.throwBadParam();
     }
 
     public boolean isShowHistory()

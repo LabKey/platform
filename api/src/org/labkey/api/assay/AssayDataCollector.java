@@ -78,8 +78,6 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 
     default void initDir(ContextType context) throws ExperimentException {}
 
-    File getRoot(@Nullable ExpRun run, @Nullable File data);
-
     /**
      * For files that already existed on the server's file system prior to import, and which have been copied
      * to a temporary directory for processing, the original path to the primary data file.

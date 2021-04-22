@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -29,27 +30,27 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -57,24 +58,23 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -93,10 +93,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
-import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.api.settings.AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -104,10 +104,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, new ExpMaterialImpl(new Material()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId")));
         setName(ExpSchema.TableType.Materials.name());
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
+        addAllowablePermission(InsertPermission.class);
+        addAllowablePermission(UpdatePermission.class);
     }
 
     @Override
@@ -126,49 +128,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    public AuditHandler getAuditHandler()
     {
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
             // Special case sample auditing to help build a useful timeline view
-            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, parameters);
+            return SampleTypeServiceImpl.get();
         }
         else
         {
-            super.addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
-        }
-    }
-
-    @Override
-    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, @Nullable String userComment, QueryService.AuditAction auditAction, Map<String, Object> parameters)
-    {
-        // Special case sample auditing to help build a useful timeline view
-        if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
-        {
-            Map<String, Object> params = new CaseInsensitiveHashMap<>(parameters);
-            if (auditAction.equals(QueryService.AuditAction.MERGE))
-            {
-                AuditBehaviorType sampleAuditType = auditBehavior;
-                if (sampleAuditType == null || getXmlAuditBehaviorType() != null)
-                    sampleAuditType = getAuditBehavior();
-
-                if (sampleAuditType == AuditBehaviorType.DETAILED || sampleAuditType == AuditBehaviorType.SUMMARY)
-                {
-                    // material.rowid is a dbsequence column that auto increments during merge, even if rowId is not updated
-                    // need to reselect rowId
-                    if (params.containsKey(LSID))
-                    {
-                        ExpMaterial sample = ExperimentService.get().getExpMaterial((String) params.get(LSID));
-                        if (sample != null)
-                            params.put(ROW_ID, sample.getRowId());
-                    }
-                }
-            }
-            SampleTypeService.get().addAuditEvent(user, container, this, auditBehavior, userComment, auditAction, Collections.singletonList(params));
-        }
-        else
-        {
-            super.addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
+            return super.getAuditHandler();
         }
     }
 
@@ -181,6 +150,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return wrapColumn(alias, _rootTable.getColumn("Container"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
+            case RootMaterialLSID:
+                return wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+            case AliquotedFromLSID:
+                return wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+            case IsAliquot:
+            {
+                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
+                        "(CASE WHEN RootMaterialLSID IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                columnInfo.setLabel("Is Aliquot");
+                columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
+                columnInfo.setUserEditable(false);
+                columnInfo.setReadOnly(true);
+                columnInfo.setHidden(!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAMPLE_ALIQUOT));
+                return columnInfo;
+            }
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case Description:
@@ -297,28 +281,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case Alias:
-                var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
-                aliasCol.setDescription("Contains the list of aliases for this data object");
-                aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID") {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return ExperimentService.get().getTinfoMaterialAliasMap();
-                    }
-                    }, "Alias")
-                {
-                    @Override
-                    public boolean isMultiSelectInput()
-                    {
-                        return false;
-                    }
-                });
-                aliasCol.setCalculated(false);
-                aliasCol.setNullable(true);
-                aliasCol.setRequired(false);
-                aliasCol.setDisplayColumnFactory(new ExpDataClassDataTableImpl.AliasDisplayColumnFactory());
-
-                return aliasCol;
+                return createAliasColumn(alias, ExperimentService.get()::getTinfoMaterialAliasMap);
 
             case Inputs:
                 return createLineageColumn(this, alias, true);
@@ -386,9 +349,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (filter)
                 addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
 
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
-            setImportURL(new DetailsURL(url));
+            if (canUserAccessPhi())
+            {
+                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
+                setImportURL(new DetailsURL(url));
+            }
         }
+    }
+
+    public ExpSampleType getSampleType()
+    {
+        return _ss;
     }
 
     @Override
@@ -522,6 +493,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         colLSID.setShownInDetailsView(false);
         colLSID.setShownInUpdateView(false);
 
+        var rootLSID = addColumn(ExpMaterialTable.Column.RootMaterialLSID);
+        rootLSID.setHidden(true);
+        rootLSID.setReadOnly(true);
+        rootLSID.setUserEditable(false);
+        rootLSID.setShownInInsertView(false);
+        rootLSID.setShownInDetailsView(false);
+        rootLSID.setShownInUpdateView(false);
+
+        var aliquotParentLSID = addColumn(ExpMaterialTable.Column.AliquotedFromLSID);
+        aliquotParentLSID.setHidden(true);
+        aliquotParentLSID.setReadOnly(true);
+        aliquotParentLSID.setUserEditable(false);
+        aliquotParentLSID.setShownInInsertView(false);
+        aliquotParentLSID.setShownInDetailsView(false);
+        aliquotParentLSID.setShownInUpdateView(false);
+
+        addColumn(Column.IsAliquot);
+
         addColumn(ExpMaterialTable.Column.Created);
         addColumn(ExpMaterialTable.Column.CreatedBy);
         addColumn(ExpMaterialTable.Column.Modified);
@@ -542,7 +531,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setSampleType(st, filter);
             addSampleTypeColumns(st, defaultCols);
             if (InventoryService.get() != null)
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer()));
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+
             setName(_ss.getName());
 
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
@@ -565,6 +555,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         nameCol.setURL(url);
         rowIdCol.setURL(url);
         setDetailsURL(url);
+
+        if (canUserAccessPhi())
+        {
+            ActionURL updateActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getUpdateMaterialQueryRowAction(getContainer(), this);
+            setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
+
+            ActionURL insertActionURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getInsertMaterialQueryRowAction(getContainer(), this);
+            setInsertURL(new DetailsURL(insertActionURL));
+        }
+        else
+        {
+            setImportURL(LINK_DISABLER);
+            setInsertURL(LINK_DISABLER);
+            setUpdateURL(LINK_DISABLER);
+        }
 
         setTitleColumn(Column.Name.toString());
 
@@ -607,8 +612,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // NOTE: If not explicitly set, the first domain property will be chosen as the ID column.
         final List<DomainProperty> idCols = st.hasNameExpression() ? Collections.emptyList() : st.getIdCols();
 
+        Set<FieldKey> mvColumns = domain.getProperties().stream()
+                .filter(ImportAliasable::isMvEnabled)
+                .map(dp -> FieldKey.fromParts(dp.getPropertyDescriptor().getMvIndicatorStorageColumnName()))
+                .collect(Collectors.toSet());
+
         for (ColumnInfo dbColumn : dbTable.getColumns())
         {
+            // Don't include PHI columns in full text search index
+            // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
+            if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
+                continue;
+
             if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()))
                 continue;
 
@@ -630,7 +645,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
                     SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"));
 
-                if (idCols.contains(dp.getPropertyDescriptor()))
+                if (idCols.contains(dp))
                 {
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
@@ -641,8 +656,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     visibleColumns.add(propColumn.getFieldKey());
                 }
+
+                if (propColumn.isMvEnabled())
+                {
+                    // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
+                    // it with a "MVIndicator" suffix (no underscore)
+                    var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
+                            StorageProvisioner.get().getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
+                    mvColumn.setLabel(dp.getLabel() != null ? dp.getLabel() : dp.getName() + " MV Indicator");
+                    mvColumn.setSqlTypeName("VARCHAR");
+                    mvColumn.setPropertyURI(dp.getPropertyURI());
+                    mvColumn.setNullable(true);
+                    mvColumn.setUserEditable(false);
+                    mvColumn.setHidden(true);
+                    mvColumn.setMvIndicatorColumn(true);
+
+                    addColumn(mvColumn);
+                    propColumn.setMvColumnName(FieldKey.fromParts(dp.getName() + MvColumn.MV_INDICATOR_SUFFIX));
+                }
             }
-            addColumn(propColumn);
+
+            if (!mvColumns.contains(propColumn.getFieldKey()))
+                addColumn(propColumn);
         }
 
         setDefaultVisibleColumns(visibleColumns);
@@ -657,10 +692,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
-        // don't select lsid twice
-        if (null != provisioned)
-            dataCols.remove("lsid");
-
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT ");
         String comma = "";
@@ -670,21 +701,44 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             comma = ", ";
         }
         if (null != provisioned)
-            sql.append(comma).append("ss.*");
+        {
+            for (ColumnInfo propertyColumn : provisioned.getColumns())
+            {
+                // don't select lsid twice
+                if ("lsid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                    continue;
+
+                sql.append(comma);
+                if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope()))
+                {
+                    sql.append(propertyColumn.getValueSql("self"));
+                }
+                else
+                {
+                    sql.append("(CASE WHEN ")
+                            .append("m.rootMaterialLsid IS NULL THEN ")
+                            .append(propertyColumn.getValueSql("self"))
+                            .append(" ELSE ")
+                            .append(propertyColumn.getValueSql("root"))
+                            .append(" END) AS ")
+                            .append(propertyColumn.getSelectName());
+                }
+            }
+        }
         sql.append(" FROM ");
         sql.append(_rootTable, "m");
         if (null != provisioned)
-            sql.append(" INNER JOIN ").append(provisioned, "ss").append(" ON m.lsid = ss.lsid");
+        {
+            sql.append(" INNER JOIN ").append(provisioned, "self").append(" ON m.lsid = self.lsid")
+                    .append(" LEFT JOIN ").append(provisioned, "root").append(" ON m.rootMaterialLsid = root.lsid");
+        }
 
         // WHERE
-        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
         return sql;
     }
-
-
 
     private class IdColumnRendererFactory implements DisplayColumnFactory
     {
@@ -720,8 +774,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (_ss != null || perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
-            return _userSchema.getContainer().hasPermission(user, perm);
+        if (_ss != null)
+            return super.hasPermission(user, perm);
 
         // don't allow insert/update on exp.Materials without a sample type
         return false;
@@ -757,13 +811,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
     {
+        CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+
         if (null != getRealTable().getColumn("container") && null != getColumn("folder"))
         {
-            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
             m.put("container", "folder");
-            return m;
         }
-        return null;
+
+        for (ColumnInfo col : getColumns())
+        {
+            if (col.getMvColumnName() != null)
+                m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName().getName());
+        }
+
+        return m;
     }
 
     @Override
@@ -776,7 +837,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder persist = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+            DataIteratorBuilder builder = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {
@@ -790,11 +851,30 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         }
                     }));
 
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
         {
             throw new UncheckedIOException(e);
         }
+    }
+
+
+    static final Set<String> excludeFromDetailedAuditField;
+    static
+    {
+        var set = new CaseInsensitiveHashSet();
+        set.addAll(TableInfo.defaultExcludedDetailedUpdateAuditFields);
+        set.addAll(ExpDataIterators.NOT_FOR_UPDATE);
+        // We don't want the inventory columns to show up in the sample timeline audit record;
+        // they are captured in their own audit record.
+        set.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
+        excludeFromDetailedAuditField = Collections.unmodifiableSet(set);
+    }
+
+    @Override
+    public @NotNull Set<String> getExcludedDetailedUpdateAuditFields()
+    {
+        return excludeFromDetailedAuditField;
     }
 }

@@ -6,17 +6,20 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -50,6 +53,41 @@ public class SampleTypeContentsView extends QueryView
         deriveButton.setDisplayPermission(InsertPermission.class);
         deriveButton.setRequiresSelection(true);
         return deriveButton;
+    }
+
+    @Override
+    public DataView createDataView()
+    {
+        DataView view = super.createDataView();
+        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+
+        if (returnURL == null)
+        {
+            // 27693: Respect returnURL from async webpart requests
+            if (getSettings().getReturnURLHelper() != null)
+                returnURL = getSettings().getReturnURLHelper().toString();
+            else
+                returnURL = getViewContext().getActionURL().toString();
+        }
+
+        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+        view.getDataRegion().addHiddenFormField("rowId", String.valueOf(_source.getRowId()));
+
+        return view;
+    }
+
+    private ActionButton getLinkToStudyButton(DataView view, Container container)
+    {
+        ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(container);
+
+        ContainerFilter containerFilter = view.getDataRegion().getTable().getContainerFilter();
+        if (containerFilter != null && containerFilter.getType() != null)
+            linkToStudyURL.addParameter("containerFilterName", containerFilter.getType().name());
+
+        ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+        linkToStudyButton.setDisplayPermission(InsertPermission.class);
+        linkToStudyButton.setRequiresSelection(true);
+        return linkToStudyButton;
     }
 
     private String getSelectedScript(ActionURL url, boolean isOuput)
@@ -128,6 +166,7 @@ public class SampleTypeContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
+        bar.add(getLinkToStudyButton(view, getContainer()));
 
         // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();

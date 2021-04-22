@@ -15,6 +15,8 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.HelpTopic;
 import org.springframework.validation.BindException;
 
 /**
@@ -28,7 +30,9 @@ public interface ValidationError
 {
     String getMessage();
 
-     ValidationException.SEVERITY getSeverity();
+    ValidationException.SEVERITY getSeverity();
+
+    @Nullable HelpTopic getHelp();
 
     void addToBindException(BindException be, String errorCode, boolean includeWarnings);
 }

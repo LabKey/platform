@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.study.StudySchema;
 
 /**
@@ -37,7 +38,7 @@ public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
 
     public SpecimenCommentTable(final StudyQuerySchema schema, ContainerFilter cf, boolean joinBackToSpecimens)
     {
-        super(StudySchema.getInstance().getTableInfoSpecimenComment(), schema);
+        super(SpecimenSchema.get().getTableInfoSpecimenComment(), schema);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
@@ -63,9 +64,7 @@ public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
             }
         }
 
-        var folderColumn = wrapColumn("Folder", _rootTable.getColumn("Container"));
-        ContainerForeignKey.initColumn(folderColumn, schema);
-        addColumn(folderColumn);
+        addWrapColumn("Folder", _rootTable.getColumn("Container"));
 
         setTitleColumn("Comment");
     }

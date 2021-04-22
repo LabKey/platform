@@ -100,7 +100,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -922,7 +922,7 @@ public class CoreController extends SpringActionController
             Boolean addAlias = (Boolean) object.get("addAlias");
             
             List<String> aliasList = new ArrayList<>();
-            aliasList.addAll(Arrays.asList(ContainerManager.getAliasesForContainer(target)));
+            aliasList.addAll(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
             
             // Perform move
@@ -933,7 +933,7 @@ public class CoreController extends SpringActionController
             {
                 // Save aliases
                 if (addAlias)
-                    ContainerManager.saveAliasesForContainer(afterMoveTarget, aliasList);
+                    ContainerManager.saveAliasesForContainer(afterMoveTarget, aliasList, getUser());
 
                 // Prepare response
                 Map<String, Object> response = new HashMap<>();
@@ -2183,8 +2183,7 @@ public class CoreController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
-            root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            root.addChild("Views and Scripting Configuration");
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Views and Scripting Configuration", getClass(), getContainer());
         }
     }
 
@@ -2196,7 +2195,7 @@ public class CoreController extends SpringActionController
         {
             List<Map<String, Object>> views = new ArrayList<>();
 
-            LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LabKeyScriptEngineManager manager = LabKeyScriptEngineManager.get();
 
             for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
@@ -2210,7 +2209,7 @@ public class CoreController extends SpringActionController
                 boolean isExternal = factory instanceof ExternalScriptEngineFactory;
                 record.put("external", String.valueOf(isExternal));
 
-                LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+                LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
                 record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
 
                 if (isExternal)
@@ -2313,7 +2312,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors) throws Exception
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (def.isDocker())
                 def.saveDockerImageConfig(getUser());
             svc.saveDefinition(getUser(), def);
@@ -2384,7 +2383,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
         {
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             svc.deleteDefinition(getUser(), def);
 
             return new ApiSimpleResponse("success", true);
@@ -2403,7 +2402,7 @@ public class CoreController extends SpringActionController
             CoreController controller = new CoreController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new ProjectsAction(),
                 controller.new DownloadFileLinkAction(),
                 controller.new GetExtContainerTreeAction(),
@@ -2447,7 +2446,7 @@ public class CoreController extends SpringActionController
 
     public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        ManageQCStatesBean(String returnUrl)
+        ManageQCStatesBean(ActionURL returnUrl)
         {
             super(returnUrl);
             _qcStateHandler = new CoreQCStateHandler();
@@ -2526,7 +2525,7 @@ public class CoreController extends SpringActionController
             if (AssayQCService.getProvider().supportsQC())
             {
                 return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
-                        new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+                        new ManageQCStatesBean(manageQCStatesForm.getReturnActionURL()), errors);
             }
             else
             {

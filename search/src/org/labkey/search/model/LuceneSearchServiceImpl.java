@@ -89,7 +89,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileStream.FileFileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HTMLContentExtractor;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.MultiPhaseCPUTimer;
@@ -97,6 +97,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -203,7 +204,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             InputStream is = getClass().getResourceAsStream("tikaConfig.xml");
             org.w3c.dom.Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
-            config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(), true));
+            config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(_log), true));
         }
         catch (Exception e)
         {
@@ -532,44 +533,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     return false;
                 }
 
-                boolean tooBig = isTooBig(fs, type);
+                Metadata metadata = new Metadata();
+                metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
 
-                if ("text/html".equals(type))
-                {
-                    String html;
-                    if (tooBig)
-                        html = "<html><body></body></html>";
-                    else
-                        html = PageFlowUtil.getStreamContentsAsString(is);
+                // Tika guesses content encoding of "IBM500" for short text and html documents, so suggest UTF-8. Seems
+                // related to https://issues.apache.org/jira/browse/TIKA-2771. This is just a hint, but I hope that's
+                // sufficient. If not, TikaCoreProperties.CONTENT_TYPE_OVERRIDE is an option to force UTF-8.
+                if (r.getContentType().startsWith("text"))
+                    metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
-                    body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
+                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                parse(r, fs, is, handler, metadata, isTooBig(fs, type));
+                body = handler.toString();
 
-                    if (null == title)
-                        logBadDocument("Null title", r);
-                }
-                else if (type.startsWith("text/") && !type.contains("xml") && !StringUtils.equals(type, "text/comma-separated-values"))
-                {
-                    if (tooBig)
-                        body = "";
-                    else
-                        body = PageFlowUtil.getStreamContentsAsString(is);
-                }
-                else
-                {
-                    Metadata metadata = new Metadata();
-                    metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
-                    metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                    ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                if (StringUtils.isBlank(title))
+                    title = metadata.get(TikaCoreProperties.TITLE);
 
-                    parse(r, fs, is, handler, metadata, tooBig);
-
-                    body = handler.toString();
-
-                    if (StringUtils.isBlank(title))
-                        title = metadata.get(TikaCoreProperties.TITLE);
-
-                    keywordsMed.append(getInterestingMetadataProperties(metadata));
-                }
+                keywordsMed.append(getInterestingMetadataProperties(metadata));
 
                 fs.closeInputStream();
             }
@@ -1434,25 +1415,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                 if (mp.isParseable())
                 {
-                    String message;
+                    HtmlString message;
                     int problemLocation;
 
                     if ("<EOF>".equals(mp.getEncountered()))
                     {
-                        message = PageFlowUtil.filter("Query string is incomplete");
+                        message = HtmlString.of("Query string is incomplete");
                         problemLocation = queryString.length();
                     }
                     else
                     {
                         if (1 == mp.getLine())
                         {
-                            message = "Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>";
+                            message = HtmlString.unsafe("Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>");
                             problemLocation = mp.getColumn();
                         }
                         else
                         {
                             // Multiline query?!?  Don't try to highlight, just report the location (1-based)
-                            message = PageFlowUtil.filter("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
+                            message = HtmlString.of("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
                             problemLocation = -1;
                         }
                     }
@@ -1471,7 +1452,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if (null != categories)
             {
-                Iterator itr = categories.iterator();
+                Iterator<SearchCategory> itr = categories.iterator();
 
                 if (requireCategories)
                 {
@@ -1878,7 +1859,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "xlsx_sample.xlsx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xlt_sample.xlt", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
             add(map, "xltx_sample.xltx", 2096, "Failure History", "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry", "Sample Error", "DailyB postgres", "StudySimpleExportTest.verifyCustomParticipantView", "You're trying to decode an invalid JSON String");
-            add(map, "xml_sample.xml", 456, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
+            add(map, "xml_sample.xml", 444, "The Search module offers full-text search of server contents", "The Awesome LabKey Team");
             add(map, "zip_sample.zip", 1897, "map a source tsv column", "if there are NO explicit import definitions", "");
 
             return map;
@@ -2135,5 +2116,4 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             /* pass */
         }
     }
-
 }

@@ -20,7 +20,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <labkey:errors/>
-You can import a visit map in XML format to quickly configure a study. The visit map XML must match the <%=helpLink("studySerializationFormats", "study serialization format")%> used by study import/export.<br><br>
+You can import a visit map in XML format to quickly configure a study. An example visit map is available in the documentation topic: <%=helpLink("importVisitMap", "Import Visit Map")%><br><br>
 <labkey:form action="<%=urlFor(ImportVisitMapAction.class)%>" method="post">
     Paste visit map content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>

@@ -144,7 +144,7 @@ public class SamplesSchema extends AbstractExpSchema
     }
 
     /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(ExpSampleType st, ContainerFilter cf)
+    public ExpMaterialTable getSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {

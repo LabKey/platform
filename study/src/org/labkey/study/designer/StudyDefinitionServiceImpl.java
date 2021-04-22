@@ -39,7 +39,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
@@ -185,12 +185,12 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             int dsId = StudyService.get().getDatasetIdByName(getContainer(), assayDefinition.getAssayName());
             if (dsId == -1)
             {
-                DatasetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
-                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
-                if (datasetDefinition != null)
-                {
-                    datasetDefinition.provisionTable();
-                }
+                DatasetDefinition datasetDefinition = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(assayDefinition.getAssayName())
+                        .setStudy(study)
+                        .setDemographicData(false)
+                        .setType(Dataset.TYPE_PLACEHOLDER)
+                        .setCategoryId(categoryId));
+                datasetDefinition.provisionTable();
             }
         }
 

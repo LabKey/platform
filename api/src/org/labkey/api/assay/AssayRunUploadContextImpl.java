@@ -88,6 +88,11 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     // Mutable fields
     private TransformResult _transformResult;
 
+    // async fields
+    protected String _jobDescription;
+    protected String _jobNotificationProvider;
+    protected String _pipelineJobGUID;
+
     private AssayRunUploadContextImpl(Factory<ProviderType> factory)
     {
         _protocol = factory._protocol;
@@ -116,6 +121,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         _reRunId = factory._reRunId;
         _targetStudy = factory._targetStudy;
+
+        _jobDescription = factory._jobDescription;
+        _jobNotificationProvider = factory._jobNotificationProvider;
     }
 
     public static class Factory<ProviderType extends AssayProvider> extends AssayRunUploadContext.Factory<ProviderType, Factory<ProviderType>>
@@ -387,6 +395,30 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public void uploadComplete(ExpRun run)
     {
         // no-op
+    }
+
+    @Override
+    public String getJobDescription()
+    {
+        return _jobDescription;
+    }
+
+    @Override
+    public String getJobNotificationProvider()
+    {
+        return _jobNotificationProvider;
+    }
+
+    @Override
+    public String getPipelineJobGUID()
+    {
+        return _pipelineJobGUID;
+    }
+
+    @Override
+    public void setPipelineJobGUID(String jobGUID)
+    {
+        _pipelineJobGUID = jobGUID;
     }
 
     @Override

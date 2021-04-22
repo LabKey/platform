@@ -62,7 +62,6 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
-import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
@@ -196,22 +195,38 @@ public class AuthenticationManager
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
         ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
             .filter(cp->!cp.getName().equals(PROVIDERS_KEY)) // Ignore "Authentication" -- we don't use this property anymore
-            .forEach(cp-> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
+            .forEach(cp->saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
     }
 
     public enum Priority { High, Low }
 
-    // TODO: Replace this with a generic domain-claiming mechanism
-    public static String _ldapDomain = null;
-
-    public static String getLdapDomain()
+    public static HtmlString getStandardSendVerificationEmailsMessage()
     {
-        return _ldapDomain;
+        HtmlStringBuilder builder = HtmlStringBuilder.of("Send password verification emails to all new users");
+        Collection<String> activeDomains = AuthenticationConfigurationCache.getActiveDomains();
+
+        if (!activeDomains.isEmpty())
+        {
+            // At the moment, only LDAP configurations can be associated with a domain, so we call out LDAP below
+            builder.append(" except those with email addresses that are configured for LDAP authentication (those ending in ");
+            builder.append(
+                activeDomains.stream()
+                    .map(d->"@" + d)
+                    .collect(Collectors.joining(", "))
+            );
+
+            builder.append(")");
+        }
+
+        return builder.getHtmlString();
     }
 
-    public static void setLdapDomain(String ldapDomain)
+    // Ignores domain = "*"
+    public static boolean isLdapEmail(ValidEmail email)
     {
-        _ldapDomain = StringUtils.trimToNull(ldapDomain);
+        String emailAddress = email.getEmailAddress();
+        return AuthenticationConfigurationCache.getActiveDomains().stream()
+            .anyMatch(domain->StringUtils.endsWithIgnoreCase(emailAddress, "@" + domain));
     }
 
     public static boolean isRegistrationEnabled()
@@ -325,9 +340,9 @@ public class AuthenticationManager
             if (!configuration.isAutoRedirect())
             {
                 LinkFactory factory = configuration.getLinkFactory();
-                html.append(HtmlString.unsafe("<li>"));
+                html.startTag("li");
                 html.append(factory.getLink(currentURL, logoType));
-                html.append(HtmlString.unsafe("</li>"));
+                html.endTag("li");
             }
         }
 
@@ -704,15 +719,15 @@ public class AuthenticationManager
 
 
     /** avoid spamming the audit log **/
-    private static Cache<String, String> authMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication Messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication Messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
         String key = user.getUserId() + "/" + ((null==request||null==request.getLocalAddr())?"":request.getLocalAddr());
-        String prevMessage = authMessages.get(key);
+        String prevMessage = AUTH_MESSAGES.get(key);
         if (StringUtils.equals(prevMessage, msg))
             return;
-        authMessages.put(key, msg);
+        AUTH_MESSAGES.put(key, msg);
         if (user.isGuest())
         {
             UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(ContainerManager.getRoot().getId(), msg, user);
@@ -1055,7 +1070,7 @@ public class AuthenticationManager
         if (null != session && !user.isGuest())
         {
             // notify websocket clients associated with this http session, the user has logged out
-            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.LoggedOut);
+            NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.SessionLogOut);
 
             // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
             NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);

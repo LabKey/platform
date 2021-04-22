@@ -32,6 +32,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -59,17 +60,17 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
-            if (!col.getName().equalsIgnoreCase("Container"))
+            BuiltInColumnTypes type = BuiltInColumnTypes.findBuiltInType(col);
+            if (type == BuiltInColumnTypes.Container)
+            {
+                addContainerColumn();
+            }
+            else
             {
                 var newCol = addWrapColumn(col);
                 if (col.isHidden())
                     newCol.setHidden(col.isHidden());
-
-                if (newCol.getName().equalsIgnoreCase("CreatedBy") || newCol.getName().equalsIgnoreCase("ModifiedBy"))
-                    UserIdQueryForeignKey.initColumn(schema, newCol, true);
             }
-            else
-                addContainerColumn();
         }
 
 
@@ -108,7 +109,7 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         }
 
         @Override
-        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+        public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
         {
             return importRows(user, container, rows, context.getErrors(), context.getConfigParameters(), extraScriptContext);
         }

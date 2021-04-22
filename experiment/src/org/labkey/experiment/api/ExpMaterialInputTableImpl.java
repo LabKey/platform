@@ -37,7 +37,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
 {
     public ExpMaterialInputTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, null, cf);
+        super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, cf);
     }
 
     @Override

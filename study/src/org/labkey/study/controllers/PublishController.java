@@ -30,20 +30,17 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.assay.PublishConfirmAction;
-import org.labkey.study.assay.PublishStartAction;
+import org.labkey.study.assay.AssayPublishConfirmAction;
+import org.labkey.study.assay.StudyPublishManager;
+import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -56,8 +53,8 @@ import java.util.List;
 public class PublishController extends SpringActionController
 {
     private static final ActionResolver _resolver = new DefaultActionResolver(PublishController.class,
-        PublishStartAction.class,
-        PublishConfirmAction.class
+        AssayPublishStartAction.class,
+        AssayPublishConfirmAction.class
     );
 
     public PublishController()
@@ -81,7 +78,7 @@ public class PublishController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
+    public class PublishAssayHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
 
@@ -118,7 +115,7 @@ public class PublishController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer()));
+            root.addChild("Assay List", urlProvider(AssayUrls.class).getBeginURL(getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy-to-Study History");
         }
@@ -137,11 +134,11 @@ public class PublishController extends SpringActionController
             if (null != jobGuid)
                 jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
 
-            PipelineStatusUrls urls = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+            PipelineStatusUrls urls = urlProvider(PipelineStatusUrls.class);
             ActionURL url  = null != jobId ? urls.urlDetails(getContainer(), jobId) : urls.urlBegin(getContainer());
 
             response.put("success", true);
-            response.put("returnUrl", url);
+            response.put(ActionURL.Param.returnUrl.name(), url);
 
             return response;
         }
@@ -240,51 +237,34 @@ public class PublishController extends SpringActionController
                 if (_targetStudyContainer != null)
                 {
                     info("Starting copy of data to study in folder: " + _targetStudyContainer.getPath());
-                    boolean hasPermission = false;
-                    for (Study publishTarget : AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class))
-                    {
-                        if (publishTarget.getContainer().equals(_targetStudyContainer))
+
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
+                    _runIds.forEach((runId) -> {
+
+                        info("Starting copy for run : " + runId);
+                        ExpRun run = ExperimentService.get().getExpRun(runId);
+                        if (run != null)
                         {
-                            hasPermission = true;
-                            break;
+                            List<String> errors = new ArrayList<>();
+                            _statusUrl = StudyPublishManager.getInstance().autoCopyResults(
+                                    protocol,
+                                    provider,
+                                    run,
+                                    getUser(),
+                                    getContainer(),
+                                    _targetStudyContainer,
+                                    errors,
+                                    getLogger());
+
+                            errors.forEach(this::error);
                         }
-                    }
-
-                    if (!hasPermission)
-                    {
-                        error("Insufficient permission to copy assay data to study in folder : " + _targetStudyContainer.getPath());
-                    }
-                    else
-                    {
-                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
-                        AssayProvider provider = AssayService.get().getProvider(protocol);
-                        _runIds.forEach((runId) -> {
-
-                            info("Starting copy for run : " + runId);
-                            ExpRun run = ExperimentService.get().getExpRun(runId);
-                            if (run != null)
-                            {
-                                List<String> errors = new ArrayList<>();
-                                _statusUrl = AssayPublishManager.getInstance().autoCopyResults(
-                                        protocol,
-                                        provider,
-                                        run,
-                                        getUser(),
-                                        getContainer(),
-                                        _targetStudyContainer,
-                                        errors,
-                                        getLogger());
-
-                                errors.forEach(this::error);
-                            }
-                            else
-                                error("Unable to locate run : " + runId);
-                        });
-                    }
+                        else
+                            error("Unable to locate run : " + runId);
+                    });
                 }
                 else
                     error("Invalid target study folder");
-
             }
             catch (Throwable t)
             {

@@ -33,7 +33,6 @@ import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -62,7 +61,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -216,8 +214,7 @@ public class QueryView extends WebPartView<Object>
     {
         if (ReportService.get().getGlobalItemFilterTypes().contains(type)) return true;
         if (RReport.TYPE.equals(type)) return true;
-        if (CrosstabReport.TYPE.equals(type)) return true;
-        return ChartQueryReport.TYPE.equals(type);
+        return CrosstabReport.TYPE.equals(type);
     };
 
     private TableInfo _table;
@@ -335,7 +332,7 @@ public class QueryView extends WebPartView<Object>
     {
         out.write("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
-        if (getQueryDef() != null && getQueryDef().canEdit(getUser()))
+        if (getQueryDef() != null && getQueryDef().canEdit(getUser()) && getQueryDef().isSqlEditable())
             out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()) + "\">Edit Query</a>");
         out.write("</p>");
 
@@ -398,25 +395,22 @@ public class QueryView extends WebPartView<Object>
             String label = getCaption();
             menu.setId(getDataRegionName() + ".Menu." + label);
 
-            if (getQueryDef() != null && getQueryDef().canEdit(getUser()))
+            if (getQueryDef() != null)
             {
                 NavTree editQueryItem;
-                if (getQueryDef().isSqlEditable())
+                if (getQueryDef().isSqlEditable() && getQueryDef().canEdit(getUser()))
                     editQueryItem = new NavTree("Edit Source", getSchema().urlFor(QueryAction.sourceQuery, getQueryDef()));
                 else
                     editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
                 editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
                 addMenuItem(editQueryItem);
-                if (getQueryDef().isMetadataEditable())
+
+                if (getQueryDef().isMetadataEditable() && getQueryDef().canEditMetadata(getUser()))
                 {
                     NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
                     editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
                     addMenuItem(editMetadataItem);
                 }
-            }
-            else
-            {
-                addMenuItem("Edit Query", false, true);
             }
 
             addSeparator();
@@ -429,7 +423,7 @@ public class QueryView extends WebPartView<Object>
                 for (QueryDefinition query : getSchema().getTablesAndQueries(true))
                 {
                     String name = query.getName();
-                    NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name).getLocalURIString());
+                    NavTree item = new NavTree(name, target.clone().replaceParameter(param(QueryParam.queryName), name));
                     item.setId(getDataRegionName() + ":" + label + ":" + name);
                     // Intentionally don't set the description so we can avoid having to instantiate all of the TableInfos,
                     // which can be expensive for some schemas
@@ -1024,7 +1018,9 @@ public class QueryView extends WebPartView<Object>
         ActionButton deleteAllRows = new ActionButton("Delete All Rows");
         deleteAllRows.setDisplayPermission(AdminPermission.class);
         deleteAllRows.setActionType(ActionButton.Action.SCRIPT);
-        deleteAllRows.setScript("Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
+        deleteAllRows.setScript(
+                "LABKEY.requiresExt4Sandbox(function() {" +
+                    "Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows in this " + tableNoun + "? This action cannot be undone and will result in an empty " + tableNoun + ".', function(button){" +
                         "if (button == 'yes'){" +
                             "var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows'); " +
                             "Ext4.Ajax.request({ " +
@@ -1057,7 +1053,8 @@ public class QueryView extends WebPartView<Object>
                                 "scope : this " +
                             "});" +
                         "}" +
-                    "});"
+                    "});" +
+                "});"
         );
         return deleteAllRows;
     }
@@ -1496,7 +1493,7 @@ public class QueryView extends WebPartView<Object>
             {
                 if (viewItemFilter.accept(designer.getReportType(), designer.getLabel()))
                 {
-                    NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                    NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL());
                     item.setId(getBaseMenuId() + ":Reports:Create:" + designer.getLabel());
                     item.setImageSrc(designer.getIconURL());
                     item.setImageCls(designer.getIconCls());
@@ -1538,7 +1535,7 @@ public class QueryView extends WebPartView<Object>
 
             for (ReportService.DesignerInfo designer : reportDesigners)
             {
-                NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL());
                 item.setId(getBaseMenuId() + ":Charts:Create" + designer.getLabel());
                 item.setImageSrc(designer.getIconURL());
                 item.setImageCls(designer.getIconCls());
@@ -1668,12 +1665,12 @@ public class QueryView extends WebPartView<Object>
             if (ignoreUserFilter())
             {
                 url.deleteParameter(param(QueryParam.ignoreFilter));
-                item = new NavTree(label, url.toString());
+                item = new NavTree(label, url);
             }
             else
             {
                 url.replaceParameter(param(QueryParam.ignoreFilter), "1");
-                item = new NavTree(label, url.toString());
+                item = new NavTree(label, url);
                 item.setSelected(true);
             }
             item.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].clearSelected({quiet: true});");
@@ -1770,7 +1767,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String label = Objects.toString(view.getLabel(), "default");
 
-                item = new NavTree(label, (String) null);
+                item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(""));
                 item.setId(getBaseMenuId() + ":GridViews:default");
                 if ("".equals(currentView))
@@ -1780,7 +1777,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String label = view.getLabel();
 
-                item = new NavTree(label, (String) null);
+                item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(name));
                 item.setId(getBaseMenuId() + ":GridViews:grid-" + PageFlowUtil.filter(name));
                 if (name.equals(currentView))
@@ -1854,8 +1851,7 @@ public class QueryView extends WebPartView<Object>
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null)
                     && !report.getType().equals(TimeChartReport.TYPE)
-                    && !report.getType().equals(GenericChartReport.TYPE)
-                    && !(report instanceof ChartQueryReport))
+                    && !report.getType().equals(GenericChartReport.TYPE))
             {
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
@@ -1886,7 +1882,7 @@ public class QueryView extends WebPartView<Object>
             for (Report report : reports)
             {
                 String reportId = report.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(report.getDescriptor().getReportName(), (String) null);
+                NavTree item = new NavTree(report.getDescriptor().getReportName(), (ActionURL) null);
                 item.setId(getBaseMenuId() + ":Reports:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
@@ -1914,7 +1910,7 @@ public class QueryView extends WebPartView<Object>
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null) &&
-                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE) || report instanceof ChartQueryReport))
+                    (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE)))
             {
                 if (canViewReport(getUser(), getContainer(), report))
                 {
@@ -1944,7 +1940,7 @@ public class QueryView extends WebPartView<Object>
             for (Report chart : charts)
             {
                 String chartId = chart.getDescriptor().getReportId().toString();
-                NavTree item = new NavTree(chart.getDescriptor().getReportName(), (String) null);
+                NavTree item = new NavTree(chart.getDescriptor().getReportName(), (ActionURL) null);
                 item.setImageSrc(ReportUtil.getIconUrl(getContainer(), chart));
                 item.setImageCls(ReportUtil.getIconCls(chart));
                 item.setScript(getChangeReportScript(chartId));
@@ -2110,20 +2106,27 @@ public class QueryView extends WebPartView<Object>
 
         if (_customView != null && _customView.getErrors() != null)
         {
-            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream().map(e -> new DataRegion.Message(PageFlowUtil.filter(e), DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
+            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream()
+                    .map(e -> new DataRegion.Message(e, DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
                     .collect(Collectors.toList()));
+        }
+
+        TableInfo table = getTable();
+        if (table instanceof FilteredTable && ((FilteredTable) table).hasRulesOmittedColumns())
+        {
+            rgn.addMessageSupplier(x -> List.of(new DataRegion.Message("PHI protected columns have been omitted", DataRegion.MessageType.WARNING, DataRegion.MessagePart.header)));
         }
 
         // Allow region to specify header lock, optionally override
         if (rgn.getAllowHeaderLock())
             rgn.setAllowHeaderLock(getSettings().getAllowHeaderLock());
 
-        rgn.setTable(getTable());
+        rgn.setTable(table);
 
         if (isShowConfiguredButtons())
         {
             // We first apply the button bar config from the table:
-            ButtonBarConfig tableBarConfig = getTable() == null ? null : getTable().getButtonBarConfig();
+            ButtonBarConfig tableBarConfig = table == null ? null : table.getButtonBarConfig();
             if (tableBarConfig != null)
                 rgn.addButtonBarConfig(tableBarConfig);
             // Then any overriding button bar config (from javascript) is applied:
@@ -2131,7 +2134,6 @@ public class QueryView extends WebPartView<Object>
                 rgn.addButtonBarConfig(_buttonBarConfig);
         }
 
-        TableInfo table = getTable();
         if (table != null && table.getAggregateRowConfig() != null)
         {
             rgn.setAggregateRowConfig(table.getAggregateRowConfig());
@@ -2318,7 +2320,7 @@ public class QueryView extends WebPartView<Object>
         return getTsvWriter(headerType, Collections.emptyMap());
     }
 
-    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
     {
         _exportView = true;
         DataView view = createDataView();
@@ -2327,20 +2329,12 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(false);
         RenderContext rc = view.getRenderContext();
         rc.setCache(false);
-        try
-        {
-            Results results = rgn.getResults(rc);
-            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()), renameColumn);
-            tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
-            // don't step on default
-            if (null != headerType)
-                tsv.setColumnHeaderType(headerType);
-            return tsv;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        TSVGridWriter tsv = new TSVGridWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), renameColumnMap);
+        tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
+        // don't step on default
+        if (null != headerType)
+            tsv.setColumnHeaderType(headerType);
+        return tsv;
     }
 
     public Results getResults() throws SQLException, IOException
@@ -2400,35 +2394,27 @@ public class QueryView extends WebPartView<Object>
         return getExcelWriter(docType, null);
     }
 
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumns) throws IOException
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumnMap) throws IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
         RenderContext rc = configureForExcelExport(docType, view, rgn);
 
-        try
-        {
-            Results results = rgn.getResults(rc);
-            ExcelWriter ew = renameColumns == null || renameColumns.isEmpty() ? new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType, renameColumns);
-            ew.setFilenamePrefix(getSettings().getQueryName());
-            ew.setAutoSize(true);
-            return ew;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExcelWriter ew = renameColumnMap == null || renameColumnMap.isEmpty() ? new ExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(()->rgn.getResults(rc), getExportColumns(rgn.getDisplayColumns()), docType, renameColumnMap);
+        ew.setFilenamePrefix(getSettings().getQueryName());
+        ew.setAutoSize(true);
+        return ew;
     }
 
     private static class AliasColumnExcelWriter extends ExcelWriter
     {
-        private Map<String, String> _renameColumns;
+        private final Map<String, String> _renameColumnMap;
 
-        public AliasColumnExcelWriter(Results results, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumns)
+        public AliasColumnExcelWriter(ResultsFactory factory, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumnMap)
         {
-            super(results, displayColumns, docType);
-            _renameColumns = renameColumns;
+            super(factory, displayColumns, docType);
+            _renameColumnMap = renameColumnMap;
         }
 
         @Override
@@ -2437,18 +2423,18 @@ public class QueryView extends WebPartView<Object>
         {
 
             super.renderColumnCaptions(sheet, visibleColumns);
-            if (_renameColumns == null || _renameColumns.isEmpty())
+            if (_renameColumnMap == null || _renameColumnMap.isEmpty())
                 return;
 
             int row = getCurrentRow() - 1;
             for (int col = 0; col < visibleColumns.size(); col++)
             {
                 String originalColName = visibleColumns.get(col).getName();
-                if (_renameColumns.containsKey(originalColName))
+                if (_renameColumnMap.containsKey(originalColName))
                 {
                     Cell cell = sheet.getRow(row).getCell(col);
                     if (cell != null)
-                        cell.setCellValue(_renameColumns.get(originalColName));
+                        cell.setCellValue(_renameColumnMap.get(originalColName));
                 }
             }
         }
@@ -2569,7 +2555,7 @@ public class QueryView extends WebPartView<Object>
     {
         List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
 
-        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(null, displayColumns, docType) : new AliasColumnExcelWriter(null, displayColumns, docType, renameCols);
+        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(()->null, displayColumns, docType) : new AliasColumnExcelWriter(()->null, displayColumns, docType, renameCols);
     }
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
@@ -2614,7 +2600,7 @@ public class QueryView extends WebPartView<Object>
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
                                  List<FieldKey> excludeColumns,
-                                 @NotNull Map<String, String> renameColumns,
+                                 @NotNull Map<String, String> renameColumnMap,
                                  @Nullable String prefix
                                  )
             throws IOException
@@ -2623,8 +2609,8 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
-                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumnMap, docType)
+                    : (renameColumnMap.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumnMap)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();
@@ -2690,22 +2676,21 @@ public class QueryView extends WebPartView<Object>
         exportToTsv(response, delim, quote, headerType, Collections.emptyMap());
     }
 
-    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
 
         if (table != null)
         {
-            int rowCount = doExport(response, delim, quote, headerType, renameColumn);
+            int rowCount = doExport(response, delim, quote, headerType, renameColumnMap);
             logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
-
-    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
     {
-        try (TSVGridWriter tsv = renameColumn.isEmpty() ? getTsvWriter(headerType) : getTsvWriter(headerType, renameColumn))
+        try (TSVGridWriter tsv = renameColumnMap.isEmpty() ? getTsvWriter(headerType) : getTsvWriter(headerType, renameColumnMap))
         {
             tsv.setDelimiterCharacter(delim);
             tsv.setQuoteCharacter(quote);
@@ -3248,7 +3233,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     if (null != getContainerFilter())
                         queryDef.setContainerFilter(getContainerFilter());
-                    ti = queryDef.getTable(getSchema(), errors, true, false, false);
+                    ti = queryDef.getTable(getSchema(), errors, true, false);
                 }
             }
 

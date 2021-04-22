@@ -154,6 +154,12 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public boolean isDeleted()
+    {
+        return _deleted;
+    }
+
+    @Override
     public boolean isShownInInsertView()
     {
         return _pd.isShownInInsertView();
@@ -607,6 +613,45 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public String getSourceOntology()
+    {
+        return _pd.getSourceOntology();
+    }
+
+    @Override
+    public void setSourceOntology(String sourceOntology)
+    {
+        if (!StringUtils.equals(sourceOntology, getSourceOntology()))
+            edit().setSourceOntology(sourceOntology);
+    }
+
+    @Override
+    public String getConceptImportColumn()
+    {
+        return _pd.getConceptImportColumn();
+    }
+
+    @Override
+    public void setConceptImportColumn(String conceptImportColumn)
+    {
+        if (!StringUtils.equals(conceptImportColumn, getConceptImportColumn()))
+            edit().setConceptImportColumn(conceptImportColumn);
+    }
+
+    @Override
+    public String getConceptLabelColumn()
+    {
+        return _pd.getConceptLabelColumn();
+    }
+
+    @Override
+    public void setConceptLabelColumn(String conceptLabelColumn)
+    {
+        if (!StringUtils.equals(conceptLabelColumn, getConceptLabelColumn()))
+            edit().setConceptLabelColumn(conceptLabelColumn);
+    }
+
+    @Override
     public void setPrincipalConceptCode(String code)
     {
         if (!StringUtils.equals(code, getPrincipalConceptCode()))
@@ -619,6 +664,18 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPrincipalConceptCode();
     }
 
+    @Override
+    public void setDerivationDataScope(String scope)
+    {
+        if (!StringUtils.equals(scope, getDerivationDataScope()))
+            edit().setDerivationDataScope(scope);
+    }
+
+    @Override
+    public String getDerivationDataScope()
+    {
+        return _pd.getDerivationDataScope();
+    }
 
     @Override
     public PropertyDescriptor getPropertyDescriptor()
@@ -688,16 +745,16 @@ public class DomainPropertyImpl implements DomainProperty
 
                 // Drop first, so rename doesn't have to worry about it
                 if (mvDropped)
-                    StorageProvisioner.dropMvIndicator(this, _pdOld);
+                    ((StorageProvisionerImpl)StorageProvisioner.get()).dropMvIndicator(this, _pdOld);
 
                 if (propRenamed)
-                    StorageProvisioner.renameProperty(this.getDomain(), this, _pdOld, mvDropped);
+                    StorageProvisionerImpl.get().renameProperty(this.getDomain(), this, _pdOld, mvDropped);
 
                 if (propResized)
-                    StorageProvisioner.resizeProperty(this.getDomain(), this, _pdOld.getScale());
+                    StorageProvisionerImpl.get().resizeProperty(this.getDomain(), this, _pdOld.getScale());
 
                 if (mvAdded)
-                    StorageProvisioner.addMvIndicator(this);
+                    StorageProvisionerImpl.get().addMvIndicator(this);
             }
         }
         else
@@ -1068,4 +1125,6 @@ public class DomainPropertyImpl implements DomainProperty
             return pd;
         }
     }
+
+
 }

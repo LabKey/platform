@@ -42,6 +42,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.HtmlString.unsafe;
+
 /**
  * Tracks objects that may be expensive, commonly allocated so that we know that they're not being held and creating
  * a memory leak. Will not prevent the tracked objects from being garbage collected.
@@ -87,21 +89,21 @@ public class MemTracker
             _allocTime = allocTime;
         }
 
-        public String getHtmlStack()
+        public HtmlString getHtmlStack()
         {
             if (_stackTrace == null)
             {
-                return MiniProfiler.NO_STACK_TRACE_AVAILABLE;
+                return HtmlString.of(MiniProfiler.NO_STACK_TRACE_AVAILABLE);
             }
-            StringBuilder builder = new StringBuilder();
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
             for (int i = 3; i < _stackTrace.length; i++)
             {
                 String line = _stackTrace[i].toString();
-                builder.append(PageFlowUtil.filter(line)).append("<br>\r\n");
+                builder.append(line).append(HtmlString.BR).append("\r\n");
                 if (line.contains("org.labkey.api.view.ViewServlet.service"))
                     break;
             }
-            return builder.toString();
+            return builder.getHtmlString();
         }
 
         public long getThreadId()

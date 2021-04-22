@@ -15,12 +15,13 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -34,18 +35,54 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
 
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
 {
-    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
+    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
-        super(name, rootTable, schema, objectType, cf);
+        super(name, rootTable, schema, cf);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return isAllowedPermission(perm) && getContainer().hasPermission(user, perm) && canUserAccessPhi();
+    }
+
+    protected MutableColumnInfo createAliasColumn(String alias, Supplier<TableInfo> aliasMapTable)
+    {
+        var aliasCol = wrapColumn("Alias", getRealTable().getColumn("LSID"));
+        aliasCol.setDescription("Contains the list of aliases for this data object");
+        aliasCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("LSID")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return aliasMapTable.get();
+            }
+        }, "Alias")
+        {
+            @Override
+            public boolean isMultiSelectInput()
+            {
+                return false;
+            }
+        });
+        aliasCol.setCalculated(false);
+        aliasCol.setNullable(true);
+        aliasCol.setRequired(false);
+        aliasCol.setDisplayColumnFactory(new AliasDisplayColumnFactory());
+        aliasCol.setConceptURI("http://www.labkey.org/exp/xml#alias");
+        aliasCol.setPropertyURI("http://www.labkey.org/exp/xml#alias");
+        return aliasCol;
     }
 
     /**
@@ -184,6 +221,12 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
 
     @Override
     public boolean isAlwaysInsertExpObject()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportTableRules()
     {
         return true;
     }

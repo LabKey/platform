@@ -31,6 +31,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BeanViewForm;
@@ -39,8 +40,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewService;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -116,7 +115,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class ReportsController extends BaseStudyController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
@@ -152,42 +150,9 @@ public class ReportsController extends BaseStudyController
             if (_study == null)
                 root.addChild("No Study In Folder");
             else if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 root.addChild("Views");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class DeleteCustomQueryAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            String viewName = getRequest().getParameter("reportView");
-            String defName = getRequest().getParameter("defName");
-            if (viewName != null && defName != null)
-            {
-                final ViewContext context = getViewContext();
-                final UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "study");
-                final Study study = getStudyRedirectIfNull(context.getContainer());
-                QueryDefinition qd = QueryService.get().getQueryDef(context.getUser(), study.getContainer(), "study", defName);
-                if (qd == null)
-                    qd = schema.getQueryDefForTable(defName);
-
-                if (qd != null)
-                {
-                    CustomView view = qd.getCustomView(context.getUser(), context.getRequest(), viewName);
-                    if (view != null)
-                        view.delete(context.getUser(), context.getRequest());
-                }
-            }
-            return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 
@@ -329,7 +294,7 @@ public class ReportsController extends BaseStudyController
                     }
                     else
                     {
-                        _successURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
+                        _successURL = urlProvider(ReportUrls.class).urlManageViews(getContainer());
                     }
                 }
 
@@ -741,7 +706,7 @@ public class ReportsController extends BaseStudyController
         private Container _container;
         private User _user;
         private String _queryName;
-        private ActionURL _srcURL;
+        private ActionURL _returnUrl;
         private Map<String, DatasetDefinition> _datasetMap;
 
         public CreateQueryReportBean(ViewContext context, String queryName) throws IllegalStateException
@@ -750,7 +715,7 @@ public class ReportsController extends BaseStudyController
             _container = context.getContainer();
             _user = context.getUser();
             _queryName = queryName;
-            _srcURL = context.getActionURL();
+            _returnUrl = context.getActionURL();
         }
 
         private List<String> getTableAndQueryNames(ViewContext context) throws IllegalStateException
@@ -791,9 +756,9 @@ public class ReportsController extends BaseStudyController
             return _queryName;
         }
 
-        public ActionURL getSrcURL()
+        public ActionURL getReturnUrl()
         {
-            return _srcURL;
+            return _returnUrl;
         }
     }
 
@@ -821,7 +786,7 @@ public class ReportsController extends BaseStudyController
     {
         private final Report _report;
         private final boolean _confirm;
-        private final String _srcURL;
+        private final ActionURL _returnUrl;
         private final boolean _redirToReport;
 
         public SaveReportWidget(Report report)
@@ -829,11 +794,11 @@ public class ReportsController extends BaseStudyController
             this(report, false, null, false);
         }
 
-        public SaveReportWidget(Report report, boolean confirm, String srcURL, boolean redirToReport)
+        public SaveReportWidget(Report report, boolean confirm, ActionURL returnUrl, boolean redirToReport)
         {
             _report = report;
             _confirm = confirm;
-            _srcURL = srcURL;
+            _returnUrl = returnUrl;
             _redirToReport = redirToReport;
         }
 
@@ -863,9 +828,7 @@ public class ReportsController extends BaseStudyController
             out.write("<td>");
             if (!_confirm)
             {
-                out.write("<input type=hidden name=srcURL value='");
-                out.write(PageFlowUtil.filter(getViewContext().getActionURL().getLocalURIString()));
-                out.write("'>");
+                out.write(ReturnUrlForm.generateHiddenFormField(getViewContext().getActionURL()).toString());
             }
             out.write("<input type=hidden name=redirectToReport value='");
             out.write(Boolean.toString(_redirToReport));
@@ -903,7 +866,7 @@ public class ReportsController extends BaseStudyController
 
             if (_confirm)
             {
-                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(_srcURL));
+                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(_returnUrl));
             }
             out.write("</td></tr></table>");
         }
@@ -1226,7 +1189,7 @@ public class ReportsController extends BaseStudyController
             addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
         catch (Exception e)
         {
@@ -1241,7 +1204,7 @@ public class ReportsController extends BaseStudyController
             Study study = addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
 
             VisitImpl visit = null;
 
@@ -1322,7 +1285,7 @@ public class ReportsController extends BaseStudyController
                 {
                     NavTree menu = new NavTree();
                     menu.addChild("New " + StudyService.get().getSubjectNounSingular(getContainer()) + " Report", new ActionURL(this.getClass(), getContainer()));
-                    menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                    menu.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
                     view.setNavMenu(menu);
                 }
                 return view;

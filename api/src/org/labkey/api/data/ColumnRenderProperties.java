@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
@@ -27,6 +28,8 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Set;
+
+import static org.labkey.api.ontology.OntologyService.conceptCodeConceptURI;
 
 public interface ColumnRenderProperties extends ImportAliasable
 {
@@ -120,6 +123,8 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     boolean isNumericType();
 
+    boolean isUniqueIdField();
+
     default String getFriendlyTypeName()
     {
         return getFriendlyTypeName(getJavaClass());
@@ -180,5 +185,34 @@ public interface ColumnRenderProperties extends ImportAliasable
      */
     int getPrecision();
 
-    String getPrincipalConceptCode();
+    // Properties loaded by OntologyService
+    default boolean isConceptColumn()
+    {
+        return getJdbcType().isText() && conceptCodeConceptURI.equals(getConceptURI()) && null != OntologyService.get();
+    }
+
+    default String getSourceOntology()
+    {
+        return null;
+    }
+
+    default String getConceptImportColumn()
+    {
+        return null;
+    }
+
+    default String getConceptLabelColumn()
+    {
+        return null;
+    }
+
+    default String getPrincipalConceptCode()
+    {
+        return null;
+    }
+
+    default String getDerivationDataScope()
+    {
+        return null;
+    }
 }

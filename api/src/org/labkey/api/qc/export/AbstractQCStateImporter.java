@@ -73,7 +73,7 @@ public abstract class AbstractQCStateImporter
 
         String assayDefault = qcXml.getAssayDataDefault();
         if (finalStates.containsKey(assayDefault))
-            helper.setDefaultAssayQCState(ctx.getContainer(), ctx.getUser(), finalStates.get(assayDefault).getRowId());
+            helper.setDefaultPublishedDataQCState(ctx.getContainer(), ctx.getUser(), finalStates.get(assayDefault).getRowId());
 
         String datasetDefault = qcXml.getInsertUpdateDefault();
         if (finalStates.containsKey(datasetDefault))

@@ -15,18 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor"%>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction"%>
-<%@ page import="org.labkey.study.model.SpecimenRequestActor"%>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
-    StudyImpl study = me.getModelBean();
-    SpecimenRequestActor[] actors = study.getSampleRequestActors();
+    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
 %>
 <labkey:errors/>
 <script type="text/javascript">

@@ -64,7 +64,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 {
     protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, cf);
         addAllowablePermission(DesignDataClassPermission.class);
     }
 
@@ -75,7 +75,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         {
             case Folder:
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ListDataClassAction.class, getContainer()));
+                columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ListDataClassAction.class, getContainer())));
                 return columnInfo;
 
             case Description:

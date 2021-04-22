@@ -19,6 +19,8 @@ import { AppContainer } from 'react-hot-loader'
 
 import { App } from './AuthenticationConfiguration'
 
+import './authenticationConfiguration.scss';
+
 const render = () => {
     ReactDOM.render(
         <AppContainer>

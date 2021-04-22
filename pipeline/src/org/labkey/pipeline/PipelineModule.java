@@ -42,8 +42,6 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -74,6 +72,7 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.ScriptTaskFactory;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
 import org.labkey.pipeline.cluster.ClusterStartup;
+import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
@@ -87,9 +86,9 @@ import org.labkey.pipeline.xml.ScriptTaskType;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -107,7 +106,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -135,6 +134,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.complete.getNotificationType(), "Pipeline", "fa-check-circle");
         NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.cancelled.getNotificationType(), "Pipeline", "fa-ban");
         NotificationService.get().registerNotificationType(PipelineJob.TaskStatus.error.getNotificationType(), "Pipeline", "fa-exclamation-triangle");
+        NotificationService.get().registerNotificationType(FolderImportJob.IMPORT_COMPLETED_NOTIFICATION, "Folder Import", "fa-check-circle");
+        NotificationService.get().registerNotificationType(FolderImportJob.IMPORT_CANCELLED_NOTIFICATION, "Folder Import", "fa-ban");
+        NotificationService.get().registerNotificationType(FolderImportJob.IMPORT_ERROR_NOTIFICATION, "Folder Import", "fa-exclamation-triangle");
 
         PipelineQuerySchema.register(this);
 
@@ -145,21 +147,20 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new PipelineWebPart(portalCtx);
                 }
             },
-
             new DefaultWebPartFactory("Pipeline Files", PipelineController.BrowseWebPart.class),
             new BaseWebPartFactory(ProtocolManagementWebPart.getName())
             {
                 @Override
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new ProtocolManagementWebPart(portalCtx);
                 }
