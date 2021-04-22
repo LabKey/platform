@@ -1620,11 +1620,11 @@ public class XarReader extends AbstractXarImporter
                 value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
             }
 
-            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
+            if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
             {
-                Container autoCopyContainer = ContainerManager.getForPath(value);
-                if (autoCopyContainer != null)
-                    value = autoCopyContainer.getId();
+                Container autoLinkContainer = ContainerManager.getForPath(value);
+                if (autoLinkContainer != null)
+                    value = autoLinkContainer.getId();
             }
 
             String ontologyEntryURI = trimString(simpleProp.getOntologyEntryURI());

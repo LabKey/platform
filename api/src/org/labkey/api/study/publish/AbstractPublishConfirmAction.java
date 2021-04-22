@@ -138,7 +138,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             _postedPtids = new HashMap<>();
             _postedTargetStudies = new HashMap<>();
 
-            attemptCopy(form, errors, _selectedObjects, _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids);
+            attemptLinkage(form, errors, _selectedObjects, _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids);
         }
         return !errors.hasErrors();
     }
@@ -194,9 +194,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
     protected abstract Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(FORM form);
 
     /**
-     * Perform the copy to study operation
+     * Perform the link to study operation
      */
-    protected abstract ActionURL copyToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
+    protected abstract ActionURL linkToStudy(FORM form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors);
 
     /**
      * Returns the hidden form fields that need to be included on the data region form
@@ -262,13 +262,13 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
-        ActionButton publishButton = new ActionButton(publishURL, "Copy to Study");
-        publishButton.setScript("return assayPublish_onCopyToStudy(this)", true);
+        ActionButton publishButton = new ActionButton(publishURL, "Link to Study");
+        publishButton.setScript("return assayPublish_onLinkToStudy(this)", true);
         buttons.add(publishButton);
 
         publishURL.replaceParameter("validate", "true");
         ActionButton validateButton = new ActionButton(publishURL, "Re-Validate");
-        validateButton.setScript("return assayPublish_onCopyToStudy(this)", true);
+        validateButton.setScript("return assayPublish_onLinkToStudy(this)", true);
         buttons.add(validateButton);
 
         TimepointType timepointType = null;
@@ -280,7 +280,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.PublishSource.toString());
             publishURL.replaceParameter("includeTimestamp", "true");
             ActionButton includeTimeButton = new ActionButton(publishURL, "Display DateTime");
-            includeTimeButton.setScript("return assayPublish_onCopyToStudy(this)", true);
+            includeTimeButton.setScript("return assayPublish_onLinkToStudy(this)", true);
             buttons.add(includeTimeButton);
         }
 
@@ -306,13 +306,13 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
     }
 
-    private void attemptCopy(FORM form, BindException errors,
-                             Set<Integer> selectedObjects, List<Integer> allObjects,
-                             Container targetStudy,
-                             Map<Object, String> postedTargetStudies,
-                             Map<Object, String> postedVisits,
-                             Map<Object, String> postedDates,
-                             Map<Object, String> postedPtids)
+    private void attemptLinkage(FORM form, BindException errors,
+                            Set<Integer> selectedObjects, List<Integer> allObjects,
+                            Container targetStudy,
+                            Map<Object, String> postedTargetStudies,
+                            Map<Object, String> postedVisits,
+                            Map<Object, String> postedDates,
+                            Map<Object, String> postedPtids)
             throws RedirectException
     {
         Map<Integer, PublishKey> publishData = new LinkedHashMap<>();
@@ -449,7 +449,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         if (errors.getErrorCount() == 0 && !form.isValidate())
         {
             List<String> publishErrors = new ArrayList<>();
-            _successURL  = copyToStudy(form, targetStudy, publishData, publishErrors);
+            _successURL  = linkToStudy(form, targetStudy, publishData, publishErrors);
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), form .getDataRegionSelectionKey());

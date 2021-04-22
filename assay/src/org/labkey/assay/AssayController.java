@@ -1680,13 +1680,13 @@ public class AssayController extends SpringActionController
             StudyPublishService service = StudyPublishService.get();
             if (service != null)
             {
-                // issue 42415 : for assays at either the shared or project scope, allow a copy target which
+                // issue 42415 : for assays at either the shared or project scope, allow a linkage target which
                 // translates to a study in the current assay import folder
                 if (getContainer().isProject() || getContainer().equals(ContainerManager.getSharedContainer()))
                 {
                     containersInfo.add(Map.of(
-                            "id", StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getId(),
-                            "name", StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER.getName(),
+                            "id", StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER.getId(),
+                            "name", StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER.getName(),
                             "path", "(Assay import folder)"));
                 }
 

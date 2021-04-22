@@ -161,7 +161,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors);
+    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
@@ -169,7 +169,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer);
 
-    Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy);
+    Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toLink);
 
     boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain);
 
@@ -216,7 +216,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     Class<? extends Controller> getDataImportAction();
 
     /**
-     * Returns true if the given provider can display a useful details page for dataset data that has been copied.
+     * Returns true if the given provider can display a useful details page for dataset data that has been linked.
      * If a provider is a simple GPAT, then it does not have a useful details page
      */
     boolean hasUsefulDetailsPage();
