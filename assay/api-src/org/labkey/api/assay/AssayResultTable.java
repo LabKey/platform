@@ -21,7 +21,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -88,7 +87,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     private static final String RUN_ID_ALIAS = "Run";
 
-    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
+    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeLinkedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema, cf);
         _protocol = _userSchema.getProtocol();
@@ -240,9 +239,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         SQLFragment qcFragment = qcService.getDataTableCondition(_protocol, getContainer(), getUserSchema().getUser());
         addCondition(qcFragment);
 
-        if (includeCopiedToStudyColumns)
+        if (includeLinkedToStudyColumns)
         {
-            Set<String> studyColumnNames = schema.addCopiedToStudyColumns(this, false);
+            Set<String> studyColumnNames = schema.addLinkedToStudyColumns(this, false);
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));

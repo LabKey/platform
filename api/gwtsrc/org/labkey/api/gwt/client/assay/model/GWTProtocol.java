@@ -65,6 +65,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowTransformationScript;
     private boolean _allowPlateMetadata;
 
+    // UNDONE: update 'autoCopy' to 'autoLink' for the two members below and align ui-components and tests accordingly
     private GWTContainer _autoCopyTargetContainer;
     private String _autoCopyTargetContainerId;
     private boolean _saveScriptFiles;
