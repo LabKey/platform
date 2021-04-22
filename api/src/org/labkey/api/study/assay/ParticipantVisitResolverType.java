@@ -40,7 +40,7 @@ import java.util.Map;
 
 /**
  * A factory for {@link ParticipantVisitResolver} objects, which is also responsible for showing whatever UI is needed
- * to collect user information to feed into the resolver during the copy-to-study operation.
+ * to collect user information to feed into the resolver during the link to study operation.
  * User: jeckels
  * Date: Sep 20, 2007
  */

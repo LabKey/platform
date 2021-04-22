@@ -81,9 +81,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     }
 
     @Override
-    public FilteredTable createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns)
+    public FilteredTable createDataTable(ContainerFilter cf, boolean includeLinkedToStudyColumns)
     {
-        return new _AssayResultTable(this, cf, includeCopiedToStudyColumns);
+        return new _AssayResultTable(this, cf, includeLinkedToStudyColumns);
     }
 
     @Override
@@ -111,9 +111,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
 
     private class _AssayExcludedResultTable extends AssayResultTable
     {
-        _AssayExcludedResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
+        _AssayExcludedResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeLinkedToStudyColumns)
         {
-            super(schema, cf, includeCopiedToStudyColumns);
+            super(schema, cf, includeLinkedToStudyColumns);
 
             List<FieldKey> defaultCols = new ArrayList<>(getDefaultVisibleColumns());
             defaultCols.add(FieldKey.fromParts("Run"));
@@ -142,9 +142,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     */
     private class _AssayResultTable extends AssayResultTable
     {
-        _AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
+        _AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeLinkedToStudyColumns)
         {
-            super(schema, cf, includeCopiedToStudyColumns);
+            super(schema, cf, includeLinkedToStudyColumns);
             String flagConceptURI = org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI();
             for (ColumnInfo col : getColumns())
             {
