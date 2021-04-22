@@ -391,9 +391,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (provInputsProperty != null)
             {
                 ProvenanceService pvs = ProvenanceService.get();
-                if (pvs == null)
-                    throw new ExperimentException("Provenance service not available");
-
                 Set<String> runInputLSIDs = null;
                 if (provInputsProperty instanceof String)
                 {

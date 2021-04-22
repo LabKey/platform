@@ -2826,10 +2826,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             ProvenanceService pvs = ProvenanceService.get();
-            if (null != pvs)
-            {
-                deleteProvenance(u, lsids, pvs);
-            }
+            deleteProvenance(u, lsids, pvs);
             deleteRows(lsids);
 
             new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);

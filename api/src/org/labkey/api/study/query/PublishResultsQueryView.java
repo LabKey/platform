@@ -36,7 +36,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -358,11 +359,12 @@ public class PublishResultsQueryView extends QueryView
             Integer sourceId = _sourceIdCol != null ? (Integer)_sourceIdCol.getValue(ctx) : null;
             if (sourceId != null && !_resolvers.containsKey(sourceId))
             {
-                ExpObject expObject = _publishSource.resolvePublishSource(sourceId);
-                if (expObject != null)
+                // resolving ptid/timepoint by specimen ID is only supported for Assays
+                if (_publishSource == Dataset.PublishSource.Assay)
                 {
-                    ParticipantVisitResolver resolver = new StudyParticipantVisitResolver(expObject.getContainer(), _targetStudyContainer, getUser());
-                    _resolvers.put(sourceId, resolver);
+                    ExpRun run = ExperimentService.get().getExpRun(sourceId);
+                    if (run != null)
+                        _resolvers.put(sourceId,  new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
                 }
             }
             return _resolvers.get(sourceId);
