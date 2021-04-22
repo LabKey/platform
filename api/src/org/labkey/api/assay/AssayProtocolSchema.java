@@ -813,7 +813,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
      * had data linked into them.
      * @return The names of the added columns that should be visible
      */
-    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
+    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns) // table is luminex.datarow, corresponding to the rows in the visible area
     {
         Set<String> visibleColumnNames = new HashSet<>();
         StudyService svc = StudyService.get();
@@ -829,11 +829,12 @@ public abstract class AssayProtocolSchema extends AssaySchema
                     continue;
                 }
 
+                // sets a hidden column that is (CASE WHEN StudyDataJoin$47._key IS NOT NULL THEN 5012 ELSE NULL END)
                 String datasetIdColumnName = "dataset" + datasetIndex++;
                 final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
-                datasetColumn.setHidden(true);
+                datasetColumn.setHidden(false);
                 datasetColumn.setUserEditable(false);
-                datasetColumn.setShownInInsertView(false);
+                datasetColumn.setShownInInsertView(true);
                 datasetColumn.setShownInUpdateView(false);
                 datasetColumn.setReadOnly(true);
                 table.addColumn(datasetColumn);

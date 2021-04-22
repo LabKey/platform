@@ -33,6 +33,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -1146,7 +1147,7 @@ public class StudyPublishManager implements StudyPublishService
 
         Set<DatasetDefinition> result = new HashSet<>();
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
-        for (Map<String, Object> row : rows)
+        for (Map<String, Object> row : rows) // for each row in study.dataset where publishsourcetype is assay and publishSourceId is as given
         {
             String containerId = (String)row.get("container");
             int datasetId = ((Number)row.get("datasetid")).intValue();
@@ -1237,5 +1238,11 @@ public class StudyPublishManager implements StudyPublishService
                 // This will be implemented once publish and recall audit logging are completed.
             }
         }
+    }
+
+    @Override
+    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
+    {
+        return null;
     }
 }

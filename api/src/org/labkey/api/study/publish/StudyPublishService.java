@@ -19,6 +19,7 @@ package org.labkey.api.study.publish;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -118,4 +119,6 @@ public interface StudyPublishService
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
     void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
+
+    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns);
 }

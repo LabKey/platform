@@ -2,6 +2,7 @@ package org.labkey.experiment.publish;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -250,6 +251,10 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     protected ActionURL linkToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
+//        SamplesSchema schema = getUserSchema(form);
+//        TableInfo ti = schema.getTable(form.getSampleType().getName());
+//        schema.addCopiedToStudyColumns(ti); // so I think this is the table in question, the columns corresponding to ST rows
+
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
 

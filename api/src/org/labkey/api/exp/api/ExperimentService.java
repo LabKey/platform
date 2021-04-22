@@ -750,6 +750,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useUXDomainDesigner();
 
+    public void addCopiedToStudyColumns(TableInfo table);
+
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
     SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
