@@ -444,10 +444,12 @@ Ext4.define('File.panel.Upload', {
                             fn : function(btn) {
                                 if (btn == 'yes') {
                                     Ext4.each(alreadyExistFiles, function(f) {
-                                        file.overwrite = true;
-                                        file.status = Dropzone.ADDED;
+                                        f.overwrite = true;
+                                        f.status = Dropzone.ADDED;
                                         this.processFile(f);
                                     }, this);
+                                } else {
+                                    this.uploadPanel.fireEvent('transfercomplete', {fileRecords: fileRecords});
                                 }
                             },
                             scope : this
