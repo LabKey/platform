@@ -7,7 +7,7 @@
 /*
  * basically, change a=1&a=2=&a=3 to a=1\t2\t3 and resubmit the form
  */
-function assayPublish_onCopyToStudy(el, fieldNames)
+function assayPublish_onLinkToStudy(el, fieldNames)
 {
     var formEl = jQuery(el).closest("FORM")[0];
 
