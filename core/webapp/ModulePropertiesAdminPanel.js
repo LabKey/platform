@@ -234,7 +234,6 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             if(item.isDirty()){
                 toSave.push({
                     container: item.moduleProp.container.id,
-                    userId: 0, //currently do not support individualized properties
                     value: item.getValue(),
                     propName: item.propName,
                     moduleName: item.moduleName
