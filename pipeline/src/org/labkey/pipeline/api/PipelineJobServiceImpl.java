@@ -574,9 +574,9 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 new TextField("name", "Name", null, true, ""),
                 new TextareaField("description", "Description", null, false, ""),
                 new SelectField<>("type", "Type", null, true, typeOptions.get(0).getValue(), typeOptions),
-                new SelectField<>("task", "Pipeline Task", null, true, null, taskOptions),
-                new TextField("pipelineUsername", "Run as Username", null, false, null, usernameHelpText, usernameHref),
-                new TextField("pipelineAssayProvider", "Assay Provider", null, false, null, assayProviderHelpText, assayProviderHref),
+                new SelectField<>("pipelineId", "Pipeline Task", "Select a Pipeline Task", true, null, taskOptions),
+                new TextField("username", "Run as Username", null, false, null, usernameHelpText, usernameHref),
+                new TextField("assay provider", "Assay Provider", null, false, null, assayProviderHelpText, assayProviderHref),
                 new CheckboxField("enabled", "Enable this Trigger", false, true)
         );
 
