@@ -33,7 +33,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
@@ -85,6 +84,7 @@ import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -369,7 +369,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     /** Implementations may return null if they don't have any data associated with them */
     @Nullable
-    public abstract TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns);
+    public abstract TableInfo createDataTable(ContainerFilter cf, boolean includeLinkedToStudyColumns);
 
     public ExpRunTable createRunsTable(ContainerFilter cf)
     {
@@ -413,7 +413,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         // Add the batch column, but replace the lookup with one to the assay's Batches table.
         var batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.Batch);
-        // Issue 23399: Batch properties not accessible from copy to study Nab assay.
+        // Issue 23399: Batch properties not accessible from copy (link) to study Nab assay.
         // Propagate run table's container filter to batch table
         batchColumn.setFk(
                 QueryForeignKey
@@ -786,7 +786,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     /**
      * Transform an illegal name into a safe version. All non-letter characters
      * become underscores, and the first character must be a letter. Retain this implementation for backwards
-     * compatibility with copied to study column names. See issue 41030.
+     * compatibility with linked to study column names. See issue 41030.
      */
     private String sanitizeName(String originalName)
     {
@@ -810,10 +810,10 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
-     * had data copied into them.
+     * had data linked into them.
      * @return The names of the added columns that should be visible
      */
-    public Set<String> addCopiedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
+    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
     {
         Set<String> visibleColumnNames = new HashSet<>();
         StudyService svc = StudyService.get();
@@ -822,7 +822,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             int datasetIndex = 0;
             Set<String> usedColumnNames = new HashSet<>();
-            for (final Dataset assayDataset : StudyService.get().getDatasetsForPublishSource(getProtocol().getRowId(), Dataset.PublishSource.Assay))
+            for (final Dataset assayDataset : StudyPublishService.get().getDatasetsForPublishSource(getProtocol().getRowId(), Dataset.PublishSource.Assay))
             {
                 if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
                 {
@@ -838,8 +838,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 datasetColumn.setReadOnly(true);
                 table.addColumn(datasetColumn);
 
-                String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                        "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
+                String studyLinkedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
+                        "._key IS NOT NULL THEN 'linked' ELSE NULL END)";
 
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
@@ -850,32 +850,32 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 if (sanitizedStudyName.isEmpty() || "study".equalsIgnoreCase(sanitizedStudyName))
                 {
                     // issue 41472 include the prefix as part of the sanitization process
-                    studyColumnName = sanitizeName("copied_to_" + studyName);
+                    studyColumnName = sanitizeName("linked_to_" + studyName);
                 }
                 else
-                    studyColumnName = "copied_to_" + sanitizeName(studyName);
+                    studyColumnName = "linked_to_" + sanitizeName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))
                     studyColumnName = studyColumnName + datasetIndex;
                 usedColumnNames.add(studyColumnName);
 
-                final ExprColumn studyCopiedColumn = new ExprColumn(table,
+                final ExprColumn studyLinkedColumn = new ExprColumn(table,
                         studyColumnName,
-                        new SQLFragment(studyCopiedSql),
+                        new SQLFragment(studyLinkedSql),
                         JdbcType.VARCHAR,
                         datasetColumn);
-                final String copiedToStudyColumnCaption = "Copied to " + studyName;
-                studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
-                studyCopiedColumn.setUserEditable(false);
-                studyCopiedColumn.setReadOnly(true);
-                studyCopiedColumn.setShownInInsertView(false);
-                studyCopiedColumn.setShownInUpdateView(false);
-                studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
+                final String linkedToStudyColumnCaption = "Linked to " + studyName;
+                studyLinkedColumn.setLabel(linkedToStudyColumnCaption);
+                studyLinkedColumn.setUserEditable(false);
+                studyLinkedColumn.setReadOnly(true);
+                studyLinkedColumn.setShownInInsertView(false);
+                studyLinkedColumn.setShownInUpdateView(false);
+                studyLinkedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
 
-                table.addColumn(studyCopiedColumn);
+                table.addColumn(studyLinkedColumn);
 
-                visibleColumnNames.add(studyCopiedColumn.getName());
+                visibleColumnNames.add(studyLinkedColumn.getName());
             }
             if (setVisibleColumns)
             {

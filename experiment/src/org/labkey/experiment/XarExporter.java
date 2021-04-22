@@ -470,27 +470,24 @@ public class XarExporter
         }
 
         ProvenanceService pvs = ProvenanceService.get();
-        if (pvs != null)
+        var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
+        if (!provURIs.isEmpty())
         {
-            var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
-            if (!provURIs.isEmpty())
+            ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
+            for (Pair<String, String> pair : provURIs)
             {
-                ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
-                for (Pair<String, String> pair : provURIs)
+                if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
+                    continue;
+
+                var objectRefs = xProvMap.addNewObjectRefs();
+                if (!StringUtils.isEmpty(pair.first))
                 {
-                    if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
-                        continue;
+                    objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
+                }
 
-                    var objectRefs = xProvMap.addNewObjectRefs();
-                    if (!StringUtils.isEmpty(pair.first))
-                    {
-                        objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
-                    }
-
-                    if (!StringUtils.isEmpty(pair.second))
-                    {
-                        objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
-                    }
+                if (!StringUtils.isEmpty(pair.second))
+                {
+                    objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
                 }
             }
         }
@@ -1275,11 +1272,11 @@ public class XarExporter
                                 queueDomain(domain);
                             }
 
-                            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
-                                Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
-                                if (autoCopyContainer != null)
-                                    simpleValue.setStringValue(autoCopyContainer.getPath());
+                                Container autoLinkContainer = ContainerManager.getForId(value.getStringValue());
+                                if (autoLinkContainer != null)
+                                    simpleValue.setStringValue(autoLinkContainer.getPath());
                             }
                         }
                         break;

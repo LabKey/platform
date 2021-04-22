@@ -39,10 +39,8 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,7 +54,7 @@ import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEG
 public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
     @Override
-    public List<DbLoginConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> ignored)
+    public DbLoginConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings ignored)
     {
         Map<String, Object> properties = Map.of(
             "RowId", 0,
@@ -66,7 +64,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         Map<String, String> stringProperties = DbLoginManager.getProperties();
 
-        return Collections.singletonList(new DbLoginConfiguration(this, stringProperties, properties));
+        return new DbLoginConfiguration(this, stringProperties, properties);
     }
 
     @Override

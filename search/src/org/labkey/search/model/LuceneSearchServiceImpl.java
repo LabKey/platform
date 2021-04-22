@@ -89,7 +89,6 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileStream.FileFileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MinorConfigurationException;
@@ -98,6 +97,7 @@ import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -533,44 +533,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     return false;
                 }
 
-                boolean tooBig = isTooBig(fs, type);
+                Metadata metadata = new Metadata();
+                metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
+                metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
 
-                if ("text/html".equals(type))
-                {
-                    String html;
-                    if (tooBig)
-                        html = "<html><body></body></html>";
-                    else
-                        html = PageFlowUtil.getStreamContentsAsString(is);
+                // Tika guesses content encoding of "IBM500" for short text and html documents, so suggest UTF-8. Seems
+                // related to https://issues.apache.org/jira/browse/TIKA-2771. This is just a hint, but I hope that's
+                // sufficient. If not, TikaCoreProperties.CONTENT_TYPE_OVERRIDE is an option to force UTF-8.
+                if (r.getContentType().startsWith("text"))
+                    metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
-                    body = new HTMLContentExtractor.GenericHTMLExtractor(html).extract();
+                ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                parse(r, fs, is, handler, metadata, isTooBig(fs, type));
+                body = handler.toString();
 
-                    if (null == title)
-                        logBadDocument("Null title", r);
-                }
-                else if (type.startsWith("text/") && !type.contains("xml") && !StringUtils.equals(type, "text/comma-separated-values"))
-                {
-                    if (tooBig)
-                        body = "";
-                    else
-                        body = PageFlowUtil.getStreamContentsAsString(is);
-                }
-                else
-                {
-                    Metadata metadata = new Metadata();
-                    metadata.add(Metadata.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
-                    metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
-                    ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
+                if (StringUtils.isBlank(title))
+                    title = metadata.get(TikaCoreProperties.TITLE);
 
-                    parse(r, fs, is, handler, metadata, tooBig);
-
-                    body = handler.toString();
-
-                    if (StringUtils.isBlank(title))
-                        title = metadata.get(TikaCoreProperties.TITLE);
-
-                    keywordsMed.append(getInterestingMetadataProperties(metadata));
-                }
+                keywordsMed.append(getInterestingMetadataProperties(metadata));
 
                 fs.closeInputStream();
             }
@@ -1472,7 +1452,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             if (null != categories)
             {
-                Iterator itr = categories.iterator();
+                Iterator<SearchCategory> itr = categories.iterator();
 
                 if (requireCategories)
                 {
@@ -2136,5 +2116,4 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             /* pass */
         }
     }
-
 }

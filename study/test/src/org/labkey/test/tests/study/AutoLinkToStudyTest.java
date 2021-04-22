@@ -16,14 +16,14 @@ import java.util.List;
 
 @Category({DailyC.class, Assays.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 2)
-public class AutoCopyToStudyTest extends BaseWebDriverTest
+public class AutoLinkToStudyTest extends BaseWebDriverTest
 {
     private final static String ASSAY_NAME = "Test Assay";
 
     @BeforeClass
     public static void setupProject()
     {
-        AutoCopyToStudyTest initTest = (AutoCopyToStudyTest) getCurrentTest();
+        AutoLinkToStudyTest initTest = (AutoLinkToStudyTest) getCurrentTest();
         initTest.doSetup();
     }
 
@@ -40,7 +40,7 @@ public class AutoCopyToStudyTest extends BaseWebDriverTest
     @Override
     protected @Nullable String getProjectName()
     {
-        return "Auto Copy To Study Test";
+        return "Auto Link To Study Test";
     }
 
     @Override
@@ -50,7 +50,7 @@ public class AutoCopyToStudyTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testAutoCopyInSameFolder()
+    public void testAutoLinkInSameFolder()
     {
         String runName = "Run 1";
         File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run1.xls");
@@ -58,7 +58,7 @@ public class AutoCopyToStudyTest extends BaseWebDriverTest
         log("Creating an assay");
         goToManageAssays();
         _assayHelper.createAssayDesign("General", ASSAY_NAME)
-                .setAutoCopyTarget("(Assay import folder)")
+                .setAutoLinkTarget("(Assay import folder)")
                 .clickSave();
 
         log("Importing the Assay run");

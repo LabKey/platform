@@ -73,7 +73,9 @@ public class ParticipantVisitTable extends BaseStudyTable
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        return new VisitTable(_userSchema, getLookupContainerFilter());
+                        var ret = new VisitTable(_userSchema, getLookupContainerFilter());
+                        ret.afterConstruct();
+                        return ret;
                     }
                 };
                 visitColumn.setFk(visitFK);

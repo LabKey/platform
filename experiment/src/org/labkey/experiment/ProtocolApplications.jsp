@@ -96,8 +96,7 @@
         List<? extends ExpDataRunInput> dataRunOutputs = protocolApplication.getDataOutputs();
 
         Set<Pair<String, String>> provenance = Collections.emptySet();
-        if (pvs != null)
-            provenance = pvs.getProvenanceObjectUris(protocolApplication.getRowId());
+        provenance = pvs.getProvenanceObjectUris(protocolApplication.getRowId());
     %>
         <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top">

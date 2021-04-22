@@ -357,13 +357,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
+        public ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishStartAction.class);
         }
 
         @Override
-        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishConfirmAction.class);
         }
@@ -1657,92 +1657,15 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ManageLocationsAction extends FormViewAction<LocationEditForm>
+    public class ManageLocationsAction extends SimpleViewAction<Object>
     {
         @Override
-        public void validateCommand(LocationEditForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, StudyQuerySchema.LOCATION_TABLE_NAME);
-            QueryView queryView = schema.createView(getViewContext(), settings, errors);
-            return queryView;
-        }
 
-        @Override
-        public boolean handlePost(LocationEditForm form, BindException errors)
-        {
-            int[] ids = form.getIds();
-            if (ids != null && ids.length > 0)
-            {
-                Map<Integer, LocationImpl> locationFormLookup = new HashMap<>();
-                for (int i = 0; i < ids.length; i++)
-                {
-                    LocationImpl loc = new LocationImpl(getContainer(), form.getLabels()[i]);
-                    if (form.getDescriptions() != null)
-                        loc.setDescription(form.getDescriptions()[i]);
-
-                    locationFormLookup.put(ids[i], loc);
-                }
-
-                boolean emptyLabel = false;
-                for (LocationImpl location : getStudyThrowIfNull().getLocations())
-                {
-                    LocationImpl formLocation = locationFormLookup.get(location.getRowId());
-                    if (formLocation != null)
-                    {
-                        if (formLocation.getLabel() == null)
-                            emptyLabel = true;
-                        else if (!StringUtils.equals(formLocation.getLabel(), location.getLabel())
-                            || !StringUtils.equals(formLocation.getDescription(), location.getDescription()))
-                        {
-                            location = location.createMutable();
-                            location.setLabel(formLocation.getLabel());
-                            location.setDescription(formLocation.getDescription());
-                            LocationManager.get().updateLocation(getUser(), location);
-                        }
-                    }
-                }
-                if (emptyLabel)
-                {
-                    errors.reject("manageLocations", "Some location labels could not be updated: empty labels are not allowed.");
-                }
-
-            }
-            if (form.getNewId() != null || form.getNewLabel() != null || form.getNewDescription() != null)
-            {
-                if (form.getNewId() == null)
-                    errors.reject("manageLocations", "Unable to create location: an ID is required for all locations.");
-                else if (form.getNewLabel() == null)
-                    errors.reject("manageLocations", "Unable to create location: a label is required for all locations.");
-                else
-                {
-                    try
-                    {
-                        LocationImpl location = new LocationImpl();
-                        location.setLabel(form.getNewLabel());
-                        location.setLdmsLabCode(Integer.parseInt(form.getNewId()));
-                        location.setDescription(form.getNewDescription());
-                        location.setContainer(getContainer());
-                        LocationManager.get().createLocation(getUser(), location);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        errors.reject("manageLocations", "Unable to create location: ID must be an integer.");
-                    }
-                }
-            }
-            return errors.getErrorCount() == 0;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(LocationEditForm form)
-        {
-            return null;
+            return schema.createView(getViewContext(), settings, errors);
         }
 
         @Override
@@ -1827,38 +1750,11 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class LocationEditForm extends BulkEditForm
-    {
-        private String _newDescription;
-        private String[] _descriptions;
-
-        public String getNewDescription()
-        {
-            return _newDescription;
-        }
-
-        public void setNewDescription(String newDescription)
-        {
-            _newDescription = newDescription;
-        }
-
-        public String[] getDescriptions()
-        {
-            return _descriptions;
-        }
-
-        public void setDescriptions(String[] descriptions)
-        {
-            _descriptions = descriptions;
-        }
-    }
-
     public static class LocationForm extends ViewForm
     {
         private int[] _ids;
         private String[] _labels;
         private String _containerFilter;
-
         public String[] getLabels()
         {
             return _labels;
@@ -2484,11 +2380,15 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected void validatePermission(User user, BindException errors)
+        protected boolean canInsert(User user)
         {
-            if (_def.canInsert(user))
-                return;
-            throw new UnauthorizedException("Can't update dataset: " + _def.getName());
+            return _def.canInsert(user);
+        }
+
+        @Override
+        protected boolean canUpdate(User user)
+        {
+            return _def.canUpdate(user);
         }
 
         @Override
@@ -2786,7 +2686,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setActionType(ActionButton.Action.POST);
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
-                    PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid,
+                    PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid, def.getPublishSource(),
                             NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
 
                         @Override
@@ -2800,14 +2700,14 @@ public class StudyController extends BaseStudyController
                 }
             }
             else
-                view.addView(new HtmlView("The Dataset does not exist."));
+                view.addView(new HtmlView(HtmlString.of("The Dataset does not exist.")));
             return view;
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Copy-to-Study History Details");
+            root.addChild("Link to Study History Details");
         }
     }
 
@@ -2871,26 +2771,19 @@ public class StudyController extends BaseStudyController
                 for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
-                    Container sourceContainer;
-                    ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
-                    if (expRun != null && expRun.getContainer() != null)
-                        sourceContainer = expRun.getContainer();
-                    else
-                        continue; // No logging if we can't find a matching run
-
-                    publishSource.addRecallAuditEvent(form.getPublishSourceId(), def, entry.getValue().size(), sourceContainer, getUser());
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
+                    if (sourceContainer != null)
+                        StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);
 
-            // if the recall was initiated from the assay copy to study history view, redirect back to the same view
-            // will need to generalize this to support samples
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getPublishSourceId());
-            if (protocol != null && originalSourceLsid != null)
+            // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
+            if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                ExpRun expRun = ExperimentService.get().getExpRun(originalSourceLsid);
-                if (expRun != null && expRun.getContainer() != null)
-                    throw new RedirectException(StudyPublishService.get().getPublishHistory(expRun.getContainer(), protocol));
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid);
+                if (container != null)
+                    throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }
             return true;
         }
@@ -7384,6 +7277,12 @@ public class StudyController extends BaseStudyController
         protected void validatePermission(User user, BindException errors)
         {
             checkPermissions();
+        }
+
+        @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, ManageStudyPermission.class);
         }
 
         @Override

@@ -60,8 +60,10 @@ public class LineageTableInfo extends VirtualTable
     final String _expType;
     private @Nullable
     final String _cpasType;
+    private @Nullable
+    final String _runProtocolLsid;
 
-    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment objectids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
+    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment objectids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType, @Nullable String runProtocolLsid)
     {
         super(schema.getDbSchema(), name, schema);
         _objectids = objectids;
@@ -73,6 +75,7 @@ public class LineageTableInfo extends VirtualTable
         _depth = depth;
         _expType = expType;
         _cpasType = cpasType;
+        _runProtocolLsid = runProtocolLsid;
 
         var self = new BaseColumnInfo(FieldKey.fromParts("self"), this, JdbcType.INTEGER);
         addColumn(self);
@@ -93,6 +96,9 @@ public class LineageTableInfo extends VirtualTable
 
         var parentCpasType = new BaseColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
         addColumn(parentCpasType);
+
+        var parentRunProtocolLsid = new BaseColumnInfo(FieldKey.fromParts("runProtocolLsid"), this, JdbcType.VARCHAR);
+        addColumn(parentRunProtocolLsid);
 
         var parentName = new BaseColumnInfo(FieldKey.fromParts("name"), this, JdbcType.VARCHAR);
         addColumn(parentName);
@@ -271,13 +277,14 @@ public class LineageTableInfo extends VirtualTable
         options.setChildren(!_parents);
         options.setCpasType(_cpasType);
         options.setExpType(_expType);
+        options.setRunProtocolLsid(_runProtocolLsid);
         if (_depth != null)
             options.setDepth(_depth);
 
         options.setUseObjectIds(true);
         SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_objectids, options);
 
-        String comment = String.format("<LineageTableInfo parents=%b, depth=%d, expType=%s, cpasType=%s>\n", _parents, _depth, _expType, _cpasType);
+        String comment = String.format("<LineageTableInfo parents=%b, depth=%d, expType=%s, cpasType=%s, runProtocolLsid=%s>\n", _parents, _depth, _expType, _cpasType, _runProtocolLsid);
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment(comment, getSqlDialect());
@@ -310,6 +317,9 @@ public class LineageTableInfo extends VirtualTable
 
             var cpasType = new BaseColumnInfo(FieldKey.fromParts("cpastype"), this, JdbcType.VARCHAR);
             addColumn(cpasType);
+
+            var runProtocolLsid = new BaseColumnInfo(FieldKey.fromParts("runProtocolLsid"), this, JdbcType.VARCHAR);
+            addColumn(runProtocolLsid);
 
             var lsid = new BaseColumnInfo(FieldKey.fromParts("lsid"), this, JdbcType.VARCHAR);
             lsid.setSqlTypeName("lsidtype");

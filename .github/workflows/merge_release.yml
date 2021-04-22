@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Merge PR
-        uses: LabKey/gitHubActions/merge-release@master
+        uses: LabKey/gitHubActions/merge-release@develop
         with:
           target_branch: ${{ github.event.pull_request.base.ref }}
           merge_branch: ${{ github.event.pull_request.head.ref }}

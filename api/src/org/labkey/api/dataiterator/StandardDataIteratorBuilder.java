@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -112,9 +113,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             this.dp = dp;
         }
         int indexFrom = 0;
-        int indexMv = 0;
-        ColumnInfo target=null;
-        DomainProperty dp=null;
+        int indexMv = SimpleTranslator.NO_MV_INDEX;
+        ColumnInfo target;
+        DomainProperty dp;
     }
 
     @Override
@@ -135,7 +136,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         // Add translator/validator for ontology import features
         if (null != OntologyService.get())
-            dib = OntologyService.get().getConceptLookupDataIteratorBuilder(_inputBuilder, _target);
+            dib = OntologyService.get().getConceptLookupDataIteratorBuilder(dib, _target);
 
         DataIterator input = dib.getDataIterator(context);
 
@@ -208,11 +209,11 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             if (null != to && _convertTypes)
             {
                 if (!unusedCols.containsKey(to.target.getFieldKey()))
-                    setupError.addGlobalError("Two columns mapped to target column: " + to.target.getName());
+                    setupError.addGlobalError("Two columns mapped to target column " + to.target.getName() + ". Check the column names and import aliases for your data.");
                 unusedCols.remove(to.target.getFieldKey());
                 to.indexFrom = i;
                 Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());
-                to.indexMv = null==indexMv ? 0 : indexMv.intValue();
+                to.indexMv = null==indexMv ? SimpleTranslator.NO_MV_INDEX : indexMv.intValue();
                 convertTargetCols.add(to);
             }
             else
@@ -242,16 +243,14 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         for (TranslateHelper pair : convertTargetCols)
         {
-            PropertyType pt = null==pair.dp ? null : pair.dp.getPropertyDescriptor().getPropertyType();
+            PropertyDescriptor pd = pair.dp == null ? null : pair.dp.getPropertyDescriptor();
+            PropertyType pt = pd == null ? null : pd.getPropertyType();
             boolean isAttachment = pt == PropertyType.ATTACHMENT || pt == PropertyType.FILE_LINK;
-            boolean supportsMV = (null != pair.target && null != pair.target.getMvColumnName()) || (null != pair.dp && pair.dp.isMvEnabled());
 
             if (null == pair.target || isAttachment)
                 convert.addColumn(pair.indexFrom);
-            else if (null == pair.dp)
-                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, supportsMV);
             else
-                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
+                convert.addConvertColumn(pair.target, pair.indexFrom, pair.indexMv, pd, pt, false);
         }
 
 

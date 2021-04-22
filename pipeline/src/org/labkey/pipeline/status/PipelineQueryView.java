@@ -114,7 +114,7 @@ public class PipelineQueryView extends QueryView
     {
         if (_buttonOption != PipelineService.PipelineButtonOption.Assay)
         {
-            if (getContainer().hasPermission(getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getContainer()))
+            if (getContainer().hasPermission(getUser(), InsertPermission.class) && PipelineService.get().hasValidPipelineRoot(getContainer()) && !getContainer().isRoot())
             {
                 ActionButton button = new ActionButton(PipelineController.BrowseAction.class, "Process and Import Data");
                 button.setActionType(ActionButton.Action.LINK);
@@ -127,6 +127,21 @@ public class PipelineQueryView extends QueryView
         {
             // Add the view, export, etc buttons
             super.populateButtonBar(view, bar);
+        }
+
+        if (_buttonOption != PipelineService.PipelineButtonOption.Minimal)
+        {
+            if (showDeleteButton())
+            {
+                ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
+                deleteURL.addReturnURL(_returnURL);
+                ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
+                deleteStatus.setIconCls("trash");
+                deleteStatus.setRequiresSelection(true);
+                deleteStatus.setActionType(ActionButton.Action.POST);
+                deleteStatus.setDisplayPermission(DeletePermission.class);
+                bar.add(deleteStatus);
+            }
         }
 
         if (_buttonOption != PipelineService.PipelineButtonOption.Assay)
@@ -150,21 +165,6 @@ public class PipelineQueryView extends QueryView
             retryStatus.setActionType(ActionButton.Action.POST);
             retryStatus.setDisplayPermission(UpdatePermission.class);
             bar.add(retryStatus);
-        }
-
-        if (_buttonOption != PipelineService.PipelineButtonOption.Minimal)
-        {
-            if (showDeleteButton())
-            {
-                ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
-                deleteURL.addReturnURL(_returnURL);
-                ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
-                deleteStatus.setIconCls("trash");
-                deleteStatus.setRequiresSelection(true);
-                deleteStatus.setActionType(ActionButton.Action.POST);
-                deleteStatus.setDisplayPermission(DeletePermission.class);
-                bar.add(deleteStatus);
-            }
 
             ActionURL cancelURL = new ActionURL(StatusController.CancelStatusAction.class, getContainer());
             cancelURL.addReturnURL(_returnURL);
@@ -174,19 +174,6 @@ public class PipelineQueryView extends QueryView
             cancelButton.setDisplayPermission(DeletePermission.class);
             bar.add(cancelButton);
 
-            // Display the "Show Queue" button, if this is not the Enterprise Pipeline,
-            // the user is an administrator, and this is the pipeline administration page.
-            if (!PipelineService.get().isEnterprisePipeline() &&
-                    getContainer().hasPermission(getUser(), AdminOperationsPermission.class) &&
-                    getContainer().isRoot())
-            {
-                ActionButton showQueue = new ActionButton(PipelineController.urlStatus(getContainer(), true), "Show Queue");
-                bar.add(showQueue);
-            }
-        }
-
-        if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
-        {
             ActionURL completeURL = new ActionURL(StatusController.CompleteStatusAction.class, getContainer());
             completeURL.addReturnURL(_returnURL);
             ActionButton completeStatus = new ActionButton(completeURL, "Complete");

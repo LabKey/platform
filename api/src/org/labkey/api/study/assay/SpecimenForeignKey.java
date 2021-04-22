@@ -434,7 +434,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
             if (targetStudy != null)
             {
-                // We're in the middle of a copy to study, so ignore what the user selected as the target when they uploaded
+                // We're in the middle of a link to study, so ignore what the user selected as the target when they uploaded
                 sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
                 sql.add(targetStudy.getId());
             }

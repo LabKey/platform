@@ -35,6 +35,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -118,6 +119,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI;
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
 /**
@@ -279,9 +281,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        // delete the default "Unspecified" SampleType TODO: move to an upgrade script in 19.2
-        SampleTypeServiceImpl.get().deleteDefaultSampleType();
-
         // TODO move to an upgrade script
         ExperimentUpgradeCode.upgradeMaterialSource(null);
 
@@ -472,6 +471,27 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
                 results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 
+                results.put("uniqueIdColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
+                results.put("sampleTypeWithUniqueIdCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE D.conceptURI = ?", STORAGE_UNIQUE_ID_CONCEPT_URI).getObject(Long.class));
+
+                results.put("fileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+                results.put("sampleTypeWithFileColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.FILE_LINK.getTypeUri()).getObject(Long.class));
+
+                results.put("attachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE rangeURI = ?", PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+                results.put("dataClassWithAttachmentColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE DD.storageSchemaName = ? AND D.rangeURI = ?", DataClassDomainKind.PROVISIONED_SCHEMA_NAME, PropertyType.ATTACHMENT.getTypeUri()).getObject(Long.class));
+
                 return results;
             });
         }
@@ -520,7 +540,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return list;
     }
 
-
     @Override
     @NotNull
     public Set<Class> getIntegrationTests()
@@ -546,7 +565,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         list.add(new JspTestCase("/org/labkey/experiment/api/ExpSampleTypeTestCase.jsp"));
         return list;
     }
-
 
     @NotNull
     @Override
@@ -579,7 +597,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME);
     }
 
-
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
@@ -608,7 +625,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
         }, SearchService.PRIORITY.bulk);
     }
-
 
     @Override
     public void indexDeleted()

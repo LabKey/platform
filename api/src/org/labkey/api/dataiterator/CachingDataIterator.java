@@ -158,6 +158,17 @@ public class CachingDataIterator extends AbstractDataIterator implements Scrolla
     @Override
     public Object get(int i)
     {
+        if (_currentRowArray == null)
+        {
+            // No row available
+            if (i == 0)
+            {
+                // Use null to signal we're not on a real data row
+                return null;
+            }
+            // Otherwise, no value available to share
+            throw new IllegalStateException("No current row");
+        }
         return _currentRowArray[i];
     }
 

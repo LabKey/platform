@@ -347,6 +347,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getUploadSpecimensURL(Container c)
+        {
+            return new ActionURL(ShowUploadSpecimensAction.class, c);
+        }
+
+        @Override
         public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
         {
             ActionURL url = new ActionURL(InsertSpecimenQueryRowAction.class, c);
@@ -5321,6 +5327,12 @@ public class SpecimenController extends BaseStudyController
                 // No permission
                 errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
             }
+        }
+
+        @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, RequestSpecimensPermission.class);
         }
 
         @Override

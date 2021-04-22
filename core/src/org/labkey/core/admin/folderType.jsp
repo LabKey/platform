@@ -162,7 +162,9 @@ function updateDefaultOptions(cb)
 
                         function uncheckEl(m){
                             var el = Ext4.Element.select('input[value='+m+'][type="checkbox"]');
-                            el.elements[0].checked = false;
+                            if (el.elements.length > 0) {
+                                el.elements[0].checked = false;
+                            }
                         }
                     }
                 }, this);
@@ -177,7 +179,9 @@ function updateDefaultOptions(cb)
                 if(dependencyMap[m].indexOf(cb.value) > -1)
                 {
                     var el = Ext4.Element.select('input[value='+m+'][type="checkbox"]');
-                    el.elements[0].checked = true;
+                    if (el.elements.length > 0) {
+                        el.elements[0].checked = true;
+                    }
                 }
             }
         }

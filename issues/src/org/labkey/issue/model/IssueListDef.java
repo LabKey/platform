@@ -247,7 +247,20 @@ public class IssueListDef extends Entity
     public static SimpleFilter.FilterClause createFilterClause(IssueListDef issueListDef, User user)
     {
         Domain domain = issueListDef.getDomain(user);
+        ContainerFilter containerFilter = getContainerFilter(domain, user);
+        if (containerFilter != null)
+        {
+            return containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container"));
+        }
+        return null;
+    }
 
+    /**
+     * Returns the container filter with the proper scope for the issue list definition domain
+     */
+    @Nullable
+    public static ContainerFilter getContainerFilter(Domain domain, User user)
+    {
         if (domain != null)
         {
             ContainerFilter containerFilter = null;
@@ -258,8 +271,7 @@ public class IssueListDef extends Entity
             else if (domainContainer.isProject())
                 containerFilter = ContainerFilter.Type.CurrentAndSubfolders.create(domainContainer, user);
 
-            if (containerFilter != null)
-                return containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container"));
+            return containerFilter;
         }
         return null;
     }

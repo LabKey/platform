@@ -10,7 +10,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -29,7 +28,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarExportContext;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -53,7 +55,6 @@ import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.folder.xml.FolderDocument;
 
@@ -84,6 +85,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
     public static final String SAMPLE_TYPE_PREFIX = "SAMPLE_TYPE_";
     public static final String DATA_CLASS_PREFIX = "DATA_CLASS_";
     private PHI _exportPhiLevel = PHI.NotPHI;
+    private XarExportContext _xarCtx;
 
     private SampleTypeAndDataClassFolderWriter()
     {
@@ -112,9 +114,12 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         XarExportSelection runsSelection = new XarExportSelection();
         Set<ExpSampleType> sampleTypes = new HashSet<>();
         Set<ExpDataClass> dataClasses = new HashSet<>();
+        List<ExpMaterial> materialsToExport = new ArrayList<>();
+        List<ExpData> datasToExport = new ArrayList<>();
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
+        _xarCtx = ctx.getContext(XarExportContext.class);
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(ctx.getContainer(), ExpSampleType.class, "export"));
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), true))
@@ -123,21 +128,37 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
             if (StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
                 continue;
 
+            // ignore sample types that are filtered out
+            if (_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
+                continue;
+
             // filter out non sample type material sources
             Lsid lsid = new Lsid(sampleType.getLSID());
 
             if (sampleTypeLsid.getNamespacePrefix().equals(lsid.getNamespacePrefix()))
             {
+                Set<Integer> includedSamples = _xarCtx != null ? _xarCtx.getIncludedSamples().get(sampleType.getRowId()) : null;
                 sampleTypes.add(sampleType);
                 typesSelection.addSampleType(sampleType);
+                materialsToExport.addAll(sampleType.getSamples(ctx.getContainer()).stream()
+                        .filter(m -> includedSamples == null || includedSamples.contains(m.getRowId()))
+                        .collect(Collectors.toList()));
                 exportTypes = true;
             }
         }
 
         for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(ctx.getContainer(), ctx.getUser(), false))
         {
+            // ignore data classes that are filtered out
+            if (_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
+                continue;
+
+            Set<Integer> includedDatas = _xarCtx != null ? _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()) : null;
             dataClasses.add(dataClass);
             typesSelection.addDataClass(dataClass);
+            datasToExport.addAll(dataClass.getDatas().stream()
+                    .filter(d -> includedDatas == null || includedDatas.contains(d.getRowId()))
+                    .collect(Collectors.toList()));
             exportTypes = true;
         }
 
@@ -147,12 +168,14 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 || run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
                 .collect(Collectors.toList());
 
+        // get the list of runs with the materials or data we expect to export, these will be the sample derivation
+        // protocol runs to track the lineage
         Set<ExpRun> exportedRuns = new HashSet<>();
-        for (ExpRun run : runs)
-        {
-            if (exportRun(run, sampleTypes, dataClasses))
-                exportedRuns.add(run);
-        }
+        if (!materialsToExport.isEmpty())
+            exportedRuns.addAll(ExperimentService.get().getRunsUsingMaterials(materialsToExport));
+
+        if (!datasToExport.isEmpty())
+            exportedRuns.addAll(ExperimentService.get().getRunsUsingDatas(datasToExport));
 
         if (!exportedRuns.isEmpty())
         {
@@ -192,7 +215,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
-        // write out the sample rows that aren't participating in the derivation protocol
+        // write out the sample rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), SamplesSchema.SCHEMA_NAME);
         if (userSchema != null)
         {
@@ -205,7 +228,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
                     if (!columns.isEmpty())
                     {
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, SimpleFilter.createContainerFilter(ctx.getContainer()), null);
+                        SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
+
+                        // filter only to the specific samples
+                        if (_xarCtx != null && _xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
+                            filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedSamples().get(sampleType.getRowId()));
+
+                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
                         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
                         {
                             tsvWriter.setApplyFormats(false);
@@ -221,7 +250,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
     private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, ImportContext<FolderDocument.Folder> ctx, VirtualFile dir, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs) throws Exception
     {
-        // write out the sample rows that aren't participating in the derivation protocol
+        // write out the DataClass rows
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), ExpSchema.SCHEMA_EXP_DATA);
         if (userSchema != null)
         {
@@ -234,7 +263,13 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
                     if (!columns.isEmpty())
                     {
-                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, SimpleFilter.createContainerFilter(ctx.getContainer()), null);
+                        SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
+
+                        // filter only to the specific samples
+                        if (_xarCtx != null && _xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
+                            filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()));
+
+                        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, null);
                         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
                         {
                             tsvWriter.setApplyFormats(false);
@@ -248,31 +283,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                 }
             }
         }
-    }
-
-    /**
-     * Checks whether the material inputs or outputs for the run are samples
-     * from the set of specified sample types. Will return true if either the
-     * inputs or outputs are from the set of sample types.
-     */
-    private boolean exportRun(ExpRun run, Set<ExpSampleType> sampleTypes, Set<ExpDataClass> dataClasses)
-    {
-        if (run.getMaterialInputs().keySet().stream().anyMatch(mat -> sampleTypes.contains(mat.getSampleType())))
-        {
-            return true;
-        }
-
-        if (run.getMaterialOutputs().stream().anyMatch(mat -> sampleTypes.contains(mat.getSampleType())))
-        {
-            return true;
-        }
-
-        if (run.getDataInputs().keySet().stream().anyMatch(data -> dataClasses.contains(data.getDataClass(null))))
-        {
-            return true;
-        }
-
-        return run.getDataOutputs().stream().anyMatch(data -> dataClasses.contains(data.getDataClass(null)));
     }
 
     private Collection<ColumnInfo> getColumnsToExport(ImportContext<FolderDocument.Folder> ctx, TableInfo tinfo, LSIDRelativizer.RelativizedLSIDs relativizedLSIDs)

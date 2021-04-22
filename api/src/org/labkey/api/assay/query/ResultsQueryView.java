@@ -143,7 +143,7 @@ public class ResultsQueryView extends AssayBaseQueryView
 
             if (null != StudyPublishService.get() && !StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             {
-                ActionURL publishURL = PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(getContainer(), _protocol);
+                ActionURL publishURL = PageFlowUtil.urlProvider(StudyUrls.class).getLinkToStudyURL(getContainer(), _protocol);
                 for (Pair<String, String> param : publishURL.getParameters())
                 {
                     if (!"rowId".equalsIgnoreCase(param.getKey()))
@@ -154,7 +154,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                 if (getTable().getContainerFilter() != null && getTable().getContainerFilter().getType() != null)
                     publishURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
 
-                ActionButton publishButton = new ActionButton(publishURL, "Copy to Study", ActionButton.Action.POST);
+                ActionButton publishButton = new ActionButton(publishURL, "Link to Study", ActionButton.Action.POST);
                 publishButton.setDisplayPermission(InsertPermission.class);
                 publishButton.setRequiresSelection(true);
 

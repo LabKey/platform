@@ -14,7 +14,6 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     private final boolean _enabled;
     private final int _rowId;
     private final String _entityId;
-    private final Integer _sortOrder;
 
     public BaseAuthenticationConfiguration(AP provider, Map<String, Object> standardSettings)
     {
@@ -23,7 +22,6 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
         _entityId = (String)standardSettings.get("EntityId");
         _description = (String)standardSettings.get("Description");
         _enabled = (Boolean)standardSettings.get("Enabled");
-        _sortOrder = (Integer)standardSettings.get("SortOrder");
     }
 
     @Override
@@ -67,12 +65,6 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     public boolean isEnabled()
     {
         return _enabled;
-    }
-
-    @Override
-    public int getSortOrder()
-    {
-        return _sortOrder;
     }
 
     @Override

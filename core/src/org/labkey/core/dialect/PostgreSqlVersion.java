@@ -3,6 +3,7 @@ package org.labkey.core.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.PostgreSqlServerType;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -60,6 +61,11 @@ public enum PostgreSqlVersion
         .map(v->v._version)
         .max(Comparator.naturalOrder())
         .orElseThrow();
+
+    static @NotNull PostgreSqlVersion get(int version, PostgreSqlServerType type)
+    {
+        return get(PostgreSqlServerType.LabKey == type ? MAX_KNOWN_VERSION : version);
+    }
 
     static @NotNull PostgreSqlVersion get(int version)
     {

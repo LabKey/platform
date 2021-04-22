@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -48,6 +49,7 @@ import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -680,5 +682,36 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     {
         return false;
     };
+
+    /**
+     * Max PHI across all columns in the table.
+     */
+    default PHI getMaxPhiLevel()
+    {
+        return getColumns().stream()
+                .map(ColumnRenderProperties::getPHI)
+                .max(Comparator.comparingInt(PHI::getRank))
+                .orElse(PHI.NotPHI);
+    }
+
+    /**
+     * Get the max allowed PHI for the current user in the current container.
+     */
+    default PHI getUserMaxAllowedPhiLevel()
+    {
+        UserSchema schema = getUserSchema();
+        if (schema == null)
+            return PHI.NotPHI;
+
+        return ComplianceService.get().getMaxAllowedPhi(schema.getContainer(), schema.getUser());
+    }
+
+    /**
+     * Return true if the current user is allowed the maximum phi level set across all columns.
+     */
+    default boolean canUserAccessPhi()
+    {
+        return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
+    }
 
 }

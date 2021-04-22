@@ -663,8 +663,15 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     {
                         return super.getValueSql(tableAlias);
                     }
+
                 };
                 to.setHidden(from.isHidden());
+                if (from.isUniqueIdField())
+                {
+                    to.setUserEditable(false);
+                    to.setHasDbSequence(true);
+                    to.setShownInInsertView(false);
+                }
                 this.addColumn(to);
             }
         }
@@ -1132,7 +1139,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (kind.hasPropertiesIncludeBaseProperties() && basePropertyNames.contains(p.getName().toLowerCase()))
                 continue;
 
-            if (!seenProperties.add(p.getName()))
+            if (!p.isDeleted() && !seenProperties.add(p.getName()))
             {
                 // There is more than property descriptor with this name attached to this table. This shouldn't happen, but we've seen
                 // at least one occurrence of it in a dev's db, thought to have been caused by in-flux code in 12/2013. The result would

@@ -253,4 +253,7 @@ public interface QueryUpdateService extends HasPermission
      * implementations should use this to decide whether to do optional expensive operations upon updates.
      */
     boolean isBulkLoad();
+
+    /** Setup the data iterator for any special behavior needed for the target table */
+    default void configureDataIteratorContext(DataIteratorContext context) {}
 }

@@ -33,7 +33,6 @@
     ActionURL retryURL = bean.retryUrl;
     ActionURL browseFilesURL = bean.browseFilesUrl;
     ActionURL showListURL = bean.showListUrl;
-    ActionURL showFolderURL = bean.showFolderUrl;
     ActionURL showDataURL = bean.dataUrl;
     Date modified = bean.modified;
 %>
@@ -207,10 +206,6 @@
     </table>
     <div class="labkey-button-bar-separate">
         <%=button("Show Grid").href(showListURL)%>
-
-        <% if (showFolderURL != null) { %>
-        <%=button("Folder").href(showFolderURL)%>
-        <% } %>
 
         <%-- NOTE: showDataURL is null until the job is complete.  When complete, the button will be shown. --%>
         <%=button("Data").id("show-data-btn").href(showDataURL).addClass(status.active || showDataURL == null ? "hidden" : "")%>

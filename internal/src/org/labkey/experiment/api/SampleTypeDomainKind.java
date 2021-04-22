@@ -92,6 +92,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
+        RESERVED_NAMES.add("IsAliquot");
         RESERVED_NAMES.add("AliquotedFrom");
         RESERVED_NAMES.add("AliquotedFromLSID");
         RESERVED_NAMES.add("RootMaterialLSID");
@@ -267,12 +268,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
-        // Cannot edit default sample type
         ExpSampleType st = getSampleType(domain);
-        if (st == null || SampleTypeService.get().getDefaultSampleTypeLsid().equals(domain.getTypeURI()))
-        {
+        if (st == null)
             return false;
-        }
+
         return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
     }
 

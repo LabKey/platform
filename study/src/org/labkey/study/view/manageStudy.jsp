@@ -119,7 +119,7 @@
     Collection<StudyReloadSource> reloadSources = StudyService.get().getStudyReloadSources(getContainer());
 
     ComplianceService complianceService = ComplianceService.get();
-    String maxAllowedPhi = (null != complianceService ? complianceService.getMaxAllowedPhi(c, getUser()).name() : PHI.Restricted.name());
+    String maxAllowedPhi = complianceService.getMaxAllowedPhi(c, getUser()).name();
 
     if (study.hasSourceStudy() || study.isSnapshotStudy())
     {

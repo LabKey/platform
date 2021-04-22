@@ -34,8 +34,8 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.study.publish.AbstractPublishStartAction;
-import org.labkey.study.publish.PublishStartForm;
+import org.labkey.api.study.publish.AbstractPublishStartAction;
+import org.labkey.api.study.publish.PublishStartForm;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -112,7 +112,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
         // if QC is enabled for this protocol, verify that the selected data has been approved, otherwise show an error
         if (!validateQCState(_runIds, ids))
         {
-            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>QC checks failed. There are unapproved rows of data in the copy to study selection, " +
+            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>QC checks failed. There are unapproved rows of data in the link to study selection, " +
                     "please change your selection or request a QC Analyst to approve the run data.</span>"));
         }
 
@@ -129,7 +129,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
                 inputs.add(Pair.of(DataRegion.SELECT_CHECKBOX_NAME, id.toString()));
 
             // Copy url parameters to hidden inputs
-            ActionURL url = urlProvider(StudyUrls.class).getCopyToStudyConfirmURL(getContainer(), _protocol);
+            ActionURL url = urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _protocol);
             for (Pair<String, String> parameter : url.getParameters())
                 inputs.add(parameter);
 
@@ -144,7 +144,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
     @Override
     protected ActionURL getSuccessUrl(AssayPublishStartForm form)
     {
-        return urlProvider(StudyUrls.class).getCopyToStudyConfirmURL(getContainer(), _protocol );
+        return urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _protocol );
     }
 
     @Override
@@ -242,6 +242,6 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
 
         root.addChild("Assay List", urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
         root.addChild(_protocol.getName(), urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        root.addChild("Copy to Study: Choose Target");
+        root.addChild("Link to Study: Choose Target");
     }
 }
