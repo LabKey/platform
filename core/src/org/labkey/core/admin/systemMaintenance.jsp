@@ -53,7 +53,7 @@
     {
         if (!task.hideFromAdminPage())
         {
-            if (task.isConfigurable())
+            if (task.isRecurring())
                 configurableTasks.add(task);
             else
                 singleUseTasks.add(task);

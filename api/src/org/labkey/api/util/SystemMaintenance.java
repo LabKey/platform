@@ -267,10 +267,10 @@ public class SystemMaintenance
         }
 
         /**
-         * Specify if the task is meant to be configurable and therefore shown in the group of maintenance tasks
-         * that can be enabled / disabled as part of the daily/nightly schedule.
+         * Specify if the task is meant to be configurable / recurring and therefore shown in the group of maintenance
+         * tasks that can be enabled / disabled as part of the daily/nightly schedule.
          */
-        default boolean isConfigurable()
+        default boolean isRecurring()
         {
             return true;
         }
