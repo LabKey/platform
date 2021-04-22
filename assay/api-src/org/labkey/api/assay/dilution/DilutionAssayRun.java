@@ -131,8 +131,8 @@ public abstract class DilutionAssayRun extends Luc5Assay
         for (ColumnInfo runColumn : runTableInfo.getColumns())
         {
             // These columns cause an UnauthorizedException if the user has permission to see the dataset
-            // this run has been copied to, but not the run folder, because the column joins to the exp.Data query
-            // which doesn't know anything about the extra permission the user has been granted by the copy to study linkage.
+            // this run has been linked to, but not the run folder, because the column joins to the exp.Data query
+            // which doesn't know anything about the extra permission the user has been granted by the link to study.
             // We don't need to show it in the details view, so just skip it.
             if (!ExpRunTable.Column.DataOutputs.name().equalsIgnoreCase(runColumn.getName()) &&
                 !ExpRunTable.Column.JobId.name().equalsIgnoreCase(runColumn.getName()) &&
@@ -260,7 +260,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
         TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME, null);
 
-        // Do a query to get all the info we need to do the copy
+        // Do a query to get all the info we need to do the linkage
         TableInfo resultTable = schema.createDataTable(null,false);
         DilutionManager mgr = new DilutionManager();
 
