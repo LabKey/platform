@@ -34,7 +34,7 @@ import java.util.Map;
 public class StudyDatasetColumn extends ExprColumn
 {
     private AssayProvider _provider;
-    private final Dataset _dataset;
+    private final Dataset _assayDataset;
     private final User _user;
 
     public StudyDatasetColumn(TableInfo parent, String name, AssayProvider provider, Dataset assayDataset, User user)
@@ -42,13 +42,13 @@ public class StudyDatasetColumn extends ExprColumn
         super(parent, name, new SQLFragment("(CASE WHEN " + getDatasetIdAlias(assayDataset.getContainer()) +
                 "._key IS NOT NULL THEN " + assayDataset.getDatasetId() + " ELSE NULL END)"), JdbcType.INTEGER);
         _provider = provider;
-        _dataset = assayDataset;
+        _assayDataset = assayDataset;
         _user = user;
     }
 
     public Container getStudyContainer()
     {
-        return _dataset.getContainer();
+        return _assayDataset.getContainer();
     }
 
     public static String getDatasetIdAlias(Container studyContainer)
@@ -68,8 +68,8 @@ public class StudyDatasetColumn extends ExprColumn
         SQLFragment joinSql = new SQLFragment();
         String datasetAlias = getDatasetIdAlias();
         Container studyContainer = getStudyContainer();
-        TableInfo datasetTable = _dataset.getTableInfo(_user);
-        ExpProtocol protocol = (ExpProtocol) _dataset.resolvePublishSource();
+        TableInfo datasetTable = _assayDataset.getTableInfo(_user);
+        ExpProtocol protocol = (ExpProtocol)_assayDataset.resolvePublishSource();
 
         joinSql.appendComment("<StudyDatasetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.append(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).append(" ON ");

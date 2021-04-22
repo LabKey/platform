@@ -7110,10 +7110,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
     }
 
-    public void addCopiedToStudyColumns(TableInfo table) {
-
-    }
-
     public static class TestCase extends Assert
     {
         @Before

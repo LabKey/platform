@@ -22,13 +22,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -36,8 +33,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.ExprColumn;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
@@ -45,19 +40,13 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.StudyDatasetColumn;
-import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -139,11 +128,15 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        ExpSampleType st = getSampleTypes().get(name); // name is
+        ExpSampleType st = getSampleTypes().get(name);
         if (st == null)
             return null;
+
+        // Get linked to study columns
         AbstractTableInfo tableInfo = (AbstractTableInfo) getSampleTable(st, cf);
-        addLinkedToStudyColumns(tableInfo);
+        int rowId = getSampleTypes().get(tableInfo.getName()).getRowId();
+        StudyPublishService.get().addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, "RowId", getUser());
+
         return tableInfo;
     }
 
@@ -170,75 +163,6 @@ public class SamplesSchema extends AbstractExpSchema
         ret.populate(st, true);
         ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
-    }
-
-    /** Adds columns to data table, providing a link to any datasets that have had data linked into them. */
-    private void addLinkedToStudyColumns(AbstractTableInfo table) // TestSampleTypeLinkage, filteredTable over exp.material, 7 default visible columns
-    {
-        Set<String> visibleColumnNames = new HashSet<>();
-        StudyService svc = StudyService.get();
-
-        if (null != svc)
-        {
-            int datasetIndex = 0;
-            Set<String> usedColumnNames = new HashSet<>(); // TODO use this to prevent collisions
-            int temp = getSampleTypes().get(table.getName()).getRowId(); // this seems overly complicated
-
-            // For each dataset that has been found to be linked from this sample type, we must construct a column for that dataset, and another column to display
-            for (final Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(temp, Dataset.PublishSource.SampleType))
-            {
-                // do permission check here
-
-                String datasetIdColumnName = "dataset" + datasetIndex++;
-                final ExprColumn datasetColumn = new StudyDatasetLinkedColumn(table, datasetIdColumnName, dataset, getUser());
-
-                datasetColumn.setHidden(false);
-                datasetColumn.setUserEditable(false);
-                datasetColumn.setShownInInsertView(true);
-                datasetColumn.setShownInUpdateView(true);
-                datasetColumn.setReadOnly(true);
-                table.addColumn(datasetColumn);
-
-
-
-                // CREATE VISIBLE COLUMN
-                String studyColumnName = "linked_to_" + dataset.getStudy().getLabel(); // sanitize
-                usedColumnNames.add(studyColumnName);
-                SQLFragment sqlLink = new SQLFragment("(SELECT CASE WHEN " + "StudyDataJoin$" + dataset.getContainer().getRowId() +
-                        "._key IS NOT NULL THEN 'linked' ELSE NULL END)");
-
-                final ExprColumn studyLinkedColumn = new ExprColumn(
-                        table,
-                        studyColumnName,
-                        sqlLink,
-                        JdbcType.VARCHAR,
-                        datasetColumn
-                );
-                final String linkedToStudyColumnCaption = "Linked to " + dataset.getStudy().getLabel();
-                studyLinkedColumn.setLabel(linkedToStudyColumnCaption);
-                studyLinkedColumn.setUserEditable(false);
-                studyLinkedColumn.setReadOnly(true);
-                studyLinkedColumn.setShownInInsertView(false);
-                studyLinkedColumn.setShownInUpdateView(false);
-                studyLinkedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(dataset.getContainer(), dataset.getDatasetId())));
-
-                table.addColumn(studyLinkedColumn);
-
-
-
-                visibleColumnNames.add(studyLinkedColumn.getName()); // note, only do this until it's up to 3
-            }
-            // add visible columns
-            if (visibleColumnNames.size() > 0)
-            {
-                List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
-                for (String columnName : visibleColumnNames)
-                {
-                    visibleColumns.add(new FieldKey(null, columnName));
-                }
-//                table.setDefaultVisibleColumns(visibleColumns);
-            }
-        }
     }
 
     /**

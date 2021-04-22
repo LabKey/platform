@@ -120,5 +120,5 @@ public interface StudyPublishService
 
     void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 
-    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns);
+    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user);
 }

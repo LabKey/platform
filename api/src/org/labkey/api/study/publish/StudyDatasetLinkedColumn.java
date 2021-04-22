@@ -16,13 +16,15 @@ public class StudyDatasetLinkedColumn extends ExprColumn
 {
     private final Dataset _dataset;
     private final User _user;
+    private final String _rowIdName;
 
-    public StudyDatasetLinkedColumn(TableInfo parent, String name, Dataset dataset, User user)
+    public StudyDatasetLinkedColumn(TableInfo parent, String name, Dataset dataset, String rowIdName, User user)
     {
         super(parent, name, new SQLFragment("(CASE WHEN " + "StudyDataJoin$" + dataset.getContainer().getRowId() +
                 "._key IS NOT NULL THEN " + dataset.getDatasetId() + " ELSE NULL END)"), JdbcType.INTEGER);
 
         _dataset = dataset;
+        _rowIdName = rowIdName;
         _user = user;
     }
 
@@ -52,7 +54,7 @@ public class StudyDatasetLinkedColumn extends ExprColumn
 
         joinSql.appendComment("<StudyDatasetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.append(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).append(" ON ");
-        joinSql.append(datasetAlias).append("._key = CAST(").append(parentAlias).append(".").append("RowId").append(" AS ");
+        joinSql.append(datasetAlias).append("._key = CAST(").append(parentAlias).append(".").append(_rowIdName).append(" AS ");
         joinSql.append(getSqlDialect().getSqlTypeName(JdbcType.VARCHAR)).append("(200))");
         joinSql.appendComment("</StudyDatasetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);

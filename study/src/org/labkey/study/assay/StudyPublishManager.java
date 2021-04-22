@@ -42,6 +42,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -65,7 +66,9 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -75,6 +78,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -82,13 +86,16 @@ import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.publish.PublishKey;
+import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -1240,9 +1247,106 @@ public class StudyPublishManager implements StudyPublishService
         }
     }
 
-    @Override
-    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
+    private String sanitizeName(String originalName)
     {
-        return null;
+        StringBuilder sb = new StringBuilder();
+        boolean first = true; // first character is special
+        for (int i = 0; i < originalName.length(); i++)
+        {
+            char c = originalName.charAt(i);
+            if (AliasManager.isLegalNameChar(c, first))
+            {
+                sb.append(c);
+                first = false;
+            }
+            else if (!first)
+            {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user)
+    {
+        Set<String> visibleColumnNames = new HashSet<>();
+        StudyService svc = StudyService.get();
+
+        if (null != svc)
+        {
+            int datasetIndex = 0;
+            Set<String> usedColumnNames = new HashSet<>();
+
+            Dataset.PublishSource thing = Dataset.PublishSource.Assay;
+            for (final Dataset assayDataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, publishSource))
+            {
+                if (!assayDataset.getContainer().hasPermission(user, ReadPermission.class) || !assayDataset.canRead(user))
+                {
+                    continue;
+                }
+
+                // sets a hidden column that is (CASE WHEN StudyDataJoin$47._key IS NOT NULL THEN 5012 ELSE NULL END)
+                String datasetIdColumnName = "dataset" + datasetIndex++;
+
+                final StudyDatasetLinkedColumn datasetColumn = new StudyDatasetLinkedColumn(table, datasetIdColumnName, assayDataset, rowIdName, user);
+                datasetColumn.setHidden(true);
+                datasetColumn.setUserEditable(false);
+                datasetColumn.setShownInInsertView(false);
+                datasetColumn.setShownInUpdateView(false);
+                datasetColumn.setReadOnly(true);
+                table.addColumn(datasetColumn);
+
+                String studyLinkedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
+                        "._key IS NOT NULL THEN 'linked' ELSE NULL END)";
+
+                String studyName = assayDataset.getStudy().getLabel();
+                if (studyName == null)
+                    continue; // No study in that folder
+
+                String studyColumnName;
+                String sanitizedStudyName = sanitizeName(studyName);
+                if (sanitizedStudyName.isEmpty() || "study".equalsIgnoreCase(sanitizedStudyName))
+                {
+                    // issue 41472 include the prefix as part of the sanitization process
+                    studyColumnName = sanitizeName("linked_to_" + studyName);
+                }
+                else
+                    studyColumnName = "linked_to_" + sanitizeName(studyName);
+
+                // column names must be unique. Prevent collisions
+                while (usedColumnNames.contains(studyColumnName))
+                    studyColumnName = studyColumnName + datasetIndex;
+                usedColumnNames.add(studyColumnName);
+
+                final ExprColumn studyLinkedColumn = new ExprColumn(table,
+                        studyColumnName,
+                        new SQLFragment(studyLinkedSql),
+                        JdbcType.VARCHAR,
+                        datasetColumn);
+                final String linkedToStudyColumnCaption = "Linked to " + studyName;
+                studyLinkedColumn.setLabel(linkedToStudyColumnCaption);
+                studyLinkedColumn.setUserEditable(false);
+                studyLinkedColumn.setReadOnly(true);
+                studyLinkedColumn.setShownInInsertView(false);
+                studyLinkedColumn.setShownInUpdateView(false);
+                studyLinkedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
+
+                table.addColumn(studyLinkedColumn);
+
+                visibleColumnNames.add(studyLinkedColumn.getName());
+            }
+            if (setVisibleColumns)
+            {
+                List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
+                for (String columnName : visibleColumnNames)
+                {
+                    visibleColumns.add(new FieldKey(null, columnName));
+                }
+                table.setDefaultVisibleColumns(visibleColumns);
+            }
+        }
+
+        return visibleColumnNames;
     }
 }

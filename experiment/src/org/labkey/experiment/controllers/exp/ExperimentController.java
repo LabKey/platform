@@ -609,9 +609,6 @@ public class ExperimentController extends SpringActionController
             detailsView.setTitle("Sample Type Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
-            // inside will determine whether or not we end up adding them
-//            schema.addCopiedToStudyColumns(detailsView.getDataRegion().getTable());
-
             Container autoLinkContainer = _sampleType.getAutoLinkTargetContainer();
             if (null != autoLinkContainer)
             {
