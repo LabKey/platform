@@ -2380,11 +2380,15 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected void validatePermission(User user, BindException errors)
+        protected boolean canInsert(User user)
         {
-            if (_def.canInsert(user))
-                return;
-            throw new UnauthorizedException("Can't update dataset: " + _def.getName());
+            return _def.canInsert(user);
+        }
+
+        @Override
+        protected boolean canUpdate(User user)
+        {
+            return _def.canUpdate(user);
         }
 
         @Override
@@ -7273,6 +7277,12 @@ public class StudyController extends BaseStudyController
         protected void validatePermission(User user, BindException errors)
         {
             checkPermissions();
+        }
+
+        @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, ManageStudyPermission.class);
         }
 
         @Override
