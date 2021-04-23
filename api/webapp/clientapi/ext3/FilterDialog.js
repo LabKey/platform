@@ -108,6 +108,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 // OR if it is of type : (boolean, int, date, text), multiline excluded
                 if (this.column.lookup || this.column.dimension)
                     this.allowFacet = true;
+                // else if (this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI) {
+                //     this.allowFacet = false;
+                // }
                 else if (this.jsonType == 'boolean' || this.jsonType == 'int' ||
                         (this.jsonType == 'string' && this.column.inputType != 'textarea'))
                     this.allowFacet = true;
@@ -452,7 +455,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 // However, ComboBox doesn't fire 'select' event when changed programatically so we fire it manually.
                 this.combos[c].reset();
                 this.combos[c].fireEvent('select', this.combos[c], null);
-                this.inputs[c].reset();
+                this.inputs[c]?.reset();
             }
         }
         else {
@@ -634,7 +637,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         var val = idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.jsonType).getURLSuffix() : '';
         //Override the default for Concepts unless it is blank
         if (this.column.conceptURI === this.CONCEPT_CODE_CONCEPT_URI && val !== '')
-            val = LABKEY.Filter.Types.EQUAL.getURLSuffix();
+            val = LABKEY.Filter.Types.ONTOLOGY_IN_SUBTREE.getURLSuffix();
 
         return {
             xtype: 'combo',
