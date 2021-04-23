@@ -1312,9 +1312,17 @@ public class Query
 
     static class FailTest extends SqlTest
     {
-        FailTest(String sql)
+        private final boolean _onlyQueryParseExceptions;
+
+        public FailTest(String sql, boolean onlyQueryParseExceptions)
         {
             super(sql);
+            this._onlyQueryParseExceptions = onlyQueryParseExceptions;
+        }
+
+        FailTest(String sql)
+        {
+            this(sql, true);
         }
 
         @Override
@@ -1330,7 +1338,10 @@ public class Query
             }
             catch (Exception x)
             {
-                throw new AssertionError("unexpected exception: " + x.getMessage(), x);
+                if (!(x instanceof QueryException) || _onlyQueryParseExceptions)
+                {
+                    throw new AssertionError("unexpected exception: " + x.getMessage(), x);
+                }
             }
         }
     }
@@ -1827,7 +1838,7 @@ public class Query
         new FailTest("SELECT A, B, count(*) As C " +
             "FROM (SELECT seven as A, twelve/0 AS B FROM lists.R) " +
             "GROUP BY A, B " +
-            "PIVOT C BY B")
+            "PIVOT C BY B", false)
     };
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
