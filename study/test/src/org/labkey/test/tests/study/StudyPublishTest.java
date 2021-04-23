@@ -60,8 +60,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -380,7 +380,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             DataRegionTable dataTable = new DatasetPropertiesPage(getDriver()).clickViewData().getDataRegion();
             assertTrue("Expect > 0 records", dataTable.getDataRowCount() > 0 );
             assertThat("expect all participant data to be present and have values",
-                    dataTable.getColumnDataAsText("Mouse Id"), allOf(notNullValue()));
+                    dataTable.getColumnDataAsText("Mouse Id"), not(hasItem("")));
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -392,7 +392,7 @@ public class StudyPublishTest extends StudyPHIExportTest
             DataRegionTable dataTable = new DatasetPropertiesPage(getDriver()).clickViewData().getDataRegion();
             assertTrue("Expect > 0 records", dataTable.getDataRowCount() > 0 );
             assertThat("expect all participant data to be present",
-                    dataTable.getColumnDataAsText("Mouse Id"), allOf(notNullValue()));
+                    dataTable.getColumnDataAsText("Mouse Id"), not(hasItem("")));
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
