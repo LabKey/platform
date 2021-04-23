@@ -130,6 +130,16 @@ LABKEY.Query = new function()
         return 'GET';
     }
 
+    var containerFilter = {
+        current: "Current",
+        currentAndFirstChildren: "CurrentAndFirstChildren",
+        currentAndSubfolders: "CurrentAndSubfolders",
+        currentPlusProject: "CurrentPlusProject",
+        currentAndParents: "CurrentAndParents",
+        currentPlusProjectAndShared: "CurrentPlusProjectAndShared",
+        allFolders: "AllFolders"
+    };
+
     // public methods:
     /** @scope LABKEY.Query */
     return {
@@ -149,15 +159,8 @@ LABKEY.Query = new function()
          * <li><b>allFolders:</b> Include all folders for which the user has read permission</li>
          * </ul>
          */
-        containerFilter : {
-            current: "Current",
-            currentAndFirstChildren: "CurrentAndFirstChildren",
-            currentAndSubfolders: "CurrentAndSubfolders",
-            currentPlusProject: "CurrentPlusProject",
-            currentAndParents: "CurrentAndParents",
-            currentPlusProjectAndShared: "CurrentPlusProjectAndShared",
-            allFolders: "AllFolders"
-        },
+        containerFilter : containerFilter,
+        ContainerFilter : containerFilter,
 
         /**
          * Execute arbitrary LabKey SQL. For more information, see the

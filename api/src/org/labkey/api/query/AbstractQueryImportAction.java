@@ -49,6 +49,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.PageFlowUtil;
@@ -87,8 +88,6 @@ import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionA
  */
 public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM>
 {
-    public static final String ASYNC_QUERY_IMPORT_PARAM = "useAsync";
-
     public static class ImportViewBean
     {
         public String urlCancel = null;
@@ -175,7 +174,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void setShowImportOptions(boolean b)
     {
-        _importViewBean.showImportOptions = b;
+        if (b && canUpdate(getUser()))
+            _importViewBean.showImportOptions = true;
     }
 
     protected void setTypeName(String name)
@@ -188,13 +188,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _importViewBean.acceptZeroResults = acceptZeroResults;
     }
 
+    protected boolean canInsert(User user)
+    {
+        return _target != null
+                ? _target.hasPermission(user, InsertPermission.class)
+                : getContainer().hasPermission(user, InsertPermission.class);
+    }
+
+    protected boolean canUpdate(User user)
+    {
+        return _target != null
+                ? _target.hasPermission(user, UpdatePermission.class)
+                : getContainer().hasPermission(user, UpdatePermission.class);
+    }
+
     public ModelAndView getDefaultImportView(FORM form, BindException errors)
     {
         ActionURL url = getViewContext().getActionURL();
-        User user = getUser();
         Container c = getContainer();
-
-        validatePermission(user, errors);
 
         if (StringUtils.isBlank(_importViewBean.urlReturn))
         {
@@ -268,12 +279,52 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
     }
 
+    enum Params
+    {
+        text,
+        path,
+        module,
+        moduleResource,
+        saveToPipeline,
+        useAsync,
+        importIdentity,
+        importLookupByAlternateKey,
+        format,
+        insertOption
+    }
+
+    @Nullable
+    private String getParam(Params p)
+    {
+        return getViewContext().getRequest().getParameter(p.name());
+    }
+
     public final ApiResponse _execute(FORM form, BindException errors) throws Exception
     {
         initRequest(form);
 
         User user = getUser();
         validatePermission(user, errors);
+        if (!errors.hasErrors())
+        {
+            // validate insert or update permissions based on the insert option
+            QueryUpdateService.InsertOption insertOption = QueryUpdateService.InsertOption.INSERT;
+            String insertOptionParam = getParam(Params.insertOption);
+            if (insertOptionParam != null)
+                insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
+
+            switch (insertOption)
+            {
+                case MERGE, REPLACE, UPSERT -> {
+                    if (!canUpdate(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to update rows");
+                }
+                default -> {
+                    if (!canInsert(user))
+                        errors.reject(SpringActionController.ERROR_MSG, "User does not have permission to insert rows");
+                }
+            }
+        }
 
         if (errors.hasErrors())
             throw errors;
@@ -284,24 +335,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         String originalName = null;
         DataLoader loader = null;
 
-        String text = getViewContext().getRequest().getParameter("text");
-        String path = getViewContext().getRequest().getParameter("path");
+        String text = getParam(Params.text);
+        String path = getParam(Params.path);
 
-        String moduleName = getViewContext().getRequest().getParameter("module");
-        String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
+        String moduleName = getParam(Params.module);
+        String moduleResource = getParam(Params.moduleResource);
 
-        String saveToPipeline = getViewContext().getRequest().getParameter("saveToPipeline"); // saveToPipeline saves import file to pipeline root, but doesn't necessarily do import in a background job
+        String saveToPipeline = getParam(Params.saveToPipeline); // saveToPipeline saves import file to pipeline root, but doesn't necessarily do import in a background job
 
-        if (getViewContext().getRequest().getParameter("useAsync") != null) // useAsync will save import file to pipeline root as well as run import in a background job
-            _useAsync = Boolean.valueOf(getViewContext().getRequest().getParameter(ASYNC_QUERY_IMPORT_PARAM));
+        if (getParam(Params.useAsync) != null) // useAsync will save import file to pipeline root as well as run import in a background job
+            _useAsync = Boolean.valueOf(getParam(Params.useAsync ));
 
 
         // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
-        if (getViewContext().getRequest().getParameter("importIdentity") != null)
-            _importIdentity = Boolean.valueOf(getViewContext().getRequest().getParameter("importIdentity"));
+        if (getParam(Params.importIdentity) != null)
+            _importIdentity = Boolean.valueOf(getParam(Params.importIdentity));
 
-        if (getViewContext().getRequest().getParameter("importLookupByAlternateKey") != null)
-            _importLookupByAlternateKey = Boolean.valueOf(getViewContext().getRequest().getParameter("importLookupByAlternateKey"));
+        if (getParam(Params.importLookupByAlternateKey) != null)
+            _importLookupByAlternateKey = Boolean.valueOf(getParam(Params.importLookupByAlternateKey));
 
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
@@ -314,7 +365,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 hasPostData = true;
                 originalName = "upload.tsv";
                 TabLoader tabLoader = new TabLoader(text, _hasColumnHeaders);
-                if ("csv".equalsIgnoreCase(getViewContext().getRequest().getParameter("format")))
+                if ("csv".equalsIgnoreCase(getParam(Params.format)))
                 {
                     tabLoader.setDelimiterCharacter(',');
                     originalName = "upload.csv";
