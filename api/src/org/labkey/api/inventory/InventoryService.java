@@ -44,13 +44,11 @@ public interface InventoryService
             "FreezeThawCount",
             "CheckedOutBy",
             "CheckedOut",
-            "DisplayUnit", // this is the name of the column, not the display name of "Units"
             "StorageRow",
             "StorageCol",
             "StorageLocation",
             "EnteredStorage",
             "StorageStatus",
-            "StoredAmountDisplay",
             "StoredAmount",
             "Units",
             "StorageComment"
