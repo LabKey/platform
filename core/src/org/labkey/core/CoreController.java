@@ -2647,14 +2647,30 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(ClientSideMetricForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put(form.getMetricName(), ClientSideMetricManager.get().increment(form.getMetricName()));
+            String name = form.getMetricName();
+            if (!StringUtils.isEmpty(form.getApplicationName()))
+                name = form.getApplicationName() + "_" + name;
+            name = name.replaceAll("\\s","");
+            response.put("name", name);
+            response.put("count", ClientSideMetricManager.get().increment(name));
             return response;
         }
     }
 
     public static class ClientSideMetricForm
     {
+        private String _applicationName;
         private String _metricName;
+
+        public String getApplicationName()
+        {
+            return _applicationName;
+        }
+
+        public void setApplicationName(String applicationName)
+        {
+            _applicationName = applicationName;
+        }
 
         public String getMetricName()
         {
