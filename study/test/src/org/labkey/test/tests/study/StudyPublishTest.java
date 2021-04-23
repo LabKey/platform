@@ -908,7 +908,6 @@ public class StudyPublishTest extends StudyPHIExportTest
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects,
                 "Container specific module properties",
-                "ETL Definitions",
                 "External schema definitions",
                 "Folder type and active modules",
                 "Full-text search settings",
