@@ -7,6 +7,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -59,8 +61,11 @@ public interface AuditHandler
                     .filter(column -> column.getAlias().equalsIgnoreCase(key))
                     .map((ColumnInfo::getName))
                     .findFirst()
-                    .orElse(key)
-                    .toLowerCase();
+                    .orElse(key);
+            String lcName = nameFromAlias.toLowerCase();
+            // Preserve casing of inputs so we can show the names properly
+            if (!lcName.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) && !lcName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+                nameFromAlias = lcName;
 
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
             if (!excludedFromDetailDiff.contains(nameFromAlias) && row.containsKey(nameFromAlias))
