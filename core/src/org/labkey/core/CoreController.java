@@ -160,6 +160,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -2633,6 +2634,40 @@ public class CoreController extends SpringActionController
             response.put("body", newBody);
 
             return response;
+        }
+    }
+
+    @RequiresLogin
+    public class IncrementClientSideMetricCountAction extends MutatingApiAction<ClientSideMetricForm>
+    {
+        @Override
+        public void validateForm(ClientSideMetricForm form, Errors errors)
+        {
+            if (StringUtils.isEmpty(form.getMetricName()))
+                errors.reject(ERROR_MSG, "Must provide a metricName.");
+        }
+
+        @Override
+        public ApiResponse execute(ClientSideMetricForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put(form.getMetricName(), ClientSideMetricManager.get().increment(form.getMetricName()));
+            return response;
+        }
+    }
+
+    public static class ClientSideMetricForm
+    {
+        private String _metricName;
+
+        public String getMetricName()
+        {
+            return _metricName;
+        }
+
+        public void setMetricName(String metricName)
+        {
+            _metricName = metricName;
         }
     }
 
