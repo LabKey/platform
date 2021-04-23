@@ -1712,7 +1712,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             }
             else if (existingRecord != null && existingRecord.size() > 0)
             {
-                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields());
+                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
