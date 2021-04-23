@@ -206,7 +206,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
         public String getLinkToStudyAuditMessage(ExpObject source, int recordCount)
         {
-            return recordCount + " row(s) were copied to a study from the " + getAuditMessageSourceType() + ": " + source.getName();
+            return recordCount + " row(s) were linked to a study from the " + getAuditMessageSourceType() + ": " + source.getName();
         }
 
         public String getRecallFromStudyAuditMessage(String label, int recordCount)
