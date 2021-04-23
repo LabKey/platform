@@ -30,8 +30,7 @@ import org.labkey.api.view.ActionURL;
 public class ContainerForeignKey extends QueryForeignKey
 {
     /**
-     * Deprecated: relying on ContainerIdColumnInfoTransformer is preferred()
-
+     * @deprecated relying on ContainerIdColumnInfoTransformer is preferred()
      */
      @Deprecated
     static public <COL extends MutableColumnInfo> COL initColumn(COL column, UserSchema schema)
@@ -41,8 +40,7 @@ public class ContainerForeignKey extends QueryForeignKey
 
 
     /**
-     * Deprecated: relying on ContainerIdColumnInfoTransformer is preferred()
-
+     * @deprecated relying on ContainerIdColumnInfoTransformer is preferred()
      */
     @Deprecated
     static public <COL extends MutableColumnInfo> COL initColumn(@NotNull COL column, UserSchema schema, final ActionURL url)
