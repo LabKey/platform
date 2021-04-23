@@ -170,7 +170,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
     private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> existingRow, TableInfo table)
     {
-        Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(row, existingRow, table.getExtraDetailedUpdateAuditFields(), table.getExcludedDetailedUpdateAuditFields());
+        Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(row, existingRow, table.getExtraDetailedUpdateAuditFields(), table.getExcludedDetailedUpdateAuditFields(), table);
 
         Map<String, Object> originalRow = rowPair.first;
         Map<String, Object> modifiedRow = rowPair.second;
