@@ -54,14 +54,14 @@ public interface StudyPublishService
     String ROWID_PROPERTY_NAME = "RowId";
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
-    String AUTO_COPY_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
+    String AUTO_LINK_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
 
     String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
     String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
 
-    // auto copy to study target which defaults to the study in the folder the import occurs, using the shared folder
+    // auto link to study target which defaults to the study in the folder the import occurs, using the shared folder
     // which should be safe from collisions since we don't allow assay creation there
-    Container AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER = ContainerManager.getSharedContainer();
+    Container AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER = ContainerManager.getSharedContainer();
 
     static void setInstance(StudyPublishService serviceImpl)
     {
@@ -73,7 +73,7 @@ public interface StudyPublishService
         return ServiceRegistry.get().getService(StudyPublishService.class);
     }
 
-    void checkForAlreadyCopiedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
+    void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer);
 
     ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
@@ -96,11 +96,11 @@ public interface StudyPublishService
     TimepointType getTimepointType(Container container);
 
     /**
-     * Automatically copy assay data to a study if the design is set up to do so
-     * @return any errors that prevented the copy
+     * Automatically link assay data to a study if the design is set up to do so
+     * @return any errors that prevented the link
      */
     @Nullable
-    ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
+    ActionURL autoLinkResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
@@ -108,7 +108,7 @@ public interface StudyPublishService
     ExpProtocol ensureStudyPublishProtocol(User user, Container container, @Nullable String name, @Nullable String lsid) throws ExperimentException;
 
     /**
-     * Returns the set of datasets which have ever had data copied from the provided protocol
+     * Returns the set of datasets which have ever had data linked from the provided protocol
      */
     Set<? extends Dataset> getDatasetsForPublishSource(Integer sourceId, Dataset.PublishSource publishSource);
 

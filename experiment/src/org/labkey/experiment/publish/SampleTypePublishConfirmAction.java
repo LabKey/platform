@@ -248,7 +248,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     }
 
     @Override
-    protected ActionURL copyToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
+    protected ActionURL linkToStudy(SampleTypePublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
@@ -277,7 +277,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         }
 
         ExpSampleType sampleType = form._sampleType;
-        StudyPublishService.get().checkForAlreadyCopiedRows(getUser(), Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()), errors, rowIdsByTargetContainer);
+        StudyPublishService.get().checkForAlreadyLinkedRows(getUser(), Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()), errors, rowIdsByTargetContainer);
         if (!errors.isEmpty())
         {
             return null;
@@ -305,6 +305,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         if (_targetStudyName != null)
-            root.addChild("Copy to " + _targetStudyName + ": Verify Results");
+            root.addChild("Link to " + _targetStudyName + ": Verify Results");
     }
 }

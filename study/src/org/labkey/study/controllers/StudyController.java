@@ -355,13 +355,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
+        public ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishStartAction.class);
         }
 
         @Override
-        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishConfirmAction.class);
         }
@@ -2705,7 +2705,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Link-to-Study History Details");
+            root.addChild("Link to Study History Details");
         }
     }
 

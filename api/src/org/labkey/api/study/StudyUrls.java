@@ -39,6 +39,6 @@ public interface StudyUrls extends UrlProvider
     ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields);
     ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor);
     ActionURL getManageFileWatchersURL(Container container);
-    ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
-    ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
+    ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol);
+    ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol);
 }

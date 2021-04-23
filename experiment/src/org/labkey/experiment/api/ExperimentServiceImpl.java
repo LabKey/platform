@@ -3500,7 +3500,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                     SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
                                     Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                                    // Add an audit event to the copy to study history
+                                    // Add an audit event to the link to study history
                                     publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
 
                                     // Do the actual delete on the dataset for the rows in question

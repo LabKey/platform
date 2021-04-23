@@ -93,13 +93,13 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     @Override
     public String getLabel()
     {
-        return "Link-to-Study events";
+        return "Link to Study events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Data about assay or sample data linked and recalled to studies.";
+        return "Data about assay and sample data linked and recalled to studies.";
     }
 
     @Override

@@ -132,7 +132,7 @@ import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVEN
 import static org.labkey.study.query.DatasetTableImpl.SOURCE_ROW_LSID;
 
 /**
- * Manages the copy-to-study operation that links assay rows into datasets in the target study, creating the dataset
+ * Manages the link to study operation that links assay rows into datasets in the target study, creating the dataset
  * if needed.
  * User: Mark Igra
  * Date: Aug 16, 2006
@@ -183,7 +183,7 @@ public class StudyPublishManager implements StudyPublishService
             String legalName = ColumnInfo.legalNameFromName(targetPd.getName()).toLowerCase();
             if (legalNames.contains(legalName))
             {
-                errors.add("Unable to copy to study: duplicate column \"" + targetPd.getName() + "\" detected in the assay design.  Please contact an administrator.");
+                errors.add("Unable to link to study: duplicate column \"" + targetPd.getName() + "\" detected in the assay design.  Please contact an administrator.");
                 return Collections.emptyList();
             }
             legalNames.add(legalName);
@@ -201,7 +201,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public void checkForAlreadyCopiedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
+    public void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
                                           List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer)
     {
         for (Map.Entry<Container, Set<Integer>> entry : rowIdsByTargetContainer.entrySet())
@@ -215,15 +215,15 @@ public class StudyPublishManager implements StudyPublishService
                         publishSource.first == dataset.getPublishSource() &&
                         dataset.getKeyPropertyName() != null)
                 {
-                    // Check to see if it already has the data rows that are being copied
+                    // Check to see if it already has the data rows that are being linked
                     TableInfo tableInfo = dataset.getTableInfo(user, false);
                     Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts(dataset.getKeyPropertyName()), entry.getValue()));
                     long existingRowCount = new TableSelector(tableInfo, datasetFilter, null).getRowCount();
                     if (existingRowCount > 0)
                     {
-                        // If so, don't let the user copy them again, even if they have different participant/visit/date info
+                        // If so, don't let the user link them again, even if they have different participant/visit/date info
                         String errorMessage = existingRowCount == 1 ? "One of the selected rows has" : (existingRowCount + " of the selected rows have");
-                        errorMessage += " already been copied to the study \"" + targetStudy.getLabel() + "\" in " + entry.getKey().getPath();
+                        errorMessage += " already been linked to the study \"" + targetStudy.getLabel() + "\" in " + entry.getKey().getPath();
                         errorMessage += " (RowIds: " + entry.getValue() + ")";
                         errors.add(errorMessage);
                     }
@@ -287,8 +287,8 @@ public class StudyPublishManager implements StudyPublishService
             maps.add(dataMap);
         }
 
-        // CONSIDER: transact all copies together
-        // CONSIDER: returning list of URLS along with a count of rows copied to each study.
+        // CONSIDER: transact all linkages together
+        // CONSIDER: returning list of URLS along with a count of rows linked to each study.
         ActionURL url = null;
         for (Map.Entry<Container, List<Map<String, Object>>> entry : partitionedDataMaps.entrySet())
         {
@@ -737,7 +737,7 @@ public class StudyPublishManager implements StudyPublishService
         {
             if (!propertyNamesToUris.containsKey(newPdName))
             {
-                // We used to copy batch properties with the "Run" prefix - see if we need to rename the target column
+                // We used to link batch properties with the "Run" prefix - see if we need to rename the target column
                 if (!renameRunPropertyToBatch(domain, propertyNamesToUris, newPdNames, newPdName, user))
                 {
                     PropertyDescriptor pd = typeMap.get(newPdName);
@@ -782,7 +782,7 @@ public class StudyPublishManager implements StudyPublishService
         if (newPdName.startsWith(AssayService.BATCH_COLUMN_NAME))
         {
             String oldName = "Run" + newPdName.substring(AssayService.BATCH_COLUMN_NAME.length());
-            // Check if we don't have a different run-prefixed property to copy and and we do have a run-prefixed property in the target domain
+            // Check if we don't have a different run-prefixed property to link and and we do have a run-prefixed property in the target domain
             if (!newPdNames.contains(oldName) && propertyNamesToUris.containsKey(oldName))
             {
                 String originalURI = propertyNamesToUris.get(oldName);
@@ -1032,30 +1032,30 @@ public class StudyPublishManager implements StudyPublishService
             return false;
         }
 
-        // Check if there are any rows that have been selected to copy that have specimen data that doesn't match
+        // Check if there are any rows that have been selected to link that have specimen data that doesn't match
         // the target study
         SimpleFilter filter = new SimpleFilter(matchFieldKey, false);
         filter.addClause(new SimpleFilter.InClause(tableMetadata.getResultRowIdFieldKey(), dataRowPKs));
         return new TableSelector(tableInfo, filter, null).exists();
     }
 
-    /** Automatically copy assay data to a study if the design is set up to do so */
+    /** Automatically link assay data to a study if the design is set up to do so */
     @Override
     @Nullable
-    public ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
+    public ActionURL autoLinkResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
     {
-        LOG.debug("Considering whether to attempt auto-copy results from assay run " + run.getName() + " from container " + container.getPath());
+        LOG.debug("Considering whether to attempt auto-link results from assay run " + run.getName() + " from container " + container.getPath());
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (protocol.getObjectProperties().get(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI) != null)
+        if (protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI) != null)
         {
             // First, track down the target study
-            String targetStudyContainerId = protocol.getObjectProperties().get(StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI).getStringValue();
+            String targetStudyContainerId = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI).getStringValue();
             if (targetStudyContainerId != null)
             {
-                LOG.debug("Found configured target study container ID, " + targetStudyContainerId + " for auto-copy with " + run.getName() + " from container " + container.getPath());
+                LOG.debug("Found configured target study container ID, " + targetStudyContainerId + " for auto-linking with " + run.getName() + " from container " + container.getPath());
                 final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
 
-                return autoCopyResults(protocol, provider, run, user, container, targetStudyContainer, errors, LOG);
+                return autoLinkResults(protocol, provider, run, user, container, targetStudyContainer, errors, LOG);
             }
         }
 
@@ -1063,12 +1063,12 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Nullable
-    public ActionURL autoCopyResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,
-                                        Container targetStudyContainer, List<String> errors, Logger log)
+    public ActionURL autoLinkResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,
+                                     Container targetStudyContainer, List<String> errors, Logger log)
     {
         if (targetStudyContainer != null)
         {
-            if (targetStudyContainer.equals(StudyPublishService.AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER))
+            if (targetStudyContainer.equals(StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER))
             {
                 // this configuration translates to the current folder
                 targetStudyContainer = container;
@@ -1090,11 +1090,11 @@ public class StudyPublishManager implements StudyPublishService
                 if (!hasPermission)
                 {
                     // We don't have permission to create or add to
-                    log.error("Insufficient permission to copy assay data to study in folder : " + targetStudyContainer.getPath());
+                    log.error("Insufficient permission to link assay data to study in folder : " + targetStudyContainer.getPath());
                     return null;
                 }
 
-                log.debug("Resolved target study in container " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
+                log.debug("Resolved target study in container " + targetStudyContainer.getPath() + " for auto-linking with " + run.getName() + " from container " + container.getPath());
 
                 FieldKey ptidFK = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
                 FieldKey visitFK = provider.getTableMetadata(protocol).getVisitIDFieldKey(study.getTimepointType());
@@ -1103,7 +1103,7 @@ public class StudyPublishManager implements StudyPublishService
 
                 AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
 
-                // Do a query to get all the info we need to do the copy
+                // Do a query to get all the info we need to do the link
                 TableInfo resultTable = schema.createDataTable(null, false);
 
                 // Check if we can resolve the PTID column by name. See issue 32281
@@ -1135,36 +1135,36 @@ public class StudyPublishManager implements StudyPublishService
                     String ptid = ptidObject == null ? null : ptidObject.toString();
                     int objectId = ((Number) objectIdColumn.getValue(rs)).intValue();
                     Object visit = visitColumn == null ? null : visitColumn.getValue(rs);
-                    // Only copy rows that have a participant and a visit/date
+                    // Only link rows that have a participant and a visit/date
                     if (ptid != null && visit != null)
                     {
                         PublishKey key;
-                        // 13647: Conversion exception in assay auto copy-to-study
+                        // 13647: Conversion exception in assay auto link to study
                         if (study.getTimepointType().isVisitBased())
                         {
                             float visitId = Float.parseFloat(visit.toString());
                             key = new PublishKey(targetContainer, ptid, visitId, objectId);
-                            log.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                            log.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-linking of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                         }
                         else
                         {
                             Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
                             key = new PublishKey(targetContainer, ptid, date, objectId);
-                            log.debug("Resolved info (" + ptid + "/" + date + ") for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                            log.debug("Resolved info (" + ptid + "/" + date + ") for auto-linking of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                         }
                         keys.put(objectId, key);
                     }
                     else
                     {
-                        log.debug("Missing ptid and/or visit info for auto-copy of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                        log.debug("Missing ptid and/or visit info for auto-linking of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
                     }
                 });
 
-                log.debug("Identified " + keys + " rows with sufficient data to copy to " + targetStudyContainer.getPath() + " for auto-copy with " + run.getName() + " from container " + container.getPath());
-                return provider.copyToStudy(user, container, protocol, targetStudyContainer, keys, errors);
+                log.debug("Identified " + keys + " rows with sufficient data to link to " + targetStudyContainer.getPath() + " for auto-linking with " + run.getName() + " from container " + container.getPath());
+                return provider.linkToStudy(user, container, protocol, targetStudyContainer, keys, errors);
             }
             else
-                log.info("Unable to copy the assay data, there is no study in the folder: " + targetStudyContainer.getPath());
+                log.info("Unable to link the assay data, there is no study in the folder: " + targetStudyContainer.getPath());
         }
         return null;
     }
@@ -1181,7 +1181,7 @@ public class StudyPublishManager implements StudyPublishService
             ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, protocolName);
             baseProtocol.setLSID(protocolLsid);
             baseProtocol.setMaxInputMaterialPerInstance(0);
-            baseProtocol.setProtocolDescription("Simple protocol for publishing study using copy to study.");
+            baseProtocol.setProtocolDescription("Simple protocol for publishing study using link to study.");
             return ExperimentService.get().insertSimpleProtocol(baseProtocol, user);
         }
         return protocol;
@@ -1214,7 +1214,7 @@ public class StudyPublishManager implements StudyPublishService
         // Remember all of the run RowIds for a given protocol (assay design)
         Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
 
-        // Go through the runs and figure out what protocols they belong to, and what datasets they could have been copied to
+        // Go through the runs and figure out what protocols they belong to, and what datasets they could have been linked to
         for (ExpRun run : runs)
         {
             ExpProtocol protocol = run.getProtocol();
@@ -1241,7 +1241,7 @@ public class StudyPublishManager implements StudyPublishService
             for (DatasetDefinition dataset : entry.getValue())
             {
                 // Don't enforce permissions for the current user - we still want to tell them if the data
-                // has been copied even if they can't see the dataset.
+                // has been linked even if they can't see the dataset.
                 UserSchema schema = StudyQuerySchema.createSchema(dataset.getStudy(), user, false);
                 TableInfo tableInfo = schema.getTable(dataset.getName());
                 AssayProvider provider = AssayService.get().getProvider(entry.getKey());
