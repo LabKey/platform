@@ -218,9 +218,7 @@ Click the Save button at any time to accept the current settings and continue.</
                 <td valign="top">
                     <label>
                         <input type="radio" name="usageReportingLevel" id="usageReportingLevel2" onchange="enableUsageTest();"
-                               value="ON"<%=checked("MEDIUM".equals(appProps.getUsageReportingLevel().toString()) ||
-                               "LOW".equals(appProps.getUsageReportingLevel().toString()) ||
-                               "ON".equals(appProps.getUsageReportingLevel().toString()))%>>
+                               value="ON"<%=checked("ON".equals(appProps.getUsageReportingLevel().toString()))%>>
                         <strong>ON</strong> - Check for updates and report system information, usage data, and organization details.
                     </label>
                 </td>
