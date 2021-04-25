@@ -5,4 +5,4 @@ WHERE   Set IN
         FROM prop.PropertySets
         WHERE Category = 'SiteConfig')
 AND     Name = 'usageReportingLevel'
-AND     value = 'MEDIUM';
+AND     value IN ('MEDIUM', 'LOW');
