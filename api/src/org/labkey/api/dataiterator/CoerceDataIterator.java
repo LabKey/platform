@@ -29,7 +29,6 @@ import java.util.Set;
 /**
  * User: matthewb
  * Date: 2011-08-26
- * Time: 1:42 PM
  *
  * This iterator is called prepares data for the BeforeTriggerDataIterator.
  * We do a best attempt at converting to the target type, but to not fail if
@@ -70,7 +69,7 @@ public class CoerceDataIterator extends SimpleTranslator
                 else if (to.getFk() instanceof MultiValuedForeignKey)
                     addColumn(to.getName(), i); // pass-through multi-value columns -- converting will stringify a collection
                 else
-                    addConvertColumn(to.getName(), i, to.getJdbcType(), false);
+                    addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), true);
             }
             else
             {

@@ -217,7 +217,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None)
                 {
                     // usually we let DataIterator handle convert, but we need to convert for consistent _key/lsid generation
-                    out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
+                    out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null, null != match.getMvColumnName());
                 }
                 else if (match.getPropertyType() == PropertyType.FILE_LINK)
                 {
