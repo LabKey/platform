@@ -130,7 +130,7 @@ public class SurveyModule extends DefaultModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, NAME, () -> {
+            svc.registerUsageMetrics(UsageReportingLevel.ON, NAME, () -> {
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("surveyDesigns", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.SurveyDesigns").getObject(Long.class));
                 metric.put("surveys", new SqlSelector(DbSchema.get("survey", DbSchemaType.Module), "SELECT COUNT(*) FROM survey.Surveys").getObject(Long.class));

@@ -980,7 +980,7 @@ public class QueryManager
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, moduleName, () -> {
+            svc.registerUsageMetrics(UsageReportingLevel.ON, moduleName, () -> {
                 Bag<String> bag = DbScope.getDbScopes().stream()
                         .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
                         .collect(Collectors.toCollection(HashBag::new));
