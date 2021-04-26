@@ -7,7 +7,8 @@ import {
     Alert,
     EntityInsertPanel,
     initQueryGridState,
-    SampleTypeDataType
+    SampleTypeDataType,
+    Location,
 } from '@labkey/components';
 
 export const SampleInsertPage: FC = memo(() => {
@@ -36,6 +37,7 @@ export const SampleInsertPage: FC = memo(() => {
                 }}
                 nounPlural="samples"
                 nounSingular="sample"
+                location={{ query: {} } as Location}
             />
         </>
     );
