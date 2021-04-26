@@ -445,7 +445,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.ON, MODULE_NAME, () -> {
+            svc.registerUsageMetrics(MODULE_NAME, () -> {
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("studyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
                 metric.put("datasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));

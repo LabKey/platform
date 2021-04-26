@@ -51,16 +51,15 @@ public interface UsageMetricsService
     }
 
     /** @return map of module name to a map of metric names/values */
-    @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics(UsageReportingLevel level);
+    @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics();
 
     /**
      *  Method to register a module's metrics. Call from doStartup() / startupAfterSpringConfiguration()
      *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
      *
-     * @param level The UsageReportingLevel at which to include these metrics, LOW or MEDIUM.
      * @param moduleName The name of the module
      * @param metrics Implementation of the functional interface UsageMetricsProvider.getUsageMetrics() method. Typically
      *                this will return a map of metric name -> value pairs.
      */
-    void registerUsageMetrics(UsageReportingLevel level, String moduleName, UsageMetricsProvider metrics);
+    void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
 }

@@ -964,7 +964,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();
 
-        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.ON, getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
             Map<String, Object> javaInfo = new HashMap<>();
             javaInfo.put("java.vendor", System.getProperty("java.vendor"));

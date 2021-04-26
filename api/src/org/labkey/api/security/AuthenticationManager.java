@@ -1369,7 +1369,7 @@ public class AuthenticationManager
 
     public static void registerMetricsProvider()
     {
-        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.ON, ModuleLoader.getInstance().getCoreModule().getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), () -> {
             Map<String, Long> map = AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
                 .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
 
