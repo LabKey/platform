@@ -439,6 +439,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             return (QueryParseException) e;
         }
+        if (e instanceof QueryException)
+        {
+            return new QueryParseException(e.getMessage(), e.getCause(), 0, 0);
+        }
         if (e instanceof BadSqlGrammarException || e instanceof DataIntegrityViolationException)
         {
             return new QueryParseException(e.getMessage(), e, 0, 0);

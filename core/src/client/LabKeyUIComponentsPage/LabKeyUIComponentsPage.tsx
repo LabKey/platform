@@ -35,6 +35,7 @@ import {
     ChangePasswordModal,
     UserDetailHeader,
     SelectInput,
+    ServerContextProvider,
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
@@ -164,19 +165,17 @@ export class App extends React.Component<any, State> {
         this.setState((state) => ({showChangePassword: !state.showChangePassword}));
     };
 
-    onFileUpload(attachments: Map<string, File>) {
-        alert("Uploading " + attachments.size + " files...just kidding, not actually uploading those files.");
-    }
-
     onToggleButtonsClick = (selectedToggleButton: string) => {
         this.setState(() => ({selectedToggleButton}));
     };
 
     render() {
         const { selected, showProgress, showConfirm, showLoadingModal, showChangePassword } = this.state;
+        const serverContext = getServerContext();
+        const ctx = Object.assign({}, serverContext, { user: new User(serverContext.user) });
 
         return (
-            <>
+            <ServerContextProvider initialContext={ctx}>
                 <p>
                     This page is setup to show examples of shared React components from
                     the <a href={'https://github.com/LabKey/labkey-ui-components'} target={'_blank'}>labkey-ui-components</a> repository.
@@ -370,7 +369,7 @@ export class App extends React.Component<any, State> {
                 {selected === 'PageDetailHeader' &&
                     this.renderPanel('PageDetailHeader',
                         <PageDetailHeader
-                            user={new User(getServerContext().user)}
+                            user={ctx.user}
                             iconDir={'_images'}
                             title={'Page Detail Header'}
                             subTitle={'With a subtitle'}
@@ -451,15 +450,15 @@ export class App extends React.Component<any, State> {
                     this.renderPanel('UserDetailHeader',
                         <>
                             <UserDetailHeader
-                                title={'Welcome, ' + getServerContext().user.displayName}
-                                user={new User(getServerContext().user)}
+                                title={'Welcome, ' + ctx.user.displayName}
+                                user={ctx.user}
                                 userProperties={fromJS({})}
-                                dateFormat={getServerContext().container.formats.dateFormat.toUpperCase()}
+                                dateFormat={ctx.container.formats.dateFormat.toUpperCase()}
                                 renderButtons={() => <Button onClick={this.toggleChangePassword} disabled={showChangePassword}>Change Password</Button>}
                             />
                             {showChangePassword &&
                             <ChangePasswordModal
-                                    user={new User(getServerContext().user)}
+                                    user={ctx.user}
                                     onSuccess={() => {
                                         alert('Your password has been changed.');
                                     }}
@@ -470,7 +469,7 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'UserProfile' &&
-                    <UserProfilePage user={new User(getServerContext().user)}/>
+                    <UserProfilePage user={ctx.user}/>
                 }
                 {selected === 'WizardNavButtons' &&
                     this.renderPanel('WizardNavButtons',
@@ -482,7 +481,7 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
-            </>
+            </ServerContextProvider>
         )
     }
 }
