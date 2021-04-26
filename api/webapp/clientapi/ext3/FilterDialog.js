@@ -1451,8 +1451,8 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
                 }],
                 listeners: {
                     render: () => {
-                        // const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                        const conceptFilterScript = 'core/gen/conceptFilter';
+                        const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
+                        // const conceptFilterScript = 'core/gen/conceptFilter';
                         LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId, index, scope:this});
                     }
                 },
@@ -1501,8 +1501,10 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
 
         // Update concept filters if possible
         if (this.updateConceptFilters[f]) {
+            const filter = this.filters[f];
             const conceptBrowserUpdater = this.updateConceptFilters[f];
-            conceptBrowserUpdater.setValue(inputValue);
+
+            conceptBrowserUpdater.setValue(filter.getURLParameterValue());
             conceptBrowserUpdater.setFilterType(filter.getFilterType());
         }
     },
