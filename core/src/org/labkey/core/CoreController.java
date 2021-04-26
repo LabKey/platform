@@ -2639,37 +2639,36 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(ClientSideMetricForm form, Errors errors)
         {
-            if (StringUtils.isEmpty(form.getMetricName()))
-                errors.reject(ERROR_MSG, "Must provide a metricName.");
+            if (StringUtils.isEmpty(form.getFeatureArea()) || StringUtils.isEmpty(form.getMetricName()))
+                errors.reject(ERROR_MSG, "Must provide both a featureArea and metricName.");
         }
 
         @Override
         public ApiResponse execute(ClientSideMetricForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            String name = form.getMetricName();
-            if (!StringUtils.isEmpty(form.getApplicationName()))
-                name = form.getApplicationName() + "_" + name;
-            name = name.replaceAll("\\s","");
-            response.put("name", name);
-            response.put("count", ClientSideMetricManager.get().increment(name));
+            String featureArea = form.getFeatureArea();
+            String metricName = form.getMetricName();
+            response.put("featureArea", featureArea);
+            response.put("metricName", metricName);
+            response.put("count", ClientSideMetricManager.get().increment(featureArea, metricName));
             return response;
         }
     }
 
     public static class ClientSideMetricForm
     {
-        private String _applicationName;
+        private String _featureArea;
         private String _metricName;
 
-        public String getApplicationName()
+        public String getFeatureArea()
         {
-            return _applicationName;
+            return _featureArea;
         }
 
-        public void setApplicationName(String applicationName)
+        public void setFeatureArea(String featureArea)
         {
-            _applicationName = applicationName;
+            _featureArea = featureArea;
         }
 
         public String getMetricName()
