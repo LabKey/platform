@@ -1654,10 +1654,6 @@ public class CoreController extends SpringActionController
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    User saveUser = UserManager.getUser(row.getInt("userId"));
-                    if (saveUser == null)
-                        throw new IllegalArgumentException("Invalid user: " + row.getInt("userId"));
-
                     mp.saveValue(ctx.getUser(), ct, row.getString("value"));
                 }
                 transaction.commit();

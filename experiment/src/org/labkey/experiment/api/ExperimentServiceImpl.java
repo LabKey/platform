@@ -3503,7 +3503,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                     // Do the actual delete on the dataset for the rows in question
                                     dataset.deleteDatasetRows(user, lsids);
 
-                                    // Add an audit event to the copy to study history
+                                    // Add an audit event to the link to study history
                                     publishService.addRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
                                 }
                             }

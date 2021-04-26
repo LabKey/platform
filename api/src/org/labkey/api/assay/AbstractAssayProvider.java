@@ -206,7 +206,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors)
+    public ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors)
     {
         try
         {
@@ -270,7 +270,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(getTableMetadata(protocol).getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
-                    // Remember which rows we're planning to copy, partitioned by the target study
+                    // Remember which rows we're planning to link, partitioned by the target study
                     Set<Integer> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
                     if (rowIds == null)
                     {
@@ -282,7 +282,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMaps.add(dataMap);
                 }
 
-                StudyPublishService.get().checkForAlreadyCopiedRows(user, Pair.of(Dataset.PublishSource.Assay, protocol.getRowId()), errors, rowIdsByTargetContainer);
+                StudyPublishService.get().checkForAlreadyLinkedRows(user, Pair.of(Dataset.PublishSource.Assay, protocol.getRowId()), errors, rowIdsByTargetContainer);
                 if (!errors.isEmpty())
                 {
                     return null;
@@ -776,7 +776,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return matches.isEmpty() ? null : matches.iterator().next();
     }
 
-    /** Resolve result rows to their owning ExpData object. Optional method for assays that support copy-to-study */
+    /** Resolve result rows to their owning ExpData object. Optional method for assays that support link to study */
     public Set<ExpData> getDatasForResultRows(Collection<Integer> rowIds, ExpProtocol protocol, ResolverCache cache)
     {
         return Collections.emptySet();

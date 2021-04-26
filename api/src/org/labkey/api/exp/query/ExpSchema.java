@@ -434,6 +434,18 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
+    public ForeignKey getMaterialForeignKey(ContainerFilter cf, String targetColumnName)
+    {
+        return new LookupForeignKey(targetColumnName)
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.Materials.toString(), cf);
+            }
+        };
+    }
+
     public ForeignKey getMaterialProtocolInputForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.MaterialProtocolInputs.name(), "RowId", null)
