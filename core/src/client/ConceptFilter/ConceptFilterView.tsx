@@ -25,7 +25,6 @@ interface Props {
 }
 
 export const ConceptFilterView: FC<Props> = memo(props => {
-    const {context} = props;
     const {
         initFilterValue,
         initFilter,
@@ -36,14 +35,14 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         subscribeFilterTypeChanged,
         unsubscribeFilterTypeChanged,
         loadListener,
-    } = context;
+    } = props.context;
     const [filterValue, setFilterValue] = useState(initFilterValue);
     const [filter, setFilter] = useState(initFilter);
-    const [collapsed, setHidden] = useState<boolean>(true);
+    const [collapsed, setCollapsed] = useState<boolean>(true);
 
     const clickHandler = useCallback(() => {
-        setHidden(!collapsed);
-    },[collapsed, setHidden]);
+        setCollapsed(!collapsed);
+    },[collapsed, setCollapsed]);
 
     useEffect(() => {
         const handleValueChange = (newValue: string) => {
@@ -61,7 +60,7 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         subscribeFilterTypeChanged(handleFilterChange);
         return () => unsubscribeFilterTypeChanged(handleFilterChange);
 
-    },[setFilter, subscribeFilterValue, unsubscribeFilterValue]);
+    },[setFilter, subscribeFilterTypeChanged, unsubscribeFilterTypeChanged]);
 
     useEffect(() => {
         loadListener();
