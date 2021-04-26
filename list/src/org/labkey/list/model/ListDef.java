@@ -24,6 +24,7 @@ import org.labkey.api.exp.list.ListDefinition.BodySetting;
 import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
 import org.labkey.api.exp.list.ListDefinition.IndexSetting;
 import org.labkey.api.exp.list.ListDefinition.TitleSetting;
+import org.labkey.api.exp.list.ListDefinition.Category;
 import org.labkey.api.util.UnexpectedException;
 
 import java.util.Date;
@@ -39,6 +40,7 @@ public class ListDef extends Entity implements Cloneable
     protected String _description;
     protected Date _lastIndexed;
 
+    protected Category _category = null;
     protected DiscussionSetting _discussionSetting = DiscussionSetting.None;
     protected boolean _allowDelete = true;
     protected boolean _allowUpload = true;
@@ -97,6 +99,11 @@ public class ListDef extends Entity implements Cloneable
     public Date getLastIndexed()
     {
         return _lastIndexed;
+    }
+
+    public Category getCategory()
+    {
+        return _category;
     }
 
     public int getDiscussionSetting()
@@ -220,6 +227,7 @@ public class ListDef extends Entity implements Cloneable
         to._titleColumn = _titleColumn;
         to._description = _description;
         to._lastIndexed = _lastIndexed;
+        to._category = _category;
         to._discussionSetting = _discussionSetting;
         to._allowDelete = _allowDelete;
         to._allowUpload = _allowUpload;
@@ -263,6 +271,7 @@ public class ListDef extends Entity implements Cloneable
             return false;
         if (_lastIndexed != null ? !_lastIndexed.equals(listDef._lastIndexed) : listDef._lastIndexed != null)
             return false;
+        if (_category != listDef._category) return false;
         if (_discussionSetting != listDef._discussionSetting) return false;
         if (_entireListIndexSetting != listDef._entireListIndexSetting) return false;
         if (_entireListTitleSetting != listDef._entireListTitleSetting) return false;
@@ -290,6 +299,7 @@ public class ListDef extends Entity implements Cloneable
         result = 31 * result + (_titleColumn != null ? _titleColumn.hashCode() : 0);
         result = 31 * result + (_description != null ? _description.hashCode() : 0);
         result = 31 * result + (_lastIndexed != null ? _lastIndexed.hashCode() : 0);
+        result = 31 * result + (_category != null ? _category.hashCode() : 0);
         result = 31 * result + (_discussionSetting != null ? _discussionSetting.hashCode() : 0);
         result = 31 * result + (_allowDelete ? 1 : 0);
         result = 31 * result + (_allowUpload ? 1 : 0);
@@ -379,6 +389,7 @@ public class ListDef extends Entity implements Cloneable
         {
             _lastIndexed = lastIndexed;
         }
+        public void setCategory(Category category) { _category = category; }
         public void setDiscussionSetting(int value)
         {
             _discussionSetting = DiscussionSetting.getForValue(value);

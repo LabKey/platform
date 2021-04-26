@@ -168,6 +168,12 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
+    enum Category
+    {
+        PrivatePicklist,
+        PublicPicklist
+    }
+
     enum IndexSetting
     {
         MetaData(0, true, false),
