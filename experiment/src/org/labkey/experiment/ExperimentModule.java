@@ -425,7 +425,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.ON, MODULE_NAME, () -> {
+            svc.registerUsageMetrics(MODULE_NAME, () -> {
                 Map<String, Object> results = new HashMap<>();
                 if (AssayService.get() != null)
                 {
