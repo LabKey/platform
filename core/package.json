@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.3.0-fb-ontFilter.3",
-    "@labkey/components": "2.24.4-fb-ontFilter.7",
+    "@labkey/components": "2.25.0-fb-ontFilter.8",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.1.1"
   },
