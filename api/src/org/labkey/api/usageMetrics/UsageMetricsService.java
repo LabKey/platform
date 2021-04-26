@@ -29,7 +29,7 @@ import java.util.Map;
  *         UsageMetricsService svc = UsageMetricsService.get();
  *         if (null != svc)
  *         {
- *             svc.registerUsageMetrics(UsageReportingLevel.ON, NAME, () -> {
+ *             svc.registerUsageMetrics(moduleName, () -> {
  *                 Map<String, Object> metric = new HashMap<>();
  *                 metric.put("etlRunCount", new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class));
  *                 return metric;
