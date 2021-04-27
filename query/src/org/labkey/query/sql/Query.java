@@ -1218,9 +1218,9 @@ public class Query
             {
                 ResultSetMetaData md = rs.getMetaData();
                 if (_countColumns >= 0)
-                    QueryTestCase.assertEquals(_sql, _countColumns, md.getColumnCount());
+                    QueryTestCase.assertEquals("Wrong number of columns. " + _sql, _countColumns, md.getColumnCount());
                 if (_countRows >= 0)
-                    QueryTestCase.assertEquals(_sql, _countRows, rs.getSize());
+                    QueryTestCase.assertEquals("Wrong number of rows. " + _sql, _countRows, rs.getSize());
 
                 validateResults(rs);
 
@@ -1230,7 +1230,7 @@ public class Query
                     QueryDefinition existing = QueryService.get().getQueryDef(user, container, "lists", _name);
                     if (null != existing)
                         existing.delete(TestContext.get().getUser());
-                    QueryDefinition q = QueryService.get().createQueryDef(user, container, "lists", _name);
+                    QueryDefinition q = QueryService.get().createQueryDef(user, container, SchemaKey.fromString("lists"), _name);
                     q.setSql(_sql);
                     if (null != _metadata)
                         q.setMetadataXml(_metadata);
@@ -1312,9 +1312,17 @@ public class Query
 
     static class FailTest extends SqlTest
     {
-        FailTest(String sql)
+        private final boolean _onlyQueryParseExceptions;
+
+        public FailTest(String sql, boolean onlyQueryParseExceptions)
         {
             super(sql);
+            this._onlyQueryParseExceptions = onlyQueryParseExceptions;
+        }
+
+        FailTest(String sql)
+        {
+            this(sql, true);
         }
 
         @Override
@@ -1330,7 +1338,10 @@ public class Query
             }
             catch (Exception x)
             {
-                QueryTestCase.fail("unexpected exception: " + x.toString());
+                if (!(x instanceof QueryException) || _onlyQueryParseExceptions)
+                {
+                    throw new AssertionError("unexpected exception: " + x.getMessage(), x);
+                }
             }
         }
     }
@@ -1382,6 +1393,7 @@ public class Query
         new SqlTest("SELECT R.seven FROM R UNION ALL SELECT R.seven FROM R UNION ALL SELECT R.twelve FROM R", 1, 3*Rsize),
         new SqlTest("SELECT u.seven FROM (SELECT R.seven FROM R UNION SELECT R.seven FROM R UNION SELECT R.twelve FROM R) u WHERE u.seven > 5", 1, 6),
 
+        new SqlTest("SELECT d, seven, twelve, (twelve/2) AS half FROM R", 4, Rsize), // Calculated column
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM R", 8, Rsize),
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM lists.R", 8, Rsize),
         new SqlTest("SELECT d, seven, twelve, day, month, date, duration, guid FROM Folder.qtest.lists.S", 8, Rsize),
@@ -1440,12 +1452,17 @@ public class Query
                 "FROM R\n" +
                 "GROUP BY seven, month\n" +
                 "PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"),
-        // Regression tests for issue 27910: pivot query summary columns not aggregated correctly
+        // Regression tests for Issue 27910: pivot query summary columns not aggregated correctly
         new SqlTest("SELECT day, month, count(*) as total, " +
                 "SUM(CASE WHEN month = 'April' THEN 1 ELSE 0 END) AS A, " +
                 "SUM(CASE WHEN month = 'May' THEN 1 ELSE 0 END) AS M " +
                 "FROM lists.R GROUP BY month, day " +
                 "PIVOT A, M BY month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')", 28, 7),
+        // Verify pivot on sub-select
+        new SqlTest("SELECT A, B, count(*) As C " +
+            "FROM (SELECT seven as A, twelve/1 AS B FROM lists.R) " +
+            "GROUP BY A, B " +
+            "PIVOT C BY B", 14, 7),
 
         // saved queries
         new SqlTest("Rquery",
@@ -1815,7 +1832,13 @@ public class Query
         new FailTest("SELECT A.Name FROM core.Modules A FULL JOIN core.Modules B ON B.Name=C.Name FULL JOIN core.Modules C ON A.Name=C.Name"), // Missing from-clause entry
 
         // trailing semicolon in subselect
-        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X")
+        new FailTest("SELECT Parent FROM (SELECT Parent FROM core.containers;) AS X"),
+
+        // Regression test for Issue 40618: Generate better error message when PIVOT column list can't be computed due to bad sql
+        new FailTest("SELECT A, B, count(*) As C " +
+            "FROM (SELECT seven as A, twelve/0 AS B FROM lists.R) " +
+            "GROUP BY A, B " +
+            "PIVOT C BY B", false)
     };
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
