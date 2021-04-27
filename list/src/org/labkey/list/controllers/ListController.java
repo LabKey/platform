@@ -64,6 +64,7 @@ import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AbstractQueryImportAction;
@@ -78,8 +79,10 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -105,6 +108,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditProvider;
+import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListDomainKindProperties;
 import org.labkey.list.model.ListManager;
@@ -275,8 +279,8 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignListPermission.class)
-    public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
+    @RequiresAnyOf({DesignListPermission.class, ManagePicklistsPermission.class})
+    public static class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
         private final ArrayList<Integer> _listIDs = new ArrayList<>();
         private final ArrayList<Container> _containers = new ArrayList<>();
@@ -286,23 +290,45 @@ public class ListController extends SpringActionController
         {
             if (form.getListId() == null)
             {
-                String failMessage = "You do not have permission to delete: \n";
+                List<String> errorMessages = new ArrayList<>();
                 Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
                 for (String s : listIDs)
                 {
                     String[] parts = s.split(",");
                     Container c = ContainerManager.getForId(parts[1]);
-                    if(c.hasPermission(getUser(), DesignListPermission.class)){
-                        _listIDs.add(Integer.parseInt(parts[0]));
-                        _containers.add(c);
-                    }
+                    if (c == null)
+                        errorMessages.add(String.format("Container not found for %s", s));
                     else
                     {
-                        failMessage = failMessage + "\t" + ListService.get().getList(c, Integer.parseInt(parts[0])).getName() + " in Container: " + c.getName() +"\n";
+                        int listId = Integer.parseInt(parts[0]);
+                        ListDef listDef = ListManager.get().getList(c, listId);
+                        boolean isPicklist = listDef.getCategory() != null;
+                        if (isPicklist)
+                        {
+                            boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
+                            boolean canDeletePicklist = isOwnPicklist && c.hasPermission(getUser(), ManagePicklistsPermission.class) ||
+                                    (listDef.getCategory() == ListDefinition.Category.PublicPicklist && c.hasPermission(getUser(), ApplicationAdminPermission.class));
+                            if (canDeletePicklist)
+                            {
+                                _listIDs.add(listId);
+                                _containers.add(c);
+                            }
+                            else
+                                errorMessages.add(String.format("You do not have permission to delete picklist %s in container %s", listDef.getName(), c.getName()));
+                        }
+                        else if (c.hasPermission(getUser(), DesignListPermission.class))
+                        {
+                            _listIDs.add(listId);
+                            _containers.add(c);
+                        }
+                        else
+                        {
+                            errorMessages.add(String.format("You do not have permission to delete the list %s in container %s", listDef.getName(), c.getName()));
+                        }
                     }
                 }
-                if(!failMessage.equals("You do not have permission to delete: \n"))
-                    errors.reject("DELETE PERMISSION ERROR", failMessage);
+                if (!errorMessages.isEmpty())
+                    errors.reject(ERROR_MSG,  StringUtils.join(errorMessages, "\n"));
             }
             else
             {

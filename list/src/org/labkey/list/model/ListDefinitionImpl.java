@@ -180,6 +180,12 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
+    public Category getCategory()
+    {
+        return _def.getCategory();
+    }
+
+    @Override
     public DiscussionSetting getDiscussionSetting()
     {
         return _def.getDiscussionSettingEnum();

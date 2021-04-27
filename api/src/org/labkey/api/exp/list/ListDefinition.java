@@ -343,6 +343,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     Collection<String> getDependents(User user);
 
+    Category getCategory();
     DiscussionSetting getDiscussionSetting();
     void setDiscussionSetting(DiscussionSetting discussionSetting);
 

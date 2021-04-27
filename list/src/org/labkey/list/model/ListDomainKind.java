@@ -55,6 +55,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -63,6 +64,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -326,16 +328,42 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return true;
     }
 
-    @Override
-    public boolean canCreateDefinition(User user, Container container)
+//    @Override
+//    public boolean canCreateDefinition(User user, Container container)
+//    {
+//        return container.hasPermission("ListDomainKind.canCreateDefinition", user, DesignListPermission.class);
+//    }
+//
+
+    private ListDefinition.Category getCategory(String name)
     {
+        if (StringUtils.isEmpty(name))
+            return null;
+        try
+        {
+            return ListDefinition.Category.valueOf(name.trim());
+        }
+        catch (IllegalArgumentException e)
+        {
+            return null;
+        }
+    }
+
+    private boolean canCreateDefinition(User user, Container container, ListDomainKindProperties options)
+    {
+        ListDefinition.Category category = getCategory(options.getCategory());
+
+        if (category != null)
+            return container.hasPermission("ListDomainKind.canCreateDefinition for picklist", user, ManagePicklistsPermission.class);
         return container.hasPermission("ListDomainKind.canCreateDefinition", user, DesignListPermission.class);
     }
 
-    @Override
-    public boolean canEditDefinition(User user, Domain domain)
+    public boolean canEditDefinition(User user, Domain domain, ListDomainKindProperties options)
     {
         Container c = domain.getContainer();
+        ListDefinition.Category category = getCategory(options.getCategory());
+        if (category != null)
+            return c.hasPermission("ListDomainKind.canEditDefinition for picklist", user, ManagePicklistsPermission.class);
         return c.hasPermission("ListDomainKind.canEditDefinition", user, DesignListPermission.class);
     }
 
@@ -694,5 +722,17 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     public void ensureBaseProperties(Domain d)
     {
         var props = getBaseProperties(d);
+    }
+
+    @Override
+    public void validateOptions(Container container, User user, ListDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    {
+        boolean isUpdate = domain != null;
+
+        if (!isUpdate && !canCreateDefinition(user, container, options))
+            throw new UnauthorizedException("You don't have permission to create a new domain");
+
+        if (isUpdate && !canEditDefinition(user, domain, options))
+            throw new UnauthorizedException("You don't have permission to edit this domain");
     }
 }
