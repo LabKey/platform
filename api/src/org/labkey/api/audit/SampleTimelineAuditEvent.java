@@ -196,6 +196,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         elements.put("isLineageUpdate", getIsLineageUpdate());
         elements.put("inventoryUpdateType", getInventoryUpdateType());
         elements.put("transactionId", getTransactionId());
+        elements.put("metadata", getMetadata());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }

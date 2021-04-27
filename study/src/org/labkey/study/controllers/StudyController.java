@@ -67,6 +67,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
@@ -189,6 +190,8 @@ import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
+import org.labkey.study.controllers.publish.SampleTypePublishConfirmAction;
+import org.labkey.study.controllers.publish.SampleTypePublishStartAction;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -355,6 +358,15 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getLinkToStudyURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishStartAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
+        }
+
+        @Override
         public ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishStartAction.class);
@@ -365,6 +377,16 @@ public class StudyController extends BaseStudyController
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishConfirmAction.class);
         }
+
+        @Override
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
+        }
+
     }
 
     public StudyController()

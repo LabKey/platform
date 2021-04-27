@@ -98,8 +98,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.controllers.PublishController;
+import org.labkey.study.assay.query.PublishAuditProvider;
+import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
@@ -563,7 +563,7 @@ public class StudyPublishManager implements StudyPublishService
                 int recordCount = rows.size();
 
                 String auditMessage = publishSource.getLinkToStudyAuditMessage(source, recordCount);
-                AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(), auditMessage, publishSource, source);
+                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source);
 
                 event.setTargetStudy(targetContainer.getId());
                 event.setDatasetId(dataset.getDatasetId());
@@ -996,6 +996,13 @@ public class StudyPublishManager implements StudyPublishService
                     return url;
                 }
 
+                case SampleType -> {
+                    ActionURL url = new ActionURL(PublishController.PublishSampleTypeHistoryAction.class, container).addParameter("rowId", publishSourceId);
+                    if (containerFilter != null && containerFilter.getType() != null)
+                        url.addParameter("containerFilterName", containerFilter.getType().name());
+                    return url;
+                }
+
                 default -> throw new IllegalArgumentException("No publish history view for : " + source);
             }
         }
@@ -1274,7 +1281,7 @@ public class StudyPublishManager implements StudyPublishService
                 sourceName = source.getName();
 
             String auditMessage = sourceType.getRecallFromStudyAuditMessage(sourceName, rowCount);
-            AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(), auditMessage, sourceType, source);
+            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source);
 
             event.setTargetStudy(def.getStudy().getContainer().getId());
             event.setDatasetId(def.getDatasetId());

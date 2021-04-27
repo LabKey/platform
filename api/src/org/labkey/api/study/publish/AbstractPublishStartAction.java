@@ -92,7 +92,7 @@ public abstract class AbstractPublishStartAction<FORM extends PublishStartForm> 
             }
         }
 
-        return new JspView<>("/org/labkey/study/publish/view/publishChooseStudy.jsp",
+        return new JspView<>("/org/labkey/api/study/publish/publishChooseStudy.jsp",
                 new PublishBean(getSuccessUrl(form),
                     getDataIDs(form),
                     form.getDataRegionSelectionKey(),

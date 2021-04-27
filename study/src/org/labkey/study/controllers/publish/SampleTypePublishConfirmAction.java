@@ -1,4 +1,4 @@
-package org.labkey.experiment.publish;
+package org.labkey.study.controllers.publish;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -19,6 +19,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.AbstractPublishConfirmAction;
 import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
@@ -32,7 +33,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -215,7 +215,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     protected ActionURL getPublishHandlerURL(SampleTypePublishConfirmForm form)
     {
-        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType).deleteParameters();
+        return urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType).deleteParameters();
     }
 
     @Override
@@ -301,7 +301,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     public void addNavTrail(NavTree root)
     {
         setHelpTopic(new HelpTopic("linkSampleData"));
-        root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
+        root.addChild("Sample Types", urlProvider(ExperimentUrls.class).getShowSampleTypeListURL(getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         if (_targetStudyName != null)

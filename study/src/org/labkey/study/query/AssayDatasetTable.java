@@ -34,7 +34,8 @@ public class AssayDatasetTable extends DatasetTableImpl
      * @see AssayTableMetadata#getResultLsidFieldKey()
      * @deprecated Use {@link DatasetTableImpl#SOURCE_ROW_LSID}
      */
-    public static final String LEGACY_ASSAY_RESULT_LSID = "AssayResultLsid";
+    @Deprecated
+    private static final String LEGACY_ASSAY_RESULT_LSID = "AssayResultLsid";
 
     private List<FieldKey> _defaultVisibleColumns = null;
     private TableInfo _assayResultTable;

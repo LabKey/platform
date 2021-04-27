@@ -18,6 +18,7 @@ package org.labkey.api.study;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -39,6 +40,8 @@ public interface StudyUrls extends UrlProvider
     ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields);
     ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor);
     ActionURL getManageFileWatchersURL(Container container);
+    ActionURL getLinkToStudyURL(Container container, ExpSampleType sampleType);
     ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol);
+    ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType);
     ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol);
 }
