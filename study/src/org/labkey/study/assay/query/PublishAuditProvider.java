@@ -32,7 +32,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -60,13 +59,13 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
     // NOTE: The event type is kept for backwards compatibility even though this audit log supports publish/recall events for both Assay and SampleType.
     public static final String PUBLISH_AUDIT_EVENT = "AssayPublishAuditEvent";
 
-    public static final String COLUMN_NAME_PROTOCOL = "Protocol";
-    public static final String COLUMN_NAME_SAMPLE_TYPE = "SampleType";
+    public static final String COLUMN_NAME_PROTOCOL = "Protocol"; // assay id
     public static final String COLUMN_NAME_SAMPLE_TYPE_ID = "SampleTypeID";
     public static final String COLUMN_NAME_TARGET_STUDY = "TargetStudy";
     public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
     public static final String COLUMN_NAME_SOURCE_TYPE = "SourceType";
     public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
+    public static final String COLUMN_NAME_SOURCE_NAME = "SourceName"; // assay or sample type name
     public static final String COLUMN_NAME_RECORD_COUNT = "RecordCount";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -116,11 +115,9 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
                     col.setLabel("Assay/Protocol");
                     col.setDisplayColumnFactory(colInfo -> new ProtocolColumn(colInfo, containerCol, null));
                 }
-                else if (COLUMN_NAME_SAMPLE_TYPE.equalsIgnoreCase(col.getName()))
+                else if (COLUMN_NAME_SOURCE_NAME.equalsIgnoreCase(col.getName()))
                 {
-                    // lookup SampleType by name
-                    col.setLabel("Sample Type");
-                    col.setFk(QueryForeignKey.from(getUserSchema(), cf).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.SampleSets).key(ExpSampleTypeTable.Column.Name.name()));
+                    col.setLabel("Source Name");
                 }
                 else if (COLUMN_NAME_SAMPLE_TYPE_ID.equalsIgnoreCase(col.getName()))
                 {
@@ -148,9 +145,8 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             }
         };
 
-        // TODO: change to a redirect action
         FieldKey containerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
-        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?publishSourceId=${protocol}&sampleTypeId=${sampleTypeId}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
+        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&sampleTypeId=${sampleTypeId}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
         url.setStrictContainerContextEval(true);
 
         table.setDetailsURL(url);
@@ -198,9 +194,9 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
     public static class AuditEvent extends AuditTypeEvent
     {
         private String _sourceType; // the type of published data source (assay, sample type, ...)
-        private @Nullable Integer _protocol;
-        private @Nullable String _sampleType; // sample type name
-        private @Nullable Integer _sampleTypeId;
+        private @Nullable Integer _protocol; // assay protocol id
+        private @Nullable String _sourceName; // assay name or sample type name
+        private @Nullable Integer _sampleTypeId; // sample type id
         private String _targetStudy;
         private int _datasetId;
         private String _sourceLsid;
@@ -217,11 +213,14 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             _sourceType = sourceType.name();
             if (source != null)
             {
+                setSourceName(source.getName());
+                setSourceLsid(source.getLSID());
                 switch (sourceType)
                 {
-                    case Assay -> setProtocol(source.getRowId());
+                    case Assay -> {
+                        setProtocol(source.getRowId());
+                    }
                     case SampleType -> {
-                        setSampleType(source.getName());
                         setSampleTypeId(source.getRowId());
                     }
                 }
@@ -248,14 +247,14 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             _protocol = protocol;
         }
 
-        public @Nullable String getSampleType()
+        public @Nullable String getSourceName()
         {
-            return _sampleType;
+            return _sourceName;
         }
 
-        public void setSampleType(@Nullable String sampleType)
+        public void setSourceName(@Nullable String sourceName)
         {
-            _sampleType = sampleType;
+            _sourceName = sourceName;
         }
 
         public @Nullable Integer getSampleTypeId()
@@ -313,11 +312,11 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
         {
             Map<String, Object> elements = new LinkedHashMap<>();
             elements.put("protocol", getProtocol());
-            elements.put("sampleType", getSampleType());
             elements.put("sampleTypeId", getSampleTypeId());
             elements.put("targetStudy", getTargetStudy());
             elements.put("datasetId", getDatasetId());
             elements.put("sourceType", getSourceType());
+            elements.put("sourceName", getSourceName());
             elements.put("sourceLsid", getSourceLsid());
             elements.put("recordCount", getRecordCount());
             elements.putAll(super.getAuditLogMessageElements());
@@ -338,11 +337,11 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL, PropertyType.INTEGER));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_TYPE, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_SAMPLE_TYPE_ID, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_TARGET_STUDY, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_DATASET_ID, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_TYPE, PropertyType.STRING, 20));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_SOURCE_LSID, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_RECORD_COUNT, PropertyType.INTEGER));
             _fields = Collections.unmodifiableSet(fields);
@@ -357,7 +356,10 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
         @Override
         public Set<Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(new Index(false, COLUMN_NAME_PROTOCOL));
+            return PageFlowUtil.set(
+                    new Index(false, COLUMN_NAME_PROTOCOL),
+                    new Index(false, COLUMN_NAME_SAMPLE_TYPE_ID)
+            );
         }
 
         @Override

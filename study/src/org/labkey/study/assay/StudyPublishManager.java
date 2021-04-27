@@ -543,7 +543,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     /**
-     * To help generate the assay audit record, group the rows by the source type lsid.
+     * To help generate the assay audit record, group the rows by the source type lsid (assay protocol or sample type).
      */
     private Map<String, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
     {
@@ -567,7 +567,6 @@ public class StudyPublishManager implements StudyPublishService
 
                 event.setTargetStudy(targetContainer.getId());
                 event.setDatasetId(dataset.getDatasetId());
-                event.setSourceLsid(sourceLsid);
                 event.setRecordCount(recordCount);
 
                 AuditLogService.get().addEvent(user, event);
@@ -990,7 +989,7 @@ public class StudyPublishManager implements StudyPublishService
             switch (source)
             {
                 case Assay -> {
-                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("rowId", publishSourceId);
+                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("publishSourceId", publishSourceId);
                     if (containerFilter != null && containerFilter.getType() != null)
                         url.addParameter("containerFilterName", containerFilter.getType().name());
                     return url;

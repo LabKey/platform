@@ -2667,24 +2667,82 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class PublishHistoryDetailsForm
+    {
+        private @Nullable Integer _protocolId;
+        private @Nullable Integer _sampleTypeId;
+        private int _datasetId;
+        private String _sourceLsid;
+        private int _recordCount;
+
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
+
+        public Integer getSampleTypeId()
+        {
+            return _sampleTypeId;
+        }
+
+        public void setSampleTypeId(Integer sampleTypeId)
+        {
+            _sampleTypeId = sampleTypeId;
+        }
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getSourceLsid()
+        {
+            return _sourceLsid;
+        }
+
+        public void setSourceLsid(String sourceLsid)
+        {
+            _sourceLsid = sourceLsid;
+        }
+
+        public int getRecordCount()
+        {
+            return _recordCount;
+        }
+
+        public void setRecordCount(int recordCount)
+        {
+            _recordCount = recordCount;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class PublishHistoryDetailsAction extends SimpleViewAction
+    public class PublishHistoryDetailsAction extends SimpleViewAction<PublishHistoryDetailsForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(PublishHistoryDetailsForm form, BindException errors)
         {
             final StudyImpl study = getStudyRedirectIfNull();
-            final ViewContext context = getViewContext();
 
             VBox view = new VBox();
 
-            int datasetId = NumberUtils.toInt((String)context.get(DatasetDefinition.DATASETKEY), -1);
+            int datasetId = form.getDatasetId();
             final DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
             if (def != null)
             {
                 final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
+                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
                 {
@@ -2693,12 +2751,14 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String publishSourceId = (String)getViewContext().get("publishSourceId");
-                    String sourceLsid = (String)getViewContext().get("sourceLsid");
-                    String recordCount = (String)getViewContext().get("recordCount");
+                    Integer protocolId = form.getProtocolId();
+                    Integer sampleTypeId = form.getSampleTypeId();
+                    assert protocolId != null || sampleTypeId != null : "Expected one protocolId or sampleTypeId parameters";
+                    String sourceLsid = form.getSourceLsid(); // the assay protocol or sample type LSID
+                    int recordCount = form.getRecordCount();
 
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteURL.addParameter("publishSourceId", publishSourceId);
+                    deleteURL.addParameter("publishSourceId", protocolId != null ? protocolId : sampleTypeId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
                     final ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
@@ -2707,7 +2767,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
                     PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid, def.getPublishSource(),
-                            NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
+                            protocolId != null ? protocolId : sampleTypeId, recordCount) {
 
                         @Override
                         protected void populateButtonBar(DataView view, ButtonBar bar)
