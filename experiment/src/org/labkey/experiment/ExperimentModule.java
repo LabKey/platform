@@ -191,6 +191,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, "Sample aliquot",
                 "Support creation of sample aliquot", false);
 
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_PICKLIST, "Sample picklists",
+                "Support creation of sample picklists", false);
+
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
