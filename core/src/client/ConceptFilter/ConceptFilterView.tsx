@@ -7,6 +7,7 @@ import { Filter, } from '@labkey/api';
 
 type ChangeListener = (newValue: string) => void;
 type FilterChangeListener = (filter: Filter.IFilterType) => void;
+type CollapseChangeListener = (collapse: boolean) => void;
 
 export interface AppContext {
     ontologyId: string;
@@ -18,6 +19,9 @@ export interface AppContext {
     subscribeFilterTypeChanged: (listener: FilterChangeListener) => void;
     unsubscribeFilterTypeChanged: (listener: FilterChangeListener) => void;
     loadListener: () => void;
+    subscribeCollapse: (listener: CollapseChangeListener) => void;
+    unsubscribeCollapse: () => void;
+    onOpen: () => void;
 }
 
 interface Props {
@@ -35,6 +39,9 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         subscribeFilterTypeChanged,
         unsubscribeFilterTypeChanged,
         loadListener,
+        subscribeCollapse,
+        unsubscribeCollapse,
+        onOpen,
     } = props.context;
     const [filterValue, setFilterValue] = useState(initFilterValue);
     const [filter, setFilter] = useState(initFilter);
@@ -42,6 +49,7 @@ export const ConceptFilterView: FC<Props> = memo(props => {
 
     const clickHandler = useCallback(() => {
         setCollapsed(!collapsed);
+        onOpen();
     },[collapsed, setCollapsed]);
 
     useEffect(() => {
@@ -61,6 +69,14 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         return () => unsubscribeFilterTypeChanged(handleFilterChange);
 
     },[setFilter, subscribeFilterTypeChanged, unsubscribeFilterTypeChanged]);
+
+    useEffect(() => {
+        const handleCollapse = (collapse: boolean): void => {
+            setCollapsed(true);
+        }
+        subscribeCollapse(handleCollapse);
+        return () => unsubscribeCollapse();
+    });
 
     useEffect(() => {
         loadListener();

@@ -1389,6 +1389,14 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
         LABKEY.FilterDialog.View.ConceptFilter.superclass.initComponent.call(this);
     },
 
+    getListenerConfig: function(index) {
+        if (!this.updateConceptFilters[index]) {
+            this.updateConceptFilters[index] = {filterIndex: index};
+        }
+
+        return this.updateConceptFilters[index];
+    },
+
     loadConceptPickers: function(ctx = this) {
         const { divId, index, scope} = ctx;
         const {inputs} = scope;
@@ -1404,27 +1412,32 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
                 }
             },
             subscribeFilterValue: (listener) => {
-                if(!scope.updateConceptFilters[index]) {
-                    scope.updateConceptFilters[index] = {};
-                }
-                scope.updateConceptFilters[index].setValue = listener;
+                scope.getListenerConfig(index).setValue = listener;
                 this.changed = true;
             },
             unsubscribeFilterValue: () => {
-                if (scope.updateConceptFilters[index]) scope.updateConceptFilters[index].setValue = undefined;
+                scope.getListenerConfig(index).setValue = undefined;
             },
             subscribeFilterTypeChanged: (listener) => {
-                if(!scope.updateConceptFilters[index]) {
-                    scope.updateConceptFilters[index] = {};
-                }
-                scope.updateConceptFilters[index].setFilterType = listener;
+                scope.getListenerConfig(index).setFilterType = listener;
                 this.changed = true;
             },
             unsubscribeFilterTypeChanged: () => {
-                if (scope.updateConceptFilters[index]) scope.updateConceptFilters[index].setFilterType = undefined;
+                scope.getListenerConfig(index).setFilterType = undefined;
             },
             loadListener: () => {
                 scope.onViewReady();  // TODO be a little more targeted, but this ensures the filtertype & filterValue parameters get set because the Ext elements get rendered & set async
+            },
+            subscribeCollapse: (listener) => {
+                scope.getListenerConfig(index).collapsePanel = listener;
+            },
+            unsubscribeCollapse: () => {
+                scope.getListenerConfig(index).collapsePanel = undefined;
+            },
+            onOpen: () => {
+                scope.updateConceptFilters.forEach( panel => {
+                    if (panel.filterIndex !== index) panel.collapsePanel();
+                });
             },
         });
     },
@@ -1451,8 +1464,8 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
                 }],
                 listeners: {
                     render: () => {
-                        const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                        // const conceptFilterScript = 'core/gen/conceptFilter';
+                        // const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
+                        const conceptFilterScript = 'core/gen/conceptFilter';
                         LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId, index, scope:this});
                     }
                 },
