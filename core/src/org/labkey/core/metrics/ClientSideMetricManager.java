@@ -1,7 +1,6 @@
 package org.labkey.core.metrics;
 
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.UsageReportingLevel;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +29,7 @@ public class ClientSideMetricManager
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, moduleName, () -> Collections.singletonMap("clientSideMetricCounts", FEATURE_AREA_METRIC_COUNTS));
+            svc.registerUsageMetrics(moduleName, () -> Collections.singletonMap("clientSideMetricCounts", FEATURE_AREA_METRIC_COUNTS));
         }
     }
 }
