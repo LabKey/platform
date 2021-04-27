@@ -496,11 +496,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     {
         try
         {
-            return UsageReportingLevel.valueOf(lookupStringValue(USAGE_REPORTING_LEVEL, isDevMode() ? UsageReportingLevel.NONE.toString() : UsageReportingLevel.MEDIUM.toString()));
+            return UsageReportingLevel.valueOf(lookupStringValue(USAGE_REPORTING_LEVEL, isDevMode() ? UsageReportingLevel.NONE.toString() : UsageReportingLevel.ON.toString()));
         }
         catch (IllegalArgumentException e)
         {
-            return UsageReportingLevel.LOW;
+            return UsageReportingLevel.ON;
         }
     }
 
