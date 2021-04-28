@@ -58,10 +58,17 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
+import org.labkey.study.xml.impl.StudyDocumentImpl;
 import org.springframework.util.StringUtils;
 
 import java.sql.SQLException;
@@ -164,12 +171,67 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             return dib;
     }
 
+    private void autoLinkSampleTypeResults(List<Map<String, Object>> results, Container container, User user)
+    {
+        LOG.debug(String.format("Considering whether to attempt auto-link results for row insert to %s from container %s", _sampleType.getName(), container.getPath()));
+
+        Container targetContainer = _sampleType.getAutoLinkTargetContainer();
+        List<String> publishErrors = new ArrayList<>();
+        if (targetContainer != null)
+        {
+            Study study = StudyService.get().getStudy(targetContainer);
+            String targetContainerPath = targetContainer.getPath();
+            if (study != null)
+            {
+                String sampleTypeName = _sampleType.getName();
+                String containerPath = container.getPath();
+
+                LOG.debug(String.format("Found configured target study container ID, %s for auto-linking with %s from container %s", study.getShortName(), sampleTypeName, containerPath));
+
+                Set<Study> validStudies = StudyPublishService.get().getValidPublishTargets(user, InsertPermission.class);
+                if (validStudies.contains(study))
+                {
+                    LOG.debug(String.format("Resolved target study in container %s for auto-linking with %s from container %s", targetContainerPath, sampleTypeName, containerPath));
+                    List<Map<String, Object>> dataMaps = new ArrayList<>();
+
+                    for (Map<String, Object> result : results) {
+                        Map<String, Object> dataMap = new HashMap<>();
+                        dataMap.put(StudyPublishService.PARTICIPANTID_PROPERTY_NAME, result.get("ParticipantID")); //TODO
+                        dataMap.put(StudyPublishService.DATE_PROPERTY_NAME, result.get("Date"));
+                        dataMap.put(StudyPublishService.SEQUENCENUM_PROPERTY_NAME, result.get("VisitId"));
+                        dataMap.put(ExpMaterialTable.Column.RowId.toString(), result.get("RowId"));
+                        dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, _sampleType.getLSID());
+
+                        dataMaps.add(dataMap);
+                    }
+
+                    // Rosaline: replace with java-formatting
+                    StudyPublishService.get().publishData(
+                            user,
+                            container,
+                            targetContainer,
+                            sampleTypeName,
+                            Pair.of(Dataset.PublishSource.SampleType, _sampleType.getRowId()),
+                            dataMaps,
+                            ExpMaterialTable.Column.RowId.toString(),
+                            publishErrors);
+                } else {
+                    LOG.error("Insufficient permission to link assay data to study in folder : " + targetContainerPath);
+                }
+            } else {
+                LOG.info("Unable to link the assay data, there is no study in the folder: " + targetContainerPath);
+            }
+        }
+    }
+
+    // bulk insert
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
+//            autoLinkSampleTypeResults(rows, container, user);
             onSamplesChanged();
             audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
         }
@@ -188,6 +250,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ret;
     }
 
+    // single row insert
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
@@ -199,6 +262,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
+            autoLinkSampleTypeResults(results, container, user);
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }

@@ -35,7 +35,7 @@ public class ExperimentListenerImpl implements ExperimentListener
         List<ValidationException> errors = new ArrayList<>();
         List<String> linkToStudyErrors = new ArrayList<>();
 
-        StudyPublishService.get().autoLinkResults(protocol, run, user, container, linkToStudyErrors);
+        StudyPublishService.get().autoLinkAssayResults(protocol, run, user, container, linkToStudyErrors);
 
         // copy results data to the target study if the protocol is configured to auto link
         for (String error : linkToStudyErrors)

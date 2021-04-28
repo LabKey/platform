@@ -100,7 +100,7 @@ public interface StudyPublishService
      * @return any errors that prevented the link
      */
     @Nullable
-    ActionURL autoLinkResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
+    ActionURL autoLinkAssayResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
@@ -120,5 +120,10 @@ public interface StudyPublishService
 
     void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
 
+    /**
+     * Adds columns to an assay data table, providing a link to any datasets that have
+     * had data linked into them.
+     * @return The names of the added columns that should be visible
+     */
     Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user);
 }

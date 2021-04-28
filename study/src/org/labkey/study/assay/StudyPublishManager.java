@@ -1000,7 +1000,7 @@ public class StudyPublishManager implements StudyPublishService
     /** Automatically link assay data to a study if the design is set up to do so */
     @Override
     @Nullable
-    public ActionURL autoLinkResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
+    public ActionURL autoLinkAssayResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
     {
         LOG.debug("Considering whether to attempt auto-link results from assay run " + run.getName() + " from container " + container.getPath());
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -1154,7 +1154,7 @@ public class StudyPublishManager implements StudyPublishService
 
         Set<DatasetDefinition> result = new HashSet<>();
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
-        for (Map<String, Object> row : rows) // for each row in study.dataset where publishsourcetype is assay and publishSourceId is as given
+        for (Map<String, Object> row : rows)
         {
             String containerId = (String)row.get("container");
             int datasetId = ((Number)row.get("datasetid")).intValue();
@@ -1247,6 +1247,11 @@ public class StudyPublishManager implements StudyPublishService
         }
     }
 
+    /**
+     * Transform an illegal name into a safe version. All non-letter characters
+     * become underscores, and the first character must be a letter. Retain this implementation for backwards
+     * compatibility with linked to study column names. See issue 41030.
+     */
     private String sanitizeName(String originalName)
     {
         StringBuilder sb = new StringBuilder();
@@ -1278,7 +1283,6 @@ public class StudyPublishManager implements StudyPublishService
             int datasetIndex = 0;
             Set<String> usedColumnNames = new HashSet<>();
 
-            Dataset.PublishSource thing = Dataset.PublishSource.Assay;
             for (final Dataset assayDataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, publishSource))
             {
                 if (!assayDataset.getContainer().hasPermission(user, ReadPermission.class) || !assayDataset.canRead(user))
@@ -1286,7 +1290,6 @@ public class StudyPublishManager implements StudyPublishService
                     continue;
                 }
 
-                // sets a hidden column that is (CASE WHEN StudyDataJoin$47._key IS NOT NULL THEN 5012 ELSE NULL END)
                 String datasetIdColumnName = "dataset" + datasetIndex++;
 
                 final StudyDatasetLinkedColumn datasetColumn = new StudyDatasetLinkedColumn(table, datasetIdColumnName, assayDataset, rowIdName, user);
@@ -1334,9 +1337,13 @@ public class StudyPublishManager implements StudyPublishService
 
                 table.addColumn(studyLinkedColumn);
 
-                visibleColumnNames.add(studyLinkedColumn.getName());
+                // Issue 42937: limit default visible columns to 3 for a given assay protocol
+                if (datasetIndex > 3)
+                    visibleColumnNames.clear();
+                else
+                    visibleColumnNames.add(studyLinkedColumn.getName());
             }
-            if (setVisibleColumns)
+            if (setVisibleColumns && visibleColumnNames.size() > 0)
             {
                 List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
                 for (String columnName : visibleColumnNames)
