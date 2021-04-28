@@ -200,11 +200,21 @@ public class DataIteratorUtil
                 matches.add(null);
                 continue;
             }
-            Pair<ColumnInfo,MatchType> to = null;
-            if (null != from.getPropertyURI())
-                to = targetMap.get(from.getPropertyURI());
-            if (null == to)
-                to = targetMap.get(from.getName());
+
+            // Match by name first
+            Pair<ColumnInfo,MatchType> to = targetMap.get(from.getName());
+
+            // If name matches, check if property URI matches for higher priority match type
+            if (null != to && null != from.getPropertyURI())
+            {
+                // Renamed columns in queries will not match. Just stick with name match.
+                if (from.getPropertyURI().equals(to.first.getPropertyURI())) {
+                    Pair<ColumnInfo,MatchType> toUri = targetMap.get(from.getPropertyURI());
+                    if (null != toUri)
+                        to = toUri;
+                }
+            }
+
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
