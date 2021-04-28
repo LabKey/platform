@@ -156,7 +156,7 @@ public class ListModule extends SpringModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, getName(), () -> {
+            svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("listCount", new SqlSelector(DbSchema.get("exp", DbSchemaType.Module), "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
                 return metric;

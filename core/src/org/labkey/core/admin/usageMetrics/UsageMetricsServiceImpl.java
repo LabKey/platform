@@ -37,57 +37,49 @@ import java.util.stream.Collectors;
  */
 public class UsageMetricsServiceImpl implements UsageMetricsService
 {
-    private static Logger LOG = LogManager.getLogger(UsageMetricsServiceImpl.class);
+    private static final Logger LOG = LogManager.getLogger(UsageMetricsServiceImpl.class);
 
-    private final Map<UsageReportingLevel, Map<String, Set<UsageMetricsProvider>>> moduleUsageReports = new ConcurrentHashMap<>();
+    private final Map<String, Set<UsageMetricsProvider>> moduleUsageReports = new ConcurrentHashMap<>();
 
     @Override
-    public void registerUsageMetrics(UsageReportingLevel level, String moduleName, UsageMetricsProvider metrics)
+    public void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics)
     {
-        if (UsageReportingLevel.NONE == level)
-            throw new MinorConfigurationException(moduleName + " module registered metric for UsageReportingLevel NONE. This will never be sent.");
-        moduleUsageReports.computeIfAbsent(level, k -> new ConcurrentHashMap<>())
-                .computeIfAbsent(moduleName, k -> new ConcurrentHashSet<>()).add(metrics);
+        moduleUsageReports.computeIfAbsent(moduleName, k -> new ConcurrentHashSet<>()).add(metrics);
     }
 
     @Override
     @Nullable
-    public Map<String, Map<String, Object>> getModuleUsageMetrics(UsageReportingLevel level)
+    public Map<String, Map<String, Object>> getModuleUsageMetrics()
     {
-        if (null == moduleUsageReports.get(level))
-            return null;
-        else
+        Map<String, Map<String, Object>> allModulesMetrics = new HashMap<>();
+        moduleUsageReports.forEach((moduleName, providers) ->
         {
-            Map<String, Map<String, Object>> allModulesMetrics = new HashMap<>();
-            moduleUsageReports.get(level).forEach((moduleName, providers) ->
+            try
             {
-                try
+                Map<String, Object> moduleMetrics = allModulesMetrics.computeIfAbsent(moduleName, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                providers.forEach(provider ->
                 {
-                    Map<String, Object> moduleMetrics = allModulesMetrics.computeIfAbsent(moduleName, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-                    providers.forEach(provider ->
+                    Map<String, Object> providerMetrics = provider.getUsageMetrics();
+                    Set<String> duplicateKeys = providerMetrics.keySet()
+                            .stream()
+                            .filter(moduleMetrics::containsKey)
+                            .collect(Collectors.toSet());
+                    if (duplicateKeys.isEmpty())
+                        moduleMetrics.putAll(providerMetrics);
+                    else
                     {
-                        Map<String, Object> providerMetrics = provider.getUsageMetrics();
-                        Set<String> duplicateKeys = providerMetrics.keySet()
-                                .stream()
-                                .filter(moduleMetrics::containsKey)
-                                .collect(Collectors.toSet());
-                        if (duplicateKeys.isEmpty())
-                            moduleMetrics.putAll(providerMetrics);
-                        else
-                        {
-                            String message = (moduleName + " module has duplicate metric names registered by multiple UsageMetricProviders. Duplicate names: " + duplicateKeys);
-                            LOG.error(message);
-                        }
-                    });
-                }
-                catch (Exception e)
-                {
-                    allModulesMetrics.computeIfAbsent(ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(moduleName, e.getMessage());
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-            });
+                        String message = (moduleName + " module has duplicate metric names registered by multiple UsageMetricProviders. Duplicate names: " + duplicateKeys);
+                        LOG.error(message);
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                allModulesMetrics.computeIfAbsent(ERRORS, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER)).put(moduleName, e.getMessage());
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        });
 
-            return allModulesMetrics;
-        }
+        return allModulesMetrics;
     }
 }

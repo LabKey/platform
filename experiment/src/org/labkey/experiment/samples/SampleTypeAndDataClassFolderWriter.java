@@ -125,7 +125,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), true))
         {
             // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
-            if (StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
+            if (StudyService.get() != null && StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
                 continue;
 
             // ignore sample types that are filtered out

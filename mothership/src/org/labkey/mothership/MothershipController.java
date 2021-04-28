@@ -690,7 +690,7 @@ public class MothershipController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors)
         {
-            MothershipReport report = UsageReportingLevel.generateReport(UsageReportingLevel.MEDIUM, MothershipReport.Target.local);
+            MothershipReport report = UsageReportingLevel.generateReport(UsageReportingLevel.ON, MothershipReport.Target.local);
             if (report != null)
             {
                 report.run();
