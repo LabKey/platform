@@ -747,7 +747,7 @@ public class ProxyServlet extends HttpServlet
             // jupyter notebook redirect url contains context and servlet path, resulting in duplicate path
             String sourcePath = getSourcePath(servletRequest);
             if (!theUrl.startsWith(sourcePath))
-                curUrl.append(getSourcePath(servletRequest));
+                curUrl.append(sourcePath);
 
             if (theUrl.startsWith("/"))
                 appendPath(curUrl, theUrl);
