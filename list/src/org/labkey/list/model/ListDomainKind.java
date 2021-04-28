@@ -261,9 +261,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return Collections.emptySet(); // TODO: Allow this to return the Key Column
     }
 
-    public static Lsid generateDomainURI(String name, Container c, ListDefinition.KeyType keyType)
+    public static Lsid generateDomainURI(String name, Container c, KeyType keyType, ListDefinition.@Nullable Category category)
     {
-        String type = getType(keyType);
+        String type = getType(keyType, category);
         StringBuilder typeURI = getBaseURI(name, type, c);
 
         // 13131: uniqueify the lsid for situations where a preexisting list was renamed
@@ -279,19 +279,22 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     public static Lsid createPropertyURI(String listName, String columnName, Container c, ListDefinition.KeyType keyType)
     {
-        StringBuilder typeURI = getBaseURI(listName, getType(keyType), c);
+        StringBuilder typeURI = getBaseURI(listName, getType(keyType, null), c);
         typeURI.append(".").append(PageFlowUtil.encode(columnName));
         return new Lsid(typeURI.toString());
     }
 
-    private static String getType(ListDefinition.KeyType keyType)
+    private static String getType(KeyType keyType, @Nullable ListDefinition.Category category)
     {
         String type;
         switch (keyType)
         {
             case Integer:
             case AutoIncrementInteger:
-                type = IntegerListDomainKind.NAMESPACE_PREFIX;
+                if (category != null)
+                    type = PicklistDomainKind.NAMESPACE_PREFIX;
+                else
+                    type = IntegerListDomainKind.NAMESPACE_PREFIX;
                 break;
             case Varchar:
                 type = VarcharListDomainKind.NAMESPACE_PREFIX;
@@ -328,42 +331,16 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return true;
     }
 
-//    @Override
-//    public boolean canCreateDefinition(User user, Container container)
-//    {
-//        return container.hasPermission("ListDomainKind.canCreateDefinition", user, DesignListPermission.class);
-//    }
-//
-
-    private ListDefinition.Category getCategory(String name)
+    @Override
+    public boolean canCreateDefinition(User user, Container container)
     {
-        if (StringUtils.isEmpty(name))
-            return null;
-        try
-        {
-            return ListDefinition.Category.valueOf(name.trim());
-        }
-        catch (IllegalArgumentException e)
-        {
-            return null;
-        }
-    }
-
-    private boolean canCreateDefinition(User user, Container container, ListDomainKindProperties options)
-    {
-        ListDefinition.Category category = getCategory(options.getCategory());
-
-        if (category != null)
-            return container.hasPermission("ListDomainKind.canCreateDefinition for picklist", user, ManagePicklistsPermission.class);
         return container.hasPermission("ListDomainKind.canCreateDefinition", user, DesignListPermission.class);
     }
 
-    public boolean canEditDefinition(User user, Domain domain, ListDomainKindProperties options)
+    @Override
+    public boolean canEditDefinition(User user, Domain domain)
     {
         Container c = domain.getContainer();
-        ListDefinition.Category category = getCategory(options.getCategory());
-        if (category != null)
-            return c.hasPermission("ListDomainKind.canEditDefinition for picklist", user, ManagePicklistsPermission.class);
         return c.hasPermission("ListDomainKind.canEditDefinition", user, DesignListPermission.class);
     }
 
@@ -405,10 +382,19 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 throw new ApiUsageException("List keyType provided does not exist.");
         }
 
+        ListDefinition.Category category;
+        try {
+            category = ListDefinition.Category.valueOf(listProperties.getCategory());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ApiUsageException(String.format("List category type provided (%s) does not exist.", listProperties.getCategory()));
+        }
+
         if (!getSupportedKeyTypes().contains(keyType))
             throw new ApiUsageException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
 
-        ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
+        ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo, category);
         list.setKeyName(keyName);
 
         String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
@@ -626,6 +612,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         updatedListProps.setAllowUpload(newListProps.isAllowUpload());
         updatedListProps.setAllowExport(newListProps.isAllowExport());
         updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
+        updatedListProps.setCategory(newListProps.getCategory());
         updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
         updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());
         updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
@@ -724,15 +711,4 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         var props = getBaseProperties(d);
     }
 
-    @Override
-    public void validateOptions(Container container, User user, ListDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
-    {
-        boolean isUpdate = domain != null;
-
-        if (!isUpdate && !canCreateDefinition(user, container, options))
-            throw new UnauthorizedException("You don't have permission to create a new domain");
-
-        if (isUpdate && !canEditDefinition(user, domain, options))
-            throw new UnauthorizedException("You don't have permission to edit this domain");
-    }
 }

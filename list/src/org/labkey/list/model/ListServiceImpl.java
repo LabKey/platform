@@ -71,13 +71,13 @@ public class ListServiceImpl implements ListService
     @Override
     public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType)
     {
-        return new ListDefinitionImpl(container, name, keyType, null);
+        return new ListDefinitionImpl(container, name, keyType, null, null);
     }
 
     @Override
-    public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo)
+    public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo, @Nullable ListDefinition.Category category)
     {
-        return new ListDefinitionImpl(container, name, keyType, templateInfo);
+        return new ListDefinitionImpl(container, name, keyType, category, templateInfo);
     }
 
     @Override

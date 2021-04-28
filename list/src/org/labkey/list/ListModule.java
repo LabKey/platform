@@ -29,6 +29,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
@@ -57,6 +58,7 @@ import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.ListWriter;
+import org.labkey.list.model.PicklistDomainKind;
 import org.labkey.list.model.VarcharListDomainKind;
 import org.labkey.list.view.ListItemType;
 import org.labkey.list.view.ListsWebPart;
@@ -111,8 +113,10 @@ public class ListModule extends SpringModule
 
         PropertyService.get().registerDomainKind(new IntegerListDomainKind());
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
+        PropertyService.get().registerDomainKind(new PicklistDomainKind());
 
         RoleManager.registerPermission(new DesignListPermission());
+        RoleManager.registerPermission(new ManagePicklistsPermission());
 
         AttachmentService.get().registerAttachmentType(ListItemType.get());
     }

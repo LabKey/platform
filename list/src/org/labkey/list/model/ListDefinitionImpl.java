@@ -91,7 +91,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
-    public ListDefinitionImpl(Container container, String name, KeyType keyType, TemplateInfo templateInfo)
+    public ListDefinitionImpl(Container container, String name, KeyType keyType, @Nullable Category category, TemplateInfo templateInfo)
     {
         _new = true;
         ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder();
@@ -99,8 +99,9 @@ public class ListDefinitionImpl implements ListDefinition
         builder.setName(name);
         builder.setEntityId(makeGUID());
         builder.setKeyType(keyType.toString());
+        builder.setCategory(category);
         _def = builder;
-        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType);
+        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType, category);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name, templateInfo);
     }
 
