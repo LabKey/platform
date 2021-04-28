@@ -207,7 +207,7 @@ public class DataIteratorUtil
             // If name matches, check if property URI matches for higher priority match type
             if (null != to && null != from.getPropertyURI())
             {
-                // Renamed columns in queries will not match. Just stick with name match.
+                // Built-in columns aliased in source query will not match. Just stick with name match.
                 if (from.getPropertyURI().equals(to.first.getPropertyURI())) {
                     Pair<ColumnInfo,MatchType> toUri = targetMap.get(from.getPropertyURI());
                     if (null != toUri)
