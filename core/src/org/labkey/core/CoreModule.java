@@ -188,6 +188,7 @@ import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -964,7 +965,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();
 
-        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.LOW, getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
             Map<String, Object> javaInfo = new HashMap<>();
             javaInfo.put("java.vendor", System.getProperty("java.vendor"));
@@ -972,6 +973,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("javaRuntime", javaInfo);
             return results;
         });
+
+        ClientSideMetricManager.get().registerUsageMetrics(getName());
 
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

@@ -3712,7 +3712,7 @@ public class AdminController extends SpringActionController
                 if (form.isAllowReporting() && appProps.getExceptionReportingLevel() == ExceptionReportingLevel.NONE)
                 {
                     appProps.setExceptionReportingLevel(ExceptionReportingLevel.MEDIUM);
-                    appProps.setUsageReportingLevel(UsageReportingLevel.MEDIUM);
+                    appProps.setUsageReportingLevel(UsageReportingLevel.ON);
                 }
                 else if (!form.isAllowReporting())
                 {
@@ -9515,7 +9515,7 @@ public class AdminController extends SpringActionController
     static class MothershipReportSelectionForm
     {
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
-        private String _level = UsageReportingLevel.MEDIUM.toString();
+        private String _level = UsageReportingLevel.ON.toString();
         private boolean _submit = false;
         private String _forwardedFor = null;
         // indicates action is being invoked for dev/test

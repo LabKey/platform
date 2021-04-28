@@ -445,7 +445,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME, () -> {
+            svc.registerUsageMetrics(MODULE_NAME, () -> {
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("studyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
                 metric.put("datasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
@@ -808,7 +808,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "reportCountsByType"
             );
             assertTrue("Mothership report missing expected metrics",
-                    UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME)
+                    UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)
                     .keySet().containsAll(metricNames));
         }
     }
