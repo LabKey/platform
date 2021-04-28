@@ -212,7 +212,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="usageReportingLevel" id="usageReportingLevel1" onchange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>>
+                        <input type="radio" name="usageReportingLevel" id="usageReportingLevel1" onchange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>>
                         <strong>OFF</strong> - Do not check for updates or report any usage data.
                     </label>
                 </td>
@@ -221,7 +221,7 @@ Click the Save button at any time to accept the current settings and continue.</
                 <td valign="top">
                     <label>
                         <input type="radio" name="usageReportingLevel" id="usageReportingLevel2" onchange="enableUsageTest();"
-                               value="<%=UsageReportingLevel.ON%>>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>>
+                               value="<%=UsageReportingLevel.ON%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>>
                         <strong>ON</strong> - Check for updates and report system information, usage data, and organization details.
                     </label>
                 </td>
@@ -247,7 +247,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel1" value="<%=NONE%>>"<%=checked(appProps.getExceptionReportingLevel() == NONE)%>>
+                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel1" value="<%=NONE%>"<%=checked(appProps.getExceptionReportingLevel() == NONE)%>>
                         <strong>OFF</strong> - Do not report exceptions.
                     </label>
                 </td>
@@ -255,7 +255,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel2" value="<%=LOW%>>"<%=checked(appProps.getExceptionReportingLevel() == LOW)%>>
+                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel2" value="<%=LOW%>"<%=checked(appProps.getExceptionReportingLevel() == LOW)%>>
                         <strong>ON, low</strong> - Include anonymous system and exception information.
                     </label>
                 </td>
@@ -263,7 +263,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel3" value="<%=MEDIUM%>>"<%=checked(appProps.getExceptionReportingLevel() == MEDIUM)%>>
+                        <input type="radio" name="exceptionReportingLevel" onchange="enableExceptionTest();" id="exceptionReportingLevel3" value="<%=MEDIUM%>"<%=checked(appProps.getExceptionReportingLevel() == MEDIUM)%>>
                         <strong>ON, medium</strong> - Include anonymous system and exception information, as well as the URL that triggered the exception.
                     </label>
                 </td>
@@ -312,11 +312,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="labkey-form-label">Require ExtJS v3.4.1 be loaded on each page</td>
-    <td><input type="checkbox" name="ext3Required" id="ext3Required" <%=checked(appProps.isExt3Required())%>></td>
+    <td><input type="checkbox" name="ext3Required" id="ext3Required"<%=checked(appProps.isExt3Required())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Require ExtJS v3.x based Client API be loaded on each page</td>
-    <td><input type="checkbox" name="ext3APIRequired" id="ext3APIRequired" <%=checked(appProps.isExt3APIRequired())%>></td>
+    <td><input type="checkbox" name="ext3APIRequired" id="ext3APIRequired"<%=checked(appProps.isExt3APIRequired())%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -328,7 +328,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Require SSL connections (users must connect via SSL)</td>
-    <td><input type="checkbox" name="sslRequired" id="sslRequired" <%=checked(appProps.isSSLRequired())%>></td>
+    <td><input type="checkbox" name="sslRequired" id="sslRequired"<%=checked(appProps.isSSLRequired())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">SSL port number (specified in server config file)</td>
@@ -390,7 +390,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Display Message</td>
-    <td><input type="checkbox" name="showRibbonMessage" id="showRibbonMessage" <%=checked(appProps.isShowRibbonMessage())%>></td>
+    <td><input type="checkbox" name="showRibbonMessage" id="showRibbonMessage"<%=checked(appProps.isShowRibbonMessage())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Message HTML</td>
@@ -406,7 +406,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Admin only mode (only site admins may log in)</td>
-    <td><input type="checkbox" name="adminOnlyMode" id="adminOnlyMode" <%=checked(appProps.isUserRequestedAdminOnlyMode())%>></td>
+    <td><input type="checkbox" name="adminOnlyMode" id="adminOnlyMode"<%=checked(appProps.isUserRequestedAdminOnlyMode())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label" valign="top">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</td>
@@ -440,7 +440,7 @@ Click the Save button at any time to accept the current settings and continue.</
         Always include inaccessible parent folders in project menu when child folder is accessible<%=helpPopup("Project menu access",
             "Unchecking this will only allow users to see folders in the project menu where they have permissions to see the root project and all parent folders.")%>
     </td>
-    <td><input type="checkbox" name="navAccessOpen" id="navAccessOpen" <%=checked(appProps.isNavigationAccessOpen())%>></td>
+    <td><input type="checkbox" name="navAccessOpen" id="navAccessOpen"<%=checked(appProps.isNavigationAccessOpen())%>></td>
 </tr>
 <tr><td>&nbsp;</td></tr>
 <tr><td>&nbsp;</td></tr>
