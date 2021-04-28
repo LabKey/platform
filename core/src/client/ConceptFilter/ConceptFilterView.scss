@@ -19,11 +19,13 @@
 
   .ontology-browser-container {
     .concept-search-container {
-      padding: 0;
+      padding-bottom: 10px;
+
       .result-menu {
-        padding-right: 10px;  //Allow room for scroll bar
+        padding-right: 8px;  //Allow room for scroll bar
         min-width: 400px;
         max-width: 458px;
+        max-height: 320px;
       }
     }
   }
