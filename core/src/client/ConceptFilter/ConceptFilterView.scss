@@ -1,5 +1,30 @@
 @import "@labkey/components-scss";
 
-//.control-label {
-//  text-align: left;
-//}
+.concept-filter-view {
+  margin: 0 0 10px;
+  padding: 5px 10px;
+
+  a.show-toggle {
+    cursor: pointer;
+  }
+
+  &.collapsed {
+    margin: unset;
+    padding: 2px 0 10px;
+    border: unset;
+    a.show-toggle {
+      margin-left: 105px;
+    }
+  }
+
+  .ontology-browser-container {
+    .concept-search-container {
+      padding: 0;
+      .result-menu {
+        padding-right: 10px;  //Allow room for scroll bar
+        min-width: 400px;
+        max-width: 458px;
+      }
+    }
+  }
+}
