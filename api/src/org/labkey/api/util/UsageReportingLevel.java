@@ -50,7 +50,7 @@ import java.util.TreeMap;
  * User: jeckels
  * Date: Apr 26, 2006
  */
-public enum UsageReportingLevel
+public enum UsageReportingLevel implements SafeToRenderEnum
 {
     NONE
     {
