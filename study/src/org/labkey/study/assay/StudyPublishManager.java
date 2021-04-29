@@ -56,11 +56,13 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -79,14 +81,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -1019,6 +1019,61 @@ public class StudyPublishManager implements StudyPublishService
 
         return null;
     }
+
+    @Override
+    public void autoLinkSampleType(ExpSampleType sampleType, List<Map<String, Object>> results, Container container, User user)
+    {
+        LOG.debug(String.format("Considering whether to attempt auto-link results for row insert to %s from container %s", sampleType.getName(), container.getPath()));
+
+        Container targetContainer = sampleType.getAutoLinkTargetContainer();
+        List<String> publishErrors = new ArrayList<>();
+        if (targetContainer != null)
+        {
+            Study study = StudyService.get().getStudy(targetContainer);
+            String targetContainerPath = targetContainer.getPath();
+            if (study != null)
+            {
+                String sampleTypeName = sampleType.getName();
+                String containerPath = container.getPath();
+
+                LOG.debug(String.format("Found configured target study container ID, %s for auto-linking with %s from container %s", study.getShortName(), sampleTypeName, containerPath));
+
+                Set<Study> validStudies = StudyPublishService.get().getValidPublishTargets(user, InsertPermission.class);
+                if (validStudies.contains(study))
+                {
+                    LOG.debug(String.format("Resolved target study in container %s for auto-linking with %s from container %s", targetContainerPath, sampleTypeName, containerPath));
+                    List<Map<String, Object>> dataMaps = new ArrayList<>();
+
+                    for (Map<String, Object> result : results) {
+                        Map<String, Object> dataMap = new HashMap<>();
+                        dataMap.put(StudyPublishService.PARTICIPANTID_PROPERTY_NAME, result.get("ParticipantID")); //TODO
+                        dataMap.put(StudyPublishService.DATE_PROPERTY_NAME, result.get("Date"));
+                        dataMap.put(StudyPublishService.SEQUENCENUM_PROPERTY_NAME, result.get("VisitId"));
+                        dataMap.put(ExpMaterialTable.Column.RowId.toString(), result.get("RowId"));
+                        dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID());
+
+                        dataMaps.add(dataMap);
+                    }
+
+                    StudyPublishService.get().publishData(
+                        user,
+                        container,
+                        targetContainer,
+                        sampleTypeName,
+                        Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
+                        dataMaps,
+                        ExpMaterialTable.Column.RowId.toString(),
+                        publishErrors
+                    );
+                } else {
+                    LOG.error("Insufficient permission to link assay data to study in folder : " + targetContainerPath);
+                }
+            } else {
+                LOG.info("Unable to link the assay data, there is no study in the folder: " + targetContainerPath);
+            }
+        }
+    }
+
 
     @Nullable
     public ActionURL autoLinkResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,

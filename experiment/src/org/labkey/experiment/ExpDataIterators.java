@@ -63,13 +63,12 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
-import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -285,6 +284,118 @@ public class ExpDataIterators
         }
     }
 
+    public static class AutoLinkToStudyDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final User _user;
+        private final TableInfo _expTable;
+        private final boolean _isSample;
+
+        public AutoLinkToStudyDataIteratorBuilder(@NotNull DataIteratorBuilder in, boolean isSample, Container container, User user, TableInfo expTable)
+        {
+            _in = in;
+            _container = container;
+            _user = user;
+            _expTable = expTable;
+            _isSample = isSample;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(pre, context, _isSample, _container, _user, _expTable));
+        }
+    }
+
+    private static class AutoLinkToStudyDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final boolean _isSample;
+        final Container _container;
+        final User _user;
+        final TableInfo _expTable;
+
+        final Supplier<Object> _participantIDCol;
+        final Supplier<Object> _dateCol;
+        final Supplier<Object> _visitIdCol;
+        final Supplier<Object> _rowIdCol;
+        final Supplier<Object> _lsidCol;
+        final List<Map<String, Object>> _rows = new ArrayList<>();
+
+        final String PARTICIPANT = StudyPublishService.PARTICIPANTID_PROPERTY_NAME;
+        final String DATE = StudyPublishService.DATE_PROPERTY_NAME;
+        final String VISIT = "VisitID"; // Find/make constant?
+        final String LSID = "LSID";     // Find/make constant?
+        final String ROWID = ExpMaterialTable.Column.RowId.toString();
+
+        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, boolean isSample, Container container, User user,  TableInfo expTable)
+        {
+            super(di);
+            _context = context;
+
+            _isSample = isSample;
+            _container = container;
+            _user = user;
+            _expTable = expTable;
+
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _participantIDCol = map.get(PARTICIPANT) != null ? di.getSupplier(map.get(PARTICIPANT)) : null;
+            _dateCol = map.get(DATE) != null ? di.getSupplier(map.get(DATE)) : null;
+            _visitIdCol = map.get(VISIT) != null ? di.getSupplier(map.get(VISIT)) : null;
+            _rowIdCol = map.get(ROWID) != null ? di.getSupplier(map.get(ROWID)) : null;
+            _lsidCol = map.get(LSID) != null ? di.getSupplier(map.get(LSID)) : null;
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            if (getErrors().hasErrors())
+                return hasNext;
+
+            if (!hasNext)
+            {
+                if (_rows.size() > 0 && _isSample)
+                {
+                    ExpSampleType sampleType = ((ExpMaterialTableImpl) _expTable).getSampleType();
+                    StudyPublishService.get().autoLinkSampleType(sampleType, _rows, _container, _user);
+                }
+                return false;
+            }
+
+            if (_participantIDCol != null && _rowIdCol != null && _lsidCol != null && (_dateCol != null || _visitIdCol != null))
+            {
+                String participantId = _participantIDCol.get().toString();
+                Object date = _dateCol != null ? _dateCol.get() : null;
+                Object visit = _visitIdCol.get();
+                int rowId = ((Number) _rowIdCol.get()).intValue();
+                Object lsid = _lsidCol.get();
+
+                // Only link rows that have a participant and a visit/date
+                if (participantId != null && date != null)
+                {
+                    // Rosaline todo: Issue13647, StudyPublishManager line 1155
+                    Map<String,Object> row = Map.of(
+                            PARTICIPANT, participantId,
+                            DATE, date,
+                            "VisitId", visit,
+                            ExpMaterialTable.Column.RowId.toString(), rowId,
+                            StudyPublishService.SOURCE_LSID_PROPERTY_NAME, lsid
+                    );
+                    _rows.add(row);
+                }
+            }
+            return true;
+        }
+    }
 
     public static class FlagDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -426,7 +537,7 @@ public class ExpDataIterators
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
 
-    static class DerivationDataIterator extends WrapperDataIterator
+    static class DerivationDataIterator extends WrapperDataIterator // Rosaline temp note: finds the parent columns
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
@@ -984,13 +1095,14 @@ public class ExpDataIterators
 
             // Wire up derived parent/child data and materials
             DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, false));
+            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new AutoLinkToStudyDataIteratorBuilder(step5, isSample, _container, _user, _expTable));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            DataIteratorBuilder step6 = step5;
+            DataIteratorBuilder step7 = step6;
             if (null != _indexFunction)
-                step6 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step5, _indexFunction)); // may need to add this after the aliases are set
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
 
-            return LoggingDataIterator.wrap(step6.getDataIterator(context));
+            return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
     }
 }

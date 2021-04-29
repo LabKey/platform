@@ -262,7 +262,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            autoLinkSampleTypeResults(results, container, user);
+//            autoLinkSampleTypeResults(results, container, user);
             onSamplesChanged();
             audit(QueryService.AuditAction.INSERT);
         }
