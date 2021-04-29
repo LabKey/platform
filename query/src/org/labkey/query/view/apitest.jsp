@@ -105,7 +105,7 @@
     </tr>
     <tr>
         <td width="100%">
-            <input type="button" id="btnEval" value="Eval JSON Response" onclick="evalResponse()"/>&nbsp;
+            <input type="button" id="btnEval" value="Validate JSON Response" onclick="evalResponse()"/>&nbsp;
             <input type="button" id="btnSaveTest" value="Record Test" onclick="recordTest()"/></td>
     </tr>
 </table>
