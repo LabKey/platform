@@ -33,19 +33,16 @@ public class DefaultProvenanceProvider implements ProvenanceService
     @Override
     public void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs)
     {
-
     }
 
     @Override
     public void addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs)
     {
-
     }
 
     @Override
     public void addProvenance(Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs)
     {
-
     }
 
     @Override
@@ -69,25 +66,26 @@ public class DefaultProvenanceProvider implements ProvenanceService
     @Override
     public void deleteProvenance(int protocolAppId)
     {
-
     }
 
     @Override
     public void deleteRunProvenance(int runId)
     {
-
     }
 
     @Override
-    public void deleteAssayResultProvenance(@NotNull SQLFragment sqlFragment)
+    public void deleteProvenanceByLsids(Container c, User user, @NotNull Collection<String> lsids, boolean deleteOntologyObjects, Collection<String> deleteEmptyRunsForProtocol)
     {
+    }
 
+    @Override
+    public void deleteProvenanceByLsids(Container c, User user, @NotNull SQLFragment lsidInFrag, boolean deleteOntologyObjects, Collection<String> deleteEmptyRunsForProtocol)
+    {
     }
 
     @Override
     public void deleteObjectProvenance(int objectId)
     {
-
     }
 
     @Override
@@ -97,13 +95,25 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public List<? extends ExpRun> getRuns(Set<String> lsids)
+    public List<? extends ExpRun> getRuns(Collection<String> lsids)
     {
         return Collections.emptyList();
     }
 
     @Override
-    public Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids)
+    public List<? extends ExpRun> getRuns(SQLFragment lsidInFrag)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Map<String, Set<ExpRun>> getRunsByLsid(Collection<String> lsids)
+    {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, Set<ExpRun>> getRunsByLsid(SQLFragment lsidInFrag)
     {
         return Collections.emptyMap();
     }
@@ -117,7 +127,6 @@ public class DefaultProvenanceProvider implements ProvenanceService
     @Override
     public void addRecordingStep(HttpServletRequest request, GUID recordingId, RecordedAction action)
     {
-
     }
 
     @Override

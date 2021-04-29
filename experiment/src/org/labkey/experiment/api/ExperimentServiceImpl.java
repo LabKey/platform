@@ -3879,6 +3879,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 executor.execute(materialSQL);
             }
 
+            // clean up provenance
+            ProvenanceService.get().deleteProvenanceByLsids(container, user, lsidInFrag, false, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
+
             // delete exp.objects
             try (Timing ignored = MiniProfiler.step("exp.object"))
             {
@@ -4522,6 +4525,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return getRunsUsingMaterials(Arrays.asList(ArrayUtils.toObject(ids)));
     }
 
+    // consider including runs with provenance records as well
     public List<ExpRunImpl> getRunsUsingMaterials(Collection<Integer> ids)
     {
         if (ids.isEmpty())
