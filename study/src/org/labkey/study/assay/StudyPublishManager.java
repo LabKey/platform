@@ -1044,12 +1044,17 @@ public class StudyPublishManager implements StudyPublishService
                     LOG.debug(String.format("Resolved target study in container %s for auto-linking with %s from container %s", targetContainerPath, sampleTypeName, containerPath));
                     List<Map<String, Object>> dataMaps = new ArrayList<>();
 
+                    final String pidName = StudyPublishService.PARTICIPANTID_PROPERTY_NAME;
+                    final String dateName = StudyPublishService.DATE_PROPERTY_NAME;
+                    final String visitName = StudyPublishService.SEQUENCENUM_PROPERTY_NAME;
+                    final String rowIdName = ExpMaterialTable.Column.RowId.toString();
+
                     for (Map<String, Object> result : results) {
                         Map<String, Object> dataMap = new HashMap<>();
-                        dataMap.put(StudyPublishService.PARTICIPANTID_PROPERTY_NAME, result.get("ParticipantID")); //TODO
-                        dataMap.put(StudyPublishService.DATE_PROPERTY_NAME, result.get("Date"));
-                        dataMap.put(StudyPublishService.SEQUENCENUM_PROPERTY_NAME, result.get("VisitId"));
-                        dataMap.put(ExpMaterialTable.Column.RowId.toString(), result.get("RowId"));
+                        dataMap.put(pidName, result.get(pidName));
+                        dataMap.put(dateName, result.get(dateName));
+                        dataMap.put(visitName, result.get(visitName));
+                        dataMap.put(rowIdName, result.get(rowIdName));
                         dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID());
 
                         dataMaps.add(dataMap);

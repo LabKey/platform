@@ -15,9 +15,11 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -63,6 +65,8 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -79,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -320,14 +325,14 @@ public class ExpDataIterators
         final Supplier<Object> _participantIDCol;
         final Supplier<Object> _dateCol;
         final Supplier<Object> _visitIdCol;
-        final Supplier<Object> _rowIdCol;
         final Supplier<Object> _lsidCol;
+        final Supplier<Object> _rowIdCol;
         final List<Map<String, Object>> _rows = new ArrayList<>();
 
         final String PARTICIPANT = StudyPublishService.PARTICIPANTID_PROPERTY_NAME;
         final String DATE = StudyPublishService.DATE_PROPERTY_NAME;
-        final String VISIT = "VisitID"; // Find/make constant?
-        final String LSID = "LSID";     // Find/make constant?
+        final String VISIT = StudyPublishService.SEQUENCENUM_PROPERTY_NAME;
+        final String LSID = StudyPublishService.SOURCE_LSID_PROPERTY_NAME;
         final String ROWID = ExpMaterialTable.Column.RowId.toString();
 
         protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, boolean isSample, Container container, User user,  TableInfo expTable)
@@ -340,12 +345,13 @@ public class ExpDataIterators
             _user = user;
             _expTable = expTable;
 
+            final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME; //Rosaline temp note: verify this is valid location
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _participantIDCol = map.get(PARTICIPANT) != null ? di.getSupplier(map.get(PARTICIPANT)) : null;
             _dateCol = map.get(DATE) != null ? di.getSupplier(map.get(DATE)) : null;
-            _visitIdCol = map.get(VISIT) != null ? di.getSupplier(map.get(VISIT)) : null;
+            _visitIdCol = map.get(visitName) != null ? di.getSupplier(map.get(visitName)) : null;
+            _lsidCol = map.get("LSID") != null ? di.getSupplier(map.get("LSID")) : null; // Rosaline temp note: verify
             _rowIdCol = map.get(ROWID) != null ? di.getSupplier(map.get(ROWID)) : null;
-            _lsidCol = map.get(LSID) != null ? di.getSupplier(map.get(LSID)) : null;
         }
 
         private BatchValidationException getErrors()
@@ -361,13 +367,12 @@ public class ExpDataIterators
             if (getErrors().hasErrors())
                 return hasNext;
 
+            ExpSampleType sampleType = ((ExpMaterialTableImpl) _expTable).getSampleType();
+
             if (!hasNext)
             {
                 if (_rows.size() > 0 && _isSample)
-                {
-                    ExpSampleType sampleType = ((ExpMaterialTableImpl) _expTable).getSampleType();
                     StudyPublishService.get().autoLinkSampleType(sampleType, _rows, _container, _user);
-                }
                 return false;
             }
 
@@ -376,20 +381,31 @@ public class ExpDataIterators
                 String participantId = _participantIDCol.get().toString();
                 Object date = _dateCol != null ? _dateCol.get() : null;
                 Object visit = _visitIdCol.get();
-                int rowId = ((Number) _rowIdCol.get()).intValue();
                 Object lsid = _lsidCol.get();
+                int rowId = ((Number) _rowIdCol.get()).intValue();
 
                 // Only link rows that have a participant and a visit/date
                 if (participantId != null && date != null)
                 {
-                    // Rosaline todo: Issue13647, StudyPublishManager line 1155
+                    Study study = StudyService.get().getStudy(sampleType.getAutoLinkTargetContainer());
+                    Float visitId = null; // Rosaline temp note: is this a decent pattern?
+                    Date dateId = null;
+
+                    // 13647: Conversion exception in auto link to study
+                    if (study.getTimepointType().isVisitBased())
+                    {
+                        visitId = Float.parseFloat(visit.toString());
+                    } else {
+                        dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
+                    }
+
                     Map<String,Object> row = Map.of(
                             PARTICIPANT, participantId,
-                            DATE, date,
-                            "VisitId", visit,
-                            ExpMaterialTable.Column.RowId.toString(), rowId,
-                            StudyPublishService.SOURCE_LSID_PROPERTY_NAME, lsid
-                    );
+                            DATE, dateId == null ? date : dateId,
+                            VISIT, visitId == null ? visit : visitId,
+                            LSID, lsid,
+                            ROWID, rowId
+                            );
                     _rows.add(row);
                 }
             }
@@ -537,7 +553,7 @@ public class ExpDataIterators
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
 
-    static class DerivationDataIterator extends WrapperDataIterator // Rosaline temp note: finds the parent columns
+    static class DerivationDataIterator extends WrapperDataIterator
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
