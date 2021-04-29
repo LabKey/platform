@@ -111,13 +111,13 @@
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionDisable" value="<%=FileRootProp.disable%>"
                                 <%=checked(FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection(true);">
+                                onclick="updateSelection(<%=h(!FileRootProp.disable.name().equals(bean.getFileRootOption()))%>);">
                             Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td></tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
                                 <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection(true);">
+                                onclick="updateSelection(<%=h(!FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>);">
                             Use a default based on the project-level root
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
@@ -125,16 +125,16 @@
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
                                 <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection(true);">
+                                onclick="updateSelection(<%=h(!FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>);">
                             Use a <%=text(getContainer().getContainerNoun())%>-level file root
-                            <input type="text" id="folderRootPath" name="folderRootPath" size="64" value="<%=h(bean.getFolderRootPath())%>"></td>
+                            <input type="text" id="folderRootPath" name="folderRootPath" size="64" onchange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>"></td>
                     </tr>
                     <% if (cloud != null) { %>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=FileRootProp.cloudRoot%>"
                                 <%=checked(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>
-                                onclick="updateSelection(true);">
+                                onclick="updateSelection(<%=h(!FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>);">
                             Use cloud-based file storage
                             <select name="cloudRootName" id="cloudRootName" onchange="updateSelection(true);">
                                 <% for (CloudStoreService.StoreInfo storeInfo : storeInfos.values())
@@ -272,26 +272,82 @@
             if (cloudRootName)
                 document.getElementById('cloudRootName').style.display = '';
         }
+
+        updateMigrateFiles(isChange, optionDisableChecked);
+    }
+
+    function onRootChange()
+    {
+        var value = document.getElementById('folderRootPath').value;
+        if (!value)
+        {
+            return;
+        }
+
+        var isChangeFromExisting = value != <%=q(bean.getFolderRootPath())%>;
+        var optionDisableChecked = document.getElementById('optionDisable').checked;
+        updateMigrateFiles(isChangeFromExisting, optionDisableChecked);
+    }
+
+    function updateMigrateFiles(isChange, optionDisableChecked)
+    {
         var migrateFiles = document.getElementById('migrateFilesRow');
+        if (!migrateFiles) {
+            return;
+        }
+
+        var optionCloudRoot = document.getElementById('optionCloudRoot');
         var notifyAboutPipeline = document.getElementById('notifyAboutPipeline');
+        if (isChange && !optionDisableChecked && !<%=isFolderSetup || isCurrentFileRootOptionDisable%>)
+        {
+            migrateFiles.style.display = '';
+            if (notifyAboutPipeline)
+            {
+                if (optionCloudRoot && optionCloudRoot.checked)
+                    notifyAboutPipeline.style.display = '';
+                else
+                    notifyAboutPipeline.style.display = 'none';
+            }
+            var migrateMoveOption = document.getElementById('migrateMoveOption');
+            if (migrateMoveOption)
+            {
+                var isNewCloudRootManaged = false;  // TODO: must we prevent moving when switching *TO* unmanaged cloud root?
+                if ((optionCloudRoot && optionCloudRoot.checked && isNewCloudRootManaged) || <%=!isCurrentFileRootManaged%>)
+                {
+                    migrateMoveOption.setAttribute('hidden', '');
+                }
+                else
+                {
+                    migrateMoveOption.removeAttribute('hidden');
+                }
+            }
+        }
+        else
+        {
+            migrateFiles.style.display = 'none';
+            if (notifyAboutPipeline)
+                notifyAboutPipeline.style.display = 'none';
+        }
+    }
+
+    function onRootChange()
+    {
+
+        var value = document.getElementById('folderRootPath').value;
+        var isChangeFromExisting = value != '<%=h(bean.getFolderRootPath())%>';
+
+        var optionCloudRoot = document.getElementById('optionCloudRoot');
+        var migrateFiles = document.getElementById('migrateFilesRow');
         if (migrateFiles)
         {
-            if (isChange && !optionDisableChecked && !<%=isFolderSetup || isCurrentFileRootOptionDisable%>)
+            if (isChangeFromExisting)
             {
                 migrateFiles.style.display = '';
-                if (notifyAboutPipeline)
-                {
-                    if (optionCloudRoot && optionCloudRoot.checked)
-                        notifyAboutPipeline.style.display = '';
-                    else
-                        notifyAboutPipeline.style.display = 'none';
-                }
                 var migrateMoveOption = document.getElementById('migrateMoveOption');
                 if (migrateMoveOption)
                 {
                     var isNewCloudRootManaged = false;  // TODO: must we prevent moving when switching *TO* unmanaged cloud root?
-                    if ((optionCloudRoot && optionCloudRoot.checked && isNewCloudRootManaged) ||
-                            <%=!isCurrentFileRootManaged%>)
+                    if ((optionCloudRoot && optionCloudRoot.checked && isNewCloudRootManaged) || <%=!isCurrentFileRootManaged%>)
                     {
                         migrateMoveOption.setAttribute('hidden', '');
                     }

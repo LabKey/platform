@@ -2383,6 +2383,20 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetIssueAction extends ReadOnlyApiAction<IssueIdForm>
     {
+        private JSONObject getUsers(Set<Integer> userIds)
+        {
+            var currentUser = getUser();
+            var users = new JSONObject();
+            for (var userId : userIds)
+            {
+                var user = UserManager.getUser(userId);
+
+                if (user != null)
+                    users.put(String.valueOf(user.getUserId()), User.getUserProps(user, currentUser, null, false));
+            }
+            return users;
+        }
+
         @Override
         public ApiResponse execute(IssueIdForm issueIdForm, BindException errors)
         {
@@ -2394,6 +2408,11 @@ public class IssuesController extends SpringActionController
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
 
+            var userIds = new HashSet<Integer>();
+            userIds.add(issue.getAssignedTo());
+            userIds.add(issue.getCreatedBy());
+            userIds.add(issue.getModifiedBy());
+
             JSONArray comments = new JSONArray();
             jsonIssue.put("comments", comments);
             for (Comment c : issue.getComments())
@@ -2402,8 +2421,11 @@ public class IssuesController extends SpringActionController
                 jsonComment.put("createdByName", c.getCreatedByName(user));
                 jsonComment.put("comment", c.getHtmlComment());
                 comments.put(comments.length(),  jsonComment);
+                userIds.add(c.getCreatedBy());
+                userIds.add(c.getModifiedBy());
                 // ATTACHMENTS
             }
+            jsonIssue.put("users", getUsers(userIds));
             jsonIssue.put("success", Boolean.TRUE);
             return new ApiSimpleResponse(jsonIssue);
         }

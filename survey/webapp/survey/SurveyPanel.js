@@ -36,7 +36,7 @@ Ext4.define('LABKEY.ext4.SurveyDisplayPanel', {
             surveyLabel     : this.surveyLabel,
             isSubmitted     : this.isSubmitted,
             canEdit         : this.canEdit,
-            returnURL       : this.returnURL,
+            returnUrl       : this.returnUrl,
             autosaveInterval: this.autosaveInterval,
             disableAutoSave : this.disableAutoSave
         });

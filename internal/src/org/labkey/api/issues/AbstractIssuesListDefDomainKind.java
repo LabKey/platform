@@ -210,12 +210,19 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         }
     }
 
+    // Allow subclasses to clean up before final domain deletion
+    public abstract void beforeDeleteDomain(User user, Domain domain);
+
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public final void deleteDomain(User user, Domain domain)
     {
-        try
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
+            IssuesListDefService.get().deleteIssueDefsForDomain(user, domain);
+            beforeDeleteDomain(user, domain);
             domain.delete(user);
+
+            transaction.commit();
         }
         catch (DomainNotFoundException e)
         {

@@ -140,7 +140,7 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void beforeDeleteDomain(User user, Domain domain)
     {
         try
         {
@@ -150,7 +150,6 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
             deleteLookup(domain, user, TYPE_LOOKUP);
             deleteLookup(domain, user, MILESTONE_LOOKUP);
             deleteLookup(domain, user, RESOLUTION_LOOKUP);
-            domain.delete(user);
         }
         catch (DomainNotFoundException e)
         {
