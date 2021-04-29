@@ -52,7 +52,7 @@ public interface PropertyStore
      *
      * @param user The user of interest
      * @param category The property set category
-     * @return A stream of PropertyMaps THAT MUST BE CLOSED via try-with-resources or in a finally block
+     * @return A stream of container objects. This stream MUST BE CLOSED via try-with-resources or in a finally block.
      */
     Stream<Container> streamMatchingContainers(User user, String category);
 }
