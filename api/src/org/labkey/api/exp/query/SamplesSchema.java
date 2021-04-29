@@ -104,7 +104,7 @@ public class SamplesSchema extends AbstractExpSchema
         super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
-    protected Map<String, ExpSampleType> getSampleTypes()
+    public Map<String, ExpSampleType> getSampleTypes()
     {
         if (_sampleTypeMap == null)
         {

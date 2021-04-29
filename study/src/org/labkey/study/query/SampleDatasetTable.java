@@ -2,22 +2,18 @@ package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.study.Dataset;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.study.model.DatasetDefinition;
 
 import java.util.ArrayList;
@@ -116,6 +112,11 @@ public class SampleDatasetTable extends DatasetTableImpl
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
             if (userSchema != null)
                 _sampleResultTable = userSchema.getTable(sampleType.getName());
+            if (userSchema instanceof AbstractExpSchema) {
+                SamplesSchema samplesSchema = (SamplesSchema) userSchema;
+                ExpSampleType st = samplesSchema.getSampleTypes().get(_name);
+                _sampleResultTable = samplesSchema.getSampleTable(st, _containerFilter);
+            }
         }
         return _sampleResultTable;
     }

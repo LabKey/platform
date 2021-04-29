@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
