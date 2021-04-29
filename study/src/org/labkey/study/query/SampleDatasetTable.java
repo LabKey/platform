@@ -112,11 +112,10 @@ public class SampleDatasetTable extends DatasetTableImpl
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
             if (userSchema != null)
                 _sampleResultTable = userSchema.getTable(sampleType.getName());
-            if (userSchema instanceof AbstractExpSchema) {
-                SamplesSchema samplesSchema = (SamplesSchema) userSchema;
-                ExpSampleType st = samplesSchema.getSampleTypes().get(_name);
-                _sampleResultTable = samplesSchema.getSampleTable(st, _containerFilter);
-            }
+
+            // Hide 'linked' column for Sample Type Datasets
+            if (userSchema instanceof AbstractExpSchema)
+                _sampleResultTable = ((SamplesSchema) userSchema).getSampleTable(sampleType, null);
         }
         return _sampleResultTable;
     }
