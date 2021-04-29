@@ -40,11 +40,12 @@
                     <property name="customFields">
                         <list>
                             <bean class="org.labkey.api.formSchema.RadioField">
-                                <constructor-arg value="action"/>
-                                <constructor-arg value="Action"/>
-                                <constructor-arg value="true" />
-                                <constructor-arg value="replace" />
-                                <constructor-arg>
+                                <!-- Is this the correct name for the custom param? -->
+                                <constructor-arg index="0" value="action"/>
+                                <constructor-arg index="1" value="Action"/>
+                                <constructor-arg index="2" type="java.lang.Boolean" value="false" />
+                                <constructor-arg index="3" value="replace" />
+                                <constructor-arg index="4">
                                     <list>
                                         <bean class="org.labkey.api.formSchema.Option">
                                             <constructor-arg index="0" value="merge"/>
@@ -56,15 +57,17 @@
                                         </bean>
                                     </list>
                                 </constructor-arg>
-                                <constructor-arg value="Choose Merge to merge values in file with existing list, Replace to replace existing values."/>
+                                <constructor-arg index="5" value="Choose Merge to merge values in file with existing list, Replace to replace existing values."/>
                             </bean>
 
                             <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <constructor-arg value="allowDomainUpdates"/>
-                                <constructor-arg value="Allow Domain Updates"/>
-                                <constructor-arg value="true"/>
-                                <constructor-arg value="true"/>
-                                <constructor-arg value="Enable to allow domain updates"/>
+                                <!-- Is this the correct name for the custom param? -->
+                                <constructor-arg index="0" value="allowDomainUpdates"/>
+                                <constructor-arg index="1" value="Allow Domain Updates"/>
+                                <constructor-arg index="2" type="java.lang.Boolean" value="false" />
+                                <!-- Is this the correct default value? -->
+                                <constructor-arg index="3" value="true"/>
+                                <constructor-arg index="4" value="Enable to allow domain updates"/>
                             </bean>
                         </list>
                     </property>
