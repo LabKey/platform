@@ -95,4 +95,6 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
     Boolean isInitialFileTypesRequired();
 
     FormSchema getFormSchema();
+
+    FormSchema getCustomFieldsFormSchema();
 }

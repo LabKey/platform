@@ -97,10 +97,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private static final String _filePatternHref = _baseHref + "filepattern";
     private static final String _quietHelpText = "Number of seconds to wait after file activity before executing a job (minimum is 1).";
     private static final String _quietHref = _baseHref + "quietperiod";
-    private static final String _containerMoveHelpText = "Move the file to this container before analysis. This must be a relative or absolute container path.";
-    private static final String _containerMoveHref = _baseHref + "moveto";
-    private static final String _directoryMoveHelpText = "Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory.";
-    private static final String _directoryMoveHref = _baseHref + "subdirectory";
+    private static final String _moveContainerHelpText = "Move the file to this container before analysis. This must be a relative or absolute container path.";
+    private static final String _moveContainerHref = _baseHref + "moveto";
+    private static final String _moveDirectoryHelpText = "Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory.";
+    private static final String _moveDirectoryHref = _baseHref + "subdirectory";
     private static final String _copyHelpText = "Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder.";
     private static final String _copyHref = _baseHref + "copyto";
     private static final List<Field> _defaultFields = List.of(
@@ -108,8 +108,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             new CheckboxField("recursive", "Include Child Folders", false, false),
             new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, _filePatternHelpText, _filePatternHref),
             new NumberField("quiet", "Quiet Period (Seconds)", null, true, 1.0, _quietHelpText, _quietHref),
-            new TextField("containerMove", "Move to Container", "/Other Project/Subfolder A", false, null, _containerMoveHelpText, _containerMoveHref),
-            new TextField("directoryMove", "Move to Subdirectory", "My Watched Files/Move", false, null, _directoryMoveHelpText, _directoryMoveHref),
+            new TextField("moveContainer", "Move to Container", "/Other Project/Subfolder A", false, null, _moveContainerHelpText, _moveContainerHref),
+            new TextField("moveDirectory", "Move to Subdirectory", "My Watched Files/Move", false, null, _moveDirectoryHelpText, _moveDirectoryHref),
             new TextField("copy", "Copy File To", null, false, null, _copyHelpText, _copyHref)
     );
     private List<Field> _customFields;
@@ -520,6 +520,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return new TaskId(pipelineTaskId.getModuleName(), TaskId.Type.task, taskName, pipelineTaskId.getVersion());
     }
 
+    @Override
     public FormSchema getFormSchema()
     {
         List<Field> fields = new ArrayList<>(_defaultFields);
@@ -530,10 +531,16 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             fields.subList(4, 6).clear();
         }
 
-        if (getCustomFields() != null)
-            fields.addAll(getCustomFields());
-
         return new FormSchema(fields);
+    }
+
+    @Override
+    public FormSchema getCustomFieldsFormSchema()
+    {
+        if (getCustomFields() != null)
+            return new FormSchema(getCustomFields());
+
+        return null;
     }
 
     /*
