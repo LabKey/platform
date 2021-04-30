@@ -384,7 +384,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         ListDefinition.Category category;
         try {
-            category = ListDefinition.Category.valueOf(listProperties.getCategory());
+            category = listProperties.getCategory() != null ? ListDefinition.Category.valueOf(listProperties.getCategory()) : null;
         }
         catch (IllegalArgumentException e)
         {
