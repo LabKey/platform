@@ -16,6 +16,8 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,6 +28,7 @@ import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.data.xml.queryCustomView.FilterType;
@@ -44,6 +47,8 @@ import java.util.stream.Collectors;
  */
 public class JsonWriter
 {
+    private static final Logger LOG = LogManager.getLogger(JsonWriter.class);
+
     public static Map<FieldKey, Map<String,Object>> getNativeColProps(TableInfo tableInfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat, boolean includeAdditionalQueryColumns)
     {
         List<DisplayColumn> displayColumns = QueryService.get().getColumns(tableInfo, fields, tableInfo.getColumns())
@@ -362,6 +367,18 @@ public class JsonWriter
                     ColumnInfo targetCol = ((TableInfo)lookupTable).getColumn(key);
                     if (targetCol != null)
                         key = targetCol.getName();
+                    else
+                    {
+                        //
+                        TableInfo parentTable = columnInfo.getParentTable();
+                        UserSchema userSchema = parentTable.getUserSchema();
+                        String containerInfo = userSchema == null ? "" : " in container " + userSchema.getContainer().getPath();
+                        LOG.warn("Unable to resolve column '" + key + "' on lookup target " + schemaName + "." +
+                                queryName + " referenced by column '" + columnInfo.getName() + "' from table " +
+                                parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + containerInfo +
+                                ". Using the table's PK instead");
+                        key = null;
+                    }
                 }
             }
 
