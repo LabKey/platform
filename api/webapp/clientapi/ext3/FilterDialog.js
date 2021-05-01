@@ -1472,8 +1472,8 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
                 }],
                 listeners: {
                     render: function() {
-                        const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                        // const conceptFilterScript = 'core/gen/conceptFilter';
+                        // const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
+                        const conceptFilterScript = 'core/gen/conceptFilter';
                         LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId:divId, index:index, scope:this});
                     },
                     scope: this
