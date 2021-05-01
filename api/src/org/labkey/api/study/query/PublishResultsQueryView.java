@@ -28,6 +28,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
@@ -354,7 +355,7 @@ public class PublishResultsQueryView extends QueryView
             _reshowTargetStudies = reshowTargetStudies;
         }
 
-        public ParticipantVisitResolver getResolver(RenderContext ctx)
+        private ParticipantVisitResolver getResolver(RenderContext ctx)
         {
             Integer sourceId = _sourceIdCol != null ? (Integer)_sourceIdCol.getValue(ctx) : null;
             if (sourceId != null && !_resolvers.containsKey(sourceId))
@@ -393,11 +394,11 @@ public class PublishResultsQueryView extends QueryView
             TimepointType timepointType = targetStudy == null ? null : targetStudy.getTimepointType();
             Container targetStudyContainer = targetStudy == null ? null : targetStudy.getContainer();
 
-            Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(_visitIdCol.getValue(ctx)) : null;
-            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(ctx.getContainer(), _dateCol.getValue(ctx)) : null;
+            Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(getColumnValue(_visitIdCol, ctx)) : null;
+            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(ctx.getContainer(), getColumnValue(_dateCol, ctx)) : null;
 
-            String specimenID = _specimenIDCol == null ? null : convertObjectToString(_specimenIDCol.getValue(ctx));
-            String participantID = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
+            String specimenID = _specimenIDCol == null ? null : convertObjectToString(getColumnValue(_specimenIDCol, ctx));
+            String participantID = _ptidCol == null ? null : convertObjectToString(getColumnValue(_ptidCol, ctx));
 
             try
             {
@@ -418,7 +419,7 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowVisits.get(key);
             }
-            Double result = _visitIdCol == null ? null : convertObjectToDouble(_visitIdCol.getValue(ctx));
+            Double result = _visitIdCol == null ? null : convertObjectToDouble(getColumnValue(_visitIdCol, ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -435,7 +436,7 @@ public class PublishResultsQueryView extends QueryView
                 return _reshowPtids.get(key);
             }
             
-            String result = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
+            String result = _ptidCol == null ? null : convertObjectToString(getColumnValue(_ptidCol, ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -451,13 +452,26 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowDates.get(key);
             }
-            Date result = _dateCol == null ? null : convertObjectToDate(ctx.getContainer(), _dateCol.getValue(ctx));
+            Date result = _dateCol == null ? null : convertObjectToDate(ctx.getContainer(), getColumnValue(_dateCol, ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
             return includeTimestamp ? DateUtil.formatDateTimeISO8601(result) : DateUtil.formatDateISO8601(result);
+        }
+
+        private Object getColumnValue(ColumnInfo col, RenderContext ctx)
+        {
+            DisplayColumn dc = col.getRenderer();
+            if (dc instanceof IMultiValuedDisplayColumn)
+            {
+                // support for lineage and multivalue columns
+                List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
+                if (values.size() == 1)
+                    return values.get(0);
+            }
+            return col.getValue(ctx);
         }
 
         public Container getUserTargetStudy(RenderContext ctx)
@@ -680,7 +694,6 @@ public class PublishResultsQueryView extends QueryView
             if (_specimenIDCol != null) { set.add(_specimenIDCol); }
             if (_targetStudyCol != null) { set.add(_targetStudyCol); }
         }
-
     }
 
     public static abstract class InputColumn extends SimpleDisplayColumn

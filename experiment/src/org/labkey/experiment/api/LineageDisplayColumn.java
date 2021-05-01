@@ -44,6 +44,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
 
     private ReexecutableDataregion innerDataRegion;
     private ReexecutableRenderContext innerCtx;
+    private ColumnInfo innerBoundColumn;
     private DisplayColumn innerDisplayColumn;
 
     public static DisplayColumn create(QuerySchema schema, ColumnInfo objectid, FieldKey boundFieldKey)
@@ -75,6 +76,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         if (null == bound)
             return;
 
+        innerBoundColumn = bound;
         innerDataRegion = new ReexecutableDataregion();
         innerDataRegion.setTable(seedTable);
         innerDataRegion.addColumn(bound);
@@ -87,6 +89,15 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         return null;
     }
 
+    public DisplayColumn getInnerDisplayColumn()
+    {
+        return innerDisplayColumn;
+    }
+
+    public ColumnInfo getInnerBoundColumn()
+    {
+        return innerBoundColumn;
+    }
 
     private int innerCtxObjectId = -1;
 
