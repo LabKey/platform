@@ -191,6 +191,14 @@ public class DataIteratorUtil
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
         matches.add(null);
 
+        boolean isEtl = false;
+        if (input instanceof SimpleTranslator)
+        {
+            String source = ((SimpleTranslator) input)._context.getDataSource();
+            if (null != source)
+                isEtl = source.equals(ETL_DATA_SOURCE);
+        }
+
         // match columns to target columninfos (duplicates StandardDataIteratorBuilder, extract shared method?)
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
@@ -201,20 +209,11 @@ public class DataIteratorUtil
                 continue;
             }
 
-            // Match by name first
-            Pair<ColumnInfo,MatchType> to = targetMap.get(from.getName());
-
-            // If name matches, check if property URI matches for higher priority match type
-            if (null != to && null != from.getPropertyURI())
-            {
-                // Built-in columns aliased in source query will not match. Just stick with name match.
-                if (from.getPropertyURI().equals(to.first.getPropertyURI())) {
-                    Pair<ColumnInfo,MatchType> toUri = targetMap.get(from.getPropertyURI());
-                    if (null != toUri)
-                        to = toUri;
-                }
-            }
-
+            Pair<ColumnInfo,MatchType> to = null;
+            if (null != from.getPropertyURI() && !isEtl)
+                to = targetMap.get(from.getPropertyURI());
+            if (null == to)
+                to = targetMap.get(from.getName());
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present

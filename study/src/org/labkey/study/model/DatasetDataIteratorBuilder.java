@@ -251,13 +251,18 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         // do a conversion for PTID aliasing
         Integer translatedIndexPTID = indexPTID;
-        try
+
+        // If not an ETL then get ParticipantId translate column
+        if (context.getDataSource() == null || !context.getDataSource().equals("etl"))
         {
-            translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
-        }
-        catch (ValidationException e)
-        {
-            context.getErrors().addRowError(e);
+            try
+            {
+                translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
+            }
+            catch (ValidationException e)
+            {
+                context.getErrors().addRowError(e);
+            }
         }
 
         // For now, just specify null for sequence num index... we'll add it below
