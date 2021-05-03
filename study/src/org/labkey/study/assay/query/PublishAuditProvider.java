@@ -124,6 +124,12 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
                     // lookup to SampleType by ID
                     col.setLabel("Sample Type ID");
                     col.setFk(QueryForeignKey.from(getUserSchema(), cf).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.SampleSets));
+
+                    // ExpSampleTypeTableImpl uses a details URL with the current Container as the URL's fixed
+                    // container context, but we would like to use the audit event row's container column instead.
+                    var fieldKeyContext = new ContainerContext.FieldKeyContext(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
+                    var detailsURL = DetailsURL.fromString("experiment-showSampleType.view?rowId=${" +COLUMN_NAME_SAMPLE_TYPE_ID + "}", fieldKeyContext);
+                    col.setURL(detailsURL);
                 }
                 else if (COLUMN_NAME_SOURCE_TYPE.equalsIgnoreCase(col.getName()))
                 {
@@ -145,8 +151,9 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             }
         };
 
-        FieldKey containerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
-        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&sampleTypeId=${sampleTypeId}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}", new ContainerContext.FieldKeyContext(containerFieldKey));
+        FieldKey targetStudyContainerFieldKey = FieldKey.fromParts(COLUMN_NAME_TARGET_STUDY);
+        DetailsURL url = DetailsURL.fromString("study/publishHistoryDetails.view?protocolId=${protocol}&sampleTypeId=${sampleTypeId}&datasetId=${datasetId}&sourceLsid=${sourceLsid}&recordCount=${recordCount}",
+                new ContainerContext.FieldKeyContext(targetStudyContainerFieldKey));
         url.setStrictContainerContextEval(true);
 
         table.setDetailsURL(url);
