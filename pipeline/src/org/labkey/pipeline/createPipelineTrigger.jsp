@@ -17,17 +17,10 @@
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
-<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
-<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.pipeline.PipelineController.CreatePipelineTriggerAction" %>
 <%@ page import="org.labkey.pipeline.PipelineController.PipelineTriggerForm" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
