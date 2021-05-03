@@ -19,7 +19,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -28,6 +28,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -114,11 +115,15 @@ public class SampleTypeWebPart extends QueryView
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
 
-        ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(getContainer());
-        linkToStudyURL.addParameter("sampleTypeIds", true);
-        ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
-        linkToStudyButton.setDisplayPermission(InsertPermission.class);
-        bar.add(linkToStudyButton);
+        StudyUrls studyUrls = PageFlowUtil.urlProvider(StudyUrls.class);
+        if (studyUrls != null)
+        {
+            ActionURL linkToStudyURL = studyUrls.getLinkToStudyURL(getContainer(), (ExpSampleType)null);
+            linkToStudyURL.addParameter("sampleTypeIds", true);
+            ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+            linkToStudyButton.setDisplayPermission(InsertPermission.class);
+            bar.add(linkToStudyButton);
+        }
     }
 
     @Override

@@ -302,7 +302,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         queryView.setButtons(buttons);
 
-        return new VBox(new JspView<>("/org/labkey/study/publish/view/publishHeader.jsp",
+        return new VBox(new JspView<>("/org/labkey/api/study/publish/publishHeader.jsp",
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
     }
 

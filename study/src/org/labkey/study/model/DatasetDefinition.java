@@ -56,12 +56,10 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -2772,49 +2770,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return result;
     }
 
-    private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
+    private void deleteProvenance(Container c, User u, Collection<String> lsids)
     {
-        // Get the ExpRuns referenced by the dataset row LSIDs
-        List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
-        // get all lsids for the dataset
-        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(u, this);
-
-        // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
-        for (String lsid : lsids)
-        {
-            // NOTE: We need to get and delete the objects individually instead of deleting in bulk
-            // NOTE: because the objects live in a different container than the run.
-            // CONSIDER: This could be optimized by select from.exp object and performing bulk deletes partitioned by container
-            OntologyObject expObject = OntologyManager.getOntologyObject(null/*any container*/, lsid);
-            if (null != expObject)
-            {
-                pvs.deleteObjectProvenance(expObject.getObjectId());
-                OntologyManager.deleteOntologyObject(lsid, expObject.getContainer(), false);
-            }
-        }
-
-        // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
-        // NOTE: Should we do this for other run types as well?  In the future, other runs might have a provenance reference to the dataset LSID
-        for (ExpRun run : runs)
-        {
-            boolean syncNeeded = true;
-            if (run.getProtocol().getLSID().equals(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
-            {
-                // get all the input and output LSIDs that remain for the selected runs
-                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getRowId()));
-                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getRowId()));
-
-                // if allRunLsids is empty or all the lsids of the dataset are recalled, delete the StudyPublishRun
-                if (allRunLsids.isEmpty() || allDatasetLsids.size() == lsids.size())
-                {
-                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
-                    syncNeeded = false;
-                }
-            }
-
-            if (syncNeeded)
-                ExperimentService.get().syncRunEdges(run);
-        }
+        ProvenanceService.get().deleteProvenanceByLsids(c, u, lsids, true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
     }
 
     @Override
@@ -2825,8 +2783,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            ProvenanceService pvs = ProvenanceService.get();
-            deleteProvenance(u, lsids, pvs);
+            deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
             new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);

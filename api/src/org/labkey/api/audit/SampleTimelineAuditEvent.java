@@ -19,7 +19,9 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         DELETE("Sample was deleted.", "Deleted"),
         TRUNCATE("Sample was deleted.", "Deleted"),
         MERGE("Sample was registered or updated.", "Registered"),
-        UPDATE("Sample was updated.", "Updated");
+        UPDATE("Sample was updated.", "Updated"),
+        PUBLISH("Sample was linked to a study", "Linked To Study"),
+        RECALL("Sample was recalled from a study", "Recalled From Study");
 
         private final String _comment;
         private final String _actionLabel;
@@ -42,7 +44,6 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 
         public static String getActionCommentDetailed(@NotNull QueryService.AuditAction action, boolean isUpdate)
         {
-
             SampleTimelineEventType type;
             if (action == QueryService.AuditAction.MERGE)
                 type = getTypeFromAction(isUpdate ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT);
@@ -195,6 +196,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         elements.put("isLineageUpdate", getIsLineageUpdate());
         elements.put("inventoryUpdateType", getInventoryUpdateType());
         elements.put("transactionId", getTransactionId());
+        elements.put("metadata", getMetadata());
         elements.putAll(super.getAuditLogMessageElements());
         return elements;
     }

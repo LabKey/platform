@@ -29,7 +29,10 @@ import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
@@ -51,9 +54,11 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
@@ -74,7 +79,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
@@ -94,8 +98,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.controllers.PublishController;
+import org.labkey.study.assay.query.PublishAuditProvider;
+import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
@@ -121,8 +125,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
-import static org.labkey.study.query.AssayDatasetTable.ASSAY_RESULT_LSID;
+import static java.util.stream.Collectors.toList;
+import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
+import static org.labkey.study.query.DatasetTableImpl.SOURCE_ROW_LSID;
 
 /**
  * Manages the link to study operation that links assay rows into datasets in the target study, creating the dataset
@@ -313,7 +320,7 @@ public class StudyPublishManager implements StudyPublishService
         boolean schemaChanged = false;
         DatasetDefinition dataset = null;
         List<Map<String, Object>> convertedDataMaps;
-        List<String> lsids;
+        List<String> datasetLsids;
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -340,6 +347,7 @@ public class StudyPublishManager implements StudyPublishService
                     break;
                 }
             }
+
             if (dataset == null)
             {
                 dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, sourceName))
@@ -384,6 +392,7 @@ public class StudyPublishManager implements StudyPublishService
             }
             if (!errors.isEmpty())
                 return null;
+
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
             convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris, publishSource.getKey().name());
 
@@ -397,17 +406,18 @@ public class StudyPublishManager implements StudyPublishService
             if (defaultQCStateId != null)
                 defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-            lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
 
-            // provenance runs are only created for assay sourced datasets
-            if (publishSource.first == Dataset.PublishSource.Assay)
-            {
-                ExpObject expSource = publishSource.first.resolvePublishSource(publishSource.second);
-                if (expSource instanceof ExpProtocol)
-                    createProvenanceRun(user, targetContainer, sourceName, (ExpProtocol)expSource, errors, dataset, lsids);
-            }
+            final ExpObject source = publishSource.first.resolvePublishSource(publishSource.second);
+            createProvenanceRun(user, targetContainer, publishSource.first, source, errors, dataset, datasetLsids);
+
             if (!errors.isEmpty())
                 return null;
+
+            if (datasetLsids.size() > 0)
+            {
+                logPublishEvent(publishSource.first, source, dataMaps, user, sourceContainer, targetContainer, dataset);
+            }
 
             transaction.commit();
         }
@@ -416,38 +426,15 @@ public class StudyPublishManager implements StudyPublishService
             throw new UnexpectedException(e);
         }
 
-        // TODO : consider pushing this into PublishSource
-        if (lsids.size() > 0 &&  publishSource.first == Dataset.PublishSource.Assay)
-        {
-            ExpProtocol protocol = (ExpProtocol)publishSource.first.resolvePublishSource(publishSource.second);
-            if (protocol != null)
-            {
-                for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
-                {
-                    // CONSIDER: add reference to the provenance run?
-                    AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(),
-                            entry.getValue()[0] + " row(s) were linked to a study from the assay: " + protocol.getName());
-
-                    event.setProtocol(protocol.getRowId());
-                    event.setTargetStudy(targetContainer.getId());
-                    event.setDatasetId(dataset.getDatasetId());
-                    event.setSourceLsid(entry.getKey());
-                    event.setRecordCount(entry.getValue()[0]);
-
-                    AuditLogService.get().addEvent(user, event);
-                }
-            }
-        }
-
         //Make sure that the study is updated with the correct timepoints.
         StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
         return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
     }
 
-    private void createProvenanceRun(User user, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol, List<String> errors, DatasetDefinition dataset, List<String> lsids)
+    private void createProvenanceRun(User user, @NotNull Container targetContainer, Dataset.PublishSource sourceType, @Nullable ExpObject source, List<String> errors, DatasetDefinition dataset, List<String> datasetLsids)
     {
-        if (lsids.isEmpty() || null == protocol)
+        if (source == null || datasetLsids.isEmpty())
             return;
 
         // If provenance module is not present, do nothing
@@ -455,49 +442,71 @@ public class StudyPublishManager implements StudyPublishService
         if (!pvs.isProvenanceSupported())
             return;
 
-        AssayProvider provider = AssayService.get().getProvider(protocol);
-        if (provider == null)
+        switch (sourceType)
         {
-            errors.add("provenance error: assay provider for '" + protocol.getName() + "' not found");
-            return;
-        }
+            case SampleType -> {
+                ExpSampleType sampleType = (ExpSampleType)source;
+                createProvenanceRun(user, targetContainer, sampleType, errors, dataset, datasetLsids);
+            }
+            case Assay -> {
+                ExpProtocol protocol = (ExpProtocol)source;
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider == null)
+                {
+                    errors.add("provenance error: assay provider for '" + protocol.getName() + "' not found");
+                    return;
+                }
 
-        if (provider.getResultRowLSIDPrefix() == null)
-        {
-            LOG.info("Can't create provenance run; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
-            return;
+                if (provider.getResultRowLSIDPrefix() == null)
+                {
+                    LOG.info("Can't create provenance run; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    return;
+                }
+
+                createProvenanceRun(user, targetContainer, protocol, errors, dataset, datasetLsids);
+            }
         }
+    }
+
+    private void createProvenanceRun(User user, @NotNull Container targetContainer, @NotNull ExpObject source, List<String> errors, DatasetDefinition dataset, List<String> datasetLsids)
+    {
+        assert !datasetLsids.isEmpty();
+
+        ProvenanceService pvs = ProvenanceService.get();
+        assert pvs.isProvenanceSupported();
 
         String domainName = dataset.getDomain().getName();
         TableInfo datasetTable = dataset.getDomainKind().getTableInfo(user, targetContainer, domainName);
-        if (datasetTable.getColumn(ASSAY_RESULT_LSID) == null)
+        ColumnInfo datasetLsidCol = datasetTable.getColumn("lsid");
+        ColumnInfo sourceRowLsidCol = datasetTable.getColumn(SOURCE_ROW_LSID);
+        if (sourceRowLsidCol == null)
         {
-            errors.add("provenance error: Assay result table for assay '" + protocol.getName() + "' has no LSID column");
+            errors.add("provenance error: expected " + dataset.getName() + " dataset table for '" + source.getName() + "' to have source row LSID column '" + SOURCE_ROW_LSID + "'");
             return;
         }
 
         // Add Provenance details
         // Create a mapping from the assay result LSID to the dataset LSID
         Set<Pair<String, String>> lsidPairs = new HashSet<>();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsids, CompareType.IN);
-        Collection<Map<String, Object>> resultRowsMap = new TableSelector(datasetTable, datasetTable.getColumns("lsid", ASSAY_RESULT_LSID), filter, null).getMapCollection();
-        Set<String> resultRowLsids = new LinkedHashSet<>();
-        for (Map<String, Object> resultRow : resultRowsMap)
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), datasetLsids, CompareType.IN);
+        Collection<Map<String, Object>> datasetRowsMap = new TableSelector(datasetTable, List.of(datasetLsidCol, sourceRowLsidCol), filter, null).getMapCollection();
+        Set<String> sourceRowLsids = new LinkedHashSet<>();
+        for (Map<String, Object> datasetRow : datasetRowsMap)
         {
-            String resultRowLsid = Objects.toString(resultRow.get(ASSAY_RESULT_LSID), null);
-            String datasetLsid = Objects.toString(resultRow.get("lsid"), null);
-            if (resultRowLsid == null || datasetLsid == null)
+            String sourceRowLsid = Objects.toString(datasetRow.get(SOURCE_ROW_LSID), null);
+            String datasetLsid = Objects.toString(datasetRow.get("lsid"), null);
+            if (sourceRowLsid == null || datasetLsid == null)
             {
-                errors.add("provenance error: Expected assay result row to have an lsid: " + resultRow);
+                errors.add("provenance error: Expected source row to have an lsid: " + datasetRow);
                 return;
             }
-            lsidPairs.add(Pair.of(resultRowLsid, datasetLsid));
-            resultRowLsids.add(resultRowLsid);
+            lsidPairs.add(Pair.of(sourceRowLsid, datasetLsid));
+            sourceRowLsids.add(sourceRowLsid);
         }
 
         // Create a new experiment run using the "Study Publish" Protocol
         ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
-        ExpProtocol studyPublishProtocol = null;
+        ExpProtocol studyPublishProtocol;
 
         try
         {
@@ -523,10 +532,10 @@ public class StudyPublishManager implements StudyPublishService
             return;
         }
 
-        // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
-        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
+        // Add the source row LSIDs as provenance inputs to the “StudyPublish” run’s starting protocol application
+        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), sourceRowLsids);
 
-        // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
+        // Add the provenance mapping of source row LSID to study dataset LSID to the run’s final protocol application
         pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
 
         // Call syncRunEdges
@@ -534,27 +543,67 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     /**
-     * To help generate the assay audit record, compute the map of source runs and number of rows
-     * published
+     * To help generate the assay audit record, group the rows by the source type lsid (assay protocol or sample type).
      */
-    private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
+    private Map<String, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
     {
-        Map<String, int[]> lsidMap = new HashMap<>();
+        return dataMaps.stream().collect(Collectors.groupingBy(m -> (String)m.get(SOURCE_LSID_PROPERTY_NAME)));
+    }
 
-        for (Map<String, Object> map : dataMaps)
+    // TODO : consider pushing this into PublishSource
+    private void logPublishEvent(Dataset.PublishSource publishSource, ExpObject source, List<Map<String, Object>> dataMaps, User user, Container sourceContainer, Container targetContainer, Dataset dataset)
+    {
+        Map<String, List<Map<String, Object>>> sourceLSIDCounts = groupBySourceLsid(dataMaps);
+        if (source != null)
         {
-            for (Map.Entry<String, Object> entry : map.entrySet())
+            for (Map.Entry<String, List<Map<String, Object>>> entry : sourceLSIDCounts.entrySet())
             {
-                if (entry.getKey().equalsIgnoreCase("sourcelsid"))
+                String sourceLsid = entry.getKey();
+                List<Map<String, Object>> rows = entry.getValue();
+                int recordCount = rows.size();
+
+                String auditMessage = publishSource.getLinkToStudyAuditMessage(source, recordCount);
+                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source);
+
+                event.setTargetStudy(targetContainer.getId());
+                event.setDatasetId(dataset.getDatasetId());
+                event.setRecordCount(recordCount);
+
+                AuditLogService.get().addEvent(user, event);
+
+                // Create sample timeline event for each of the samples
+                if (Dataset.PublishSource.SampleType == publishSource)
                 {
-                    String lsid = String.valueOf(entry.getValue());
-                    int[] count = lsidMap.computeIfAbsent(lsid, k -> new int[1]);
-                    count[0]++;
-                    break;
+                    var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.PUBLISH;
+                    Map<String, Object> eventMetadata = new HashMap<>();
+                    eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
+                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+
+                    List<Integer> sampleIds = rows.stream().map(m -> (Integer)m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
+                    List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
+                    List<AuditTypeEvent> events = new ArrayList<>(samples.size());
+                    for (ExpMaterial sample : samples)
+                    {
+                        int sampleId = sample.getRowId();
+                        String sampleName = sample.getName();
+                        String sampleLsid = sample.getLSID();
+
+                        SampleTimelineAuditEvent timelineEvent = new SampleTimelineAuditEvent(sourceContainer.getId(), timelineEventType.getComment());
+                        timelineEvent.setSampleType(source.getName());
+                        timelineEvent.setSampleTypeId(source.getRowId());
+                        timelineEvent.setSampleId(sampleId);
+                        timelineEvent.setSampleName(sampleName);
+                        timelineEvent.setSampleLsid(sampleLsid);
+
+                        timelineEvent.setMetadata(metadata);
+                        timelineEvent.setLineageUpdate(false);
+                        events.add(timelineEvent);
+                    }
+
+                    AuditLogService.get().addEvents(user, events);
                 }
             }
         }
-        return lsidMap;
     }
 
     private boolean verifyRequiredColumns(List<Map<String, Object>> dataMaps, TimepointType timepointType)
@@ -940,7 +989,14 @@ public class StudyPublishManager implements StudyPublishService
             switch (source)
             {
                 case Assay -> {
-                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("rowId", publishSourceId);
+                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("publishSourceId", publishSourceId);
+                    if (containerFilter != null && containerFilter.getType() != null)
+                        url.addParameter("containerFilterName", containerFilter.getType().name());
+                    return url;
+                }
+
+                case SampleType -> {
+                    ActionURL url = new ActionURL(PublishController.PublishSampleTypeHistoryAction.class, container).addParameter("rowId", publishSourceId);
                     if (containerFilter != null && containerFilter.getType() != null)
                         url.addParameter("containerFilterName", containerFilter.getType().name());
                     return url;
@@ -1212,29 +1268,57 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
+    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> pairs)
     {
-        Dataset.PublishSource source = def.getPublishSource();
-        switch (source)
+        Dataset.PublishSource sourceType = def.getPublishSource();
+        if (sourceType != null)
         {
-            case Assay -> {
-                String assayName = def.getLabel();
-                ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
-                if (protocol != null)
-                    assayName = protocol.getName();
+            ExpObject source = def.resolvePublishSource();
 
-                AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(), rowCount + " row(s) were recalled to the assay: " + assayName);
+            String sourceName = def.getLabel();
+            if (source != null)
+                sourceName = source.getName();
 
-                if (protocol != null)
-                    event.setProtocol(protocol.getRowId());
-                event.setTargetStudy(def.getStudy().getContainer().getId());
-                event.setDatasetId(def.getDatasetId());
+            String auditMessage = sourceType.getRecallFromStudyAuditMessage(sourceName, rowCount);
+            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source);
 
-                AuditLogService.get().addEvent(user, event);
-            }
+            event.setTargetStudy(def.getStudy().getContainer().getId());
+            event.setDatasetId(def.getDatasetId());
+            event.setRecordCount(rowCount);
 
-            case SampleType -> {
-                // This will be implemented once publish and recall audit logging are completed.
+            AuditLogService.get().addEvent(user, event);
+
+            // Create sample timeline event for each of the samples
+            if (sourceType == Dataset.PublishSource.SampleType && pairs != null)
+            {
+                var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
+                Map<String, Object> eventMetadata = new HashMap<>();
+                eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
+                String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+
+                List<Integer> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
+                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
+                List<AuditTypeEvent> events = new ArrayList<>(samples.size());
+                for (ExpMaterial sample : samples)
+                {
+                    int sampleId = sample.getRowId();
+                    String sampleName = sample.getName();
+                    String sampleLsid = sample.getLSID();
+
+                    SampleTimelineAuditEvent timelineEvent = new SampleTimelineAuditEvent(sourceContainer.getId(), timelineEventType.getComment());
+                    timelineEvent.setSampleType(sourceName);
+                    if (source != null)
+                        timelineEvent.setSampleTypeId(source.getRowId());
+                    timelineEvent.setSampleId(sampleId);
+                    timelineEvent.setSampleName(sampleName);
+                    timelineEvent.setSampleLsid(sampleLsid);
+
+                    timelineEvent.setMetadata(metadata);
+                    timelineEvent.setLineageUpdate(false);
+                    events.add(timelineEvent);
+                }
+
+                AuditLogService.get().addEvents(user, events);
             }
         }
     }
