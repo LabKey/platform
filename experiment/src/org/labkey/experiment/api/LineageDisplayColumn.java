@@ -8,6 +8,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ILineageDisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
@@ -38,7 +39,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 
 // NOTE DataColumn perhaps does more than we need, consider extending DisplayColumn instead?
 
-public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisplayColumn
+public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisplayColumn, ILineageDisplayColumn
 {
     private final FieldKey boundFieldKey;
 
@@ -89,11 +90,13 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         return null;
     }
 
+    @Override
     public DisplayColumn getInnerDisplayColumn()
     {
         return innerDisplayColumn;
     }
 
+    @Override
     public ColumnInfo getInnerBoundColumn()
     {
         return innerBoundColumn;
