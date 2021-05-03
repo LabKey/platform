@@ -70,7 +70,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         Assay
                 {
                     @Override
-                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    public @Nullable ExpProtocol resolvePublishSource(Integer publishSourceId)
                     {
                         if (publishSourceId != null)
                             return ExperimentService.get().getExpProtocol(publishSourceId);
@@ -94,7 +94,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         if (publishSourceId != null)
                         {
-                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            ExpProtocol protocol = resolvePublishSource(publishSourceId);
                             if (protocol != null)
                             {
                                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
@@ -112,7 +112,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         if (publishSourceId != null)
                         {
-                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            ExpProtocol protocol = resolvePublishSource(publishSourceId);
                             if (protocol != null)
                             {
                                 AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -133,11 +133,17 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
                         return null;
                     }
+
+                    @Override
+                    protected String getAuditMessageSourceType()
+                    {
+                        return "assay";
+                    }
                 },
         SampleType
                 {
                     @Override
-                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    public @Nullable ExpSampleType resolvePublishSource(Integer publishSourceId)
                     {
                         return SampleTypeService.get().getSampleType(publishSourceId);
                     }
@@ -156,7 +162,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         if (publishSourceId != null)
                         {
-                            ExpSampleType sampleType = (ExpSampleType)resolvePublishSource(publishSourceId);
+                            ExpSampleType sampleType = resolvePublishSource(publishSourceId);
                             if (sampleType != null)
                             {
                                 ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(sampleType);
@@ -182,6 +188,12 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
                         return null;
                     }
+
+                    @Override
+                    protected String getAuditMessageSourceType()
+                    {
+                        return "sample type";
+                    }
                 };
 
         public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
@@ -189,6 +201,18 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
         public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid);
+
+        protected abstract String getAuditMessageSourceType();
+
+        public String getLinkToStudyAuditMessage(ExpObject source, int recordCount)
+        {
+            return recordCount + " row(s) were linked to a study from the " + getAuditMessageSourceType() + ": " + source.getName();
+        }
+
+        public String getRecallFromStudyAuditMessage(String label, int recordCount)
+        {
+            return recordCount + " row(s) were recalled from a study to the " + getAuditMessageSourceType() + ": " + label;
+        }
     }
 
     Set<String> getDefaultFieldNames();

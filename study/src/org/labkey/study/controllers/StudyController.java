@@ -67,8 +67,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
@@ -191,6 +190,8 @@ import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
+import org.labkey.study.controllers.publish.SampleTypePublishConfirmAction;
+import org.labkey.study.controllers.publish.SampleTypePublishStartAction;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -357,6 +358,15 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getLinkToStudyURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishStartAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
+        }
+
+        @Override
         public ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishStartAction.class);
@@ -367,6 +377,16 @@ public class StudyController extends BaseStudyController
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishConfirmAction.class);
         }
+
+        @Override
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
+        }
+
     }
 
     public StudyController()
@@ -2647,24 +2667,82 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class PublishHistoryDetailsForm
+    {
+        private @Nullable Integer _protocolId;
+        private @Nullable Integer _sampleTypeId;
+        private int _datasetId;
+        private String _sourceLsid;
+        private int _recordCount;
+
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
+
+        public Integer getSampleTypeId()
+        {
+            return _sampleTypeId;
+        }
+
+        public void setSampleTypeId(Integer sampleTypeId)
+        {
+            _sampleTypeId = sampleTypeId;
+        }
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getSourceLsid()
+        {
+            return _sourceLsid;
+        }
+
+        public void setSourceLsid(String sourceLsid)
+        {
+            _sourceLsid = sourceLsid;
+        }
+
+        public int getRecordCount()
+        {
+            return _recordCount;
+        }
+
+        public void setRecordCount(int recordCount)
+        {
+            _recordCount = recordCount;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class PublishHistoryDetailsAction extends SimpleViewAction
+    public class PublishHistoryDetailsAction extends SimpleViewAction<PublishHistoryDetailsForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(PublishHistoryDetailsForm form, BindException errors)
         {
             final StudyImpl study = getStudyRedirectIfNull();
-            final ViewContext context = getViewContext();
 
             VBox view = new VBox();
 
-            int datasetId = NumberUtils.toInt((String)context.get(DatasetDefinition.DATASETKEY), -1);
+            int datasetId = form.getDatasetId();
             final DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
             if (def != null)
             {
                 final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
+                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
                 {
@@ -2673,12 +2751,14 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String publishSourceId = (String)getViewContext().get("publishSourceId");
-                    String sourceLsid = (String)getViewContext().get("sourceLsid");
-                    String recordCount = (String)getViewContext().get("recordCount");
+                    Integer protocolId = form.getProtocolId();
+                    Integer sampleTypeId = form.getSampleTypeId();
+                    assert protocolId != null || sampleTypeId != null : "Expected one protocolId or sampleTypeId parameters";
+                    String sourceLsid = form.getSourceLsid(); // the assay protocol or sample type LSID
+                    int recordCount = form.getRecordCount();
 
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteURL.addParameter("publishSourceId", publishSourceId);
+                    deleteURL.addParameter("publishSourceId", protocolId != null ? protocolId : sampleTypeId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
                     final ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
@@ -2687,7 +2767,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
                     PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid, def.getPublishSource(),
-                            NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
+                            protocolId != null ? protocolId : sampleTypeId, recordCount) {
 
                         @Override
                         protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -2744,36 +2824,30 @@ public class StudyController extends BaseStudyController
 
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
-            // Need to handle this by groups of source lsids -- each assay container needs logging
-            MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
-
-            if (originalSourceLsid != null)
+            // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
+            MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
+            List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
+            for (Map<String,Object> row : data)
             {
-                sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
-            }
-            else
-            {
-                List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
-                for (Map<String,Object> row : data)
+                String sourceLSID = (String)row.get("sourcelsid");
+                String datasetRowLsid = (String)row.get("lsid");
+                Integer sourceRowId = (Integer)row.get("rowId");
+                if (sourceLSID != null && datasetRowLsid != null)
                 {
-                    Object sourceLSID = row.get("sourcelsid");
-                    Object lsid = row.get("lsid");
-                    if (sourceLSID != null && lsid != null)
-                    {
-                        sourceLsid2datasetLsid.put(sourceLSID.toString(), lsid.toString());
-                    }
+                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, sourceRowId));
                 }
             }
 
             Dataset.PublishSource publishSource = def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
             {
-                for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
+                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : sourceLsidToLsidPair.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
+                    Collection<Pair<String, Integer>> pairs = entry.getValue();
                     Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
                     if (sourceContainer != null)
-                        StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
+                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);

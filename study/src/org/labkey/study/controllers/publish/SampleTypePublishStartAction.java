@@ -1,17 +1,17 @@
-package org.labkey.experiment.publish;
+package org.labkey.study.controllers.publish;
 
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.publish.AbstractPublishStartAction;
+import org.labkey.api.study.publish.PublishStartForm;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.study.publish.AbstractPublishStartAction;
-import org.labkey.api.study.publish.PublishStartForm;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -97,7 +97,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     @Override
     protected ActionURL getSuccessUrl(SampleTypePublishStartForm form)
     {
-        return urlProvider(ExperimentUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType);
+        return urlProvider(StudyUrls.class).getLinkToStudyConfirmURL(getContainer(), _sampleType);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     public void addNavTrail(NavTree root)
     {
         setHelpTopic(new HelpTopic("linkSampleData"));
-        root.addChild("Sample Types", new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
+        root.addChild("Sample Types", ExperimentUrls.get().getShowSampleTypeListURL(getContainer()));
         if (_sampleType != null)
             root.addChild(_sampleType.getName(), urlProvider(ExperimentUrls.class).getShowSampleTypeURL(_sampleType));
         root.addChild("Link to Study: Choose Target");

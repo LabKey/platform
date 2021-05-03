@@ -20,7 +20,8 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.publish.PublishBean" %>
 <%@ page import="org.labkey.api.study.publish.StudyPublishService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
@@ -31,8 +32,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.publish.PublishBean" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -48,7 +47,7 @@
     {
         Iterator<Container> studyIt = bean.getStudies().iterator();
         firstStudyContainer = studyIt.next();
-        firstStudy = StudyManager.getInstance().getStudy(firstStudyContainer);
+        firstStudy = StudyService.get().getStudy(firstStudyContainer);
         if (firstStudy == null)
             unambiguous = false;
     }

@@ -103,10 +103,14 @@ public interface ProvenanceService
      */
     void deleteRunProvenance(int runId);
 
-    /**
-     * Delete provenance for assay result rows.
-     */
-    void deleteAssayResultProvenance(@NotNull SQLFragment sqlFragment);
+    void deleteProvenanceByLsids(
+            Container c, User user, @NotNull Collection<String> lsids,
+            boolean deleteEdgesAndOntologyObjects, Collection<String> deleteEmptyRunsForProtocol);
+
+    void deleteProvenanceByLsids(
+            Container c, User user, @NotNull SQLFragment lsidInFrag,
+            boolean deleteOntologyObjects, Collection<String> deleteEmptyRunsForProtocol);
+
 
     /**
      * Delete provenance for a assay result row.
@@ -121,12 +125,14 @@ public interface ProvenanceService
     /**
      * Get the ExpRun referenced by the set of LSIDs
      */
-    List<? extends ExpRun> getRuns(Set<String> lsids);
+    List<? extends ExpRun> getRuns(Collection<String> lsids);
+    List<? extends ExpRun> getRuns(SQLFragment lsidInFrag);
 
     /**
      * Get the ExpRun referenced by the set of LSIDs
      */
-    Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids);
+    Map<String, Set<ExpRun>> getRunsByLsid(Collection<String> lsids);
+    Map<String, Set<ExpRun>> getRunsByLsid(SQLFragment lsidInFrag);
 
     /**
      * Start a recording session, place RecordedActionSet in http session state and

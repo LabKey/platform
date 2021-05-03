@@ -53,6 +53,7 @@ public interface StudyPublishService
     String SEQUENCENUM_PROPERTY_NAME = "SequenceNum";
     String DATE_PROPERTY_NAME = "Date";
     String SOURCE_LSID_PROPERTY_NAME = "SourceLSID";
+    String ROWID_PROPERTY_NAME = "RowId";
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
     String AUTO_LINK_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
@@ -121,7 +122,7 @@ public interface StudyPublishService
      */
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
-    void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
+    void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> datasetRowLsidAndSourceRowIds);
 
     /**
      * Adds columns to an assay data table, providing a link to any datasets that have
