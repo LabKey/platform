@@ -64,8 +64,7 @@
                                 <!-- Is this the correct name for the custom param? -->
                                 <constructor-arg index="0" value="allowDomainUpdates"/>
                                 <constructor-arg index="1" value="Allow Domain Updates"/>
-                                <constructor-arg index="2" type="java.lang.Boolean" value="false" />
-                                <!-- Is this the correct default value? -->
+                                <constructor-arg index="2" value="false" />
                                 <constructor-arg index="3" value="true"/>
                                 <constructor-arg index="4" value="Enable to allow domain updates"/>
                             </bean>
