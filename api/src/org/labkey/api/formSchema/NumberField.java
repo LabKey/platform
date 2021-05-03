@@ -5,7 +5,7 @@ package org.labkey.api.formSchema;
  */
 public class NumberField extends AbstractField<Double>
 {
-    public static final String TYPE = "text";
+    public static final String TYPE = "number";
 
     public NumberField(String name, String label, String placeholder, Boolean required, Double defaultValue)
     {
