@@ -7,8 +7,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -22,31 +22,29 @@ import java.util.List;
 
 public class SampleDatasetTable extends DatasetTableImpl
 {
-    public static final FieldKey SAMPLE_RESULT_LSID = FieldKey.fromParts("SampleResultLsid");
-
-    private TableInfo _sampleResultTable;
+    private TableInfo _sampleTable;
     private List<FieldKey> _defaultVisibleColumns = null;
 
     public SampleDatasetTable(@NotNull StudyQuerySchema schema, ContainerFilter cf, @NotNull DatasetDefinition dsd)
     {
         super(schema, cf, dsd);
 
-        TableInfo sampleResultTable = getSamplesTable();
+        TableInfo sampleTable = getSamplesTable();
         ExpObject publishSource = _dsd.resolvePublishSource();
-        if (sampleResultTable != null && publishSource instanceof ExpSampleType)
+        if (sampleTable != null && publishSource instanceof ExpSampleType)
         {
-            for (final ColumnInfo columnInfo : sampleResultTable.getColumns())
+            for (final ColumnInfo columnInfo : sampleTable.getColumns())
             {
                 String name = columnInfo.getName();
-                if (columnInfo.getFieldKey().equals(SAMPLE_RESULT_LSID))
+                if (name.equals(ExpMaterialTable.Column.LSID.name()))
                 {
-                    // add the sample result lsid column as "SampleResultLsid" so it won't collide with the dataset's LSID column
-                    name = SAMPLE_RESULT_LSID.toString();
+                    // add the sample row's lsid column as "SourceRowLsid" so it won't collide with the dataset's LSID column
+                    name = SOURCE_ROW_LSID;
                 }
 
                 if (!getColumnNameSet().contains(name))
                 {
-                    ExprColumn wrappedColumn = wrapPublishSourceColumn(columnInfo, name, this::getSampleResultAlias);
+                    ExprColumn wrappedColumn = wrapPublishSourceColumn(columnInfo, name, this::getSampleTableAlias);
                     addColumn(wrappedColumn);
                 }
             }
@@ -64,10 +62,10 @@ public class SampleDatasetTable extends DatasetTableImpl
         {
             // compute default visible columns for sample dataset
             List<FieldKey> defaultVisibleCols = new ArrayList<>(super.getDefaultVisibleColumns());
-            TableInfo sampleResultTable = getSamplesTable();
-            if (null != sampleResultTable)
+            TableInfo sampleTable = getSamplesTable();
+            if (null != sampleTable)
             {
-                for (FieldKey fieldKey : sampleResultTable.getDefaultVisibleColumns())
+                for (FieldKey fieldKey : sampleTable.getDefaultVisibleColumns())
                 {
                     if (!defaultVisibleCols.contains(fieldKey) && !defaultVisibleCols.contains(FieldKey.fromParts(fieldKey.getName())))
                     {
@@ -87,12 +85,12 @@ public class SampleDatasetTable extends DatasetTableImpl
     {
         SQLFragment sqlf = super._getFromSQL(alias, includeParticipantVisit);
 
-        String sampleResultAlias = getSampleResultAlias(alias);
-        TableInfo sampleResultTable = getSamplesTable();
-        if (sampleResultTable != null)
+        String sampleTableAlias = getSampleTableAlias(alias);
+        TableInfo sampleTable = getSamplesTable();
+        if (sampleTable != null)
         {
-            sqlf.append(" LEFT OUTER JOIN ").append(sampleResultTable.getFromSQL(sampleResultAlias)).append("\n");
-            sqlf.append(" ON ").append(sampleResultAlias).append(".").append(sampleResultTable.getPkColumnNames().get(0)).append(" = ");
+            sqlf.append(" LEFT OUTER JOIN ").append(sampleTable.getFromSQL(sampleTableAlias)).append("\n");
+            sqlf.append(" ON ").append(sampleTableAlias).append(".").append(sampleTable.getPkColumnNames().get(0)).append(" = ");
             sqlf.append(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
         }
 
@@ -102,7 +100,7 @@ public class SampleDatasetTable extends DatasetTableImpl
     @Nullable
     private TableInfo getSamplesTable()
     {
-        if (_sampleResultTable == null)
+        if (_sampleTable == null)
         {
             ExpObject source = _dsd.resolvePublishSource();
             if (!(source instanceof ExpSampleType))
@@ -111,13 +109,13 @@ public class SampleDatasetTable extends DatasetTableImpl
             ExpSampleType sampleType = (ExpSampleType)source;
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
             if (userSchema != null)
-                _sampleResultTable = userSchema.getTable(sampleType.getName());
+                _sampleTable = userSchema.getTable(sampleType.getName());
         }
-        return _sampleResultTable;
+        return _sampleTable;
     }
 
-    private String getSampleResultAlias(String mainAlias)
+    private String getSampleTableAlias(String mainAlias)
     {
-        return mainAlias + "_SR";
+        return mainAlias + "_ST";
     }
 }

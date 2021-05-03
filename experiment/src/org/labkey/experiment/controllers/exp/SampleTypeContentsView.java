@@ -12,14 +12,16 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -76,15 +78,31 @@ public class SampleTypeContentsView extends QueryView
         return view;
     }
 
-    private ActionButton getLinkToStudyButton(DataView view, Container container)
+    // Returns null if Study module is not available
+    // See method in assay ResultQueryView.getLinktToStudyButton
+    @Nullable
+    private ActionButton getLinkToStudyButton(DataView view)
     {
-        ActionURL linkToStudyURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getLinkToStudyURL(container);
+        if (null == StudyPublishService.get() || StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
+            return null;
+
+        StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
+        if (urls == null)
+            return null;
+
+        ActionURL publishURL = urls.getLinkToStudyURL(getContainer(), _source);
+        for (Pair<String, String> param : publishURL.getParameters())
+        {
+            if (!"rowId".equalsIgnoreCase(param.getKey()))
+                view.getDataRegion().addHiddenFormField(param.getKey(), param.getValue());
+        }
+        publishURL.deleteParameters();
 
         ContainerFilter containerFilter = view.getDataRegion().getTable().getContainerFilter();
         if (containerFilter != null && containerFilter.getType() != null)
-            linkToStudyURL.addParameter("containerFilterName", containerFilter.getType().name());
+            publishURL.addParameter("containerFilterName", containerFilter.getType().name());
 
-        ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+        ActionButton linkToStudyButton = new ActionButton(publishURL, "Link to Study");
         linkToStudyButton.setDisplayPermission(InsertPermission.class);
         linkToStudyButton.setRequiresSelection(true);
         return linkToStudyButton;
@@ -166,7 +184,10 @@ public class SampleTypeContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
-        bar.add(getLinkToStudyButton(view, getContainer()));
+
+        ActionButton linkToStudyButton = getLinkToStudyButton(view);
+        if (linkToStudyButton != null)
+            bar.add(linkToStudyButton);
 
         // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();

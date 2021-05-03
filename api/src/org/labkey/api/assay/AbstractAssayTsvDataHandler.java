@@ -59,11 +59,11 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -374,9 +374,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                 }
 
-                // call pvs to delete assay result rows provenance
-                ProvenanceService pvs = ProvenanceService.get();
-                pvs.deleteAssayResultProvenance(assayResultLsidSql);
+                // delete provenance for assay result rows
+                ProvenanceService.get().deleteProvenanceByLsids(run.getContainer(), user, new SQLFragment(" IN (").append(assayResultLsidSql).append(")"), true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
                 int count = OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
                 LOG.debug("AbstractAssayTsvDataHandler.beforeDeleteData: deleted " + count + " ontology objects for assay result lsids");

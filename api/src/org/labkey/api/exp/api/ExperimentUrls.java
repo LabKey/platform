@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -32,6 +33,11 @@ import org.labkey.api.view.ActionURL;
  */
 public interface ExperimentUrls extends UrlProvider
 {
+    static ExperimentUrls get()
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class);
+    }
+
     ActionURL getRunGraphURL(ExpRun run);
     ActionURL getRunGraphURL(Container c, int rowId);
 
@@ -108,7 +114,4 @@ public interface ExperimentUrls extends UrlProvider
 
     ActionURL getInsertMaterialQueryRowAction(Container c, TableInfo table);
 
-    ActionURL getLinkToStudyURL(Container container);
-
-    ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType);
 }
