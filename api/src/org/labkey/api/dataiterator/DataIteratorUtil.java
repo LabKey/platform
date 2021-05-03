@@ -210,6 +210,7 @@ public class DataIteratorUtil
             }
 
             Pair<ColumnInfo,MatchType> to = null;
+            // Only do propertyURI matching if not an ETL
             if (null != from.getPropertyURI() && !isEtl)
                 to = targetMap.get(from.getPropertyURI());
             if (null == to)
