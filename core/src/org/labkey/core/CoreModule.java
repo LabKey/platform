@@ -678,10 +678,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Allow dialect to make adjustments to the just upgraded core database (e.g., install aggregate functions, etc.)
         CoreSchema.getInstance().getSqlDialect().afterCoreUpgrade(moduleContext);
 
-        // The core SQL scripts install aggregate functions and other objects that dialects need to know about. Prepare the
-        // dialects again to make sure they're aware of all the changes. Prepare all the scopes because we could have more
-        // than one scope pointed at the core database (e.g., external schemas). See #17077 (pg example) and #19177 (ss example)
-        for (DbScope scope : DbScope.getDbScopes())
+        // The core SQL scripts install aggregate functions and other objects that dialects need to know about. Prepare
+        // the previously initialized dialects again to make sure they're aware of all the changes. Prepare all the
+        // initialized scopes because we could have more than one scope pointed at the core database (e.g., external
+        // schemas). See #17077 (pg example) and #19177 (ss example).
+        for (DbScope scope : DbScope.getInitializedDbScopes())
             scope.getSqlDialect().prepare(scope);
 
         // Now that we know the standard containers have been created, add a listener that warms the just-cleared caches with
