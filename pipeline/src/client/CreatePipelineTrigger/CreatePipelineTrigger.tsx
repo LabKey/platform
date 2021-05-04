@@ -52,13 +52,16 @@ interface FormState {
     customFieldFormSchemas: Record<string, FormSchema>;
     // the parameters not known by the FormSchema, added via "add custom parameter" in UI
     customParameters: Record<number, CustomParameterModel>;
+    customConfigValid: boolean;
     details: Details;
     detailsFormSchema: FormSchema;
+    detailsValid: boolean;
     rowId?: number;
     saveError: string;
     saving: boolean;
     taskFormSchemas: Record<string, FormSchema>;
     triggerConfig: TriggerConfiguration;
+    triggerConfigValid: boolean;
     view: View;
 }
 
@@ -115,13 +118,34 @@ type FormStateAction =
     | UpdateCustomParamAction
     | SetSavingAction;
 
+const validateValues = (formSchema: FormSchema, values: Record<string, any>): boolean => {
+    if (formSchema === null) return true;
+
+    let isValid = true;
+
+    formSchema.fields.forEach(field => {
+        const value = values[field.name];
+
+        if (field.required) {
+            if (value === null || value === undefined) {
+                isValid = false;
+                console.log(field.name, 'value is null or undefined');
+            }
+            if (typeof value === 'string' && value.trim() === '') {
+                isValid = false;
+                console.log(field.name, 'value is empty');
+            }
+        }
+    });
+
+    return isValid;
+};
+
 const formStateReducer = (state: FormState, action: FormStateAction): FormState => {
     switch (action.type) {
         case ActionType.SET_VIEW: {
-            const { name, pipelineId } = state.details;
-
-            // Don't navigate to the Configuration form if the user hasn't filled out he required fields in Details.
-            if (name === null || name.trim() === '' || pipelineId === null) {
+            // Don't navigate to the Configuration form if the user hasn't filled out the required fields in Details.
+            if (!state.detailsValid) {
                 return state;
             }
 
@@ -147,25 +171,35 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
                 // Delete values that don't exist in new taskFormSchema (e.g. containerMove/directoryMove)
                 resetTriggerConfig = { ...resetTriggerConfig };
                 const taskFormSchema = taskFormSchemas[value];
-                Object.keys(resetTriggerConfig).forEach(key => {
-                    if (taskFormSchema.fields.find(f => f.name === key) === undefined) {
-                        delete resetTriggerConfig[key];
-                    }
-                });
+
+                if (taskFormSchema) {
+                    Object.keys(resetTriggerConfig).forEach(key => {
+                        if (taskFormSchema.fields.find(f => f.name === key) === undefined) {
+                            delete resetTriggerConfig[key];
+                        }
+                    });
+                }
             }
+
+            const newDetails = { ...details, [field]: value };
 
             return {
                 ...state,
                 customConfig: resetCustomConfig,
-                details: { ...details, [field]: value },
+                details: newDetails,
+                detailsValid: validateValues(state.detailsFormSchema, newDetails),
                 triggerConfig: resetTriggerConfig,
             };
         }
         case ActionType.UPDATE_TRIGGER_CONFIG: {
-            return { ...state, triggerConfig: { ...state.triggerConfig, [action.field]: action.value } };
+            const triggerConfig = { ...state.triggerConfig, [action.field]: action.value };
+            const formSchema = state.taskFormSchemas[state.details.pipelineId];
+            return { ...state, triggerConfig, triggerConfigValid: validateValues(formSchema, triggerConfig) };
         }
         case ActionType.UPDATE_CUSTOM_CONFIG: {
-            return { ...state, customConfig: { ...state.customConfig, [action.field]: action.value } };
+            const customConfig = { ...state.customConfig, [action.field]: action.value };
+            const formSchema = state.customFieldFormSchemas[state.details.pipelineId];
+            return { ...state, customConfig, customConfigValid: validateValues(formSchema, customConfig) };
         }
         case ActionType.ADD_CUSTOM_PARAM: {
             const { customParameters } = state;
@@ -217,7 +251,10 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
 };
 
 // customParameters is computed based on customConfig and taskFormSchemas
-type InitialState = Omit<FormState, 'customParameters' | 'saving' | 'saveError'>;
+type InitialState = Omit<
+    FormState,
+    'customParameters' | 'customConfigValid' | 'detailsValid' | 'saving' | 'saveError' | 'triggerConfigValid'
+>;
 
 const initializeFormState = (initialState: InitialState): FormState => {
     const {
@@ -247,7 +284,7 @@ const initializeFormState = (initialState: InitialState): FormState => {
     } else {
         // The server serializes quiet in ms, but expects seconds when saving.
         _triggerConfig.quiet = _triggerConfig.quiet / 1000;
-        const formSchema = customFieldFormSchemas[details.pipelineId];
+        const formSchema = customFieldFormSchemas[_details.pipelineId];
 
         Object.keys(_customConfig).forEach(key => {
             const value = _customConfig[key];
@@ -280,15 +317,18 @@ const initializeFormState = (initialState: InitialState): FormState => {
 
     return {
         customConfig: _customConfig,
+        customConfigValid: validateValues(customFieldFormSchemas[_details.pipelineId], _customConfig),
         customFieldFormSchemas,
         customParameters,
         details: _details,
         detailsFormSchema,
+        detailsValid: validateValues(detailsFormSchema, _details),
         saveError: undefined,
         saving: false,
         rowId,
         taskFormSchemas,
         triggerConfig: _triggerConfig,
+        triggerConfigValid: validateValues(taskFormSchemas[_details.pipelineId], _triggerConfig),
         view,
     };
 };
@@ -335,18 +375,16 @@ interface DetailsFormProps {
 
 const DetailsForm: FC<DetailsFormProps> = ({ dispatch, formState, onNext, returnUrl }) => {
     const { details, detailsFormSchema } = formState;
-    const { name, pipelineId } = details;
     const onChange = useCallback((name_, value) => {
         dispatch({ type: ActionType.UPDATE_DETAILS, field: name_, value });
     }, []);
-    const nextDisabled = name === null || name.trim() === '' || pipelineId === null;
 
     return (
         <div className="details-form">
             <AutoForm formSchema={detailsFormSchema} onChange={onChange} values={details} />
 
             <div className="pipeline-trigger-buttons">
-                <button type="button" className="btn btn-primary" disabled={nextDisabled} onClick={onNext}>
+                <button type="button" className="btn btn-primary" disabled={!formState.detailsValid} onClick={onNext}>
                     next
                 </button>
                 <a href={returnUrl} className="btn btn-default">
@@ -448,11 +486,14 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
     const { formState, dispatch, onBack, onSubmit, returnUrl } = props;
     const {
         customConfig,
+        customConfigValid,
         customFieldFormSchemas,
         customParameters,
         details,
+        detailsValid,
         taskFormSchemas,
         triggerConfig,
+        triggerConfigValid,
     } = formState;
     const { parameterFunction } = triggerConfig;
     const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
@@ -470,6 +511,7 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
     const onParamFunctionChange = useCallback(event => {
         dispatch({ type: ActionType.UPDATE_TRIGGER_CONFIG, field: 'parameterFunction', value: event.target.value });
     }, []);
+    const saveDisabled = !customConfigValid || !detailsValid || !triggerConfigValid;
 
     return (
         <div className="configuration-form">
@@ -507,7 +549,7 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
             </div>
 
             <div className="pipeline-trigger-buttons">
-                <button type="button" className="btn btn-primary" onClick={onSubmit}>
+                <button disabled={saveDisabled} type="button" className="btn btn-primary" onClick={onSubmit}>
                     save
                 </button>
                 <a href={returnUrl} className="btn btn-default">
