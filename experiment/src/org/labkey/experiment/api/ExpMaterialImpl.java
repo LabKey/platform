@@ -110,7 +110,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public void setLSID(Lsid lsid)
     {
         if (null != getName() && !getName().equals(lsid.getObjectId()))
-            throw new IllegalStateException("name="+getName() + " lsid="+lsid.toString());
+            throw new IllegalStateException("name=" + getName() + " lsid=" + lsid);
         super.setLSID(lsid);
     }
 
@@ -534,7 +534,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (ConversionException x)
                 {
-                    throw new ValidationException("Could not convert '" + value + "' for field " + dp.getName() + ", should be of type " + dp.getPropertyDescriptor().getPropertyType().getJavaType().getSimpleName());
+                    throw new ValidationException(OntologyManager.getStandardConversionErrorMessage(value, dp.getName(), true, dp.getPropertyDescriptor().getPropertyType().getJavaType()));
                 }
                 converted.put(dp.getName(), value);
                 values.remove(key);

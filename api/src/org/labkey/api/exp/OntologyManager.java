@@ -341,7 +341,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + pd.getPropertyType().getJavaType().getSimpleName());
+                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), true, pd.getPropertyType().getJavaType()));
                     }
                 }
                 assert ensure.stop();
@@ -590,7 +590,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
+                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), true, propertyTypes[i].getJavaType()));
                     }
                 }
 
@@ -632,6 +632,12 @@ public class OntologyManager
         }
 
         return results;
+    }
+
+    public static String getStandardConversionErrorMessage(Object value, String fieldName, boolean useField, Class<?> expectedClass)
+    {
+        String fromType = (value instanceof String) ? "" : "(" + (value.getClass().getSimpleName() + ") ");
+        return "Could not convert value " + fromType + "'" + value + "' for " + (useField ? "field" : "column") + " '" + fieldName + "'; expected type " + expectedClass.getSimpleName();
     }
 
     // TODO: Consolidate with ColumnValidator

@@ -48,6 +48,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -163,8 +164,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String msg;
         if (null != value && null != target)
         {
-            String fromType = (value instanceof String) ? "" : "(" + (value.getClass().getSimpleName() + ") ");
-            msg = "Could not convert " + fromType + "'" + value + "' for field " + fieldName + ", should be of type " + target.getJavaClass().getSimpleName();
+            msg = OntologyManager.getStandardConversionErrorMessage(value, fieldName, true, target.getJavaClass());
         }
         else if (null != x)
             msg = StringUtils.defaultString(x.getMessage(), x.toString());

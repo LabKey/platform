@@ -1262,7 +1262,7 @@ public abstract class CompareType
             return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
         }
 
-        return ((Comparable)a).compareTo(b);
+        return a.compareTo(b);
     }
 
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo

@@ -381,8 +381,8 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "N/A"));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-    //study:Label: Could not convert 'N/A' for field Value, should be of type Double
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("should be of type Double"));
+    //study:Label: Could not convert value 'N/A' for field 'Value'; expected type Double
+    assertTrue(errors.getRowErrors().get(0).getMessage().contains("expected type Double"));
 
     // conversion test
     rows.clear(); errors.clear();
