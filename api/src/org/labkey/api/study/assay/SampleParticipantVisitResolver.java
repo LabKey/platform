@@ -21,13 +21,17 @@ import org.labkey.api.study.query.PublishResultsQueryView;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Resolver that tries to resolve subject and timepoint information using sample IDs
  */
 public class SampleParticipantVisitResolver extends StudyParticipantVisitResolver
 {
+    private final Set<Integer> _resolvedSamples = new HashSet<>();
+
     public SampleParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer, User user)
     {
         super(runContainer, targetStudyContainer, user);
@@ -63,6 +67,8 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
                                         getRunContainer(),
                                         targetStudyContainer);
 
+                                // keep track of resolved samples
+                                _resolvedSamples.add(id);
                                 return mergeParticipantVisitInfo(originalInfo, studyInfo);
                             }
                         }
@@ -71,5 +77,13 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
             }
         }
         return originalInfo;
+    }
+
+    /**
+     * Does the sample exist in the target study (in one of the sample type datasets)
+     */
+    public boolean isSampleMatched(Integer sampleId)
+    {
+        return _resolvedSamples.contains(sampleId);
     }
 }

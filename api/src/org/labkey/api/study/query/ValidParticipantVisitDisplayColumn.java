@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
@@ -31,17 +32,31 @@ import java.io.Writer;
 public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
 {
     private final PublishResultsQueryView.ResolverHelper _resolverHelper;
+    private boolean _matchSpecimen;
 
-    public ValidParticipantVisitDisplayColumn(PublishResultsQueryView.ResolverHelper resolverHelper)
+    public ValidParticipantVisitDisplayColumn(PublishResultsQueryView.ResolverHelper resolverHelper,
+                                              ColumnInfo specimenIdCol,
+                                              ColumnInfo sampleIdCol)
     {
         _resolverHelper = resolverHelper;
-        setCaption("Specimen Match");
+        _matchSpecimen = (specimenIdCol != null || sampleIdCol == null);
+
+        if (_matchSpecimen)
+            setCaption("Specimen Match");
+        else
+            setCaption("Sample Match");
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Pair<Boolean,String> matchStatus = _resolverHelper.getMatchStatus(ctx);
+        Pair<Boolean,String> matchStatus;
+
+        if (_matchSpecimen)
+            matchStatus = _resolverHelper.getMatchStatus(ctx);
+        else
+            matchStatus = _resolverHelper.getSampleMatchStatus(ctx);
+
         boolean match = matchStatus.first;
         String message = matchStatus.second;
         if (match)

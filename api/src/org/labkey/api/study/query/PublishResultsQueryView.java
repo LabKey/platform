@@ -374,7 +374,7 @@ public class PublishResultsQueryView extends QueryView
                         if (_specimenIDCol != null)
                             _resolvers.put(sourceId, new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
                         else if (_sampleIdCol != null)
-                            _resolvers.put(sourceId, new SampleParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                            _resolvers.put(sourceId, new  SampleParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
                     }
                 }
             }
@@ -696,6 +696,36 @@ public class PublishResultsQueryView extends QueryView
                 //noinspection ThrowableInstanceNeverThrown
                 throw (IOException)new IOException().initCause(e);
             }
+        }
+
+        public Pair<Boolean, String> getSampleMatchStatus(RenderContext ctx)
+        {
+            Container targetStudy = getUserTargetStudy(ctx);
+            if (targetStudy == null)
+                targetStudy = _targetStudyContainer;
+
+            // Bail early if no match can be made.
+            if (targetStudy == null)
+                return new Pair<>(false, "<p>No target study selected for this row.</p>");
+
+            ParticipantVisitResolver resolver = getResolver(ctx);
+            boolean isSampleMatched = false;
+            if (resolver instanceof SampleParticipantVisitResolver)
+            {
+                Object sampleId = _sampleIdCol.getValue(ctx);
+                if (sampleId instanceof Integer)
+                {
+                    isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched((Integer)sampleId);
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("<p>The Sample ID in this row does");
+            if (!isSampleMatched)
+                sb.append(" <strong>not</strong>");
+            sb.append(" match a sample in the study.</p>");
+
+            return new Pair<>(isSampleMatched, sb.toString());
         }
 
         public void addQueryColumns(Set<ColumnInfo> set)
@@ -1023,7 +1053,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         if (_showSpecimenMatch)
-            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
+            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper, specimenIDCol, sampleIdCol));
 
         if (sourceIdCol != null && objectIdCol != null)
             columns.add(new SourceDataLinkDisplayColumn(null, resolverHelper, _publishSource, sourceIdCol, objectIdCol));
