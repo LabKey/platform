@@ -1640,7 +1640,7 @@ public class DbScope
      * Returns all DbScopes that have been successfully initialized, ignoring those that haven't been initialized yet
      * @return A collection of initialized DbScopes
      */
-    private static @NotNull Collection<DbScope> getInitializedDbScopes()
+    public static @NotNull Collection<DbScope> getInitializedDbScopes()
     {
         return getLoaders().stream()
             .map(DbScopeLoader::getIfPresent)
