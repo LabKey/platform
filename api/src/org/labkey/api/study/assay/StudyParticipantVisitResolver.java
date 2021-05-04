@@ -40,7 +40,7 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
         super(runContainer, targetStudyContainer, user);
     }
 
-    private ParticipantVisit mergeParticipantVisitInfo(ParticipantVisitImpl originalInfo, ParticipantVisit studyInfo)
+    protected ParticipantVisit mergeParticipantVisitInfo(ParticipantVisitImpl originalInfo, ParticipantVisit studyInfo)
     {
         if (studyInfo == null)
             return originalInfo;
