@@ -252,8 +252,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         // do a conversion for PTID aliasing
         Integer translatedIndexPTID = indexPTID;
 
-        // If not an ETL then get ParticipantId translate column
-        if (context.getDataSource() == null || !context.getDataSource().equals("etl"))
+        // Add translate columninfo if subjectCol is aliased
+        if (!subjectCol.getName().equals("ParticipantId"))
         {
             try
             {
