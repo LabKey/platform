@@ -437,7 +437,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             }
             catch (ConversionException x)
             {
-                errors.addError(new FieldError(commandName, propertyName, value, true, new String[] {"ConversionError", "typeMismatch"}, null, "Could not convert to value: " + String.valueOf(value)));
+                errors.addError(new FieldError(commandName, propertyName, value, true, new String[] {"ConversionError", "typeMismatch"}, null, "Could not convert to value: " + value));
             }
             catch (Exception x)
             {

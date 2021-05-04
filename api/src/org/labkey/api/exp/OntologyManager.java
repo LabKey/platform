@@ -543,7 +543,7 @@ public class OntologyManager
                             }
                             catch (ConversionException e)
                             {
-                                throw new ValidationException("Could not convert value '" + value + "' for field '" + pd.getName() + "'", pd.getName());
+                                throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), true, pd.getJavaClass()));
                             }
                         }
                     }

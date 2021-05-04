@@ -40,6 +40,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -2388,7 +2389,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (ConversionException e)
             {
-                throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + value + "' to a " + p.getJdbcType() + " for column '" + p.getName() + "'"));
+                throw new RuntimeSQLException(new SQLGenerationException(OntologyManager.getStandardConversionErrorMessage(value, p.getName(), true, p.getJdbcType().getJavaClass())));
             }
         }
     }

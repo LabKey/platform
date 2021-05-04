@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -90,7 +91,7 @@ public class IssueValidation
                     }
                     catch (ConversionException e)
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, String.format("Could not convert '%s' to an %s", entry.getValue(), col.getJavaClass().getSimpleName()));
+                        errors.reject(SpringActionController.ERROR_MSG, OntologyManager.getStandardConversionErrorMessage(entry.getValue(), col.getName(), true, col.getJavaClass()));
                     }
                 }
             }
