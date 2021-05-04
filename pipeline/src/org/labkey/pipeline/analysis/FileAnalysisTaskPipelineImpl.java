@@ -26,7 +26,11 @@ import org.labkey.api.formSchema.CheckboxField;
 import org.labkey.api.formSchema.Field;
 import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.formSchema.NumberField;
+import org.labkey.api.formSchema.Option;
+import org.labkey.api.formSchema.RadioField;
+import org.labkey.api.formSchema.SelectField;
 import org.labkey.api.formSchema.TextField;
+import org.labkey.api.formSchema.TextareaField;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -90,6 +94,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private Boolean _moveAvailable = true;
 
     /** Below are variables used to generate a FormSchema so we can instruct the client how to render a form */
+    // new HelpTopic("fileWatchCreate").getHelpTopicHref(), generates a link pointing to archived docs. Is there a better way?
     private static final String _baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
     private static final String _locationHelpText = "This can be an absolute path on the server's file system or a relative path under the container's pipeline root.";
     private static final String _locationHref = _baseHref + "location";
@@ -509,6 +514,64 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // For now, only write out the job info file for file-based pipeline jobs.
         pipeline._writeJobInfoFile = true;
+
+        if (xpipeline.isSetCustomFields())
+        {
+            XmlObject[] xCustomFields = xpipeline.getCustomFields().selectPath("./*");
+            List<Field> customFields = new ArrayList<>();
+
+            for (int customFieldIndex = 0; customFieldIndex < xCustomFields.length; customFieldIndex++)
+            {
+                XmlObject xCustomField = xCustomFields[customFieldIndex];
+                if (xCustomField instanceof org.labkey.pipeline.xml.TextField)
+                {
+                    org.labkey.pipeline.xml.TextField xField = (org.labkey.pipeline.xml.TextField)xCustomField;
+                    TextField field = new TextField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.TextAreaField)
+                {
+                    org.labkey.pipeline.xml.TextAreaField xField = (org.labkey.pipeline.xml.TextAreaField)xCustomField;
+                    TextareaField field = new TextareaField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.NumberField)
+                {
+                    org.labkey.pipeline.xml.NumberField xField = (org.labkey.pipeline.xml.NumberField)xCustomField;
+                    NumberField field = new NumberField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.CheckboxField)
+                {
+                    org.labkey.pipeline.xml.CheckboxField xField = (org.labkey.pipeline.xml.CheckboxField)xCustomField;
+                    CheckboxField field = new CheckboxField(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.RadioField)
+                {
+                    org.labkey.pipeline.xml.RadioField xField = (org.labkey.pipeline.xml.RadioField)xCustomField;
+                    List<Option<String>> options = new ArrayList<>();
+                    for (org.labkey.pipeline.xml.Option option : xField.getOptionArray())
+                    {
+                        options.add(new Option<String>(option.getValue(), option.getLabel()));
+                    }
+                    RadioField<String> field = new RadioField(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.SelectField)
+                {
+                    org.labkey.pipeline.xml.SelectField xField = (org.labkey.pipeline.xml.SelectField)xCustomField;
+                    List<Option<String>> options = new ArrayList<>();
+                    for (org.labkey.pipeline.xml.Option option : xField.getOptionArray())
+                    {
+                        options.add(new Option<String>(option.getValue(), option.getLabel()));
+                    }
+                    SelectField field = new SelectField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+            }
+            pipeline.setCustomFields(customFields);
+        }
 
         //PipelineJobService.get().addTaskPipeline(pipeline);
         return pipeline;
