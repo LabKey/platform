@@ -634,6 +634,7 @@ public class OntologyManager
         return results;
     }
 
+    // Note: Keep in sync with BaseWebDriverTest.getConversionErrorMessage()
     public static String getStandardConversionErrorMessage(Object value, String fieldName, boolean useField, Class<?> expectedClass)
     {
         String fromType = (value instanceof String) ? "" : "(" + (value.getClass().getSimpleName() + ") ");
