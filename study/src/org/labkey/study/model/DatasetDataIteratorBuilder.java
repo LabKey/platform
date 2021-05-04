@@ -251,18 +251,13 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         // do a conversion for PTID aliasing
         Integer translatedIndexPTID = indexPTID;
-
-        // Add translate columninfo if subjectCol is aliased
-        if (!subjectCol.getName().equals("ParticipantId"))
+        try
         {
-            try
-            {
-                translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
-            }
-            catch (ValidationException e)
-            {
-                context.getErrors().addRowError(e);
-            }
+            translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
+        }
+        catch (ValidationException e)
+        {
+            context.getErrors().addRowError(e);
         }
 
         // For now, just specify null for sequence num index... we'll add it below
@@ -617,7 +612,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new BaseColumnInfo("ParticipantId", JdbcType.VARCHAR);
+            ColumnInfo col = new BaseColumnInfo("ParticipantAliasId", JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
