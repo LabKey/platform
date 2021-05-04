@@ -63,7 +63,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (ConversionException e)
                     {
-                        throw new NotFoundException(OntologyManager.getStandardConversionErrorMessage(value, fieldKey.toString(), true, targetClass));
+                        throw new NotFoundException(OntologyManager.getStandardConversionErrorMessage(value, fieldKey.toString(), targetClass));
                     }
                 }
                 else if (SqlDialect.isGUIDType(columnPK.get(i).getSqlTypeName()))
@@ -74,7 +74,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (IllegalArgumentException e)
                     {
-                        throw new NotFoundException(OntologyManager.getStandardConversionErrorMessage(value, fieldKey.toString(), true, GUID.class));
+                        throw new NotFoundException(OntologyManager.getStandardConversionErrorMessage(value, fieldKey.toString(), GUID.class));
                     }
                 }
             }

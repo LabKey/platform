@@ -534,7 +534,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (ConversionException x)
                 {
-                    throw new ValidationException(OntologyManager.getStandardConversionErrorMessage(value, dp.getName(), true, dp.getPropertyDescriptor().getPropertyType().getJavaType()));
+                    throw new ValidationException(OntologyManager.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
                 }
                 converted.put(dp.getName(), value);
                 values.remove(key);

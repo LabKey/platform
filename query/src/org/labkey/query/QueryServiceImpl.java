@@ -2389,7 +2389,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (ConversionException e)
             {
-                throw new RuntimeSQLException(new SQLGenerationException(OntologyManager.getStandardConversionErrorMessage(value, p.getName(), true, p.getJdbcType().getJavaClass())));
+                throw new RuntimeSQLException(new SQLGenerationException(OntologyManager.getStandardConversionErrorMessage(value, p.getName(), p.getJdbcType().getJavaClass())));
             }
         }
     }

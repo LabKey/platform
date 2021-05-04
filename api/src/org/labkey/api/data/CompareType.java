@@ -1438,7 +1438,7 @@ public abstract class CompareType
 
     private static void throwConversionException(String value, ColumnRenderProperties column, Class<?> expectedClass)
     {
-        throw new RuntimeSQLException(new SQLGenerationException(OntologyManager.getStandardConversionErrorMessage(value, column.getName(), true, expectedClass)));
+        throw new RuntimeSQLException(new SQLGenerationException(OntologyManager.getStandardConversionErrorMessage(value, column.getName(), expectedClass)));
     }
 
     public static Date asDate(Object v)

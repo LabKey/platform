@@ -91,7 +91,7 @@ public class IssueValidation
                     }
                     catch (ConversionException e)
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, OntologyManager.getStandardConversionErrorMessage(entry.getValue(), col.getName(), true, col.getJavaClass()));
+                        errors.reject(SpringActionController.ERROR_MSG, OntologyManager.getStandardConversionErrorMessage(entry.getValue(), col.getName(), col.getJavaClass()));
                     }
                 }
             }

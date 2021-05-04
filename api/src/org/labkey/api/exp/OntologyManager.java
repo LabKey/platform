@@ -341,7 +341,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), true, pd.getPropertyType().getJavaType()));
+                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType()));
                     }
                 }
                 assert ensure.stop();
@@ -543,7 +543,7 @@ public class OntologyManager
                             }
                             catch (ConversionException e)
                             {
-                                throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), true, pd.getJavaClass()));
+                                throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass()));
                             }
                         }
                     }
@@ -590,7 +590,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), true, propertyTypes[i].getJavaType()));
+                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), propertyTypes[i].getJavaType()));
                     }
                 }
 
@@ -634,11 +634,11 @@ public class OntologyManager
         return results;
     }
 
-    // Note: Keep in sync with BaseWebDriverTest.getConversionErrorMessage()
-    public static String getStandardConversionErrorMessage(Object value, String fieldName, boolean useField, Class<?> expectedClass)
+    // Note: Keep in sync with LabKeySiteWrapper.getConversionErrorMessage()
+    // Example: "Could not convert value '2.34' (Double) for Boolean field 'Medical History.Dep Diagnosed in Last 18 Months'"
+    public static String getStandardConversionErrorMessage(Object value, String fieldName, Class<?> expectedClass)
     {
-        String fromType = (value instanceof String) ? "" : "(" + (value.getClass().getSimpleName() + ") ");
-        return "Could not convert value " + fromType + "'" + value + "' for " + (useField ? "field" : "column") + " '" + fieldName + "'; expected type " + expectedClass.getSimpleName();
+        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + expectedClass.getSimpleName() + " field '" + fieldName + "'";
     }
 
     // TODO: Consolidate with ColumnValidator

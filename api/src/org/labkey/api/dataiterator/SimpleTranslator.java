@@ -164,7 +164,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String msg;
         if (null != value && null != target)
         {
-            msg = OntologyManager.getStandardConversionErrorMessage(value, fieldName, true, target.getJavaClass());
+            msg = OntologyManager.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
         }
         else if (null != x)
             msg = StringUtils.defaultString(x.getMessage(), x.toString());
