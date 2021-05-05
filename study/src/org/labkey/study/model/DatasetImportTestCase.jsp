@@ -4,12 +4,12 @@
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.audit.AuditLogService" %>
-<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.ConvertHelper" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.MvUtil" %>
 <%@ page import="org.labkey.api.data.Results" %>
@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.exp.property.PropertyService" %>
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
 <%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
+<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page import="org.labkey.api.qc.QCState" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
@@ -52,6 +53,7 @@
 <%@ page import="org.labkey.api.util.JunitUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.study.StudyFolderType" %>
 <%@ page import="org.labkey.study.StudySchema" %>
 <%@ page import="org.labkey.study.dataset.DatasetAuditProvider" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
@@ -70,10 +72,9 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="static org.labkey.study.model.StudyManager.TEST_LOGGER" %>
 <%@ page import="static org.labkey.study.dataset.DatasetAuditProvider.DATASET_AUDIT_EVENT" %>
-<%@ page import="org.labkey.study.StudyFolderType" %>
-<%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 
@@ -381,8 +382,8 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", "N/A"));
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
-    //study:Label: Could not convert 'N/A' for field Value, should be of type Double
-    assertTrue(errors.getRowErrors().get(0).getMessage().contains("should be of type Double"));
+    //study:Label: Value: Could not convert value 'N/A' (String) for Double field 'Value'
+    assertTrue(errors.getRowErrors().get(0).getMessage().endsWith(ConvertHelper.getStandardConversionErrorMessage("N/A", "Value", Double.class)));
 
     // conversion test
     rows.clear(); errors.clear();

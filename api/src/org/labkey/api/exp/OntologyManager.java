@@ -341,7 +341,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + pd.getPropertyType().getJavaType().getSimpleName());
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType()));
                     }
                 }
                 assert ensure.stop();
@@ -543,7 +543,7 @@ public class OntologyManager
                             }
                             catch (ConversionException e)
                             {
-                                throw new ValidationException("Could not convert value '" + value + "' for field '" + pd.getName() + "'", pd.getName());
+                                throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass()));
                             }
                         }
                     }
@@ -590,7 +590,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), propertyTypes[i].getJavaType()));
                     }
                 }
 
