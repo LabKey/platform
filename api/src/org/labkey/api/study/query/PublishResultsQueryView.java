@@ -17,6 +17,7 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.data.ActionButton;
@@ -29,7 +30,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -86,7 +86,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -95,6 +94,7 @@ import java.util.stream.Collectors;
  */
 public class PublishResultsQueryView extends QueryView
 {
+    private static final Logger LOG = Logger.getLogger(PublishResultsQueryView.class);
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final boolean _mismatched;
@@ -484,6 +484,8 @@ public class PublishResultsQueryView extends QueryView
                 List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
                 if (values.size() == 1)
                     return values.get(0);
+                else
+                    LOG.warn("Unable to use the value returned from column : " + col.getName() + " because this multi-value column returned more than a single value.");
             }
             return col.getValue(ctx);
         }

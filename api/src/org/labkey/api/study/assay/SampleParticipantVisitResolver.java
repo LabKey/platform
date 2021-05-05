@@ -19,18 +19,16 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.query.PublishResultsQueryView;
 
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Resolver that tries to resolve subject and timepoint information using sample IDs
  */
 public class SampleParticipantVisitResolver extends StudyParticipantVisitResolver
 {
-    private final Set<Integer> _resolvedSamples = new HashSet<>();
+    private final Map<Integer, ParticipantVisit> _resolvedSamples = new HashMap<>();
 
     public SampleParticipantVisitResolver(Container runContainer, @Nullable Container targetStudyContainer, User user)
     {
@@ -44,6 +42,10 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
         if (targetStudyContainer != null)
         {
             Integer id = Integer.valueOf(sampleId);
+
+            if (_resolvedSamples.containsKey(id))
+                return mergeParticipantVisitInfo(originalInfo, _resolvedSamples.get(id));
+
             ExpMaterial expMaterial = ExperimentService.get().getExpMaterial(id);
             if (expMaterial != null)
             {
@@ -68,13 +70,16 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
                                         targetStudyContainer);
 
                                 // remember resolved samples
-                                _resolvedSamples.add(id);
+                                _resolvedSamples.put(id, studyInfo);
                                 return mergeParticipantVisitInfo(originalInfo, studyInfo);
                             }
                         }
                     }
                 }
             }
+
+            // cache the miss
+            _resolvedSamples.put(id, originalInfo);
         }
         return originalInfo;
     }
@@ -84,6 +89,6 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
      */
     public boolean isSampleMatched(Integer sampleId)
     {
-        return _resolvedSamples.contains(sampleId);
+        return _resolvedSamples.containsKey(sampleId);
     }
 }
