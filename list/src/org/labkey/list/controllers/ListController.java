@@ -280,22 +280,30 @@ public class ListController extends SpringActionController
     }
 
     @RequiresAnyOf({DesignListPermission.class, ManagePicklistsPermission.class})
-    public static class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
+    public static class DeleteListDefinitionAction extends ConfirmAction<ListDeletionForm>
     {
-        private final ArrayList<Integer> _listIDs = new ArrayList<>();
-        private final ArrayList<Container> _containers = new ArrayList<>();
+        private final List<Integer> _listIDs = new ArrayList<>();
+        private final List<Container> _containers = new ArrayList<>();
 
         @Override
-        public void validateCommand(ListDefinitionForm form, Errors errors)
+        public void validateCommand(ListDeletionForm form, Errors errors)
         {
             if (form.getListId() == null)
             {
                 List<String> errorMessages = new ArrayList<>();
-                Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+                Collection<String> listIDs;
+                if (form.getListIds() != null)
+                    listIDs = form.getListIds();
+                else
+                    listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
                 for (String s : listIDs)
                 {
                     String[] parts = s.split(",");
-                    Container c = ContainerManager.getForId(parts[1]);
+                    Container c;
+                    if (parts.length > 1)
+                        c = ContainerManager.getForId(parts[1]);
+                    else
+                        c = getContainer();
                     if (c == null)
                         errorMessages.add(String.format("Container not found for %s", s));
                     else
@@ -339,7 +347,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors)
+        public ModelAndView getConfirmView(ListDeletionForm form, BindException errors)
         {
             if (getPageConfig().getTitle() == null)
                 setTitle("Delete List");
@@ -347,7 +355,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ListDefinitionForm form, BindException errors)
+        public boolean handlePost(ListDeletionForm form, BindException errors)
         {
             for(int i = 0; i < _listIDs.size(); i++)
             {
@@ -368,9 +376,24 @@ public class ListController extends SpringActionController
         }
 
         @Override @NotNull
-        public URLHelper getSuccessURL(ListDefinitionForm form)
+        public URLHelper getSuccessURL(ListDeletionForm form)
         {
             return form.getReturnURLHelper(getBeginURL(getContainer()));
+        }
+    }
+
+    public static class ListDeletionForm extends ListDefinitionForm
+    {
+        private List<String> _listIds;
+
+        public List<String> getListIds()
+        {
+            return _listIds;
+        }
+
+        public void setListIds(List<String> listIds)
+        {
+            _listIds = listIds;
         }
     }
 
