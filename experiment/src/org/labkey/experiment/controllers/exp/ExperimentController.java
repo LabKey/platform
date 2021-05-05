@@ -53,6 +53,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
@@ -190,8 +191,6 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-import org.labkey.experiment.publish.SampleTypePublishConfirmAction;
-import org.labkey.experiment.publish.SampleTypePublishStartAction;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
@@ -268,9 +267,7 @@ public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            ExperimentController.class,
-            SampleTypePublishStartAction.class,
-            SampleTypePublishConfirmAction.class
+            ExperimentController.class
     );
     private static final String GUEST_DIRECTORY_NAME = "guest";
 
@@ -715,10 +712,15 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            ActionURL linkToStudyHistoryURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
-            ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
-            linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
-            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
+            var publish = StudyPublishService.get();
+            if (AuditLogService.get().isViewable() && publish != null)
+            {
+                ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(getContainer(), getUser());
+                ActionURL linkToStudyHistoryURL = publish.getPublishHistory(getContainer(), Dataset.PublishSource.SampleType, _sampleType.getRowId(), cf);
+                ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
+                linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
+            }
 
             return new VBox(detailsView, queryView);
         }
@@ -727,7 +729,7 @@ public class ExperimentController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            ActionURL url = new ActionURL(ListSampleTypesAction.class, getContainer());
+            ActionURL url = ExperimentUrls.get().getShowSampleTypeListURL(getContainer());
             addRootNavTrail(root);
             root.addChild("Sample Types", url);
             root.addChild("Sample Type " + _sampleType.getName());
@@ -6356,20 +6358,6 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
-        @Override
-        public ActionURL getLinkToStudyURL(Container container)
-        {
-            return new ActionURL(SampleTypePublishStartAction.class, container);
-        }
-
-        @Override
-        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
-        {
-            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
-            if (sampleType != null)
-                url.addParameter("rowId", sampleType.getRowId());
-            return url;
-        }
     }
 
     private static abstract class BaseResolveLsidApiAction<F extends ResolveLsidsForm> extends ReadOnlyApiAction<F>

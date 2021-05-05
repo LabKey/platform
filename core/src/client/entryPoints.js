@@ -64,5 +64,10 @@ module.exports = {
         title: 'Dataset Designer',
         permission: 'admin', // used in StudyController.EditTypeAction and StudyController.DefineDatasetTypeAction
         path: './src/client/DatasetDesigner'
+    }, {
+        name: 'conceptFilter',
+        title: 'Concept Filter',
+        generateLib: true,
+        path: './src/client/ConceptFilter',
     }]
 };

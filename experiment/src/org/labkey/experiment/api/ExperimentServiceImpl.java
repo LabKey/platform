@@ -3500,11 +3500,11 @@ public class ExperimentServiceImpl implements ExperimentService
                                     SimpleFilter filter = new SimpleFilter(tableMetadata.getRunRowIdFieldKeyFromResults(), run.getRowId());
                                     Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
+                                    // Add an audit event to the link to study history
+                                    publishService.addRecallAuditEvent(run.getContainer(), user, dataset, lsids.size(), null);
+
                                     // Do the actual delete on the dataset for the rows in question
                                     dataset.deleteDatasetRows(user, lsids);
-
-                                    // Add an audit event to the link to study history
-                                    publishService.addRecallAuditEvent(dataset, lsids.size(), run.getContainer(), user);
                                 }
                             }
                         }
@@ -3878,6 +3878,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 materialSQL.append(rowIdInFrag);
                 executor.execute(materialSQL);
             }
+
+            // clean up provenance
+            ProvenanceService.get().deleteProvenanceByLsids(container, user, lsidInFrag, false, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
             // delete exp.objects
             try (Timing ignored = MiniProfiler.step("exp.object"))
@@ -4522,6 +4525,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return getRunsUsingMaterials(Arrays.asList(ArrayUtils.toObject(ids)));
     }
 
+    // consider including runs with provenance records as well
     public List<ExpRunImpl> getRunsUsingMaterials(Collection<Integer> ids)
     {
         if (ids.isEmpty())
