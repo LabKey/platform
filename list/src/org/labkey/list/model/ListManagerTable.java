@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -55,7 +56,45 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Category")));
+        addWrapColumn( _rootTable.getColumn(FieldKey.fromParts("Category")));
+        MutableColumnInfo sharingCol = addWrapColumn("Sharing", _rootTable.getColumn(FieldKey.fromParts("Category")));
+        sharingCol.setDisplayColumnFactory(new DisplayColumnFactory() {
+
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ListCategoryColumn(colInfo);
+            }
+
+            class ListCategoryColumn extends DataColumn
+            {
+                public ListCategoryColumn(ColumnInfo col) { super(col, false); }
+
+                @Override
+                public Object getValue(RenderContext ctx)
+                {
+                    String category = (String) super.getValue(ctx);
+                    if (category.equals(ListDefinition.Category.PublicPicklist.toString()))
+                        return "public";
+                    else if (category.equals(ListDefinition.Category.PrivatePicklist.toString()))
+                        return "private";
+                    return null;
+                }
+
+                @Override
+                public Object getDisplayValue(RenderContext ctx)
+                {
+                    return this.getValue(ctx);
+                }
+
+                @Override
+                public @NotNull HtmlString getFormattedHtml(RenderContext ctx)
+                {
+                    return HtmlString.of(getDisplayValue(ctx));
+                }
+            }
+        });
+
         MutableColumnInfo countCol = addWrapColumn("ItemCount", _rootTable.getColumn(FieldKey.fromParts("ListID")));
         countCol.setHidden(true);
         countCol.setDisplayColumnFactory(new DisplayColumnFactory() {
