@@ -55,7 +55,7 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
                         if (dataset.getContainer() == targetStudyContainer)
                         {
                             TableInfo tableInfo = dataset.getTableInfo(getUser(), false);
-                            Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts(dataset.getKeyPropertyName()), Collections.singletonList(id)));
+                            Filter datasetFilter = new SimpleFilter(FieldKey.fromParts(dataset.getKeyPropertyName()), id);
                             Map<String, Object> row = new TableSelector(tableInfo, datasetFilter, null).getMap();
                             if (row != null && !row.isEmpty())
                             {
@@ -67,7 +67,7 @@ public class SampleParticipantVisitResolver extends StudyParticipantVisitResolve
                                         getRunContainer(),
                                         targetStudyContainer);
 
-                                // keep track of resolved samples
+                                // remember resolved samples
                                 _resolvedSamples.add(id);
                                 return mergeParticipantVisitInfo(originalInfo, studyInfo);
                             }
