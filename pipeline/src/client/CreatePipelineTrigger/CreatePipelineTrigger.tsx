@@ -1,4 +1,4 @@
-import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useState, useReducer } from 'react';
+import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useEffect, useState, useReducer } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { naturalSort, FormSchema, AutoForm } from '@labkey/components';
 import { Alert, ListGroup, ListGroupItem } from 'react-bootstrap';
@@ -56,14 +56,29 @@ interface FormState {
     details: Details;
     detailsFormSchema: FormSchema;
     detailsValid: boolean;
+    isDirty: boolean;
     rowId?: number;
     saveError: string;
     saving: boolean;
+    saveSuccessful: boolean;
     taskFormSchemas: Record<string, FormSchema>;
     triggerConfig: TriggerConfiguration;
     triggerConfigValid: boolean;
     view: View;
 }
+
+// The omitted fields are computed by initializeFormState
+type InitialState = Omit<
+    FormState,
+    | 'customParameters'
+    | 'customConfigValid'
+    | 'detailsValid'
+    | 'isDirty'
+    | 'saveError'
+    | 'saving'
+    | 'saveSuccessful'
+    | 'triggerConfigValid'
+>;
 
 enum ActionType {
     SET_VIEW = 'SET_VIEW',
@@ -108,6 +123,7 @@ interface SetSavingAction {
     type: ActionType.SET_SAVING;
     saveError: string;
     saving: boolean;
+    saveSuccessful: boolean;
 }
 
 type FormStateAction =
@@ -119,7 +135,8 @@ type FormStateAction =
     | SetSavingAction;
 
 const validateValues = (formSchema: FormSchema, values: Record<string, any>): boolean => {
-    if (formSchema === null) return true;
+    // Not every trigger type has a custom form schema, so this can be null/undefined.
+    if (!formSchema) return true;
 
     let isValid = true;
 
@@ -129,11 +146,9 @@ const validateValues = (formSchema: FormSchema, values: Record<string, any>): bo
         if (field.required) {
             if (value === null || value === undefined) {
                 isValid = false;
-                console.log(field.name, 'value is null or undefined');
             }
             if (typeof value === 'string' && value.trim() === '') {
                 isValid = false;
-                console.log(field.name, 'value is empty');
             }
         }
     });
@@ -188,18 +203,29 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
                 customConfig: resetCustomConfig,
                 details: newDetails,
                 detailsValid: validateValues(state.detailsFormSchema, newDetails),
+                isDirty: true,
                 triggerConfig: resetTriggerConfig,
             };
         }
         case ActionType.UPDATE_TRIGGER_CONFIG: {
             const triggerConfig = { ...state.triggerConfig, [action.field]: action.value };
             const formSchema = state.taskFormSchemas[state.details.pipelineId];
-            return { ...state, triggerConfig, triggerConfigValid: validateValues(formSchema, triggerConfig) };
+            return {
+                ...state,
+                isDirty: true,
+                triggerConfig,
+                triggerConfigValid: validateValues(formSchema, triggerConfig),
+            };
         }
         case ActionType.UPDATE_CUSTOM_CONFIG: {
             const customConfig = { ...state.customConfig, [action.field]: action.value };
             const formSchema = state.customFieldFormSchemas[state.details.pipelineId];
-            return { ...state, customConfig, customConfigValid: validateValues(formSchema, customConfig) };
+            return {
+                ...state,
+                isDirty: true,
+                customConfig,
+                customConfigValid: validateValues(formSchema, customConfig),
+            };
         }
         case ActionType.ADD_CUSTOM_PARAM: {
             const { customParameters } = state;
@@ -211,13 +237,14 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
                     ...customParameters,
                     [id]: { key: '', value: '', id },
                 },
+                isDirty: true,
             };
         }
         case ActionType.REMOVE_CUSTOM_PARAM: {
             const { id } = action;
             const customParameters = { ...state.customParameters };
             delete customParameters[id];
-            return { ...state, customParameters };
+            return { ...state, customParameters, isDirty: true };
         }
         case ActionType.UPDATE_CUSTOM_PARAM: {
             const { customParameters } = state;
@@ -236,11 +263,12 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
                     ...customParameters,
                     [id]: { key, value, id },
                 },
+                isDirty: true,
             };
         }
         case ActionType.SET_SAVING: {
-            const { saving, saveError } = action;
-            return { ...state, saving, saveError };
+            const { saving, saveError, saveSuccessful } = action;
+            return { ...state, saving, saveError, saveSuccessful };
         }
         default: {
             // Throw error for unhandled actions.
@@ -249,12 +277,6 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
         }
     }
 };
-
-// customParameters is computed based on customConfig and taskFormSchemas
-type InitialState = Omit<
-    FormState,
-    'customParameters' | 'customConfigValid' | 'detailsValid' | 'saving' | 'saveError' | 'triggerConfigValid'
->;
 
 const initializeFormState = (initialState: InitialState): FormState => {
     const {
@@ -323,8 +345,10 @@ const initializeFormState = (initialState: InitialState): FormState => {
         details: _details,
         detailsFormSchema,
         detailsValid: validateValues(detailsFormSchema, _details),
+        isDirty: false,
         saveError: undefined,
         saving: false,
+        saveSuccessful: false,
         rowId,
         taskFormSchemas,
         triggerConfig: _triggerConfig,
@@ -491,6 +515,7 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
         customParameters,
         details,
         detailsValid,
+        saving,
         taskFormSchemas,
         triggerConfig,
         triggerConfigValid,
@@ -511,7 +536,7 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
     const onParamFunctionChange = useCallback(event => {
         dispatch({ type: ActionType.UPDATE_TRIGGER_CONFIG, field: 'parameterFunction', value: event.target.value });
     }, []);
-    const saveDisabled = !customConfigValid || !detailsValid || !triggerConfigValid;
+    const saveDisabled = !customConfigValid || !detailsValid || !triggerConfigValid || saving;
 
     return (
         <div className="configuration-form">
@@ -648,31 +673,47 @@ export const CreatePipelineTrigger: FC<Props> = props => {
         taskFormSchemas,
         customFieldFormSchemas
     );
-    const { view } = formState;
+    const { isDirty, saveSuccessful, saveError, saving, view } = formState;
     const helpText = HELP_TEXT + (tasksHelpText[formState.details.pipelineId] ?? '');
     const showDetails = useCallback(() => dispatch({ type: ActionType.SET_VIEW, view: View.DETAILS }), []);
     const showConfig = useCallback(() => dispatch({ type: ActionType.SET_VIEW, view: View.CONFIGURATION }), []);
     const onSubmit = useCallback(async () => {
-        dispatch({ type: ActionType.SET_SAVING, saving: true, saveError: undefined });
-        let saveError;
+        dispatch({ type: ActionType.SET_SAVING, saving: true, saveError: undefined, saveSuccessful: false });
+        let _saveError;
+        let success = false;
 
         try {
-            const success = await savePipelineTrigger(formState);
+            success = await savePipelineTrigger(formState);
 
             if (success !== true) {
-                saveError = 'Error saving pipeline trigger';
-            } else {
-                window.location.href = returnUrl;
+                _saveError = 'Error saving pipeline trigger';
             }
         } catch (error) {
-            saveError = error;
+            _saveError = error;
         } finally {
-            dispatch({ type: ActionType.SET_SAVING, saving: false, saveError });
+            dispatch({ type: ActionType.SET_SAVING, saving: false, saveError: _saveError, saveSuccessful: success });
         }
     }, [formState]);
 
-    // TODO:
-    //  - handle dirty state.
+    useEffect(() => {
+        const beforeUnload = (event: BeforeUnloadEvent): void => {
+            if (!saveSuccessful && (saving || isDirty)) {
+                event.preventDefault();
+                event.returnValue = true;
+            }
+        };
+        window.addEventListener('beforeunload', beforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', beforeUnload);
+        };
+    }, [isDirty, saving, saveSuccessful]);
+
+    useEffect(() => {
+        if (saveSuccessful) {
+            window.setTimeout(() => (window.location.href = returnUrl), 1000);
+        }
+    }, [saveSuccessful]);
 
     return (
         <div className="create-pipeline-trigger row">
@@ -696,6 +737,8 @@ export const CreatePipelineTrigger: FC<Props> = props => {
             </div>
 
             <div className="col-sm-7">
+                {saveSuccessful && <Alert bsStyle="success">Trigger saved successfully</Alert>}
+                {saveError !== undefined && <Alert bsStyle="danger">{saveError}</Alert>}
                 <Alert bsStyle="info">{helpText}</Alert>
 
                 {view === View.DETAILS && (
