@@ -611,8 +611,8 @@ function savePipelineTrigger(formState: FormState): Promise<boolean> {
     });
 
     let move = '';
-    const container = moveContainer.trim();
-    const directory = moveDirectory.trim();
+    const container = moveContainer === undefined ? '' : moveContainer.trim();
+    const directory = moveDirectory === undefined ? '' : moveDirectory.trim();
 
     if (container || directory) {
         const pipeline = container && !container.endsWith('/') ? '/@pipeline/' : '@pipeline/';
@@ -719,11 +719,11 @@ export const CreatePipelineTrigger: FC<Props> = props => {
         <div className="create-pipeline-trigger row">
             <div className="col-sm-2">
                 <ListGroup>
-                    <ListGroupItem active={view === View.DETAILS} href="#details" onClick={showDetails}>
+                    <ListGroupItem active={view === View.DETAILS} onClick={showDetails}>
                         Details
                     </ListGroupItem>
 
-                    <ListGroupItem active={view === View.CONFIGURATION} href="#configuration" onClick={showConfig}>
+                    <ListGroupItem active={view === View.CONFIGURATION} onClick={showConfig}>
                         Configuration
                     </ListGroupItem>
                 </ListGroup>
