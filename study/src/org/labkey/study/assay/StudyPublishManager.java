@@ -989,7 +989,7 @@ public class StudyPublishManager implements StudyPublishService
             switch (source)
             {
                 case Assay -> {
-                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("publishSourceId", publishSourceId);
+                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("rowId", publishSourceId);
                     if (containerFilter != null && containerFilter.getType() != null)
                         url.addParameter("containerFilterName", containerFilter.getType().name());
                     return url;
