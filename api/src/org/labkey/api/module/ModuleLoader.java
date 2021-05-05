@@ -510,7 +510,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings)
                 {
                     for (HtmlString error : _duplicateModuleErrors)
                     {
@@ -591,7 +591,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings)
                 {
                     warnings.add(HtmlString.of(message));
                 }
@@ -1654,10 +1654,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
         WarningService.get().register(new WarningProvider()
         {
             @Override
-            public void addDynamicWarnings(Warnings warnings, ViewContext context)
+            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
             {
-                if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
-                    warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews + ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
+                if (context.getUser().hasSiteAdminPermission())
+                {
+                    if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
+                        warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews +
+                            ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
+                }
             }
         });
         refreshMissingViews();
