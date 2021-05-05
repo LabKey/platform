@@ -63,6 +63,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
@@ -1542,6 +1543,7 @@ public class PipelineController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("fileWatcher");
+            root.addChild("Pipeline Trigger Configurations", urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations"));
             root.addChild(_title);
         }
     }
