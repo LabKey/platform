@@ -50,6 +50,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
@@ -209,6 +210,16 @@ public class ListController extends SpringActionController
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), ListManagerSchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ListManagerSchema.LIST_MANAGER);
+            if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
+            {
+                SimpleFilter filter = new SimpleFilter();
+
+                SQLFragment sql = new SQLFragment("Category != '")
+                        .append(ListDefinition.Category.PrivatePicklist)
+                        .append("' OR CreatedBy = ").append(getUser().getUserId());
+                filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
+                settings.setBaseFilter(filter);
+            }
             return schema.createView(getViewContext(), settings, errors);
         }
 
