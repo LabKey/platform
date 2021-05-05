@@ -797,7 +797,20 @@ public abstract class UploadSamplesHelper
             Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
             try
             {
-                String aliquotedFrom = (String) map.get("AliquotedFrom");
+                String aliquotedFrom = null;
+                Object aliquotedFromObj = map.get("AliquotedFrom");
+                if (aliquotedFromObj != null)
+                {
+                    if (aliquotedFromObj instanceof String)
+                    {
+                        aliquotedFrom = (String) aliquotedFromObj;
+                    }
+                    else if (aliquotedFromObj instanceof Number)
+                    {
+                        aliquotedFrom = aliquotedFromObj.toString();
+                    }
+                }
+
                 boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
                 if (isAliquot)
                 {
