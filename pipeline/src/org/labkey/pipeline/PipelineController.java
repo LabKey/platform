@@ -1552,6 +1552,9 @@ public class PipelineController extends SpringActionController
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
         {
+            if (StringUtils.isBlank(form.getLocation()))
+                form.setLocation("./");
+
             PipelineManager.validateTriggerConfiguration(form, getContainer(), getUser(), errors);
         }
 
