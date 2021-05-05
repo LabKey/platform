@@ -34,6 +34,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
@@ -48,7 +49,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -164,7 +164,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String msg;
         if (null != value && null != target)
         {
-            msg = OntologyManager.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
+            msg = ConvertHelper.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
         }
         else if (null != x)
             msg = StringUtils.defaultString(x.getMessage(), x.toString());

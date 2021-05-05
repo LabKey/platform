@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -534,7 +535,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (ConversionException x)
                 {
-                    throw new ValidationException(OntologyManager.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
+                    throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
                 }
                 converted.put(dp.getName(), value);
                 values.remove(key);

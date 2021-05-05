@@ -19,7 +19,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.NotFoundException;
@@ -63,7 +62,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (ConversionException e)
                     {
-                        throw new NotFoundException(OntologyManager.getStandardConversionErrorMessage(value, fieldKey.toString(), targetClass));
+                        throw new NotFoundException(ConvertHelper.getStandardConversionErrorMessage(value, fieldKey.toString(), targetClass));
                     }
                 }
                 else if (SqlDialect.isGUIDType(columnPK.get(i).getSqlTypeName()))
@@ -74,7 +73,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (IllegalArgumentException e)
                     {
-                        throw new NotFoundException(OntologyManager.getStandardConversionErrorMessage(value, fieldKey.toString(), GUID.class));
+                        throw new NotFoundException(ConvertHelper.getStandardConversionErrorMessage(value, fieldKey.toString(), GUID.class));
                     }
                 }
             }

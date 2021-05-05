@@ -341,7 +341,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType()));
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType()));
                     }
                 }
                 assert ensure.stop();
@@ -543,7 +543,7 @@ public class OntologyManager
                             }
                             catch (ConversionException e)
                             {
-                                throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass()));
+                                throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass()));
                             }
                         }
                     }
@@ -590,7 +590,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException(getStandardConversionErrorMessage(value, pd.getName(), propertyTypes[i].getJavaType()));
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), propertyTypes[i].getJavaType()));
                     }
                 }
 
@@ -632,13 +632,6 @@ public class OntologyManager
         }
 
         return results;
-    }
-
-    // Note: Keep in sync with LabKeySiteWrapper.getConversionErrorMessage()
-    // Example: "Could not convert value '2.34' (Double) for Boolean field 'Medical History.Dep Diagnosed in Last 18 Months'"
-    public static String getStandardConversionErrorMessage(Object value, String fieldName, Class<?> expectedClass)
-    {
-        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + expectedClass.getSimpleName() + " field '" + fieldName + "'";
     }
 
     // TODO: Consolidate with ColumnValidator

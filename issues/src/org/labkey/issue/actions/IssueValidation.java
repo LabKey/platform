@@ -23,11 +23,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -91,7 +91,7 @@ public class IssueValidation
                     }
                     catch (ConversionException e)
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, OntologyManager.getStandardConversionErrorMessage(entry.getValue(), col.getName(), col.getJavaClass()));
+                        errors.reject(SpringActionController.ERROR_MSG, ConvertHelper.getStandardConversionErrorMessage(entry.getValue(), col.getName(), col.getJavaClass()));
                     }
                 }
             }

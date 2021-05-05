@@ -30,7 +30,6 @@ import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AliasedColumn;
@@ -1438,7 +1437,7 @@ public abstract class CompareType
 
     private static void throwConversionException(String value, ColumnRenderProperties column, Class<?> expectedClass)
     {
-        throw new RuntimeSQLException(new SQLGenerationException(OntologyManager.getStandardConversionErrorMessage(value, column.getName(), expectedClass)));
+        throw new RuntimeSQLException(new SQLGenerationException(ConvertHelper.getStandardConversionErrorMessage(value, column.getName(), expectedClass)));
     }
 
     public static Date asDate(Object v)
