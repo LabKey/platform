@@ -17,6 +17,7 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.data.ActionButton;
@@ -28,7 +29,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
@@ -58,6 +59,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
 import org.labkey.api.study.assay.ParticipantVisitImpl;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
+import org.labkey.api.study.assay.SampleParticipantVisitResolver;
 import org.labkey.api.study.assay.StudyParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
@@ -84,7 +86,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -93,6 +94,7 @@ import java.util.stream.Collectors;
  */
 public class PublishResultsQueryView extends QueryView
 {
+    private static final Logger LOG = Logger.getLogger(PublishResultsQueryView.class);
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final boolean _mismatched;
@@ -122,7 +124,8 @@ public class PublishResultsQueryView extends QueryView
         SpecimenPtid,
         SpecimenVisit,
         SpecimenDate,
-        TargetStudy             // for assays the run level target study value
+        TargetStudy,            // for assays the run level target study value
+        SampleId
     }
 
     public PublishResultsQueryView(UserSchema schema, QuerySettings settings, BindException errors,
@@ -250,7 +253,7 @@ public class PublishResultsQueryView extends QueryView
         return dr;
     }
 
-    private static Date convertObjectToDate(Container container, Object dateObject)
+    public static Date convertObjectToDate(Container container, Object dateObject)
     {
         Date date = null;
         if (dateObject instanceof Date)
@@ -273,7 +276,7 @@ public class PublishResultsQueryView extends QueryView
         return o == null ? null : o.toString();
     }
 
-    private static Double convertObjectToDouble(Object visitIdObject)
+    public static Double convertObjectToDouble(Object visitIdObject)
     {
         Double visitId = null;
         if (visitIdObject instanceof Number)
@@ -308,6 +311,7 @@ public class PublishResultsQueryView extends QueryView
         private final ColumnInfo _specimenVisitCol;
         private final ColumnInfo _specimenDateCol;
         private final ColumnInfo _targetStudyCol;
+        private final ColumnInfo _sampleIdCol;
         private final Map<Integer, ParticipantVisitResolver> _resolvers = new HashMap<>();
 
         private Map<Object, String> _reshowVisits;
@@ -322,7 +326,8 @@ public class PublishResultsQueryView extends QueryView
                               ColumnInfo ptidCol, ColumnInfo visitIdCol, ColumnInfo dateCol,
                               ColumnInfo specimenIDCol, ColumnInfo assayMatchCol,
                               ColumnInfo specimenPTIDCol, ColumnInfo specimenVisitCol, ColumnInfo specimenDateCol,
-                              ColumnInfo targetStudyCol)
+                              ColumnInfo targetStudyCol,
+                              ColumnInfo sampleIdCol)
         {
             _publishSource = publishSource;
             _targetStudyContainer = targetStudyContainer;
@@ -339,6 +344,7 @@ public class PublishResultsQueryView extends QueryView
             _specimenVisitCol = specimenVisitCol;
             _specimenDateCol = specimenDateCol;
             _targetStudyCol = targetStudyCol;
+            _sampleIdCol = sampleIdCol;
         }
 
         private User getUser()
@@ -354,17 +360,22 @@ public class PublishResultsQueryView extends QueryView
             _reshowTargetStudies = reshowTargetStudies;
         }
 
-        public ParticipantVisitResolver getResolver(RenderContext ctx)
+        private ParticipantVisitResolver getResolver(RenderContext ctx)
         {
             Integer sourceId = _sourceIdCol != null ? (Integer)_sourceIdCol.getValue(ctx) : null;
             if (sourceId != null && !_resolvers.containsKey(sourceId))
             {
-                // resolving ptid/timepoint by specimen ID is only supported for Assays
+                // resolving ptid/timepoint by specimen or sample ID is only supported for Assays
                 if (_publishSource == Dataset.PublishSource.Assay)
                 {
                     ExpRun run = ExperimentService.get().getExpRun(sourceId);
                     if (run != null)
-                        _resolvers.put(sourceId,  new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                    {
+                        if (_specimenIDCol != null)
+                            _resolvers.put(sourceId, new StudyParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                        else if (_sampleIdCol != null)
+                            _resolvers.put(sourceId, new  SampleParticipantVisitResolver(run.getContainer(), _targetStudyContainer, getUser()));
+                    }
                 }
             }
             return _resolvers.get(sourceId);
@@ -393,15 +404,19 @@ public class PublishResultsQueryView extends QueryView
             TimepointType timepointType = targetStudy == null ? null : targetStudy.getTimepointType();
             Container targetStudyContainer = targetStudy == null ? null : targetStudy.getContainer();
 
-            Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(_visitIdCol.getValue(ctx)) : null;
-            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(ctx.getContainer(), _dateCol.getValue(ctx)) : null;
+            Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(getColumnValue(_visitIdCol, ctx)) : null;
+            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(ctx.getContainer(), getColumnValue(_dateCol, ctx)) : null;
 
-            String specimenID = _specimenIDCol == null ? null : convertObjectToString(_specimenIDCol.getValue(ctx));
-            String participantID = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
+            String specimenID = _specimenIDCol == null ? null : convertObjectToString(getColumnValue(_specimenIDCol, ctx));
+            String participantID = _ptidCol == null ? null : convertObjectToString(getColumnValue(_ptidCol, ctx));
+            String sampleID = _sampleIdCol == null ? null : convertObjectToString(getColumnValue(_sampleIdCol, ctx));
 
             try
             {
-                return resolver.resolve(specimenID, participantID, visitId, date, targetStudyContainer);
+                if (_specimenIDCol != null)
+                    return resolver.resolve(specimenID, participantID, visitId, date, targetStudyContainer);
+                else
+                    return resolver.resolve(sampleID, participantID, visitId, date, targetStudyContainer);
             }
             catch (ExperimentException e)
             {
@@ -418,7 +433,7 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowVisits.get(key);
             }
-            Double result = _visitIdCol == null ? null : convertObjectToDouble(_visitIdCol.getValue(ctx));
+            Double result = _visitIdCol == null ? null : convertObjectToDouble(getColumnValue(_visitIdCol, ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -435,7 +450,7 @@ public class PublishResultsQueryView extends QueryView
                 return _reshowPtids.get(key);
             }
             
-            String result = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
+            String result = _ptidCol == null ? null : convertObjectToString(getColumnValue(_ptidCol, ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -451,13 +466,28 @@ public class PublishResultsQueryView extends QueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowDates.get(key);
             }
-            Date result = _dateCol == null ? null : convertObjectToDate(ctx.getContainer(), _dateCol.getValue(ctx));
+            Date result = _dateCol == null ? null : convertObjectToDate(ctx.getContainer(), getColumnValue(_dateCol, ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
             return includeTimestamp ? DateUtil.formatDateTimeISO8601(result) : DateUtil.formatDateISO8601(result);
+        }
+
+        private Object getColumnValue(ColumnInfo col, RenderContext ctx)
+        {
+            DisplayColumn dc = col.getRenderer();
+            if (dc instanceof IMultiValuedDisplayColumn)
+            {
+                // support for lineage and multivalue columns
+                List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
+                if (values.size() == 1)
+                    return values.get(0);
+                else
+                    LOG.warn("Unable to use the value returned from column : " + col.getName() + " because this multi-value column returned more than a single value.");
+            }
+            return col.getValue(ctx);
         }
 
         public Container getUserTargetStudy(RenderContext ctx)
@@ -670,6 +700,36 @@ public class PublishResultsQueryView extends QueryView
             }
         }
 
+        public Pair<Boolean, String> getSampleMatchStatus(RenderContext ctx)
+        {
+            Container targetStudy = getUserTargetStudy(ctx);
+            if (targetStudy == null)
+                targetStudy = _targetStudyContainer;
+
+            // Bail early if no match can be made.
+            if (targetStudy == null)
+                return new Pair<>(false, "<p>No target study selected for this row.</p>");
+
+            ParticipantVisitResolver resolver = getResolver(ctx);
+            boolean isSampleMatched = false;
+            if (resolver instanceof SampleParticipantVisitResolver)
+            {
+                Object sampleId = _sampleIdCol.getValue(ctx);
+                if (sampleId instanceof Integer)
+                {
+                    isSampleMatched = ((SampleParticipantVisitResolver) resolver).isSampleMatched((Integer)sampleId);
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("<p>The Sample ID in this row does");
+            if (!isSampleMatched)
+                sb.append(" <strong>not</strong>");
+            sb.append(" match a sample in the study.</p>");
+
+            return new Pair<>(isSampleMatched, sb.toString());
+        }
+
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             if (_sourceIdCol != null) { set.add(_sourceIdCol); }
@@ -680,7 +740,6 @@ public class PublishResultsQueryView extends QueryView
             if (_specimenIDCol != null) { set.add(_specimenIDCol); }
             if (_targetStudyCol != null) { set.add(_targetStudyCol); }
         }
-
     }
 
     public static abstract class InputColumn extends SimpleDisplayColumn
@@ -936,29 +995,19 @@ public class PublishResultsQueryView extends QueryView
         ColumnInfo sourceIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SourceId));
         ColumnInfo visitIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.VisitId));
         ColumnInfo dateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.Date));
-        if (dateCol == null)
-        {
-            // issue 41982 : look for an alternate date column if the standard assay date field does not exist
-            // TODO : consider pushing this into the assay specific part of the action
-            List<ColumnInfo> dateCols = selectColumns.stream()
-                    .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
-                            (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
-                    .collect(Collectors.toList());
-
-            if (dateCols.size() == 1)
-                dateCol = dateCols.get(0);
-        }
         ColumnInfo specimenIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenId));
         ColumnInfo matchCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenMatch));
         ColumnInfo specimenPTIDCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenPtid));
         ColumnInfo specimenVisitCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenVisit));
         ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenDate));
         ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.TargetStudy));
+        ColumnInfo sampleIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SampleId));
 
         ResolverHelper resolverHelper = new ResolverHelper(
                 _targetStudyContainer, getUser(),
                 _publishSource,
-                sourceIdCol, objectIdCol, ptidCol, visitIDCol, dateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
+                sourceIdCol, objectIdCol, ptidCol, visitIDCol, dateCol, specimenIDCol, matchCol, specimenPTIDCol,
+                specimenVisitCol, specimenDateCol, targetStudyCol, sampleIdCol);
         resolverHelper.setReshow(_reshowVisits, _reshowDates, _reshowPtids, _reshowTargetStudies);
 
         TargetStudyInputColumn targetStudyInputColumn = null;
@@ -1006,7 +1055,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         if (_showSpecimenMatch)
-            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
+            columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper, specimenIDCol, sampleIdCol));
 
         if (sourceIdCol != null && objectIdCol != null)
             columns.add(new SourceDataLinkDisplayColumn(null, resolverHelper, _publishSource, sourceIdCol, objectIdCol));

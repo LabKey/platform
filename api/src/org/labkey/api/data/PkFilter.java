@@ -62,7 +62,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (ConversionException e)
                     {
-                        throw new NotFoundException("Failed to convert '" + value + "' for '" + fieldKey + "', should be of type " + targetClass.getName());
+                        throw new NotFoundException(ConvertHelper.getStandardConversionErrorMessage(value, fieldKey.toString(), targetClass));
                     }
                 }
                 else if (SqlDialect.isGUIDType(columnPK.get(i).getSqlTypeName()))
@@ -73,7 +73,7 @@ public class PkFilter extends SimpleFilter
                     }
                     catch (IllegalArgumentException e)
                     {
-                        throw new NotFoundException("Failed to convert '" + value + "' for '" + fieldKey + "', should be of type GUID");
+                        throw new NotFoundException(ConvertHelper.getStandardConversionErrorMessage(value, fieldKey.toString(), GUID.class));
                     }
                 }
             }
