@@ -40,19 +40,18 @@
                     <property name="customFields">
                         <list>
                             <bean class="org.labkey.api.formSchema.RadioField">
-                                <!-- Is this the correct name for the custom param? -->
-                                <constructor-arg index="0" value="action"/>
+                                <constructor-arg index="0" value="mergeData"/>
                                 <constructor-arg index="1" value="Action"/>
                                 <constructor-arg index="2" type="java.lang.Boolean" value="false" />
                                 <constructor-arg index="3" value="replace" />
                                 <constructor-arg index="4">
                                     <list>
                                         <bean class="org.labkey.api.formSchema.Option">
-                                            <constructor-arg index="0" value="merge"/>
+                                            <constructor-arg index="0" value="true"/>
                                             <constructor-arg index="1" value="Merge"/>
                                         </bean>
                                         <bean class="org.labkey.api.formSchema.Option">
-                                            <constructor-arg index="0" value="replace"/>
+                                            <constructor-arg index="0" value="false"/>
                                             <constructor-arg index="1" value="Replace"/>
                                         </bean>
                                     </list>
@@ -61,7 +60,6 @@
                             </bean>
 
                             <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <!-- Is this the correct name for the custom param? -->
                                 <constructor-arg index="0" value="allowDomainUpdates"/>
                                 <constructor-arg index="1" value="Allow Domain Updates"/>
                                 <constructor-arg index="2" value="false" />

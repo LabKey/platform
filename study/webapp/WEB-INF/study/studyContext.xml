@@ -104,15 +104,14 @@
                     <property name="customFields">
                         <list>
                             <bean class="org.labkey.api.formSchema.RadioField">
-                                <!-- Is this the correct name for the custom param? -->
-                                <constructor-arg index="0" value="action"/>
+                                <constructor-arg index="0" value="default.action"/>
                                 <constructor-arg index="1" value="Action"/>
                                 <constructor-arg index="2" value="false" />
                                 <constructor-arg index="3" value="replace" />
                                 <constructor-arg index="4">
                                     <list>
                                         <bean class="org.labkey.api.formSchema.Option">
-                                            <constructor-arg index="0" value="merge"/>
+                                            <constructor-arg index="0" value="append"/>
                                             <constructor-arg index="1" value="Merge"/>
                                         </bean>
                                         <bean class="org.labkey.api.formSchema.Option">
@@ -125,22 +124,11 @@
                             </bean>
 
                             <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <!-- Is this the correct name for the custom param? -->
                                 <constructor-arg index="0" value="allowDomainUpdates"/>
                                 <constructor-arg index="1" value="Allow Domain Updates"/>
                                 <constructor-arg index="2" value="false" />
-                                <!-- Is this the correct default value? -->
                                 <constructor-arg index="3" value="true"/>
                                 <constructor-arg index="4" value="Enable to allow domain updates"/>
-                            </bean>
-
-                            <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <!-- Is this the correct name for the custom param? -->
-                                <constructor-arg index="0" value="failForUndefinedVisits"/>
-                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
-                                <constructor-arg index="2" value="false" />
-                                <constructor-arg index="3" value="true"/>
-                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
                             </bean>
                         </list>
                     </property>
@@ -171,13 +159,19 @@
                     <property name="customFields">
                         <list>
                             <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <!-- Is this the correct name for the custom param? -->
-                                <constructor-arg index="0" value="validateQueries"/>
+                                <constructor-arg index="0" value="skipQueryValidation"/>
                                 <constructor-arg index="1" value="Validate All Queries After Reload"/>
                                 <constructor-arg index="2" value="false" />
-                                <!-- Is this the correct default value? -->
-                                <constructor-arg index="3" value="true"/>
+                                <constructor-arg index="3" value="false"/>
                                 <constructor-arg index="4" value="Enable to validate queries after reload is complete"/>
+                            </bean>
+
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="failForUndefinedVisits"/>
+                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
                             </bean>
                         </list>
                     </property>
