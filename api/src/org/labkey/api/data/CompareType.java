@@ -906,13 +906,14 @@ public abstract class CompareType
     }
 
 
-    private String _preferredURLKey;
+    private final String _preferredURLKey;
     private final OperatorType.Enum _xmlType;
-    private Set<String> _urlKeys = new CaseInsensitiveHashSet();
-    private String _displayValue;
-    private boolean _dataValueRequired;
-    private String _sql;
-    private String _scriptName;
+    private final Set<String> _urlKeys = new CaseInsensitiveHashSet();
+    private final String _displayValue;
+    private final boolean _dataValueRequired;
+    private final String _sql;
+    private final String _scriptName;
+
     private String _valueSeparator;
 
     protected CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
@@ -1262,7 +1263,7 @@ public abstract class CompareType
             return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
         }
 
-        return ((Comparable)a).compareTo(b);
+        return a.compareTo(b);
     }
 
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
@@ -1336,11 +1337,8 @@ public abstract class CompareType
             lookupQueryName = ((PropertyDescriptor)col).getLookupQuery();
         }
 
-        if ("core".equalsIgnoreCase(lookupSchemaName) &&
-                ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName)))
-            return true;
-
-        return false;
+        return "core".equalsIgnoreCase(lookupSchemaName) &&
+                ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName));
     }
 
     // TODO: How can I tell if this column is the core.Users DisplayName display column?
@@ -1353,8 +1351,7 @@ public abstract class CompareType
         if (col instanceof LookupColumn || (col instanceof AliasedColumn && ((AliasedColumn)col).getColumn() instanceof LookupColumn))
         {
             String propertyURI = col.getPropertyURI();
-            if (propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName")))
-                return true;
+            return propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName"));
         }
 
         return false;
@@ -1365,10 +1362,7 @@ public abstract class CompareType
         JdbcType type = colInfo.getJdbcType();
         switch (type)
         {
-            case INTEGER:
-            case TINYINT:
-            case SMALLINT:
-            {
+            case INTEGER, TINYINT, SMALLINT -> {
                 // Treat the empty string as null
                 stringValue = StringUtils.trimToNull(stringValue);
                 if (stringValue == null)
@@ -1381,24 +1375,20 @@ public abstract class CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to an integer for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Integer.class);
                 }
             }
-
-            case BIGINT:
-            {
+            case BIGINT -> {
                 try
                 {
                     return Long.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a long for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Long.class);
                 }
             }
-
-            case BOOLEAN:
-            {
+            case BOOLEAN -> {
                 try
                 {
                     // Treat the empty string as null
@@ -1411,29 +1401,21 @@ public abstract class CompareType
                 }
                 catch (Exception e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a boolean for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Boolean.class);
                 }
             }
-
-            case TIMESTAMP:
-            case DATE:
-            case TIME:
-            {
+            case TIMESTAMP, DATE, TIME -> {
                 try
                 {
                     return ConvertUtils.convert(stringValue, Date.class);
                 }
                 catch (ConversionException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a date for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Date.class);
                 }
             }
-
             //FALL THROUGH! (Decimal is better than nothing)
-            case DECIMAL:
-            case REAL:
-            case DOUBLE:
-            {
+            case DECIMAL, REAL, DOUBLE -> {
                 try
                 {
                     // Treat the empty string as null
@@ -1446,14 +1428,17 @@ public abstract class CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a number for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Number.class);
                 }
             }
         }
-
         return stringValue;
     }
 
+    private static void throwConversionException(String value, ColumnRenderProperties column, Class<?> expectedClass)
+    {
+        throw new RuntimeSQLException(new SQLGenerationException(ConvertHelper.getStandardConversionErrorMessage(value, column.getName(), expectedClass)));
+    }
 
     public static Date asDate(Object v)
     {
