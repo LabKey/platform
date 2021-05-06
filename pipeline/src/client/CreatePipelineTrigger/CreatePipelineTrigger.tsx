@@ -32,7 +32,7 @@ interface TriggerConfiguration {
     rowId: number;
 }
 
-type CustomConfiguration = Record<string, string>;
+type CustomConfiguration = Record<string, string | boolean>;
 
 interface CustomParameterModel {
     key: string;
@@ -311,6 +311,12 @@ const initializeFormState = (initialState: InitialState): FormState => {
         Object.keys(_customConfig).forEach(key => {
             const value = _customConfig[key];
             const field = formSchema?.fields.find(f => f.name === key);
+
+            if (field && field.type === 'checkbox') {
+                // The server serializes custom config values as strings, so we need to convert them to booleans if
+                // they are to be rendered as checkboxes.
+                _customConfig[field.name] = value === 'true';
+            }
 
             if (!field) {
                 // If no field is defined in the formSchema then it needs to be rendered as a "custom parameter"
