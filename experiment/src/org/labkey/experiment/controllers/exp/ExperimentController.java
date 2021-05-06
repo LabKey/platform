@@ -3143,7 +3143,7 @@ public class ExperimentController extends SpringActionController
                     }
                     for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
-                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
+                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId())); // like /labkey/Tutorials/TempStudyForJennifer/study-dataset.view?datasetId=5001
                         if (dataset.canDeleteDefinition(getUser()))
                         {
                             deleteableDatasets.add(entry);
@@ -3209,11 +3209,17 @@ public class ExperimentController extends SpringActionController
         public Object execute(DeleteConfirmationForm deleteForm, BindException errors)
         {
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            Set<Integer> deletable = deleteForm.getIds(false);
+            List<Integer> deleteRequest = new ArrayList<>(deletable);
             List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
-            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials));
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
+
+            // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
+            response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, deletable, getUser(), getContainer()));
+
+            return success(response);
         }
     }
 
@@ -3454,7 +3460,28 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "To delete a sample type, you must be in its folder or project."));
             }
 
-            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes));
+            List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
+            List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
+            if (StudyService.get() != null)
+            {
+                for (ExpSampleType sampleType: sampleTypes)
+                {
+                    for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
+                    {
+                        ActionURL datasetURL = StudyService.get().getDatasetURL(getContainer(), dataset.getDatasetId());
+                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, datasetURL);
+                        if (dataset.canDeleteDefinition(getUser()))
+                        {
+                            deleteableDatasets.add(entry);
+                        }
+                        else
+                        {
+                            noPermissionDatasets.add(entry);
+                        }
+                    }
+                }
+            }
+            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes), "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
         private List<ExpSampleType> getSampleTypes(DeleteForm deleteForm)

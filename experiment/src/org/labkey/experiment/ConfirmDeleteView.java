@@ -142,11 +142,6 @@ public class ConfirmDeleteView extends JspView<ConfirmDeleteView.ConfirmDeleteBe
         }
     }
 
-    public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form)
-    {
-        this(objectType, detailAction, objects, form, Collections.emptyList());
-    }
-
     public ConfirmDeleteView(String objectType, Class<? extends Controller> detailAction, List<? extends ExpObject> objects, DeleteForm form, List<? extends ExpRun> runs)
     {
         this(objectType, detailAction, objects, form, runs, null, Collections.emptyList(), Collections.emptyList());

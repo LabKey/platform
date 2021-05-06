@@ -114,7 +114,7 @@ public class SampleDatasetTable extends DatasetTableImpl
 
             // Hide 'linked' column for Sample Type Datasets
             if (userSchema instanceof AbstractExpSchema)
-                _sampleResultTable = ((SamplesSchema) userSchema).getSampleTable(sampleType, null);
+                _sampleTable = ((SamplesSchema) userSchema).getSampleTable(sampleType, null);
         }
         return _sampleTable;
     }
