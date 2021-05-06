@@ -27,7 +27,7 @@
 <div class="container">
     <div class="row content-row">
         <div class="content-left">
-            <%= text(pageConfig.renderSiteMessages(getViewContext())) %>
+            <%=pageConfig.renderSiteMessages(getViewContext())%>
             <div class="well">
                 <% me.include(me.getBody(), out); %>
             </div>
