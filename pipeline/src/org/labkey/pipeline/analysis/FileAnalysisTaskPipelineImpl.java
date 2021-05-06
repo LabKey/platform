@@ -95,27 +95,27 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
     /** Below are variables used to generate a FormSchema so we can instruct the client how to render a form */
     // new HelpTopic("fileWatchCreate").getHelpTopicHref(), generates a link pointing to archived docs. Is there a better way?
-    private static final String _baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
-    private static final String _locationHelpText = "This can be an absolute path on the server's file system or a relative path under the container's pipeline root.";
-    private static final String _locationHref = _baseHref + "location";
-    private static final String _filePatternHelpText = "A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties.";
-    private static final String _filePatternHref = _baseHref + "filepattern";
-    private static final String _quietHelpText = "Number of seconds to wait after file activity before executing a job (minimum is 1).";
-    private static final String _quietHref = _baseHref + "quietperiod";
-    private static final String _moveContainerHelpText = "Move the file to this container before analysis. This must be a relative or absolute container path.";
-    private static final String _moveContainerHref = _baseHref + "moveto";
-    private static final String _moveDirectoryHelpText = "Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory.";
-    private static final String _moveDirectoryHref = _baseHref + "subdirectory";
-    private static final String _copyHelpText = "Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder.";
-    private static final String _copyHref = _baseHref + "copyto";
+    private static final String BASE_HREF = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
+    private static final String LOCATION_HELP_TEXT = "This can be an absolute path on the server's file system or a relative path under the container's pipeline root.";
+    private static final String LOCATION_HREF = BASE_HREF + "location";
+    private static final String FILE_PATTERN_HELP_TEXT = "A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties.";
+    private static final String FILE_PATTERN_HREF = BASE_HREF + "filepattern";
+    private static final String QUIET_HELP_TEXT = "Number of seconds to wait after file activity before executing a job (minimum is 1).";
+    private static final String QUIET_HREF = BASE_HREF + "quietperiod";
+    private static final String MOVE_CONTAINER_HELP_TEXT = "Move the file to this container before analysis. This must be a relative or absolute container path.";
+    private static final String MOVE_CONTAINER_HREF = BASE_HREF + "moveto";
+    private static final String MOVE_DIRECTORY_HELP_TEXT = "Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory.";
+    private static final String MOVE_DIRECTORY_HREF = BASE_HREF + "subdirectory";
+    private static final String COPY_HELP_TEXT = "Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder.";
+    private static final String COPY_HREF = BASE_HREF + "copyto";
     private static final List<Field> _defaultFields = List.of(
-            new TextField("location", "Location to Watch", "./", false, null, _locationHelpText, _locationHref),
+            new TextField("location", "Location to Watch", "./", false, null, LOCATION_HELP_TEXT, LOCATION_HREF),
             new CheckboxField("recursive", "Include Child Folders", false, false),
-            new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, _filePatternHelpText, _filePatternHref),
-            new NumberField("quiet", "Quiet Period (Seconds)", null, true, 1.0, _quietHelpText, _quietHref),
-            new TextField("moveContainer", "Move to Container", "/Other Project/Subfolder A", false, null, _moveContainerHelpText, _moveContainerHref),
-            new TextField("moveDirectory", "Move to Subdirectory", "My Watched Files/Move", false, null, _moveDirectoryHelpText, _moveDirectoryHref),
-            new TextField("copy", "Copy File To", null, false, null, _copyHelpText, _copyHref)
+            new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, FILE_PATTERN_HELP_TEXT, FILE_PATTERN_HREF),
+            new NumberField("quiet", "Quiet Period (Seconds)", null, true, 1.0, QUIET_HELP_TEXT, QUIET_HREF),
+            new TextField("moveContainer", "Move to Container", "/Other Project/Subfolder A", false, null, MOVE_CONTAINER_HELP_TEXT, MOVE_CONTAINER_HREF),
+            new TextField("moveDirectory", "Move to Subdirectory", "My Watched Files/Move", false, null, MOVE_DIRECTORY_HELP_TEXT, MOVE_DIRECTORY_HREF),
+            new TextField("copy", "Copy File To", null, false, null, COPY_HELP_TEXT, COPY_HREF)
     );
     private List<Field> _customFields;
 
