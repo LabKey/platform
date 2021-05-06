@@ -167,7 +167,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row.");
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row, id " + oldRowMap.get("RowId"));
 
         if (null != dataObjectMap)
         {
