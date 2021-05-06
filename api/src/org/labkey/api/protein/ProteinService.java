@@ -20,10 +20,15 @@ import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.springframework.validation.BindException;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,10 +75,10 @@ public interface ProteinService
     List<QueryViewProvider<PeptideSearchForm>> getPeptideSearchViews();
 
     /** @param aaRowWidth the number of amino acids to display in a single row */
-    WebPartView getProteinCoverageView(int seqId, String[] peptides, int aaRowWidth, boolean showEntireFragmentInCoverage);
+    WebPartView<?> getProteinCoverageView(int seqId, String[] peptides, int aaRowWidth, boolean showEntireFragmentInCoverage, @Nullable String accessionForFeatures);
 
     /** @return a web part with all of the annotations and identifiers we know for a given protein */
-    WebPartView getAnnotationsView(int seqId);
+    WebPartView<?> getAnnotationsView(int seqId, Map<String, Collection<HtmlString>> extraAnnotations);
 
     String getProteinSequence(int seqId);
 
@@ -269,4 +274,7 @@ public interface ProteinService
             _location = location;
         }
     }
+
+    List<ProteinFeature> getProteinFeatures(String accession) throws IOException, ParserConfigurationException, SAXException;
+
 }
