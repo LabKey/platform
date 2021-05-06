@@ -74,9 +74,10 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
                 public Object getValue(RenderContext ctx)
                 {
                     String category = (String) super.getValue(ctx);
-                    if (category.equals(ListDefinition.Category.PublicPicklist.toString()))
+
+                    if (ListDefinition.Category.PublicPicklist.toString().equals(category))
                         return "public";
-                    else if (category.equals(ListDefinition.Category.PrivatePicklist.toString()))
+                    else if (ListDefinition.Category.PrivatePicklist.toString().equals(category))
                         return "private";
                     return null;
                 }
