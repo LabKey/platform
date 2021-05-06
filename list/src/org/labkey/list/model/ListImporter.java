@@ -442,6 +442,8 @@ public class ListImporter
             list.setEntireListBodyTemplate(listSettingsXml.getEntireListBodyTemplate());
 
             list.setFileAttachmentIndex(listSettingsXml.getFileAttachmentIndex());
+            if (listSettingsXml.getCategory() != null)
+                list.setCategory(ListDefinition.Category.valueOf(listSettingsXml.getCategory()));
         }
 
         list.setPreferredListIds(preferredListIds);

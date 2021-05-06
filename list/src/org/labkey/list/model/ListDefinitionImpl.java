@@ -187,6 +187,12 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
+    public void setCategory(Category category)
+    {
+        edit().setCategory(category);
+    }
+
+    @Override
     public DiscussionSetting getDiscussionSetting()
     {
         return _def.getDiscussionSettingEnum();
