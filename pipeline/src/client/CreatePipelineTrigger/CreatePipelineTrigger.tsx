@@ -303,6 +303,13 @@ const initializeFormState = (initialState: InitialState): FormState => {
         // The server defaults to 0, but does not allow anything less than 1 when saving.
         _triggerConfig.quiet = 1;
         _details.type = detailsFormSchema.fields.find(f => f.name === 'type').defaultValue;
+
+        // populate default values of custom config.
+        customFieldFormSchemas[_details.pipelineId]?.fields.forEach(field => {
+            if (field.defaultValue) {
+                _customConfig[field.name] = field.defaultValue;
+            }
+        });
     } else {
         // The server serializes quiet in ms, but expects seconds when saving.
         _triggerConfig.quiet = _triggerConfig.quiet / 1000;
