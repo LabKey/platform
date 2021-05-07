@@ -26,6 +26,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
@@ -157,7 +158,10 @@ public class ListModule extends SpringModule
         {
             svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> metric = new HashMap<>();
-                metric.put("listCount", new SqlSelector(DbSchema.get("exp", DbSchemaType.Module), "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
+                DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
+                metric.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
+                metric.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist.toString() + "'").getObject(Long.class));
+                metric.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist.toString() + "'").getObject(Long.class));
                 return metric;
             });
         }
