@@ -88,7 +88,7 @@ public class ListWriter
 
     public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
     {
-        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, true);
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())

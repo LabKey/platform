@@ -98,7 +98,7 @@ public class ListImporter
     {
         //Since we don't have a definition here, try to get one from the fileName & context
 
-        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, true);
         ListDefinition def = lists.get(FileUtil.getBaseName(fileName));
 
         if (_importContext.getInputDataMap() != null)
@@ -354,7 +354,7 @@ public class ListImporter
             }
         }
 
-        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, true);
         int failedLists = 0;
         int successfulLists = 0;
         for (String listName : lists.keySet())
@@ -537,7 +537,7 @@ public class ListImporter
 
         TablesType tablesXml = tablesDoc.getTables();
 
-        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, true);
 
         for (TableType tableType : tablesXml.getTableArray())
         {

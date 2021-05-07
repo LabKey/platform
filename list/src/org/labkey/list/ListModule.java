@@ -42,7 +42,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;

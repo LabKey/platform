@@ -346,6 +346,14 @@ public interface ListDefinition extends Comparable<ListDefinition>
     Category getCategory();
     void setCategory(Category category);
 
+    int getCreatedBy();
+
+    default boolean isVisible(@NotNull User user)
+    {
+        // any user can see public picklists and lists that aren't picklists
+        return getCategory() != Category.PrivatePicklist || getCreatedBy() == user.getUserId();
+    }
+
     DiscussionSetting getDiscussionSetting();
     void setDiscussionSetting(DiscussionSetting discussionSetting);
 

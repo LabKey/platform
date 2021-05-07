@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -4276,7 +4275,7 @@ public class ExperimentServiceImpl implements ExperimentService
             ListService ls = ListService.get();
             if (ls != null)
             {
-                for (ListDefinition list : ListService.get().getLists(c).values())
+                for (ListDefinition list : ListService.get().getLists(c, null, true).values())
                 {
                     // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
                     if (list.getContainer().equals(c))

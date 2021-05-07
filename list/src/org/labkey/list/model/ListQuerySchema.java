@@ -83,7 +83,7 @@ public class ListQuerySchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return ListManager.get().getLists(getContainer())
+        return ListManager.get().getLists(getContainer(), getUser(), true)
             .stream()
             .map(ListDef::getName)
             .collect(Collectors.toSet());

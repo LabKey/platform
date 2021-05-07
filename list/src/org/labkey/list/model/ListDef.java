@@ -16,15 +16,17 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Builder;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.exp.list.ListDefinition.BodySetting;
+import org.labkey.api.exp.list.ListDefinition.Category;
 import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
 import org.labkey.api.exp.list.ListDefinition.IndexSetting;
 import org.labkey.api.exp.list.ListDefinition.TitleSetting;
-import org.labkey.api.exp.list.ListDefinition.Category;
+import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 
 import java.util.Date;
@@ -214,6 +216,15 @@ public class ListDef extends Entity implements Cloneable
     public boolean getFileAttachmentIndex()
     {
         return _fileAttachmentIndex;
+    }
+
+    public boolean isVisible(@Nullable User user)
+    {
+        // any user can see public picklists and lists that aren't picklists
+        if (user == null)
+            return _category != Category.PrivatePicklist;
+
+        return _category != Category.PrivatePicklist || getCreatedBy() == user.getUserId();
     }
 
     protected void copyTo(ListDef to)

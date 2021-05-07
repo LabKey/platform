@@ -193,6 +193,9 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
+    public int getCreatedBy() { return _def.getCreatedBy(); }
+
+    @Override
     public DiscussionSetting getDiscussionSetting()
     {
         return _def.getDiscussionSettingEnum();

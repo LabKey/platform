@@ -83,7 +83,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -103,6 +103,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -210,16 +211,16 @@ public class ListController extends SpringActionController
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), ListManagerSchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ListManagerSchema.LIST_MANAGER);
-            if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
-            {
-                SimpleFilter filter = new SimpleFilter();
 
-                SQLFragment sql = new SQLFragment("Category != '")
-                        .append(ListDefinition.Category.PrivatePicklist)
-                        .append("' OR CreatedBy = ").append(getUser().getUserId());
-                filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
-                settings.setBaseFilter(filter);
-            }
+            // users should see all lists without a category and public picklists and any lists they created.
+            SimpleFilter filter = new SimpleFilter();
+
+            SQLFragment sql = new SQLFragment("Category IS NULL OR Category = '")
+                    .append(ListDefinition.Category.PublicPicklist.toString())
+                    .append("' OR CreatedBy = ").append(getUser().getUserId());
+            filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
+            settings.setBaseFilter(filter);
+
             return schema.createView(getViewContext(), settings, errors);
         }
 
@@ -326,7 +327,11 @@ public class ListController extends SpringActionController
                         {
                             boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
                             boolean canDeletePicklist = isOwnPicklist && c.hasPermission(getUser(), ManagePicklistsPermission.class) ||
-                                    (listDef.getCategory() == ListDefinition.Category.PublicPicklist && c.hasPermission(getUser(), ApplicationAdminPermission.class));
+                                    (listDef.getCategory() == ListDefinition.Category.PublicPicklist && (
+                                                    getUser().hasApplicationAdminPermission() ||
+                                                    getUser().hasSiteAdminPermission() ||
+                                                    getContainer().hasPermission(getUser(), AdminPermission.class)
+                                    ));
                             if (canDeletePicklist)
                             {
                                 _listIDs.add(listId);
@@ -421,6 +426,9 @@ public class ListController extends SpringActionController
             _list = form.getList();
             if (null == _list)
                 throw new NotFoundException("List does not exist in this container");
+
+            if (!_list.isVisible(getUser()))
+                throw new UnauthorizedException("User is not allowed to see this list.");
 
             ListQueryView view = new ListQueryView(form, errors);
 
@@ -1029,7 +1037,7 @@ public class ListController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            response.put("lists", getJSONLists(ListService.get().getLists(getContainer())));
+            response.put("lists", getJSONLists(ListService.get().getLists(getContainer(), getUser(), false)));
             response.put("success", true);
 
             return response;
