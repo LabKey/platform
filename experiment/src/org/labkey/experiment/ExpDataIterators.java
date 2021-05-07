@@ -389,7 +389,7 @@ public class ExpDataIterators
                     return true;
 
                 Study study = StudyService.get().getStudy(sampleType.getAutoLinkTargetContainer());
-                Float visitId = null; // Rosaline temp note: is this a decent pattern?
+                Float visitId = null;
                 Date dateId = null;
 
                 // 13647: Conversion exception in auto link to study
