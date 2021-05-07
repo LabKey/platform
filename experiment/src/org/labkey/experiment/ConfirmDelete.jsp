@@ -61,7 +61,7 @@ else
     </ul>
 
     <% if (bean.getDeleteableExtras().size() > 0) { %>
-        <p><%= h(bean.getDeleteableExtras().size() > 1 ? Integer.toString(bean.getDeleteableExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> will also be deleted:</p>
+        <%= h(bean.getDeleteableExtras().size() > 1 ? Integer.toString(bean.getDeleteableExtras().size()) : "One") %> <%= h(bean.getExtraNoun())%><%= h(bean.getDeleteableExtras().size() > 1 ? "s" : "") %> will also be deleted:
 
         <ul>
         <%  int count = 0;
