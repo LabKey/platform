@@ -354,6 +354,11 @@ public interface ListDefinition extends Comparable<ListDefinition>
         return getCategory() != Category.PrivatePicklist || getCreatedBy() == user.getUserId();
     }
 
+    default boolean isPicklist()
+    {
+        return getCategory() == Category.PrivatePicklist || getCategory() == Category.PublicPicklist;
+    }
+
     DiscussionSetting getDiscussionSetting();
     void setDiscussionSetting(DiscussionSetting discussionSetting);
 
