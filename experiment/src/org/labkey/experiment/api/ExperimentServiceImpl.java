@@ -3781,24 +3781,21 @@ public class ExperimentServiceImpl implements ExperimentService
             Set<Integer> linkedDatasetsBySelectedRow = new HashSet<>();
 
             // Over each selected row
-            for (Integer id : deletable) // TODO: is there a way to filter by all deletable at once instead of doing this for loop?
-            {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"),  id);
-                TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
-                Collection<Map> selectedRow = rowIdsFromTableSelector.getCollection(Map.class);
+            SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
+            TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
+            Collection<Map> selectedRow = rowIdsFromTableSelector.getCollection(Map.class);
 
-                // Over each column of name 'dataset<N>'
-                for (Map selectedColumn : selectedRow)
+            // Over each column of name 'dataset<N>'
+            for (Map selectedColumn : selectedRow)
+            {
+                // Check if each cell is populated (that is, if the given row was linked to a certain study)
+                for (Object cell : selectedColumn.entrySet())
                 {
-                    // Check if each cell is populated (that is, if the given row was linked to a certain study)
-                    for (Object cell : selectedColumn.entrySet())
+                    String key = (String) ((Pair) cell).getKey();
+                    Object value = ((Pair) cell).getValue();
+                    if (value instanceof Integer && linkedColumnNames.contains(key))
                     {
-                        String key = (String) ((Pair) cell).getKey();
-                        Object value = ((Pair) cell).getValue();
-                        if (value instanceof Integer && linkedColumnNames.contains(key))
-                        {
-                            linkedDatasetsBySelectedRow.add((Integer) value);
-                        }
+                        linkedDatasetsBySelectedRow.add((Integer) value);
                     }
                 }
             }

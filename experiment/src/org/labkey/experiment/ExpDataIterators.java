@@ -378,36 +378,36 @@ public class ExpDataIterators
 
             if (_participantIDCol != null && _rowIdCol != null && _lsidCol != null && (_dateCol != null || _visitIdCol != null))
             {
-                String participantId = _participantIDCol.get().toString();
+                String participantId = _participantIDCol.get() != null ? _participantIDCol.get().toString() : null;
                 Object date = _dateCol != null ? _dateCol.get() : null;
                 Object visit = _visitIdCol.get();
                 Object lsid = _lsidCol.get();
                 int rowId = ((Number) _rowIdCol.get()).intValue();
 
-                // Only link rows that have a participant and a visit/date
-                if (participantId != null && date != null)
+                // Only link rows that have a participant and a visit/date. Return if this is not the case
+                if (participantId == null || (date == null || visit == null))
+                    return true;
+
+                Study study = StudyService.get().getStudy(sampleType.getAutoLinkTargetContainer());
+                Float visitId = null; // Rosaline temp note: is this a decent pattern?
+                Date dateId = null;
+
+                // 13647: Conversion exception in auto link to study
+                if (study.getTimepointType().isVisitBased())
                 {
-                    Study study = StudyService.get().getStudy(sampleType.getAutoLinkTargetContainer());
-                    Float visitId = null; // Rosaline temp note: is this a decent pattern?
-                    Date dateId = null;
-
-                    // 13647: Conversion exception in auto link to study
-                    if (study.getTimepointType().isVisitBased())
-                    {
-                        visitId = Float.parseFloat(visit.toString());
-                    } else {
-                        dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
-                    }
-
-                    Map<String,Object> row = Map.of(
-                            PARTICIPANT, participantId,
-                            DATE, dateId == null ? date : dateId,
-                            VISIT, visitId == null ? visit : visitId,
-                            LSID, lsid,
-                            ROWID, rowId
-                            );
-                    _rows.add(row);
+                    visitId = Float.parseFloat(visit.toString());
+                } else {
+                    dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
                 }
+
+                Map<String,Object> row = Map.of(
+                        PARTICIPANT, participantId,
+                        DATE, dateId == null ? date : dateId,
+                        VISIT, visitId == null ? visit : visitId,
+                        LSID, lsid,
+                        ROWID, rowId
+                        );
+                _rows.add(row);
             }
             return true;
         }
