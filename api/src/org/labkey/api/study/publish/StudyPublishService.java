@@ -104,6 +104,9 @@ public interface StudyPublishService
     @Nullable
     ActionURL autoLinkAssayResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
 
+    /**
+     * Automatically link sample type data to a study if the design is set up to do so
+     */
     void autoLinkSampleType(ExpSampleType sampleType, List<Map<String, Object>> results, Container container, User user);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */

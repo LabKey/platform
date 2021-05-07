@@ -3143,7 +3143,7 @@ public class ExperimentController extends SpringActionController
                     }
                     for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay))
                     {
-                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId())); // like /labkey/Tutorials/TempStudyForJennifer/study-dataset.view?datasetId=5001
+                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId()));
                         if (dataset.canDeleteDefinition(getUser()))
                         {
                             deleteableDatasets.add(entry);

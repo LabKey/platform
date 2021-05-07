@@ -345,12 +345,12 @@ public class ExpDataIterators
             _user = user;
             _expTable = expTable;
 
-            final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME; //Rosaline temp note: verify this is valid location
+            final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _participantIDCol = map.get(PARTICIPANT) != null ? di.getSupplier(map.get(PARTICIPANT)) : null;
             _dateCol = map.get(DATE) != null ? di.getSupplier(map.get(DATE)) : null;
             _visitIdCol = map.get(visitName) != null ? di.getSupplier(map.get(visitName)) : null;
-            _lsidCol = map.get("LSID") != null ? di.getSupplier(map.get("LSID")) : null; // Rosaline temp note: verify
+            _lsidCol = map.get("LSID") != null ? di.getSupplier(map.get("LSID")) : null;
             _rowIdCol = map.get(ROWID) != null ? di.getSupplier(map.get(ROWID)) : null;
         }
 

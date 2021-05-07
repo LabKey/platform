@@ -64,7 +64,7 @@ public class ExperimentListenerImpl implements ExperimentListener
     @Override
     public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
     {
-        // Check for datasets that need rows deleted due to a Sample Type linkage
+        // Check for datasets that need rows deleted due to a linked Sample Type row-level deletion
         for (ExpMaterial material: materials)
         {
             for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(material.getSampleType().getRowId(), Dataset.PublishSource.SampleType))
