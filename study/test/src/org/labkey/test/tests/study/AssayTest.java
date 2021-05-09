@@ -284,7 +284,7 @@ public class AssayTest extends AbstractAssayTest
                 "Specimen ID changed from 'AAA07XK5-05' to 'EditedSpecimenID'",
                 "Visit ID changed from '601.0' to '601.5",
                 "testAssayDataProp5 changed from blank to '514801'",
-                "Deleted data row, id ");
+                "Deleted data row.");
     }
 
     /**
@@ -443,42 +443,41 @@ public class AssayTest extends AbstractAssayTest
         _customizeViewsHelper.addColumn("SpecimenID/GlobalUniqueId", "Specimen Global Unique Id");
         _customizeViewsHelper.addColumn("SpecimenID/Specimen/PrimaryType", "Specimen Specimen Primary Type");
         _customizeViewsHelper.addColumn("SpecimenID/AssayMatch", "Specimen Assay Match");
-//        _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
-//        _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
-//        _customizeViewsHelper.removeColumn("testAssayDataProp4");
+        _customizeViewsHelper.removeColumn("Run/testAssayRunProp1");
+        _customizeViewsHelper.removeColumn("Run/Batch/testAssaySetProp2");
+        _customizeViewsHelper.removeColumn("testAssayDataProp4");
         _customizeViewsHelper.applyCustomView();
 
         assertTextPresent("Blood (Whole)", 4);
 
-//        Locator.XPathLocator trueLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'true']");
-//        int totalTrues = getElementCount(trueLocator);
-//        assertEquals(4, totalTrues);
+        Locator.XPathLocator trueLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'true']");
+        int totalTrues = getElementCount(trueLocator);
+        assertEquals(4, totalTrues);
 
-//        DataRegionTable region = new DataRegionTable("Data", this);
-//        region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
+        DataRegionTable region = new DataRegionTable("Data", this);
+        region.setFilter("SpecimenID", "Starts With", "AssayTestControl");
 
         // verify that there are no trues showing for the assay match column that were filtered out
-//        totalTrues = getElementCount(trueLocator);
-//        assertEquals(0, totalTrues);
+        totalTrues = getElementCount(trueLocator);
+        assertEquals(0, totalTrues);
 
-//        DataRegionTable region = new DataRegionTable("Data", this);
-//        log("Check out the data for all of the runs");
-//        clickAndWait(Locator.linkWithText("view results"));
-//        region.clearAllFilters("SpecimenID");
-//        assertElementPresent(Locator.tagWithText("td", "7.0"));
-//        assertElementPresent(Locator.tagWithText("td", "18"));
-//
-//        assertTextPresent("Blood (Whole)", 7);
-//
-//        Locator.XPathLocator falseLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'false']");
-//        int totalFalses = getElementCount(falseLocator);
-//        assertEquals(3, totalFalses);
-//
-//        region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
-//
-//        // verify the falses have been filtered out
-//        totalFalses = getElementCount(falseLocator);
-//        assertEquals(0, totalFalses);
+        log("Check out the data for all of the runs");
+        clickAndWait(Locator.linkWithText("view results"));
+        region.clearAllFilters("SpecimenID");
+        assertElementPresent(Locator.tagWithText("td", "7.0"));
+        assertElementPresent(Locator.tagWithText("td", "18"));
+
+        assertTextPresent("Blood (Whole)", 7);
+
+        Locator.XPathLocator falseLocator = Locator.xpath("//table[contains(@class, 'labkey-data-region')]//td[text() = 'false']");
+        int totalFalses = getElementCount(falseLocator);
+        assertEquals(3, totalFalses);
+
+        region.setFilter("SpecimenID", "Does Not Start With", "BAQ");
+
+        // verify the falses have been filtered out
+        totalFalses = getElementCount(falseLocator);
+        assertEquals(0, totalFalses);
 
         stopImpersonating();
     }
