@@ -284,7 +284,7 @@ public class AssayTest extends AbstractAssayTest
                 "Specimen ID changed from 'AAA07XK5-05' to 'EditedSpecimenID'",
                 "Visit ID changed from '601.0' to '601.5",
                 "testAssayDataProp5 changed from blank to '514801'",
-                "Deleted data row.");
+                "Deleted data row, id ");
     }
 
     /**
