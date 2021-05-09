@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -183,21 +184,17 @@ public class DataIteratorUtil
         return targetAliasesMap;
     }
 
+    public static boolean isEtl(@NotNull DataIteratorContext context)
+    {
+        return context.getDataSource() != null && context.getDataSource().equals(ETL_DATA_SOURCE);
+    }
 
     /* NOTE doesn't check column mapping collisions */
-    protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, Container container)
+    protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, boolean isEtl, Container container)
     {
         Map<String,Pair<ColumnInfo,MatchType>> targetMap = _createTableMap(target, useImportAliases);
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
         matches.add(null);
-
-        boolean isEtl = false;
-        if (input instanceof SimpleTranslator)
-        {
-            String source = ((SimpleTranslator) input)._context.getDataSource();
-            if (null != source)
-                isEtl = source.equals(ETL_DATA_SOURCE);
-        }
 
         // match columns to target columninfos (duplicates StandardDataIteratorBuilder, extract shared method?)
         for (int i=1 ; i<=input.getColumnCount() ; i++)
@@ -210,11 +207,30 @@ public class DataIteratorUtil
             }
 
             Pair<ColumnInfo,MatchType> to = null;
-            // Only do propertyURI matching if not an ETL
-            if (null != from.getPropertyURI() && !isEtl)
-                to = targetMap.get(from.getPropertyURI());
-            if (null == to)
+            if (isEtl)
+            {
+                // Match by name first
                 to = targetMap.get(from.getName());
+
+                // If name matches, check if property URI matches for higher priority match type
+                if (null != to && null != from.getPropertyURI())
+                {
+                    // Renamed columns in queries will not match. Just stick with name match.
+                    if (from.getPropertyURI().equals(to.first.getPropertyURI())) {
+                        Pair<ColumnInfo,MatchType> toUri = targetMap.get(from.getPropertyURI());
+                        if (null != toUri)
+                            to = toUri;
+                    }
+                }
+            }
+            else
+            {
+                if (null != from.getPropertyURI())
+                    to = targetMap.get(from.getPropertyURI());
+                if (null == to)
+                    to = targetMap.get(from.getName());
+            }
+
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
@@ -235,9 +251,9 @@ public class DataIteratorUtil
 
 
     /** throws ValidationException only if there are unresolvable ambiguity in the source->destination column mapping */
-    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError, @Nullable Container container)
+    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, boolean isEtl, ValidationException setupError, @Nullable Container container)
     {
-        ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases, container);
+        ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases, isEtl, container);
         MultiValuedMap<FieldKey,Integer> duplicatesMap = new ArrayListValuedHashMap<>(input.getColumnCount()+1);
 
         for (int i=1 ; i<= input.getColumnCount() ; i++)
