@@ -123,6 +123,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -545,25 +546,27 @@ public class StudyPublishManager implements StudyPublishService
     /**
      * To help generate the assay audit record, group the rows by the source type lsid (assay protocol or sample type).
      */
-    private Map<String, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
+    private Map<Optional<String>, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
     {
-        return dataMaps.stream().collect(Collectors.groupingBy(m -> (String)m.get(SOURCE_LSID_PROPERTY_NAME)));
+        // source LSID may be null
+        return dataMaps.stream().collect(Collectors.groupingBy(m -> Optional.ofNullable((String)m.get(SOURCE_LSID_PROPERTY_NAME))));
     }
 
     // TODO : consider pushing this into PublishSource
     private void logPublishEvent(Dataset.PublishSource publishSource, ExpObject source, List<Map<String, Object>> dataMaps, User user, Container sourceContainer, Container targetContainer, Dataset dataset)
     {
-        Map<String, List<Map<String, Object>>> sourceLSIDCounts = groupBySourceLsid(dataMaps);
+        Map<Optional<String>, List<Map<String, Object>>> sourceLSIDCounts = groupBySourceLsid(dataMaps);
         if (source != null)
         {
-            for (Map.Entry<String, List<Map<String, Object>>> entry : sourceLSIDCounts.entrySet())
+            for (var entry : sourceLSIDCounts.entrySet())
             {
-                String sourceLsid = entry.getKey();
+                // source LSID may be null
+                String sourceLsid = entry.getKey().orElse(null);
                 List<Map<String, Object>> rows = entry.getValue();
                 int recordCount = rows.size();
 
                 String auditMessage = publishSource.getLinkToStudyAuditMessage(source, recordCount);
-                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source);
+                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source, sourceLsid);
 
                 event.setTargetStudy(targetContainer.getId());
                 event.setDatasetId(dataset.getDatasetId());
@@ -1280,7 +1283,7 @@ public class StudyPublishManager implements StudyPublishService
                 sourceName = source.getName();
 
             String auditMessage = sourceType.getRecallFromStudyAuditMessage(sourceName, rowCount);
-            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source);
+            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source, null);
 
             event.setTargetStudy(def.getStudy().getContainer().getId());
             event.setDatasetId(def.getDatasetId());
