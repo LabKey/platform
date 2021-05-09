@@ -563,7 +563,7 @@ public class StudyPublishManager implements StudyPublishService
                 int recordCount = rows.size();
 
                 String auditMessage = publishSource.getLinkToStudyAuditMessage(source, recordCount);
-                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source);
+                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source, sourceLsid);
 
                 event.setTargetStudy(targetContainer.getId());
                 event.setDatasetId(dataset.getDatasetId());
@@ -1280,7 +1280,7 @@ public class StudyPublishManager implements StudyPublishService
                 sourceName = source.getName();
 
             String auditMessage = sourceType.getRecallFromStudyAuditMessage(sourceName, rowCount);
-            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source);
+            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source, null);
 
             event.setTargetStudy(def.getStudy().getContainer().getId());
             event.setDatasetId(def.getDatasetId());
