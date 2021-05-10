@@ -64,7 +64,6 @@ public class PublishController extends SpringActionController
             AssayPublishConfirmAction.class,
             SampleTypePublishStartAction.class,
             SampleTypePublishConfirmAction.class
-//            SampleTypePublishHistoryAction.class
     );
 
     public PublishController()
