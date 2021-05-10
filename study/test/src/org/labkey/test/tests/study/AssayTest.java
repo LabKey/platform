@@ -212,7 +212,7 @@ public class AssayTest extends AbstractAssayTest
 
         // Be sure that we have a special audit record
         clickAndWait(Locator.linkWithText("view link to study history"));
-        assertTextPresent("3 row(s) were recalled to the assay: ");
+        assertTextPresent("3 row(s) were recalled from a study to the assay: ");
 
         // Verify that the deleted run data is gone from the dataset
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
@@ -595,7 +595,7 @@ public class AssayTest extends AbstractAssayTest
             linkStudy.clickHeaderButton("Recall Rows");
             acceptAlert();
         });
-        assertTextPresent("row(s) were recalled to the assay: " + TEST_ASSAY);
+        assertTextPresent("row(s) were recalled from a study to the assay: " + TEST_ASSAY);
 
         // Set a filter so that we know we're looking at the link event for SecondRun again
         region.setFilter("Comment", "Starts With", "3 row(s) were linked to a study from the assay");
