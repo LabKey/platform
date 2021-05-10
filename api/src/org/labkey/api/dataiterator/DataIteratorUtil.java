@@ -215,7 +215,9 @@ public class DataIteratorUtil
                 // If name matches, check if property URI matches for higher priority match type
                 if (null != to && null != from.getPropertyURI())
                 {
-                    // Renamed columns in queries will not match. Just stick with name match.
+                    // Renamed built-in columns (ex. LSID, ParticipantId) in source queries will not match propertyURI with
+                    // target. In that case, just stick with name match. Otherwise check for propertyURI match for higher priority match
+                    // (this is primarily for ParticipantId which can have two columns with same name in the dataiterator)
                     if (from.getPropertyURI().equals(to.first.getPropertyURI())) {
                         Pair<ColumnInfo,MatchType> toUri = targetMap.get(from.getPropertyURI());
                         if (null != toUri)

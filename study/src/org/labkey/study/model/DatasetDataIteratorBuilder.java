@@ -613,7 +613,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new BaseColumnInfo("ParticipantAliasId", JdbcType.VARCHAR);
+            ColumnInfo col = new BaseColumnInfo("ParticipantId", JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
