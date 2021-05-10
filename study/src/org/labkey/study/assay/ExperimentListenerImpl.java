@@ -15,6 +15,7 @@
  */
 package org.labkey.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -22,6 +23,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.BatchValidationException;
@@ -67,23 +69,27 @@ public class ExperimentListenerImpl implements ExperimentListener
         // Check for datasets that need rows deleted due to a linked Sample Type row-level deletion
         for (ExpMaterial material: materials)
         {
-            for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(material.getSampleType().getRowId(), Dataset.PublishSource.SampleType))
+            ExpSampleType sampleType = material.getSampleType();
+            if (sampleType != null)
             {
-                if (!dataset.canDelete(user))
+                for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
                 {
-                    throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
-                }
+                    if (!dataset.canDelete(user))
+                    {
+                        throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
+                    }
 
-                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                TableInfo tableInfo = schema.getTable(dataset.getName());
+                    UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                    TableInfo tableInfo = schema.getTable(dataset.getName());
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), material.getRowId());
-                Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), material.getRowId());
+                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
 
-                if (lsids.size() > 0)
-                {
-                    StudyPublishService.get().addRecallAuditEvent(material.getContainer(), user, dataset, lsids.size(), null);
-                    dataset.deleteDatasetRows(user, lsids);
+                    if (lsids.size() > 0)
+                    {
+                        StudyPublishService.get().addRecallAuditEvent(material.getContainer(), user, dataset, lsids.size(), null);
+                        dataset.deleteDatasetRows(user, lsids);
+                    }
                 }
             }
         }

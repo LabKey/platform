@@ -364,7 +364,7 @@ public class ExpDataIterators
         {
             boolean hasNext = super.next();
 
-            if (getErrors().hasErrors())
+            if (getErrors().hasErrors() || !(_expTable instanceof ExpMaterialTableImpl))
                 return hasNext;
 
             ExpSampleType sampleType = ((ExpMaterialTableImpl) _expTable).getSampleType();
