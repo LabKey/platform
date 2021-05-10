@@ -89,7 +89,7 @@
         name: <%=q(bean.getName())%>,
         pipelineId: <%=q(bean.getPipelineId())%>,
         type: <%=q(bean.getType())%>,
-        username: <%=q(bean.getUsername())%>
+        username: <%=q(bean.getUsername())%> || <%=q(getUser().getDisplayName(getUser()))%>
     };
     const triggerConfig = JSON.parse(<%=q(bean.getConfiguration())%>);
     delete triggerConfig.parameters; // The CreatePipelineTrigger component does not expect this parameter.
