@@ -65,22 +65,18 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         QueryView view = getQueryView();
         SimpleFilter filter = new SimpleFilter(view.getSettings().getSortFilterURL(), view.getDataRegionName());
 
-        for (SimpleFilter.FilterClause clause : filter.getClauses())
+        for (SimpleFilter.FilterClause filterClause : filter.getClauses())
         {
-            JSONObject filterObj = new JSONObject();
-            List<String> fieldKey = clause.getFieldKeys().get(0).getParts();
-            String value = getFilterValue(clause, clause.getParamVals());
-            CompareType operator;
+            if (!(filterClause instanceof CompareType.AbstractCompareClause))
+                throw new UnsupportedOperationException("Filter clause '" + filterClause.getClass().getName() + "' not currently supported in export scripts");
 
-            //two kinds of clauses can be used on URLs: CompareClause and MultiValuedFilterClause
-            if (clause instanceof CompareType.CompareClause)
-                operator = ((CompareType.CompareClause)clause).getCompareType();
-            else if (clause instanceof SimpleFilter.ContainsOneOfClause)
-                operator = clause.isNegated() ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
-            else if (clause instanceof SimpleFilter.InClause)
-                operator = clause.isNegated() ? CompareType.NOT_IN : CompareType.IN;
-            else
-                operator = CompareType.EQUAL;
+            CompareType.AbstractCompareClause clause = (CompareType.AbstractCompareClause)filterClause;
+
+            JSONObject filterObj = new JSONObject();
+            List<String> fieldKey = clause.getFieldKey().getParts();
+            CompareType operator = clause.getCompareType();
+            var param = clause.toURLParam("q");
+            var value = param == null ? null : param.getValue();
 
             filterObj.put("value", value);
             filterObj.put("type", operator.getScriptName());

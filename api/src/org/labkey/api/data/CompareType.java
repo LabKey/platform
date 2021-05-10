@@ -958,7 +958,9 @@ public abstract class CompareType
                     // TODO what do we do with malformed parameters???
                     JSONArray array = new JSONArray(value);
                     for (int i = 0; i < array.length(); i++)
-                        values.add(array.get(i).toString());
+                    {
+                        values.add(Objects.toString(array.get(i), null));
+                    }
                 }
                 catch (JSONException ex)
                 {
@@ -1247,6 +1249,37 @@ public abstract class CompareType
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             return getCompareType().meetsCriteria(col, value, getParamVals());
+        }
+    }
+
+    // Return the non-URL-encoded filter value for filter types that support multiple parameter values
+    @NotNull
+    static String toCollectionURLParamValue(final Collection<?> paramVals, final String multiValueSep, final boolean includeNull)
+    {
+        boolean containsSeparator = paramVals.stream().filter(Objects::nonNull).map(Objects::toString).anyMatch(s -> s.contains(multiValueSep));
+        if (containsSeparator)
+        {
+            JSONArray json = new JSONArray(paramVals);
+            if (includeNull)
+                json.put((Object)null);
+
+            return JSON_MARKER_START + json + JSON_MARKER_END;
+        }
+        else
+        {
+            StringBuilder sb = new StringBuilder();
+            String separator = "";
+            for (Object value : paramVals)
+            {
+                sb.append(separator);
+                separator = multiValueSep;
+                sb.append(value == null ? "" : value.toString());
+            }
+            if (includeNull)
+            {
+                sb.append(separator);
+            }
+            return sb.toString();
         }
     }
 
@@ -1758,10 +1791,10 @@ public abstract class CompareType
         private Object validateValue(Object value)
         {
             if (value == null)
-                throw new IllegalArgumentException(_comparison._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
+                throw new IllegalArgumentException(getCompareType()._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             if (value instanceof String && ((String)value).length() == 0)
-                throw new IllegalArgumentException(_comparison._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
+                throw new IllegalArgumentException(getCompareType()._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             return value;
         }
@@ -1772,12 +1805,7 @@ public abstract class CompareType
             Object[] values = getParamVals();
             if (values != null && values.length == 2 && values[0] != null && values[1] != null)
             {
-                StringBuilder sb = new StringBuilder();
-                sb.append(values[0].toString());
-                sb.append(SEPARATOR);
-                sb.append(values[1].toString());
-
-                return sb.toString();
+                return CompareType.toCollectionURLParamValue(Arrays.asList(getParamVals()), SEPARATOR, false);
             }
             return null;
         }
@@ -1804,7 +1832,6 @@ public abstract class CompareType
 
     abstract private static class LikeClause extends CompareClause
     {
-
         private final String _unescapedValue;
 
         protected LikeClause(FieldKey fieldKey, CompareType compareType, Object value)

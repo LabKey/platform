@@ -63,9 +63,13 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
     public static final String COLUMN_NAME_SAMPLE_TYPE_ID = "SampleTypeID";
     public static final String COLUMN_NAME_TARGET_STUDY = "TargetStudy";
     public static final String COLUMN_NAME_DATASET_ID = "DatasetId";
+    // Dataset.PublishSource.Assay or SampleType
     public static final String COLUMN_NAME_SOURCE_TYPE = "SourceType";
+    // For samples, the sourceLsid is the SampleType's LSID.
+    // For assay, sourceLsid is typically the assay run's LSID. See AssayProvider.getSourceLSID().
     public static final String COLUMN_NAME_SOURCE_LSID = "SourceLsid";
-    public static final String COLUMN_NAME_SOURCE_NAME = "SourceName"; // assay or sample type name
+    // assay or sample type name
+    public static final String COLUMN_NAME_SOURCE_NAME = "SourceName";
     public static final String COLUMN_NAME_RECORD_COUNT = "RecordCount";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -214,14 +218,14 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             super();
         }
 
-        public AuditEvent(String container, String comment, Dataset.PublishSource sourceType, @Nullable ExpObject source)
+        public AuditEvent(String container, String comment, Dataset.PublishSource sourceType, @Nullable ExpObject source, @Nullable String sourceLsid)
         {
             super(PUBLISH_AUDIT_EVENT, container, comment);
             _sourceType = sourceType.name();
+            _sourceLsid = sourceLsid;
             if (source != null)
             {
                 setSourceName(source.getName());
-                setSourceLsid(source.getLSID());
                 switch (sourceType)
                 {
                     case Assay -> {

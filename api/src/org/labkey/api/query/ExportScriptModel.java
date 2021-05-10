@@ -35,7 +35,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -96,7 +95,19 @@ public abstract class ExportScriptModel
         return _view.getSettings().getViewName();
     }
 
-    public abstract String getScriptExportText();
+    public String getExportText()
+    {
+        try
+        {
+            return getScriptExportText();
+        }
+        catch (Exception e)
+        {
+            return "Error generating script export: " + e.getMessage();
+        }
+    }
+
+    protected abstract String getScriptExportText();
 
     public abstract String getFilters();
 
@@ -130,26 +141,20 @@ public abstract class ExportScriptModel
         QueryView view = getQueryView();
         ArrayList<String> makeFilterExprs = new ArrayList<>();
         SimpleFilter filter = new SimpleFilter(view.getSettings().getSortFilterURL(), view.getDataRegionName());
-        FieldKey fieldKey;
-        CompareType operator;
-        String value;
 
-        for (FilterClause clause : filter.getClauses())
+        for (FilterClause filterClause : filter.getClauses())
         {
+            if (!(filterClause instanceof CompareType.AbstractCompareClause))
+                throw new UnsupportedOperationException("Filter clause '" + filterClause.getClass().getName() + "' not currently supported in export scripts");
+
+            CompareType.AbstractCompareClause clause = (CompareType.AbstractCompareClause)filterClause;
+
             //all filter clauses can report col names and values,
             //each of which in this case should contain only one value
-            fieldKey = clause.getFieldKeys().get(0);
-            value = getFilterValue(clause, clause.getParamVals());
-
-            //two kinds of clauses can be used on URLs: CompareClause and MultiValuedFilterClause
-            if (clause instanceof CompareType.CompareClause)
-                operator = ((CompareType.CompareClause)clause).getCompareType();
-            else if (clause instanceof SimpleFilter.ContainsOneOfClause)
-                operator = clause.isNegated() ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
-            else if (clause instanceof SimpleFilter.InClause)
-                operator = clause.isNegated() ? CompareType.NOT_IN : CompareType.IN;
-            else
-                operator = CompareType.EQUAL;
+            FieldKey fieldKey = clause.getFieldKey();
+            CompareType operator = clause.getCompareType();
+            var param = clause.toURLParam("q");
+            var value = param == null ? null : param.getValue();
 
             makeFilterExprs.add(makeFilterExpression(fieldKey.toString(), operator, value));
         }
@@ -157,38 +162,6 @@ public abstract class ExportScriptModel
         return makeFilterExprs;
     }
 
-    protected String getFilterValue(FilterClause clause, Object[] values)
-    {
-        if (null == values || values.length == 0)
-            return "";
-
-        //in clause has multiple values, which are in semi-colon-delimited list on the URL
-        if (clause instanceof SimpleFilter.MultiValuedFilterClause)
-        {
-            StringBuilder sb = new StringBuilder();
-            String sep = "";
-
-            for (Object val : values)
-            {
-                sb.append(sep);
-                sb.append(toString(val));
-                sep = ";";
-            }
-
-            return sb.toString();
-        }
-        else
-        {
-            //should have only one value (convert null to empty string)
-            return null == values[0] ? "" : toString(values[0]);
-        }
-    }
-
-    // Export script should use ISO date format for filter data values, #19520
-    private String toString(Object val)
-    {
-        return (val instanceof Date ? DateUtil.formatDateISO8601((Date)val) : val.toString());
-    }
 
     public boolean hasSort()
     {
