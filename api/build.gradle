@@ -21,7 +21,6 @@ List apache = [
         "commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}",
         "commons-codec:commons-codec:${commonsCodecVersion}",
         "org.apache.commons:commons-collections4:${commonsCollections4Version}",
-        "org.apache.commons:commons-csv:${commonsCsvVersion}",
         "commons-dbcp:commons-dbcp:${commonsDbcpVersion}",
         "commons-io:commons-io:${commonsIoVersion}",
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
