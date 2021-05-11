@@ -20,7 +20,7 @@ package org.labkey.api.formSchema;
  * The base Field class, extend this if you want to implement a new Field type used by FormSchema.
  * @param <T>
  */
-public abstract class AbstractField<T> implements Field
+public abstract class AbstractField<T> implements Field<T>
 {
     private String _name;
     private String _label;
@@ -51,6 +51,7 @@ public abstract class AbstractField<T> implements Field
         _helpTextHref = helpTextHref;
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -61,6 +62,7 @@ public abstract class AbstractField<T> implements Field
         _name = name;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
