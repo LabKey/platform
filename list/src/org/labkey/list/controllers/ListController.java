@@ -327,11 +327,7 @@ public class ListController extends SpringActionController
                         {
                             boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
                             boolean canDeletePicklist = isOwnPicklist && c.hasPermission(getUser(), ManagePicklistsPermission.class) ||
-                                    (listDef.getCategory() == ListDefinition.Category.PublicPicklist && (
-                                                    getUser().hasApplicationAdminPermission() ||
-                                                    getUser().hasSiteAdminPermission() ||
-                                                    getContainer().hasPermission(getUser(), AdminPermission.class)
-                                    ));
+                                    (listDef.getCategory() == ListDefinition.Category.PublicPicklist && getContainer().hasPermission(getUser(), AdminPermission.class));
                             if (canDeletePicklist)
                             {
                                 _listIDs.add(listId);
