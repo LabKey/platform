@@ -387,7 +387,7 @@ public class ExpDataIterators
                 int rowId = ((Number) _rowIdCol.get()).intValue();
 
                 // Only link rows that have a participant and a visit/date. Return if this is not the case
-                if (participantId == null || (date == null || visit == null))
+                if (participantId == null || (date == null && visit == null))
                     return true;
 
                 Float visitId = null;
@@ -403,13 +403,15 @@ public class ExpDataIterators
                     dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
                 }
 
-                Map<String,Object> row = Map.of(
-                        PARTICIPANT, participantId,
-                        DATE, dateId == null ? date : dateId,
-                        VISIT, visitId == null ? visit : visitId,
-                        LSID, lsid,
-                        ROWID, rowId
-                        );
+                Map<String,Object> row = new HashMap<>();
+                row.put(PARTICIPANT, participantId);
+                row.put(LSID, lsid);
+                row.put(ROWID, rowId);
+                if (visitId != null)
+                    row.put(VISIT, visitId);
+                if (dateId != null)
+                    row.put(DATE, dateId);
+
                 _rows.add(row);
             }
             return true;

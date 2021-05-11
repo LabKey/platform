@@ -3807,7 +3807,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (linkedDatasetsBySelectedRow.contains(dataset.getDatasetId()))
                 {
                     ActionURL datasetURL = StudyService.get().getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
-                    associatedDatasets.add(Map.of("name",dataset.getStudy().getShortName(), "url", datasetURL));
+                    associatedDatasets.add(Map.of("name",dataset.getStudy().getResourceName(), "url", datasetURL));
                 }
             }
         }
