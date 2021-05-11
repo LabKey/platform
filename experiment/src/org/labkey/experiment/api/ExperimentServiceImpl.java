@@ -3786,14 +3786,13 @@ public class ExperimentServiceImpl implements ExperimentService
             Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
 
             // Over each column of name 'dataset<N>'
-            for (Map selectedColumn : selectedRow)
+            for (Map<String, Object> selectedColumn : selectedRow)
             {
                 // Check if each cell is populated (that is, if the given row was linked to a certain study)
-                for (Object entry : selectedColumn.entrySet())
+                for (Map.Entry<String, Object> entry : selectedColumn.entrySet())
                 {
-                    Map.Entry<String, Object> entryValue = (Map.Entry<String, Object>) entry;
-                    String key = entryValue.getKey();
-                    Object value = entryValue.getValue();
+                    String key = entry.getKey();
+                    Object value = entry.getValue();
                     if (value instanceof Integer && linkedColumnNames.contains(key))
                     {
                         linkedDatasetsBySelectedRow.add((Integer) value);

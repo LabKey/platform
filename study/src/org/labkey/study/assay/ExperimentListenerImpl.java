@@ -37,6 +37,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -83,12 +84,12 @@ public class ExperimentListenerImpl implements ExperimentListener
                     TableInfo tableInfo = schema.getTable(dataset.getName());
 
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), material.getRowId());
-                    Collection<String> lsids = new TableSelector(tableInfo, singleton("LSID"), filter, null).getCollection(String.class);
+                    String lsid = new TableSelector(tableInfo, singleton("LSID"), filter, null).getObject(String.class);
 
-                    if (lsids.size() > 0)
+                    if (lsid != null)
                     {
-                        StudyPublishService.get().addRecallAuditEvent(material.getContainer(), user, dataset, lsids.size(), null);
-                        dataset.deleteDatasetRows(user, lsids);
+                        StudyPublishService.get().addRecallAuditEvent(material.getContainer(), user, dataset, 1, null);
+                        dataset.deleteDatasetRows(user, Arrays.asList(lsid));
                     }
                 }
             }
