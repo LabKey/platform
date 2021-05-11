@@ -42,8 +42,8 @@
                             <bean class="org.labkey.api.formSchema.RadioField">
                                 <constructor-arg index="0" value="mergeData"/>
                                 <constructor-arg index="1" value="Action"/>
-                                <constructor-arg index="2" type="java.lang.Boolean" value="false" />
-                                <constructor-arg index="3" value="replace" />
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false" />
                                 <constructor-arg index="4">
                                     <list>
                                         <bean class="org.labkey.api.formSchema.Option">
