@@ -346,9 +346,12 @@ public class ExpDataIterators
             _user = user;
             _expTable = expTable;
 
-            @Nullable Container targetContainer = ((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer();
-            if (_study == null && targetContainer != null) {
-                _study = StudyService.get().getStudy(targetContainer);
+            if (_expTable instanceof  ExpMaterialTableImpl)
+            {
+                @Nullable Container targetContainer = ((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer();
+                if (_study == null && targetContainer != null) {
+                    _study = StudyService.get().getStudy(targetContainer);
+                }
             }
             final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
