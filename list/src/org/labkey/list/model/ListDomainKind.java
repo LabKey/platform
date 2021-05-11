@@ -261,7 +261,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return Collections.emptySet(); // TODO: Allow this to return the Key Column
     }
 
-    public static Lsid generateDomainURI(String name, Container c, KeyType keyType, ListDefinition.@Nullable Category category)
+    public static Lsid generateDomainURI(String name, Container c, KeyType keyType, @Nullable ListDefinition.Category category)
     {
         String type = getType(keyType, category);
         StringBuilder typeURI = getBaseURI(name, type, c);

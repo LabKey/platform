@@ -46,8 +46,7 @@ public class ListManagerTable extends FilteredTable<ListManagerSchema>
     {
         super(table, userSchema, cf);
 
-        MutableColumnInfo listIdCol = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ListID")));
-        listIdCol.setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ListID")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
 
