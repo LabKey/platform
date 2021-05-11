@@ -294,6 +294,21 @@ public class PublishResultsQueryView extends QueryView
         return visitId;
     }
 
+    public static Object getColumnValue(ColumnInfo col, RenderContext ctx)
+    {
+        DisplayColumn dc = col.getRenderer();
+        if (dc instanceof IMultiValuedDisplayColumn)
+        {
+            // support for lineage and multivalue columns
+            List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
+            if (values.size() == 1)
+                return values.get(0);
+            else
+                LOG.warn("Unable to use the value returned from column : " + col.getName() + " because this multi-value column returned more than a single value.");
+        }
+        return col.getValue(ctx);
+    }
+
     public static class ResolverHelper
     {
         private final Dataset.PublishSource _publishSource;
@@ -473,21 +488,6 @@ public class PublishResultsQueryView extends QueryView
                 result = pv == null ? null : pv.getDate();
             }
             return includeTimestamp ? DateUtil.formatDateTimeISO8601(result) : DateUtil.formatDateISO8601(result);
-        }
-
-        private Object getColumnValue(ColumnInfo col, RenderContext ctx)
-        {
-            DisplayColumn dc = col.getRenderer();
-            if (dc instanceof IMultiValuedDisplayColumn)
-            {
-                // support for lineage and multivalue columns
-                List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
-                if (values.size() == 1)
-                    return values.get(0);
-                else
-                    LOG.warn("Unable to use the value returned from column : " + col.getName() + " because this multi-value column returned more than a single value.");
-            }
-            return col.getValue(ctx);
         }
 
         public Container getUserTargetStudy(RenderContext ctx)

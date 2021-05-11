@@ -28,12 +28,16 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -133,4 +137,12 @@ public interface StudyPublishService
      * @return The names of the added columns that should be visible
      */
     Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user);
+
+    /**
+     * For a given sample, helps identify the special columns : subject/visit/date that are needed to publish sample rows to a
+     * study target.
+     *
+     * @param qs an optional query settings if custom view fields should be additionally inspected for publish relevant columns.
+     */
+    Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container, ExpSampleType sampleType, @Nullable QuerySettings qs);
 }

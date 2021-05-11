@@ -1,23 +1,16 @@
 package org.labkey.study.controllers.publish;
 
-import org.labkey.api.collections.LabKeyCollectors;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ILineageDisplayColumn;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -32,7 +25,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -55,7 +47,7 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction<SampleTypePublishConfirmAction.SampleTypePublishConfirmForm>
 {
     private ExpSampleType _sampleType;
-    private final Map<ExtraColFieldKeys, FieldKey> _fieldKeyMap = new HashMap<>();
+    private Map<ExtraColFieldKeys, FieldKey> _fieldKeyMap;
     private final String ROW_ID = ExpMaterialTable.Column.RowId.toString();
 
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
@@ -137,52 +129,8 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
     private void initializeFieldKeys(SampleTypePublishConfirmForm form)
     {
-        if (_fieldKeyMap.isEmpty())
-        {
-            ExpSampleType sampleType = form.getSampleType();
-            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), SamplesSchema.SCHEMA_NAME);
-            TableInfo tableInfo = userSchema.getTable(sampleType.getName());
-            if (tableInfo == null)
-                throw new IllegalStateException(String.format("Sample Type %s not found", sampleType.getName()));
-
-            Map<FieldKey, ColumnInfo> columns = tableInfo.getColumns().stream()
-                    .collect(LabKeyCollectors.toLinkedMap(ColumnInfo::getFieldKey, c -> c));
-
-            // also add columns present in the default view, useful for picking up any lineage fields
-            QueryView view = new QueryView(userSchema, getQuerySettings(form), null);
-            DataView dataView = view.createDataView();
-            for (Map.Entry<FieldKey, ColumnInfo> entry : dataView.getDataRegion().getSelectColumns().entrySet())
-            {
-                if (!columns.containsKey(entry.getKey()))
-                    columns.put(entry.getKey(), entry.getValue());
-            }
-
-            for (ColumnInfo ci : columns.values())
-            {
-                ColumnInfo col = ci;
-                DisplayColumn dc = col.getRenderer();
-
-                // hack to pull in lineage concept URI info, because the metadata doesn't get propagated
-                // to the actual lookup column
-                if (dc instanceof ILineageDisplayColumn)
-                {
-                    col = ((ILineageDisplayColumn)dc).getInnerBoundColumn();
-                }
-
-                if (PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
-                {
-                    if (!_fieldKeyMap.containsKey(ExtraColFieldKeys.VisitId) && col.getJdbcType().isReal())
-                        _fieldKeyMap.put(ExtraColFieldKeys.VisitId, ci.getFieldKey());
-                    if (!_fieldKeyMap.containsKey(ExtraColFieldKeys.Date) && col.getJdbcType().isDateOrTime())
-                        _fieldKeyMap.put(ExtraColFieldKeys.Date, ci.getFieldKey());
-                }
-
-                if (!_fieldKeyMap.containsKey(ExtraColFieldKeys.ParticipantId) && PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
-                {
-                    _fieldKeyMap.put(ExtraColFieldKeys.ParticipantId, ci.getFieldKey());
-                }
-            }
-        }
+        if (_fieldKeyMap == null)
+            _fieldKeyMap = StudyPublishService.get().getSamplePublishFieldKeys(getUser(), getContainer(), form.getSampleType(), getQuerySettings(form));
     }
 
     @Override
