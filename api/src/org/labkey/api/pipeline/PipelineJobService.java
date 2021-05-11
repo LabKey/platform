@@ -18,6 +18,8 @@ package org.labkey.api.pipeline;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
@@ -172,4 +174,6 @@ public interface PipelineJobService extends TaskPipelineRegistry
         /** Any external computational resource to which something on the web server submits jobs via {@link RemoteExecutionEngine} */
         RemoteExecutionEngine
     }
+
+    public FormSchema getFormSchema(Container container);
 }
