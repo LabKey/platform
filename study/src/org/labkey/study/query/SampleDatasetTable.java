@@ -109,12 +109,16 @@ public class SampleDatasetTable extends DatasetTableImpl
 
             ExpSampleType sampleType = (ExpSampleType)source;
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
-            if (userSchema != null)
-                _sampleTable = userSchema.getTable(sampleType.getName());
 
             // Hide 'linked' column for Sample Type Datasets
-            if (userSchema instanceof AbstractExpSchema)
+            if (userSchema instanceof SamplesSchema)
+            {
                 _sampleTable = ((SamplesSchema) userSchema).getSampleTable(sampleType, null);
+            }
+            else
+            {
+                throw new IllegalStateException(String.format("%s must be a SamplesSchema", userSchema.getName()));
+            }
         }
         return _sampleTable;
     }

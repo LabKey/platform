@@ -3762,7 +3762,7 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
         StudyPublishService studyPublishService = StudyPublishService.get();
-        if (studyPublishService != null && allMaterials.size() > 0)
+        if (studyPublishService != null && !allMaterials.isEmpty())
         {
             ExpSampleType sampleType = allMaterials.get(0).getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
@@ -3783,16 +3783,17 @@ public class ExperimentServiceImpl implements ExperimentService
             // Over each selected row
             SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
             TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
-            Collection<Map> selectedRow = rowIdsFromTableSelector.getCollection(Map.class);
+            Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
 
             // Over each column of name 'dataset<N>'
             for (Map selectedColumn : selectedRow)
             {
                 // Check if each cell is populated (that is, if the given row was linked to a certain study)
-                for (Object cell : selectedColumn.entrySet())
+                for (Object entry : selectedColumn.entrySet())
                 {
-                    String key = (String) ((Pair) cell).getKey();
-                    Object value = ((Pair) cell).getValue();
+                    Map.Entry<String, Object> entryValue = (Map.Entry<String, Object>) entry;
+                    String key = entryValue.getKey();
+                    Object value = entryValue.getValue();
                     if (value instanceof Integer && linkedColumnNames.contains(key))
                     {
                         linkedDatasetsBySelectedRow.add((Integer) value);

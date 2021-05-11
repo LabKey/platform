@@ -1108,7 +1108,8 @@ public class StudyPublishManager implements StudyPublishService
                     final String visitName = StudyPublishService.SEQUENCENUM_PROPERTY_NAME;
                     final String rowIdName = ExpMaterialTable.Column.RowId.toString();
 
-                    for (Map<String, Object> result : results) {
+                    for (Map<String, Object> result : results)
+                    {
                         Map<String, Object> dataMap = new HashMap<>();
                         dataMap.put(pidName, result.get(pidName));
                         dataMap.put(dateName, result.get(dateName));
@@ -1129,7 +1130,9 @@ public class StudyPublishManager implements StudyPublishService
                         ExpMaterialTable.Column.RowId.toString(),
                         publishErrors
                     );
-                } else {
+                } 
+                else
+                {
                     LOG.error("Insufficient permission to link assay data to study in folder : " + targetContainerPath);
                 }
             } else {

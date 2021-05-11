@@ -322,6 +322,7 @@ public class ExpDataIterators
         final User _user;
         final TableInfo _expTable;
 
+        final Study _study;
         final Supplier<Object> _participantIDCol;
         final Supplier<Object> _dateCol;
         final Supplier<Object> _visitIdCol;
@@ -345,6 +346,7 @@ public class ExpDataIterators
             _user = user;
             _expTable = expTable;
 
+            _study = StudyService.get().getStudy(((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer());
             final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _participantIDCol = map.get(PARTICIPANT) != null ? di.getSupplier(map.get(PARTICIPANT)) : null;
@@ -388,15 +390,16 @@ public class ExpDataIterators
                 if (participantId == null || (date == null || visit == null))
                     return true;
 
-                Study study = StudyService.get().getStudy(sampleType.getAutoLinkTargetContainer());
                 Float visitId = null;
                 Date dateId = null;
 
                 // 13647: Conversion exception in auto link to study
-                if (study.getTimepointType().isVisitBased())
+                if (_study.getTimepointType().isVisitBased())
                 {
                     visitId = Float.parseFloat(visit.toString());
-                } else {
+                }
+                else
+                {
                     dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
                 }
 
