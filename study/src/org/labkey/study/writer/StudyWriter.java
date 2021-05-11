@@ -60,7 +60,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             }
 
             // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
-            boolean exportDatasets = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASETS) || dataTypes.contains(StudyArchiveDataTypes.CRF_DATASETS);
+            boolean exportDatasets = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASETS) || dataTypes.contains(StudyArchiveDataTypes.CRF_DATASETS) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASETS);
 
             // Call all the writers defined in the study module.
             for (Writer<StudyImpl, StudyExportContext> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())

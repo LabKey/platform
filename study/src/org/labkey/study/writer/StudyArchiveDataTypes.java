@@ -21,6 +21,7 @@ package org.labkey.study.writer;
 public class StudyArchiveDataTypes
 {
     public static final String ASSAY_DATASETS = "Assay Datasets";
+    public static final String SAMPLE_TYPE_DATASETS = "Sample Type Datasets";
     public static final String ASSAY_SCHEDULE = "Assay Schedule";
     public static final String COHORT_SETTINGS = "Cohort Settings";
     public static final String CRF_DATASETS = "CRF Datasets";

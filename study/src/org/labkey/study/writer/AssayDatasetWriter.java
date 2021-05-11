@@ -24,7 +24,7 @@ import org.labkey.study.model.StudyImpl;
 * Date: Jun 30, 2009
 * Time: 10:56:48 PM
 */
-// DatasetWriter actually writes all datasets (crf & assay).  This is a do-nothing writer to gets the assay dataset checkbox
+// DatasetWriter actually writes all datasets (crf, assay, and sample type).  This is a do-nothing writer to gets the assay dataset checkbox
 // to show up in the UI.  TODO: More flexible data-driven UI mechanism.
 class AssayDatasetWriter implements InternalStudyWriter
 {

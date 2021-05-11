@@ -81,12 +81,13 @@ public class StudyExportContext extends SimpleStudyExportContext
         // TODO, add support for sample datasets
         boolean includeCRF = getDataTypes().contains(StudyArchiveDataTypes.CRF_DATASETS);
         boolean includeAssay = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASETS);
+        boolean includeSampleType = getDataTypes().contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASETS);
         boolean includeDatasetData = getDataTypes().contains(StudyArchiveDataTypes.DATASET_DATA);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
             Dataset.PublishSource publishSource = dataset.getPublishSource();
-            if (includeDatasetData || (!dataset.isPublishedData() && includeCRF) || ((publishSource == Dataset.PublishSource.Assay) && includeAssay))
+            if (includeDatasetData || (!dataset.isPublishedData() && includeCRF) || ((publishSource == Dataset.PublishSource.Assay) && includeAssay) || ((publishSource == Dataset.PublishSource.SampleType) && includeSampleType))
             {
                 _datasets.add(dataset);
                 _datasetIds.add(dataset.getDatasetId());
