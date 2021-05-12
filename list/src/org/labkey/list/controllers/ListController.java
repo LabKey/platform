@@ -297,6 +297,19 @@ public class ListController extends SpringActionController
         private final List<Integer> _listIDs = new ArrayList<>();
         private final List<Container> _containers = new ArrayList<>();
 
+        private boolean canDelete(int listId)
+        {
+            ListDef listDef = ListManager.get().getList(getContainer(), listId);
+            boolean isPicklist = listDef.getCategory() != null;
+            if (isPicklist)
+            {
+                boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
+                return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && getContainer().hasPermission(getUser(), AdminPermission.class));
+
+            }
+            return getContainer().hasPermission(getUser(), DesignListPermission.class);
+        }
+
         @Override
         public void validateCommand(ListDeletionForm form, Errors errors)
         {
@@ -321,30 +334,13 @@ public class ListController extends SpringActionController
                     else
                     {
                         int listId = Integer.parseInt(parts[0]);
-                        ListDef listDef = ListManager.get().getList(c, listId);
-                        boolean isPicklist = listDef.getCategory() != null;
-                        if (isPicklist)
-                        {
-                            boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
-                            boolean canDeletePicklist = isOwnPicklist && c.hasPermission(getUser(), ManagePicklistsPermission.class) ||
-                                    (listDef.getCategory() == ListDefinition.Category.PublicPicklist && getContainer().hasPermission(getUser(), AdminPermission.class));
-                            if (canDeletePicklist)
-                            {
-                                _listIDs.add(listId);
-                                _containers.add(c);
-                            }
-                            else
-                                errorMessages.add(String.format("You do not have permission to delete picklist %s in container %s", listDef.getName(), c.getName()));
-                        }
-                        else if (c.hasPermission(getUser(), DesignListPermission.class))
+                        if (canDelete(listId))
                         {
                             _listIDs.add(listId);
                             _containers.add(c);
                         }
                         else
-                        {
-                            errorMessages.add(String.format("You do not have permission to delete the list %s in container %s", listDef.getName(), c.getName()));
-                        }
+                            errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, c.getName()));
                     }
                 }
                 if (!errorMessages.isEmpty())
@@ -353,8 +349,13 @@ public class ListController extends SpringActionController
             else
             {
                 //Accessed from the edit list page, where selection is not possible
-                _listIDs.add(form.getListId());
-                _containers.add(getContainer());
+                if (canDelete(form.getListId()))
+                {
+                    _listIDs.add(form.getListId());
+                    _containers.add(getContainer());
+                }
+                else
+                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", form.getListId(), getContainer().getName()));
             }
         }
 
