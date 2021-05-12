@@ -185,13 +185,27 @@ public interface ColumnRenderProperties extends ImportAliasable
      */
     int getPrecision();
 
-    // Properties loaded by OntologyService
+        /* Properties loaded by OntologyService */
+
+    // any column can be annotated with PrincipalConceptCode
+    default String getPrincipalConceptCode()
+    {
+        return null;
+    }
+
+    // For concept lookup columns only we have SourceOntology, ConceptSubTree (must be in SourceOntology),
+    // also to support import features we have ImportColumn and LabelColumn
     default boolean isConceptColumn()
     {
         return getJdbcType().isText() && conceptCodeConceptURI.equals(getConceptURI()) && null != OntologyService.get();
     }
 
     default String getSourceOntology()
+    {
+        return null;
+    }
+
+    default String getConceptSubtree()
     {
         return null;
     }
@@ -205,11 +219,8 @@ public interface ColumnRenderProperties extends ImportAliasable
     {
         return null;
     }
+    /* End properties loaded by OntologyService */
 
-    default String getPrincipalConceptCode()
-    {
-        return null;
-    }
 
     default String getDerivationDataScope()
     {

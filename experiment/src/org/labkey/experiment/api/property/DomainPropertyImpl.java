@@ -613,6 +613,19 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
+    public void setPrincipalConceptCode(String code)
+    {
+        if (!StringUtils.equals(code, getPrincipalConceptCode()))
+            edit().setPrincipalConceptCode(code);
+    }
+
+    @Override
+    public String getPrincipalConceptCode()
+    {
+        return _pd.getPrincipalConceptCode();
+    }
+
+    @Override
     public String getSourceOntology()
     {
         return _pd.getSourceOntology();
@@ -623,6 +636,19 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (!StringUtils.equals(sourceOntology, getSourceOntology()))
             edit().setSourceOntology(sourceOntology);
+    }
+
+    @Override
+    public String getConceptSubtree()
+    {
+        return _pd.getConceptSubtree();
+    }
+
+    @Override
+    public void setConceptSubtree(String path)
+    {
+        if (!StringUtils.equals(path, getConceptSubtree()))
+            edit().setConceptSubtree(path);
     }
 
     @Override
@@ -649,19 +675,6 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (!StringUtils.equals(conceptLabelColumn, getConceptLabelColumn()))
             edit().setConceptLabelColumn(conceptLabelColumn);
-    }
-
-    @Override
-    public void setPrincipalConceptCode(String code)
-    {
-        if (!StringUtils.equals(code, getPrincipalConceptCode()))
-            edit().setPrincipalConceptCode(code);
-    }
-
-    @Override
-    public String getPrincipalConceptCode()
-    {
-        return _pd.getPrincipalConceptCode();
     }
 
     @Override
@@ -850,7 +863,12 @@ public class DomainPropertyImpl implements DomainProperty
         setMvEnabled(propSrc.isMvEnabled());
         setDefaultValueTypeEnum(propSrc.getDefaultValueTypeEnum());
         setScale(propSrc.getScale());
+
         setPrincipalConceptCode(propSrc.getPrincipalConceptCode());
+        setSourceOntology(propSrc.getSourceOntology());
+        setConceptSubtree(propSrc.getConceptSubtree());
+        setConceptImportColumn(propSrc.getConceptImportColumn());
+        setConceptLabelColumn(propSrc.getConceptLabelColumn());
 
         // check to see if we're moving a lookup column to another container:
         Lookup lookup = propSrc.getLookup();
