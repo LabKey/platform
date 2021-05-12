@@ -3777,36 +3777,39 @@ public class ExperimentServiceImpl implements ExperimentService
                     linkedColumnNames.add(column.getName());
             }
 
-            // Obtain, for selected rows, the ids of datasets that are linked
-            Set<Integer> linkedDatasetsBySelectedRow = new HashSet<>();
-
-            // Over each selected row
-            SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
-            TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
-            Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
-
-            // Over each column of name 'dataset<N>'
-            for (Map<String, Object> selectedColumn : selectedRow)
+            if (linkedColumnNames.size() > 0)
             {
-                // Check if each cell is populated (that is, if the given row was linked to a certain study)
-                for (Map.Entry<String, Object> entry : selectedColumn.entrySet())
+                // Obtain, for selected rows, the ids of datasets that are linked
+                Set<Integer> linkedDatasetsBySelectedRow = new HashSet<>();
+
+                // Over each selected row
+                SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
+                TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
+                Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
+
+                // Over each column of name 'dataset<N>'
+                for (Map<String, Object> selectedColumn : selectedRow)
                 {
-                    String key = entry.getKey();
-                    Object value = entry.getValue();
-                    if (value instanceof Integer && linkedColumnNames.contains(key))
+                    // Check if each cell is populated (that is, if the given row was linked to a certain study)
+                    for (Map.Entry<String, Object> entry : selectedColumn.entrySet())
                     {
-                        linkedDatasetsBySelectedRow.add((Integer) value);
+                        String key = entry.getKey();
+                        Object value = entry.getValue();
+                        if (value instanceof Integer && linkedColumnNames.contains(key))
+                        {
+                            linkedDatasetsBySelectedRow.add((Integer) value);
+                        }
                     }
                 }
-            }
 
-            // Verify that collected dataset ids constitute linked datasets, and construct payload
-            for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
-            {
-                if (linkedDatasetsBySelectedRow.contains(dataset.getDatasetId()))
+                // Verify that collected dataset ids constitute linked datasets, and construct payload
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
                 {
-                    ActionURL datasetURL = StudyService.get().getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
-                    associatedDatasets.add(Map.of("name",dataset.getStudy().getResourceName(), "url", datasetURL));
+                    if (linkedDatasetsBySelectedRow.contains(dataset.getDatasetId()))
+                    {
+                        ActionURL datasetURL = StudyService.get().getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
+                        associatedDatasets.add(Map.of("name",dataset.getStudy().getResourceName(), "url", datasetURL));
+                    }
                 }
             }
         }
