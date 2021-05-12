@@ -68,6 +68,7 @@
             <!--<xs:element name="initialInputs"/>-->
             <xs:element name="tasks" type="TasksType"/>
             <xs:element name="triggerConfiguration" type="TriggerConfigurationType" minOccurs="0"/>
+            <xs:element name="customFields" type="CustomFields" minOccurs="0" />
         </xs:sequence>
         <xs:attributeGroup ref="NameVersionAttrGroup"/>
         <xs:attribute name="splittable" type="xs:boolean" use="optional">
@@ -337,6 +338,85 @@
                 <xs:element name="file" type="FileOutputType"/>
             </xs:choice>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AbstractField" abstract="true">
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="label" type="xs:string" use="required" />
+        <xs:attribute name="placeholder" type="xs:string" />
+        <xs:attribute name="required" type="xs:boolean" use="required" />
+        <xs:attribute name="helpText" type="xs:string" />
+        <xs:attribute name="helpTextHref" type="xs:string" />
+    </xs:complexType>
+
+    <xs:complexType name="Option">
+        <xs:attribute name="label" type="xs:string" use="required" />
+        <xs:attribute name="value" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="TextField">
+        <xs:complexContent>
+            <xs:extension base="AbstractField">
+                <xs:attribute name="defaultValue" type="xs:string" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="TextAreaField">
+        <xs:complexContent>
+            <xs:extension base="AbstractField">
+                <xs:attribute name="defaultValue" type="xs:string" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="NumberField">
+        <xs:complexContent>
+            <xs:extension base="AbstractField">
+                <xs:attribute name="defaultValue" type="xs:double" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="CheckboxField">
+        <xs:complexContent>
+            <xs:extension base="AbstractField">
+                <xs:attribute name="defaultValue" type="xs:boolean" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="RadioField">
+        <xs:complexContent>
+            <xs:extension base="AbstractField">
+                <xs:sequence>
+                    <xs:element name="option" minOccurs="2" maxOccurs="unbounded" type="Option"/>
+                </xs:sequence>
+                <xs:attribute name="defaultValue" type="xs:string" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SelectField">
+        <xs:complexContent>
+            <xs:extension base="AbstractField">
+                <xs:sequence>
+                    <xs:element name="option" minOccurs="2" maxOccurs="unbounded" type="Option"/>
+                </xs:sequence>
+                <xs:attribute name="defaultValue" type="xs:string" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="CustomFields">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="text" minOccurs="0" type="TextField"/>
+            <xs:element name="textarea" minOccurs="0" type="TextAreaField"/>
+            <xs:element name="number" minOccurs="0" type="NumberField"/>
+            <xs:element name="checkbox" minOccurs="0" type="CheckboxField"/>
+            <xs:element name="radio" minOccurs="0" type="RadioField"/>
+            <xs:element name="select" minOccurs="0" type="SelectField"/>
+        </xs:choice>
     </xs:complexType>
 </xs:schema>
 

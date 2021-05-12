@@ -101,6 +101,37 @@
                         </list>
                     </property>
                     <property name="helpText" value="The selected Pipeline task can only be initiated on Excel, .tsv, and .txt files." />
+                    <property name="customFields">
+                        <list>
+                            <bean class="org.labkey.api.formSchema.RadioField">
+                                <constructor-arg index="0" value="default.action"/>
+                                <constructor-arg index="1" value="Action"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="replace" />
+                                <constructor-arg index="4">
+                                    <list>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="append"/>
+                                            <constructor-arg index="1" value="Merge"/>
+                                        </bean>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="replace"/>
+                                            <constructor-arg index="1" value="Replace"/>
+                                        </bean>
+                                    </list>
+                                </constructor-arg>
+                                <constructor-arg index="5" value="Choose Merge to merge values in file with existing list, Replace to replace existing values."/>
+                            </bean>
+
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="allowDomainUpdates"/>
+                                <constructor-arg index="1" value="Allow Domain Updates"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="true"/>
+                                <constructor-arg index="4" value="Enable to allow domain updates"/>
+                            </bean>
+                        </list>
+                    </property>
                 </bean>
 
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
@@ -125,6 +156,25 @@
                         </list>
                     </property>
                     <property name="helpText" value="The selected Pipeline task should only be initiated on a studyload.txt file underneath a pipeline root, and will only analyze exploded study archives. It will not accept compressed (.zip) study archives." />
+                    <property name="customFields">
+                        <list>
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="skipQueryValidation"/>
+                                <constructor-arg index="1" value="Validate All Queries After Reload"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to validate queries after reload is complete"/>
+                            </bean>
+
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="failForUndefinedVisits"/>
+                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
+                            </bean>
+                        </list>
+                    </property>
                 </bean>
             </list>
         </property>
