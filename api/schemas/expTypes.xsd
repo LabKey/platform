@@ -589,6 +589,15 @@
 					These properties define how the column data is imported, and the target ontology.
 				</xs:documentation>
 			</xs:annotation>
+			<xs:element name="subtree" type="xs:string" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>
+						This is a slash ('/') separated path of concepts codes.  The values in this column are expected
+						to be children of the tree rooted at this path.  This is not yet enforced, but this is used to
+						disambiguate synonyms on import, and to modify the display of concepts that are not in the expected tree.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="labelColumn" type="xs:string" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>
