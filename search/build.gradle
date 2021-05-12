@@ -3,7 +3,7 @@ plugins {
 }
 
 ext.luceneVersion="8.0.0"
-ext.mime4jVersion="0.8.1"
+ext.mime4jVersion="0.8.3"
 
 dependencies {
     external "org.apache.lucene:lucene-analyzers-common:${luceneVersion}"
@@ -19,11 +19,12 @@ dependencies {
     // See also tikaConfig.xml to exclude specific parsers or detectors.
     external "org.apache.commons:commons-compress:${commonsCompressVersion}"
     external "org.tukaani:xz:${tukaaniXZVersion}"         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
-    external "org.apache.pdfbox:jempbox:1.8.13"
+    external "org.apache.pdfbox:jempbox:1.8.16"
     external "com.drewnoakes:metadata-extractor:2.8.1"
     external "org.apache.poi:poi-scratchpad:${poiVersion}"
     external "org.ccil.cowan.tagsoup:tagsoup:1.2.1"
     external "org.codelibs:jhighlight:1.0.3"
+    external "org.apache.commons:commons-csv:1.8"
     external "org.apache.james:apache-mime4j-core:${mime4jVersion}"
     external "org.apache.james:apache-mime4j-dom:${mime4jVersion}"
     external "org.apache.pdfbox:pdfbox:${pdfboxVersion}"
