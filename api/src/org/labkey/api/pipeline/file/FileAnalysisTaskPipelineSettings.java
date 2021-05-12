@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.labkey.api.formSchema.Field;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipelineSettings;
@@ -98,6 +99,11 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
 
     /** Whether to allow the task to move files during file analysis. Default is true */
     private Boolean _moveAvailable;
+
+    /**
+     * The custom fields to render when configuring a FileAnalysisTaskPipeline
+     */
+    private List<Field> _customFields;
 
     public FileAnalysisTaskPipelineSettings(String name)
     {
@@ -239,5 +245,15 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
     public void setMoveAvailable(Boolean moveAvailable)
     {
         _moveAvailable = moveAvailable;
+    }
+
+    public List<Field> getCustomFields()
+    {
+        return _customFields;
+    }
+
+    public void setCustomFields(List<Field> customFields)
+    {
+        _customFields = customFields;
     }
 }

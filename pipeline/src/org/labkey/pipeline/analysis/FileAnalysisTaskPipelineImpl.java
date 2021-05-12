@@ -22,6 +22,15 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.CheckboxField;
+import org.labkey.api.formSchema.Field;
+import org.labkey.api.formSchema.FormSchema;
+import org.labkey.api.formSchema.NumberField;
+import org.labkey.api.formSchema.Option;
+import org.labkey.api.formSchema.RadioField;
+import org.labkey.api.formSchema.SelectField;
+import org.labkey.api.formSchema.TextField;
+import org.labkey.api.formSchema.TextareaField;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -83,6 +92,32 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _helpText;
     /** Whether to allow the task to move files during file analysis. Default is true */
     private Boolean _moveAvailable = true;
+
+    /** Below are variables used to generate a FormSchema so we can instruct the client how to render a form */
+    // new HelpTopic("fileWatchCreate").getHelpTopicHref(), generates a link pointing to archived docs. Is there a better way?
+    private static final String BASE_HREF = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
+    private static final String LOCATION_HELP_TEXT = "This can be an absolute path on the server's file system or a relative path under the container's pipeline root.";
+    private static final String LOCATION_HREF = BASE_HREF + "location";
+    private static final String FILE_PATTERN_HELP_TEXT = "A Java regular expression that captures filenames of interest and can extract and use information from the filename to set other properties.";
+    private static final String FILE_PATTERN_HREF = BASE_HREF + "filepattern";
+    private static final String QUIET_HELP_TEXT = "Number of seconds to wait after file activity before executing a job (minimum is 1).";
+    private static final String QUIET_HREF = BASE_HREF + "quietperiod";
+    private static final String MOVE_CONTAINER_HELP_TEXT = "Move the file to this container before analysis. This must be a relative or absolute container path.";
+    private static final String MOVE_CONTAINER_HREF = BASE_HREF + "moveto";
+    private static final String MOVE_DIRECTORY_HELP_TEXT = "Move the file to this directory underneath the destination container's pipeline root. Leaving this blank will default to the pipeline root directory.";
+    private static final String MOVE_DIRECTORY_HREF = BASE_HREF + "subdirectory";
+    private static final String COPY_HELP_TEXT = "Where the file should be copied to before analysis. This can be absolute or relative to the current project/folder.";
+    private static final String COPY_HREF = BASE_HREF + "copyto";
+    private static final List<Field> _defaultFields = List.of(
+            new TextField("location", "Location to Watch", "./", false, null, LOCATION_HELP_TEXT, LOCATION_HREF),
+            new CheckboxField("recursive", "Include Child Folders", false, false),
+            new TextField("filePattern", "File Pattern", "(^\\D*)\\.(?:tsv|txt|xls|xlsx)", false, null, FILE_PATTERN_HELP_TEXT, FILE_PATTERN_HREF),
+            new NumberField("quiet", "Quiet Period (Seconds)", null, true, 1.0, QUIET_HELP_TEXT, QUIET_HREF),
+            new TextField("moveContainer", "Move to Container", "/Other Project/Subfolder A", false, null, MOVE_CONTAINER_HELP_TEXT, MOVE_CONTAINER_HREF),
+            new TextField("moveDirectory", "Move to Subdirectory", "My Watched Files/Move", false, null, MOVE_DIRECTORY_HELP_TEXT, MOVE_DIRECTORY_HREF),
+            new TextField("copy", "Copy File To", null, false, null, COPY_HELP_TEXT, COPY_HREF)
+    );
+    private List<Field> _customFields;
 
     public FileAnalysisTaskPipelineImpl()
     {
@@ -172,6 +207,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         if (settings.isMoveAvailable() != null)
             _moveAvailable = settings.isMoveAvailable();
+
+        if (settings.getCustomFields() != null)
+            _customFields = settings.getCustomFields();
 
         return this;
     }
@@ -302,6 +340,16 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return _initialFileTypesRequired;
     }
 
+    public List<Field> getCustomFields()
+    {
+        return _customFields;
+    }
+
+    public void setCustomFields(List<Field> customFields)
+    {
+        _customFields = customFields;
+    }
+
     /**
      * Creates TaskPipeline from a file-based module <code>&lt;name>.pipeline.xml</code> config file
      * and registers any local TaskFactory definitions and this TaskPipeline with the PipelineJobService.
@@ -315,7 +363,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             throw new IllegalArgumentException("Task pipeline must by named");
 
         if (pipelineTaskId.getType() != TaskId.Type.pipeline)
-            throw new IllegalArgumentException("Task pipeline must by of type 'pipeline'");
+            throw new IllegalArgumentException("Task pipeline must be of type 'pipeline'");
 
         if (pipelineTaskId.getModuleName() == null)
             throw new IllegalArgumentException("Task pipeline must be defined by a module");
@@ -467,6 +515,64 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // For now, only write out the job info file for file-based pipeline jobs.
         pipeline._writeJobInfoFile = true;
 
+        if (xpipeline.isSetCustomFields())
+        {
+            XmlObject[] xCustomFields = xpipeline.getCustomFields().selectPath("./*");
+            List<Field> customFields = new ArrayList<>();
+
+            for (int customFieldIndex = 0; customFieldIndex < xCustomFields.length; customFieldIndex++)
+            {
+                XmlObject xCustomField = xCustomFields[customFieldIndex];
+                if (xCustomField instanceof org.labkey.pipeline.xml.TextField)
+                {
+                    org.labkey.pipeline.xml.TextField xField = (org.labkey.pipeline.xml.TextField)xCustomField;
+                    TextField field = new TextField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.TextAreaField)
+                {
+                    org.labkey.pipeline.xml.TextAreaField xField = (org.labkey.pipeline.xml.TextAreaField)xCustomField;
+                    TextareaField field = new TextareaField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.NumberField)
+                {
+                    org.labkey.pipeline.xml.NumberField xField = (org.labkey.pipeline.xml.NumberField)xCustomField;
+                    NumberField field = new NumberField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.CheckboxField)
+                {
+                    org.labkey.pipeline.xml.CheckboxField xField = (org.labkey.pipeline.xml.CheckboxField)xCustomField;
+                    CheckboxField field = new CheckboxField(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.RadioField)
+                {
+                    org.labkey.pipeline.xml.RadioField xField = (org.labkey.pipeline.xml.RadioField)xCustomField;
+                    List<Option<String>> options = new ArrayList<>();
+                    for (org.labkey.pipeline.xml.Option option : xField.getOptionArray())
+                    {
+                        options.add(new Option<String>(option.getValue(), option.getLabel()));
+                    }
+                    RadioField<String> field = new RadioField(xField.getName(), xField.getLabel(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+                else if (xCustomField instanceof org.labkey.pipeline.xml.SelectField)
+                {
+                    org.labkey.pipeline.xml.SelectField xField = (org.labkey.pipeline.xml.SelectField)xCustomField;
+                    List<Option<String>> options = new ArrayList<>();
+                    for (org.labkey.pipeline.xml.Option option : xField.getOptionArray())
+                    {
+                        options.add(new Option<String>(option.getValue(), option.getLabel()));
+                    }
+                    SelectField field = new SelectField(xField.getName(), xField.getLabel(), xField.getPlaceholder(), xField.getRequired(), xField.getDefaultValue(), options, xField.getHelpText(), xField.getHelpTextHref());
+                    customFields.add(field);
+                }
+            }
+            pipeline.setCustomFields(customFields);
+        }
+
         //PipelineJobService.get().addTaskPipeline(pipeline);
         return pipeline;
     }
@@ -475,6 +581,29 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     {
         String taskName = pipelineTaskId.getName() + TaskPipelineRegistry.LOCAL_TASK_PREFIX + name;
         return new TaskId(pipelineTaskId.getModuleName(), TaskId.Type.task, taskName, pipelineTaskId.getVersion());
+    }
+
+    @Override
+    public FormSchema getFormSchema()
+    {
+        List<Field> fields = new ArrayList<>(_defaultFields);
+
+        if (!isMoveAvailable())
+        {
+            // Don't include moveToContainer or moveToSubdirectory if move is unavailable.
+            fields.subList(4, 6).clear();
+        }
+
+        return new FormSchema(fields);
+    }
+
+    @Override
+    public FormSchema getCustomFieldsFormSchema()
+    {
+        if (getCustomFields() != null)
+            return new FormSchema(getCustomFields());
+
+        return null;
     }
 
     /*
