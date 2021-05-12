@@ -72,30 +72,25 @@
     }
 %>
 
+<%-- Issue43119: <labkey:input type="checkbox"/> elements cause juddering and overlapping --%>
+<%-- on this page without overriding styles --%>
 <style>
-    .row {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        width: 100%;
+    .control-label {
+        width: 270px !important;
     }
 
-    .label1 {
-        display: flex;
-        flex-direction: column;
-        flex-basis: 230px;
-
-        margin-left: 40px;
-        margin-right: 30px;
+    .col-lg-10 {
+        width: 45px !important;
     }
 
-    .checkbox2 {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
+    .form-control-static {
+        width: 90vw  !important;
+    }
+
+    .form-group {
+        display: flex !important;
     }
 </style>
-
 <script type="application/javascript">
 
     (function($){
@@ -186,18 +181,7 @@
             HtmlString label = HtmlString.unsafe("All data is marked for linking to study <b>" + h(firstStudy.getLabel()) + "</b> in folder <b>" + h(firstStudy.getContainer().getPath()) + "</b>.");
     %>
     <labkey:input type="displayfield" value="<%=label%>"/>
-
-    <br/>
-    <div class='row'>
-        <div class='label1'>
-            <label for="chooseStudy">Link to a different study</label>
-        </div>
-
-        <div class='checkbox2'>
-            <input type="checkbox" id="chooseStudy" onChange="toggleStudies();" value="<%=label%>"/>
-        </div>
-    </div>
-<%--    <labkey:input type="checkbox" label="Link to a different study" id="chooseStudy" onChange="toggleStudies();"/>--%>
+    <labkey:input type="checkbox" label="Link to a different study" id="chooseStudy" onChange="toggleStudies();"/>
     <%
         }
     %>
@@ -213,21 +197,8 @@
             String autoLinkTip = "Selecting this checkbox will skip the confirmation step and run the link to study process in a pipeline job. Any " +
                     bean.getBatchNoun() + " data missing valid subject IDs and timepoints will be ignored.";
     %>
-<%--    <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoLink" forceSmallContext="true"--%>
-<%--                  contextContent="<%= autoLinkTip %>"/>--%>
-<%--    has bottom margin of 5 px --%>
-
-    <div class='row'>
-        <div class='label1'>
-            <label for="autoLink"><%= h(autoLinkLabel) %></label>
-        </div>
-
-        <div class='checkbox2'>
-            <input type="checkbox" id="autoLink" onChange="toggleStudies();"/>
-        </div>
-    </div>
-
-    <br/><br/>
+    <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoLink" forceSmallContext="true"
+                  contextContent="<%= autoLinkTip %>"/>
     <%
         }
     %>
