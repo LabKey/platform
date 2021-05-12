@@ -797,6 +797,7 @@
                         An internal identifier for the concept of this column. Concepts extend the column's type to identify columns that are
                         participant IDs, user IDs, etc. Valid within the context of the server.
                         Supported for dataset import/export and list import/export.
+                        Note, this field is not directly related to more recent ontology support in LabKey server.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -951,7 +952,6 @@
                     <xs:documentation>
                         This is a parent element for ontology related metadata.  This includes the description of what this column "measures", as well as
                         additional information specific to concept-valued columns.
-                        TODO: principalConceptCode is still a higher level attribute.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -996,14 +996,23 @@
                     These properties define how the column data is imported, and the target ontology.
                 </xs:documentation>
             </xs:annotation>
-            <xs:element name="labelColumn" type="xs:string" minOccurs="0">
+            <xs:element name="subtree" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        This is a slash ('/') separated path of concepts codes.  The values in this column are expected
+                        to be children of the tree rooted at this path.  This is not yet enforced, but this is used to
+                        disambiguate synonyms on import, and to modify the display of concepts that are not in the expected tree.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="labelColumn" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         Name of column to hold the label of the resolved concept.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="importColumn" type="xs:string" minOccurs="0">
+            <xs:element name="importColumn" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         Name of column which holds the imported/provided/reported label for this concept.  The LabKey import
