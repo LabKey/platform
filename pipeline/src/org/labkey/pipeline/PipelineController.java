@@ -42,6 +42,8 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FilesAdminOptions;
@@ -60,6 +62,8 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresPermission;
@@ -104,6 +108,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineManager;
+import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
@@ -1517,7 +1522,16 @@ public class PipelineController extends SpringActionController
         public ModelAndView getView(PipelineTriggerForm form, BindException errors) throws Exception
         {
             if (form.getRowId() != null)
+            {
                 _title = "Update Pipeline Trigger";
+                Integer rowId = form.getRowId();
+                String returnURL = form.getReturnUrl();
+                SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
+                filter.addCondition(FieldKey.fromParts("RowId"), form.getRowId());
+                form = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, null).getObject(PipelineTriggerForm.class);
+                form.setRowId(rowId);
+                form.setReturnUrl(returnURL);
+            }
 
             if (form.getReturnUrl() == null)
                 form.setReturnUrl(getContainer().getStartURL(getUser()).toString());
@@ -1529,6 +1543,7 @@ public class PipelineController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("fileWatcher");
+            root.addChild("Pipeline Trigger Configurations", urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations"));
             root.addChild(_title);
         }
     }
@@ -1539,6 +1554,9 @@ public class PipelineController extends SpringActionController
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
         {
+            if (StringUtils.isBlank(form.getLocation()))
+                form.setLocation("./");
+
             PipelineManager.validateTriggerConfiguration(form, getContainer(), getUser(), errors);
         }
 

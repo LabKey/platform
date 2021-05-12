@@ -204,7 +204,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class NullSafeConverter implements Converter
     {
-        private Converter _converter;
+        private final Converter _converter;
 
         public NullSafeConverter(Converter converter)
         {
@@ -230,7 +230,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     // For example, array_to_string(array_agg(array[true, false]), '|') ==> returns 't|f'
     public static class BooleanConverter implements Converter
     {
-        private org.apache.commons.beanutils.converters.BooleanConverter _nested = new org.apache.commons.beanutils.converters.BooleanConverter();
+        private final org.apache.commons.beanutils.converters.BooleanConverter _nested = new org.apache.commons.beanutils.converters.BooleanConverter();
 
         @Override
         public Object convert(Class type, Object value)
@@ -295,7 +295,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
      */
     public static class LenientTimestampConverter implements Converter
     {
-        private LenientDateConverter _dateConverter = new LenientDateConverter();
+        private final LenientDateConverter _dateConverter = new LenientDateConverter();
 
         @Override
         public Object convert(Class clss, Object o)
@@ -366,7 +366,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class DateFriendlyStringConverter implements Converter
     {
-        private static Converter _stringConverter = new StringConverter();
+        private static final Converter _stringConverter = new StringConverter();
 
         @Override
         public Object convert(Class clss, Object o)
@@ -641,9 +641,9 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     public static class ConvertUtilsEditor extends PropertyEditorSupport
     {
-        private Class _class;
+        private final Class<?> _class;
 
-        ConvertUtilsEditor(Class c)
+        ConvertUtilsEditor(Class<?> c)
         {
             _class = c;
         }
@@ -691,7 +691,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     // see bug 5340 : Spring Data binding bizarreness. Crash when edit visit in study with exactly one dataset
     public static class StringArrayConverter implements Converter
     {
-        private org.apache.commons.beanutils.converters.StringArrayConverter _nested =
+        private final org.apache.commons.beanutils.converters.StringArrayConverter _nested =
                 new org.apache.commons.beanutils.converters.StringArrayConverter();
 
         @Override
@@ -881,5 +881,12 @@ public class ConvertHelper implements PropertyEditorRegistrar
             cal.set(1999, Calendar.JUNE,10,0,0,0);
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
         }
+    }
+
+    // Note: Keep in sync with LabKeySiteWrapper.getConversionErrorMessage()
+    // Example: "Could not convert value '2.34' (Double) for Boolean field 'Medical History.Dep Diagnosed in Last 18 Months'"
+    public static String getStandardConversionErrorMessage(Object value, String fieldName, Class<?> expectedClass)
+    {
+        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + expectedClass.getSimpleName() + " field '" + fieldName + "'";
     }
 }

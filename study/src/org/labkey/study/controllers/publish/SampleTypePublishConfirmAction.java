@@ -1,20 +1,16 @@
 package org.labkey.study.controllers.publish;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -44,16 +40,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 @RequiresPermission(InsertPermission.class)
 public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction<SampleTypePublishConfirmAction.SampleTypePublishConfirmForm>
 {
     private ExpSampleType _sampleType;
-    private FieldKey _participantId;
-    private FieldKey _visitId;
-    private FieldKey _date;
-
+    private Map<ExtraColFieldKeys, FieldKey> _fieldKeyMap;
     private final String ROW_ID = ExpMaterialTable.Column.RowId.toString();
 
     public static class SampleTypePublishConfirmForm extends PublishConfirmForm
@@ -92,25 +86,35 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         PublishSource
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey(FieldKey participantId)
+                    public FieldKey getParticipantIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
                     {
-                        return participantId;
+                        return fieldKeyMap.get(ExtraColFieldKeys.ParticipantId);
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(FieldKey visitId)
+                    public FieldKey getVisitIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
                     {
-                        return visitId;
+                        return fieldKeyMap.get(ExtraColFieldKeys.VisitId);
+                    }
+                    @Override
+                    public FieldKey getDateFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    {
+                        return fieldKeyMap.get(ExtraColFieldKeys.Date);
                     }
                 },
         UserSpecified
                 {
                     @Override
-                    public FieldKey getParticipantIDFieldKey(FieldKey participantId)
+                    public FieldKey getParticipantIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
                     {
                         return null;
                     }
                     @Override
-                    public FieldKey getVisitIDFieldKey(FieldKey visitId)
+                    public FieldKey getVisitIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
+                    {
+                        return null;
+                    }
+                    @Override
+                    public FieldKey getDateFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap)
                     {
                         return null;
                     }
@@ -118,61 +122,15 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
         // In order to match PublishConfirmForm.DefaultValueSource, we use trivial implementations
         // of functions here that simply return what they are given
-        public abstract FieldKey getParticipantIDFieldKey(FieldKey participantId);
-        public abstract FieldKey getVisitIDFieldKey(FieldKey visitId);
+        public abstract FieldKey getParticipantIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap);
+        public abstract FieldKey getVisitIDFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap);
+        public abstract FieldKey getDateFieldKey(Map<ExtraColFieldKeys, FieldKey> fieldKeyMap);
     }
 
-    private void initializeFieldKeys(ExpSampleType sampleType)
+    private void initializeFieldKeys(SampleTypePublishConfirmForm form)
     {
-        if (null == _participantId || (null == _visitId && null == _date))
-        {
-            String visitURI = PropertyType.VISIT_CONCEPT_URI;
-            String particpantURI = PropertyType.PARTICIPANT_CONCEPT_URI;
-
-            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), SamplesSchema.SCHEMA_NAME);
-            TableInfo tableInfo = userSchema.getTable(sampleType.getName());
-            if (tableInfo == null)
-                throw new IllegalStateException(String.format("Sample Type %s not found", sampleType.getName()));
-            List<ColumnInfo> columnInfoList = tableInfo.getColumns();
-
-            // Firstly attempt to use column type to determine participant, visit, and date fields
-            for (ColumnInfo ci : columnInfoList)
-            {
-                String columnURI = ci.getConceptURI();
-                FieldKey fieldKey = ci.getFieldKey();
-
-                if (null != columnURI && columnURI.equals(visitURI))
-                {
-                    if (ci.getJdbcType().isReal() && _visitId == null)
-                        _visitId = fieldKey;
-                    if (ci.getJdbcType().isDateOrTime() && _date == null)
-                        _date = fieldKey;
-                }
-
-                if (null != columnURI && columnURI.equals(particpantURI) && _participantId == null)
-                {
-                    _participantId = fieldKey;
-                }
-            }
-
-            // Secondly attempt to use column name as a fallback to determine participant, visit, and date fields
-            if (_participantId == null || _visitId == null || _date == null) {
-                for (ColumnInfo ci : columnInfoList)
-                {
-                    String columnName = ci.getName();
-                    FieldKey fieldKey = ci.getFieldKey();
-
-                    if (columnName.equalsIgnoreCase("participantid") && _participantId == null)
-                        _participantId = fieldKey;
-
-                    if (columnName.equalsIgnoreCase("visitid") && _visitId == null)
-                        _visitId = fieldKey;
-
-                    if (columnName.equalsIgnoreCase("date") && _date == null)
-                        _date = fieldKey;
-                }
-            }
-        }
+        if (_fieldKeyMap == null)
+            _fieldKeyMap = StudyPublishService.get().getSamplePublishFieldKeys(getUser(), getContainer(), form.getSampleType(), getQuerySettings(form));
     }
 
     @Override
@@ -185,7 +143,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     public boolean handlePost(SampleTypePublishConfirmForm form, BindException errors) throws Exception
     {
-        initializeFieldKeys(form.getSampleType());
+        initializeFieldKeys(form);
         return super.handlePost(form, errors);
     }
 
@@ -237,9 +195,9 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
         DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
 
         Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_participantId));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_visitId));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(_visitId));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(_fieldKeyMap));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(_fieldKeyMap));
+        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getDateFieldKey(_fieldKeyMap));
         additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SourceId, FieldKey.fromParts(
                 ExpMaterialProtocolInputTable.Column.SampleSet.name(),
                 ExpMaterialProtocolInputTable.Column.RowId.name()));

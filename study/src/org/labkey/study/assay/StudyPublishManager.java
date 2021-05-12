@@ -36,6 +36,7 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -43,7 +44,9 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.ILineageDisplayColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -64,6 +67,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -72,7 +76,9 @@ import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
@@ -87,6 +93,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -94,6 +101,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
@@ -123,6 +131,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -545,25 +554,27 @@ public class StudyPublishManager implements StudyPublishService
     /**
      * To help generate the assay audit record, group the rows by the source type lsid (assay protocol or sample type).
      */
-    private Map<String, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
+    private Map<Optional<String>, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
     {
-        return dataMaps.stream().collect(Collectors.groupingBy(m -> (String)m.get(SOURCE_LSID_PROPERTY_NAME)));
+        // source LSID may be null
+        return dataMaps.stream().collect(Collectors.groupingBy(m -> Optional.ofNullable((String)m.get(SOURCE_LSID_PROPERTY_NAME))));
     }
 
     // TODO : consider pushing this into PublishSource
     private void logPublishEvent(Dataset.PublishSource publishSource, ExpObject source, List<Map<String, Object>> dataMaps, User user, Container sourceContainer, Container targetContainer, Dataset dataset)
     {
-        Map<String, List<Map<String, Object>>> sourceLSIDCounts = groupBySourceLsid(dataMaps);
+        Map<Optional<String>, List<Map<String, Object>>> sourceLSIDCounts = groupBySourceLsid(dataMaps);
         if (source != null)
         {
-            for (Map.Entry<String, List<Map<String, Object>>> entry : sourceLSIDCounts.entrySet())
+            for (var entry : sourceLSIDCounts.entrySet())
             {
-                String sourceLsid = entry.getKey();
+                // source LSID may be null
+                String sourceLsid = entry.getKey().orElse(null);
                 List<Map<String, Object>> rows = entry.getValue();
                 int recordCount = rows.size();
 
                 String auditMessage = publishSource.getLinkToStudyAuditMessage(source, recordCount);
-                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source);
+                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source, sourceLsid);
 
                 event.setTargetStudy(targetContainer.getId());
                 event.setDatasetId(dataset.getDatasetId());
@@ -989,7 +1000,7 @@ public class StudyPublishManager implements StudyPublishService
             switch (source)
             {
                 case Assay -> {
-                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("publishSourceId", publishSourceId);
+                    ActionURL url = new ActionURL(PublishController.PublishAssayHistoryAction.class, container).addParameter("rowId", publishSourceId);
                     if (containerFilter != null && containerFilter.getType() != null)
                         url.addParameter("containerFilterName", containerFilter.getType().name());
                     return url;
@@ -1280,7 +1291,7 @@ public class StudyPublishManager implements StudyPublishService
                 sourceName = source.getName();
 
             String auditMessage = sourceType.getRecallFromStudyAuditMessage(sourceName, rowCount);
-            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source);
+            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source, null);
 
             event.setTargetStudy(def.getStudy().getContainer().getId());
             event.setDatasetId(def.getDatasetId());
@@ -1321,5 +1332,62 @@ public class StudyPublishManager implements StudyPublishService
                 AuditLogService.get().addEvents(user, events);
             }
         }
+    }
+
+    @Override
+    public Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container,
+                                                                                              ExpSampleType sampleType,
+                                                                                              @Nullable QuerySettings qs)
+    {
+        Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> fieldKeyMap = new HashMap<>();
+        if (sampleType != null)
+        {
+            UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
+            TableInfo tableInfo = userSchema.getTable(sampleType.getName());
+            if (tableInfo == null)
+                throw new IllegalStateException(String.format("Sample Type %s not found", sampleType.getName()));
+
+            Map<FieldKey, ColumnInfo> columns = tableInfo.getColumns().stream()
+                    .collect(LabKeyCollectors.toLinkedMap(ColumnInfo::getFieldKey, c -> c));
+
+            // optionally add columns added through a view, useful for picking up any lineage fields
+            if (qs != null)
+            {
+                QueryView view = new QueryView(userSchema, qs, null);
+                DataView dataView = view.createDataView();
+                for (Map.Entry<FieldKey, ColumnInfo> entry : dataView.getDataRegion().getSelectColumns().entrySet())
+                {
+                    if (!columns.containsKey(entry.getKey()))
+                        columns.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            for (ColumnInfo ci : columns.values())
+            {
+                ColumnInfo col = ci;
+                DisplayColumn dc = col.getRenderer();
+
+                // hack to pull in lineage concept URI info, because the metadata doesn't get propagated
+                // to the actual lookup column
+                if (dc instanceof ILineageDisplayColumn)
+                {
+                    col = ((ILineageDisplayColumn) dc).getInnerBoundColumn();
+                }
+
+                if (org.labkey.api.gwt.client.ui.PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                {
+                    if (!fieldKeyMap.containsKey(PublishResultsQueryView.ExtraColFieldKeys.VisitId) && col.getJdbcType().isReal())
+                        fieldKeyMap.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, ci.getFieldKey());
+                    if (!fieldKeyMap.containsKey(PublishResultsQueryView.ExtraColFieldKeys.Date) && col.getJdbcType().isDateOrTime())
+                        fieldKeyMap.put(PublishResultsQueryView.ExtraColFieldKeys.Date, ci.getFieldKey());
+                }
+
+                if (!fieldKeyMap.containsKey(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                {
+                    fieldKeyMap.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, ci.getFieldKey());
+                }
+            }
+        }
+        return fieldKeyMap;
     }
 }

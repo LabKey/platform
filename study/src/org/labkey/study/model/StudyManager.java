@@ -440,6 +440,7 @@ public class StudyManager
             return toSharedInstance(helper.get(c, rowId, "DatasetId"));
         }
 
+        @NotNull
         private List<DatasetDefinition> toSharedInstance(List<DatasetDefinition> in)
         {
             TableInfo t = getTableInfo();
@@ -2103,7 +2104,7 @@ public class StudyManager
         cols.append(")");
 
         return new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT * FROM " +
-                table + " WHERE Container = ? AND " + cols.toString(), params).exists();
+                table + " WHERE Container = ? AND " + cols, params).exists();
     }
 
     public boolean isCohortInUse(CohortImpl cohort)
@@ -2344,7 +2345,7 @@ public class StudyManager
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
         List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.size() == 1)
+        if (defs.size() == 1)
             return defs.get(0);
 
         return null;
@@ -2358,7 +2359,7 @@ public class StudyManager
         filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
 
         List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.size() == 1)
+        if (defs.size() == 1)
             return defs.get(0);
 
         return null;
@@ -2369,10 +2370,10 @@ public class StudyManager
     public DatasetDefinition getDatasetDefinitionByName(Study s, String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
-        filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
+        filter.addWhereClause("LOWER(Name) = LOWER(?)", new Object[]{name}, FieldKey.fromParts("Name"));
 
         List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.size() == 1)
+        if (defs.size() == 1)
             return defs.get(0);
 
         Study sharedStudy = getSharedStudy(s);

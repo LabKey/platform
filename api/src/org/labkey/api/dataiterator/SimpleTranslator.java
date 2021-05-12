@@ -34,6 +34,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
@@ -163,8 +164,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String msg;
         if (null != value && null != target)
         {
-            String fromType = (value instanceof String) ? "" : "(" + (value.getClass().getSimpleName() + ") ");
-            msg = "Could not convert " + fromType + "'" + value + "' for field " + fieldName + ", should be of type " + target.getJavaClass().getSimpleName();
+            msg = ConvertHelper.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
         }
         else if (null != x)
             msg = StringUtils.defaultString(x.getMessage(), x.toString());
