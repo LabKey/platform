@@ -43,6 +43,7 @@
             <labkey:input name="errorCode" formGroup="false" placeholder="Find Error Code"/>
             <div class="input-group-btn">
                 <%= button("Search").addClass("btn btn-default").iconCls("search").submit(true) %>
+                <%= button("Search").iconCls("stringy").submit(true) %>
             </div>
         </div>
     </labkey:form>
