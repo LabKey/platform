@@ -37,7 +37,6 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -54,11 +53,9 @@ import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -78,13 +75,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyContainerFilter;
-import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -782,119 +776,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
             return;
         col.setURL(fkse.remapFieldKeys(null, map));
     }
-
-    /**
-     * Transform an illegal name into a safe version. All non-letter characters
-     * become underscores, and the first character must be a letter. Retain this implementation for backwards
-     * compatibility with linked to study column names. See issue 41030.
-     */
-    private String sanitizeName(String originalName)
-    {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true; // first character is special
-        for (int i = 0; i < originalName.length(); i++)
-        {
-            char c = originalName.charAt(i);
-            if (AliasManager.isLegalNameChar(c, first))
-            {
-                sb.append(c);
-                first = false;
-            }
-            else if (!first)
-            {
-                sb.append('_');
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Adds columns to an assay data table, providing a link to any datasets that have
-     * had data linked into them.
-     * @return The names of the added columns that should be visible
-     */
-    public Set<String> addLinkedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
-    {
-        Set<String> visibleColumnNames = new HashSet<>();
-        StudyService svc = StudyService.get();
-
-        if (null != svc)
-        {
-            int datasetIndex = 0;
-            Set<String> usedColumnNames = new HashSet<>();
-            for (final Dataset assayDataset : StudyPublishService.get().getDatasetsForPublishSource(getProtocol().getRowId(), Dataset.PublishSource.Assay))
-            {
-                if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
-                {
-                    continue;
-                }
-
-                String datasetIdColumnName = "dataset" + datasetIndex++;
-                final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
-                datasetColumn.setHidden(true);
-                datasetColumn.setUserEditable(false);
-                datasetColumn.setShownInInsertView(false);
-                datasetColumn.setShownInUpdateView(false);
-                datasetColumn.setReadOnly(true);
-                table.addColumn(datasetColumn);
-
-                String studyLinkedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                        "._key IS NOT NULL THEN 'linked' ELSE NULL END)";
-
-                String studyName = assayDataset.getStudy().getLabel();
-                if (studyName == null)
-                    continue; // No study in that folder
-
-                String studyColumnName;
-                String sanitizedStudyName = sanitizeName(studyName);
-                if (sanitizedStudyName.isEmpty() || "study".equalsIgnoreCase(sanitizedStudyName))
-                {
-                    // issue 41472 include the prefix as part of the sanitization process
-                    studyColumnName = sanitizeName("linked_to_" + studyName);
-                }
-                else
-                    studyColumnName = "linked_to_" + sanitizeName(studyName);
-
-                // column names must be unique. Prevent collisions
-                while (usedColumnNames.contains(studyColumnName))
-                    studyColumnName = studyColumnName + datasetIndex;
-                usedColumnNames.add(studyColumnName);
-
-                final ExprColumn studyLinkedColumn = new ExprColumn(table,
-                        studyColumnName,
-                        new SQLFragment(studyLinkedSql),
-                        JdbcType.VARCHAR,
-                        datasetColumn);
-                final String linkedToStudyColumnCaption = "Linked to " + studyName;
-                studyLinkedColumn.setLabel(linkedToStudyColumnCaption);
-                studyLinkedColumn.setUserEditable(false);
-                studyLinkedColumn.setReadOnly(true);
-                studyLinkedColumn.setShownInInsertView(false);
-                studyLinkedColumn.setShownInUpdateView(false);
-                studyLinkedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
-
-                table.addColumn(studyLinkedColumn);
-
-                // Issue 42937: limit default visible columns to 3 for a given assay protocol
-                if (datasetIndex > 3)
-                    visibleColumnNames.clear();
-                else
-                    visibleColumnNames.add(studyLinkedColumn.getName());
-            }
-            if (setVisibleColumns && visibleColumnNames.size() > 0)
-            {
-                List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
-                for (String columnName : visibleColumnNames)
-                {
-                    visibleColumns.add(new FieldKey(null, columnName));
-                }
-                table.setDefaultVisibleColumns(visibleColumns);
-            }
-        }
-
-        return visibleColumnNames;
-    }
-
 
     private static void fixupPropertyURLs(MutableColumnInfo fk)
     {

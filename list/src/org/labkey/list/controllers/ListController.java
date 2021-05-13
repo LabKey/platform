@@ -50,6 +50,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
@@ -64,6 +65,7 @@ import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AbstractQueryImportAction;
@@ -78,8 +80,10 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -99,12 +103,14 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditProvider;
+import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListDomainKindProperties;
 import org.labkey.list.model.ListManager;
@@ -205,6 +211,16 @@ public class ListController extends SpringActionController
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), ListManagerSchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ListManagerSchema.LIST_MANAGER);
+
+            // users should see all lists without a category and public picklists and any lists they created.
+            SimpleFilter filter = new SimpleFilter();
+
+            SQLFragment sql = new SQLFragment("Category IS NULL OR Category = '")
+                    .append(ListDefinition.Category.PublicPicklist.toString())
+                    .append("' OR CreatedBy = ").append(getUser().getUserId());
+            filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
+            settings.setBaseFilter(filter);
+
             return schema.createView(getViewContext(), settings, errors);
         }
 
@@ -275,45 +291,76 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignListPermission.class)
-    public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
+    @RequiresAnyOf({DesignListPermission.class, ManagePicklistsPermission.class})
+    public static class DeleteListDefinitionAction extends ConfirmAction<ListDeletionForm>
     {
-        private final ArrayList<Integer> _listIDs = new ArrayList<>();
-        private final ArrayList<Container> _containers = new ArrayList<>();
+        private final List<Integer> _listIDs = new ArrayList<>();
+        private final List<Container> _containers = new ArrayList<>();
+
+        private boolean canDelete(int listId)
+        {
+            ListDef listDef = ListManager.get().getList(getContainer(), listId);
+            boolean isPicklist = listDef.getCategory() != null;
+            if (isPicklist)
+            {
+                boolean isOwnPicklist = listDef.getCreatedBy() == getUser().getUserId();
+                return isOwnPicklist || (listDef.getCategory() == ListDefinition.Category.PublicPicklist && getContainer().hasPermission(getUser(), AdminPermission.class));
+
+            }
+            return getContainer().hasPermission(getUser(), DesignListPermission.class);
+        }
 
         @Override
-        public void validateCommand(ListDefinitionForm form, Errors errors)
+        public void validateCommand(ListDeletionForm form, Errors errors)
         {
             if (form.getListId() == null)
             {
-                String failMessage = "You do not have permission to delete: \n";
-                Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+                List<String> errorMessages = new ArrayList<>();
+                Collection<String> listIDs;
+                if (form.getListIds() != null)
+                    listIDs = form.getListIds();
+                else
+                    listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
                 for (String s : listIDs)
                 {
                     String[] parts = s.split(",");
-                    Container c = ContainerManager.getForId(parts[1]);
-                    if(c.hasPermission(getUser(), DesignListPermission.class)){
-                        _listIDs.add(Integer.parseInt(parts[0]));
-                        _containers.add(c);
-                    }
+                    Container c;
+                    if (parts.length > 1)
+                        c = ContainerManager.getForId(parts[1]);
+                    else
+                        c = getContainer();
+                    if (c == null)
+                        errorMessages.add(String.format("Container not found for %s", s));
                     else
                     {
-                        failMessage = failMessage + "\t" + ListService.get().getList(c, Integer.parseInt(parts[0])).getName() + " in Container: " + c.getName() +"\n";
+                        int listId = Integer.parseInt(parts[0]);
+                        if (canDelete(listId))
+                        {
+                            _listIDs.add(listId);
+                            _containers.add(c);
+                        }
+                        else
+                            errorMessages.add(String.format("You do not have permission to delete list %s in container %s", listId, c.getName()));
                     }
                 }
-                if(!failMessage.equals("You do not have permission to delete: \n"))
-                    errors.reject("DELETE PERMISSION ERROR", failMessage);
+                if (!errorMessages.isEmpty())
+                    errors.reject(ERROR_MSG,  StringUtils.join(errorMessages, "\n"));
             }
             else
             {
                 //Accessed from the edit list page, where selection is not possible
-                _listIDs.add(form.getListId());
-                _containers.add(getContainer());
+                if (canDelete(form.getListId()))
+                {
+                    _listIDs.add(form.getListId());
+                    _containers.add(getContainer());
+                }
+                else
+                    errors.reject(ERROR_MSG, String.format("You do not have permission to delete list %s in container %s", form.getListId(), getContainer().getName()));
             }
         }
 
         @Override
-        public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors)
+        public ModelAndView getConfirmView(ListDeletionForm form, BindException errors)
         {
             if (getPageConfig().getTitle() == null)
                 setTitle("Delete List");
@@ -321,7 +368,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ListDefinitionForm form, BindException errors)
+        public boolean handlePost(ListDeletionForm form, BindException errors)
         {
             for(int i = 0; i < _listIDs.size(); i++)
             {
@@ -342,9 +389,24 @@ public class ListController extends SpringActionController
         }
 
         @Override @NotNull
-        public URLHelper getSuccessURL(ListDefinitionForm form)
+        public URLHelper getSuccessURL(ListDeletionForm form)
         {
             return form.getReturnURLHelper(getBeginURL(getContainer()));
+        }
+    }
+
+    public static class ListDeletionForm extends ListDefinitionForm
+    {
+        private List<String> _listIds;
+
+        public List<String> getListIds()
+        {
+            return _listIds;
+        }
+
+        public void setListIds(List<String> listIds)
+        {
+            _listIds = listIds;
         }
     }
 
@@ -361,6 +423,9 @@ public class ListController extends SpringActionController
             _list = form.getList();
             if (null == _list)
                 throw new NotFoundException("List does not exist in this container");
+
+            if (!_list.isVisible(getUser()))
+                throw new UnauthorizedException("User is not allowed to see this list.");
 
             ListQueryView view = new ListQueryView(form, errors);
 
@@ -969,7 +1034,7 @@ public class ListController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            response.put("lists", getJSONLists(ListService.get().getLists(getContainer())));
+            response.put("lists", getJSONLists(ListService.get().getLists(getContainer(), getUser(), false)));
             response.put("success", true);
 
             return response;

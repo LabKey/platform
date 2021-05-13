@@ -16,6 +16,8 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
             if (response.success) {
                 var numCanDelete = response.data.canDelete.length;
                 var numCannotDelete = response.data.cannotDelete.length;
+                var associatedDatasets = response.data.associatedDatasets;
+                var associatedDatasetsLength = associatedDatasets.length;
                 var canDeleteNoun = numCanDelete === 1 ? nounSingular : nounPlural;
                 var cannotDeleteNoun = numCannotDelete === 1 ? nounSingular : nounPlural;
                 var totalNum = numCanDelete + numCannotDelete;
@@ -43,11 +45,23 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                     text += numCannotDelete + " " + cannotDeleteNoun + " cannot be deleted because ";
                     text += (numCannotDelete === 1 ? " it has ": " they have ") + dependencyText + "."
                 }
+                if (associatedDatasetsLength > 0) {
+                    text += "<br/><br/> The selected row(s) will also be deleted from the linked dataset(s) in the following studies:";
+                    text += "<ul>";
+                    associatedDatasets.forEach(dataset => {
+                        text += `<li> <a href="${dataset.url}" target="_blank"> ${dataset.name} </a> </li>`
+                    });
+                    text += "</ul>";
+                }
+
                 if (numCannotDelete > 0) {
                     text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets#delete') + "'>more info</a>)";
                 }
                 if (numCanDelete > 0) {
-                    text += " <br/><br/><b>Deletion cannot be undone.</b>  Do you want to proceed?";
+                    if (associatedDatasetsLength === 0) {
+                        text += "<br/><br/>";
+                    }
+                    text += " <b>Deletion cannot be undone.</b>  Do you want to proceed?";
                 }
 
                 Ext4.Msg.show({

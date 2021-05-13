@@ -88,7 +88,7 @@ public class ListWriter
 
     public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
     {
-        Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        Map<String, ListDefinition> lists = ListService.get().getLists(c, user, true);
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
@@ -226,6 +226,7 @@ public class ListWriter
         if (null != def.getEntireListTitleTemplate()) settings.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
         if (def.getEntireListBodySetting().getValue() != 0) settings.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
         if (null != def.getEntireListBodyTemplate()) settings.setEntireListBodyTemplate(def.getEntireListBodyTemplate());
+        if (null != def.getCategory()) settings.setCategory(def.getCategory().toString());
 
         if (def.getFileAttachmentIndex()) settings.setFileAttachmentIndex(def.getFileAttachmentIndex());
     }

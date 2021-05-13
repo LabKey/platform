@@ -60,6 +60,9 @@ public interface QueryDefinition
     void setIsTemporary(boolean temporary);
     boolean isTemporary();
 
+    boolean isIncludedForLookups();
+    void setIsIncludedForLookups(boolean included);
+
     /**
      * Get the named custom view for this QueryDefinition and owner.
      * @param owner Get the custom view with the given name owned by the user or is shared.
