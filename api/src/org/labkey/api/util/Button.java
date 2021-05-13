@@ -232,6 +232,8 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         boolean iconOnly = getIconCls() != null;
         String submitId = GUID.makeGUID();
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
+        final HtmlString tip1 = HtmlString.of(null != tooltip ? tooltip : "");
+
         String hrefValue = (null == getHref()) ? "#" : getHref();
 
         var attrs = at(attributes)
