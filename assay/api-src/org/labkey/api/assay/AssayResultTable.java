@@ -65,8 +65,10 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.study.publish.StudyPublishService;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -241,7 +243,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         if (includeLinkedToStudyColumns)
         {
-            Set<String> studyColumnNames = schema.addLinkedToStudyColumns(this, false);
+            String rowIdName = _provider.getTableMetadata(_protocol).getResultRowIdFieldKey().getName();
+            Set<String> studyColumnNames = StudyPublishService.get().addLinkedToStudyColumns(this, Dataset.PublishSource.Assay, false, _protocol.getRowId(), rowIdName, _userSchema.getUser());
+
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));

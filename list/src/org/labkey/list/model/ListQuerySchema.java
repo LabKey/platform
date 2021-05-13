@@ -29,6 +29,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -83,10 +84,20 @@ public class ListQuerySchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return ListManager.get().getLists(getContainer())
+        return ListManager.get().getLists(getContainer(), getUser(), true)
             .stream()
             .map(ListDef::getName)
             .collect(Collectors.toSet());
+    }
+
+    @Override
+    public QueryDefinition getQueryDefForTable(String name)
+    {
+        QueryDefinition qdef = super.getQueryDefForTable(name);
+        ListDefinition list = ListService.get().getList(getContainer(), name);
+        if (list != null)
+            qdef.setIsIncludedForLookups(!list.isPicklist());
+        return qdef;
     }
 
     @Override
