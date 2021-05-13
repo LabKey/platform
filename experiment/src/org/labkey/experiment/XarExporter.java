@@ -593,6 +593,10 @@ public class XarExporter
         {
             xSampleSet.setDescription(sampleType.getDescription());
         }
+        if (sampleType.getAutoLinkTargetContainer() != null)
+        {
+            xSampleSet.setAutoLinkTargetContainerId(sampleType.getAutoLinkTargetContainer().getId());
+        }
 
         if (sampleType.hasNameExpression())
         {
