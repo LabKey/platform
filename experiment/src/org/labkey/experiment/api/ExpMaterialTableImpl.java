@@ -96,7 +96,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static org.labkey.api.settings.AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -173,7 +172,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
-                columnInfo.setHidden(!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAMPLE_ALIQUOT));
+                columnInfo.setHidden(false);
                 return columnInfo;
             }
             case Name:

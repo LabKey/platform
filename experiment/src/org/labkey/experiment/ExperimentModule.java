@@ -188,9 +188,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, "Sample aliquot",
-                "Support creation of sample aliquot", false);
-
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_PICKLIST, "Sample picklists",
                 "Support creation of sample picklists", false);
 
