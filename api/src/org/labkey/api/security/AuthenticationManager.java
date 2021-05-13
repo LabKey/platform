@@ -1092,6 +1092,10 @@ public class AuthenticationManager
         return ret;
     }
 
+    /**
+     * @return A case-insensitive map of user attribute names and values that was stashed in the associated session at
+     * authentication time. This map will often be empty but will never be null.
+     */
     public static @NotNull Map<String, String> getAuthenticationAttributes(HttpServletRequest request)
     {
         Map<String, String> attributeMap = null;

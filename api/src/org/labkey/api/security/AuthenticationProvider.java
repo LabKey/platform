@@ -326,9 +326,11 @@ public interface AuthenticationProvider
         }
 
         /**
-         * Creates an authentication provider response that includes a validator to be called on every request
+         * Creates an authentication provider response that can include a validator to be called on every request and a
+         * map of user attributes
          * @param email Valid email address of the authenticated user
          * @param validator An authentication validator
+         * @param attributeMap A <b>case-insensitive</b> map of attribute names and values associated with this authentication
          * @return A new successful authentication response containing the email address of the authenticated user and a validator
          */
         public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap)
@@ -380,6 +382,9 @@ public interface AuthenticationProvider
             return _redirectURL;
         }
 
+        /**
+         * @return A case-insensitive map of attribute names and values. This will often be empty but will never be null.
+         */
         public @NotNull Map<String, String> getAttributeMap()
         {
             return _attributeMap;
