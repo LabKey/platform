@@ -36,6 +36,7 @@
                         <xsd:attribute name="entireListBodyTemplate" type="xsd:string" use="optional"/>
 
                         <xsd:attribute name="fileAttachmentIndex" type="xsd:boolean" default="false" use="optional" />
+                        <xsd:attribute name="category" type="xsd:string" use="optional" />
                     </xsd:complexType>
                 </xsd:element>
             </xsd:sequence>

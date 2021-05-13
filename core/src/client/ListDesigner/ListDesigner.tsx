@@ -21,6 +21,7 @@ import {
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
+    getListIdFromDomainId,
     BeforeUnload
 } from "@labkey/components";
 
@@ -92,18 +93,15 @@ export class App extends React.Component<{}, State> {
             this.navigate(ActionURL.buildURL('list', 'grid', getServerContext().container.path, {listId: model.listId}));
         }
         else {
-            Domain.getDomainDetails({
-                containerPath: getServerContext().container.path,
-                domainId: model.domain.domainId,
-                success: (data) => {
-                    const newModel = ListModel.create(data);
-                    this.navigate(ActionURL.buildURL('list', 'grid', getServerContext().container.path, {listId: newModel.listId}));
-                },
-                failure: (error) => {
+            getListIdFromDomainId(model.domain.domainId)
+                .then(listId => {
+                    this.navigate(ActionURL.buildURL('list', 'grid', getServerContext().container.path, {listId}))
+                })
+                .catch(error => {
                     // bail out and go to the list-begin page
                     this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));
-                }
-            });
+
+                });
         }
     }
 

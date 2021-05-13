@@ -5930,6 +5930,7 @@ public class QueryController extends SpringActionController
             qinfo.put("isInherited", isInherited);
             if (isInherited)
                 qinfo.put("containerPath", qdef.getDefinitionContainer().getPath());
+            qinfo.put("isIncludedForLookups", qdef.isIncludedForLookups());
 
             if (null != qdef.getDescription())
                 qinfo.put("description", qdef.getDescription());

@@ -50,6 +50,7 @@ public interface AppProps
     String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
     String EXPERIMENTAL_ERROR_PAGE = "errorPage";
     String EXPERIMENTAL_SAMPLE_ALIQUOT = "sampleAliquot";
+    String EXPERIMENTAL_SAMPLE_PICKLIST = "samplePicklist";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
