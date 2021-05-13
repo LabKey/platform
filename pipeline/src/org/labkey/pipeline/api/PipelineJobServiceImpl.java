@@ -552,6 +552,12 @@ public class PipelineJobServiceImpl implements PipelineJobService
             typeOptions.add(new Option<>(pipelineTriggerType.getName(), pipelineTriggerType.getName()));
         }
 
+        String typeDefaultValue = null;
+
+        if (!typeOptions.isEmpty()) {
+            typeDefaultValue = typeOptions.get(0).getValue();
+        }
+
         List<Option<String>> taskOptions = new ArrayList<>();
         List<FileAnalysisTaskPipeline> tasks = getTaskPipelines(container)
                 .stream()
@@ -573,7 +579,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         List<Field> fields = List.of(
                 new TextField("name", "Name", null, true, ""),
                 new TextareaField("description", "Description", null, false, ""),
-                new SelectField<>("type", "Type", null, true, typeOptions.get(0).getValue(), typeOptions),
+                new SelectField<>("type", "Type", null, true, typeDefaultValue, typeOptions),
                 new SelectField<>("pipelineId", "Pipeline Task", "Select a Pipeline Task", true, null, taskOptions),
                 new TextField("username", "Run as Username", null, false, null, usernameHelpText, usernameHref),
                 new TextField("assay provider", "Assay Provider", null, false, null, assayProviderHelpText, assayProviderHref),

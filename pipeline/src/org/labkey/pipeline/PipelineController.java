@@ -1528,9 +1528,16 @@ public class PipelineController extends SpringActionController
                 String returnURL = form.getReturnUrl();
                 SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
                 filter.addCondition(FieldKey.fromParts("RowId"), form.getRowId());
-                form = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, null).getObject(PipelineTriggerForm.class);
-                form.setRowId(rowId);
-                form.setReturnUrl(returnURL);
+                PipelineTriggerForm savedForm = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, null).getObject(PipelineTriggerForm.class);
+
+                if (savedForm != null)
+                {
+                    form = savedForm;
+                    form.setRowId(rowId);
+                    form.setReturnUrl(returnURL);
+                } else {
+                    errors.reject(ERROR_MSG, "Form with id " + rowId + " could not be found");
+                }
             }
 
             if (form.getReturnUrl() == null)
