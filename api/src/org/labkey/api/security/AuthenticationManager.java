@@ -74,7 +74,6 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -1093,6 +1092,16 @@ public class AuthenticationManager
         return ret;
     }
 
+    public static @NotNull Map<String, String> getAuthenticationAttributes(HttpServletRequest request)
+    {
+        Map<String, String> attributeMap = null;
+        HttpSession session = request.getSession(false);
+
+        if (null != session)
+            attributeMap = (Map<String, String>)session.getAttribute(SecurityManager.AUTHENTICATION_ATTRIBUTES_KEY);
+
+        return null != attributeMap ? attributeMap : Collections.emptyMap();
+    }
 
     private static boolean areNotBlank(String id, String password)
     {
@@ -1310,8 +1319,8 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Prep the new session and set the user attribute
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse().getConfiguration(), primaryAuthUser, true);
+        // Prep the new session and set the user & authentication-related attributes
+        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
 
         if (session.isNew() && !primaryAuthUser.isGuest())
         {
