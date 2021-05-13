@@ -222,11 +222,11 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
 
             String sourceLSID = _sampleType.getLSID();
 
-            dataMap.put("ParticipantID", publishKey.getParticipantId());
-            dataMap.put("Date", publishKey.getDate());
-            dataMap.put("SequenceNum", publishKey.getVisitId());
+            dataMap.put(StudyPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
+            dataMap.put(StudyPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
+            dataMap.put(StudyPublishService.SEQUENCENUM_PROPERTY_NAME, publishKey.getVisitId());
             dataMap.put(StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
-            dataMap.put(StudyPublishService.ROWID_PROPERTY_NAME, publishKey.getDataId());
+            dataMap.put(ROW_ID, publishKey.getDataId());
 
             Set<Integer> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
             rowIds.add(publishKey.getDataId());
