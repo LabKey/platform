@@ -58,6 +58,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             typeAhead: true,
             anyMatch: true,
             forceSelection: true,
+            matchFieldWidth: false,
             tpl: Ext4.create('Ext.XTemplate',
                 '<tpl for=".">',
                     '<tpl if="active">',
