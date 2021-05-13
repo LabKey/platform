@@ -37,6 +37,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -144,13 +145,13 @@ public class RunDatasetContextualRoles implements HasContextualRoles
         {
             for (ColumnInfo datasetColumn : datasetColumns)
             {
-                if (!(datasetColumn instanceof StudyDatasetColumn))
+                if (!(datasetColumn instanceof StudyDatasetLinkedColumn))
                     continue;
                 Integer datasetId = (Integer)result.get(datasetColumn.getName());
                 if (datasetId == null)
                     continue;
 
-                Container studyContainer = ((StudyDatasetColumn)datasetColumn).getStudyContainer();
+                Container studyContainer = ((StudyDatasetLinkedColumn)datasetColumn).getStudyContainer();
                 Dataset dataset = StudyService.get().getDataset(studyContainer, datasetId.intValue());
                 SecurityPolicy policy = dataset.getPolicy();
                 if (policy.hasPermission(user, ReadPermission.class))

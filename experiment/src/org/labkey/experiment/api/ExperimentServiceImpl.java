@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -3755,6 +3754,68 @@ public class ExperimentServiceImpl implements ExperimentService
         return partitionedIds;
     }
 
+    /**
+     * For set of rows selected for deletion, find get all linked-to-study datasets that will be affected by the delete
+     * and warn user
+     */
+    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<ExpMaterialImpl> allMaterials, Set<Integer> deletable, User user, Container container)
+    {
+        ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
+        StudyPublishService studyPublishService = StudyPublishService.get();
+        if (studyPublishService != null && !allMaterials.isEmpty())
+        {
+            ExpSampleType sampleType = allMaterials.get(0).getSampleType();
+            UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
+            TableInfo tableInfo = userSchema.getTable(sampleType.getName());
+
+            // collect up columns of name 'dataset<N>'
+            Set<String> linkedColumnNames = new HashSet<>();
+            List<ColumnInfo> columns = tableInfo.getColumns();
+            for (ColumnInfo column : columns)
+            {
+                if (column.getName().matches("(dataset)\\d+"))
+                    linkedColumnNames.add(column.getName());
+            }
+
+            if (linkedColumnNames.size() > 0)
+            {
+                // Obtain, for selected rows, the ids of datasets that are linked
+                Set<Integer> linkedDatasetsBySelectedRow = new HashSet<>();
+
+                // Over each selected row
+                SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), deletable);
+                TableSelector rowIdsFromTableSelector = new TableSelector(tableInfo, new HashSet<>(linkedColumnNames), filter, null);
+                Collection<Map<String, Object>> selectedRow = rowIdsFromTableSelector.getMapCollection();
+
+                // Over each column of name 'dataset<N>'
+                for (Map<String, Object> selectedColumn : selectedRow)
+                {
+                    // Check if each cell is populated (that is, if the given row was linked to a certain study)
+                    for (Map.Entry<String, Object> entry : selectedColumn.entrySet())
+                    {
+                        String key = entry.getKey();
+                        Object value = entry.getValue();
+                        if (value instanceof Integer && linkedColumnNames.contains(key))
+                        {
+                            linkedDatasetsBySelectedRow.add((Integer) value);
+                        }
+                    }
+                }
+
+                // Verify that collected dataset ids constitute linked datasets, and construct payload
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
+                {
+                    if (linkedDatasetsBySelectedRow.contains(dataset.getDatasetId()))
+                    {
+                        ActionURL datasetURL = StudyService.get().getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
+                        associatedDatasets.add(Map.of("name",dataset.getStudy().getResourceName(), "url", datasetURL));
+                    }
+                }
+            }
+        }
+        return associatedDatasets;
+    }
+
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
     {
         deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
@@ -4276,7 +4337,7 @@ public class ExperimentServiceImpl implements ExperimentService
             ListService ls = ListService.get();
             if (ls != null)
             {
-                for (ListDefinition list : ListService.get().getLists(c).values())
+                for (ListDefinition list : ListService.get().getLists(c, null, true).values())
                 {
                     // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
                     if (list.getContainer().equals(c))

@@ -98,6 +98,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
+    private boolean _includedForLookups = true;
 
     // todo: spec 25628 making _cache static prevents the entire map of all tableInfos from being reloaded each time GetQueryViewsAction instantiates a new copy of QueryDefintionImpl
     // but may make _cache susceptible to concurrency conflicts or security problems -- more investigation is needed
@@ -790,6 +791,18 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (isSnapshot() == f)
             return;
         edit().setFlags(mgr.setIsSnapshot(_queryDef.getFlags(), f));
+    }
+
+    @Override
+    public boolean isIncludedForLookups()
+    {
+        return _includedForLookups;
+    }
+
+    @Override
+    public void setIsIncludedForLookups(boolean included)
+    {
+        _includedForLookups = included;
     }
 
     @Override
