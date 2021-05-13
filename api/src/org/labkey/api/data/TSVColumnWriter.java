@@ -68,9 +68,10 @@ public abstract class TSVColumnWriter extends TSVWriter
         {
             if (dc.isVisible(ctx))
             {
+                String colName = dc.getName();
                 String header = _columnHeaderType.getText(dc);
-                if (renameColumn.containsKey(header))
-                    header = renameColumn.get(header);
+                if (renameColumn.containsKey(colName))
+                    header = renameColumn.get(colName);
                 headers.add(header);
             }
         }
