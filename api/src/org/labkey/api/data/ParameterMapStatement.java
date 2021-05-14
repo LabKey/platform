@@ -240,7 +240,7 @@ public class ParameterMapStatement implements AutoCloseable
     }
 
 
-    public boolean execute() throws SQLException
+    public int execute() throws SQLException
     {
         prepareParametersBeforeExecute();
 
@@ -254,6 +254,7 @@ public class ParameterMapStatement implements AutoCloseable
                 rs = _dialect.executeWithResults(_stmt);
             else
                 _stmt.execute();
+            int rowcount = _stmt.getUpdateCount();
 
             Integer firstInt = null, secondInt = null;
 
@@ -291,13 +292,13 @@ public class ParameterMapStatement implements AutoCloseable
 
             if (_selectRowId)
                 _rowId = firstInt;
+
+            return rowcount;
         }
         finally
         {
             ResultSetUtil.close(rs);
         }
-
-        return true;
     }
 
 
