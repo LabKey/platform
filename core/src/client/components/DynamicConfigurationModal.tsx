@@ -167,7 +167,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
             queryString = {
                 server: fieldValues.servers,
                 principal: fieldValues.principalTemplate,
-                sasl: fieldValues.SASL,
+                sasl: fieldValues.sasl,
+                readAttributes: fieldValues.readAttributes
             };
         }
 
