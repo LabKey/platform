@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.4.0",
-    "@labkey/components": "2.30.0",
+    "@labkey/components": "2.31.0-fb-unprefixed-search.0",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.1.1"
   },
