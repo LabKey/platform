@@ -115,15 +115,16 @@ public class SampleTypeWebPart extends QueryView
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
 
-        StudyUrls studyUrls = PageFlowUtil.urlProvider(StudyUrls.class);
-        if (studyUrls != null)
-        {
-            ActionURL linkToStudyURL = studyUrls.getLinkToStudyURL(getContainer(), (ExpSampleType)null);
-            linkToStudyURL.addParameter("sampleTypeIds", true);
-            ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
-            linkToStudyButton.setDisplayPermission(InsertPermission.class);
-            bar.add(linkToStudyButton);
-        }
+//      Deferred--Uncomment if supporting SampleType-level links is desired
+//        StudyUrls studyUrls = PageFlowUtil.urlProvider(StudyUrls.class);
+//        if (studyUrls != null)
+//        {
+//            ActionURL linkToStudyURL = studyUrls.getLinkToStudyURL(getContainer(), (ExpSampleType)null);
+//            linkToStudyURL.addParameter("sampleTypeIds", true);
+//            ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+//            linkToStudyButton.setDisplayPermission(InsertPermission.class);
+//            bar.add(linkToStudyButton);
+//        }
     }
 
     @Override

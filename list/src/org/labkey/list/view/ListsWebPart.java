@@ -85,7 +85,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
 
     private void renderNarrowView(ViewContext model, PrintWriter out)
     {
-        Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer());
+        Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer(), model.getUser(), false);
         out.write("<table>");
         if (lists.isEmpty())
         {

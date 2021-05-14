@@ -8,6 +8,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
@@ -108,8 +109,16 @@ public class SampleDatasetTable extends DatasetTableImpl
 
             ExpSampleType sampleType = (ExpSampleType)source;
             UserSchema userSchema = QueryService.get().getUserSchema(_userSchema.getUser(), sampleType.getContainer(), SamplesSchema.SCHEMA_NAME);
-            if (userSchema != null)
-                _sampleTable = userSchema.getTable(sampleType.getName());
+
+            // Hide 'linked' column for Sample Type Datasets
+            if (userSchema instanceof SamplesSchema)
+            {
+                _sampleTable = ((SamplesSchema) userSchema).getSampleTable(sampleType, null);
+            }
+            else
+            {
+                throw new IllegalStateException(String.format("%s must be a SamplesSchema", userSchema.getName()));
+            }
         }
         return _sampleTable;
     }
