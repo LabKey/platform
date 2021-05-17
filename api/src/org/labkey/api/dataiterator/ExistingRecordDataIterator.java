@@ -39,6 +39,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + ExistingRecordDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
 
+    final CachingDataIterator _unwrapped;
     final TableInfo target;
     final ArrayList<ColumnInfo> pkColumns = new ArrayList<>();
     final ArrayList<Supplier<Object>> pkSuppliers = new ArrayList<>();
@@ -52,6 +53,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark)
     {
         super(in);
+
+        // NOTE in might get wrapped with a LoggingDataIterator, so remember the original DataIterator
+        this._unwrapped = useMark ? (CachingDataIterator)in : null;
+
         this.target = target;
         this.existingColIndex = in.getColumnCount()+1;
         this.useMark = useMark;
@@ -130,7 +135,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         if (useMark)
-            ((CachingDataIterator)_delegate).mark();
+            _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
         if (ret && !pkColumns.isEmpty())
             prefetchExisting();
@@ -251,7 +256,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 existingRecords.put(r,(Map<String,Object>)map);
             });
             // backup to where we started so caller can iterate through them one at a time
-            ((CachingDataIterator)_delegate).reset();
+            _unwrapped.reset(); // unwrapped _delegate
             _delegate.next();
         }
     }
