@@ -10,6 +10,7 @@
                 <bean class="org.labkey.experiment.pipeline.MoveRunsTaskFactory">
                     <property name="location" value="webserver-high-priority" />
                 </bean>
+                <bean class="org.labkey.experiment.pipeline.SampleReloadTask$Factory"/>
             </list>
         </property>
 
@@ -26,7 +27,66 @@
                         </list>
                     </property>
                 </bean>
+
+                <!-- Sample Type reload pipeline -->
+                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
+                    <constructor-arg value="SampleReloadTask"/>
+                    <property name="description" value="Reload Sample Types"/>
+                    <property name="protocolObjectId" value="experiment.sampleReload"/>
+                    <property name="protocolName" value="Sample Type Reload"/>
+                    <property name="protocolFactoryName" value="sampleReload"/>
+                    <property name="defaultDisplayState" value="hidden"/>
+                    <property name="allowForTriggerConfiguration" value="true"/>
+                    <property name="initialInputExts">
+                        <list>
+                            <ref bean="csvFileType"/>
+                            <ref bean="tsvFileType"/>
+                            <ref bean="xlsFileType"/>
+                            <ref bean="xlsxFileType"/>
+                        </list>
+                    </property>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="sampleReloadTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.experiment.pipeline.SampleReloadTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                    <property name="helpText" value="The selected Pipeline task can be initiated on .csv, .tsv and Excel files.
+                        The task can reload data into existing sample types as well as create new sample types." />
+                    <property name="customFields">
+                        <list>
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="skipQueryValidation"/>
+                                <constructor-arg index="1" value="Validate All Queries After Reload"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to validate queries after reload is complete"/>
+                            </bean>
+
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="failForUndefinedVisits"/>
+                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
             </list>
         </property>
+    </bean>
+    <bean id="csvFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".csv"/>
+    </bean>
+    <bean id="tsvFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".tsv"/>
+    </bean>
+    <bean id="xlsxFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".xlsx"/>
+    </bean>
+    <bean id="xlsFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".xls"/>
     </bean>
 </beans>
