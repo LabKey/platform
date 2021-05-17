@@ -79,7 +79,9 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -482,6 +484,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleType() and deleteDomainObjects()?
             truncateSampleType(source, user, null);
+
+            StudyService studyService = StudyService.get();
+            if (studyService != null)
+            {
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, Dataset.PublishSource.SampleType))
+                {
+                    dataset.delete(user);
+                }
+            }
+            else
+            {
+                LOG.warn("Could not delete datasets associated with this protocol: Study service not available.");
+            }
 
             Domain d = source.getDomain();
             d.delete(user);

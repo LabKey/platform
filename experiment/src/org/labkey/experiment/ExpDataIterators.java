@@ -15,9 +15,11 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -63,13 +65,14 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
-import org.labkey.experiment.api.Material;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -80,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -285,6 +289,141 @@ public class ExpDataIterators
         }
     }
 
+    public static class AutoLinkToStudyDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final User _user;
+        private final TableInfo _expTable;
+        private final boolean _isSample;
+
+        public AutoLinkToStudyDataIteratorBuilder(@NotNull DataIteratorBuilder in, boolean isSample, Container container, User user, TableInfo expTable)
+        {
+            _in = in;
+            _container = container;
+            _user = user;
+            _expTable = expTable;
+            _isSample = isSample;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(pre, context, _isSample, _container, _user, _expTable));
+        }
+    }
+
+    private static class AutoLinkToStudyDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final boolean _isSample;
+        final Container _container;
+        final User _user;
+        final TableInfo _expTable;
+
+        Study _study;
+        final Supplier<Object> _participantIDCol;
+        final Supplier<Object> _dateCol;
+        final Supplier<Object> _visitIdCol;
+        final Supplier<Object> _lsidCol;
+        final Supplier<Object> _rowIdCol;
+        final List<Map<String, Object>> _rows = new ArrayList<>();
+
+        final String PARTICIPANT = StudyPublishService.PARTICIPANTID_PROPERTY_NAME;
+        final String DATE = StudyPublishService.DATE_PROPERTY_NAME;
+        final String VISIT = StudyPublishService.SEQUENCENUM_PROPERTY_NAME;
+        final String LSID = StudyPublishService.SOURCE_LSID_PROPERTY_NAME;
+        final String ROWID = ExpMaterialTable.Column.RowId.toString();
+
+        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, boolean isSample, Container container, User user,  TableInfo expTable)
+        {
+            super(di);
+            _context = context;
+
+            _isSample = isSample;
+            _container = container;
+            _user = user;
+            _expTable = expTable;
+
+            if (_expTable instanceof  ExpMaterialTableImpl)
+            {
+                @Nullable Container targetContainer = ((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer();
+                if (_study == null && targetContainer != null) {
+                    _study = StudyService.get().getStudy(targetContainer);
+                }
+            }
+            final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _participantIDCol = map.get(PARTICIPANT) != null ? di.getSupplier(map.get(PARTICIPANT)) : null;
+            _dateCol = map.get(DATE) != null ? di.getSupplier(map.get(DATE)) : null;
+            _visitIdCol = map.get(visitName) != null ? di.getSupplier(map.get(visitName)) : null;
+            _lsidCol = map.get("LSID") != null ? di.getSupplier(map.get("LSID")) : null;
+            _rowIdCol = map.get(ROWID) != null ? di.getSupplier(map.get(ROWID)) : null;
+        }
+
+        private BatchValidationException getErrors()
+        {
+            return _context.getErrors();
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            // if there is no _study set to auto-link, then skip processing
+            if (getErrors().hasErrors() || !(_expTable instanceof ExpMaterialTableImpl) || _study == null)
+                return hasNext;
+
+            ExpSampleType sampleType = ((ExpMaterialTableImpl) _expTable).getSampleType();
+
+            if (!hasNext)
+            {
+                if (_rows.size() > 0 && _isSample)
+                    StudyPublishService.get().autoLinkSampleType(sampleType, _rows, _container, _user);
+                return false;
+            }
+
+            if (_participantIDCol != null && _rowIdCol != null && _lsidCol != null && (_dateCol != null || _visitIdCol != null))
+            {
+                String participantId = _participantIDCol.get() != null ? _participantIDCol.get().toString() : null;
+                Object date = _dateCol != null ? _dateCol.get() : null;
+                Object visit = _visitIdCol.get();
+                Object lsid = _lsidCol.get();
+                int rowId = ((Number) _rowIdCol.get()).intValue();
+
+                // Only link rows that have a participant and a visit/date. Return if this is not the case
+                if (participantId == null || (date == null && visit == null))
+                    return true;
+
+                Float visitId = null;
+                Date dateId = null;
+
+                // 13647: Conversion exception in auto link to study
+                if (_study.getTimepointType().isVisitBased())
+                {
+                    visitId = Float.parseFloat(visit.toString());
+                }
+                else
+                {
+                    dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
+                }
+
+                Map<String,Object> row = new HashMap<>();
+                row.put(PARTICIPANT, participantId);
+                row.put(LSID, lsid);
+                row.put(ROWID, rowId);
+                if (visitId != null)
+                    row.put(VISIT, visitId);
+                if (dateId != null)
+                    row.put(DATE, dateId);
+
+                _rows.add(row);
+            }
+            return true;
+        }
+    }
 
     public static class FlagDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -984,13 +1123,14 @@ public class ExpDataIterators
 
             // Wire up derived parent/child data and materials
             DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, false));
+            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new AutoLinkToStudyDataIteratorBuilder(step5, isSample, _container, _user, _expTable));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            DataIteratorBuilder step6 = step5;
+            DataIteratorBuilder step7 = step6;
             if (null != _indexFunction)
-                step6 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step5, _indexFunction)); // may need to add this after the aliases are set
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
 
-            return LoggingDataIterator.wrap(step6.getDataIterator(context));
+            return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
     }
 }

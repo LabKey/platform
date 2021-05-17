@@ -19,6 +19,7 @@ package org.labkey.api.study.publish;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -26,6 +27,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -104,7 +106,12 @@ public interface StudyPublishService
      * @return any errors that prevented the link
      */
     @Nullable
-    ActionURL autoLinkResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
+    ActionURL autoLinkAssayResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
+
+    /**
+     * Automatically link sample type data to a study if the design is set up to do so
+     */
+    void autoLinkSampleType(ExpSampleType sampleType, List<Map<String, Object>> results, Container container, User user);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
@@ -123,6 +130,13 @@ public interface StudyPublishService
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
     void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> datasetRowLsidAndSourceRowIds);
+
+    /**
+     * Adds columns to an assay data table, providing a link to any datasets that have
+     * had data linked into them.
+     * @return The names of the added columns that should be visible
+     */
+    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user);
 
     /**
      * For a given sample, helps identify the special columns : subject/visit/date that are needed to publish sample rows to a

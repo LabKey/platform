@@ -88,6 +88,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ListManager implements SearchService.DocumentProvider
 {
@@ -129,8 +130,17 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getLists(Container container)
     {
+        return getLists(container, null, true);
+    }
+
+    public Collection<ListDef> getLists(Container container, @Nullable User user, boolean includeAllLists)
+    {
         List<ListDef> ownLists = _listDefCache.get(container.getId());
-        return getAllScopedLists(ownLists, container);
+        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
+        if (includeAllLists)
+            return scopedLists;
+        else
+            return scopedLists.stream().filter(listDef -> listDef.isVisible(user)).collect(Collectors.toList());
     }
 
     private Collection<ListDef> getAllScopedLists(Collection<ListDef> ownLists, Container container)
@@ -342,7 +352,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         Runnable r = () -> {
-            Map<String, ListDefinition> lists = ListService.get().getLists(c);
+            Map<String, ListDefinition> lists = ListService.get().getLists(c, null, true);
 
             try
             {
