@@ -50,13 +50,15 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             itemId: 'impersonate',
             allowBlank: false,
             valueField: 'userId',
-            displayField: 'displayName',
+            displayField: 'concatenatedName',
             fieldLabel: 'User',
             triggerAction: 'all',
             labelWidth: 50,
             queryMode: 'local',
             typeAhead: true,
+            anyMatch: true,
             forceSelection: true,
+            matchFieldWidth: false,
             tpl: Ext4.create('Ext.XTemplate',
                 '<tpl for=".">',
                     '<tpl if="active">',
@@ -84,8 +86,17 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                 fields: [
                     {name: 'userId', type: 'integer'},
                     {name: 'email', type: 'string'},
+                    {name: 'active', type: 'boolean'},
                     {name: 'displayName', type: 'string'},
-                    {name: 'active', type: 'boolean'}
+                    {name: 'concatenatedName', type: 'string',
+                        convert : function(v, record) {
+                            // concatenate both displayName and email so they can both be used
+                            // to search for users
+                            if (record && record.raw && record.raw.email && record.raw.displayName)
+                                return record.raw.email + ' ' + record.raw.displayName;
+                            return '';
+                        }
+                    }
                 ]
             });
         }
@@ -97,7 +108,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                 {
                     property : 'email',
                     direction: 'ASC'
-                },
+                }
             ],
             autoLoad: true,
             proxy: {
