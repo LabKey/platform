@@ -554,9 +554,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         String typeDefaultValue = null;
 
-        if (!typeOptions.isEmpty()) {
+        if (!typeOptions.isEmpty())
             typeDefaultValue = typeOptions.get(0).getValue();
-        }
 
         List<Option<String>> taskOptions = new ArrayList<>();
         List<FileAnalysisTaskPipeline> tasks = getTaskPipelines(container)

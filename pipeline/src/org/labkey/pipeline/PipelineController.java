@@ -1535,7 +1535,9 @@ public class PipelineController extends SpringActionController
                     form = savedForm;
                     form.setRowId(rowId);
                     form.setReturnUrl(returnURL);
-                } else {
+                }
+                else
+                {
                     errors.reject(ERROR_MSG, "Form with id " + rowId + " could not be found");
                 }
             }
