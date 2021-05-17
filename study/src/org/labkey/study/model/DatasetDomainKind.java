@@ -389,7 +389,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         boolean useTimeKeyField = arguments.isUseTimeKeyField();
         boolean showByDefault = arguments.isShowByDefault();
         String dataSharing = arguments.getDataSharing();
-        boolean strictFieldValidation = arguments.isStrictFieldValidation();
 
         // general dataset validation
         validateDatasetProperties(arguments, container, user, domain, null);
@@ -469,7 +468,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     {
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
-                            if (strictFieldValidation)
+                            if (arguments.isStrictFieldValidation())
                                 throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
                         }
                         else
