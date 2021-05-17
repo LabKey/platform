@@ -424,7 +424,7 @@ public class PageConfig
     }
 
     // For now, gives a central place to render messaging
-    public HasHtmlString renderSiteMessages(ViewContext context)
+    public HtmlString renderSiteMessages(ViewContext context)
     {
         HtmlStringBuilder messages = HtmlStringBuilder.of();
 
@@ -456,7 +456,7 @@ public class PageConfig
         messages.append(HtmlString.unsafe("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>"));
         messages.append(HtmlString.unsafe("</noscript>"));
 
-        return messages;
+        return messages.getHtmlString();
     }
 
     public JSONObject getPortalContext()
