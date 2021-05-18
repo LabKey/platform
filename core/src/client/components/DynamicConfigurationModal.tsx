@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import { ActionURL, Ajax } from '@labkey/api';
+import { Ajax } from '@labkey/api';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput} from './DynamicFields';
@@ -53,15 +53,13 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
     }
 
     saveEditedModal = (): void => {
-        const {modalType, authConfig, configType, closeModal, updateAuthRowsAfterSave} = this.props;
-
-        const baseUrl = ActionURL.getBaseURL(true);
-        const saveUrl = baseUrl + modalType.saveLink;
-        let form = new FormData();
+        const { modalType, authConfig, configType, closeModal, updateAuthRowsAfterSave } = this.props;
 
         if (this.areRequiredFieldsEmpty()) {
             return;
         }
+
+        let form = new FormData();
 
         if (authConfig.configuration) {
             form.append('configuration', authConfig.configuration.toString());
@@ -72,7 +70,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         });
 
         Ajax.request({
-            url: saveUrl,
+            url: modalType.saveLink,
             method: 'POST',
             form,
             scope: this,
@@ -167,7 +165,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
             queryString = {
                 server: fieldValues.servers,
                 principal: fieldValues.principalTemplate,
-                sasl: fieldValues.SASL,
+                sasl: fieldValues.sasl,
+                readAttributes: fieldValues.readAttributes
             };
         }
 
@@ -237,13 +236,13 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                         <div className="modal__test-button">
                             <Button
                                 className="labkey-button"
-                                onClick={() =>
-                                    window.open(
-                                        ActionURL.getBaseURL(true) +
-                                        modalType.testLink +
-                                        ActionURL.queryString(queryString)
-                                    )
-                                }
+                                onClick={() => {
+                                    const testLinkUrl = new URL(modalType.testLink, window.location.origin);
+                                    if (queryString) {
+                                        testLinkUrl.search = new URLSearchParams(queryString).toString();
+                                    }
+                                    window.open(testLinkUrl.href);
+                                }}
                             >
                                 Test
                             </Button>
