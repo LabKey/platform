@@ -1,6 +1,5 @@
 import React, { PureComponent } from 'react';
 import { FileAttachmentForm } from '@labkey/components';
-import { ActionURL } from '@labkey/api';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
@@ -125,7 +124,7 @@ export class SSOFields extends PureComponent<Props> {
             <>
                 <ImageAndFileAttachmentForm
                     text="Page Header Logo"
-                    imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
+                    imageUrl={this.props.headerLogoUrl}
                     onFileChange={this.props.onFileChange}
                     handleDeleteLogo={this.props.handleDeleteLogo}
                     fileTitle="auth_header_logo"
@@ -137,7 +136,7 @@ export class SSOFields extends PureComponent<Props> {
 
                 <ImageAndFileAttachmentForm
                     text="Login Page Logo"
-                    imageUrl={ActionURL.getBaseURL(true) + this.props.loginLogoUrl}
+                    imageUrl={this.props.loginLogoUrl}
                     onFileChange={this.props.onFileChange}
                     handleDeleteLogo={this.props.handleDeleteLogo}
                     fileTitle="auth_login_page_logo"
