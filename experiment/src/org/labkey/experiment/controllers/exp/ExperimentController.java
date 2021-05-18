@@ -3462,7 +3462,7 @@ public class ExperimentController extends SpringActionController
 
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
-            if (StudyService.get() != null)
+            if (StudyService.get() != null && StudyPublishService.get() != null)
             {
                 for (ExpSampleType sampleType: sampleTypes)
                 {
