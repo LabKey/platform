@@ -875,6 +875,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @Override
     public void setDerivationDataScope(String scope)
     {
+        assert _checkLocked();
         _derivationDataScope = scope;
     }
 
