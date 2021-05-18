@@ -476,6 +476,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setCalculated(col.isCalculated());
 
         setSourceOntology(col.getSourceOntology());
+        setConceptSubtree(col.getConceptSubtree());
         setConceptImportColumn(col.getConceptImportColumn());
         setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
