@@ -486,6 +486,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         });
 
         typeColumnInfo.setReadOnly(true);
+        typeColumnInfo.setUserEditable(false);
         typeColumnInfo.setShownInInsertView(false);
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);

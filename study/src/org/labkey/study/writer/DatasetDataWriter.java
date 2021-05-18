@@ -40,6 +40,7 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.ExprColumn;
@@ -298,6 +299,10 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
                     continue;
 
+                // don't include the sample type alias column for export
+                if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(in.getName()) && def.isPublishedData())
+                    continue;
+
                 if (in.equals(qcStateColumn))
                 {
                     // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label), but
@@ -318,23 +323,26 @@ public class DatasetDataWriter implements InternalStudyWriter
                     // For assay datasets only, include both the display value and raw value for FKs if they differ
                     // Don't do this for the Participant and SequenceNum columns, since we know that their lookup targets
                     // will be available. See issue 15141
-                    if (def.isPublishedData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
+                    if (def.isPublishedData() && def.getPublishSource() == Dataset.PublishSource.Assay)
                     {
-                        boolean foundMatch = false;
-                        for (ColumnInfo existingColumns : inColumns)
+                        if (displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
                         {
-                            if (existingColumns.getFieldKey().equals(displayField.getFieldKey()))
+                            boolean foundMatch = false;
+                            for (ColumnInfo existingColumns : inColumns)
                             {
-                                foundMatch = true;
-                                break;
+                                if (existingColumns.getFieldKey().equals(displayField.getFieldKey()))
+                                {
+                                    foundMatch = true;
+                                    break;
+                                }
                             }
-                        }
-                        if (!foundMatch)
-                        {
-                            // issue 31169
-                            if (in.isMvEnabled())
-                                ((BaseColumnInfo)displayField).setNullable(true);
-                            outColumns.add(displayField);
+                            if (!foundMatch)
+                            {
+                                // issue 31169
+                                if (in.isMvEnabled())
+                                    ((BaseColumnInfo)displayField).setNullable(true);
+                                outColumns.add(displayField);
+                            }
                         }
                     }
 
