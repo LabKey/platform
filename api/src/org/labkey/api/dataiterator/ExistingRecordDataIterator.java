@@ -54,7 +54,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         super(in);
 
-        // NOTE in might get wrapped with a LoggingDataIterator, so remember the original DataIterator
+        // NOTE it might get wrapped with a LoggingDataIterator, so remember the original DataIterator
         this._unwrapped = useMark ? (CachingDataIterator)in : null;
 
         this.target = target;
