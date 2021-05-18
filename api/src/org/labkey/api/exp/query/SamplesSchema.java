@@ -133,12 +133,17 @@ public class SamplesSchema extends AbstractExpSchema
             return null;
 
         // Get linked to study columns
-        AbstractTableInfo tableInfo = (AbstractTableInfo) getSampleTable(st, cf);
-        int rowId = getSampleTypes().get(tableInfo.getName()).getRowId();
-        String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
-        StudyPublishService.get().addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
-
-        return tableInfo;
+        StudyPublishService studyPublishService = StudyPublishService.get();
+        if (studyPublishService != null)
+        {
+            AbstractTableInfo tableInfo = (AbstractTableInfo) getSampleTable(st, cf);
+            int rowId = getSampleTypes().get(tableInfo.getName()).getRowId();
+            String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
+            studyPublishService.addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
+            return tableInfo;
+        }
+        
+        return getSampleTable(st, cf);
     }
 
     @Override
