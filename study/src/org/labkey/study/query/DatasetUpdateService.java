@@ -292,8 +292,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                 // TODO: consider creating DataIterator metadata to mark "internal" cols (not to be returned via API)
                 DataIterator it = etl.getDataIterator(context);
                 DataIteratorBuilder cleanMap = new MapDataIterator.MapDataIteratorImpl(it, true, CaseInsensitiveHashSet.of(
-                        it.getColumnInfo(0).getName(),
-                        DatasetDataIteratorBuilder.class.getName() + "#" + DatasetDomainKind._KEY
+                        it.getColumnInfo(0).getName()
                 ));
                 etl = cleanMap;
             }
