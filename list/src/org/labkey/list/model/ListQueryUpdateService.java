@@ -53,6 +53,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.view.ListItemAttachmentParent;
 
@@ -146,7 +147,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+        List<Map<String, Object>> result = this._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
 
         if (null != result)
         {
@@ -169,6 +170,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         return result;
+    }
+
+    @Override
+    protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        return super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
