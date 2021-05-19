@@ -177,7 +177,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             {
                 ((BaseColumnInfo)inputColumn).setPropertyURI(match.getPropertyURI());
 
-                if (match == lsidColumn || match == seqnumColumn)
+                if (match == lsidColumn || match == seqnumColumn || DatasetDomainKind._KEY.equals(match.getName()))
                     continue;
 
                 // We usually ignore incoming containerColumn.  However, if we're in a dataspace study
@@ -352,7 +352,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         if (null != indexKeyProperty)
         {
-            it.indexKeyPropertyOutput = it.addAliasColumn("_key", indexKeyProperty, JdbcType.VARCHAR);
+            // used for generating LSID, not for generating insert/update SQL
+            it.indexKeyPropertyOutput = it.addAliasColumn(DatasetDataIteratorBuilder.class.getName() + "#" + DatasetDomainKind._KEY, indexKeyProperty, JdbcType.VARCHAR);
         }
 
         //
