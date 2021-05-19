@@ -184,6 +184,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
                                        @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, boolean useMerge)
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
         context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
@@ -221,6 +224,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
                          @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to update data into this table.");
+
         return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
@@ -229,8 +235,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
                           Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        int count = super._importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list, false);
         return count;
@@ -241,6 +250,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to update data into this table.");
+
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
         if (result.size() > 0)
             ListManager.get().indexList(_list, false);
