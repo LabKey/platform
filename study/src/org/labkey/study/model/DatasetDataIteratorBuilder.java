@@ -356,8 +356,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             // it.indexKeyPropertyOutput is the index of column with name=DatasetDomainKind._KEY (alias of column indexKeyProperty)
             // CONSIDER: this column is inserted twice, because the _key column is needed for is copied into the exp.datasets for the index (participantid, sequencenum, _key)
             // Since we now actually generate the index per materialized table, we could try to avoid this duplication
-            assert it.getColumnInfo(indexKeyProperty).getName().equals(keyColumnName);
-            it.indexKeyPropertyOutput = it.addAliasColumn(DatasetDomainKind._KEY, indexKeyProperty, keyColumn.getJdbcType());
+            assert null == keyColumnName || it.getColumnInfo(indexKeyProperty).getName().equals(keyColumnName);
+            it.indexKeyPropertyOutput = it.addAliasColumn(DatasetDomainKind._KEY, indexKeyProperty, JdbcType.VARCHAR);
         }
 
         //
