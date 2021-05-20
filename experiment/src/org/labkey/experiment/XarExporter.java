@@ -455,8 +455,11 @@ public class XarExporter
                 // include a file path in the export, though.  We use "Data" + rowId of the data object as the file name
                 // to ensure that the path won't collide with other output data from exported runs in the xar archive,
                 // but we don't want to include data classes as part of this behavior.
-                if (data.getDataFileUrl() == null && data.isFinalRunOutput() && (data.getDataClass(null) == null))
+                if ((data.getDataFileUrl() == null) && data.isFinalRunOutput() &&
+                        (data.getDataClass(null) == null) && (run.getFilePathRoot() != null))
+                {
                     data.setDataFileURI(run.getFilePathRootPath().resolve("Data" + data.getRowId()).toUri());
+                }
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
             }
