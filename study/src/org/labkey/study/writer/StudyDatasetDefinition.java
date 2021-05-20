@@ -4,7 +4,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
-public class StudyDatasetWriter implements InternalStudyWriter
+// DatasetDefinitionWriter actually writes all dataset definitions (study, assay, and sample type). This is a do-nothing writer to get the
+// study dataset definition checkbox to show up in the UI.
+public class StudyDatasetDefinition implements InternalStudyWriter
 {
     @Override
     public @Nullable String getDataType()

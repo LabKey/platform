@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
+// DatasetDataWriter actually writes all dataset data (study, assay, and sample type).  This is a do-nothing writer to get the
+// sample type dataset data checkbox to show up in the UI.
 public class SampleTypeDatasetData implements InternalStudyWriter
 {
     @Override

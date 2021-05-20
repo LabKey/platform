@@ -59,8 +59,8 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
                     writer.write(study, ctx, vf);
             }
 
-            // Support 'Dataset Definition' and 'Dataset Data' options
-            DatasetWriter definitionWriter = new DatasetWriter();
+            // Support '<X> Dataset Definition' and '<X> Dataset Data' options
+            DatasetDefinitionWriter definitionWriter = new DatasetDefinitionWriter();
             InternalStudyWriter datasetDataWriter = new DatasetDataWriter();
             boolean hasDatasetDefinition = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
             boolean hasDatasetData = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);

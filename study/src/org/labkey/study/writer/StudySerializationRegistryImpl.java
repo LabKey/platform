@@ -84,11 +84,11 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         // New up the writers every time since these classes can be stateful
         return List.of(
                 new AssayDatasetData(),
-                new AssayDatasetWriter(),
+                new AssayDatasetDefinition(),
                 new SampleTypeDatasetData(),
-                new SampleTypeDatasetWriter(),
+                new SampleTypeDatasetDefinition(),
                 new StudyDatasetData(),
-                new StudyDatasetWriter(),
+                new StudyDatasetDefinition(),
                 new AssayScheduleWriter(),
                 new ViewCategoryWriter(),
                 new CohortWriter(),

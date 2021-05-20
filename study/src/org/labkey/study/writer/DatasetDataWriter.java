@@ -97,7 +97,7 @@ public class DatasetDataWriter implements InternalStudyWriter
     {
         List<DatasetDefinition> datasets = ctx.getDatasets();
 
-        VirtualFile vf = root.getDir(DatasetWriter.DEFAULT_DIRECTORY);
+        VirtualFile vf = root.getDir(DatasetDefinitionWriter.DEFAULT_DIRECTORY);
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
