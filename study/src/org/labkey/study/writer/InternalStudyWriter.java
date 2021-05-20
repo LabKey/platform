@@ -35,7 +35,7 @@ public interface InternalStudyWriter extends BaseStudyWriter<StudyImpl, StudyExp
         return true;
     }
 
-    default void write1(StudyImpl study, StudyExportContext ctx, VirtualFile root, Set<String> dataTypes) throws Exception
+    default void write(StudyImpl study, StudyExportContext ctx, VirtualFile root, Set<String> dataTypes) throws Exception
     {
     }
 }
