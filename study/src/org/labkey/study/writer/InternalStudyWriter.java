@@ -17,7 +17,10 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.study.writer.BaseStudyWriter;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+
+import java.util.Set;
 
 /*
 * User: adam
@@ -30,5 +33,9 @@ public interface InternalStudyWriter extends BaseStudyWriter<StudyImpl, StudyExp
     default boolean includeWithTemplate()
     {
         return true;
+    }
+
+    default void write1(StudyImpl study, StudyExportContext ctx, VirtualFile root, Set<String> dataTypes) throws Exception
+    {
     }
 }

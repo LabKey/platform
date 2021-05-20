@@ -10,7 +10,7 @@ public class SampleTypeDatasetWriter implements InternalStudyWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.SAMPLE_TYPE_DATASETS;
+        return StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS;
     }
 
     @Override

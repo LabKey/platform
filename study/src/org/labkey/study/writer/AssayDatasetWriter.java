@@ -32,7 +32,7 @@ class AssayDatasetWriter implements InternalStudyWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.ASSAY_DATASETS;
+        return StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS;
     }
 
     @Override

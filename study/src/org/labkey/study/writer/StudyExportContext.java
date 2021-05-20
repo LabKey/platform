@@ -78,16 +78,18 @@ public class StudyExportContext extends SimpleStudyExportContext
 
     private void initializeDatasets(StudyImpl study)
     {
-        // TODO, add support for sample datasets
-        boolean includeCRF = getDataTypes().contains(StudyArchiveDataTypes.CRF_DATASETS);
-        boolean includeAssay = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASETS);
-        boolean includeSampleType = getDataTypes().contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASETS);
-        boolean includeDatasetData = getDataTypes().contains(StudyArchiveDataTypes.DATASET_DATA);
+        boolean includeStudyData = getDataTypes().contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA) || getDataTypes().contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
+        boolean includeAssayData = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS);
+        boolean includeSampleTypeData = getDataTypes().contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || getDataTypes().contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
             Dataset.PublishSource publishSource = dataset.getPublishSource();
-            if (includeDatasetData || (!dataset.isPublishedData() && includeCRF) || ((publishSource == Dataset.PublishSource.Assay) && includeAssay) || ((publishSource == Dataset.PublishSource.SampleType) && includeSampleType))
+            boolean isStudyDataset = !dataset.isPublishedData();
+            boolean isAssayDataset = publishSource == Dataset.PublishSource.Assay;
+            boolean isSampleTypeDataset = publishSource == Dataset.PublishSource.SampleType;
+
+            if ((isStudyDataset && includeStudyData) || (isAssayDataset && includeAssayData) || (isSampleTypeDataset && includeSampleTypeData))
             {
                 _datasets.add(dataset);
                 _datasetIds.add(dataset.getDatasetId());

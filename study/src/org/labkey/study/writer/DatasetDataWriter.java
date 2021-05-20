@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -99,6 +100,77 @@ public class DatasetDataWriter implements InternalStudyWriter
         {
             // no data to export for placeholder datasets
             if (def.getType().equals(Dataset.TYPE_PLACEHOLDER))
+                continue;
+
+            TableInfo ti = schema.getTable(def.getName());
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.getPhiLevel());
+            // Sort the data rows by PTID & sequence, #11261
+            Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
+
+            SimpleFilter filter = new SimpleFilter();
+            if (def.isPublishedData())
+            {
+                Dataset.PublishSource publishSource = def.getPublishSource();
+                if (publishSource == Dataset.PublishSource.Assay)
+                {
+                    // Try to find the protocol and provider
+                    ExpProtocol protocol = (ExpProtocol)def.resolvePublishSource();
+                    if (protocol != null)
+                    {
+                        AssayProvider provider = AssayService.get().getProvider(protocol);
+                        if (provider != null)
+                        {
+                            // Assuming they're still around, filter out rows where the source assay run has been deleted,
+                            // thus orphaning the dataset row and pulling out all of its real data
+                            filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), null, CompareType.NONBLANK);
+                        }
+                    }
+                }
+            }
+
+            if (ctx.isShiftDates())
+            {
+                createDateShiftColumns(ti, columns, ctx.getContainer());
+            }
+            if (ctx.isAlternateIds())
+            {
+                createAlternateIdColumns(ti, columns, ctx.getContainer());
+            }
+            if (!def.isDemographicData() && ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
+            {
+                filter.addInClause(FieldKey.fromParts("VisitRowId"), ctx.getVisitIds());
+            }
+            if (ctx.getParticipants() != null && !ctx.getParticipants().isEmpty())
+            {
+                filter.addInClause(FieldKey.fromParts(StudyService.get().getSubjectColumnName(ctx.getContainer())), ctx.getParticipants());
+            }
+
+            if (ctx.isDataspaceProject())
+                DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
+            ResultsFactory factory = ()->QueryService.get().select(ti, columns, filter, sort, null, false);
+            writeResultsToTSV(factory, vf, def.getFileName());
+        }
+    }
+
+    @Override
+    public void write1(StudyImpl study, StudyExportContext ctx, VirtualFile root, Set<String> dataTypes) throws Exception
+    {
+        List<DatasetDefinition> datasets = ctx.getDatasets();
+
+        VirtualFile vf = root.getDir(DatasetWriter.DEFAULT_DIRECTORY);
+
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+
+        // Write out all the dataset .tsv files
+        for (DatasetDefinition def : datasets)
+        {
+            boolean passStudyDatasets = !def.isPublishedData() && !dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
+            boolean passAssayDatasets = Objects.equals(def.getPublishSource(), Dataset.PublishSource.Assay) && !dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA);
+            boolean passSampleTypeDatasets = Objects.equals(def.getPublishSource(), Dataset.PublishSource.SampleType) && !dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA);
+
+            // no data to export for placeholder datasets
+            // exclude datasets for which 'Dataset Data' is not a selection option
+            if (def.getType().equals(Dataset.TYPE_PLACEHOLDER) || passStudyDatasets || passAssayDatasets || passSampleTypeDatasets)
                 continue;
 
             TableInfo ti = schema.getTable(def.getName());

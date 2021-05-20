@@ -47,7 +47,7 @@ public class DatasetWriter implements InternalStudyWriter
     @Override
     public String getDataType()
     {
-        return StudyArchiveDataTypes.CRF_DATASETS;
+        return StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS;
     }
 
     @Override
