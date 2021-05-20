@@ -418,6 +418,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to delete data from this table.");
+
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
         if (null != result)
