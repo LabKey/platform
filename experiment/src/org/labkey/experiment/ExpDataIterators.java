@@ -349,8 +349,9 @@ public class ExpDataIterators
             if (_expTable instanceof  ExpMaterialTableImpl)
             {
                 @Nullable Container targetContainer = ((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer();
-                if (_study == null && targetContainer != null) {
-                    _study = StudyService.get().getStudy(targetContainer);
+                StudyService studyService = StudyService.get();
+                if (_study == null && targetContainer != null && studyService != null) {
+                    _study = studyService.getStudy(targetContainer);
                 }
             }
             final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;

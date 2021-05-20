@@ -163,7 +163,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, input, context, user);
 
         ValidationException matchError = new ValidationException();
-        ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases, matchError, null);
+        ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases,
+                DataIteratorUtil.isEtl(context), matchError, null);
         if (matchError.hasErrors())
             setupError(matchError.getMessage());
 
@@ -196,6 +197,22 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 {
                     // TODO silently ignore or add error?
                     continue;
+                }
+
+                if (match == subjectCol)
+                {
+                    try
+                    {
+                        // translate the incoming participant column
+                        // do a conversion for PTID aliasing
+                        it.translatePtid(in, user);
+                        continue;
+                    }
+                    catch (ValidationException e)
+                    {
+                        setupError(e.getMessage());
+                        return it;
+                    }
                 }
 
                 int out;
@@ -249,19 +266,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         Integer indexContainer = outputMap.get(containerColumn);
         Integer indexReplace = outputMap.get("replace");
 
-        // do a conversion for PTID aliasing
-        Integer translatedIndexPTID = indexPTID;
-        try
-        {
-            translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
-        }
-        catch (ValidationException e)
-        {
-            context.getErrors().addRowError(e);
-        }
-
         // For now, just specify null for sequence num index... we'll add it below
-        it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty, indexContainer);
+        it.setSpecialOutputColumns(indexPTID, null, indexVisitDate, indexKeyProperty, indexContainer);
         it.setTimepointType(timetype);
 
         /* NOTE: these columns must be added in dependency order
@@ -411,11 +417,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             Integer indexVisit = timetype.isVisitBased() ? it.indexSequenceNumOutput : indexVisitDate;
             // no point if required columns are missing
-            if (null != translatedIndexPTID && null != indexVisit)
+            if (null != indexPTID && null != indexVisit)
             {
                 ScrollableDataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                 _datasetDefinition.checkForDuplicates(scrollable, indexLSID,
-                        translatedIndexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
+                        indexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
                         context, null,
                         checkDuplicates);
                 scrollable.beforeFirst();
@@ -612,7 +618,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new BaseColumnInfo("ParticipantId", JdbcType.VARCHAR);
+            ColumnInfo col = new BaseColumnInfo(_datasetDefinition.getStudy().getSubjectColumnName(), JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);

@@ -241,10 +241,11 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         SQLFragment qcFragment = qcService.getDataTableCondition(_protocol, getContainer(), getUserSchema().getUser());
         addCondition(qcFragment);
 
-        if (includeLinkedToStudyColumns)
+        StudyPublishService studyPublishService = StudyPublishService.get();
+        if (includeLinkedToStudyColumns && studyPublishService != null)
         {
             String rowIdName = _provider.getTableMetadata(_protocol).getResultRowIdFieldKey().getName();
-            Set<String> studyColumnNames = StudyPublishService.get().addLinkedToStudyColumns(this, Dataset.PublishSource.Assay, false, _protocol.getRowId(), rowIdName, _userSchema.getUser());
+            Set<String> studyColumnNames = studyPublishService.addLinkedToStudyColumns(this, Dataset.PublishSource.Assay, false, _protocol.getRowId(), rowIdName, _userSchema.getUser());
 
             for (String columnName : studyColumnNames)
             {
