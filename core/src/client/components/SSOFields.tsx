@@ -3,7 +3,6 @@ import { FileAttachmentForm } from '@labkey/components';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
-import { ActionURL } from '@labkey/api';
 
 class NoImageSelectedDisplay extends PureComponent {
     render () {
