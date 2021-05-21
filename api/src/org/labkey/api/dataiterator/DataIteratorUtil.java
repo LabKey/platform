@@ -206,13 +206,9 @@ public class DataIteratorUtil
         return targetAliasesMap;
     }
 
-    public static boolean isEtl(@NotNull DataIteratorContext context)
-    {
-        return context.getDataSource() != null && context.getDataSource().equals(ETL_DATA_SOURCE);
-    }
 
     /* NOTE doesn't check column mapping collisions */
-    protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, boolean isEtl, Container container)
+    protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, Container container)
     {
         Map<String,Pair<ColumnInfo,MatchType>> targetMap = _createTableMap(target, useImportAliases);
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
@@ -227,39 +223,15 @@ public class DataIteratorUtil
                 continue;
             }
 
-            Pair<ColumnInfo,MatchType> to = null;
-            if (isEtl)
+            Pair<ColumnInfo,MatchType> to = targetMap.get(from.getName());
+            if (null == to && null != from.getPropertyURI())
             {
-                // Match by name first
-                to = targetMap.get(from.getName());
-
-                // If name matches, check if property URI matches for higher priority match type
-                if (null != to && null != from.getPropertyURI())
-                {
-                    // Renamed built-in columns (ex. LSID, ParticipantId) in source queries will not match propertyURI with
-                    // target. In that case, just stick with name match. Otherwise check for propertyURI match for higher priority match
-                    // (this is primarily for ParticipantId which can have two columns with same name in the dataiterator)
-                    if (from.getPropertyURI().equals(to.first.getPropertyURI())) {
-                        Pair<ColumnInfo,MatchType> toUri = targetMap.get(from.getPropertyURI());
-                        if (null != toUri)
-                            to = toUri;
-                    }
-                }
+                // Do we actually rely on this anywhere???
+                // Like maybe ETL from one study to another where subject name does not match? or assay publish?
+                to = targetMap.get(from.getPropertyURI());
+                if (null != to)
+                    to = new Pair<>(to.first, org.labkey.api.dataiterator.DataIteratorUtil.MatchType.low);
             }
-            else
-            {
-                to = targetMap.get(from.getName());
-                if (null == to && null != from.getPropertyURI())
-                {
-                    // Do we actually rely on this anywhere???
-                    // Like maybe ETL from one study to another where subject name does not match? or assay publish?
-                    to = targetMap.get(from.getPropertyURI());
-                    if (null != to)
-                        to = new Pair<>(to.first, org.labkey.api.dataiterator.DataIteratorUtil.MatchType.low);
-                }
-            }
-
-
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
@@ -280,9 +252,9 @@ public class DataIteratorUtil
 
 
     /** throws ValidationException only if there are unresolvable ambiguity in the source->destination column mapping */
-    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, boolean isEtl, ValidationException setupError, @Nullable Container container)
+    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError, @Nullable Container container)
     {
-        ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases, isEtl, container);
+        ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases, container);
         MultiValuedMap<FieldKey,Integer> duplicatesMap = new ArrayListValuedHashMap<>(input.getColumnCount()+1);
 
         for (int i=1 ; i<= input.getColumnCount() ; i++)
