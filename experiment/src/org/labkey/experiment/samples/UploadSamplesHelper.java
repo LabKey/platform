@@ -814,7 +814,16 @@ public abstract class UploadSamplesHelper
                 boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
                 if (isAliquot)
                 {
-                    generatedName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
+                    String aliquotName = null;
+                    // If a name is already provided, just use it as is
+                    Object currNameObj = map.get("Name");
+                    if (currNameObj != null)
+                        aliquotName = currNameObj.toString();
+
+                    if (StringUtils.isEmpty(aliquotName))
+                        aliquotName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
+
+                    generatedName = aliquotName;
                 }
                 else
                     generatedName = nameGen.generateName(nameState, map);

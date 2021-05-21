@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
-import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -424,7 +423,7 @@ public class PageConfig
     }
 
     // For now, gives a central place to render messaging
-    public HasHtmlString renderSiteMessages(ViewContext context)
+    public HtmlStringBuilder renderSiteMessages(ViewContext context)
     {
         HtmlStringBuilder messages = HtmlStringBuilder.of();
 

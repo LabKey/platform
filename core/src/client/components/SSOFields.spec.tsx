@@ -20,6 +20,20 @@ describe("<SSOFields/>", () => {
         expect(tree).toMatchSnapshot();
     });
 
+    test("With images attached", () => {
+        const component =
+            <SSOFields
+                canEdit={true}
+                headerLogoUrl={"imgURLHeader"}
+                loginLogoUrl={"imgURLLogin"}
+                onFileChange={() => {}}
+                handleDeleteLogo={() => {}}
+            />;
+
+        const tree = renderer.create(component).toJSON();
+        expect(tree).toMatchSnapshot();
+    });
+
     test("Editable mode", () => {
         const component =
             <SSOFields
