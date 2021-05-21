@@ -31,9 +31,9 @@
                 <!-- Sample Type reload pipeline -->
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
                     <constructor-arg value="SampleReloadTask"/>
-                    <property name="description" value="Reload Sample Types"/>
+                    <property name="description" value="Import Samples from Data File"/>
                     <property name="protocolObjectId" value="experiment.sampleReload"/>
-                    <property name="protocolName" value="Sample Type Reload"/>
+                    <property name="protocolName" value="Sample Reload"/>
                     <property name="protocolFactoryName" value="sampleReload"/>
                     <property name="defaultDisplayState" value="hidden"/>
                     <property name="allowForTriggerConfiguration" value="true"/>
@@ -56,20 +56,33 @@
                         The task can reload data into existing sample types as well as create new sample types." />
                     <property name="customFields">
                         <list>
-                            <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <constructor-arg index="0" value="skipQueryValidation"/>
-                                <constructor-arg index="1" value="Validate All Queries After Reload"/>
+                            <bean class="org.labkey.api.formSchema.RadioField">
+                                <constructor-arg index="0" value="mergeData"/>
+                                <constructor-arg index="1" value="Action"/>
                                 <constructor-arg index="2" value="false" />
-                                <constructor-arg index="3" value="false"/>
-                                <constructor-arg index="4" value="Enable to validate queries after reload is complete"/>
+                                <constructor-arg index="3" value="false" />
+                                <constructor-arg index="4">
+                                    <list>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="true"/>
+                                            <constructor-arg index="1" value="Merge"/>
+                                        </bean>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="false"/>
+                                            <constructor-arg index="1" value="Append"/>
+                                        </bean>
+                                    </list>
+                                </constructor-arg>
+                                <constructor-arg index="5" value="Choose Merge to update samples which match the incoming rows. By default data is inserted and
+                                will fail if a row matching the incoming data already exists."/>
                             </bean>
 
                             <bean class="org.labkey.api.formSchema.CheckboxField">
-                                <constructor-arg index="0" value="failForUndefinedVisits"/>
-                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
+                                <constructor-arg index="0" value="alternateKeyLookup"/>
+                                <constructor-arg index="1" value="Import Lookups by Alternate Key"/>
                                 <constructor-arg index="2" value="false" />
                                 <constructor-arg index="3" value="false"/>
-                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
+                                <constructor-arg index="4" value="Enable to allow lookups to be resolved by values other than the table primary key."/>
                             </bean>
                         </list>
                     </property>
