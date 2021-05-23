@@ -357,23 +357,9 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE AGGREGATE core.array_accum (anyelement)
-(
-  sfunc = array_append,
-  stype = anyarray,
-  initcond = '{}'
-);
-
 CREATE FUNCTION core.sort(anyarray) RETURNS anyarray AS $$
 SELECT ARRAY(SELECT $1[i] FROM generate_series(array_lower($1,1), array_upper($1,1)) g(i) ORDER BY 1)
 $$ LANGUAGE SQL STRICT IMMUTABLE;
-
-CREATE AGGREGATE core.array_accum(text) (
-  SFUNC = array_append,
-  STYPE = text[],
-  INITCOND = '{}',
-  SORTOP = >
-);
 
 CREATE FUNCTION core.fnCalculateAge (startDate timestamp, endDate timestamp) RETURNS INTEGER AS $$
 DECLARE
@@ -415,10 +401,6 @@ CREATE TABLE core.Notifications
 );
 
 /* core-15.30-16.10.sql */
-
--- No longer used; replaced by built-in PostgreSQL function string_to_array()
-DROP AGGREGATE core.array_accum(anyelement);
-DROP AGGREGATE core.array_accum(text);
 
 -- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
 -- imports a tabular data file (TSV, XLSX, etc.) into the specified table.
