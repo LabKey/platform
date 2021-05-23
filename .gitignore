@@ -26,6 +26,9 @@ experiment/resources/views/gen
 assay/resources/web/assay/gen
 assay/resources/views/gen
 
+pipeline/resources/web/pipeline/gen
+pipeline/resources/views/gen
+
 # Gradle
 core/.gradle
 experiment/.gradle
@@ -34,3 +37,4 @@ query/.gradle
 study/.gradle
 list/.gradle
 issues/.gradle
+pipeline/.gradle
