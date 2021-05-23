@@ -22,28 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.query.column.ColumnInfoTransformer;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MethodInfo;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.ParameterDescription;
-import org.labkey.api.data.ParameterDescriptionImpl;
-import org.labkey.api.data.QueryLogging;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -254,6 +236,8 @@ public interface QueryService
      */
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
     SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
+
+    BaseColumnInfo createQueryColumn(TableInfo table, FieldKey key, String labKeySql, JdbcType type);
 
     void addCompareType(CompareType type);
 

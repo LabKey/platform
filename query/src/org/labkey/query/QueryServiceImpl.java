@@ -97,6 +97,7 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.sql.LabKeyExprColumn;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QDot;
 import org.labkey.query.sql.QExpr;
@@ -356,7 +357,7 @@ public class QueryServiceImpl implements QueryService
             {
                 ColumnInfo c = columnMap.get(key);
                 if (null == c)
-                    throw new UnsupportedOperationException("column not found: " + key.toString());
+                    throw new UnsupportedOperationException("column not found: " + key);
                 return new QColumnInfo(c);
             }
 
@@ -382,17 +383,28 @@ public class QueryServiceImpl implements QueryService
 
     public static class QColumnInfo extends QInternalExpr
     {
+        private final String _tableAliasName;
         private final ColumnInfo _col;
 
-        QColumnInfo(ColumnInfo col)
+        public QColumnInfo(ColumnInfo col)
         {
+            _tableAliasName = null;
+            _col = col;
+        }
+
+        public QColumnInfo(String tableAliasName, ColumnInfo col)
+        {
+            _tableAliasName = tableAliasName;
             _col = col;
         }
 
         @Override
         public void appendSql(SqlBuilder builder, Query query)
-        {
-            builder.append(_col.getAlias());
+        { //
+            if (_tableAliasName == null)
+                builder.append(_col.getAlias());
+            else
+                builder.append(_col.getValueSql(_tableAliasName));
         }
 
         @Override
@@ -1519,13 +1531,21 @@ public class QueryServiceImpl implements QueryService
 
         for (Entry<FieldKey, Map<CustomView.ColumnProperty, String>> entry : fields)
         {
-            ColumnInfo column = columns.get(entry.getKey());
+            FieldKey fieldKey = entry.getKey();
+            Map<CustomViewInfo.ColumnProperty, String> properties = entry.getValue();
+            ColumnInfo column = columns.get(fieldKey);
 
             if (column == null)
-                continue;
+            {
+                String queryExpr = properties.get(CustomViewInfo.ColumnProperty.queryExpr);
+                if (queryExpr == null)
+                    continue;
+
+                column = createQueryColumn(table, fieldKey, queryExpr, null);
+            }
 
             DisplayColumn displayColumn = column.getRenderer();
-            String caption = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
+            String caption = properties.get(CustomViewInfo.ColumnProperty.columnTitle);
 
             if (caption != null)
                 displayColumn.setCaption(caption);
@@ -2741,6 +2761,12 @@ public class QueryServiceImpl implements QueryService
                 return column;
         }
         return null;
+    }
+
+    @Override
+    public BaseColumnInfo createQueryColumn(TableInfo table, FieldKey key, String labKeySql, JdbcType type)
+    {
+        return new LabKeyExprColumn(table, key, labKeySql, type);
     }
 
     @Override
