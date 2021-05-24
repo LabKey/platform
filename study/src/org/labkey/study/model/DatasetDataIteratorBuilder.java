@@ -163,8 +163,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, input, context, user);
 
         ValidationException matchError = new ValidationException();
-        ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases,
-                DataIteratorUtil.isEtl(context), matchError, null);
+        ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases, matchError, null);
         if (matchError.hasErrors())
             setupError(matchError.getMessage());
 
@@ -178,7 +177,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             {
                 ((BaseColumnInfo)inputColumn).setPropertyURI(match.getPropertyURI());
 
-                if (match == lsidColumn || match == seqnumColumn)
+                if (match == lsidColumn || match == seqnumColumn || DatasetDomainKind._KEY.equals(match.getName()))
                     continue;
 
                 // We usually ignore incoming containerColumn.  However, if we're in a dataspace study
@@ -353,7 +352,12 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         if (null != indexKeyProperty)
         {
-            it.indexKeyPropertyOutput = it.addAliasColumn("_key", indexKeyProperty, JdbcType.VARCHAR);
+            // indexKeyProperty is the index of the column matched to column _datasetDefinition.getKeyPropertyName(), or is a managed key
+            // it.indexKeyPropertyOutput is the index of column with name=DatasetDomainKind._KEY (alias of column indexKeyProperty)
+            // CONSIDER: this column is inserted twice, because the _key column is needed for is copied into the exp.datasets for the index (participantid, sequencenum, _key)
+            // Since we now actually generate the index per materialized table, we could try to avoid this duplication
+            assert null == keyColumnName || it.getColumnInfo(indexKeyProperty).getName().equals(keyColumnName);
+            it.indexKeyPropertyOutput = it.addAliasColumn(DatasetDomainKind._KEY, indexKeyProperty, JdbcType.VARCHAR);
         }
 
         //
