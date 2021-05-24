@@ -16,6 +16,7 @@
 package org.labkey.api.compliance;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.data.Activity;
@@ -91,6 +92,8 @@ public interface ComplianceService
 
     Pair<AttachmentParent, String> downloadSnapshot(Container container, User user, @NotNull SignedSnapshot snapshot);
 
+    JSONObject getServerSettings();
+
     class DefaultComplianceService implements ComplianceService
     {
         @Override
@@ -161,6 +164,12 @@ public interface ComplianceService
 
         @Override
         public Pair<AttachmentParent, String> downloadSnapshot(Container container, User user, SignedSnapshot snapshot)
+        {
+            return null;
+        }
+
+        @Override
+        public JSONObject getServerSettings()
         {
             return null;
         }

@@ -33,6 +33,7 @@ import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
@@ -51,7 +52,6 @@ import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
@@ -290,9 +290,14 @@ public class ApiModule extends CodeOnlyModule
     public JSONObject getPageContextJson(ContainerUser context)
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+
         AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
         if (config != null)
             json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
+
+        JSONObject complianceSettings = ComplianceService.get().getServerSettings();
+        if (complianceSettings != null)
+            json.put("compliance", complianceSettings);
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
