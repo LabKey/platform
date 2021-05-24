@@ -56,7 +56,7 @@ LABKEY.Utils = new function(impl, $) {
        displayModal(title, msg, undefined, true);
     };
 
-    var displayModal = function(title, msg, fn, args, disableBackdrop) {
+    var displayModal = function(title, msg, fn, args, disableBackdrop, disableCloseBtn) {
         var modal = $('#lk-utils-modal');
 
         if (modal.length === 0) {
@@ -70,7 +70,7 @@ LABKEY.Utils = new function(impl, $) {
         }
         var html = [
             '<div class="modal-header">',
-                '<button type="button" class="close" data-dismiss="modal">&times;</button>',
+                (!disableCloseBtn ? '<button type="button" class="close" data-dismiss="modal">&times;</button>' : ''),
                 '<h4 class="modal-title">' + LABKEY.Utils.encodeHtml(title) + '</h4>',
             '</div>',
             '<div class="modal-body">'
@@ -306,7 +306,8 @@ LABKEY.Utils = new function(impl, $) {
      * @param fn {function} This will be called with the provided argument list {args} after the modal is shown. You can generate content in
      * the modal via the following empty div: &lt;div id="modal-fn-body">&lt;/div>
      * @param args {array} Array of arguments to be applied to the function when it is called.
-     * @param disableBackdrop {boolean} True to disable closing the modal on background click.
+     * @param disableBackdrop {boolean} True to disable closing the modal on background click. Defaults to false.
+     * @param disableCloseBtn {boolean} True to disable closing the modal on close button (i.e. X in upper right corner) click. Defaults to false
      *
      * @example &lt;script type="text/javascript"&gt;
      *
@@ -316,8 +317,8 @@ LABKEY.Utils = new function(impl, $) {
      * LABKEY.Utils.modal("Hello", null, myFN, ["displayName"]);
      * &lt;/script&gt;
      */
-    impl.modal = function(title, msg, fn, args, disableBackdrop) {
-      displayModal(title, msg, fn, args, disableBackdrop);
+    impl.modal = function(title, msg, fn, args, disableBackdrop, disableCloseBtn) {
+      displayModal(title, msg, fn, args, disableBackdrop, disableCloseBtn);
     };
 
     /**
