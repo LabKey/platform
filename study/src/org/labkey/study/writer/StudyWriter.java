@@ -68,7 +68,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             if (hasDatasetData)
             {
                 definitionWriter.write(study, ctx, vf);
-                datasetDataWriter.write(study, ctx, vf, dataTypes);
+                datasetDataWriter.write(study, ctx, vf);
             }
             else if (hasDatasetDefinition)
             {
