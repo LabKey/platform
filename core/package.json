@@ -54,7 +54,7 @@
     "@labkey/api": "1.4.0",
     "@labkey/components": "2.30.0",
     "@labkey/eslint-config-react": "0.0.8",
-    "@labkey/themes": "1.1.1"
+    "@labkey/themes": "1.1.1-fb-complianceSessionSettings.0"
   },
   "devDependencies": {
     "@labkey/build": "2.1.0",
