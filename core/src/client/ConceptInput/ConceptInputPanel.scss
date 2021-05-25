@@ -1,0 +1,17 @@
+@import "@labkey/components-scss";
+
+.concept-input-container {
+  padding: 5px 0 5px;
+
+  .concept-label-text {
+    padding: 3px 5px 3px;
+
+    display: inline-flex;
+  }
+
+  .show-toggle {
+    &:hover {
+      cursor: pointer;
+    }
+  }
+}
