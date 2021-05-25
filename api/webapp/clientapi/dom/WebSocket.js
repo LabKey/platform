@@ -149,7 +149,7 @@ LABKEY.WebSocket = new function ()
                         success: LABKEY.Utils.getCallbackWrapper(function(response) {
                             // if the user was a guest or if they logged in with another account (or haven't
                             // logged back in), then we reload the page
-                            if (LABKEY.user.id !== response.id || LABKEY.user.isGuest) {
+                            if (response === undefined || LABKEY.user.id !== response.id || LABKEY.user.isGuest) {
                                 window.location.reload();
                             } else {
                                 $('#lk-utils-modal').modal('hide');
