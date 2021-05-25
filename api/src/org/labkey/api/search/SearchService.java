@@ -182,6 +182,11 @@ public interface SearchService
          */
         void setReady();
 
+        default void addRunnable(@NotNull SearchService.PRIORITY pri, @NotNull Runnable r)
+        {
+            addRunnable(r, pri);
+        }
+
         void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
 
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);

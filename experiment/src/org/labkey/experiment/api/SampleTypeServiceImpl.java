@@ -102,6 +102,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -792,22 +793,38 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         public long next(Date date)
         {
+            return getDbSequence(date).next();
+        }
+
+        public DbSequence getDbSequence(Date date)
+        {
             String seqName = getSequenceName(date);
-            DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
-            return seq.next();
+            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName, 0, 100);
+            return seq;
         }
     }
 
+
     @Override
-    public Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
+    public Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate)
     {
-        Map<String, Long> counts = new HashMap<>();
-        counts.put("dailySampleCount",   SampleSequenceType.DAILY.next(counterDate));
-        counts.put("weeklySampleCount",  SampleSequenceType.WEEKLY.next(counterDate));
-        counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
-        counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
-        return counts;
+        final var dailySampleCount = SampleSequenceType.DAILY.getDbSequence(counterDate);
+        final var weeklySampleCount = SampleSequenceType.WEEKLY.getDbSequence(counterDate);
+        final var monthlySampleCount = SampleSequenceType.MONTHLY.getDbSequence(counterDate);
+        final var yearlySampleCount = SampleSequenceType.YEARLY.getDbSequence(counterDate);
+
+        return (counts) ->
+        {
+            if (null==counts)
+                counts = new HashMap<>();
+            counts.put("dailySampleCount",   dailySampleCount.next());
+            counts.put("weeklySampleCount",  weeklySampleCount.next());
+            counts.put("monthlySampleCount", monthlySampleCount.next());
+            counts.put("yearlySampleCount",  yearlySampleCount.next());
+            return counts;
+        };
     }
+
 
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)

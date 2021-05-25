@@ -848,20 +848,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder builder = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampleset")
-                    .setIndexFunction(lsids -> () ->
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+                    .setFileLinkDirectory("sampleset");
+            SearchService ss = SearchService.get();
+            if (null != ss)
+            {
+                persist.setIndexFunction(lsids -> () ->
+                    ss.defaultTask().addRunnable(SearchService.PRIORITY.bulk, () ->
                     {
-                        SearchService ss = SearchService.get();
-                        if (ss != null)
+                        for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
                         {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
-                            {
-                                ss.defaultTask().addRunnable(() -> expMaterial.index(null), SearchService.PRIORITY.bulk);
-                            }
+                            ss.defaultTask().addRunnable(SearchService.PRIORITY.item, () -> expMaterial.index(null));
                         }
-                    }));
+                    })
+                );
+            }
 
+            DataIteratorBuilder builder = LoggingDataIterator.wrap(persist);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
