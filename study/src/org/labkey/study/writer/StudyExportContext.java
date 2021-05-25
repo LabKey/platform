@@ -81,6 +81,7 @@ public class StudyExportContext extends SimpleStudyExportContext
         boolean includeStudyData = getDataTypes().contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA) || getDataTypes().contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         boolean includeAssayData = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS);
         boolean includeSampleTypeData = getDataTypes().contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || getDataTypes().contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS);
+        boolean includeAllDatasetData = getDataTypes().contains(StudyArchiveDataTypes.DATASET_DATA);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
@@ -89,7 +90,7 @@ public class StudyExportContext extends SimpleStudyExportContext
             boolean isAssayDataset = publishSource == Dataset.PublishSource.Assay;
             boolean isSampleTypeDataset = publishSource == Dataset.PublishSource.SampleType;
 
-            if ((isStudyDataset && includeStudyData) || (isAssayDataset && includeAssayData) || (isSampleTypeDataset && includeSampleTypeData))
+            if (includeAllDatasetData || ((isStudyDataset && includeStudyData) || (isAssayDataset && includeAssayData) || (isSampleTypeDataset && includeSampleTypeData)))
             {
                 _datasets.add(dataset);
                 _datasetIds.add(dataset.getDatasetId());

@@ -99,12 +99,13 @@ public class DatasetDataWriter implements InternalStudyWriter
         // Write out all the dataset .tsv files
         for (DatasetDefinition def : datasets)
         {
+            boolean publishAllDatasets = dataTypes.contains(StudyArchiveDataTypes.DATASET_DATA);
             boolean passStudyDatasets = !def.isPublishedData() && !dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
             boolean passAssayDatasets = Objects.equals(def.getPublishSource(), Dataset.PublishSource.Assay) && !dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA);
             boolean passSampleTypeDatasets = Objects.equals(def.getPublishSource(), Dataset.PublishSource.SampleType) && !dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA);
 
             // exclude datasets for which 'Dataset Data' is not a selection option
-            if (passStudyDatasets || passAssayDatasets || passSampleTypeDatasets)
+            if (!publishAllDatasets && (passStudyDatasets || passAssayDatasets || passSampleTypeDatasets))
                 continue;
 
             // no data to export for placeholder datasets

@@ -63,7 +63,7 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             DatasetDefinitionWriter definitionWriter = new DatasetDefinitionWriter();
             InternalStudyWriter datasetDataWriter = new DatasetDataWriter();
             boolean hasDatasetDefinition = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
-            boolean hasDatasetData = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
+            boolean hasDatasetData = dataTypes.contains(StudyArchiveDataTypes.DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
 
             if (hasDatasetData)
             {
