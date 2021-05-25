@@ -102,7 +102,33 @@ LABKEY.WebSocket = new function ()
         // CONSIDER: Once reconnected, reload the page unless page is dirty -- LABKEY.isDirty()
     }
 
+    function isSessionInvalidBackgroundHideEnabled() {
+        if (LABKEY.moduleContext.api.compliance) {
+            return LABKEY.moduleContext.api.compliance.sessionInvalidBackgroundHideEnabled
+        }
+        return false;
+    }
+
+    function toggleBackgroundVisible(shouldHide) {
+        if (isSessionInvalidBackgroundHideEnabled()) {
+            var divClsSelectors = ['.lk-header-ct', '.lk-body-ct', '.footer-block', '.x4-window', '.x-window'];
+            for (var i = 0; i < divClsSelectors.length; i++) {
+                var divEls = $(divClsSelectors[i]);
+                if (divEls) {
+                    if (shouldHide) {
+                        divEls.addClass('content-blur');
+                    }
+                    else {
+                        divEls.removeClass('content-blur');
+                    }
+                }
+            }
+        }
+    }
+
     function displayModal(title, message) {
+        toggleBackgroundVisible(true);
+
         if (LABKEY.Utils && LABKEY.Utils.modal) {
             LABKEY.Utils.modal(title, null, function() {
                 $("#modal-fn-body").html([
@@ -112,11 +138,30 @@ LABKEY.WebSocket = new function ()
                     '</div>',
                 ].join(''));
 
+                // make sure that this modal is in front of any other dialogs (Ext, Ext4, etc.) on the page
+                $('#lk-utils-modal').css('z-index', 99999);
+
                 // add the on click handler for the reload page button
                 $('#lk-websocket-reload').on('click', function() {
-                    window.location.reload();
+                    // quick check to see if the user has re-logged in on another tab, making this session valid again
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
+                        success: LABKEY.Utils.getCallbackWrapper(function(response) {
+                            // if the user was a guest or if they logged in with another account (or haven't
+                            // logged back in), then we reload the page
+                            if (LABKEY.user.id !== response.id || LABKEY.user.isGuest) {
+                                window.location.reload();
+                            } else {
+                                $('#lk-utils-modal').modal('hide');
+                                toggleBackgroundVisible(false);
+                            }
+                        }),
+                        failure: function () {
+                            window.location.reload();
+                        }
+                    });
                 });
-            }, null, true);
+            }, null, true, isSessionInvalidBackgroundHideEnabled());
         }
         else {
             // fall back to using standard alert message if for some reason the jQuery modal isn't available
