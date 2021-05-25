@@ -304,7 +304,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             return 0;
         else
         {
-            getQueryTable().getAuditHandler().addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count);
+            AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count, auditType);
             return count;
         }
     }
@@ -508,7 +509,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
             String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-            getQueryTable().getAuditHandler().addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
+            getQueryTable().getAuditHandler(auditBehavior)
+                    .addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
         }
     }
 
