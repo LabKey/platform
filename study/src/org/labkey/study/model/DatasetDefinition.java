@@ -1298,6 +1298,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
             PHI maxContainedPhi = PHI.NotPHI;
+            if (getXmlAuditBehaviorType() == null) // allow XML to override
+                setAuditBehavior(AuditBehaviorType.SUMMARY); // but default to SUMMARY Issue 43200
 
             // ParticipantId
 
