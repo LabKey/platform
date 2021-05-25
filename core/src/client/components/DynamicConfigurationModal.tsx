@@ -166,7 +166,9 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                 server: fieldValues.servers,
                 principal: fieldValues.principalTemplate,
                 sasl: fieldValues.sasl,
-                readAttributes: fieldValues.readAttributes
+                readAttributes: fieldValues.readAttributes,
+                attributeSearchBase: fieldValues.attributeSearchBase,
+                attributeFilterTemplate: fieldValues.attributeFilterTemplate
             };
         }
 
