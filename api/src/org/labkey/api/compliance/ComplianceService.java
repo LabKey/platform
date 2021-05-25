@@ -92,7 +92,7 @@ public interface ComplianceService
 
     Pair<AttachmentParent, String> downloadSnapshot(Container container, User user, @NotNull SignedSnapshot snapshot);
 
-    JSONObject getServerSettings();
+    JSONObject getPageContextJson();
 
     class DefaultComplianceService implements ComplianceService
     {
@@ -169,7 +169,7 @@ public interface ComplianceService
         }
 
         @Override
-        public JSONObject getServerSettings()
+        public JSONObject getPageContextJson()
         {
             return null;
         }

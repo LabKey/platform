@@ -295,7 +295,7 @@ public class ApiModule extends CodeOnlyModule
         if (config != null)
             json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
 
-        JSONObject complianceSettings = ComplianceService.get().getServerSettings();
+        JSONObject complianceSettings = ComplianceService.get().getPageContextJson();
         if (complianceSettings != null)
             json.put("compliance", complianceSettings);
 
