@@ -167,7 +167,9 @@ LABKEY.WebSocket = new function ()
         }
         else {
             // fall back to using standard alert message if for some reason the jQuery modal isn't available
-            setTimeout(() => alert(message), 500);
+            setTimeout(function() {
+                alert(message);
+            }, 500);
         }
     }
 
