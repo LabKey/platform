@@ -1298,9 +1298,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
             PHI maxContainedPhi = PHI.NotPHI;
-            if (getXmlAuditBehaviorType() == null) // allow XML to override
-                setAuditBehavior(AuditBehaviorType.SUMMARY); // but default to SUMMARY Issue 43200
-
             // ParticipantId
 
             {
@@ -1610,7 +1607,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
 
         @Override
-        public AuditHandler getAuditHandler()
+        public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
         {
             return new DatasetAuditHandler();
         }
@@ -1619,9 +1616,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private class DatasetAuditHandler extends AbstractAuditHandler
     {
         @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
         {
-            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount);
+            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType);
         }
 
         @Override

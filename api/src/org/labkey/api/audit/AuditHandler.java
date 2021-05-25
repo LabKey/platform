@@ -30,7 +30,7 @@ import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 public interface AuditHandler
 {
-    void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount);
+    void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType);
 
     /* In the case of update the 'existingRows' is the 'before' version of the record. Caller is not expected to provide existingRows without rows. */
     void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action,

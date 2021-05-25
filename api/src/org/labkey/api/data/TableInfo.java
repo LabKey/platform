@@ -120,7 +120,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     class _DoNothingAuditHandler implements AuditHandler
     {
         @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
         {
         }
 
@@ -130,9 +130,9 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         }
     }
 
-    default AuditHandler getAuditHandler()
+    default AuditHandler getAuditHandler(@Nullable AuditBehaviorType auditBehaviorOverride)
     {
-        if (!supportsAuditTracking() || getAuditBehavior()==AuditBehaviorType.NONE)
+        if (!supportsAuditTracking() || auditBehaviorOverride == AuditBehaviorType.NONE || (auditBehaviorOverride == null && getAuditBehavior() == AuditBehaviorType.NONE))
             return new _DoNothingAuditHandler();
         return QueryService.get().getDefaultAuditHandler();
     }
