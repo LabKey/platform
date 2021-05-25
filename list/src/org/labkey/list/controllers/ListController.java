@@ -77,6 +77,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
@@ -729,11 +730,13 @@ public class ListController extends SpringActionController
     public class UploadListItemsAction extends AbstractQueryImportAction<ListDefinitionForm>
     {
         private ListDefinition _list;
+        private QueryUpdateService.InsertOption _insertOption;
 
         @Override
         protected void initRequest(ListDefinitionForm form) throws ServletException
         {
             _list = form.getList();
+            _insertOption = form.getInsertOption();
             setTarget(_list.getTable(getUser(), getContainer()));
         }
 
@@ -741,13 +744,14 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             initRequest(form);
+            setShowImportOptions(_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger);
             return getDefaultImportView(form, errors);
         }
 
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
-            int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
+            int count = _list.insertListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption == QueryUpdateService.InsertOption.MERGE);
             return count;
         }
 
