@@ -146,6 +146,7 @@ LABKEY.WebSocket = new function ()
                     // quick check to see if the user has re-logged in on another tab, making this session valid again
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
+                        timeout: 1000,
                         success: LABKEY.Utils.getCallbackWrapper(function(response) {
                             // if the user was a guest or if they logged in with another account (or haven't
                             // logged back in), then we reload the page
