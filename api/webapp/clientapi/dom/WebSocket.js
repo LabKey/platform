@@ -154,6 +154,7 @@ LABKEY.WebSocket = new function ()
                             } else {
                                 $('#lk-utils-modal').modal('hide');
                                 toggleBackgroundVisible(false);
+                                openWebsocket(); // re-establish the websocket connection for the new session
                             }
                         }),
                         failure: function () {
@@ -165,7 +166,7 @@ LABKEY.WebSocket = new function ()
         }
         else {
             // fall back to using standard alert message if for some reason the jQuery modal isn't available
-            alert(message);
+            setTimeout(() => alert(message), 500);
         }
     }
 
