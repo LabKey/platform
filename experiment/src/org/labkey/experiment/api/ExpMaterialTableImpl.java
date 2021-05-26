@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.collections4.ListUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
@@ -854,13 +855,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (null != ss)
             {
                 persist.setIndexFunction(lsids -> () ->
-                    ss.defaultTask().addRunnable(SearchService.PRIORITY.bulk, () ->
-                    {
-                        for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
+                    ListUtils.partition(lsids, 100).forEach(sublist ->
+                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
-                            ss.defaultTask().addRunnable(SearchService.PRIORITY.item, () -> expMaterial.index(null));
-                        }
-                    })
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
+                                expMaterial.index(ss.defaultTask());
+                        })
+                    )
                 );
             }
 

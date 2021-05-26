@@ -84,6 +84,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
@@ -780,7 +781,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             _formatter = DateTimeFormatter.ofPattern(pattern);
         }
 
-        public String getSequenceName(@Nullable Date date)
+        public Pair<String,Integer> getSequenceName(@Nullable Date date)
         {
             LocalDateTime ldt;
             if (date == null)
@@ -788,7 +789,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             else
                 ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
             String suffix = _formatter.format(ldt);
-            return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
+            // NOTE: it would make sense to use the dbsequence "id" feature here.
+            // e.g. instead of name=org.labkey.api.exp.api.ExpMaterial:DAILY:2021-05-25 id=0
+            // we could use name=org.labkey.api.exp.api.ExpMaterial:DAILY id=20210525
+            // however, that would require a fix up on upgrade.
+            return new Pair<>("org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix, 0);
         }
 
         public long next(Date date)
@@ -798,8 +803,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         public DbSequence getDbSequence(Date date)
         {
-            String seqName = getSequenceName(date);
-            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName, 0, 100);
+            Pair<String,Integer> seqName = getSequenceName(date);
+            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
             return seq;
         }
     }
