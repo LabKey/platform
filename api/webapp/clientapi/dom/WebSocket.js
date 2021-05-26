@@ -177,10 +177,8 @@ LABKEY.WebSocket = new function ()
 
     /** Add a general purpose listener for server events. */
     var addServerEventListener = function(event, cb) {
-        if (LABKEY.user.isSignedIn && 'WebSocket' in window) {
-            if (null === _websocket) {
-                openWebsocket();
-            }
+        if (LABKEY.user.isSignedIn) {
+            initWebSocket();
 
             var list = _callbacks[event] || [];
             list.push(cb);
@@ -188,11 +186,18 @@ LABKEY.WebSocket = new function ()
         }
     };
 
-    // initial call open the WebSocket to at least handle the logout and session timeout events
-    // other apps or code can register their own event listeners as well
-    openWebsocket();
+    // initial call will open the WebSocket to at least handle the logout and session timeout events
+    // other apps or code can register their own event listeners as well via addServerEventListener
+    var initWebSocket = function() {
+        if ('WebSocket' in window) {
+            if (null === _websocket) {
+                openWebsocket();
+            }
+        }
+    };
 
     return {
+        initWebSocket: initWebSocket,
         addServerEventListener: addServerEventListener
     };
 };
