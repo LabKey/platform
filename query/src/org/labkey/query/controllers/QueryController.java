@@ -363,6 +363,10 @@ public class QueryController extends SpringActionController
 
             // Extract the username, password, and container from the secure property store
             Map<String, String> singleConnectionMap = RemoteConnections.getRemoteConnection(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY, name, getContainer());
+            if (singleConnectionMap.isEmpty())
+            {
+                throw new NotFoundException("Remote connection not found: '" + name + "'");
+            }
             String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
             String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
             String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
