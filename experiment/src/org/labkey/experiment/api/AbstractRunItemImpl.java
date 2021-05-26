@@ -79,7 +79,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     public List<ExpRun> getSuccessorRuns()
     {
         if (null == _successorRunIdList)
-            throw new IllegalStateException("successorRunIdList not populated");
+            throw new IllegalStateException("successorRunIdList not populated for '" + this.getName() + "'");
         List<ExpRun> result = new ArrayList<>();
         for (Integer integer : _successorRunIdList)
         {

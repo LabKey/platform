@@ -3803,7 +3803,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
 
                 // Verify that collected dataset ids constitute linked datasets, and construct payload
-                for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
+                for (Dataset dataset : studyPublishService.getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
                 {
                     if (linkedDatasetsBySelectedRow.contains(dataset.getDatasetId()))
                     {

@@ -1399,6 +1399,7 @@ public abstract class Method
         postgresMethods.put("char_length",new PassthroughMethod("char_length",JdbcType.INTEGER,1,1));
         postgresMethods.put("character_length",new PassthroughMethod("character_length",JdbcType.INTEGER,1,1));
         postgresMethods.put("chr",new PassthroughMethod("chr",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         postgresMethods.put("decode",new PassthroughMethod("decode",JdbcType.VARCHAR,2,2));
         postgresMethods.put("encode",new PassthroughMethod("encode",JdbcType.VARCHAR,2,2));
         postgresMethods.put("initcap",new PassthroughMethod("initcap",JdbcType.VARCHAR,1,1));
@@ -1523,6 +1524,7 @@ public abstract class Method
         mssqlMethods.put("char", chr);
         mssqlMethods.put("chr", chr);   // postgres and oracle use 'chr' (see 15473)
         mssqlMethods.put("charindex",new PassthroughMethod("charindex",JdbcType.INTEGER,2,3));
+        mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference",new PassthroughMethod("difference",JdbcType.INTEGER,2,2));
         mssqlMethods.put("isnumeric",new PassthroughMethod("isnumeric",JdbcType.BOOLEAN,1,1));
         mssqlMethods.put("len",new PassthroughMethod("len",JdbcType.INTEGER,1,1));

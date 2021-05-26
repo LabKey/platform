@@ -21,10 +21,12 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -36,7 +38,7 @@ public interface MapDataIterator extends DataIterator
     boolean supportsGetMap();
     Map<String,Object> getMap();
 
-    static class MapDataIteratorImpl implements MapDataIterator, ScrollableDataIterator
+    class MapDataIteratorImpl implements MapDataIterator, ScrollableDataIterator
     {
         DataIterator _input;
         boolean _mutable;
@@ -46,6 +48,11 @@ public interface MapDataIterator extends DataIterator
 
         MapDataIteratorImpl(DataIterator in, boolean mutable)
         {
+            this(in, mutable, Set.of());
+        }
+
+        public MapDataIteratorImpl(DataIterator in, boolean mutable, Set<String> skip)
+        {
             _input = in;
             _mutable = mutable;
             Map map = new CaseInsensitiveHashMap<Integer>(in.getColumnCount()*2);
@@ -53,6 +60,8 @@ public interface MapDataIterator extends DataIterator
             for (int i=0 ; i<=in.getColumnCount() ; i++)
             {
                 String name = in.getColumnInfo(i).getName();
+                if (skip.contains(name))
+                    continue;
                 if (_findMap.containsKey(name))
                 {
                     LogManager.getLogger(MapDataIterator.class).warn("Map already has column named '" + name + "'");
