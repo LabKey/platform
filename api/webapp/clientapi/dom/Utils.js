@@ -61,8 +61,8 @@ LABKEY.Utils = new function(impl, $) {
 
         if (modal.length === 0) {
             $('body').append([
-                '<div id="lk-utils-modal" class="modal fade" role="dialog">',
-                '<div class="modal-dialog"><div class="modal-content"></div></div>',
+                '<div id="lk-utils-modal" class="modal fade in" role="dialog">',
+                    '<div class="modal-dialog"><div class="modal-content"></div></div>',
                 '</div>'
             ].join(''));
 
@@ -79,8 +79,8 @@ LABKEY.Utils = new function(impl, $) {
             html.push('<br><p>' + LABKEY.Utils.encodeHtml(msg) + '<br></p>');
         }
          html.push(
-                 '<div id="modal-fn-body"></div>',
-                 '</div>'
+             '<div id="modal-fn-body"></div>',
+             '</div>'
          );
 
         modal.find('.modal-content').html(html.join(''));
@@ -88,20 +88,23 @@ LABKEY.Utils = new function(impl, $) {
             fn.apply(this, args);
         }
 
-        // Some views may not be able to access the modal.modal() method
-        if (!LABKEY.Utils.isFunction(modal.modal)) {
-            console.warn('LABKEY.Utils.displayModal() unable to display modal.');
-            console.warn(title, msg);
-            return;
-        }
-
         // prevent the modal from being closed by clicking outside the dialog
-        if (disableBackdrop) {
+        if (disableBackdrop && LABKEY.Utils.isFunction(modal.modal)) {
             modal.modal({backdrop: 'static'});
         }
 
-        modal.modal('show');
+        showModal('lk-utils-modal')
     };
+
+    var showModal = function(divId) {
+        var modal = $('#' + divId);
+        if (LABKEY.Utils.isFunction(modal.modal)) {
+            modal.modal('show');
+        } else {
+            $('body').append('<div id="lk-utils-modal-backdrop" class="fade modal-backdrop in"></div>');
+            modal.show();
+        }
+    }
 
     var getNextRow = function(rowElem, targetTagName)
     {
