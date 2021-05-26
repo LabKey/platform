@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -269,6 +270,7 @@ public class NameGenerator
         private final boolean _incrementSampleCounts;
 
         private final Map<String, Object> _batchExpressionContext;
+        private Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction;
         private final Map<String, Integer> _newNames = new CaseInsensitiveHashMap<>();
 
         private int _rowNumber = 0;
@@ -336,8 +338,12 @@ public class NameGenerator
             Map<String, Long> sampleCounts = null;
             if (_incrementSampleCounts && !_exprHasSampleCounterFormats)
             {
-                Date now = (Date)_batchExpressionContext.get("now");
-                sampleCounts = SampleTypeService.get().incrementSampleCounts(now);
+                if (null == getSampleCountsFunction)
+                {
+                    Date now = (Date)_batchExpressionContext.get("now");
+                    getSampleCountsFunction = SampleTypeService.get().getSampleCountsFunction(now);
+                }
+                sampleCounts = getSampleCountsFunction.apply(null);
             }
 
             // If a name is already provided, just use it as is

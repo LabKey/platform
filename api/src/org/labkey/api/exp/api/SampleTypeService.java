@@ -34,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public interface SampleTypeService
 {
@@ -122,8 +123,25 @@ public interface SampleTypeService
     /**
      * Increment and get the sample counters for the given date, or the current date if no date is supplied.
      * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
+     * <p>
+     * In a loop getSampleCountsFunction() is preferred.
      */
-    Map<String, Long> incrementSampleCounts(@Nullable Date counterDate);
+    default Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
+    {
+        return getSampleCountsFunction(counterDate).apply(null);
+    }
+
+    /**
+     * Increment and get the sample counters for the given date, or the current date if no date is supplied.
+     * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
+     *
+     * You can pass in a Map<> to reuse, or just pass in null each time. e.g.
+     *      once:
+     *          fn = getSampleCountsFunction(date);
+     *      then:
+     *          counts = fn.apply(null);
+     */
+    Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate);
 
     void deleteSampleType(int rowId, Container c, User user) throws ExperimentException;
 
