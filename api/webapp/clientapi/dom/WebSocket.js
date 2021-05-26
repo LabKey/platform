@@ -38,10 +38,10 @@ LABKEY.WebSocket = new function ()
     function openWebsocket() {
         _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
         _websocket.onmessage = websocketOnMessage;
-        _websocket.onclose = websocketOnclose;
+        _websocket.onclose = websocketOnClose;
     }
 
-    function websocketOnMessage (evt) {
+    function websocketOnMessage(evt) {
         var json = JSON.parse(evt.data);
         var event = json.event;
 
@@ -49,7 +49,7 @@ LABKEY.WebSocket = new function ()
         list.forEach(function(cb){cb(json)});
     }
 
-    function websocketOnclose(evt) {
+    function websocketOnClose(evt) {
         if (evt.wasClean) {
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
@@ -85,6 +85,9 @@ LABKEY.WebSocket = new function ()
                             // just logged in. See issue 39337
                             if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
                                 displayModal("Session Expired", 'Your session has expired. Please reload the page to continue.');
+                            } else {
+                                hideModal();
+                                openWebsocket(); // re-establish the websocket connection for the new session
                             }
                         }),
                         failure: function () {
@@ -109,27 +112,39 @@ LABKEY.WebSocket = new function ()
         return false;
     }
 
-    function toggleBackgroundVisible(shouldHide) {
+    function toggleBackgroundVisible(shouldBlur) {
         if (isSessionInvalidBackgroundHideEnabled()) {
-            var divClsSelectors = ['.lk-header-ct', '.lk-body-ct', '.footer-block', '.x4-window', '.x-window'];
+            var divClsSelectors = ['.lk-header-ct', '.lk-body-ct', '.footer-block', '.x4-window', '.x-window', "div[role='dialog'] > .modal"];
             for (var i = 0; i < divClsSelectors.length; i++) {
                 var divEls = $(divClsSelectors[i]);
                 if (divEls) {
-                    if (shouldHide) {
-                        divEls.addClass('content-blur');
+                    if (shouldBlur) {
+                        divEls.addClass('lk-content-blur');
                     }
                     else {
-                        divEls.removeClass('content-blur');
+                        divEls.removeClass('lk-content-blur');
                     }
                 }
             }
         }
     }
 
+    function hideModal() {
+        toggleBackgroundVisible(false);
+
+        var modal = $('#lk-utils-modal');
+        if (LABKEY.Utils.isFunction(modal.modal)) {
+            modal.modal('hide');
+        } else {
+            $('#lk-utils-modal-backdrop').remove();
+            modal.hide();
+        }
+    }
+
     function displayModal(title, message) {
         toggleBackgroundVisible(true);
 
-        if (LABKEY.Utils && LABKEY.Utils.modal) {
+        if (LABKEY.Utils.modal) {
             LABKEY.Utils.modal(title, null, function() {
                 $("#modal-fn-body").html([
                     '<div style="margin-bottom: 40px;">',
@@ -140,30 +155,17 @@ LABKEY.WebSocket = new function ()
 
                 // make sure that this modal is in front of any other dialogs (Ext, Ext4, etc.) on the page
                 $('#lk-utils-modal').css('z-index', 99999);
+                setTimeout(function() {
+                    $('#lk-utils-modal-backdrop').css('z-index', 99998);
+                }, 100);
 
                 // add the on click handler for the reload page button
                 $('#lk-websocket-reload').on('click', function() {
-                    // quick check to see if the user has re-logged in on another tab, making this session valid again
-                    LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
-                        timeout: 1000,
-                        success: LABKEY.Utils.getCallbackWrapper(function(response) {
-                            // if the user was a guest or if they logged in with another account (or haven't
-                            // logged back in), then we reload the page
-                            if (response === undefined || LABKEY.user.id !== response.id || LABKEY.user.isGuest) {
-                                window.location.reload();
-                            } else {
-                                $('#lk-utils-modal').modal('hide');
-                                toggleBackgroundVisible(false);
-                                openWebsocket(); // re-establish the websocket connection for the new session
-                            }
-                        }),
-                        failure: function () {
-                            window.location.reload();
-                        }
-                    });
+                    window.location.reload();
                 });
-            }, null, true, isSessionInvalidBackgroundHideEnabled());
+
+                openWebsocket(); // re-establish the websocket connection for the new guest user session
+            }, null, true, true);
         }
         else {
             // fall back to using standard alert message if for some reason the jQuery modal isn't available
