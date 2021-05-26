@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -527,16 +528,20 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClass.getTinfo();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null)
-            .setIndexFunction( lsids -> () ->
-            {
-                List<ExpDataImpl> expDatas = ExperimentServiceImpl.get().getExpDatasByLSID(lsids);
-                if (expDatas != null)
-                {
-                    for (ExpDataImpl expData : expDatas)
-                        expData.index(null);
-                }
-            });
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null);
+        SearchService ss = SearchService.get();
+        if (null != ss)
+        {
+            step0.setIndexFunction(lsids -> () ->
+                ListUtils.partition(lsids, 100).forEach(sublist ->
+                    ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                    {
+                        for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
+                            expData.index(ss.defaultTask());
+                    })
+                )
+            );
+        }
         return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
     }
 
