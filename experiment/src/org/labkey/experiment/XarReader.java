@@ -1473,7 +1473,7 @@ public class XarReader extends AbstractXarImporter
                 if (dataTable != null)
                 {
                     Map<String, Object> row = BeanObjectFactory.Registry.getFactory(Data.class).toMap(data, null);
-                    dataTable.getAuditHandler().addAuditEvent(getUser(), getContainer(), dataTable, _auditBehaviorType, null, QueryService.AuditAction.INSERT, Collections.singletonList(row), null);
+                    dataTable.getAuditHandler(_auditBehaviorType).addAuditEvent(getUser(), getContainer(), dataTable, _auditBehaviorType, null, QueryService.AuditAction.INSERT, Collections.singletonList(row), null);
                 }
             }
 
