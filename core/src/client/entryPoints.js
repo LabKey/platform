@@ -68,12 +68,6 @@ module.exports = {
         name: 'conceptFilter',
         title: 'Concept Filter',
         generateLib: true,
-        path: './src/client/ConceptFilter',
-    },{
-        name: 'conceptInput',
-        title: 'Input or Update Ontology Concept lookup column',
-        // permission: 'editor',
-        generateLib: true,
-        path: './src/client/ConceptInput'
+        path: './src/client/ConceptFilter'
     }]
 };
