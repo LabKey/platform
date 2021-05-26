@@ -17,8 +17,14 @@ package org.labkey.api.dataiterator;
 
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.ConfigurationException;
+import org.labkey.remoteapi.query.Filter;
 
+import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +52,7 @@ public class CopyConfig
     protected String _sourceTimestampColumnName = null;
     protected String _sourceRunColumnName = null;
     protected List<String> _sourceColumns = null;
+    protected List<Filter> _sourceFilters = null;
     protected Integer _sourceTimeout = null;
     protected boolean _useSource = true;
     protected boolean _useFilterStrategy = true;
@@ -54,7 +61,6 @@ public class CopyConfig
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
     protected boolean _bulkLoad;
-    protected int _transactionSize;
     protected int _batchSize;
     protected String _batchColumn = null;
     protected TargetOptions _targetOptions = TargetOptions.append;
@@ -102,6 +108,27 @@ public class CopyConfig
             else _targetString = getTargetSchema().toString() + "." + getTargetQuery();
         }
         return _targetString;
+    }
+
+    public void addSourceFilters(SimpleFilter filter)
+    {
+        if (getSourceFilters() != null)
+        {
+            for (Filter sourceFilter : getSourceFilters())
+            {
+                Filter.Operator operator = sourceFilter.getOperator();
+                if (operator == null)
+                {
+                    operator = Filter.Operator.EQUAL;
+                }
+                CompareType type = CompareType.getByURLKey(operator.getUrlKey());
+                if (type == null)
+                {
+                    throw new ConfigurationException("Unsupported filter type: " + sourceFilter.getOperator());
+                }
+                filter.addCondition(FieldKey.fromString(sourceFilter.getColumnName()), sourceFilter.getValue(), type);
+            }
+        }
     }
 
     public enum TargetOptions
@@ -215,6 +242,16 @@ public class CopyConfig
     public void setSourceContainerFilter(String sourceContainerFilter)
     {
         _sourceContainerFilter = sourceContainerFilter;
+    }
+
+    public List<Filter> getSourceFilters()
+    {
+        return _sourceFilters;
+    }
+
+    public void setSourceFilters(List<Filter> sourceFilters)
+    {
+        _sourceFilters = sourceFilters;
     }
 
     public boolean isBulkLoad()
@@ -397,6 +434,7 @@ public class CopyConfig
         _saveState = saveState;
     }
 
+    @NotNull
     public Set<String> getAlternateKeys()
     {
         return Collections.unmodifiableSet(_alternateKeys);

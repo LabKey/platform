@@ -51,7 +51,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
 {
     public ExpProtocolTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, new ExpProtocolImpl(new Protocol()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocol(), schema, cf);
         setTitleColumn("Name");
     }
 
@@ -228,12 +228,6 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
             }
 
             return null;
-        }
-
-        @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        {
-            throw new UnsupportedOperationException();
         }
 
         @Override

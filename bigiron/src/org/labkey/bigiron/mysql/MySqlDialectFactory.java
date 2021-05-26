@@ -16,12 +16,16 @@
 
 package org.labkey.bigiron.mysql;
 
+import com.mysql.cj.jdbc.AbandonedConnectionCleanupThread;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.VersionNumber;
 
 import java.sql.DatabaseMetaData;
@@ -41,6 +45,33 @@ public class MySqlDialectFactory implements SqlDialectFactory
     private String getProductName()
     {
         return "MySQL";
+    }
+
+    public MySqlDialectFactory()
+    {
+        // MySQL JDBC driver should not be present in <tomcat>/lib
+        DbScope.registerForbiddenTomcatFilenamePredicate(filename->filename.equalsIgnoreCase("mysql.jar"));
+
+        // Terminate MySQL AbandonedConnectionCleanupThread at shutdown to avoid Tomcat logging IllegalStateException, Issue 42117
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "MySQL JDBC driver clean up";
+            }
+
+            @Override
+            public void shutdownPre()
+            {
+                AbandonedConnectionCleanupThread.uncheckedShutdown();
+            }
+
+            @Override
+            public void shutdownStarted()
+            {
+            }
+        });
     }
 
     @Override

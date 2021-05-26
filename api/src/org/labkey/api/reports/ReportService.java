@@ -111,6 +111,7 @@ public interface ReportService
      */
     @Deprecated
     int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
+
     @Deprecated
     default int saveReport(ContainerUser context, String key, Report report)
     {
@@ -197,15 +198,6 @@ public interface ReportService
     void validateReportPermissions(ContainerUser context, Report report);
 
     boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
-
-    /**
-     * Convert legacy chart view report to new JS report, this method (and all related conversion code) can be deleted
-     * in version : 21.2
-     * @param report
-     * @return
-     */
-    @Deprecated
-    Report createConvertedChartViewReportInstance(Report report, ContainerUser context);
 
     interface DesignerInfo
     {

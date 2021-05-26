@@ -339,16 +339,20 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             // if visit based time chart, set range type to Automatic and hide range options
             var isVisitBased = measures.x.time == 'visit';
             this.setRangeOptionVisible(!isVisitBased);
-            if (isVisitBased)
+            if (isVisitBased) {
                 this.setScaleRangeType('automatic');
+            }
 
-            if (isVisitBased)
-                this.defaultAxisLabel = 'Visit';
-            else
+            if (isVisitBased) {
+                this.defaultAxisLabel = measures.x.visitDisplayLabel || 'Visit';
+            }
+            else {
                 this.defaultAxisLabel = measures.x.interval + (Ext4.isObject(measures.x.zeroDateCol) ? ' Since ' + measures.x.zeroDateCol.label : '');
+            }
 
-            if (!this.userEditedLabel)
+            if (!this.userEditedLabel) {
                 this.resetAxisLabel();
+            }
         }
         else
         {

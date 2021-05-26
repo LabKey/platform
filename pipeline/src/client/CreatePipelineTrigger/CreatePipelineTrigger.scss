@@ -1,0 +1,26 @@
+@import "@labkey/components-scss";
+
+.pipeline-trigger-buttons {
+  margin-top: 16px;
+}
+.pipeline-trigger-buttons .btn {
+  margin-right: 8px;
+}
+.custom-config__button {
+  color: #555;
+  cursor: pointer;
+  margin-bottom: 16px;
+
+  & .fa {
+    font-size: 18px;
+    margin-right: 8px;
+  }
+}
+.auto-form-field .form-control,
+.custom-config .form-control {
+  width: 100%;
+}
+.custom-config,
+.custom-parameters {
+  margin-top: 16px;
+}

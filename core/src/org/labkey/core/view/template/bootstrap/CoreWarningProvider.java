@@ -16,13 +16,13 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -53,7 +53,7 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     @Override
-    public void addStaticWarnings(Warnings warnings)
+    public void addStaticWarnings(@NotNull Warnings warnings)
     {
         // Warn if running on a deprecated database version or some other non-fatal database configuration issue
         DbScope labkeyScope = DbScope.getLabKeyScope();
@@ -69,40 +69,36 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     @Override
-    public void addDynamicWarnings(Warnings warnings, ViewContext context)
+    public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
     {
-        if (context != null && context.getRequest() != null)
+        if (context.getUser().hasSiteAdminPermission())
         {
-            User user = context.getUser();
-            if (null != user && user.hasSiteAdminPermission())
+            getUserRequestedAdminOnlyModeWarnings(warnings);
+
+            getModuleErrorWarnings(warnings, context);
+
+            getProbableLeakCountWarnings(warnings);
+
+            //upgrade message--show to admins
+            HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
+
+            if (null == upgradeMessage && SHOW_ALL_WARNINGS)
             {
-                getUserRequestedAdminOnlyModeWarnings(warnings);
-
-                getModuleErrorWarnings(warnings, context);
-
-                getProbableLeakCountWarnings(warnings);
-
-                //upgrade message--show to admins
-                HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
-
-                if (null == upgradeMessage && SHOW_ALL_WARNINGS)
-                {
-                    // Mock upgrade message for testing
-                    upgradeMessage = HtmlStringBuilder.of("You really ought to upgrade this server! ").append(new LinkBuilder("Click here!").href(AppProps.getInstance().getHomePageActionURL()).clearClasses()).getHtmlString();
-                }
-
-                if (null != upgradeMessage)
-                {
-                    warnings.add(upgradeMessage);
-                }
+                // Mock upgrade message for testing
+                upgradeMessage = HtmlStringBuilder.of("You really ought to upgrade this server! ").append(new LinkBuilder("Click here!").href(AppProps.getInstance().getHomePageActionURL()).clearClasses()).getHtmlString();
             }
 
-            if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+            if (null != upgradeMessage)
             {
-                String message = AppProps.getInstance().getRibbonMessageHtml();
-                message = ModuleHtmlView.replaceTokens(message, context);
-                warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
+                warnings.add(upgradeMessage);
             }
+        }
+
+        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessageHtml()))
+        {
+            String message = AppProps.getInstance().getRibbonMessageHtml();
+            message = ModuleHtmlView.replaceTokens(message, context);
+            warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
         }
     }
 
@@ -117,7 +113,7 @@ public class CoreWarningProvider implements WarningProvider
             HtmlStringBuilder html = HtmlStringBuilder.of("The maximum amount of heap memory allocated to LabKey Server is too low (less than 2GB). LabKey recommends ");
             html.append(new HelpTopic("configWebappMemory").getSimpleLinkHtml("setting the maximum heap to at least 2 gigabytes (-Xmx2G) on test/evaluation servers and at least 4 gigabytes (-Xmx4G) on production servers"));
             html.append(".");
-            warnings.add(html.getHtmlString());
+            warnings.add(html);
         }
     }
 
@@ -191,7 +187,7 @@ public class CoreWarningProvider implements WarningProvider
                 int count = ConnectionWrapper.getActiveConnectionCount();
                 HtmlStringBuilder html = HtmlStringBuilder.of(new LinkBuilder(count + " DB connection" + (count == 1 ? "" : "s") + " in use.").href(PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()).clearClasses());
                 html.append(" " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".");
-                warnings.add(html.getHtmlString());
+                warnings.add(html);
             }
         }
     }
@@ -202,7 +198,7 @@ public class CoreWarningProvider implements WarningProvider
         HtmlStringBuilder html = HtmlStringBuilder.of(prefix + " ");
         html.append(new LinkBuilder(linkText).href(url).clearClasses());
         html.append(".");
-        warnings.add(html.getHtmlString());
+        warnings.add(html);
     }
 
     // Standard warning with a link to a LabKey documentation page
@@ -212,6 +208,6 @@ public class CoreWarningProvider implements WarningProvider
         HelpTopic topic = new HelpTopic(helpTopic);
         html.append(topic.getSimpleLinkHtml(helpText));
         html.append(" for more information.");
-        warnings.add(html.getHtmlString());
+        warnings.add(html);
     }
 }

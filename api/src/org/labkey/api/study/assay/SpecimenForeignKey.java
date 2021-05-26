@@ -280,9 +280,9 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         DetailsURL detailsURL;
         if (targetStudy != null)
-            detailsURL = DetailsURL.fromString("study-samples/sampleEventsRedirect.view?id=${" + parent.getFieldKey() + "}&targetStudy=" + targetStudy.getId() );
+            detailsURL = DetailsURL.fromString("specimen-specimenEventsRedirect.view?id=${" + parent.getFieldKey() + "}&targetStudy=" + targetStudy.getId() );
         else
-            detailsURL = DetailsURL.fromString("study-samples/sampleEventsRedirect.view?id=${" + parent.getFieldKey() + "}&targetStudy=${" + targetStudyFK + "}");
+            detailsURL = DetailsURL.fromString("specimen-specimenEventsRedirect.view?id=${" + parent.getFieldKey() + "}&targetStudy=${" + targetStudyFK + "}");
         return detailsURL;
     }
 
@@ -434,7 +434,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
             if (targetStudy != null)
             {
-                // We're in the middle of a copy to study, so ignore what the user selected as the target when they uploaded
+                // We're in the middle of a link to study, so ignore what the user selected as the target when they uploaded
                 sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
                 sql.add(targetStudy.getId());
             }

@@ -51,6 +51,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.data.CompareType.CONTAINS_NONE_OF;
+import static org.labkey.api.data.CompareType.CONTAINS_ONE_OF;
+import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.data.CompareType.NOT_IN;
+
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
  * User: arauch
@@ -153,11 +158,6 @@ public class SimpleFilter implements Filter
         public boolean isNegated()
         {
             return _negated;
-        }
-
-        public void setIncludeNull(boolean includeNull)
-        {
-            _includeNull = includeNull;
         }
 
         public Object[] getParamVals()
@@ -268,6 +268,12 @@ public class SimpleFilter implements Filter
         public abstract String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
 
         public abstract SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect);
+
+        // most filters don't need tableAlias to disambiguate columns, this can be overriden if you have nested select statements (need to override toSQLFragment(Map,SqlDialect) as well)
+        public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            return toSQLFragment(columnMap, dialect);
+        }
 
         @Override
         public boolean equals(Object o)
@@ -567,9 +573,12 @@ public class SimpleFilter implements Filter
 
     public static abstract class MultiValuedFilterClause extends CompareType.AbstractCompareClause
     {
+        public static final String SEPARATOR = ";";
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
-        public MultiValuedFilterClause(@NotNull FieldKey fieldKey, Collection<?> params)
+        private CompareType _comparison;
+
+        public MultiValuedFilterClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
         {
             super(fieldKey);
             params = new ArrayList<>(params); // possibly immutable
@@ -585,6 +594,14 @@ public class SimpleFilter implements Filter
             }
 
             _paramVals = params.toArray();
+            _comparison = comparison;
+            _negated = negated;
+        }
+
+        @Override
+        public CompareType getCompareType()
+        {
+            return _comparison;
         }
 
         @Override
@@ -592,19 +609,7 @@ public class SimpleFilter implements Filter
         {
             if (getParamVals() != null && getParamVals().length > 0)
             {
-                StringBuilder sb = new StringBuilder();
-                String separator = "";
-                for (Object value : getParamVals())
-                {
-                    sb.append(separator);
-                    separator = ";";
-                    sb.append(value == null ? "" : value.toString());
-                }
-                if (_includeNull)
-                {
-                    sb.append(separator);
-                }
-                return sb.toString();
+                return CompareType.toCollectionURLParamValue(Arrays.asList(getParamVals()), SEPARATOR, _includeNull);
             }
             return null;
         }
@@ -612,7 +617,6 @@ public class SimpleFilter implements Filter
 
     public static class InClause extends MultiValuedFilterClause
     {
-        public static final String SEPARATOR = ";";
 
         public InClause(FieldKey fieldKey, Collection<?> params)
         {
@@ -626,21 +630,14 @@ public class SimpleFilter implements Filter
 
         public InClause(FieldKey fieldKey, Collection<?> params, boolean urlClause, boolean negated)
         {
-            super(fieldKey, params);
+            super(fieldKey, negated ? NOT_IN : IN, params, negated);
 
             _needsTypeConversion = urlClause;
-            _negated = negated;
         }
 
         public InClause(FieldKey fieldKey, String namedSet, boolean urlClause)
         {
             this(fieldKey, QueryService.get().getNamedSet(namedSet), urlClause, false);
-        }
-
-        @Override
-        public CompareType getCompareType()
-        {
-            return _negated ? CompareType.NOT_IN : CompareType.IN;
         }
 
         @Override
@@ -842,16 +839,9 @@ public class SimpleFilter implements Filter
 
         public ContainsOneOfClause(FieldKey fieldKey, Collection params, boolean urlClause, boolean negated)
         {
-            super(fieldKey, params);
+            super(fieldKey, negated ? CONTAINS_NONE_OF : CONTAINS_ONE_OF, params, negated);
 
             _needsTypeConversion = urlClause;
-            _negated = negated;
-        }
-
-        @Override
-        public CompareType getCompareType()
-        {
-            return _negated ? CompareType.CONTAINS_NONE_OF : CompareType.CONTAINS_ONE_OF;
         }
 
         @Override
@@ -860,7 +850,7 @@ public class SimpleFilter implements Filter
             sb.append(formatter.format(getFieldKey()));
             sb.append(" ").append(isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF (");
 
-            if(getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
+            if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
             {
                 sb.append("too many values to display)");
                 return;
@@ -896,7 +886,6 @@ public class SimpleFilter implements Filter
 
             return col.getName() + (isNegated() ? " NOT IN" : " IN ") + " (NULL)";  // Empty list case; "WHERE column IN (NULL)" should always be false
         }
-
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
@@ -953,6 +942,7 @@ public class SimpleFilter implements Filter
 
             return oc;
         }
+
         public void addInValue(Object... values)
         {
             addInValues(Arrays.asList(values));
@@ -1286,28 +1276,41 @@ public class SimpleFilter implements Filter
         return false;
     }
 
-    @Override
-    public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos)
-    {
-        if (null == _clauses || 0 == _clauses.size())
-        {
-            return new SQLFragment();
-        }
-        return getSQLFragment(tableInfo.getSqlDialect(), Table.createColumnMap(tableInfo, colInfos));
-    }
 
     //
     // Filter
     //
 
-
     public SQLFragment getSQLFragment(SqlDialect dialect)
     {
-        return getSQLFragment(dialect, Collections.emptyMap());
+        return getSQLFragment(dialect, null, Collections.emptyMap());
     }
 
+    /* tableAlias can be null if all column can be accessed by col.getAlias().  When generating a SELECT with JOIN and WHERE,
+
+     * columns may come from different tables so tableAlias should be null. e.g
+     *  SELECT ... FROM Table1 a JOIN Table2 b {SimpleFilter: WHERE}
+     * NOTE: SimpleFilter was created for getSelectSQL() which does not do this. So this is not really the intended usage, however,
+     * various subclasses of FilteredTable do this.
+     *
+     * When all columns are in the same virtual relation e.g.
+     *  SELECT ... FROM Table x {SimpleFilter: WHERE ...}
+     *  SELECT ... FROM (SELECT FROM JOIN ..) x {SimpleFilter: WHERE ...}
+     * Then pass in tableAlias="x", this removes some opportunities for column name ambiguity when generating the SQL clause.
+     */
+    public SQLFragment getSQLFragment(TableInfo t, @Nullable String tableAlias)
+    {
+        if (null == _clauses || 0 == _clauses.size())
+            return new SQLFragment();
+
+        return getSQLFragment(t.getSqlDialect(), tableAlias, Table.createColumnMap(t, t.getColumns()));
+    }
+
+
+    /* See note for getSQLFragment(TableInfo, String) */
+
     @Override
-    public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap)
+    public SQLFragment getSQLFragment(SqlDialect dialect, @Nullable String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
         SQLFragment ret = new SQLFragment();
 
@@ -1322,7 +1325,7 @@ public class SimpleFilter implements Filter
             ret.append("(");
             try
             {
-                ret.append(fc.toSQLFragment(columnMap, dialect));
+                ret.append(fc.toSQLFragment(tableAlias, columnMap, dialect));
             }
             catch (RuntimeSQLException e)
             {
@@ -1346,16 +1349,9 @@ public class SimpleFilter implements Filter
 
     public List<Object> getWhereParams(TableInfo tableInfo)
     {
-        return getWhereParams(tableInfo, tableInfo.getColumns());
-    }
-
-
-    public List<Object> getWhereParams(TableInfo tableInfo, List<ColumnInfo> colInfos)
-    {
-        SQLFragment frag = getSQLFragment(tableInfo, colInfos);
+        SQLFragment frag = getSQLFragment(tableInfo, null);
         return frag.getParams();
     }
-
 
     @Override
     public Set<FieldKey> getWhereParamFieldKeys()
@@ -1606,20 +1602,44 @@ public class SimpleFilter implements Filter
         {
             SimpleFilter filter = new SimpleFilter();
             filter.addClause(new CompareClause(FieldKey.fromParts("Field1"), CompareType.EQUAL, 1));
-            filter.addClause(new ContainsOneOfClause(FieldKey.fromParts("Field2"), Arrays.asList("x", "y"), true));
 
-            FilterClause containsClause = new CompareType.ContainsClause(FieldKey.fromParts("Field3"), "o_O");
+            // verify SQL '_' wildcard escaped with '!' in generated SQL
+            var containsOneOf = new ContainsOneOfClause(FieldKey.fromParts("Field2"), Arrays.asList("x", "u_u"), true);
+            assertArrayEquals(new Object[] { "x", "u_u" }, containsOneOf.getParamVals());
+            assertEquals("x;u_u", containsOneOf.toURLParam("query").getValue());
+            var containsOneOfFrag = containsOneOf.getLabKeySQLWhereClause(Collections.emptyMap());
+            assertEquals("(LOWER(\"Field2\") LIKE LOWER('%x%')  ESCAPE '!')" +
+                        " OR (LOWER(\"Field2\") LIKE LOWER('%u!_u%')  ESCAPE '!')",
+                    containsOneOfFrag);
+            filter.addClause(containsOneOf);
+
+            // verify filter containing multi-value separator ';' use json encoded filter value
+            var containsOneOfEscaping = new ContainsOneOfClause(FieldKey.fromParts("Field3"), Arrays.asList("a", "ev;l"), true);
+            assertArrayEquals(new Object[] { "a", "ev;l" }, containsOneOfEscaping.getParamVals());
+            final String containsOneOfJsonValue = "{json:[\"a\",\"ev;l\"]}";
+            assertEquals(containsOneOfJsonValue, containsOneOfEscaping.toURLParam("query").getValue());
+            filter.addClause(containsOneOfEscaping);
+
+            FilterClause containsClause = new CompareType.ContainsClause(FieldKey.fromParts("Field4"), "o_O");
             // Issue 37524: QueryWebPart with CONTAINS filter and value that includes an underscore will generate incorrect filter on the "select all" url
             // LikeClause escapes SQL wildcards in the the parameter value, but it shouldn't ent up on the URL
             assertArrayEquals(new Object[] { "o!_O" }, containsClause.getParamVals());
             assertEquals("o_O", containsClause.toURLParam("query").getValue());
             filter.addClause(containsClause);
 
-            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By&query.Field3%7Econtains=o_O", filter.toQueryString("query"));
+            assertEquals("query.Field1%7Eeq=1" +
+                    "&query.Field2%7Econtainsoneof=x%3Bu_u" +
+                    "&query.Field3%7Econtainsoneof=" + PageFlowUtil.encode(containsOneOfJsonValue) +
+                    "&query.Field4%7Econtains=o_O",
+                    filter.toQueryString("query"));
             URLHelper url = new URLHelper("http://labkey.com");
 
             filter.applyToURL(url, "query");
-            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By&query.Field3%7Econtains=o_O", url.getQueryString());
+            assertEquals("query.Field1%7Eeq=1" +
+                    "&query.Field2%7Econtainsoneof=x%3Bu_u" +
+                    "&query.Field3%7Econtainsoneof=" + PageFlowUtil.encode(containsOneOfJsonValue) +
+                    "&query.Field4%7Econtains=o_O",
+                    url.getQueryString());
         }
     }
 
@@ -1671,6 +1691,9 @@ public class SimpleFilter implements Filter
             // Include null parameter
             assertEquals(new Pair<>("query.Foo~in", "Bar;Blip;"), new InClause(fieldKey, Arrays.asList("Bar", "Blip", "")).toURLParam("query."));
             assertEquals(new Pair<>("query.Foo~notin", "Bar;Blip;"), new InClause(fieldKey, Arrays.asList("Bar", "Blip", ""), true, true).toURLParam("query."));
+
+            // verify filter containing multi-value separator ';' use json encoded filter value
+            assertEquals(new Pair<>("query.Foo~in", "{json:[\"bar\",\"bl;ip\",null]}"), new InClause(fieldKey, Arrays.asList("bar", "bl;ip", "")).toURLParam("query."));
         }
 
         @Test
@@ -1819,6 +1842,9 @@ public class SimpleFilter implements Filter
             assertEquals(Pair.of("query.Foo~between", "1,2"), new CompareType.BetweenClause(fieldKey, "1", "2", false).toURLParam("query."));
             assertEquals(Pair.of("query.Foo~notbetween", "-1,2.2"), new CompareType.BetweenClause(fieldKey, -1, 2.2, true).toURLParam("query."));
             assertEquals(Pair.of("query.Foo~between", "A,Z"), new CompareType.BetweenClause(fieldKey, "A", "Z", false).toURLParam("query."));
+            // verify filter containing multi-value separator ',' use json encoded filter value
+            assertEquals(Pair.of("query.Foo~between", "{json:[\"a,b,c\",\"Z\"]}"),
+                    new CompareType.BetweenClause(fieldKey, "a,b,c", "Z", false).toURLParam("query."));
         }
     }
 }

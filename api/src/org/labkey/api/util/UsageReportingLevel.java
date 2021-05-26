@@ -50,7 +50,7 @@ import java.util.TreeMap;
  * User: jeckels
  * Date: Apr 26, 2006
  */
-public enum UsageReportingLevel
+public enum UsageReportingLevel implements SafeToRenderEnum
 {
     NONE
     {
@@ -72,8 +72,21 @@ public enum UsageReportingLevel
             return null;
         }
     },
-    /** Captures only very basic user and container count information */
-    LOW
+
+    /**
+     * Captures basic User info, container count information and Site Settings info to help identify the organization running the install,
+     * and more detailed stats about how many items exist or actions have been invoked.
+     *
+     * May capture site-wide usage information, including counts for certain data types, such as assay designs,
+     * reports of a specific type, or lists. May also capture the number of times a certain feature was used in a
+     * given time window, such as since the server was last restarted.
+     *
+     * Per policy, this should not capture the names of specific objects like container names, dataset names, etc.
+     *
+     * Also per policy, this should not capture metrics at a container or other similar granularity. For example,
+     * metrics should not break down the number of lists defined in each folder (even if that folder was de-identified).
+     */
+    ON
     {
         @Override
         protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
@@ -97,32 +110,6 @@ public enum UsageReportingLevel
             metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
             metrics.put("mostRecentLogin", DateUtil.formatDateISO8601(UserManager.getMostRecentLogin()));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>)metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-            putModulesMetrics(modulesMap);
-            putModulesBuildInfo(modulesMap);
-        }
-    },
-    /**
-     * Captures Site Settings info to help identify the organization running the install, and more detailed stats
-     * about how many items exist or actions have been invoked.
-     *
-     * May capture site-wide usage information, including counts for certain data types, such as assay designs,
-     * reports of a specific type, or lists. May also capture the number of times a certain feature was used in a
-     * given time window, such as since the server was last restarted.
-     *
-     * Per policy, this should not capture the names of specific objects like container names, dataset names, etc.
-     *
-     * Also per policy, this should not capture metrics at a container or other similar granularity. For example,
-     * metrics should not break down the number of lists defined in each folder (even if that folder was deidentified).
-     */
-    MEDIUM
-    {
-        @Override
-        protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
-        {
-            LOW.addExtraParams(report, metrics);
-
             LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
             report.addParam("logoLink", laf.getLogoHref());
             report.addParam("organizationName", laf.getCompanyName());
@@ -135,18 +122,11 @@ public enum UsageReportingLevel
 
             putModuleControllerHits(modulesMap);
             putModulesMetrics(modulesMap);
+            putModulesBuildInfo(modulesMap);
+
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
 
             report.addHostName();
-        }
-    },
-
-    DIAGNOSTICS
-    {
-        @Override
-        protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
-        {
-            // no op
         }
     };
 
@@ -209,7 +189,13 @@ public enum UsageReportingLevel
             }
             report.addServerSessionParams();
             Map<String, Object> additionalMetrics = new LinkedHashMap<>();
+
+            // Track the time to compute the metrics
+            long startTime = System.currentTimeMillis();
+
             level.addExtraParams(report, additionalMetrics);
+
+            additionalMetrics.put("timeToCalculateMetrics", System.currentTimeMillis() - startTime);
             report.setMetrics(additionalMetrics);
             return report;
         }
@@ -252,7 +238,7 @@ public enum UsageReportingLevel
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            Map<String, Map<String, Object>> allRegisteredMetrics = svc.getModuleUsageMetrics(this);
+            Map<String, Map<String, Object>> allRegisteredMetrics = svc.getModuleUsageMetrics();
             if (null != allRegisteredMetrics)
             {
                 allRegisteredMetrics.forEach((module, metrics) ->

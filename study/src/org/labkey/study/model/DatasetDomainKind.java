@@ -29,6 +29,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
@@ -56,8 +57,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.query.DatasetFactory;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -122,7 +124,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
             new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
             new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER),
-            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
+            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR, 256)
         ));
 
 
@@ -139,7 +142,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             new PropertyStorageSpec(MODIFIED, JdbcType.TIMESTAMP),
             new PropertyStorageSpec(CREATED_BY, JdbcType.INTEGER),
             new PropertyStorageSpec(MODIFIED_BY, JdbcType.INTEGER),
-            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP)
+            new PropertyStorageSpec(DATE, JdbcType.TIMESTAMP),
+            new PropertyStorageSpec(DataIntegrationService.Columns.TransformImportHash.getColumnName(), JdbcType.VARCHAR, 256)
         ));
 
         DATASPACE_PROPERTY_INDICES = new HashSet<>(Arrays.asList(
@@ -443,9 +447,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 }
             }
 
-            DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, showByDefault,
-                    label, description, cohortId, tag, visitDatePropertyName, dataSharing);
+            DatasetDefinition def = StudyPublishManager.getInstance().createDataset(user, new DatasetDefinition.Builder(name)
+                    .setStudy(study)
+                    .setKeyPropertyName(keyPropertyName)
+                    .setDatasetId(datasetId)
+                    .setDemographicData(demographics)
+                    .setCategoryId(categoryId)
+                    .setUseTimeKeyField(useTimeKeyField)
+                    .setKeyManagementType(managementType)
+                    .setShowByDefault(showByDefault)
+                    .setLabel(label)
+                    .setDescription(description)
+                    .setCohortId(cohortId)
+                    .setTag(tag)
+                    .setVisitDatePropertyName(visitDatePropertyName)
+                    .setDataSharing(dataSharing));
 
             if (def.getDomain() != null)
             {
@@ -464,7 +480,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     for (GWTPropertyDescriptor pd : properties)
                     {
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
-                            throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                        {
+                            if (arguments.isStrictFieldValidation())
+                                throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                        }
                         else
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
@@ -724,7 +743,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == dsd)
             return null;
 
-        return new DatasetTableImpl(schema, null, dsd);
+        return DatasetFactory.createDataset(schema, null, dsd);
     }
 
     @Override

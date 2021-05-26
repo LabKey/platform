@@ -22,14 +22,14 @@ package org.labkey.api.assay.actions;
  */
 public class DataDetailsForm extends ProtocolIdForm
 {
-    private Object _dataRowId;
+    private int _dataRowId;
 
-    public Object getDataRowId()
+    public int getDataRowId()
     {
         return _dataRowId;
     }
 
-    public void setDataRowId(Object dataRowId)
+    public void setDataRowId(int dataRowId)
     {
         _dataRowId = dataRowId;
     }

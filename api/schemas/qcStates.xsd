@@ -37,7 +37,7 @@
                 <xs:element name="assayDataDefault" type="xs:string" minOccurs="0">
                     <xs:annotation>
                         <xs:documentation>
-                            Specifies the default QC state for data copied from assays.
+                            Specifies the default QC state for data linked to a study.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>

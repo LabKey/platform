@@ -30,6 +30,7 @@ import org.apache.logging.log4j.util.PropertiesUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.gwt.client.util.PropertyUtil;
@@ -50,6 +51,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.remoteapi.query.Filter;
 import org.quartz.CronExpression;
 
 import java.io.BufferedReader;
@@ -204,7 +206,7 @@ abstract public class PipelineJob extends Job implements Serializable
             return getClass().getName() + "." + name();
         }
     }
-    
+
     /**
      * Implements a runnable to complete a part of the
      * processing associated with a particular <code>PipelineJob</code>. This is often the execution of an external tool,
@@ -227,8 +229,11 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
         /**
-         * Do the work of the task.
+         * Do the work of the task. The task should not set the status of the job to complete - this will be handled
+         * by the caller.
          * @return the files used as inputs and generated as outputs, and the steps that operated on them
+         * @throws PipelineJobException if something went wrong during the exception of the job. The caller will
+         * handle setting the job's status to ERROR
          */
         @NotNull
         public abstract RecordedActionSet run() throws PipelineJobException;
@@ -279,13 +284,14 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     /** Although having a null provider is legal, it is recommended that one be used
-     * so that it can respond to events as needed */ 
+     * so that it can respond to events as needed */
     public PipelineJob(@Nullable String provider, ViewBackgroundInfo info, @NotNull PipeRoot root)
     {
         _info = info;
         _provider = provider;
         _jobGUID = GUID.makeGUID();
         _activeTaskStatus = TaskStatus.waiting;
+
 
         _pipeRoot = root;
 
@@ -340,7 +346,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (errors > 0)
             _activeTaskStatus = TaskStatus.error;
-        
+
         _errors = errors;
     }
 
@@ -379,7 +385,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         return setActiveTaskId(activeTaskId, true);
     }
-    
+
     public boolean setActiveTaskId(@Nullable TaskId activeTaskId, boolean updateStatus)
     {
         if (activeTaskId == null || !activeTaskId.equals(_activeTaskId))
@@ -412,7 +418,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (getActiveTaskId() == null)
             return null;
-        
+
         return PipelineJobService.get().getTaskFactory(getActiveTaskId());
     }
 
@@ -440,7 +446,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public File getLogFile()
     {
-        Path logFilePath =  getLogFilePath();
+        Path logFilePath = getLogFilePath();
         if (null != logFilePath && !FileUtil.hasCloudScheme(logFilePath))
             return logFilePath.toFile();
         return null;
@@ -453,6 +459,25 @@ abstract public class PipelineJob extends Job implements Serializable
 
         return FileUtil.hasCloudScheme(_logFilePathName) ? FileUtil.stringToPath(getContainer(), _logFilePathName) : new File(FileUtil.createUri(_logFilePathName)).toPath();
     }
+
+    /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
+    public static File findUniqueLogFile(File primaryFile, String baseName)
+    {
+        // need to look in current and archived dirs for any unused log file names (issue 20987)
+        File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
+        File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
+        File fileLogArchived = FT_LOG.newFile(archivedDir, baseName);
+
+        int index = 1;
+        while (NetworkDrive.exists(fileLog) || NetworkDrive.exists(fileLogArchived))
+        {
+            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index));
+            fileLogArchived = FT_LOG.newFile(archivedDir, baseName + "." + (index++));
+        }
+
+        return fileLog;
+    }
+
 
     public LocalDirectory getLocalDirectory()
     {
@@ -574,7 +599,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (_settingStatus)
             return true;
-        
+
         _settingStatus = true;
         try
         {
@@ -651,7 +676,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public boolean setQueue(PipelineQueue queue, String initialState)
     {
         restoreQueue(queue);
-        
+
         // Initialize the task pipeline
         TaskPipeline taskPipeline = getTaskPipeline();
         if (taskPipeline != null)
@@ -724,7 +749,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         if (inter.isInstance(this))
             return (T) this;
-        
+
         throw new UnsupportedOperationException("Job type " + getClass().getName() +
                 " does not implement " + inter.getName());
     }
@@ -868,7 +893,7 @@ abstract public class PipelineJob extends Job implements Serializable
             if (i == -1)
             {
                 error("Active task " + _activeTaskId + " not found in task pipeline.");
-                return false;                
+                return false;
             }
         }
 
@@ -881,7 +906,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 // See if the job has already completed.
                 if (_activeTaskId == null)
                     return false;
-                
+
                 return findRunnableTask(progression, i + 1);
 
             case error:
@@ -900,7 +925,7 @@ abstract public class PipelineJob extends Job implements Serializable
                 // Run auto-retry, and retry if appropriate.
                 autoRetry();
                 return false;
-            
+
             case running:
             case cancelled:
             case cancelling:
@@ -1013,6 +1038,10 @@ abstract public class PipelineJob extends Job implements Serializable
         return false;
     }
 
+    /**
+     * Subclasses that override this method instead of defining a task pipeline are responsible for setting the job's
+     * status at the end of their execution to either COMPLETE or ERROR
+     */
     @Override
     public void run()
     {
@@ -1150,7 +1179,7 @@ abstract public class PipelineJob extends Job implements Serializable
             error(e.getMessage(), e);
         }
     }
-    
+
     private void join()
     {
         try
@@ -1181,7 +1210,7 @@ abstract public class PipelineJob extends Job implements Serializable
             throw new PipelineJobException("Could not create the " + outputFile + " file.", e);
         }
     }
-    
+
     public void runSubProcess(ProcessBuilder pb, File dirWork) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, null, 0, false);
@@ -1668,7 +1697,7 @@ abstract public class PipelineJob extends Job implements Serializable
     /////////////////////////////////////////////////////////////////////////
     // Scheduling interface
     //      TODO: Figure out how these apply to the Enterprise Pipeline
-    
+
     protected boolean canInterrupt()
     {
         return false;
@@ -1717,7 +1746,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     /////////////////////////////////////////////////////////////////////////
     // JobRunner.Job interface
-    
+
     @Override
     public Object get() throws InterruptedException, ExecutionException
     {
@@ -1776,6 +1805,20 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             _queue.done(this);
         }
+
+        PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
+        if (notificationProvider != null)
+            notificationProvider.onJobDone(this);
+    }
+
+    protected String getJobNotificationProvider()
+    {
+        return null;
+    }
+
+    protected String getNotificationType(PipelineJob.TaskStatus status)
+    {
+        return status.getNotificationType();
     }
 
     public static String serializeJob(PipelineJob job)
@@ -1844,6 +1887,7 @@ abstract public class PipelineJob extends Job implements Serializable
         module.addDeserializer(URI.class, new URISerialization.Deserializer());
         module.addSerializer(File.class, new FileSerialization.Serializer());
         module.addDeserializer(File.class, new FileSerialization.Deserializer());
+        module.addDeserializer(Filter.class, new FilterDeserializer());
 
         mapper.registerModule(module);
         return mapper;

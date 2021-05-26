@@ -64,7 +64,7 @@ public class AssayRunType extends ExperimentRunType
         viewSelectedButton.setActionType(ActionButton.Action.POST);
         bar.add(viewSelectedButton);
 
-        // Hack - this check is to prevent us from showing Copy-To-Study for Illumina or other prototype assays that
+        // Hack - this check is to prevent us from showing Link to Study for Illumina or other prototype assays that
         // don't implement any results import yet
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         if (provider != null)
@@ -76,16 +76,16 @@ public class AssayRunType extends ExperimentRunType
 
                 if (null != urls)
                 {
-                    ActionURL copyURL = urls.getCopyToStudyURL(context.getContainer(), _protocol);
-                    copyURL.addParameter("runIds", true);
+                    ActionURL linkURL = urls.getLinkToStudyURL(context.getContainer(), _protocol);
+                    linkURL.addParameter("runIds", true);
                     if (table.getContainerFilter() != null && table.getContainerFilter().getType() != null)
-                        copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
-                    ActionButton copySelectedButton = new ActionButton(copyURL, "Copy to Study");
-                    copySelectedButton.setDisplayPermission(InsertPermission.class);
-                    copySelectedButton.setURL(copyURL);
-                    copySelectedButton.setRequiresSelection(true);
-                    copySelectedButton.setActionType(ActionButton.Action.POST);
-                    bar.add(copySelectedButton);
+                        linkURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());
+                    ActionButton linkSelectedButton = new ActionButton(linkURL, "Link to Study");
+                    linkSelectedButton.setDisplayPermission(InsertPermission.class);
+                    linkSelectedButton.setURL(linkURL);
+                    linkSelectedButton.setRequiresSelection(true);
+                    linkSelectedButton.setActionType(ActionButton.Action.POST);
+                    bar.add(linkSelectedButton);
                 }
             }
         }

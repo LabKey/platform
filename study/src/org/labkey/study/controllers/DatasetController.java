@@ -26,15 +26,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableViewForm;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -137,32 +133,6 @@ public class DatasetController extends BaseStudyController
             if (newRecord != null)
             {
                 newData = DatasetAuditProvider.decodeFromDataMap(newRecord);
-                String lsid = newData.get("lsid");
-                if (lsid != null)
-                {
-                    // If we have a current record, display it
-                    Dataset ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
-                    if (null != ds)
-                    {
-                        TableInfo datasetTable = ds.getTableInfo(getUser());
-
-                        TableViewForm objForm = new TableViewForm(datasetTable);
-                        objForm.set("lsid", lsid);
-                        objForm.set(DatasetDefinition.DATASETKEY, datasetId);
-
-                        DetailsView objView = new DetailsView(objForm);
-
-                        view.addView(objView);
-                    }
-                }
-                else
-                {
-                    view.addView(new NoRecordView());
-                }
-            }
-            else
-            {
-                view.addView(new NoRecordView());
             }
 
             if (oldRecord != null)
@@ -188,6 +158,10 @@ public class DatasetController extends BaseStudyController
                 }
                 view.addView(new AuditChangesView(comment, oldData, newData));
             }
+            else
+            {
+                view.addView(new NoRecordView());
+            }
 
             return view;
         }
@@ -197,7 +171,7 @@ public class DatasetController extends BaseStudyController
             @Override
             protected void renderInternal(Object model, PrintWriter out)
             {
-                out.write("<p>No current record found</p>");
+                out.write("<p>No additional details recorded</p>");
             }
         }
 
@@ -217,7 +191,7 @@ public class DatasetController extends BaseStudyController
         @Override
         public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "bulkDatasetDelete.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/bulkDatasetDelete.jsp", form, errors);
         }
 
         @Override

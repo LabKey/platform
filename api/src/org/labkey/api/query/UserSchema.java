@@ -50,7 +50,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
-import org.springframework.core.convert.ConversionException;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -171,12 +170,18 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return getTable(name, cf, true, false);
     }
 
+    @Nullable
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
+    {
+        return getTable(name, cf, includeExtraMetadata, forWrite, false);
+    }
+
     /**
      * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is no ContainerFilter
      * @param forWrite true means do not return a cached version
      */
     @Nullable
-    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
+    public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, boolean skipSuggestedColumns)
     {
         TableInfo table = null;
         String cacheKey = cacheKey(name,cf,includeExtraMetadata,forWrite);
@@ -195,7 +200,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         }
         else if (o instanceof QueryDefinition)
         {
-            table = ((QueryDefinition)o).getTable(this, errors, true);
+            table = ((QueryDefinition)o).getTable(this, errors, true, skipSuggestedColumns);
             // throw if there are any non-warning errors
             for (QueryException ex : errors)
             {
@@ -413,8 +418,9 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return true;
     }
 
+    // TODO: rename to createQueryDefForTable
     public QueryDefinition getQueryDefForTable(String name)
-    {                                                
+    {
         return QueryService.get().createQueryDefForTable(this, name);
     }
 

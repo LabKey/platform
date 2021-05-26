@@ -15,14 +15,16 @@
  */
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 
-public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>
+public final class HtmlString implements SafeToRender, DOM.Renderable, Comparable<HtmlString>, Serializable
 {
     // Helpful constants for convenience (and efficiency)
     public static final HtmlString EMPTY_STRING = HtmlString.of("");
@@ -110,6 +112,7 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
         _s = null==s ? "" : s;
     }
 
+    @JsonValue
     @Override
     public String toString()
     {

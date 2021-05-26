@@ -17,6 +17,7 @@
 package org.labkey.list;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -24,9 +25,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
@@ -39,7 +43,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
@@ -55,6 +58,7 @@ import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.ListWriter;
+import org.labkey.list.model.PicklistDomainKind;
 import org.labkey.list.model.VarcharListDomainKind;
 import org.labkey.list.view.ListItemType;
 import org.labkey.list.view.ListsWebPart;
@@ -79,7 +83,7 @@ public class ListModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.002;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -93,10 +97,10 @@ public class ListModule extends SpringModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        List<WebPartFactory> result = new ArrayList<>();
-        result.add(ListsWebPart.FACTORY);
-        result.add(new SingleListWebPartFactory());
-        return result;
+        return List.of(
+            ListsWebPart.FACTORY,
+            new SingleListWebPartFactory()
+        );
     }
 
     @Override
@@ -109,8 +113,10 @@ public class ListModule extends SpringModule
 
         PropertyService.get().registerDomainKind(new IntegerListDomainKind());
         PropertyService.get().registerDomainKind(new VarcharListDomainKind());
+        PropertyService.get().registerDomainKind(new PicklistDomainKind());
 
         RoleManager.registerPermission(new DesignListPermission());
+        RoleManager.registerPermission(new ManagePicklistsPermission());
 
         AttachmentService.get().registerAttachmentType(ListItemType.get());
     }
@@ -150,9 +156,12 @@ public class ListModule extends SpringModule
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, getName(), () -> {
+            svc.registerUsageMetrics(getName(), () -> {
                 Map<String, Object> metric = new HashMap<>();
-                metric.put("listCount", new SqlSelector(DbSchema.get("exp", DbSchemaType.Module), "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
+                DbSchema dbSchema = DbSchema.get("exp", DbSchemaType.Module);
+                metric.put("listCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list").getObject(Long.class));
+                metric.put("publicPicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PublicPicklist.toString() + "'").getObject(Long.class));
+                metric.put("privatePicklistCount", new SqlSelector(dbSchema, "SELECT COUNT(*) FROM exp.list WHERE category ='" + ListDefinition.Category.PrivatePicklist.toString() + "'").getObject(Long.class));
                 return metric;
             });
         }
@@ -205,5 +214,11 @@ public class ListModule extends SpringModule
             ListManager.TestCase.class,
             ListWriter.TestCase.class
         );
+    }
+
+    @Override
+    public @Nullable UpgradeCode getUpgradeCode()
+    {
+        return new ListManager.ListUpgradeCode();
     }
 }

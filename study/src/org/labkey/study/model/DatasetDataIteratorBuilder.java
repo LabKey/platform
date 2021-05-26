@@ -17,7 +17,6 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -34,6 +33,7 @@ import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -47,6 +47,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 
 import java.text.DecimalFormat;
@@ -60,32 +61,35 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-class DatasetDataIteratorBuilder implements DataIteratorBuilder
+public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 {
-    private DatasetDefinition _datasetDefinition;
-    User user;
+    final private DatasetDefinition _datasetDefinition;
+    final User user;
     boolean needsQC;
     QCState defaultQC;
     List<String> lsids = null;
     DatasetDefinition.CheckForDuplicates checkDuplicates = DatasetDefinition.CheckForDuplicates.never;
     boolean isForUpdate = false;
     boolean useImportAliases = false;
-    Logger logger = null;
-    StudyImportContext _studyImportContext;
-
+    Map<String, Map<Object, Object>>  _tableIdMapMap;    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
 
     DataIteratorBuilder builder = null;
-    DataIterator input = null;
 
     ValidationException setupError = null;
 
-    DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
         this.needsQC = qc;
         this.defaultQC = defaultQC;
-        _studyImportContext = studyImportContext;
+        this._tableIdMapMap = null == studyImportContext ? Map.of() : studyImportContext.getTableIdMapMap();
+    }
+
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user)
+    {
+        _datasetDefinition = datasetDefinition;
+        this.user = user;
     }
 
     /**
@@ -110,19 +114,9 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         checkDuplicates = check;
     }
 
-    void setInput(DataIteratorBuilder b)
+    public void setInput(DataIteratorBuilder b)
     {
         builder = b;
-    }
-
-    void setInput(DataIterator it)
-    {
-        input = it;
-    }
-
-    void setLogger(Logger logger)
-    {
-        this.logger = logger;
     }
 
     void setKeyList(List<String> lsids)
@@ -141,8 +135,13 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         Map<Enum, Object> contextConfig = context.getConfigParameters();
-        if (null == contextConfig)
-            contextConfig = Collections.emptyMap();
+
+        if (null != contextConfig.get(DatasetUpdateService.Config.CheckForDuplicates))
+            checkDuplicates = (DatasetDefinition.CheckForDuplicates)contextConfig.get(DatasetUpdateService.Config.CheckForDuplicates);
+        if (null != contextConfig.get(DatasetUpdateService.Config.DefaultQCState))
+            defaultQC = (QCState)contextConfig.get(DatasetUpdateService.Config.DefaultQCState);
+        if (null != contextConfig.get(DatasetUpdateService.Config.StudyImportMaps))
+            _tableIdMapMap = (Map)contextConfig.get(DatasetUpdateService.Config.StudyImportMaps);
 
         // might want to make allow importManagedKey an explicit option, for now allow for GUID
         boolean allowImportManagedKey = isForUpdate || _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID;
@@ -159,10 +158,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         ColumnInfo containerColumn = table.getColumn("container");
         ColumnInfo visitdateColumn = table.getColumn("date");
 
-        if (null == input && null != builder)
-            input = builder.getDataIterator(context);
-
-        input = LoggingDataIterator.wrap(input);
+        DataIterator input = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
         DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, input, context, user);
 
@@ -181,7 +177,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
             {
                 ((BaseColumnInfo)inputColumn).setPropertyURI(match.getPropertyURI());
 
-                if (match == lsidColumn || match == seqnumColumn)
+                if (match == lsidColumn || match == seqnumColumn || DatasetDomainKind._KEY.equals(match.getName()))
                     continue;
 
                 // We usually ignore incoming containerColumn.  However, if we're in a dataspace study
@@ -202,29 +198,46 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                     continue;
                 }
 
+                if (match == subjectCol)
+                {
+                    try
+                    {
+                        // translate the incoming participant column
+                        // do a conversion for PTID aliasing
+                        it.translatePtid(in, user);
+                        continue;
+                    }
+                    catch (ValidationException e)
+                    {
+                        setupError(e.getMessage());
+                        return it;
+                    }
+                }
+
                 int out;
                 if (DefaultStudyDesignWriter.isColumnNumericForeignKeyToDataspaceTable(match.getFk(), true))
                 {
                     // Use rowId mapping tables or extra column if necessary to map FKs
                     FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
-                    Map<Object, Object> dataspaceTableIdMap = Collections.emptyMap();
-                    if (null != _studyImportContext && null != match.getFk())
+                    Map<Object, Object> dataspaceTableIdMap = null;
+                    if (null != match.getFk())
                     {
                         String lookupTableName = match.getFk().getLookupTableName();
-                        dataspaceTableIdMap = _studyImportContext.getTableIdMap(lookupTableName);
+                        dataspaceTableIdMap = _tableIdMapMap.get(lookupTableName);
                     }
+                    if (null == dataspaceTableIdMap)
+                        dataspaceTableIdMap = Collections.emptyMap();
                     out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
                             dataspaceTableIdMap);
                 }
                 else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None)
                 {
                     // usually we let DataIterator handle convert, but we need to convert for consistent _key/lsid generation
-                    out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
+                    out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null, null != match.getMvColumnName());
                 }
-                else if (match == keyColumn && _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID)
+                else if (match.getPropertyType() == PropertyType.FILE_LINK)
                 {
-                    // make sure guid is not null (12884)
-                    out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
+                    out = it.addFileColumn(match.getName(), in);
                 }
                 else
                 {
@@ -252,19 +265,8 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         Integer indexContainer = outputMap.get(containerColumn);
         Integer indexReplace = outputMap.get("replace");
 
-        // do a conversion for PTID aliasing
-        Integer translatedIndexPTID = indexPTID;
-        try
-        {
-            translatedIndexPTID = it.translatePtid(indexPTIDInput, user);
-        }
-        catch (ValidationException e)
-        {
-            context.getErrors().addRowError(e);
-        }
-
         // For now, just specify null for sequence num index... we'll add it below
-        it.setSpecialOutputColumns(translatedIndexPTID, null, indexVisitDate, indexKeyProperty, indexContainer);
+        it.setSpecialOutputColumns(indexPTID, null, indexVisitDate, indexKeyProperty, indexContainer);
         it.setTimepointType(timetype);
 
         /* NOTE: these columns must be added in dependency order
@@ -350,7 +352,12 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         if (null != indexKeyProperty)
         {
-            it.indexKeyPropertyOutput = it.addAliasColumn("_key", indexKeyProperty, JdbcType.VARCHAR);
+            // indexKeyProperty is the index of the column matched to column _datasetDefinition.getKeyPropertyName(), or is a managed key
+            // it.indexKeyPropertyOutput is the index of column with name=DatasetDomainKind._KEY (alias of column indexKeyProperty)
+            // CONSIDER: this column is inserted twice, because the _key column is needed for is copied into the exp.datasets for the index (participantid, sequencenum, _key)
+            // Since we now actually generate the index per materialized table, we could try to avoid this duplication
+            assert null == keyColumnName || it.getColumnInfo(indexKeyProperty).getName().equals(keyColumnName);
+            it.indexKeyPropertyOutput = it.addAliasColumn(DatasetDomainKind._KEY, indexKeyProperty, JdbcType.VARCHAR);
         }
 
         //
@@ -372,7 +379,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         // QCSTATE
         //
 
-        if (needsQC)
+        if (needsQC == Boolean.TRUE)
         {
             Integer indexInputQCState = findColumnInMap(inputMap, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
             Integer indexInputQCText = inputMap.get(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
@@ -414,12 +421,12 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             Integer indexVisit = timetype.isVisitBased() ? it.indexSequenceNumOutput : indexVisitDate;
             // no point if required columns are missing
-            if (null != translatedIndexPTID && null != indexVisit)
+            if (null != indexPTID && null != indexVisit)
             {
                 ScrollableDataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                 _datasetDefinition.checkForDuplicates(scrollable, indexLSID,
-                        translatedIndexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
-                        context, logger,
+                        indexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
+                        context, null,
                         checkDuplicates);
                 scrollable.beforeFirst();
                 ret = scrollable;
@@ -586,6 +593,12 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return addColumn(qcCol, qcCall);
         }
 
+        int addFileColumn(String name, int index)
+        {
+            var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
+            return addColumn(col, new FileColumn(_datasetDefinition.getContainer(), name, index, "datasetdata"));
+        }
+
     //        int addSequenceNumFromDateColumn()
     //        {
     //            return addColumn(new BaseColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
@@ -609,7 +622,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new BaseColumnInfo("ParticipantId", JdbcType.VARCHAR);
+            ColumnInfo col = new BaseColumnInfo(_datasetDefinition.getStudy().getSubjectColumnName(), JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);

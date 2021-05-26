@@ -47,6 +47,10 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
 {
     private static final Logger LOG = LogManager.getLogger(FolderImportJob.class);
 
+    public static final String IMPORT_COMPLETED_NOTIFICATION = FolderImportJob.class.getName() + "." + PipelineJob.TaskStatus.complete.name();
+    public static final String IMPORT_CANCELLED_NOTIFICATION = FolderImportJob.class.getName() + "." + PipelineJob.TaskStatus.cancelled.name();
+    public static final String IMPORT_ERROR_NOTIFICATION = FolderImportJob.class.getName() + "." + PipelineJob.TaskStatus.error.name();
+
     private final FolderImportContext _ctx;
     private final VirtualFile _root;
     private final String _originalFilename;
@@ -110,5 +114,17 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
     public String getDescription()
     {
         return "Folder import";
+    }
+
+    @Override
+    protected String getNotificationType(PipelineJob.TaskStatus status)
+    {
+        return switch (status)
+                {
+                    case complete -> IMPORT_COMPLETED_NOTIFICATION;
+                    case error -> IMPORT_ERROR_NOTIFICATION;
+                    case cancelled -> IMPORT_CANCELLED_NOTIFICATION;
+                    default -> status.getNotificationType();
+                };
     }
 }

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
@@ -31,6 +32,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -85,7 +87,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -115,6 +116,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         DataTransformer<ProviderType> transformer = new DefaultDataTransformer<>();
         return transformer.transformAndValidate(context, run);
     }
+    @Override
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
+    {
+        return saveExperimentRun(context, batchId, false);
+    }
 
     /**
      * Create and save an experiment run synchronously or asynchronously in a background job depending upon the assay design.
@@ -124,7 +130,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @return Pair of batch and run that were inserted.  ExpBatch will not be null, but ExpRun may be null when inserting the run async.
      */
     @Override
-    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId, boolean forceAsync) throws ExperimentException, ValidationException
     {
         ExpExperiment exp = null;
         if (batchId != null)
@@ -139,7 +145,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         // Check if assay protocol is configured to import in the background.
         // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
-        boolean importInBackground = provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView();
+        boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
         if (!importInBackground)
         {
             File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
@@ -187,20 +193,23 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 // Choose another file as the primary
                 primaryFile = context.getUploadedData().entrySet().iterator().next().getValue();
             }
+            AssayRunAsyncContext asyncContext = context.getProvider().createRunAsyncContext(context);
             final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(
-                    context.getProvider().createRunAsyncContext(context),
+                    asyncContext,
                     info,
                     batch,
                     forceSaveBatchProps,
                     PipelineService.get().getPipelineRootSetting(context.getContainer()),
                     primaryFile);
 
+            context.setPipelineJobGUID(pipelineJob.getJobGUID());
+
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
             ExperimentService.get().getSchema().getScope().addCommitTask(() -> {
                 try
                 {
-                    PipelineService.get().queueJob(pipelineJob);
+                    PipelineService.get().queueJob(pipelineJob, asyncContext.getJobNotificationProvider());
                 }
                 catch (PipelineValidationException e)
                 {
@@ -254,9 +263,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
         }
 
-        addInputMaterials(context, inputMaterials, resolverType);
+        // TODO: Share these RemapCache and materialCache instances with AbstractAssayTsvDataHandler.checkData and ExpressionMatrixDataHandler.importFile
+        // Cache of resolved alternate lookup keys -> rowId
+        final RemapCache cache = new RemapCache(true);
+        // Cache of rowId -> ExpMaterial
+        final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
+
+        addInputMaterials(context, inputMaterials, resolverType, cache, materialCache);
         addInputDatas(context, inputDatas, resolverType);
-        addOutputMaterials(context, outputMaterials, resolverType);
+        addOutputMaterials(context, outputMaterials, resolverType, cache, materialCache);
         addOutputDatas(context, inputDatas, outputDatas, resolverType);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
@@ -376,9 +391,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (provInputsProperty != null)
             {
                 ProvenanceService pvs = ProvenanceService.get();
-                if (pvs == null)
-                    throw new ExperimentException("Provenance service not available");
-
                 Set<String> runInputLSIDs = null;
                 if (provInputsProperty instanceof String)
                 {
@@ -529,10 +541,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     // See also AbstractAssayTsvDataHandler.resolveSampleNames
-    protected void addInputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addInputMaterials(AssayRunUploadContext<ProviderType> context,
+                                     Map<ExpMaterial, String> inputMaterials,
+                                     ParticipantVisitResolverType resolverType,
+                                     @NotNull RemapCache cache,
+                                     @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ExperimentException, ValidationException
     {
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
-        addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers);
+        addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers, cache, materialCache);
 
         // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
@@ -556,14 +573,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             String value = entry.getValue();
             if (pt.getJdbcType().isText())
             {
-                addMaterialByName(context, inputMaterials, value, role, searchContainers, st);
+                addMaterialByName(context, inputMaterials, value, role, searchContainers, st, cache, materialCache);
             }
             else if (pt.getJdbcType().isInteger())
             {
                 try
                 {
                     int sampleRowId = Integer.parseInt(value);
-                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, st);
+                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, st, materialCache);
                 }
                 catch (NumberFormatException ex)
                 {
@@ -676,11 +693,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (file != null)
         {
             data = ExperimentService.get().getExpDataByURL(file, c);
+            if (data != null)
+                LOG.debug("found existing exp.data for file, rowId=" + data.getRowId() + ", datafileurl=" + data.getDataFileUrl());
         }
         if (!reuseExistingDatas && data != null && data.getRun() != null)
         {
             // There's an existing data, but it's already marked as being created by another run, so create a new one
             // for the same path so the new run claim it as its own
+            LOG.debug("data is already owned by another run, so create a new one. run=" + data.getRun().getName());
             data = null;
         }
         if (data == null)
@@ -688,6 +708,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType == null)
                 dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
+            LOG.debug("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
             data = ExperimentService.get().createData(c, dataType, name);
             data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
@@ -700,21 +721,34 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType != null && !dataType.matches(new Lsid(data.getLSID())))
             {
                 // Reset its LSID so that it's the correct type
-                data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
+                String newLsid = ExperimentService.get().generateGuidLSID(c, dataType);
+                LOG.debug("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
+                data.setLSID(newLsid);
             }
         }
         return data;
     }
 
-    protected void addOutputMaterials(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> outputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addOutputMaterials(AssayRunUploadContext<ProviderType> context,
+                                      Map<ExpMaterial, String> outputMaterials,
+                                      ParticipantVisitResolverType resolverType,
+                                      @NotNull RemapCache cache,
+                                      @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ExperimentException, ValidationException
     {
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
-        addMaterials(context, outputMaterials, context.getOutputMaterials(), searchContainers);
+        addMaterials(context, outputMaterials, context.getOutputMaterials(), searchContainers, cache, materialCache);
     }
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpMaterial objects
-    protected void addMaterials(AssayRunUploadContext<ProviderType> context, @NotNull Map<ExpMaterial, String> resolved, @NotNull Map<?, String> unresolved, @NotNull Set<Container> searchContainers) throws ExperimentException
+    protected void addMaterials(AssayRunUploadContext<ProviderType> context,
+                                @NotNull Map<ExpMaterial, String> resolved,
+                                @NotNull Map<?, String> unresolved,
+                                @NotNull Set<Container> searchContainers,
+                                @NotNull RemapCache cache,
+                                @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ExperimentException, ValidationException
     {
         for (Map.Entry<?, String> entry : unresolved.entrySet())
         {
@@ -729,40 +763,32 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             else if (o instanceof Integer)
             {
-                addMaterialById(context, resolved, (Integer)o, role, searchContainers, null);
+                addMaterialById(context, resolved, (Integer)o, role, searchContainers, null, materialCache);
             }
             else if (o instanceof String)
             {
-                addMaterialByName(context, resolved, (String)o, role, searchContainers, null);
+                addMaterialByName(context, resolved, (String)o, role, searchContainers, null, cache, materialCache);
             }
             else
-                throw new ExperimentException("Unable to resolve sample: " + String.valueOf(o));
+                throw new ExperimentException("Unable to resolve sample: " + o);
         }
     }
 
-    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, String sampleName, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType st) throws ExperimentException
+    protected void addMaterialByName(AssayRunUploadContext<ProviderType> context,
+                                     Map<ExpMaterial, String> resolved,
+                                     String sampleName,
+                                     String role,
+                                     @NotNull Set<Container> searchContainers,
+                                     @Nullable ExpSampleType st,
+                                     @NotNull RemapCache cache,
+                                     @NotNull Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException
     {
-        // First, attempt to resolve by LSID
-        ExpMaterial material = ExperimentService.get().getExpMaterial(sampleName);
-
+        ExpMaterial material = ExperimentService.get().findExpMaterial(context.getContainer(), context.getUser(), null, null, sampleName, cache, materialCache);
         if (material == null)
         {
-            // Next, attempt to resolve by name
-            List<? extends ExpMaterial> matches = ExperimentService.get().getExpMaterials(context.getContainer(), context.getUser(), Collections.singleton(sampleName), st, false, false);
-            if (matches.size() == 0)
-            {
-                Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-                logger.warn("No sample found for sample name '" + sampleName + "'");
-            }
-            else if (matches.size() == 1)
-            {
-                material = matches.get(0);
-            }
-            else
-            {
-                Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
-                logger.warn("More than one sample found for sample name '" + sampleName + "'");
-            }
+            Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
+            logger.warn("No sample found for sample name '" + sampleName + "'");
         }
 
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
@@ -772,9 +798,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addMaterialById(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, Integer sampleRowId, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleType st)
+    protected void addMaterialById(AssayRunUploadContext<ProviderType> context,
+                                   Map<ExpMaterial, String> resolved,
+                                   Integer sampleRowId,
+                                   String role,
+                                   @NotNull Set<Container> searchContainers,
+                                   @Nullable ExpSampleType st,
+                                   @NotNull Map<Integer, ExpMaterial> materialCache)
     {
-        ExpMaterial material = ExperimentService.get().getExpMaterial(sampleRowId);
+        final Container c = context.getContainer();
+        final User user = context.getUser();
+        ExpMaterial material = materialCache.computeIfAbsent(sampleRowId, (x) -> ExperimentService.get().getExpMaterial(c, user, sampleRowId, null));
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
         {
             if (st == null || st.getLSID().equals(material.getCpasType()))
@@ -789,14 +823,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayDataType dataType;
         for (Map.Entry<String, File> entry : files.entrySet())
         {
-            if (entry.getKey().equals(AssayDataCollector.PLATE_METADATA_FILE))
+            String key = entry.getKey();
+            File file = entry.getValue();
+
+            if (key.equals(AssayDataCollector.PLATE_METADATA_FILE))
                 dataType = PlateMetadataDataHandler.DATA_TYPE;
             else
                 dataType = context.getProvider().getDataType();
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), dataType, context.getReRunId() == null);
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, context.getReRunId() == null);
             String role = ExpDataRunInput.DEFAULT_ROLE;
-            if (dataType != null && dataType.getFileType().isType(entry.getValue()))
+            if (dataType != null && dataType.getFileType().isType(file))
             {
                 if (dataType.getRole() != null)
                 {

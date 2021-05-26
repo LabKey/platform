@@ -53,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -259,8 +260,6 @@ public class ExpGeneratorHelper
                 }
             }
 
-            log.debug("File check complete");
-
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
                 run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, fromProvenanceRecording);
@@ -386,18 +385,17 @@ public class ExpGeneratorHelper
             // material outputs
             for (String lsid : action.getMaterialOutputs())
             {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-                // set up the input to the run
+                ExpMaterialImpl material = (ExpMaterialImpl) ExperimentService.get().getExpMaterial(lsid);
+                material.setSourceApplication(stepApp);
+                // set up the output to the run
                 if (action.isEnd())
                 {
                     material.setRun(run);
+                    material.addSuccessorRunId(run.getRowId());
                     stepApp.addMaterialInput(user, material, null, null);
                 }
-                else
-                {
-                    material.setSourceApplication(stepApp);
-                    material.save(user);
-                }
+
+                material.save(user);
             }
 
             // Set up the inputs
@@ -440,7 +438,7 @@ public class ExpGeneratorHelper
             }
 
             // add in any provenance mappings and prov object inputs and outputs
-            if (pvs != null && protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
+            if (protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
             {
                 if (!action.getProvenanceMap().isEmpty())
                     pvs.addProvenance(container, stepApp, action.getProvenanceMap());

@@ -98,14 +98,14 @@ export const SEARCH_RESULT_HITS = {
     }]
 };
 
-export const CREATE_ROW = Map<string, any>(fromJS({
+export const CREATE_ROW = {
     Created: {
-        formattedValue: "2019-05-15 19:45",
-        value: "2019-05-15 19:45:40.593"
+        formattedValue: '2019-05-15 19:45',
+        value: '2019-05-15 19:45:40.593',
     },
     CreatedBy: {
-        displayValue: "username",
-        url: "#/q/core/siteusers/1004",
-        value: 1001
-    }
-}));
+        displayValue: 'username',
+        url: '#/q/core/siteusers/1004',
+        value: 1001,
+    },
+};

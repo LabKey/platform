@@ -61,7 +61,7 @@ Ext4.QuickTips.init();
 var canEdit = <%=canEdit%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
-var timepointType = "<%=h(timepointType)%>";
+var timepointType = "<%=timepointType%>";
 
 function removeProtocolDocument(name, xid)
 {
@@ -167,7 +167,6 @@ function onSaveSuccess_updateRows()
 
 function onSaveSuccess_formSubmit()
 {
-
     // if you want to stay on page, you need to refresh anyway to update attachments
     LABKEY.setSubmit(true);
     var msgbox = Ext4.Msg.show({

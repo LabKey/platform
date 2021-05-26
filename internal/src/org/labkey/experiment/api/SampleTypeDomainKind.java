@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -45,9 +46,11 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -89,6 +92,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).collect(Collectors.toList()));
         RESERVED_NAMES.add("CpasType");
+        RESERVED_NAMES.add("IsAliquot");
+        RESERVED_NAMES.add("AliquotedFrom");
+        RESERVED_NAMES.add("AliquotedFromLSID");
+        RESERVED_NAMES.add("RootMaterialLSID");
+        RESERVED_NAMES.add("Container");
+        RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate
@@ -159,6 +168,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
     @Override
     public boolean allowFileLinkProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowTimepointProperties()
     {
         return true;
     }
@@ -253,12 +268,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
-        // Cannot edit default sample type
         ExpSampleType st = getSampleType(domain);
-        if (st == null || SampleTypeService.get().getDefaultSampleTypeLsid().equals(domain.getTypeURI()))
-        {
+        if (st == null)
             return false;
-        }
+
         return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
     }
 
@@ -272,6 +285,18 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     public boolean canDeleteDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignSampleTypePermission.class);
+    }
+
+    @Override
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return null;
+    }
+
+    @Override
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return new DefaultValueType[0];
     }
 
     @Override
@@ -322,6 +347,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
             throw new IllegalArgumentException("Value for Label Color field may not exceed " + labelColorMax + " characters.");
+
+        int metricUnitMax = materialSourceTI.getColumn("MetricUnit").getScale();
+        if (StringUtils.isNotBlank(options.getMetricUnit()) && options.getMetricUnit().length() > metricUnitMax)
+            throw new IllegalArgumentException("Value for Metric Unit field may not exceed " + metricUnitMax + " characters.");
 
         Map<String, String> aliasMap = options.getImportAliases();
         if (aliasMap == null || aliasMap.size() == 0)
@@ -395,6 +424,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         int parentCol = -1;
         String nameExpression = null;
         String labelColor = null;
+        String metricUnit = null;
+        Container autoLinkTargetContainer = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -408,12 +439,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
+            metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
+            autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer);
         }
         catch (SQLException e)
         {

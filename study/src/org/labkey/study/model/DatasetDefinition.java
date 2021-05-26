@@ -24,7 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AbstractAuditHandler;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -41,19 +44,22 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -62,6 +68,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasedColumn;
@@ -71,10 +78,13 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -87,22 +97,24 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
@@ -123,9 +135,13 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.labkey.api.query.QueryService.AuditAction.DELETE;
+import static org.labkey.api.query.QueryService.AuditAction.TRUNCATE;
 
 
 /**
@@ -133,12 +149,15 @@ import java.util.concurrent.locks.ReentrantLock;
  * Date: Jan 6, 2006
  * Time: 10:29:31 AM
  */
-public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> implements Cloneable, Dataset<DatasetDefinition>, InitializingBean
+public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements Cloneable, Dataset, InitializingBean
 {
+    // DatasetQueryUpdateService
+
+
     // standard string to use in URLs etc.
     public static final String DATASETKEY = "datasetId";
 //    static final Object MANAGED_KEY_LOCK = new Object();
-    private static Logger _log = LogManager.getLogger(DatasetDefinition.class);
+    private static final Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLock();
 
@@ -156,7 +175,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private String _description;
     private boolean _demographicData; //demographic information, sequenceNum
     private Integer _cohortId;
-    private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
+    private Integer _publishSourceId;   // the identifier of the published data source
+    private String _publishSourceType;  // the type of published data source (assay, sample type, ...)
+
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
     private String _tag;
     private String _type = Dataset.TYPE_STANDARD;
@@ -188,7 +209,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // they're used by import ('replace') or are commonly used/confused synonyms for built-in column names
         "replace",
         "visit",
-        "participant"
+        "participant",
+        DataIntegrationService.Columns.TransformImportHash.getColumnName()
     };
 
     private static final String[] DEFAULT_ABSOLUTE_DATE_FIELD_NAMES_ARRAY = new String[]
@@ -217,7 +239,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         "lsid",
         "dsrowid",
         "Dataset",
-        "ParticipantSequenceNum"
+        "ParticipantSequenceNum",
+        DataIntegrationService.Columns.TransformImportHash.getColumnName()
     };
 
     static final Set<String> DEFAULT_ABSOLUTE_DATE_FIELDS;
@@ -271,10 +294,16 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
+    public DatasetDefinition createMutable()
+    {
+        return (DatasetDefinition) super.createMutable();
+    }
+
     /*
      * given a potentially shared dataset definition, return a dataset definition that is scoped to the current study
      */
-    public DatasetDefinition createLocalDatasetDefintion(StudyImpl substudy)
+    public DatasetDefinition createLocalDatasetDefinition(StudyImpl substudy)
     {
         if (substudy.getContainer().equals(getContainer()))
             return this;
@@ -352,17 +381,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         if (DatasetDomainKind.DATE.equalsIgnoreCase(fieldName) && !study.getTimepointType().isVisitBased())
             return true;
-        
-        switch (study.getTimepointType())
-        {
-            case VISIT:
-                return DEFAULT_VISIT_FIELDS.contains(fieldName);
-            case CONTINUOUS:
-                return DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
-            case DATE:
-            default:
-                return DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
-        }
+
+        return switch (study.getTimepointType())
+                {
+                    case VISIT -> DEFAULT_VISIT_FIELDS.contains(fieldName);
+                    case CONTINUOUS -> DEFAULT_ABSOLUTE_DATE_FIELDS.contains(fieldName);
+                    default -> DEFAULT_RELATIVE_DATE_FIELDS.contains(fieldName);
+                };
     }
 
 
@@ -811,9 +836,28 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Override
-    public boolean isAssayData()
+    public boolean isPublishedData()
     {
-        return _protocolId != null;
+        return _publishSourceId != null;
+    }
+
+    @Override
+    public PublishSource getPublishSource()
+    {
+        if (_publishSourceType != null)
+            return PublishSource.valueOf(_publishSourceType);
+        return null;
+    }
+
+    @Override
+    public @Nullable ExpObject resolvePublishSource()
+    {
+        PublishSource publishSource = getPublishSource();
+        if (publishSource != null)
+        {
+            return publishSource.resolvePublishSource(getPublishSourceId());
+        }
+        return null;
     }
 
     public void setDemographicData(boolean demographicData)
@@ -870,6 +914,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    // Determines the user's permissions on this dataset based on the current dataset security rules. Primarily interested
+    // in read, insert, update, and delete permissions... except for ADVANCED_WRITE which needs to return all perms.
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
@@ -890,78 +936,79 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         {
             result.add(ReadPermission.class);
 
+            // a dataspace study always has read-only datasets, you cannot edit no matter who you are
+            if (_study.isDataspaceStudy())
+                return result;
+
             // Now check if they can write
             if (securityType == SecurityType.BASIC_WRITE)
             {
-                if (user instanceof User && ((User)user).hasSiteAdminPermission())
-                {
-                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
-                }
-                else if (getStudy().getContainer().hasPermission(user, UpdatePermission.class))
-                {
-                    // Basic write access grants insert/update/delete for datasets to everyone who has update permission
-                    // in the folder
-                    result.add(UpdatePermission.class);
-                    result.add(DeletePermission.class);
-                    result.add(InsertPermission.class);
-                }
+                // Basic write grants dataset edit perms (insert/update/delete) based on user's folder perms
+                copyEditPerms(getStudy().getContainer(), user, result);
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
-                if (user instanceof User && ((User)user).hasSiteAdminPermission())
+                // Advanced write grants dataset edit perms (insert/update/delete) based on study or dataset policy perms
+                copyEditPerms(studyPolicy, user, result);
+                // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
+                // so check for a custom security policy even if they have UpdatePermission on the study's policy
+                if (studyPolicy.hasPermission(user, ReadSomePermission.class))
                 {
-                    result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
-                }
-                else
-                {
-                    if (studyPolicy.hasPermission(user, UpdatePermission.class))
-                    {
-                        result.add(UpdatePermission.class);
-                        result.add(DeletePermission.class);
-                        result.add(InsertPermission.class);
-                    }
-                    // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
-                    // so check for a custom security policy even if they have UpdatePermission on the study's policy
-                    if (studyPolicy.hasPermission(user, ReadSomePermission.class))
-                    {
-                        // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                        result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
-                    }
+                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                    // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
+                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
                 }
             }
-        }
-
-        // a dataspace study always has read-only datasets, you cannot insert no matter who you are
-        if (_study.isDataspaceStudy())
-        {
-            result.remove(InsertPermission.class);
         }
 
         return result;
     }
 
+    private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
+
+    private void copyEditPerms(HasPermission resource, UserPrincipal user, Set<Class<? extends Permission>> result)
+    {
+        EDIT_PERMS.stream().filter(perm->resource.hasPermission(user, perm)).forEach(result::add);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        if (perm != ReadPermission.class && isEditProhibited(user))
+            return false;
+        if (getContainer().hasPermission(user, AdminPermission.class))
+            return true;
+        return getPermissions(user).contains(perm);
+    }
+
+    private boolean isEditProhibited(UserPrincipal user)
+    {
+        return getStudy().isDataspaceStudy() || (user instanceof User && !canAccessPhi((User) user));
+    }
 
     @Override
     public boolean canRead(UserPrincipal user)
     {
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(ReadPermission.class);
+        return hasPermission(user, ReadPermission.class);
     }
-
 
     @Override
-    public boolean canWrite(UserPrincipal user)
+    public boolean canUpdate(UserPrincipal user)
     {
-        if (getStudy().isDataspaceStudy())
-            return false;
-        if (user instanceof User && !canAccessPhi((User)user))
-            return false;
-        if (getContainer().hasPermission(user, AdminPermission.class))
-            return true;
-        return getPermissions(user).contains(UpdatePermission.class);
+        return hasPermission(user, UpdatePermission.class);
     }
 
+    @Override
+    public boolean canDelete(UserPrincipal user)
+    {
+        return hasPermission(user, DeletePermission.class);
+    }
+
+    @Override
+    public boolean canInsert(UserPrincipal user)
+    {
+        return hasPermission(user, InsertPermission.class);
+    }
 
     @Override
     public boolean canDeleteDefinition(UserPrincipal user)
@@ -980,12 +1027,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     public boolean canAccessPhi(User user)
     {
-        ComplianceService complianceService = ComplianceService.get();
         if (canRead(user))
         {
             DatasetSchemaTableInfo table = getTableInfo(user);
             if (null != table)
-                return table.getMaxContainedPhi().isLevelAllowed(complianceService.getMaxAllowedPhi(getContainer(), user));
+                return table.canUserAccessPhi();
         }
         return false;
     }
@@ -1033,7 +1079,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         if (other == null)
             return false;
 
-        if (isAssayData() || other.isAssayData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
+        if (isPublishedData() || other.isPublishedData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
             return false;
 
         Domain thisDomain = getDomain();
@@ -1189,11 +1235,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private static class AutoCompleteDisplayColumnFactory implements DisplayColumnFactory
     {
-        private String _completionBase;
+        private final ActionURL _completionBase;
 
-        public AutoCompleteDisplayColumnFactory(Container studyContainer, SpecimenService.CompletionType type)
+        public AutoCompleteDisplayColumnFactory(Container studyContainer, CompletionType type)
         {
-            _completionBase = SpecimenService.get().getCompletionURLBase(studyContainer, type);
+            _completionBase = PageFlowUtil.urlProvider(StudyUrls.class).getCompletionURL(studyContainer, type);
         }
 
         @Override
@@ -1202,7 +1248,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             return new DataColumn(colInfo)
             {
                 @Override
-                protected String getAutoCompleteURLPrefix()
+                protected ActionURL getAutoCompleteURLPrefix()
                 {
                     return _completionBase;
                 }
@@ -1242,7 +1288,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         TableInfo _storage;
         TableInfo _template;
-        private final PHI _maxContainedPhi;       // Max PHI of properites in dataset
+        final PHI _maxAllowed;
 
 
         private ColumnInfo getStorageColumn(String name)
@@ -1271,8 +1317,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             _storage = def.getStorageTableInfo();
             _template = getTemplateTableInfo();
-            PHI maxContainedPhi = PHI.NotPHI;
-            
+            _maxAllowed = ComplianceService.get().getMaxAllowedPhi(_container, user);
+
             // ParticipantId
 
             {
@@ -1298,7 +1344,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid"))
+            for (String name : Arrays.asList("Container", "lsid", "ParticipantSequenceNum", "sourcelsid", "Created", "CreatedBy", "Modified", "ModifiedBy", "dsrowid", DataIntegrationService.Columns.TransformImportHash.getColumnName()))
             {
                 var col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1321,7 +1367,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             var sequenceNumCol = newDatasetColumnInfo(this, getStorageColumn("SequenceNum"), getSequenceNumURI());
             sequenceNumCol.setName("SequenceNum");
-            sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, SpecimenService.CompletionType.VisitId));
+            sequenceNumCol.setDisplayColumnFactory(new AutoCompleteDisplayColumnFactory(_container, CompletionType.VisitId));
             sequenceNumCol.setMeasure(false);
 
             if (def.isDemographicData())
@@ -1369,9 +1415,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             for (DomainProperty p : properties)
             {
-                if (maxContainedPhi.getRank() < p.getPHI().getRank())
-                    maxContainedPhi = p.getPHI();
-
                 if (null != getColumn(p.getName()))
                 {
                     BaseColumnInfo builtin = (BaseColumnInfo)getColumn(p.getName());
@@ -1404,7 +1447,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
                 if (p.isMvEnabled())
                 {
-                    var baseColumn = StorageProvisioner.getMvIndicatorColumn(_storage, pd,
+                    var baseColumn = StorageProvisioner.get().getMvIndicatorColumn(_storage, pd,
                                                 "No MV column found for '" + col.getName() + "' in dataset '" + getName() + "'");
                     var mvColumn = newDatasetColumnInfo(this, baseColumn, p.getPropertyDescriptor().getPropertyURI());
                     mvColumn.setName(p.getName() + MvColumn.MV_INDICATOR_SUFFIX);
@@ -1430,8 +1473,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     wrapped.setMvColumnName(mvColumn.getFieldKey());
                 }
             }
-
-            _maxContainedPhi = maxContainedPhi;
 
             // If we have an extra key, and it's server-managed, make it non-editable
             if (def.getKeyManagementType() != KeyManagementType.None)
@@ -1577,17 +1618,133 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
 
         @Override
-        public CaseInsensitiveHashSet skipProperties()
+        public PHI getUserMaxAllowedPhiLevel()
         {
-            return null;
+            return _maxAllowed;
         }
 
-        public PHI getMaxContainedPhi()
+        /**
+         * Return true if the current user is allowed the maximum phi level set across all columns.
+         */
+        @Override
+        public boolean canUserAccessPhi()
         {
-            return _maxContainedPhi;
+            return getMaxPhiLevel().isLevelAllowed(getUserMaxAllowedPhiLevel());
+        }
+
+        @Override
+        public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
+        {
+            return new DatasetAuditHandler();
         }
     }
 
+    private class DatasetAuditHandler extends AbstractAuditHandler
+    {
+        @Override
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
+        {
+            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType);
+        }
+
+        @Override
+        public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
+        {
+            // Only add an event if Detailed audit logging is enabled
+            if (AuditBehaviorType.DETAILED != auditType)
+                return;
+            Objects.requireNonNull(rows);
+            AuditLogService auditLog = AuditLogService.get();
+
+            // Caller should provide existing rows for MERGE
+            assert action != QueryService.AuditAction.MERGE || null != existingRows;
+
+            List<DatasetAuditProvider.DatasetAuditEvent> batch = new ArrayList<>();
+            for (int i=0; i < rows.size(); i++)
+            {
+                Map<String, Object> row = rows.get(i);
+                Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
+                // note switched order (oldRecord, newRecord)
+                var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow);
+                batch.add(event);
+                if (batch.size() > 1000)
+                {
+                    auditLog.addEvents(user, batch);
+                    batch.clear();
+                }
+            }
+            if (batch.size() > 0)
+            {
+                auditLog.addEvents(user, batch);
+                batch.clear();
+            }
+        }
+
+        @Override
+        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * NOTE: userComment field is not supported for this domain and will be ignored
+         */
+        @Override
+        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord)
+        {
+            String auditComment = switch (action)
+                    {
+                        case INSERT -> "A new dataset record was inserted";
+                        case DELETE, TRUNCATE -> "A dataset record was deleted";
+                        case UPDATE, MERGE ->  null!=existingRecord && !existingRecord.isEmpty() ? "A dataset record was modified" : "A new dataset record was inserted";
+                        default -> "A dataset record was modified";
+                    };
+
+            String oldRecordString = null;
+            String newRecordString = null;
+            Object lsid = record.get("lsid");
+
+            if (action==DELETE || action==TRUNCATE)
+            {
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+            }
+            else if (existingRecord != null && existingRecord.size() > 0)
+            {
+                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+
+                // Check if no fields changed, if so adjust messaging
+                if (rowPair.second.size() == 0 )
+                {
+                    auditComment = "Dataset row was processed, but no changes detected";
+                    // Record values that were processed
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                }
+                else
+                {
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+                }
+            }
+            else
+            {
+                newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+            }
+
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
+
+            if (c.getProject() != null)
+                event.setProjectId(c.getProject().getId());
+            event.setDatasetId(getDatasetId());
+            event.setHasDetails(true);
+
+            event.setLsid(lsid == null ? null : lsid.toString());
+
+            if (oldRecordString != null) event.setOldRecordMap(oldRecordString);
+            if (newRecordString != null) event.setNewRecordMap(newRecordString);
+
+            return event;
+        }
+    }
 
     static BaseColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
     {
@@ -1678,7 +1835,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
-    public DomainKind getDomainKind()
+    public DomainKind<DatasetDomainKindProperties> getDomainKind()
     {
         switch (getStudy().getTimepointType())
         {
@@ -1723,11 +1880,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private static String uriForName(String name)
     {
-        final String StudyURI = getStudyBaseURI();
-        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(StudyURI + name);
+        assert null != getStandardPropertiesMap().get(name);
+        assert "container".equalsIgnoreCase(name)  || getStandardPropertiesMap().get(name).getPropertyURI().equalsIgnoreCase(getStudyBaseURI() + name);
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
-
 
     public static String getKeyURI()
     {
@@ -1806,20 +1962,24 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return new TableSelector(StudySchema.getInstance().getTableInfoCohort()).getObject(_cohortId, CohortImpl.class);
     }
 
-    public Integer getProtocolId()
+    public Integer getPublishSourceId()
     {
-        return _protocolId;
+        return _publishSourceId;
     }
 
-    @Override
-    public ExpProtocol getAssayProtocol()
+    public void setPublishSourceId(Integer publishSourceId)
     {
-        return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
+        _publishSourceId = publishSourceId;
     }
 
-    public void setProtocolId(Integer protocolId)
+    public String getPublishSourceType()
     {
-        _protocolId = protocolId;
+        return _publishSourceType;
+    }
+
+    public void setPublishSourceType(String publishSourceType)
+    {
+        _publishSourceType = publishSourceType;
     }
 
     @Override
@@ -2088,9 +2248,19 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      * Iterator is running.  This is asserted in the code, but it would be nice to move the
      * locking into the iterator itself.
      */
+    public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
+    {
+        return getInsertDataIterator(user, in, null, null, context, null, null, false);
+    }
+
+    /**
+     * NOTE Currently the caller is still responsible for locking MANAGED_KEY_LOCK while this
+     * Iterator is running.  This is asserted in the code, but it would be nice to move the
+     * locking into the iterator itself.
+     */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
         @Nullable List<String> lsids,
-        CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
+        @Nullable CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
         @Nullable StudyImportContext studyImportContext, boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
@@ -2102,14 +2272,24 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 defaultQCState,
                 studyImportContext);
         b.setInput(in);
-        b.setCheckDuplicates(checkDuplicates);
+
+        if (null != checkDuplicates)
+            b.setCheckDuplicates(checkDuplicates);
         b.setForUpdate(forUpdate);
         b.setUseImportAliases(!forUpdate);
         b.setKeyList(lsids);
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
-        return ((UpdateableTableInfo)table).persistRows(etl, context);
+        DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
+
+        DataIteratorBuilder existing = ExistingRecordDataIterator.createBuilder(standard, table, null);
+        DataIteratorBuilder persist = ((UpdateableTableInfo)table).persistRows(existing, context);
+        { // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
+            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
+        }
+        DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption() == QueryUpdateService.InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, target);
+        return LoggingDataIterator.wrap(audit);
     }
 
 
@@ -2135,7 +2315,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 SQLFragment seq = new SQLFragment();
                 seq.append("CAST((");
-                seq.append(StudyManager.sequenceNumFromDateSQL("date"));
+                seq.append(StudyUtils.sequenceNumFromDateSQL("date"));
                 seq.append(") AS VARCHAR(36))");
                 parts.add(seq);
                 parts.add(new SQLFragment("'.0000'"));   // Match what insert/import does
@@ -2555,7 +2735,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             resetCreatedColumnsSQL.add(newLSID);
             new SqlExecutor(getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
 
-            StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, mergeData);
+            new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+                    List.of(mergeData), List.of(oldData));
 
             // Successfully updated
             transaction.commit();
@@ -2589,49 +2770,9 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return result;
     }
 
-    private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
+    private void deleteProvenance(Container c, User u, Collection<String> lsids)
     {
-        // Get the ExpRuns referenced by the dataset row LSIDs
-        List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
-        // get all lsids for the dataset
-        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(u, this);
-
-        // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
-        for (String lsid : lsids)
-        {
-            // NOTE: We need to get and delete the objects individually instead of deleting in bulk
-            // NOTE: because the objects live in a different container than the run.
-            // CONSIDER: This could be optimized by select from.exp object and performing bulk deletes partitioned by container
-            OntologyObject expObject = OntologyManager.getOntologyObject(null/*any container*/, lsid);
-            if (null != expObject)
-            {
-                pvs.deleteObjectProvenance(expObject.getObjectId());
-                OntologyManager.deleteOntologyObject(lsid, expObject.getContainer(), false);
-            }
-        }
-
-        // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
-        // NOTE: Should we do this for other run types as well?  In the future, other runs might have a provenance reference to the dataset LSID
-        for (ExpRun run : runs)
-        {
-            boolean syncNeeded = true;
-            if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
-            {
-                // get all the input and output LSIDs that remain for the selected runs
-                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getRowId()));
-                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getRowId()));
-
-                // if allRunLsids is empty or all the lsids of the dataset are recalled, delete the StudyPublishRun
-                if (allRunLsids.isEmpty() || allDatasetLsids.size() == lsids.size())
-                {
-                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
-                    syncNeeded = false;
-                }
-            }
-
-            if (syncNeeded)
-                ExperimentService.get().syncRunEdges(run);
-        }
+        ProvenanceService.get().deleteProvenanceByLsids(c, u, lsids, true, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
     }
 
     @Override
@@ -2642,17 +2783,10 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            ProvenanceService pvs = ProvenanceService.get();
-            if (null != pvs)
-            {
-                deleteProvenance(u, lsids, pvs);
-            }
+            deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
 
-            for (Map<String, Object> oldData : oldDatas)
-            {
-                StudyServiceImpl.addDatasetAuditEvent(u, this, oldData, null);
-            }
+            new DatasetAuditHandler().addAuditEvent(u, getContainer(), null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.DELETE, oldDatas, null);
 
             transaction.commit();
         }
@@ -2684,6 +2818,173 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
+    public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
+    {
+        private final String _name;
+        private String _label;
+        private Boolean _isShowByDefault = true;
+        private Integer _categoryId;
+        private String _visitDatePropertyName;
+        private String _keyPropertyName;
+        private KeyManagementType _keyManagementType = KeyManagementType.None;
+        private String _description;
+        private Boolean _demographicData = false;   //demographic information, sequenceNum
+        private Integer _cohortId;
+        private Integer _publishSourceId;           // the identifier of the published data source
+        private PublishSource _publishSource;       // the type of published data source (assay, sample type, ...)
+        private String _tag;
+        private String _type = Dataset.TYPE_STANDARD;
+        private String _datasharing;
+        private Boolean _useTimeKeyField = false;
+        private Integer _datasetId;
+        private StudyImpl _study;
+
+        public Builder(String name)
+        {
+            _name = name;
+        }
+
+        public Builder setDescription(String description)
+        {
+            _description = description;
+            return this;
+        }
+
+        public Builder setShowByDefault(Boolean isShowByDefault)
+        {
+            _isShowByDefault = isShowByDefault;
+            return this;
+        }
+
+        public Builder setType(String type)
+        {
+            _type = type;
+            return this;
+        }
+
+        public Builder setDemographicData(Boolean demographicData)
+        {
+            _demographicData = demographicData;
+            return this;
+        }
+
+        public Builder setUseTimeKeyField(Boolean useTimeKeyField)
+        {
+            _useTimeKeyField = useTimeKeyField;
+            return this;
+        }
+
+        public Builder setKeyManagementType(KeyManagementType keyManagementType)
+        {
+            _keyManagementType = keyManagementType;
+            return this;
+        }
+
+        public Builder setCohortId(Integer cohortId)
+        {
+            _cohortId = cohortId;
+            return this;
+        }
+
+        public Builder setTag(String tag)
+        {
+            _tag = tag;
+            return this;
+        }
+
+        public Builder setLabel(String label)
+        {
+            _label = label;
+            return this;
+        }
+
+        public Builder setVisitDatePropertyName(String visitDatePropertyName)
+        {
+            _visitDatePropertyName = visitDatePropertyName;
+            return this;
+        }
+
+        public Builder setCategoryId(Integer categoryId)
+        {
+            _categoryId = categoryId;
+            return this;
+        }
+
+        public Builder setKeyPropertyName(String keyPropertyName)
+        {
+            _keyPropertyName = keyPropertyName;
+            return this;
+        }
+
+        public Builder setPublishSourceId(Integer publishSourceId)
+        {
+            _publishSourceId = publishSourceId;
+            return this;
+        }
+
+        public Builder setPublishSource(PublishSource publishSource)
+        {
+            _publishSource = publishSource;
+            return this;
+        }
+
+        public Builder setDataSharing(String dataSharing)
+        {
+            _datasharing = dataSharing;
+            return this;
+        }
+
+        public Builder setDatasetId(Integer datasetId)
+        {
+            _datasetId = datasetId;
+            return this;
+        }
+
+        public Builder setStudy(StudyImpl study)
+        {
+            _study = study;
+            return this;
+        }
+
+        public Integer getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public StudyImpl getStudy()
+        {
+            return _study;
+        }
+
+        @Override
+        public DatasetDefinition build()
+        {
+            DatasetDefinition dsd = new DatasetDefinition(_study, _datasetId, _name, _label != null ? _label : _name, null, null, null);
+            dsd.setShowByDefault(_isShowByDefault);
+            dsd.setType(_type);
+            dsd.setDemographicData(_demographicData);
+            dsd.setUseTimeKeyField(_useTimeKeyField);
+            dsd.setKeyManagementType(_keyManagementType);
+            dsd.setDescription(_description);
+            dsd.setCohortId(_cohortId);
+            dsd.setTag(_tag);
+            dsd.setVisitDatePropertyName(_visitDatePropertyName);
+            if (_categoryId != null)
+                dsd.setCategoryId(_categoryId);
+            if (_keyPropertyName != null)
+                dsd.setKeyPropertyName(_keyPropertyName);
+            if (_publishSourceId != null)
+            {
+                dsd.setPublishSourceId(_publishSourceId);
+                assert _publishSource != null : "PublishSource must be set if a publish source ID is specified";
+                dsd.setPublishSourceType(_publishSource.name());
+            }
+            if (_datasharing != null)
+                dsd.setDataSharing(_datasharing);
+
+            return dsd;
+        }
+    }
 
     public static class TestCleanupOrphanedDatasetDomains extends Assert
     {

@@ -266,17 +266,9 @@ public class OlapController extends SpringActionController
                 rethrowOlapException(x);
             }
 
-            String schemaName = cubeSchemaName();
-            if (null != schemaName)
-            {
-                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
-                if (null == schema)
-                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
-                schema.checkCanReadSchemaOlap();
-            }
-
             if (errors.hasErrors())
                 return null;
+
             if (null == cube)
             {
                 errors.reject(ERROR_MSG, "Cube not found: " + form.getCubeName());
@@ -289,6 +281,15 @@ public class OlapController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Cube descriptor not found: " + form.getCubeName());
                 return null;
+            }
+
+            String schemaName = cubeSchemaName();
+            if (null != schemaName)
+            {
+                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
+                schema.checkCanReadSchemaOlap();
             }
 
             if (!d.usesMondrian())
@@ -1100,7 +1101,7 @@ public class OlapController extends SpringActionController
     }
 
 
-    private String cubeSchemaName()  throws SQLException
+    private String cubeSchemaName()
     {
         String schemaName = _olapSchemaDescriptor.getSchemaAnnotations().get("SchemaName");
         // check cube for backwards compat, prefer olapdescriptor annotation
@@ -1328,7 +1329,7 @@ public class OlapController extends SpringActionController
         return contextNames;
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public class ListAppsAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -1591,7 +1592,7 @@ public class OlapController extends SpringActionController
             OlapController controller = new OlapController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new GetCubeDefinitionAction(),
                 new TestMdxAction(),
                 new TestJsonAction(),

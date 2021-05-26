@@ -25,6 +25,8 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 public abstract class StudyManualTest extends StudyTest
 {
@@ -53,11 +55,14 @@ public abstract class StudyManualTest extends StudyTest
         initializeFolder();
 
         clickButton("Create Study");
-        click(Locator.radioButtonByNameAndValue("simpleRepository", "false"));
         setFormElement(Locator.name("subjectNounSingular"), "Mouse");
         setFormElement(Locator.name("subjectNounPlural"), "Mice");
         setFormElement(Locator.name("subjectColumnName"), "MouseId");
         clickButton("Create Study");
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            _studyHelper.setupAdvancedRepositoryType();
+        }
 
         // change study label
         clickAndWait(Locator.linkWithText("Change Study Properties"));
@@ -226,8 +231,8 @@ public abstract class StudyManualTest extends StudyTest
 
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         setFormElement(Locator.name("text"), _tsv + "\n" + errorRow);
-        _listHelper.submitImportTsv_error("Could not convert 'badvisitd'");
-        assertTextPresent("Could not convert 'text'");
+        _listHelper.submitImportTsv_error(getConversionErrorMessage("badvisitd", "SequenceNum", BigDecimal.class));
+        assertTextPresent(getConversionErrorMessage("text", "DateField", Timestamp.class));
 
         _listHelper.submitTsvData(_tsv);
         assertTextPresent("1234", "2006-02-01", "1.2", "aliasedData");

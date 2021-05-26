@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,10 +31,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.api.ExperimentJSONConverter;
-import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -44,12 +42,12 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,58 +130,79 @@ public class DataIteratorUtil
         return targetAliasesMap;
     }
 
-    enum MatchType {propertyuri, name, alias, jdbcname, tsvColumn}
 
+    // rank of a match of import column NAME matching various properties of target column
+    // MatchType.low is used for matches based on something other than name
+    enum MatchType {propertyuri, name, alias, jdbcname, tsvColumn, low}
+
+
+    /**
+     * NOTE: matchColumns() handles multiple source columns matching the same target column (usually a data file problem
+     * for the user to fix), we don't handle one source column matching multiple target columns (more of an admin design problem).
+     * One idea would be to return MultiValuedMap<String,Pair<>>, or check for duplicates entries of the same MatchType.
+     */
     protected static Map<String,Pair<ColumnInfo,MatchType>> _createTableMap(TableInfo target, boolean useImportAliases)
     {
-        List<ColumnInfo> cols = target.getColumns();
+        /* CONSIDER: move this functionality into a TableInfo method so this map (or maps) can be cached */
+        List<ColumnInfo> cols = target.getColumns().stream()
+                .filter(col -> !col.isMvIndicatorColumn() && !col.isRawValueColumn())
+                .collect(Collectors.toList());
+
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
+
+        // should this be under the useImportAliases flag???
         for (ColumnInfo col : cols)
         {
-            if (col.isMvIndicatorColumn() || col.isRawValueColumn())
-                continue;
-            final String name = col.getName();
-            targetAliasesMap.put(name, new Pair<>(col,MatchType.name));
+            // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
+            // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
+            String tsvQueryColumnName = FieldKey.fromString(col.getName()).toDisplayString();
+            targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
+        }
+
+        // should this be under the useImportAliases flag???
+        for (ColumnInfo col : cols)
+        {
+            // Jdbc resultset names have substitutions for special characters. If this is such a column, need the substituted name to match on
+            targetAliasesMap.put(col.getJdbcRsName(), new Pair<>(col, MatchType.jdbcname));
+        }
+
+        for (ColumnInfo col : cols)
+        {
+            if (useImportAliases || "folder".equalsIgnoreCase(col.getName()))
+            {
+                for (String alias : col.getImportAliasSet())
+                    targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
+
+                // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
+                String translatedFieldKey = FieldKey.fromString(col.getName()).toDisplayString();
+                targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
+            }
+        }
+
+        for (ColumnInfo col : cols)
+        {
+            String label = col.getLabel();
+            if (null != label)
+                targetAliasesMap.put(label, new Pair<>(col, MatchType.alias));
+        }
+
+        for (ColumnInfo col : cols)
+        {
             String uri = col.getPropertyURI();
             if (null != uri)
             {
-                if (!targetAliasesMap.containsKey(uri))
-                    targetAliasesMap.put(uri, new Pair<>(col, MatchType.propertyuri));
+                targetAliasesMap.put(uri, new Pair<>(col, MatchType.propertyuri));
                 String propName = uri.substring(uri.lastIndexOf('#')+1);
-                if (!targetAliasesMap.containsKey(propName))
-                    targetAliasesMap.put(propName, new Pair<>(col, MatchType.alias));
+                targetAliasesMap.put(propName, new Pair<>(col, MatchType.alias));
             }
-            String label = col.getLabel();
-            if (null != label && !targetAliasesMap.containsKey(label))
-                targetAliasesMap.put(label, new Pair<>(col, MatchType.alias));
-            String translatedFieldKey;
-            if (useImportAliases || "folder".equalsIgnoreCase(name))
-            {
-                for (String alias : col.getImportAliasSet())
-                {
-                    if (!targetAliasesMap.containsKey(alias))
-                        targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
-                }
-                // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
-                translatedFieldKey = FieldKey.fromString(name).toDisplayString();
-                if (!targetAliasesMap.containsKey(translatedFieldKey))
-                {
-                    targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
-                }
-            }
-            // Jdbc resultset names have substitutions for special characters. If this is such a column, need the substituted name to match on
-            translatedFieldKey = col.getJdbcRsName();
-            if (!name.equals(translatedFieldKey))
-            {
-                targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.jdbcname));
-            }
-
-            // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
-            // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
-            String tsvQueryColumnName = FieldKey.fromString(name).toDisplayString();
-            if (!targetAliasesMap.containsKey(tsvQueryColumnName))
-                targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
         }
+
+        for (ColumnInfo col : cols)
+        {
+            String name = col.getName();
+            targetAliasesMap.put(name, new Pair<>(col,MatchType.name));
+        }
+
         return targetAliasesMap;
     }
 
@@ -195,7 +214,6 @@ public class DataIteratorUtil
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
         matches.add(null);
 
-        // match columns to target columninfos (duplicates StandardDataIteratorBuilder, extract shared method?)
         for (int i=1 ; i<=input.getColumnCount() ; i++)
         {
             ColumnInfo from = input.getColumnInfo(i);
@@ -204,29 +222,26 @@ public class DataIteratorUtil
                 matches.add(null);
                 continue;
             }
-            Pair<ColumnInfo,MatchType> to = null;
-            if (null != from.getPropertyURI())
+
+            Pair<ColumnInfo,MatchType> to = targetMap.get(from.getName());
+            if (null == to && null != from.getPropertyURI())
+            {
+                // Do we actually rely on this anywhere???
+                // Like maybe ETL from one study to another where subject name does not match? or assay publish?
                 to = targetMap.get(from.getPropertyURI());
-            if (null == to)
-                to = targetMap.get(from.getName());
+                if (null != to)
+                    to = new Pair<>(to.first, org.labkey.api.dataiterator.DataIteratorUtil.MatchType.low);
+            }
             if (null == to)
             {
                 // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
-                if (URIUtil.hasURICharacters(from.getColumnName()) && null != container)
+                var vocabProperties = PropertyService.get().findVocabularyProperties(container, Collections.singleton(from.getColumnName()));
+                if (vocabProperties.size() > 0)
                 {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(from.getColumnName(), container);
-                    if (null != pd)
-                    {
-                        List<Domain> domains = OntologyManager.getDomainsForPropertyDescriptor(container, pd);
-                        List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
-                        if (!vocabularyDomains.isEmpty())
-                        {
-                            to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
-                        }
-                    }
+                    to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
                 }
             }
-            if(null != to && null == to.first)
+            if (null != to && null == to.first)
             {
                 LOG.info("Column Info is null here: - " +  from.getColumnName() + " in " + target.getName());
             }
@@ -273,7 +288,7 @@ public class DataIteratorUtil
                 }
                 if (count > 1)
                 {
-                    setupError.addGlobalError("Two columns mapped to target column: " + e.getKey().toString());
+                    setupError.addGlobalError("Two columns mapped to target column " + e.getKey().toString() + ". Check the column names and import aliases for your data.");
                     break;
                 }
             }
@@ -286,13 +301,10 @@ public class DataIteratorUtil
     }
 
 
-
-
     // NOTE: first consider if using QueryUpdateService is better
     // this is just a point-to-point copy _without_ triggers
     public static int copy(File from, TableInfo to, Container c, User user) throws IOException, BatchValidationException
     {
-
         BatchValidationException errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
         DataLoader loader = DataLoaderService.get().createLoader(from, null, true, c, TabLoader.TSV_FILE_TYPE);
@@ -329,7 +341,7 @@ public class DataIteratorUtil
     // this is just a point-to-point copy _without_ triggers
     public static int copy(DataIteratorContext context, DataIteratorBuilder from, TableInfo to, Container c, User user)
     {
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user, context);
+        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(to, from, c, user);
         DataIteratorBuilder insert = ((UpdateableTableInfo)to).persistRows(etl, context);
         Pump pump = new Pump(insert, context);
         pump.run();

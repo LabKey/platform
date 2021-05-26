@@ -16,8 +16,10 @@
 
 package org.labkey.api.study;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
@@ -64,8 +66,6 @@ public interface SpecimenService
 
     Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
 
-    String getCompletionURLBase(Container studyContainer, CompletionType type);
-
     Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
 
     Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
@@ -106,7 +106,10 @@ public interface SpecimenService
 
     Domain getSpecimenEventDomain(Container container, User user);
 
-    @Nullable
+    /**
+     * Returns a map of database column name -> preferred tsv column name (one per column). Does not include import aliases.
+     * @return A map of db column name -> preferred tsv column name
+     */
     Map<String, String> getSpecimenImporterTsvColumnMap();
 
     SpecimenRequestCustomizer getRequestCustomizer();
@@ -135,18 +138,6 @@ public interface SpecimenService
         HtmlString getSubmittedMessage(Container c, int requestId);
     }
 
-    interface SampleInfo
-    {
-        String getParticipantId();
-        Double getSequenceNum();
-        String getSampleId();
-    }
-
-    enum CompletionType
-    {
-        SpecimenGlobalUniqueId,
-        ParticipantId,
-        VisitId,
-        LabId
-    }
+    @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)
+    void fireSpecimensChanged(Container c, User user, Logger logger);
 }

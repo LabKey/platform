@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
@@ -89,10 +90,10 @@ public class DefaultAssayProgressSource implements AssayProgressReport.AssayData
         {
             SQLFragment sql = new SQLFragment();
 
-            StudySchema.getInstance().getTableInfoSpecimenDetail(context.getContainer());
+            SpecimenSchema.get().getTableInfoSpecimenDetail(context.getContainer());
 
             sql.append("SELECT ParticipantId, Visit.SequenceNumMin, SequenceNum FROM ");
-            sql.append(StudySchema.getInstance().getTableInfoSpecimenDetail(context.getContainer()), "");
+            sql.append(SpecimenSchema.get().getTableInfoSpecimenDetail(context.getContainer()), "");
             sql.append(" WHERE ParticipantId IS NOT NULL AND Visit IS NOT NULL");
             //sql.add(context.getContainer());
 

@@ -62,7 +62,7 @@
       <column columnName="DefaultPipelineQCState">
         <description>The default quality control state to be applied to data imported via the pipeline.</description>
       </column>
-      <column columnName="DefaultAssayQCState">
+      <column columnName="DefaultPublishDataQCState">
         <description>The default quality control state to be applied to assay data copied to the study.</description>
       </column>
       <column columnName="DefaultDirectEntryQCState">
@@ -216,6 +216,7 @@
         <datatype>boolean</datatype>
       </column>
       <column columnName="Label">
+        <required>true</required>
         <description>The long/friendly name of each location.</description>
         <datatype>Varchar</datatype>
         <scale>200</scale>
@@ -389,8 +390,11 @@
       <column columnName="cohortid">
         <description>The ID of each dataset's cohort, if it is cohort specific.</description>
       </column>
-      <column columnName="ProtocolId">
-        <description>The unique ID of the assay design associated with each dataset, if the data is assay-associated.</description>
+      <column columnName="PublishSourceId">
+        <description>The unique ID of the source of published data associated with each dataset, if the data is publish-associated.</description>
+      </column>
+      <column columnName="PublishSourceType">
+        <description>The type of published data</description>
       </column>
       <column columnName="Modified">
         <description>The timestamp of the last modification of this dataset.</description>
@@ -600,6 +604,7 @@
         <nullable>false</nullable>
         <importAliases>
             <importAlias>ptid</importAlias>
+            <importAlias>participantid</importAlias>
         </importAliases>
       </column>
       <column columnName="datasetid">
@@ -707,6 +712,12 @@
           <fkDbSchema>core</fkDbSchema>
         </fk>
         <datatype>int</datatype>
+      </column>
+      <column columnName="diImportHash">
+        <propertyURI>http://cpas.labkey.com/Study#diImportHash</propertyURI>
+        <isHidden>true</isHidden>
+        <shownInInsertView>false</shownInInsertView>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
     </columns>
   </table>
@@ -920,7 +931,7 @@
       </column>
       <column columnName="DrawTimestamp">
           <description>The timestamp of specimen collection.</description>
-          <datatype>date</datatype>
+          <datatype>datetime</datatype>
           <formatString>DateTime</formatString>
       </column>
       <column columnName="DrawDate">
@@ -930,12 +941,12 @@
       </column>
       <column columnName="DrawTime">
           <description>The time of specimen collection.</description>
-          <datatype>date</datatype>
+          <datatype>time</datatype>
           <formatString>Time</formatString>
       </column>
       <column columnName="SalReceiptDate">
           <description>The timestamp of specimen receipt at the site-affiliated laboratory.</description>
-          <datatype>date</datatype>
+          <datatype>datetime</datatype>
       </column>
       <column columnName="SpecimenHash">
           <description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</description>
@@ -1160,7 +1171,7 @@
       </column>
       <column columnName="DrawTimestamp">
           <description>The timestamp of specimen collection.</description>
-          <datatype>date</datatype>
+          <datatype>datetime</datatype>
           <formatString>DateTime</formatString>
       </column>
       <column columnName="DrawDate">
@@ -1170,12 +1181,12 @@
       </column>
       <column columnName="DrawTime">
           <description>The time of specimen collection.</description>
-          <datatype>date</datatype>
+          <datatype>time</datatype>
           <formatString>Time</formatString>
       </column>
       <column columnName="SalReceiptDate">
           <description>The timestamp of specimen receipt at the site-affiliated laboratory.</description>
-          <datatype>date</datatype>
+          <datatype>datetime</datatype>
       </column>
       <column columnName="SpecimenHash">
           <description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</description>

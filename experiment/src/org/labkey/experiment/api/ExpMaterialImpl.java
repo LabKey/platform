@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -110,7 +111,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public void setLSID(Lsid lsid)
     {
         if (null != getName() && !getName().equals(lsid.getObjectId()))
-            throw new IllegalStateException("name="+getName() + " lsid="+lsid.toString());
+            throw new IllegalStateException("name=" + getName() + " lsid=" + lsid);
         super.setLSID(lsid);
     }
 
@@ -157,6 +158,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         String result = _object.getCpasType();
         return result == null ? ExpMaterialImpl.DEFAULT_CPAS_TYPE : result;
+    }
+
+    @Override
+    public String getRootMaterialLSID()
+    {
+        return _object.getRootMaterialLSID();
+    }
+
+    @Override
+    public String getAliquotedFromLSID()
+    {
+        return _object.getAliquotedFromLSID();
     }
 
     @Override
@@ -522,7 +535,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (ConversionException x)
                 {
-                    throw new ValidationException("Could not convert '" + value + "' for field " + dp.getName() + ", should be of type " + dp.getPropertyDescriptor().getPropertyType().getJavaType().getSimpleName());
+                    throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
                 }
                 converted.put(dp.getName(), value);
                 values.remove(key);

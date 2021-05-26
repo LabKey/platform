@@ -30,8 +30,8 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -91,7 +91,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
         getMutableColumn("RowId").setUserEditable(true);
 
         var parentColumn = getMutableColumn("Parent");
-        ContainerForeignKey.initColumn(parentColumn, _userSchema);
 
         if (url == null)
             url = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
@@ -104,7 +103,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
         this.addColumn(col);
 
         var name = getMutableColumn("Name");
-        name.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, false));
         name.setURL(detailsURL);
         name.setReadOnly(true); // CONSIDER: allow renames via QueryUpdateService api
 
@@ -130,7 +128,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         folderDisplayColumn.setReadOnly(true);
         setTitleColumn(folderDisplayColumn.getName());
 
-        final var folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
+        final var folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("EntityId"));
         folderPathCol.setReadOnly(true);
         folderPathCol.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, true));
         addColumn(folderPathCol);
@@ -174,8 +172,6 @@ public class ContainerTable extends FilteredTable<UserSchema>
         addColumn(containerDisplayColumn);
 
         col = getMutableColumn("CreatedBy");
-        col.setReadOnly(true);
-        col.setFk(new UserIdQueryForeignKey(_userSchema, true));
 
         var title = getMutableColumn("Title");
         title.setURL(detailsURL);
@@ -216,6 +212,8 @@ public class ContainerTable extends FilteredTable<UserSchema>
         @Override
         protected String transformValue(Integer rawValue)
         {
+            if (rawValue == null)
+                return "";
             int rowId = rawValue.intValue();
             Container c = ContainerManager.getForRowId(rowId);
             if (c == null)

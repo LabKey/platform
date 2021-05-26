@@ -51,7 +51,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
@@ -67,12 +66,14 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -84,13 +85,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.naming.Binding;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NameNotFoundException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.Reference;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -98,12 +92,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -122,11 +114,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -153,6 +143,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
     public static final String CPAS_DATA_SOURCE = "cpasDataSource";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
+
+    private static volatile List<String> _missingViews = Collections.emptyList();
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
@@ -259,8 +251,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public List<Module> doInit(List<File> explodedModuleDirs)
     {
         List<Map.Entry<File,File>> moduleDirs = explodedModuleDirs.stream()
-                .map(dir -> new AbstractMap.SimpleEntry<File,File>(dir,null))
-                .collect(Collectors.toList());
+            .map(dir -> new AbstractMap.SimpleEntry<File,File>(dir,null))
+            .collect(Collectors.toList());
         return doInitWithSourceModule(moduleDirs);
     }
 
@@ -303,7 +295,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         public static ExplodedModuleService newInstance(Object obj)
         {
-            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) && !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()))
+            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) &&
+                    !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()) &&
+                    !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName()))
                 return null;
             Class interfaces[] = new Class[] {ExplodedModuleService.class};
             return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(), interfaces, new _Proxy(obj));
@@ -399,7 +393,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
                 ((DefaultModule)moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
-                initializeAndPruneModules(moduleList);
+                pruneModules(moduleList);
+                initializeModules(moduleList);
 
                 Throwable t = _moduleFailures.get(moduleCreated.getName());
                 if (null != t)
@@ -477,7 +472,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         verifyProductionModeMatchesBuild();
 
         // Initialize data sources before initializing modules; modules will fail to initialize if the appropriate data sources aren't available
-        initializeDataSources();
+        DbScope.initializeDataSources();
 
         // Start up a thread that lets us hit a breakpoint in the debugger, even if all the real working threads are hung.
         // This lets us invoke methods in the debugger, gain easier access to statics, etc.
@@ -491,6 +486,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;
 
+        // Prune modules before upgrading core module, see Issue 42150
+        synchronized (_modulesLock)
+        {
+            pruneModules(_modules);
+        }
+
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
@@ -499,8 +500,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         synchronized (_modulesLock)
         {
+            checkForRenamedModules();
             // use _modules here because this List<> needs to be modifiable
-            initializeAndPruneModules(_modules);
+            initializeModules(_modules);
         }
 
         if (!_duplicateModuleErrors.isEmpty())
@@ -508,7 +510,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings)
                 {
                     for (HtmlString error : _duplicateModuleErrors)
                     {
@@ -589,7 +591,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             WarningService.get().register(new WarningProvider()
             {
                 @Override
-                public void addStaticWarnings(Warnings warnings)
+                public void addStaticWarnings(@NotNull Warnings warnings)
                 {
                     warnings.add(HtmlString.of(message));
                 }
@@ -608,6 +610,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+    }
+
+    private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
+
+    private void checkForRenamedModules()
+    {
+        getModules().stream()
+            .filter(module -> _moduleRenames.containsKey(module.getName())).findAny()
+            .ifPresent(module -> {
+                String msg = String.format("Invalid LabKey deployment. The '%s' module has been renamed, %s", module.getName(),
+                    AppProps.getInstance().getProjectRoot() == null
+                        ? " please deploy an updated distribution and restart LabKey." // Likely production environment
+                        : " please update your enlistment." // Likely dev environment
+                );
+
+                throw new IllegalStateException(msg);
+            });
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -630,21 +649,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return !PRODUCTION_BUILD_TYPE.equalsIgnoreCase(module.getBuildType());
     }
 
-    /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
-    private void initializeAndPruneModules(List<Module> modules)
+    /** Enumerates all the modules, removing the ones that don't support the core database */
+    private void pruneModules(List<Module> modules)
     {
         Module core = getCoreModule();
-
-        /*
-         * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
-         * as they may have not initialized themselves yet.  However, we did not enforce that
-         * so this cross-module behavior may have crept in.
-         *
-         * To help mitigate this a little, we remove modules that do not support this DB type
-         * before calling initialize().
-         *
-         * NOTE: see FolderTypeManager.get().registerFolderType() for an example of enforcing this
-         */
 
         ListIterator<Module> iterator = modules.listIterator();
         Module.SupportedDatabase coreType = Module.SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
@@ -661,9 +669,26 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 removeModule(iterator, module, !AppProps.getInstance().isDevMode(), e);
             }
         }
+    }
+
+    /** Enumerates all remaining modules, initializing them and removing any that fail to initialize */
+    private void initializeModules(List<Module> modules)
+    {
+        Module core = getCoreModule();
+
+        /*
+         * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
+         * as they may have not initialized themselves yet.  However, we did not enforce that
+         * so this cross-module behavior may have crept in.
+         *
+         * To help mitigate this a little, we remove modules that do not support this DB type
+         * before calling initialize().
+         *
+         * NOTE: see FolderTypeManager.get().registerFolderType() for an example of enforcing this
+         */
 
         //initialize each module in turn
-        iterator = modules.listIterator();
+        ListIterator<Module> iterator = modules.listIterator();
         while (iterator.hasNext())
         {
             Module module = iterator.next();
@@ -1088,78 +1113,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return _tomcatVersion;
     }
 
-    // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
-    private void initializeDataSources()
-    {
-        _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
-
-        Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
-
-        String labkeyDsName;
-
-        try
-        {
-            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
-            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
-            labkeyDsName = ensureDatabase(LABKEY_DATA_SOURCE, CPAS_DATA_SOURCE);
-
-            InitialContext ctx = new InitialContext();
-            Context envCtx = (Context) ctx.lookup("java:comp/env");
-            NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
-
-            while (iter.hasMore())
-            {
-                try
-                {
-                    Binding o = iter.next();
-                    String dsName = o.getName();
-                    DataSource ds = (DataSource) o.getObject();
-                    dataSources.put(dsName, ds);
-                }
-                catch (NamingException e)
-                {
-                    _log.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            throw new ConfigurationException("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-        }
-
-        DbScope.initializeScopes(labkeyDsName, dataSources);
-    }
-
-    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
-    private void verifyJdbcDrivers()
-    {
-        File lib = getTomcatLib();
-
-        if (null != lib)
-        {
-            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
-                .filter(name->new File(lib, name).exists())
-                .collect(Collectors.toList());
-
-            if (!existing.isEmpty())
-            {
-                String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
-//                throw new ConfigurationException("You must delete the following JDBC drivers from " + path + ": " + existing);
-                String message = "You must delete the following JDBC drivers from " + path + ": " + existing;
-                _log.warn(message);
-                WarningService.get().register(new WarningProvider()
-                {
-                    @Override
-                    public void addStaticWarnings(Warnings warnings)
-                    {
-                        warnings.add(HtmlString.of(message));
-                    }
-                });
-            }
-        }
-    }
-
-    public @Nullable File getTomcatLib()
+    public static @Nullable File getTomcatLib()
     {
         String classPath = System.getProperty("java.class.path", ".");
 
@@ -1187,87 +1141,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return new File(tomcat, "lib");
     }
 
-    // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
-    // create the database if it doesn't already exist, report any errors and return the name.
-    public String ensureDatabase(@NotNull String primaryName, String... alternativeNames) throws NamingException, ServletException
-    {
-        List<String> dsNames = new ArrayList<>();
-        dsNames.add(primaryName);
-        dsNames.addAll(Arrays.asList(alternativeNames));
 
-        InitialContext ctx = new InitialContext();
-        Context envCtx = (Context) ctx.lookup("java:comp/env");
-
-        DataSource dataSource = null;
-        String dsName = null;
-
-        for (String name : dsNames)
-        {
-            dsName = name;
-
-            try
-            {
-                dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
-                break;
-            }
-            catch (NameNotFoundException e)
-            {
-                // Name not found is fine (for now); keep looping through alternative names
-            }
-            catch (NamingException e)
-            {
-                String message = e.getMessage();
-
-                // dataSource is defined but the database doesn't exist. This happens only with the Tomcat JDBC
-                // connection pool, which attempts a connection on bind. In this case, we need to use some horrible
-                // reflection to get the properties we need to create the database.
-                if ((message.contains("FATAL: database") && message.contains("does not exist")) ||
-                    (message.contains("Cannot open database") && message.contains("requested by the login. The login failed.")))
-                {
-                    try
-                    {
-                        Object namingContext = envCtx.lookup("jdbc");
-                        Field bindingsField = namingContext.getClass().getDeclaredField("bindings");
-                        bindingsField.setAccessible(true);
-                        Map bindings = (Map)bindingsField.get(namingContext);
-                        Object namingEntry = bindings.get(dsName);
-                        Field valueField = namingEntry.getClass().getDeclaredField("value");
-                        Reference reference = (Reference)valueField.get(namingEntry);
-
-                        String driverClassname = (String)reference.get("driverClassName").getContent();
-                        SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, driverClassname);
-                        String url = (String)reference.get("url").getContent();
-                        String password = (String)reference.get("password").getContent();
-                        String username = (String)reference.get("username").getContent();
-
-                        DbScope.createDataBase(dialect, url, username, password, DbScope.isPrimaryDataSource(dsName));
-                    }
-                    catch (Exception e2)
-                    {
-                        throw new ConfigurationException("Failed to retrieve \"" + dsName + "\" properties from " + AppProps.getInstance().getWebappConfigurationFilename() + ". Try creating the database manually and restarting the server.", e2);
-                    }
-
-                    // Try it again
-                    dataSource = (DataSource)envCtx.lookup("jdbc/" + dsName);
-                    break;
-                }
-
-                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-            }
-        }
-
-        if (null == dataSource)
-            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
-
-        DbScope.ensureDataBase(dsName, dataSource);
-
-        return dsName;
-    }
-
-
-    // Initialize and update the CoreModule "manually", outside the normal UI-based process. We want to change the core
-    // tables before we display pages, require login, check permissions, or initialize any of the other modules.
-    // Returns true if core module required upgrading, otherwise false
+    /**
+     * Initialize and update the Core module first. We want to change the core tables before we display pages, request
+     * login, check permissions, or initialize any of the other modules.
+     * @return true if core module required upgrading, otherwise false
+     */
     private boolean upgradeCoreModule() throws ServletException
     {
         Module coreModule = getCoreModule();
@@ -1277,10 +1156,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         coreModule.initialize();
-
-        // Earliest opportunity to check, since the method adds an admin warning (and WarningService is initialized by
-        // the line above). TODO: Move this to initializeDataSources() once it throws instead of warning.
-        verifyJdbcDrivers();
 
         ModuleContext coreContext;
 
@@ -1381,6 +1256,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         if (null == _startupFailure)
             _startupFailure = t;
+
+        if (Boolean.valueOf(System.getProperty("terminateOnStartupFailure")))
+        {
+            // Issue 40038: Ride-or-die Mode
+            _log.fatal("Startup failure, terminating", t);
+            System.exit(1);
+        }
     }
 
     public void addModuleFailure(String moduleName, Throwable t)
@@ -1489,6 +1371,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             runDropScripts();
             runCreateScripts();
         }
+        refreshMissingViews();
     }
 
     // Runs the drop and create scripts in a single module
@@ -1751,6 +1634,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // performedUpgrade is true if any module required upgrading
     private void afterUpgrade(boolean performedUpgrade)
     {
+        verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
 
         if (performedUpgrade)
@@ -1763,6 +1647,37 @@ public class ModuleLoader implements Filter, MemTrackerListener
         verifyRequiredModules();
     }
 
+    // Register an admin warning that reports if any database views are missing, Issue 40187
+    private void verifyDatabaseViews()
+    {
+        // This is a "dynamic" warning because RecreateViewsAction might correct the problem at runtime
+        WarningService.get().register(new WarningProvider()
+        {
+            @Override
+            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
+            {
+                if (context.getUser().hasSiteAdminPermission())
+                {
+                    if (WarningService.get().showAllWarnings() || !_missingViews.isEmpty())
+                        warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews +
+                            ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
+                }
+            }
+        });
+        refreshMissingViews();
+    }
+
+    // Determine if any module database views are missing
+    private void refreshMissingViews()
+    {
+        _missingViews = DbSchema.getAllSchemasToTest().stream()
+            .flatMap(s -> s.getTableXmlMap().entrySet().stream()
+                .filter(e -> "VIEW".equalsIgnoreCase(e.getValue().getTableDbType()))
+                .filter(e -> s.getTable(e.getKey()).getTableType() == DatabaseTableType.NOT_IN_DB)
+                .map(e -> s.getName() + "." + e.getValue().getTableName())
+            )
+            .collect(Collectors.toList());
+    }
 
     // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
     // Particularly interesting for compliant deployments, e.g., <Parameter name="requiredModules" value="Compliance"/>
@@ -2276,8 +2191,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // filter out bootstrap scoped properties in the non-bootstrap startup case
         return props.stream()
-                .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || isNewInstall())
-                .collect(Collectors.toList());
+            .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || isNewInstall())
+            .collect(Collectors.toList());
     }
 
 
@@ -2302,11 +2217,17 @@ public class ModuleLoader implements Filter, MemTrackerListener
             File newinstall = new File(propsDir, "newinstall");
             if (newinstall.isFile())
             {
+                _log.debug("'newinstall' file detected: " + newinstall.getAbsolutePath());
+
                 _newInstall = true;
                 if (newinstall.canWrite())
                     newinstall.delete();
                 else
                     throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
+            }
+            else
+            {
+                _log.debug("no 'newinstall' file detected");
             }
 
             File[] propFiles = propsDir.listFiles((File dir, String name) -> equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
@@ -2319,6 +2240,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
                 for (File propFile : sortedPropFiles)
                 {
+                    _log.debug("loading propsFile: " + propFile.getAbsolutePath());
+
                     try (FileInputStream in = new FileInputStream(propFile))
                     {
                         Properties props = new Properties();
@@ -2328,6 +2251,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         {
                             if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                             {
+                                _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
+
                                 ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
                                 if (_configPropertyMap.containsMapping(config.getScope(), config))
                                     _configPropertyMap.removeMapping(config.getScope(), config);
@@ -2341,6 +2266,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     }
                 }
             }
+            else
+            {
+                _log.debug("no propFiles to load");
+            }
+        }
+        else
+        {
+            _log.debug("propsDir non-existant or not a directory: " + propsDir.getAbsolutePath());
         }
 
         // load any system properties with the labkey prop prefix

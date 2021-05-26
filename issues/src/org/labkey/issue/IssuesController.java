@@ -869,7 +869,12 @@ public class IssuesController extends SpringActionController
                 CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
                 IssueValidation.validateRequiredFields(issueListDef, ccc, issuesForm, getUser(), errors);
                 IssueValidation.validateNotifyList(issuesForm, errors);
-                IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
+                // don't validate the assigned to field if we are in the process
+                // of closing it and we are assigning it to the guest user (otherwise validate)
+                if (action != IssuesApiForm.action.close || UserManager.getGuestUser().getUserId() != issuesForm.getBean().getAssignedTo())
+                {
+                    IssueValidation.validateAssignedTo(issuesForm, getContainer(), errors);
+                }
                 IssueValidation.validateStringFields(issuesForm, ccc, errors);
                 IssueValidation.validateComments(issuesForm, errors);
             }
@@ -1968,7 +1973,7 @@ public class IssuesController extends SpringActionController
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
 
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("issuesListDesigner"));
         }
 
         @Override
@@ -2197,7 +2202,7 @@ public class IssuesController extends SpringActionController
                 }
 
                 //Search for the query term instead
-                return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME);
+                return urlProvider(SearchUrls.class).getSearchURL(getContainer(), issueId, IssueSearchResultTemplate.NAME);
             }
 
             ActionURL url = getViewContext().cloneActionURL();
@@ -2370,7 +2375,7 @@ public class IssuesController extends SpringActionController
         @Override
         public URLHelper getRedirectURL(SearchForm form)
         {
-            return PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
+            return urlProvider(SearchUrls.class).getSearchURL(getContainer(), form.getQ(), IssueSearchResultTemplate.NAME);
         }
     }
 
@@ -2378,6 +2383,20 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetIssueAction extends ReadOnlyApiAction<IssueIdForm>
     {
+        private JSONObject getUsers(Set<Integer> userIds)
+        {
+            var currentUser = getUser();
+            var users = new JSONObject();
+            for (var userId : userIds)
+            {
+                var user = UserManager.getUser(userId);
+
+                if (user != null)
+                    users.put(String.valueOf(user.getUserId()), User.getUserProps(user, currentUser, null, false));
+            }
+            return users;
+        }
+
         @Override
         public ApiResponse execute(IssueIdForm issueIdForm, BindException errors)
         {
@@ -2389,6 +2408,11 @@ public class IssuesController extends SpringActionController
             jsonIssue.remove("lastComment");
             jsonIssue.remove("class");
 
+            var userIds = new HashSet<Integer>();
+            userIds.add(issue.getAssignedTo());
+            userIds.add(issue.getCreatedBy());
+            userIds.add(issue.getModifiedBy());
+
             JSONArray comments = new JSONArray();
             jsonIssue.put("comments", comments);
             for (Comment c : issue.getComments())
@@ -2397,8 +2421,11 @@ public class IssuesController extends SpringActionController
                 jsonComment.put("createdByName", c.getCreatedByName(user));
                 jsonComment.put("comment", c.getHtmlComment());
                 comments.put(comments.length(),  jsonComment);
+                userIds.add(c.getCreatedBy());
+                userIds.add(c.getModifiedBy());
                 // ATTACHMENTS
             }
+            jsonIssue.put("users", getUsers(userIds));
             jsonIssue.put("success", Boolean.TRUE);
             return new ApiSimpleResponse(jsonIssue);
         }

@@ -25,16 +25,16 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    Collection<TaskPipeline> pipelines = PipelineJobService.get().getTaskPipelines(null);
+    Collection<TaskPipeline<?>> pipelines = PipelineJobService.get().getTaskPipelines(null);
 %>
 
 <labkey:errors />
 
 <p>Registered Pipelines:</p>
 
-<table>
+<table class="labkey-data-region-legacy labkey-show-borders">
 
-<% for (TaskPipeline pipeline : pipelines) { %>
+<% for (TaskPipeline<?> pipeline : pipelines) { %>
     <tr>
         <td><b>Module</b></td>
         <td><%=h(pipeline.getDeclaringModule().getName())%></td>

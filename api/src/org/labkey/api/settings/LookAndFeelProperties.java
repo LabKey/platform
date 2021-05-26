@@ -163,6 +163,12 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         return systemEmailAddress;
     }
 
+    /** Let callers peek if there's an address configured without logging a error */
+    public boolean hasSystemEmailAddress()
+    {
+        return lookupStringValue(SYSTEM_EMAIL_ADDRESS_PROP, null) != null;
+    }
+
     public String getUnsubstitutedReportAProblemPath()
     {
         return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");

@@ -18,7 +18,11 @@ package org.labkey.visualization;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.fop.svg.PDFTranscoder;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.NullSafeBindException;
@@ -48,7 +52,9 @@ import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +63,29 @@ import java.util.Map;
 
 public class VisualizationServiceImpl implements VisualizationService
 {
+    @Override
+    public void renderSvgAsPdf(String svgSource, String filename, HttpServletResponse response) throws IOException
+    {
+        response.setContentType("application/pdf");
+        response.addHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+        PDFTranscoder transcoder = new PDFTranscoder();
+        TranscoderInput xIn = new TranscoderInput(new StringReader(svgSource));
+        TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
+
+        // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
+        transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
+
+        try
+        {
+            transcoder.transcode(xIn, xOut);
+        }
+        catch (TranscoderException e)
+        {
+            throw new IOException(e);
+        }
+    }
+
     @Override
     public SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, IOException
     {
@@ -224,7 +253,7 @@ public class VisualizationServiceImpl implements VisualizationService
 
     private static boolean isDemographicQueryDefinition(QueryDefinition q)
     {
-        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || !q.isTableQueryDefinition())
+        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || q.isUserDefined())
             return false;
 
         try
@@ -268,7 +297,7 @@ public class VisualizationServiceImpl implements VisualizationService
             props.put("queryName", getQueryName(query, false, _tableInfoMap));
             props.put("queryLabel", getQueryName(query, true, _tableInfoMap));
             props.put("queryDescription", getQueryDefinition(query, _tableInfoMap));
-            props.put("isUserDefined", !query.isTableQueryDefinition());
+            props.put("isUserDefined", query.isUserDefined());
             props.put("isDemographic", isDemographicQueryDefinition(query));
             props.put("phi", column.getPHI().name());
             props.put("hidden", column.isHidden() || (tableInfo != null && !tableInfo.getDefaultVisibleColumns().contains(column.getFieldKey())));
@@ -361,11 +390,11 @@ public class VisualizationServiceImpl implements VisualizationService
                 return VisualizationProvider.QueryType.datasets.toString();
         }
 
-        if (query.isTableQueryDefinition())
+        if (query.isUserDefined())
         {
-            return VisualizationProvider.QueryType.builtIn.toString();
+            return VisualizationProvider.QueryType.custom.toString();
         }
 
-        return VisualizationProvider.QueryType.custom.toString();
+        return VisualizationProvider.QueryType.builtIn.toString();
     }
 }

@@ -38,21 +38,24 @@ import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DiskCachingDataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
+import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
@@ -124,7 +127,6 @@ public class ApiModule extends CodeOnlyModule
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
-        LabKeyJspWriter.registerExperimentalFeature();
         ApiKeyManager.get().handleStartupProperties();
     }
 
@@ -150,13 +152,16 @@ public class ApiModule extends CodeOnlyModule
             DataIteratorUtil.TestCase.class,
             DateUtil.TestCase.class,
             DbScope.DialectTestCase.class,
+            DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
+            ExistingRecordDataIterator.TestCase.class,
             ExtUtil.TestCase.class,
             FieldKey.TestCase.class,
             FileType.TestCase.class,
             FileUtil.TestCase.class,
+            GenerateUniqueDataIterator.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
             JavaVersion.TestCase.class,
@@ -199,9 +204,9 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
-    public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         //TODO: No test cases.
         //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         return list;
@@ -259,7 +264,6 @@ public class ApiModule extends CodeOnlyModule
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
             StatementUtils.TestCase.class,
-            StorageProvisioner.TestCase.class,
             Table.DataIteratorTestCase.class,
             Table.TestCase.class,
             TableSelectorTestCase.class,
@@ -289,6 +293,8 @@ public class ApiModule extends CodeOnlyModule
         AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
         if (config != null)
             json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
+
+        json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
     }
 }

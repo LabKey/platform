@@ -20,7 +20,6 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -64,32 +63,84 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.AmbiguousLocationException;
+import org.labkey.api.specimen.RequestEventType;
+import org.labkey.api.specimen.RequestedSpecimens;
+import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenRequestException;
+import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
+import org.labkey.api.specimen.SpecimenRequestStatus;
+import org.labkey.api.specimen.SpecimenSearchWebPart;
+import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.ManageReqsBean;
+import org.labkey.api.specimen.actions.ReportConfigurationBean;
+import org.labkey.api.specimen.actions.SpecimenReportActions;
+import org.labkey.api.specimen.importer.RequestabilityManager;
+import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.api.specimen.notifications.DefaultRequestNotification;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
+import org.labkey.api.specimen.pipeline.SpecimenArchive;
+import org.labkey.api.specimen.pipeline.SpecimenBatch;
+import org.labkey.api.specimen.query.SpecimenEventQueryView;
+import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.api.specimen.query.SpecimenRequestQueryView;
+import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
+import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.api.specimen.security.permissions.ManageNewRequestFormPermission;
+import org.labkey.api.specimen.security.permissions.ManageNotificationsPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestRequirementsPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.api.specimen.settings.DisplaySettings;
+import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
+import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.view.SpecimenWebPart;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
-import org.labkey.api.study.SamplesUrls;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.ParticipantDataset;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -97,79 +148,43 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
-import org.labkey.api.view.Portal.WebPart;
-import org.labkey.study.CohortFilter;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DisplayElement;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.MapArrayExcelWriter;
-import org.labkey.study.importer.RequestabilityManager;
-import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ExtendedSpecimenRequestView;
-import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.SpecimenComment;
-import org.labkey.study.model.SpecimenRequest;
-import org.labkey.study.model.SpecimenRequestActor;
-import org.labkey.study.model.SpecimenRequestEvent;
-import org.labkey.study.model.SpecimenRequestRequirement;
-import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SpecimenArchive;
-import org.labkey.study.pipeline.SpecimenBatch;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
-import org.labkey.study.query.SpecimenEventQueryView;
-import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.query.SpecimenRequestQueryView;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.requirements.RequirementProvider;
-import org.labkey.study.requirements.SpecimenRequestRequirementType;
-import org.labkey.study.security.permissions.ManageDisplaySettingsPermission;
-import org.labkey.study.security.permissions.ManageNewRequestFormPermission;
-import org.labkey.study.security.permissions.ManageNotificationsPermission;
-import org.labkey.study.security.permissions.ManageRequestRequirementsPermission;
-import org.labkey.study.security.permissions.ManageRequestSettingsPermission;
-import org.labkey.study.security.permissions.ManageRequestStatusesPermission;
-import org.labkey.study.security.permissions.ManageRequestsPermission;
-import org.labkey.study.security.permissions.ManageSpecimenActorsPermission;
-import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.security.permissions.RequestSpecimensPermission;
-import org.labkey.study.security.permissions.SetSpecimenCommentsPermission;
-import org.labkey.study.specimen.SpecimenSearchWebPart;
-import org.labkey.study.specimen.SpecimenWebPart;
-import org.labkey.study.specimen.notifications.ActorNotificationRecipientSet;
-import org.labkey.study.specimen.notifications.DefaultRequestNotification;
-import org.labkey.study.specimen.notifications.NotificationRecipientSet;
-import org.labkey.study.specimen.report.SpecimenReportExcelWriter;
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.study.specimen.report.participant.ParticipantSiteReportFactory;
-import org.labkey.study.specimen.report.participant.ParticipantSummaryReportFactory;
-import org.labkey.study.specimen.report.participant.ParticipantTypeReportFactory;
-import org.labkey.study.specimen.report.request.RequestEnrollmentSiteReportFactory;
-import org.labkey.study.specimen.report.request.RequestLocationReportFactory;
-import org.labkey.study.specimen.report.request.RequestParticipantReportFactory;
-import org.labkey.study.specimen.report.request.RequestReportFactory;
-import org.labkey.study.specimen.report.specimentype.TypeCohortReportFactory;
-import org.labkey.study.specimen.report.specimentype.TypeParticipantReportFactory;
-import org.labkey.study.specimen.report.specimentype.TypeSummaryReportFactory;
-import org.labkey.study.specimen.settings.DisplaySettings;
-import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.specimen.settings.RequestNotificationSettings;
-import org.labkey.study.specimen.settings.StatusSettings;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -191,7 +206,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -215,9 +229,20 @@ public class SpecimenController extends BaseStudyController
         ShowUploadSpecimensAction.ImportCompleteAction.class,
         ShowGroupMembersAction.class,
         ShowSearchAction.class,
-        AutoCompleteAction.class,
         ParticipantCommentAction.SpecimenCommentInsertAction.class,
-        ParticipantCommentAction.SpecimenCommentUpdateAction.class
+        ParticipantCommentAction.SpecimenCommentUpdateAction.class,
+
+        // Report actions from SpecimenReportActions
+        SpecimenReportActions.ParticipantSummaryReportAction.class,
+        SpecimenReportActions.ParticipantTypeReportAction.class,
+        SpecimenReportActions.ParticipantSiteReportAction.class,
+        SpecimenReportActions.RequestReportAction.class,
+        SpecimenReportActions.RequestEnrollmentSiteReportAction.class,
+        SpecimenReportActions.RequestSiteReportAction.class,
+        SpecimenReportActions.RequestParticipantReportAction.class,
+        SpecimenReportActions.TypeParticipantReportAction.class,
+        SpecimenReportActions.TypeSummaryReportAction.class,
+        SpecimenReportActions.TypeCohortReportAction.class
     );
 
     public SpecimenController()
@@ -225,12 +250,33 @@ public class SpecimenController extends BaseStudyController
         setActionResolver(_actionResolver);
     }
 
-    public static class SamplesUrlsImpl implements SamplesUrls
+    public static class SpecimenUrlsImpl implements SpecimenUrls
     {
         @Override
-        public ActionURL getSamplesURL(Container c)
+        public ActionURL getSpecimensURL(Container c)
         {
-            return SpecimenController.getSamplesURL(c);
+            return SpecimenController.getSpecimensURL(c);
+        }
+
+        @Override
+        public ActionURL getSpecimensURL(Container c, boolean showVials)
+        {
+            return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, true);
+        }
+
+        @Override
+        public ActionURL getCommentURL(Container c, String globalUniqueId)
+        {
+            return getSpecimensURL(c)
+                .addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.showVials, true)
+                .addParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name())
+                .addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
+        }
+
+        @Override
+        public ActionURL getManageRequestURL(Container c)
+        {
+            return new ActionURL(SpecimenController.ManageRequestAction.class, c);
         }
 
         @Override
@@ -240,9 +286,113 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getShowCreateSpecimenRequestURL(Container c)
+        {
+            return new ActionURL(ShowCreateSpecimenRequestAction.class, c);
+        }
+
+        @Override
         public ActionURL getRequestDetailsURL(Container c, int requestId)
         {
             return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
+        }
+
+        @Override
+        public ActionURL getRequestDetailsURL(Container c, String requestId)
+        {
+            return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
+        }
+
+        @Override
+        public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl)
+        {
+            ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
+            url.addParameter("id", Integer.toString(rowId));
+            if (locationId != null)
+                url.addParameter("locationId", locationId);
+            url.addReturnURL(returnUrl);
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getShowSearchURL(Container c)
+        {
+            return new ActionURL(ShowSearchAction.class, c);
+        }
+
+        @Override
+        public ActionURL getAutoReportListURL(Container c)
+        {
+            return new ActionURL(AutoReportListAction.class, c);
+        }
+
+        @Override
+        public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(SpecimenEventsAction.class, c);
+            url.addReturnURL(returnURL);
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
+        {
+            ActionURL url = new ActionURL(UpdateSpecimenQueryRowAction.class, c);
+            url.addParameter("schemaName", schemaName);
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getUploadSpecimensURL(Container c)
+        {
+            return new ActionURL(ShowUploadSpecimensAction.class, c);
+        }
+
+        @Override
+        public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
+        {
+            ActionURL url = new ActionURL(InsertSpecimenQueryRowAction.class, c);
+            url.addParameter("schemaName", schemaName);
+            url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getSubmitRequestURL(Container c, String id)
+        {
+            return new ActionURL(SpecimenController.SubmitRequestAction.class, c).addParameter("id", "${requestId}");
+        }
+
+        @Override
+        public ActionURL getDeleteRequestURL(Container c, String id)
+        {
+            return new ActionURL(SpecimenController.DeleteRequestAction.class, c).addParameter("id", "${requestId}");
+        }
+
+        @Override
+        public ActionURL getCompleteSpecimenURL(Container c, String type)
+        {
+            return new ActionURL(SpecimenController.CompleteSpecimenAction.class, c).addParameter("type", type);
+        }
+
+        @Override
+        public ActionURL getTypeParticipantReportURL(Container c)
+        {
+            return new ActionURL(SpecimenReportActions.TypeParticipantReportAction.class, c);
+        }
+
+        @Override
+        public void addSpecimenNavTrail(NavTree root, String childTitle, Container c)
+        {
+            ActionURL overviewURL = new ActionURL(OverviewAction.class, c);
+            root.addChild("Specimen Overview", overviewURL);
+            root.addChild("Available Reports", new ActionURL(SpecimenController.AutoReportListAction.class, c));
+            root.addChild(childTitle);
         }
     }
 
@@ -254,9 +404,9 @@ public class SpecimenController extends BaseStudyController
         {
             if (null == StudyService.get().getStudy(getContainer()))
                 return new HtmlView("This folder does not contain a study.");
-            SpecimenSearchWebPart sampleSearch = new SpecimenSearchWebPart(true);
-            SpecimenWebPart sampleSummary = new SpecimenWebPart(true, (StudyImpl)StudyService.get().getStudy(getContainer()));
-            return new VBox(sampleSummary, sampleSearch);
+            SpecimenSearchWebPart specimenSearch = new SpecimenSearchWebPart(true);
+            SpecimenWebPart specimenSummary = new SpecimenWebPart(true, StudyService.get().getStudy(getContainer()));
+            return new VBox(specimenSummary, specimenSearch);
         }
 
         @Override
@@ -272,14 +422,14 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getRedirectURL(Object o)
         {
-            return getSamplesURL();
+            return getSpecimensURL();
         }
     }
 
     private void addBaseSpecimenNavTrail(NavTree root)
     {
         _addNavTrail(root);
-        ActionURL overviewURL = new ActionURL(OverviewAction.class,  getContainer());
+        ActionURL overviewURL = new ActionURL(OverviewAction.class, getContainer());
         root.addChild("Specimen Overview", overviewURL);
     }
 
@@ -328,38 +478,37 @@ public class SpecimenController extends BaseStudyController
         if (isPost())
             lsids = DataRegionSelection.getSelected(getViewContext(), true);
         HttpSession session = getViewContext().getRequest().getSession(true);
-        Pair<Container, Set<String>> selectionCache = (Pair<Container, Set<String>>) session.getAttribute(SELECTED_SAMPLES_SESSION_ATTRIB_KEY);
+        Pair<Container, Set<String>> selectionCache = (Pair<Container, Set<String>>) session.getAttribute(SELECTED_SPECIMENS_SESSION_ATTRIB_KEY);
 
         boolean newFilter = (lsids != null && !lsids.isEmpty());
         boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
         if (!newFilter && !cachedFilter)
         {
-            throw new RedirectException(getSamplesURL());
+            throw new RedirectException(getSpecimensURL());
         }
 
         if (newFilter)
             selectionCache = new Pair<>(getContainer(), lsids);
 
-        session.setAttribute(SELECTED_SAMPLES_SESSION_ATTRIB_KEY, selectionCache);
+        session.setAttribute(SELECTED_SPECIMENS_SESSION_ATTRIB_KEY, selectionCache);
         return selectionCache.getValue();
     }
 
-
-    private static final String SELECTED_SAMPLES_SESSION_ATTRIB_KEY = SpecimenController.class.getName() + "/SelectedSamples";
+    private static final String SELECTED_SPECIMENS_SESSION_ATTRIB_KEY = SpecimenController.class.getName() + "/SelectedSpecimens";
 
     @RequiresPermission(ReadPermission.class)
-    public class SelectedSamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
+    public class SelectedSpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
     {
         private boolean _vialView;
         private ParticipantDataset[] _filterPds = null;
 
-        public SelectedSamplesAction()
+        public SelectedSpecimensAction()
         {
-            super(SampleViewTypeForm.class);
+            super(SpecimenViewTypeForm.class);
         }
 
         @Override
-        protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
+        protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
         {
             Study study = getStudyRedirectIfNull();
             Set<Pair<String, String>> ptidVisits = new HashSet<>();
@@ -383,7 +532,7 @@ public class SpecimenController extends BaseStudyController
                 }
             }
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
-            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/samplesHeader.jsp",
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/specimenHeader.jsp",
                     new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
             return new VBox(header, view);
         }
@@ -399,7 +548,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
+        protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
         {
             _vialView = form.isShowVials();
             Set<String> lsids = getSelectionLsids();
@@ -424,30 +573,31 @@ public class SpecimenController extends BaseStudyController
     }
 
 
-    private ActionURL getSamplesURL()
+    private ActionURL getSpecimensURL()
     {
-        return getSamplesURL(getContainer());
+        return getSpecimensURL(getContainer());
     }
 
 
-    public static ActionURL getSamplesURL(Container c)
+    public static ActionURL getSpecimensURL(Container c)
     {
-        return new ActionURL(SamplesAction.class, c);
+        return new ActionURL(SpecimensAction.class, c);
     }
 
 
     @RequiresPermission(ReadPermission.class)
-    public class SamplesAction extends QueryViewAction<SampleViewTypeForm, SpecimenQueryView>
+    @ActionNames("specimens,samples")
+    public class SpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
     {
         private boolean _vialView;
 
-        public SamplesAction()
+        public SpecimensAction()
         {
-            super(SampleViewTypeForm.class);
+            super(SpecimenViewTypeForm.class);
         }
 
         @Override
-        protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
+        protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
         {
             StudyImpl study = getStudyThrowIfNull();
 
@@ -460,7 +610,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected ModelAndView getHtmlView(SampleViewTypeForm form, BindException errors) throws Exception
+        protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudyRedirectIfNull();
 
@@ -469,7 +619,7 @@ public class SpecimenController extends BaseStudyController
             // Get last selected request
             if (null != study.getLastSpecimenRequest())
                 bean.setSelectedRequest(study.getLastSpecimenRequest());
-            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/samplesHeader.jsp", bean);
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/specimenHeader.jsp", bean);
             return new VBox(header, view);
         }
 
@@ -483,11 +633,12 @@ public class SpecimenController extends BaseStudyController
 
     public static final class SpecimenHeaderBean
     {
-        private ActionURL _otherViewURL;
-        private ViewContext _viewContext;
-        private boolean _showingVials;
+        private final ActionURL _otherViewURL;
+        private final ViewContext _viewContext;
+        private final boolean _showingVials;
+        private final Set<Pair<String, String>> _filteredPtidVisits;
+
         private Integer _selectedRequest;
-        private Set<Pair<String, String>> _filteredPtidVisits;
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
         {
@@ -524,8 +675,8 @@ public class SpecimenController extends BaseStudyController
                     if (table.equals(currentTable))
                     {
                         // use the query service to check to see if the current filter column is present
-                        // in the other view.  If so, we'll add a filter parameter with the same value on the
-                        // other view.  Otherwise, we'll keep the parameter, but we won't map it to the other view:
+                        // in the other view. If so, we'll add a filter parameter with the same value on the
+                        // other view. Otherwise, we'll keep the parameter, but we won't map it to the other view:
                         boolean translatable = column.equals("sort");
 
                         if (!translatable)
@@ -603,7 +754,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class SampleViewTypeForm extends QueryViewAction.QueryExportForm
+    public static class SpecimenViewTypeForm extends QueryViewAction.QueryExportForm
     {
         public enum PARAMS
         {
@@ -688,7 +839,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    static class SampleEventForm
+    static class SpecimenEventForm
     {
         private String _id;
         private Container _targetStudy;
@@ -715,21 +866,21 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SampleEventsRedirectAction extends SimpleViewAction<SampleEventForm>
+    public class SpecimenEventsRedirectAction extends SimpleViewAction<SpecimenEventForm>
     {
         @Override
-        public ModelAndView getView(SampleEventForm form, BindException errors)
+        public ModelAndView getView(SpecimenEventForm form, BindException errors)
         {
             if (form.getId() != null && form.getTargetStudy() != null)
             {
-                Vial vial = SpecimenManager.getInstance().getVial(form.getTargetStudy(), getUser(), form.getId());
+                Vial vial = SpecimenManagerNew.get().getVial(form.getTargetStudy(), getUser(), form.getId());
                 if (vial != null)
                 {
-                    ActionURL url = new ActionURL(SampleEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
+                    ActionURL url = new ActionURL(SpecimenEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
                     throw new RedirectException(url);
                 }
             }
-            return new HtmlView("<span class='labkey-error'>Unable to resolve the Sample ID and target Study</span>");
+            return new HtmlView("<span class='labkey-error'>Unable to resolve the Specimen ID and target Study</span>");
         }
 
         @Override
@@ -739,9 +890,9 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SampleEventsAction extends SimpleViewAction<ViewEventForm>
+    public class SpecimenEventsAction extends SimpleViewAction<ViewEventForm>
     {
-        private boolean _showingSelectedSamples;
+        private boolean _showingSelectedSpecimens;
 
         @Override
         public ModelAndView getView(ViewEventForm viewEventForm, BindException errors)
@@ -750,12 +901,12 @@ public class SpecimenController extends BaseStudyController
             {
                 throw new NotFoundException("Folder does not have a study.");
             }
-            _showingSelectedSamples = viewEventForm.isSelected();
-            Vial vial = SpecimenManager.getInstance().getVial(getContainer(), getUser(), viewEventForm.getId());
+            _showingSelectedSpecimens = viewEventForm.isSelected();
+            Vial vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), viewEventForm.getId());
             if (vial == null)
                 throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
 
-            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/study/view/specimen/sample.jsp",
+            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/study/view/specimen/specimen.jsp",
                     new SpecimenEventBean(vial, viewEventForm.getReturnUrl()));
             summaryView.setTitle("Vial Summary");
 
@@ -764,9 +915,9 @@ public class SpecimenController extends BaseStudyController
 
             VBox vbox;
 
-            if (getStudyRedirectIfNull().getRepositorySettings().isEnableRequests())
+            if (SettingsManager.get().getRepositorySettings(getStudyRedirectIfNull().getContainer()).isEnableRequests())
             {
-                List<Integer> requestIds = SpecimenManager.getInstance().getRequestIdsForSpecimen(vial);
+                List<Integer> requestIds = SpecimenRequestManager.get().getRequestIdsForSpecimen(vial);
                 SimpleFilter requestFilter;
                 WebPartView relevantRequests;
 
@@ -786,7 +937,7 @@ public class SpecimenController extends BaseStudyController
                     relevantRequests = queryView;
                 }
                 else
-                    relevantRequests = new JspView("/org/labkey/study/view/specimen/relevantRequests.jsp");
+                    relevantRequests = new JspView("/org/labkey/specimen/view/relevantRequests.jsp");
                 relevantRequests.setTitle("Relevant Vial Requests");
                 vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
             }
@@ -802,10 +953,10 @@ public class SpecimenController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             addBaseSpecimenNavTrail(root);
-            if (_showingSelectedSamples)
+            if (_showingSelectedSpecimens)
             {
-                root.addChild("Selected Specimens", new ActionURL(SelectedSamplesAction.class,
-                        getContainer()).addParameter(SampleViewTypeForm.PARAMS.showVials, "true"));
+                root.addChild("Selected Specimens", new ActionURL(SelectedSpecimensAction.class,
+                        getContainer()).addParameter(SpecimenViewTypeForm.PARAMS.showVials, "true"));
             }
             root.addChild("Vial History");
         }
@@ -813,7 +964,7 @@ public class SpecimenController extends BaseStudyController
 
     private void requiresEditRequestPermissions(SpecimenRequest request)
     {
-        if (!SpecimenManager.getInstance().hasEditRequestPermissions(getUser(), request))
+        if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request))
             throw new UnauthorizedException();
     }
 
@@ -822,7 +973,7 @@ public class SpecimenController extends BaseStudyController
         String getHiddenFormInputs(ViewContext ctx);
     }
 
-    public static class ModifySampleRequestForm extends IdForm implements HiddenFormInputGenerator
+    public static class ModifySpecimenRequestForm extends IdForm implements HiddenFormInputGenerator
     {
         public enum PARAMS
         {
@@ -922,13 +1073,13 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public abstract static class SamplesViewBean
+    public abstract static class SpecimensViewBean
     {
         protected SpecimenQueryView _specimenQueryView;
         protected List<Vial> _vials;
 
-        public SamplesViewBean(ViewContext context, List<Vial> vials, boolean showHistoryLinks,
-                               boolean showRecordSelectors, boolean disableLowVialIndicators, boolean restrictRecordSelectors)
+        public SpecimensViewBean(ViewContext context, List<Vial> vials, boolean showHistoryLinks,
+                                 boolean showRecordSelectors, boolean disableLowVialIndicators, boolean restrictRecordSelectors)
         {
             _vials = vials;
             if (vials != null && vials.size() > 0)
@@ -952,29 +1103,27 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public class ManageRequestBean extends SamplesViewBean
+    public class ManageRequestBean extends SpecimensViewBean
     {
-        public static final String SUBMISSION_WARNING = "Once a request is submitted, its specimen list may no longer be modified. Continue?";
-        public static final String CANCELLATION_WARNING = "Canceling will permanently delete this pending request. Continue?";
         protected SpecimenRequest _specimenRequest;
         protected boolean _requestManager;
         protected boolean _requirementsComplete;
         protected boolean _finalState;
         private List<ActorNotificationRecipientSet> _possibleNotifications;
         protected List<String> _missingSpecimens = null;
-        private Boolean _submissionResult;
+        private final Boolean _submissionResult;
         private Location[] _providingLocations;
         private String _returnUrl;
 
         public ManageRequestBean(ViewContext context, SpecimenRequest specimenRequest, boolean forExport, Boolean submissionResult, String returnUrl)
         {
-            super(context, SpecimenManager.getInstance().getRequestVials(specimenRequest), !forExport, !forExport, forExport, false);
+            super(context, specimenRequest.getVials(), !forExport, !forExport, forExport, false);
             _submissionResult = submissionResult;
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
             _specimenRequest = specimenRequest;
-            _finalState = SpecimenManager.getInstance().isInFinalState(_specimenRequest);
+            _finalState = SpecimenRequestManager.get().isInFinalState(_specimenRequest);
             _requirementsComplete = true;
-            _missingSpecimens = SpecimenManager.getInstance().getMissingSpecimens(_specimenRequest);
+            _missingSpecimens = SpecimenRequestManager.get().getMissingSpecimens(_specimenRequest);
             _returnUrl = returnUrl;
             SpecimenRequestRequirement[] requirements = specimenRequest.getRequirements();
             for (int i = 0; i < requirements.length && _requirementsComplete; i++)
@@ -990,25 +1139,25 @@ public class SpecimenController extends BaseStudyController
                 MenuButton exportMenuButton = new MenuButton("Export");
                 ActionURL exportExcelURL = context.getActionURL().clone().addParameter("export", "excel");
                 ActionURL exportTextURL = context.getActionURL().clone().addParameter("export", "tsv");
-                exportMenuButton.addMenuItem("Export all to Excel (.xls)", exportExcelURL.getLocalURIString());
-                exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL.getLocalURIString());
+                exportMenuButton.addMenuItem("Export all to Excel (.xls)", exportExcelURL);
+                exportMenuButton.addMenuItem("Export all to text file (.tsv)", exportTextURL);
                 buttons.add(exportMenuButton);
                 _specimenQueryView.setShowExportButtons(false);
                 _specimenQueryView.getSettings().setAllowChooseView(false);
 
-                if (SpecimenManager.getInstance().hasEditRequestPermissions(context.getUser(), specimenRequest) && !_finalState)
+                if (SpecimenRequestManager.get().hasEditRequestPermissions(context.getUser(), specimenRequest) && !_finalState)
                 {
                     ActionButton addButton = new ActionButton(new ActionURL(OverviewAction.class, getContainer()), "Specimen Search");
-                    ActionButton deleteButton = new ActionButton(RemoveRequestSamplesAction.class, "Remove Selected");
+                    ActionButton deleteButton = new ActionButton(RemoveRequestSpecimensAction.class, "Remove Selected");
                     _specimenQueryView.addHiddenFormField("id", "" + specimenRequest.getRowId());
                     buttons.add(addButton);
 
                     ActionURL importActionURL = new ActionURL(ImportVialIdsAction.class, getContainer());
                     importActionURL.addParameter("id", specimenRequest.getRowId());
                     Button importButton = new Button.ButtonBuilder("Upload Specimen Ids")
-                            .href(importActionURL)
-                            .submit(false)
-                            .build();
+                        .href(importActionURL)
+                        .submit(false)
+                        .build();
                     buttons.add(importButton);
                     buttons.add(deleteButton);
                 }
@@ -1040,7 +1189,7 @@ public class SpecimenController extends BaseStudyController
 
         public SpecimenRequestStatus getStatus()
         {
-            return SpecimenManager.getInstance().getRequestStatus(_specimenRequest.getContainer(), _specimenRequest.getStatusId());
+            return SpecimenRequestManager.get().getRequestStatus(_specimenRequest.getContainer(), _specimenRequest.getStatusId());
         }
 
         public Location getDestinationSite()
@@ -1048,7 +1197,7 @@ public class SpecimenController extends BaseStudyController
             Integer destinationSiteId = _specimenRequest.getDestinationSiteId();
             if (destinationSiteId != null)
             {
-                return StudyManager.getInstance().getLocation(_specimenRequest.getContainer(), destinationSiteId.intValue());
+                return LocationManager.get().getLocation(_specimenRequest.getContainer(), destinationSiteId.intValue());
             }
             return null;
         }
@@ -1087,7 +1236,7 @@ public class SpecimenController extends BaseStudyController
                 _providingLocations = new Location[locationSet.size()];
                 int i = 0;
                 for (Integer locationId : locationSet)
-                    _providingLocations[i++] = StudyManager.getInstance().getLocation(getContainer(), locationId);
+                    _providingLocations[i++] = LocationManager.get().getLocation(getContainer(), locationId);
             }
             return _providingLocations;
         }
@@ -1117,7 +1266,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ManageRequestForm form, boolean reshow, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException();
 
@@ -1148,17 +1297,17 @@ public class SpecimenController extends BaseStudyController
             if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create new specimen request requirements!");
 
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException();
 
             if (form.getNewActor() != null && form.getNewActor() > 0)
             {
-                SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getNewActor());
+                SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getNewActor());
                 if (actor != null)
                 {
                     // an actor is valid if a site has been provided for a per-site actor, or if no site
-                    // has been provided for a non-site-specific actor.  The UI should enforce this already,
+                    // has been provided for a non-site-specific actor. The UI should enforce this already,
                     // so this is just a backup check.
                     boolean validActor = (actor.isPerSite() && form.getNewSite() != null && form.getNewSite() > 0) ||
                             (!actor.isPerSite() && (form.getNewSite() == null || form.getNewSite() <= 0));
@@ -1171,7 +1320,7 @@ public class SpecimenController extends BaseStudyController
                         requirement.setActorId(form.getNewActor());
                         requirement.setDescription(form.getNewDescription());
                         requirement.setRequestId(request.getRowId());
-                        SpecimenManager.getInstance().createRequestRequirement(getUser(), requirement, true, true);
+                        SpecimenRequestManager.get().createRequestRequirement(getUser(), requirement, true, true);
                     }
                 }
             }
@@ -1196,8 +1345,9 @@ public class SpecimenController extends BaseStudyController
     {
         public static final String PARAM_STATUSLABEL = "SpecimenRequest.Status/Label~eq";
         public static final String PARAM_CREATEDBY = "SpecimenRequest.CreatedBy/DisplayName~eq";
-        private SpecimenRequestQueryView _view;
-        private ViewContext _context;
+
+        private final SpecimenRequestQueryView _view;
+        private final ViewContext _context;
 
         public ViewRequestsHeaderBean(ViewContext context, SpecimenRequestQueryView view)
         {
@@ -1212,7 +1362,7 @@ public class SpecimenController extends BaseStudyController
 
         public List<SpecimenRequestStatus> getStauses()
         {
-            return SpecimenManager.getInstance().getRequestStatuses(_context.getContainer(), _context.getUser());
+            return SpecimenRequestManager.get().getRequestStatuses(_context.getContainer(), _context.getUser());
         }
 
         public boolean isFilteredStatus(SpecimenRequestStatus status)
@@ -1234,11 +1384,14 @@ public class SpecimenController extends BaseStudyController
             grid.setShowDetailsColumn(false);
             if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
             {
-                ActionButton insertButton = new ActionButton(SpecimenController.ShowCreateSampleRequestAction.class, "Create New Request", ActionButton.Action.LINK);
+                ActionButton insertButton = new ActionButton(ShowCreateSpecimenRequestAction.class, "Create New Request", ActionButton.Action.LINK);
                 grid.setButtons(Collections.singletonList(insertButton));
             }
             else
+            {
                 grid.setButtons(Collections.emptyList());
+            }
+
             JspView<ViewRequestsHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/viewRequestsHeader.jsp",
                     new ViewRequestsHeaderBean(getViewContext(), grid));
 
@@ -1254,39 +1407,39 @@ public class SpecimenController extends BaseStudyController
 
     // Additional permission checking takes place before handlePost()
     @RequiresPermission(ReadPermission.class)
-    public class RemoveRequestSamplesAction extends FormHandlerAction<ModifySampleRequestForm>
+    public class RemoveRequestSpecimensAction extends FormHandlerAction<ModifySpecimenRequestForm>
     {
         @Override
-        public void validateCommand(ModifySampleRequestForm target, Errors errors)
+        public void validateCommand(ModifySpecimenRequestForm target, Errors errors)
         {
         }
 
         @Override
-        public boolean handlePost(ModifySampleRequestForm form, BindException errors) throws Exception
+        public boolean handlePost(ModifySpecimenRequestForm form, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             long[] ids = toLongArray(DataRegionSelection.getSelected(getViewContext(), true));
-            List<Long> sampleIds = new ArrayList<>();
+            List<Long> specimenIds = new ArrayList<>();
             for (long id : ids)
-                sampleIds.add(id);
+                specimenIds.add(id);
             try
             {
-                SpecimenManager.getInstance().deleteRequestSampleMappings(getUser(), request, sampleIds, true);
+                SpecimenRequestManager.get().deleteRequestSpecimenMappings(getUser(), request, specimenIds, true);
             }
             catch (RequestabilityManager.InvalidRuleException e)
             {
-                errors.reject(ERROR_MSG, "The samples could not be removed because a requestability rule is configured incorrectly. " +
-                            "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                errors.reject(ERROR_MSG, "The specimens could not be removed because a requestability rule is configured incorrectly. " +
+                            "Please report this problem to an administrator. Error details: "  + e.getMessage());
                 return false;
             }
             return true;
         }
 
         @Override
-        public ActionURL getSuccessURL(ModifySampleRequestForm addToSampleRequestForm)
+        public ActionURL getSuccessURL(ModifySpecimenRequestForm addToSpecimenRequestForm)
         {
-            return getManageRequestURL(addToSampleRequestForm.getId(), addToSampleRequestForm.getReturnUrl());
+            return getManageRequestURL(addToSpecimenRequestForm.getId(), addToSpecimenRequestForm.getReturnUrl());
         }
     }
 
@@ -1362,7 +1515,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ManageRequestStatusForm form, boolean reshow, BindException errors)
         {
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (_specimenRequest == null)
                 throw new NotFoundException();
 
@@ -1373,7 +1526,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(final ManageRequestStatusForm form, BindException errors) throws Exception
         {
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (_specimenRequest == null)
                 throw new NotFoundException();
 
@@ -1386,15 +1539,15 @@ public class SpecimenController extends BaseStudyController
             boolean hasComments = form.getComments() != null && form.getComments().length() > 0;
             if (statusChanged || detailsChanged || hasComments || hasAttachments)
             {
-                SpecimenManager.RequestEventType changeType;
+                RequestEventType changeType;
                 String comment = "";
                 String eventSummary;
                 if (statusChanged || detailsChanged)
                 {
                     if (statusChanged)
                     {
-                        SpecimenRequestStatus prevStatus = SpecimenManager.getInstance().getRequestStatus(getContainer(), _specimenRequest.getStatusId());
-                        SpecimenRequestStatus newStatus = SpecimenManager.getInstance().getRequestStatus(getContainer(), form.getStatus());
+                        SpecimenRequestStatus prevStatus = SpecimenRequestManager.get().getRequestStatus(getContainer(), _specimenRequest.getStatusId());
+                        SpecimenRequestStatus newStatus = SpecimenRequestManager.get().getRequestStatus(getContainer(), form.getStatus());
                         comment += "Status changed from \"" + (prevStatus != null ? prevStatus.getLabel() : "N/A") + "\" to \"" +
                                 (newStatus != null ? newStatus.getLabel() : "N/A") + "\"\n";
                     }
@@ -1414,19 +1567,19 @@ public class SpecimenController extends BaseStudyController
                     _specimenRequest.setModified(new Date());
                     try
                     {
-                        SpecimenManager.getInstance().updateRequest(getUser(), _specimenRequest);
+                        SpecimenRequestManager.get().updateRequest(getUser(), _specimenRequest);
                     }
                     catch (RequestabilityManager.InvalidRuleException e)
                     {
                         errors.reject(ERROR_MSG, "The request could not be updated because a requestability rule is configured incorrectly. " +
-                                    "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                                    "Please report this problem to an administrator. Error details: "  + e.getMessage());
                         return false;
                     }
-                    changeType = SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED;
+                    changeType = RequestEventType.REQUEST_STATUS_CHANGED;
                 }
                 else
                 {
-                    changeType = SpecimenManager.RequestEventType.COMMENT_ADDED;
+                    changeType = RequestEventType.COMMENT_ADDED;
                     comment = form.getComments();
                     eventSummary = "Comments added.";
                 }
@@ -1434,7 +1587,7 @@ public class SpecimenController extends BaseStudyController
                 SpecimenRequestEvent event;
                 try
                 {
-                    event = SpecimenManager.getInstance().createRequestEvent(getUser(), _specimenRequest, changeType, comment, files);
+                    event = SpecimenRequestManager.get().createRequestEvent(getUser(), _specimenRequest, changeType, comment, files);
                 }
                 catch (Exception e)
                 {
@@ -1473,7 +1626,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class CreateSampleRequestForm extends ReturnUrlForm implements HiddenFormInputGenerator
+    public static class CreateSpecimenRequestForm extends ReturnUrlForm implements HiddenFormInputGenerator
     {
         public enum PARAMS
         {
@@ -1484,13 +1637,13 @@ public class SpecimenController extends BaseStudyController
 
         private String[] _inputs;
         private int _destinationLocation;
-        private long[] _sampleRowIds;
+        private long[] _specimenRowIds;
         private boolean[] _required;
         private boolean _fromGroupedView;
         private Integer _preferredLocation;
         private boolean _ignoreReturnUrl;
         private boolean _extendedRequestUrl;
-        private String[] _sampleIds;
+        private String[] _specimenIds;
 
         @Override
         public String getHiddenFormInputs(ViewContext ctx)
@@ -1505,10 +1658,10 @@ public class SpecimenController extends BaseStudyController
                 builder.append("<input type=\"hidden\" name=\"destinationLocation\" value=\"").append(_destinationLocation).append("\">\n");
             if (getReturnUrl() != null)
                 builder.append("<input type=\"hidden\" name=\"returnUrl\" value=\"").append(PageFlowUtil.filter(getReturnUrl())).append("\">\n");
-            if (_sampleRowIds != null)
+            if (_specimenRowIds != null)
             {
-                for (long sampleId : _sampleRowIds)
-                    builder.append("<input type=\"hidden\" name=\"sampleRowIds\" value=\"").append(sampleId).append("\">\n");
+                for (long specimenId : _specimenRowIds)
+                    builder.append("<input type=\"hidden\" name=\"specimenRowIds\" value=\"").append(specimenId).append("\">\n");
             }
             else
             {
@@ -1532,24 +1685,24 @@ public class SpecimenController extends BaseStudyController
                     builder.append("<input type=\"hidden\" name=\"required\" value=\"").append(required).append("\">\n");
             }
 
-            if (_sampleIds != null)
+            if (_specimenIds != null)
             {
-                for (String sampleId : _sampleIds)
-                    builder.append("<input type=\"hidden\" name=\"sampleIds\" value=\"").append(PageFlowUtil.filter(sampleId)).append("\">\n");
+                for (String specimenId : _specimenIds)
+                    builder.append("<input type=\"hidden\" name=\"specimenIds\" value=\"").append(PageFlowUtil.filter(specimenId)).append("\">\n");
             }
 
             builder.append("<input type=\"hidden\" name=\"fromGroupedView\" value=\"").append(_fromGroupedView).append("\">\n");
             return builder.toString();
         }
 
-        public long[] getSampleRowIds()
+        public long[] getSpecimenRowIds()
         {
-            return _sampleRowIds;
+            return _specimenRowIds;
         }
 
-        public void setSampleRowIds(long[] sampleRowIds)
+        public void setSpecimenRowIds(long[] specimenRowIds)
         {
-            _sampleRowIds = sampleRowIds;
+            _specimenRowIds = specimenRowIds;
         }
 
         public int getDestinationLocation()
@@ -1622,23 +1775,23 @@ public class SpecimenController extends BaseStudyController
             _extendedRequestUrl = extendedRequestUrl;
         }
 
-        public String[] getSampleIds()
+        public String[] getSpecimenIds()
         {
-            return _sampleIds;
+            return _specimenIds;
         }
 
-        public void setSampleIds(String[] sampleIds)
+        public void setSpecimenIds(String[] specimenIds)
         {
-            _sampleIds = sampleIds;
+            _specimenIds = specimenIds;
         }
 
-        public SpecimenUtils.RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws SpecimenUtils.AmbiguousLocationException
+        public RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws AmbiguousLocationException
         {
             // first check for explicitly listed specimen row ids (this is the case when posting the final
             // specimen request form):
-            List<Vial> requestedSamples = utils.getSpecimensFromRowIds(getSampleRowIds());
-            if (requestedSamples != null && requestedSamples.size() > 0)
-                return new SpecimenUtils.RequestedSpecimens(requestedSamples);
+            List<Vial> requestedSpecimens = utils.getSpecimensFromRowIds(getSpecimenRowIds());
+            if (requestedSpecimens != null && requestedSpecimens.size() > 0)
+                return new RequestedSpecimens(requestedSpecimens);
 
             Set<String> ids;
             if ("post".equalsIgnoreCase(utils.getViewContext().getRequest().getMethod()) &&
@@ -1646,16 +1799,16 @@ public class SpecimenController extends BaseStudyController
             {
                 ids = DataRegionSelection.getSelected(utils.getViewContext(), null, true);
                 if (isFromGroupedView())
-                    return utils.getRequestableBySampleHash(ids, getPreferredLocation());
+                    return utils.getRequestableBySpecimenHash(ids, getPreferredLocation());
                 else
                     return utils.getRequestableByVialRowIds(ids);
             }
-            else if (_sampleIds != null && _sampleIds.length > 0)
+            else if (_specimenIds != null && _specimenIds.length > 0)
             {
                 ids = new HashSet<>();
-                Collections.addAll(ids, _sampleIds);
+                Collections.addAll(ids, _specimenIds);
                 if (isFromGroupedView())
-                    return utils.getRequestableBySampleHash(ids, getPreferredLocation());
+                    return utils.getRequestableBySpecimenHash(ids, getPreferredLocation());
                 else
                     return utils.getRequestableByVialGlobalUniqueIds(ids);
             }
@@ -1664,27 +1817,27 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class NewRequestBean extends SamplesViewBean
+    public static class NewRequestBean extends SpecimensViewBean
     {
-        private Container _container;
-        private SpecimenManager.SpecimenRequestInput[] _inputs;
-        private String[] _inputValues;
-        private int _selectedSite;
-        private BindException _errors;
-        private String _returnUrl;
+        private final Container _container;
+        private final SpecimenRequestInput[] _inputs;
+        private final String[] _inputValues;
+        private final int _selectedSite;
+        private final BindException _errors;
+        private final ActionURL _returnUrl;
 
-        public NewRequestBean(ViewContext context, SpecimenUtils.RequestedSpecimens requestedSpecimens, CreateSampleRequestForm form, BindException errors) throws SQLException
+        public NewRequestBean(ViewContext context, RequestedSpecimens requestedSpecimens, CreateSpecimenRequestForm form, BindException errors) throws SQLException
         {
             super(context, requestedSpecimens != null ? requestedSpecimens.getVials() : null, false, false, false, false);
             _errors = errors;
-            _inputs = SpecimenManager.getInstance().getNewSpecimenRequestInputs(context.getContainer());
+            _inputs = SpecimenRequestManager.get().getNewSpecimenRequestInputs(context.getContainer());
             _selectedSite = form.getDestinationLocation();
             _inputValues = form.getInputs();
             _container = context.getContainer();
-            _returnUrl = form.getReturnUrl();
+            _returnUrl = form.getReturnActionURL();
         }
 
-        public SpecimenManager.SpecimenRequestInput[] getInputs()
+        public SpecimenRequestInput[] getInputs()
         {
             return _inputs;
         }
@@ -1708,21 +1861,21 @@ public class SpecimenController extends BaseStudyController
             return _errors;
         }
 
-        public String getReturnUrl()
+        public ActionURL getReturnUrl()
         {
             return _returnUrl;
         }
     }
 
     @RequiresPermission(RequestSpecimensPermission.class)
-    public class HandleCreateSampleRequestAction extends FormViewAction<CreateSampleRequestForm>
+    public class HandleCreateSpecimenRequestAction extends FormViewAction<CreateSpecimenRequestForm>
     {
         private SpecimenRequest _specimenRequest;
 
         @Override
-        public ModelAndView getView(CreateSampleRequestForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CreateSpecimenRequestForm form, boolean reshow, BindException errors) throws Exception
         {
-            return getCreateSampleRequestView(form, errors);
+            return getCreateSpecimenRequestView(form, errors);
         }
 
         @Override
@@ -1733,7 +1886,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public void validateCommand(CreateSampleRequestForm form, Errors errors)
+        public void validateCommand(CreateSpecimenRequestForm form, Errors errors)
         {
             boolean missingRequiredInput = false;
             if (form.getDestinationLocation() <= 0)
@@ -1750,21 +1903,21 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public boolean handlePost(CreateSampleRequestForm form, BindException errors) throws Exception
+        public boolean handlePost(CreateSpecimenRequestForm form, BindException errors) throws Exception
         {
             getUtils().ensureSpecimenRequestsConfigured(true);
 
             String[] inputs = form.getInputs();
-            long[] sampleIds = form.getSampleRowIds();
+            long[] specimenIds = form.getSpecimenRowIds();
             StringBuilder comments = new StringBuilder();
-            SpecimenManager.SpecimenRequestInput[] expectedInputs =
-                    SpecimenManager.getInstance().getNewSpecimenRequestInputs(getContainer());
+            SpecimenRequestInput[] expectedInputs =
+                    SpecimenRequestManager.get().getNewSpecimenRequestInputs(getContainer());
             if (inputs.length != expectedInputs.length)
                 throw new IllegalStateException("Expected a form element for each input.");
 
             for (int i = 0; i < expectedInputs.length; i++)
             {
-                SpecimenManager.SpecimenRequestInput expectedInput = expectedInputs[i];
+                SpecimenRequestInput expectedInput = expectedInputs[i];
                 if (form.getDestinationLocation() != 0 && expectedInput.isRememberSiteValue())
                     expectedInput.setDefaultSiteValue(getContainer(), form.getDestinationLocation(), inputs[i]);
                 if (i > 0)
@@ -1793,12 +1946,12 @@ public class SpecimenController extends BaseStudyController
             {
                 _specimenRequest.setDestinationSiteId(form.getDestinationLocation());
             }
-            _specimenRequest.setStatusId(SpecimenManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
+            _specimenRequest.setStatusId(SpecimenRequestManager.get().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                if (!StudyManager.getInstance().isSiteValidRequestingLocation(getContainer(), _specimenRequest.getDestinationSiteId()))
+                if (!LocationManager.get().isSiteValidRequestingLocation(getContainer(), _specimenRequest.getDestinationSiteId()))
                 {
                     errors.reject(ERROR_MSG, "The requesting location is not valid.");
                     return false;
@@ -1806,20 +1959,20 @@ public class SpecimenController extends BaseStudyController
 
                 User user = getUser();
                 Container container = getContainer();
-                _specimenRequest = SpecimenManager.getInstance().createRequest(getUser(), _specimenRequest, true);
+                _specimenRequest = SpecimenRequestManager.get().createRequest(getUser(), _specimenRequest, true);
                 List<Vial> vials;
-                if (sampleIds != null && sampleIds.length > 0)
+                if (specimenIds != null && specimenIds.length > 0)
                 {
                     vials = new ArrayList<>();
-                    for (long sampleId : sampleIds)
+                    for (long specimenId : specimenIds)
                     {
-                        Vial vial = SpecimenManager.getInstance().getVial(container, user, sampleId);
+                        Vial vial = SpecimenManagerNew.get().getVial(container, user, specimenId);
                         if (vial != null)
                         {
                             boolean isAvailable = vial.isAvailable();
                             if (!isAvailable)
                             {
-                                errors.reject(null, RequestabilityManager.makeSpecimenUnavailableMessage(vial, "This sample has been removed from the list below."));
+                                errors.reject(null, RequestabilityManager.makeSpecimenUnavailableMessage(vial, "This specimen has been removed from the list below."));
                             }
                             else
                                 vials.add(vial);
@@ -1827,22 +1980,22 @@ public class SpecimenController extends BaseStudyController
                         else
                         {
                             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(),
-                                    new IllegalStateException("Specimen ID " + sampleId + " was not found in container " + container.getId()));
+                                    new IllegalStateException("Specimen ID " + specimenId + " was not found in container " + container.getId()));
                         }
                     }
                     if (errors.getErrorCount() == 0)
                     {
                         try
                         {
-                            SpecimenManager.getInstance().createRequestSampleMapping(getUser(), _specimenRequest, vials, true, true);
+                            SpecimenRequestManager.get().createRequestSpecimenMapping(getUser(), _specimenRequest, vials, true, true);
                         }
                         catch (RequestabilityManager.InvalidRuleException e)
                         {
                             errors.reject(ERROR_MSG, "The request could not be created because a requestability rule is configured incorrectly. " +
-                                    "Please report this problem to an administrator.  Error details: " + e.getMessage());
+                                    "Please report this problem to an administrator. Error details: " + e.getMessage());
                             return false;
                         }
-                        catch (SpecimenManager.SpecimenRequestException e)
+                        catch (SpecimenRequestException e)
                         {
                             errors.reject(ERROR_MSG, "A vial that was available for request has become unavailable.");
                             return false;
@@ -1850,18 +2003,18 @@ public class SpecimenController extends BaseStudyController
                     }
                     else
                     {
-                        long[] validSampleIds = new long[vials.size()];
+                        long[] validSpecimenIds = new long[vials.size()];
                         int index = 0;
                         for (Vial vial : vials)
-                            validSampleIds[index++] = vial.getRowId();
-                        form.setSampleRowIds(validSampleIds);
+                            validSpecimenIds[index++] = vial.getRowId();
+                        form.setSpecimenRowIds(validSpecimenIds);
                         return false;
                     }
                 }
                 transaction.commit();
             }
 
-            if (!SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+            if (!SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
             {
                 try
                 {
@@ -1884,18 +2037,18 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getSuccessURL(CreateSampleRequestForm createSampleRequestForm)
+        public ActionURL getSuccessURL(CreateSpecimenRequestForm createSpecimenRequestForm)
         {
             ActionURL modifiedReturnURL = null;
-            if (createSampleRequestForm.isExtendedRequestUrl())
+            if (createSpecimenRequestForm.isExtendedRequestUrl())
             {
                 return getExtendedRequestURL(_specimenRequest.getRowId(), null);
             }
-            if (createSampleRequestForm.getReturnUrl() != null)
+            if (createSpecimenRequestForm.getReturnUrl() != null)
             {
-                modifiedReturnURL = createSampleRequestForm.getReturnActionURL();
+                modifiedReturnURL = createSpecimenRequestForm.getReturnActionURL();
             }
-            if (modifiedReturnURL != null && !createSampleRequestForm.isIgnoreReturnUrl())
+            if (modifiedReturnURL != null && !createSpecimenRequestForm.isIgnoreReturnUrl())
                 return modifiedReturnURL;
             else
                 return getManageRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? modifiedReturnURL.getLocalURIString() : null);
@@ -1904,9 +2057,9 @@ public class SpecimenController extends BaseStudyController
 
     public static class SelectSpecimenProviderBean
     {
-        private HiddenFormInputGenerator _sourceForm;
-        private LocationImpl[] _possibleLocations;
-        private ActionURL _formTarget;
+        private final HiddenFormInputGenerator _sourceForm;
+        private final LocationImpl[] _possibleLocations;
+        private final ActionURL _formTarget;
 
         public SelectSpecimenProviderBean(HiddenFormInputGenerator sourceForm, LocationImpl[] possibleLocations, ActionURL formTarget)
         {
@@ -1931,36 +2084,36 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private ModelAndView getCreateSampleRequestView(CreateSampleRequestForm form, BindException errors) throws SQLException
+    private ModelAndView getCreateSpecimenRequestView(CreateSpecimenRequestForm form, BindException errors) throws SQLException
     {
         getUtils().ensureSpecimenRequestsConfigured(true);
         
-        SpecimenUtils.RequestedSpecimens requested;
+        RequestedSpecimens requested;
 
         try
         {
             requested = form.getSelectedSpecimens(getUtils());
         }
-        catch (SpecimenUtils.AmbiguousLocationException e)
+        catch (AmbiguousLocationException e)
         {
-            // Even though this method (getCreateSampleRequestView) is used from multiple places, only HandleCreateSampleRequestAction
+            // Even though this method (getCreateSpecimenRequestView) is used from multiple places, only HandleCreateSpecimenRequestAction
             // receives a post; therefore, it's safe to say that the selectSpecimenProvider.jsp form should always post to
-            // HandleCreateSampleRequestAction.
+            // HandleCreateSpecimenRequestAction.
             return new JspView<>("/org/labkey/study/view/specimen/selectSpecimenProvider.jsp",
-                    new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSampleRequestAction.class, getContainer())), errors);
+                    new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSpecimenRequestAction.class, getContainer())), errors);
         }
 
-        return new JspView<>("/org/labkey/study/view/specimen/requestSamples.jsp",
+        return new JspView<>("/org/labkey/study/view/specimen/requestSpecimens.jsp",
                 new NewRequestBean(getViewContext(), requested, form, errors));
     }
 
     @RequiresPermission(RequestSpecimensPermission.class)
-    public class ShowCreateSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
+    public class ShowCreateSpecimenRequestAction extends SimpleViewAction<CreateSpecimenRequestForm>
     {
         @Override
-        public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateSpecimenRequestForm form, BindException errors) throws Exception
         {
-            return getCreateSampleRequestView(form, errors);
+            return getCreateSpecimenRequestView(form, errors);
         }
 
         @Override
@@ -1973,12 +2126,12 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(RequestSpecimensPermission.class)
-    public class ShowAPICreateSampleRequestAction extends SimpleViewAction<CreateSampleRequestForm>
+    public class ShowAPICreateSpecimenRequestAction extends SimpleViewAction<CreateSpecimenRequestForm>
     {
         @Override
-        public ModelAndView getView(CreateSampleRequestForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateSpecimenRequestForm form, BindException errors) throws Exception
         {
-            return getCreateSampleRequestView(form, errors);
+            return getCreateSpecimenRequestView(form, errors);
         }
 
         @Override
@@ -1990,14 +2143,14 @@ public class SpecimenController extends BaseStudyController
     }
 
     @RequiresPermission(RequestSpecimensPermission.class)
-    public class ExtendedSpecimenRequestAction extends SimpleViewAction<CreateSampleRequestForm>
+    public class ExtendedSpecimenRequestAction extends SimpleViewAction<CreateSpecimenRequestForm>
     {
         @Override
-        public ModelAndView getView(CreateSampleRequestForm form, BindException errors)
+        public ModelAndView getView(CreateSpecimenRequestForm form, BindException errors)
         {
             VBox vbox = new VBox();
 
-            ExtendedSpecimenRequestView view = SpecimenManager.getInstance().getExtendedSpecimenRequestView(getViewContext());
+            ExtendedSpecimenRequestView view = SpecimenManager.get().getExtendedSpecimenRequestView(getViewContext());
             if (view != null && view.isActive())
             {
                 HtmlView requestView = new HtmlView(view.getBody());
@@ -2094,10 +2247,10 @@ public class SpecimenController extends BaseStudyController
         public boolean handlePost(RequirementForm form, BindException errors) throws Exception
         {
             SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (requirement.getRequestId() == form.getId())
             {
-                SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement);
+                SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement);
                 return true;
             }
 
@@ -2124,11 +2277,11 @@ public class SpecimenController extends BaseStudyController
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
             SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getId());
             // we should only be deleting default requirements (those without an associated request):
             if (requirement != null && requirement.getRequestId() == -1)
             {
-                SpecimenManager.getInstance().deleteRequestRequirement(getUser(), requirement, false);
+                SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement, false);
                 return true;
             }
 
@@ -2153,11 +2306,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
-                throw new NotFoundException("Sample request " + form.getId() + " does not exist.");
+                throw new NotFoundException("Specimen request " + form.getId() + " does not exist.");
 
-            SpecimenManager.getInstance().deleteMissingSpecimens(request);
+            SpecimenRequestManager.get().deleteMissingSpecimens(request);
             return true;
         }
 
@@ -2170,11 +2323,11 @@ public class SpecimenController extends BaseStudyController
 
     public class ManageRequirementBean
     {
-        private GridView _historyView;
-        private SpecimenRequestRequirement _requirement;
-        private boolean _requestManager;
-        private List<ActorNotificationRecipientSet> _possibleNotifications;
-        private boolean _finalState;
+        private final GridView _historyView;
+        private final SpecimenRequestRequirement _requirement;
+        private final boolean _requestManager;
+        private final List<ActorNotificationRecipientSet> _possibleNotifications;
+        private final boolean _finalState;
 
         public ManageRequirementBean(ViewContext context, SpecimenRequest request, SpecimenRequestRequirement requirement)
         {
@@ -2184,12 +2337,12 @@ public class SpecimenController extends BaseStudyController
             filter.addCondition(FieldKey.fromParts("RequirementId"), requirement.getRowId());
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
             _historyView = getUtils().getRequestEventGridView(context.getRequest(), null, filter);
-            _finalState = SpecimenManager.getInstance().isInFinalState(request);
+            _finalState = SpecimenRequestManager.get().isInFinalState(request);
         }
         
         public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
         {
-            RequestNotificationSettings settings = SpecimenManager.getInstance().getRequestNotificationSettings(getContainer());
+            RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
             if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
                 return true;        // All should be checked
             else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
@@ -2243,9 +2396,9 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ManageRequirementForm form, boolean reshow, BindException errors)
         {
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
                 throw new NotFoundException();
 
@@ -2259,14 +2412,14 @@ public class SpecimenController extends BaseStudyController
             if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
                 throw new UnauthorizedException("You do not have permission to update requirements!");
 
-            _specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             final SpecimenRequestRequirement requirement =
-                    SpecimenManager.getInstance().getRequirementsProvider().getRequirement(getContainer(), form.getRequirementId());
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
             if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
                 throw new NotFoundException();
 
             List<AttachmentFile> files = getAttachmentFileList();
-            SpecimenManager.RequestEventType eventType;
+            RequestEventType eventType;
             StringBuilder comment = new StringBuilder();
             comment.append(requirement.getRequirementSummary());
             String eventSummary;
@@ -2274,14 +2427,14 @@ public class SpecimenController extends BaseStudyController
             {
                 SpecimenRequestRequirement clone = requirement.createMutable();
                 clone.setComplete(form.isComplete());
-                SpecimenManager.getInstance().updateRequestRequirement(getUser(), clone);
-                eventType = SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED;
+                SpecimenRequestManager.get().updateRequestRequirement(getUser(), clone);
+                eventType = RequestEventType.REQUEST_STATUS_CHANGED;
                 comment.append("\nStatus changed to ").append(form.isComplete() ? "complete" : "incomplete");
                 eventSummary = comment.toString();
             }
             else
             {
-                eventType = SpecimenManager.RequestEventType.COMMENT_ADDED;
+                eventType = RequestEventType.COMMENT_ADDED;
                 eventSummary = "Comment added.";
             }
 
@@ -2291,7 +2444,7 @@ public class SpecimenController extends BaseStudyController
             SpecimenRequestEvent event;
             try
             {
-                event = SpecimenManager.getInstance().createRequestEvent(getUser(), requirement, eventType, comment.toString(), files);
+                event = SpecimenRequestManager.get().createRequestEvent(getUser(), requirement, eventType, comment.toString(), files);
             }
             catch (Exception e)
             {
@@ -2340,7 +2493,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", new ActionURL(ManageRequestAction.class,getContainer()).addParameter("id",form.getId())));
+            HtmlView header = new HtmlView(new LinkBuilder("View Request").href(new ActionURL(ManageRequestAction.class, getContainer()).addParameter("id", form.getId())));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);
@@ -2463,7 +2616,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/study/view/specimen/configurationRequired.jsp");
+            return new JspView("/org/labkey/specimen/view/configurationRequired.jsp");
         }
 
         @Override
@@ -2474,54 +2627,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class ManageReqsBean
-    {
-        private SpecimenRequestRequirement[] _providerRequirements;
-        private SpecimenRequestRequirement[] _receiverRequirements;
-        private SpecimenRequestRequirement[] _generalRequirements;
-        private SpecimenRequestRequirement[] _originatorRequirements;
-        private SpecimenRequestActor[] _actors;
-
-        public ManageReqsBean(User user, Container container)
-        {
-            RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> provider =
-                    SpecimenManager.getInstance().getRequirementsProvider();
-            _originatorRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.ORIGINATING_SITE);
-            _providerRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.PROVIDING_SITE);
-            _receiverRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.RECEIVING_SITE);
-            _generalRequirements = provider.getDefaultRequirements(container,
-                    SpecimenRequestRequirementType.NON_SITE_BASED);
-            _actors = provider.getActors(container);
-        }
-
-        public SpecimenRequestRequirement[] getGeneralRequirements()
-        {
-            return _generalRequirements;
-        }
-
-        public SpecimenRequestRequirement[] getReceiverRequirements()
-        {
-            return _receiverRequirements;
-        }
-
-        public SpecimenRequestRequirement[] getProviderRequirements()
-        {
-            return _providerRequirements;
-        }
-
-        public SpecimenRequestRequirement[] getOriginatorRequirements()
-        {
-            return _originatorRequirements;
-        }
-
-        public SpecimenRequestActor[] getActors()
-        {
-            return _actors;
-        }
-    }
     @RequiresPermission(ManageRequestRequirementsPermission.class)
     public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
     {
@@ -2558,7 +2663,7 @@ public class SpecimenController extends BaseStudyController
                 requirement.setActorId(actorId);
                 requirement.setDescription(description);
                 requirement.setRequestId(-1);
-                SpecimenManager.getInstance().getRequirementsProvider().createDefaultRequirement(getUser(), requirement, type);
+                SpecimenRequestRequirementProvider.get().createDefaultRequirement(getUser(), requirement, type);
             }
         }
 
@@ -2568,7 +2673,7 @@ public class SpecimenController extends BaseStudyController
             if (form.getNextPage() != null && form.getNextPage().length() > 0)
                 return new ActionURL(form.getNextPage());
             else
-                return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+                return getManageStudyURL();
         }
 
         @Override
@@ -2580,6 +2685,10 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
+    private ActionURL getManageStudyURL()
+    {
+        return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
+    }
 
     public static class EmailSpecimenListForm extends IdForm
     {
@@ -2662,23 +2771,23 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            if (!SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+            if (!SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
                 throw new UnauthorizedException();
 
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             List<Vial> vials = request.getVials();
             if (!vials.isEmpty() || SpecimenService.get().getRequestCustomizer().allowEmptyRequests())
             {
-                SpecimenRequestStatus newStatus = SpecimenManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), true);
+                SpecimenRequestStatus newStatus = SpecimenRequestManager.get().getInitialRequestStatus(getContainer(), getUser(), true);
                 request = request.createMutable();
                 request.setStatusId(newStatus.getRowId());
                 try
                 {
-                    SpecimenManager.getInstance().updateRequest(getUser(), request);
-                    SpecimenManager.getInstance().createRequestEvent(getUser(), request,
-                            SpecimenManager.RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
-                    if (SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+                    SpecimenRequestManager.get().updateRequest(getUser(), request);
+                    SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                            RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
+                    if (SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
                     {
                         try
                         {
@@ -2693,7 +2802,7 @@ public class SpecimenController extends BaseStudyController
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
                     errors.reject(ERROR_MSG, "The request could not be submitted because a requestability rule is configured incorrectly. " +
-                                "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                                "Please report this problem to an administrator. Error details: "  + e.getMessage());
                 }
                 catch (IOException e)
                 {
@@ -2728,20 +2837,20 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
-            SpecimenRequestStatus cartStatus = SpecimenManager.getInstance().getRequestShoppingCartStatus(getContainer(), getUser());
+            SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(getContainer(), getUser());
             if (request.getStatusId() != cartStatus.getRowId())
                 throw new UnauthorizedException();
 
             try
             {
-                SpecimenManager.getInstance().deleteRequest(getUser(), request);
+                SpecimenRequestManager.get().deleteRequest(getUser(), request);
             }
             catch (RequestabilityManager.InvalidRuleException e)
             {
                 errors.reject(ERROR_MSG, "The request could not be canceled because a requestability rule is configured incorrectly. " +
-                        "Please report this problem to an administrator.  Error details: "  + e.getMessage());
+                        "Please report this problem to an administrator. Error details: "  + e.getMessage());
             }
             return true;
         }
@@ -2764,11 +2873,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(EmailSpecimenListForm form, BindException errors) throws Exception
         {
-            final SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            final SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null)
                 throw new NotFoundException();
 
-            LocationImpl receivingLocation = StudyManager.getInstance().getLocation(getContainer(), request.getDestinationSiteId());
+            LocationImpl receivingLocation = LocationManager.get().getLocation(getContainer(), request.getDestinationSiteId());
             if (receivingLocation == null)
                 throw new NotFoundException();
 
@@ -2793,11 +2902,11 @@ public class SpecimenController extends BaseStudyController
                     int[] ids = new int[3];
                     for (int i = 0; i < 3; i++)
                         ids[i] = Integer.parseInt(idStrs[i]);
-                    LocationImpl originatingOrProvidingLocation = StudyManager.getInstance().getLocation(getContainer(), ids[0]);
-                    SpecimenRequestActor notifyActor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), ids[1]);
+                    LocationImpl originatingOrProvidingLocation = LocationManager.get().getLocation(getContainer(), ids[0]);
+                    SpecimenRequestActor notifyActor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), ids[1]);
                     LocationImpl notifyLocation = null;
                     if (notifyActor.isPerSite() && ids[2] >= 0)
-                        notifyLocation = StudyManager.getInstance().getLocation(getContainer(), ids[2]);
+                        notifyLocation = LocationManager.get().getLocation(getContainer(), ids[2]);
                     List<ActorNotificationRecipientSet> emailRecipients = notifications.computeIfAbsent(originatingOrProvidingLocation, k -> new ArrayList<>());
                     emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifyLocation));
                 }
@@ -2833,8 +2942,8 @@ public class SpecimenController extends BaseStudyController
                     String header = type.getDisplay() + " location notification of specimen shipment to " + receivingLocation.getDisplayName();
                     try
                     {
-                        SpecimenRequestEvent event = SpecimenManager.getInstance().createRequestEvent(getUser(), request,
-                            SpecimenManager.RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
+                        SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                            RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
 
                         final Container container = getContainer();
                         final User user = getUser();
@@ -2845,8 +2954,8 @@ public class SpecimenController extends BaseStudyController
                             @Override
                             protected List<Vial> getSpecimenList()
                             {
-                                SimpleFilter filter = getUtils().getSpecimenListFilter(getSampleRequest(), originatingOrProvidingLocation, type);
-                                return SpecimenManager.getInstance().getVials(container, user, filter);
+                                SimpleFilter filter = getUtils().getSpecimenListFilter(getSpecimenRequest(), originatingOrProvidingLocation, type);
+                                return SpecimenManagerNew.get().getVials(container, user, filter);
 //                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(container), filter, null).getArrayList(Specimen.class);
                             }
 
@@ -2939,9 +3048,9 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
         {
-            SpecimenRequest specimenRequest = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
-            LocationImpl sourceLocation = StudyManager.getInstance().getLocation(getContainer(), form.getSourceSiteId());
-            LocationImpl destLocation = StudyManager.getInstance().getLocation(getContainer(), form.getDestSiteId());
+            SpecimenRequest specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            LocationImpl sourceLocation = LocationManager.get().getLocation(getContainer(), form.getSourceSiteId());
+            LocationImpl destLocation = LocationManager.get().getLocation(getContainer(), form.getDestSiteId());
             if (specimenRequest == null || sourceLocation == null || destLocation == null)
                 throw new NotFoundException();
 
@@ -2985,7 +3094,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(LabSpecimenListsForm form, BindException errors)
         {
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
             if (request == null  || form.getListType() == null)
                 throw new NotFoundException();
 
@@ -3080,9 +3189,9 @@ public class SpecimenController extends BaseStudyController
                 {
                     LocationImpl location;
                     if (_type == LabSpecimenListsBean.Type.ORIGINATING)
-                        location = SpecimenManager.getInstance().getOriginatingLocation(vial);
+                        location = LocationManager.get().getOriginatingLocation(vial);
                     else
-                        location = SpecimenManager.getInstance().getCurrentLocation(vial);
+                        location = LocationManager.get().getCurrentLocation(vial);
                     if (location != null)
                     {
                         List<Vial> current = _specimensBySiteId.get(location.getRowId());
@@ -3110,7 +3219,7 @@ public class SpecimenController extends BaseStudyController
             Map<Integer, List<Vial>> siteIdToSpecimens = getSpecimensBySiteId();
             Set<LocationImpl> locations = new HashSet<>(siteIdToSpecimens.size());
             for (Integer locationId : siteIdToSpecimens.keySet())
-                locations.add(StudyManager.getInstance().getLocation(_specimenRequest.getContainer(), locationId));
+                locations.add(LocationManager.get().getLocation(_specimenRequest.getContainer(), locationId));
             return locations;
         }
 
@@ -3131,267 +3240,13 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public abstract class SpecimenVisitReportAction<FormType extends SpecimenVisitReportParameters> extends SimpleViewAction<FormType>
-    {
-        private FormType _form;
-
-        public SpecimenVisitReportAction(Class<FormType> beanClass)
-        {
-            super(beanClass);
-        }
-
-        @Override
-        public ModelAndView getView(FormType specimenVisitReportForm, BindException errors)
-        {
-            _form = specimenVisitReportForm;
-            if (specimenVisitReportForm.isExcelExport())
-            {
-                SpecimenReportExcelWriter writer = new SpecimenReportExcelWriter(specimenVisitReportForm);
-                writer.write(getViewContext().getResponse());
-                return null;
-            }
-            else
-            {
-                JspView<FormType> reportView = new JspView<>("/org/labkey/study/view/specimen/specimenVisitReport.jsp", specimenVisitReportForm);
-                reportView.setIsWebPart(false);
-                if (this.isPrint())
-                {
-                    return reportView;
-                }
-                else
-                {
-                    // Need unique id only in webpart case
-                    ReportConfigurationBean bean = new ReportConfigurationBean(specimenVisitReportForm, false, 0);
-                    return new VBox(new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", bean), reportView);
-                }
-            }
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBaseSpecimenNavTrail(root);
-            root.addChild("Available Reports", new ActionURL(AutoReportListAction.class, getContainer()));
-            root.addChild("Specimen Report: " + _form.getLabel());
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class TypeSummaryReportAction extends SpecimenVisitReportAction<TypeSummaryReportFactory>
-    {
-        public TypeSummaryReportAction()
-        {
-            super(TypeSummaryReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class TypeParticipantReportAction extends SpecimenVisitReportAction<TypeParticipantReportFactory>
-    {
-        public TypeParticipantReportAction()
-        {
-            super(TypeParticipantReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestReportAction extends SpecimenVisitReportAction<RequestReportFactory>
-    {
-        public RequestReportAction()
-        {
-            super(RequestReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class TypeCohortReportAction extends SpecimenVisitReportAction<TypeCohortReportFactory>
-    {
-        public TypeCohortReportAction()
-        {
-            super(TypeCohortReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestSiteReportAction extends SpecimenVisitReportAction<RequestLocationReportFactory>
-    {
-        public RequestSiteReportAction()
-        {
-            super(RequestLocationReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ParticipantSummaryReportAction extends SpecimenVisitReportAction<ParticipantSummaryReportFactory>
-    {
-        public ParticipantSummaryReportAction()
-        {
-            super(ParticipantSummaryReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ParticipantTypeReportAction extends SpecimenVisitReportAction<ParticipantTypeReportFactory>
-    {
-        public ParticipantTypeReportAction()
-        {
-            super(ParticipantTypeReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ParticipantSiteReportAction extends SpecimenVisitReportAction<ParticipantSiteReportFactory>
-    {
-        public ParticipantSiteReportAction()
-        {
-            super(ParticipantSiteReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestEnrollmentSiteReportAction extends SpecimenVisitReportAction<RequestEnrollmentSiteReportFactory>
-    {
-        public RequestEnrollmentSiteReportAction()
-        {
-            super(RequestEnrollmentSiteReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestParticipantReportAction extends SpecimenVisitReportAction<RequestParticipantReportFactory>
-    {
-        public RequestParticipantReportAction()
-        {
-            super(RequestParticipantReportFactory.class);
-        }
-        // no implementation needed; this action exists only to provide an entry point
-        // with request->bean translation for this report type.
-    }
-
-    public static class ReportConfigurationBean
-    {
-        private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
-        private static final String REQUESTS_BY_DERIVATIVE_TYPE_TITLE = "Requested Vials by Type and Timepoint";
-
-        private final Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<>();
-        private final int _uniqueId;
-        private final ViewContext _viewContext;
-
-        private boolean _listView = true;
-        private boolean _hasReports = true;
-
-        public ReportConfigurationBean(ViewContext viewContext)
-        {
-            Study study = getStudy(viewContext.getContainer());
-            _viewContext = viewContext;
-            registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeSummaryReportFactory());
-            registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeParticipantReportFactory());
-            if (StudyManager.getInstance().showCohorts(_viewContext.getContainer(), _viewContext.getUser()))
-                registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
-            if (study != null)
-            {
-                boolean enableSpecimenRequest = SpecimenManager.getInstance().getRepositorySettings(study.getContainer()).isEnableRequests();
-                if (!study.isAncillaryStudy() && !study.isSnapshotStudy() && enableSpecimenRequest)
-                {
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestLocationReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestEnrollmentSiteReportFactory());
-                    registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestParticipantReportFactory());
-                }
-                String subjectNoun = StudyService.get().getSubjectNounSingular(viewContext.getContainer());
-                registerReportFactory("Collected Vials by " + subjectNoun + " by Timepoint", new ParticipantSummaryReportFactory());
-                registerReportFactory("Collected Vials by " + subjectNoun + " by Timepoint", new ParticipantTypeReportFactory());
-                registerReportFactory("Collected Vials by " + subjectNoun + " by Timepoint", new ParticipantSiteReportFactory());
-            }
-
-            _uniqueId = 0;
-        }
-
-        // TODO: listView parameter is always false... remove?
-        public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView, int uniqueId)
-        {
-            _listView = listView;
-            _viewContext = singleFactory.getViewContext();
-            assert (_viewContext != null) : "Expected report factory to be instantiated by Spring.";
-            registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, singleFactory);
-            _hasReports = getStudy(_viewContext.getContainer()) != null && !singleFactory.getReports().isEmpty();
-            _uniqueId = uniqueId;
-        }
-
-        private void registerReportFactory(String category, SpecimenVisitReportParameters factory)
-        {
-            // we have to explicitly set the view context for these reports, since the factories aren't being newed-up by Spring in the usual way:
-            factory.setViewContext(_viewContext);
-            List<SpecimenVisitReportParameters> factories = _reportFactories.get(category);
-
-            if (factories == null)
-            {
-                factories = new ArrayList<>();
-                _reportFactories.put(category, factories);
-            }
-
-            factories.add(factory);
-        }
-
-        public Set<String> getCategories()
-        {
-            return _reportFactories.keySet();
-        }
-
-        public List<SpecimenVisitReportParameters> getFactories(String category)
-        {
-            return _reportFactories.get(category);
-        }
-
-        public boolean isListView()
-        {
-            return _listView;
-        }
-
-        public Map<String, CustomView> getCustomViews(ViewContext context)
-        {
-            // 13485 - Use provider to handle NULL study
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SchemaKey.fromParts(StudyQuerySchema.SCHEMA_NAME));
-            QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
-            return def.getCustomViews(context.getUser(), context.getRequest(), false, false);
-        }
-
-        public boolean hasReports()
-        {
-            return _hasReports;
-        }
-
-        public int getUniqueId()
-        {
-            return _uniqueId;
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class AutoReportListAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
+            return new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
         }
 
         @Override
@@ -3500,7 +3355,7 @@ public class SpecimenController extends BaseStudyController
     {
         private boolean _copyToParticipant;
         private boolean _deleteVialComment;
-        private int _copySampleId;
+        private int _copySpecimenId;
         private String _copyParticipantId;
 
         public boolean isCopyToParticipant()
@@ -3525,12 +3380,12 @@ public class SpecimenController extends BaseStudyController
 
         public int getCopySampleId()
         {
-            return _copySampleId;
+            return _copySpecimenId;
         }
 
-        public void setCopySampleId(int copySampleId)
+        public void setCopySampleId(int copySpecimenId)
         {
-            _copySampleId = copySampleId;
+            _copySpecimenId = copySpecimenId;
         }
 
         public String getCopyParticipantId()
@@ -3544,7 +3399,7 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class UpdateSpecimenCommentsBean extends SamplesViewBean
+    public static class UpdateSpecimenCommentsBean extends SpecimensViewBean
     {
         private final String _referrer;
         private final String _currentComment;
@@ -3557,7 +3412,7 @@ public class SpecimenController extends BaseStudyController
         {
             super(context, vials, false, false, true, true);
             _referrer = referrer;
-            Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
+            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
             boolean mixedComments = false;
             boolean mixedFlagState = false;
             SpecimenComment prevComment = currentComments.get(vials.get(0));
@@ -3668,10 +3523,10 @@ public class SpecimenController extends BaseStudyController
                 {
                     // use the currently saved history conflict state; if it's been forced before, this will prevent it
                     // from being cleared.
-                    SpecimenComment comment = SpecimenManager.getInstance().getSpecimenCommentForVial(vial);
+                    SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
                     if (comment != null)
                     {
-                        SpecimenManager.getInstance().setSpecimenComment(getUser(), vial, null,
+                        SpecimenManager.get().setSpecimenComment(getUser(), vial, null,
                                 comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
                     }
                 }
@@ -3715,16 +3570,16 @@ public class SpecimenController extends BaseStudyController
                 {
                     try
                     {
-                        List<Vial> vials = SpecimenManager.getInstance().getVials(getContainer(), getUser(), rowId);
+                        List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), rowId);
                         selectedVials = new ArrayList<>(vials);
                     }
-                    catch (SpecimenManager.SpecimenRequestException e)
+                    catch (SpecimenRequestException e)
                     {
                         errors.reject(ERROR_MSG, e.getMessage());
                     }
                 }
                 if (selectedVials == null || selectedVials.size() == 0)
-                    return new HtmlView("No vials selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
+                    return new HtmlView("No vials selected. " + PageFlowUtil.link("back").href("javascript:back()"));
             }
 
             return new JspView<>("/org/labkey/study/view/specimen/updateComments.jsp",
@@ -3741,16 +3596,16 @@ public class SpecimenController extends BaseStudyController
             Container container = getContainer();
             List<Vial> vials = new ArrayList<>();
             for (int rowId : commentsForm.getRowId())
-                vials.add(SpecimenManager.getInstance().getVial(container, user, rowId));
+                vials.add(SpecimenManagerNew.get().getVial(container, user, rowId));
 
-            Map<Vial, SpecimenComment> currentComments = SpecimenManager.getInstance().getSpecimenComments(vials);
+            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
 
             // copying or moving vial comments to participant level comments
             if (commentsForm.isCopyToParticipant())
             {
                 if (commentsForm.getCopySampleId() != -1)
                 {
-                    Vial vial = SpecimenManager.getInstance().getVial(container, user, commentsForm.getCopySampleId());
+                    Vial vial = SpecimenManagerNew.get().getVial(container, user, commentsForm.getCopySampleId());
                     if (vial != null)
                     {
                         _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
@@ -3773,7 +3628,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     for (Vial vial : vials)
                     {
-                        SpecimenComment comment = SpecimenManager.getInstance().getSpecimenCommentForVial(vial);
+                        SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
                         if (comment != null)
                         {
                             _successUrl.addParameter(ParticipantCommentForm.params.vialCommentsToClear, vial.getRowId());
@@ -3789,7 +3644,7 @@ public class SpecimenController extends BaseStudyController
 
                 boolean newConflictState;
                 boolean newForceState;
-                if (commentsForm.isQualityControlFlag() != null && SpecimenManager.getInstance().getDisplaySettings(container).isEnableManualQCFlagging())
+                if (commentsForm.isQualityControlFlag() != null && SettingsManager.get().getDisplaySettings(container).isEnableManualQCFlagging())
                 {
                     // if a state has been specified in the post, we consider this to be 'forcing' the state:
                     newConflictState = commentsForm.isQualityControlFlag().booleanValue();
@@ -3804,12 +3659,12 @@ public class SpecimenController extends BaseStudyController
                 
                 if (previousComment == null || commentsForm.getConflictResolveEnum() == CommentsConflictResolution.REPLACE)
                 {
-                    SpecimenManager.getInstance().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
+                    SpecimenManager.get().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
                             newConflictState, newForceState);
                 }
                 else if (commentsForm.getConflictResolveEnum() == CommentsConflictResolution.APPEND)
                 {
-                    SpecimenManager.getInstance().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
+                    SpecimenManager.get().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
                             newConflictState, newForceState);
                 }
                 // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null
@@ -3861,12 +3716,12 @@ public class SpecimenController extends BaseStudyController
             }
 
             ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
-            boolean isEmpty = SpecimenManager.getInstance().isSpecimensEmpty(getContainer(), getUser());
+            boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(getContainer(), getUser());
             if (isEmpty)
             {
                 bean.setNoSpecimens(true);
             }
-            else if (getStudyThrowIfNull().getRepositorySettings().isSpecimenDataEditable())
+            else if (SettingsManager.get().getRepositorySettings(getStudyThrowIfNull().getContainer()).isSpecimenDataEditable())
             {
                 bean.setDefaultMerge(true);         // Repository is editable; make Merge the default
                 bean.setEditableSpecimens(true);
@@ -3886,8 +3741,6 @@ public class SpecimenController extends BaseStudyController
             root.addChild("Import Study Batch - " + msg);
         }
     }
-
-
 
     @RequiresPermission(AdminPermission.class)
     public class SubmitSpecimenBatchImport extends FormHandlerAction<PipelineForm>
@@ -3913,11 +3766,10 @@ public class SpecimenController extends BaseStudyController
             return true;
         }
 
-
         @Override
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 
@@ -3956,7 +3808,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(PipelineForm pipelineForm)
         {
-            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
 
@@ -4089,7 +3941,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public @Nullable Pair<AttachmentParent, String> getAttachment(SpecimenEventAttachmentForm form)
         {
-            SpecimenRequestEvent event = SpecimenManager.getInstance().getRequestEvent(getContainer(), form.getEventId());
+            SpecimenRequestEvent event = SpecimenRequestManager.get().getRequestEvent(getContainer(), form.getEventId());
             if (event == null)
                 throw new NotFoundException("Specimen event not found");
 
@@ -4104,7 +3956,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/manageRepositorySettings.jsp", SpecimenManager.getInstance().getRepositorySettings(getContainer()));
+            return new JspView<>("/org/labkey/study/view/specimen/manageRepositorySettings.jsp", SettingsManager.get().getRepositorySettings(getContainer()));
         }
 
         @Override
@@ -4127,11 +3979,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(ManageRepositorySettingsForm form, BindException errors) throws Exception
         {
-            RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+            RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
             settings.setSimple(form.isSimple());
             settings.setEnableRequests(!form.isSimple() && form.isEnableRequests());
             settings.setSpecimenDataEditable(!form.isSimple() && form.isSpecimenDataEditable());
-            SpecimenManager.getInstance().saveRepositorySettings(getContainer(), settings);
+            SettingsManager.get().saveRepositorySettings(getContainer(), settings);
 
             return true;
         }
@@ -4139,7 +3991,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(ManageRepositorySettingsForm manageRepositorySettingsForm)
         {
-            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+            return getManageStudyURL();
         }
     }
 
@@ -4266,7 +4118,7 @@ public class SpecimenController extends BaseStudyController
 
     private Map<Integer, SpecimenRequestActor> getIdToRequestActorMap(Container container)
     {
-        SpecimenRequestActor[] actors = SpecimenManager.getInstance().getRequirementsProvider().getActors(container);
+        SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(container);
         Map<Integer, SpecimenRequestActor> idToStatus = new HashMap<>();
         for (SpecimenRequestActor actor : actors)
             idToStatus.put(actor.getRowId(), actor);
@@ -4327,7 +4179,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     SpecimenRequestActor actor = new SpecimenRequestActor();
                     actor.setLabel(form.getNewLabel());
-                    SpecimenRequestActor[] actors = SpecimenManager.getInstance().getRequirementsProvider().getActors(getContainer());
+                    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
                     actor.setSortOrder(actors.length);
                     actor.setContainer(getContainer());
                     actor.setPerSite(form.isNewPerSite());
@@ -4343,7 +4195,7 @@ public class SpecimenController extends BaseStudyController
             if (form.getNextPage() != null && form.getNextPage().length() > 0)
                 return new ActionURL(form.getNextPage());
             else
-                return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+                return getManageStudyURL();
         }
     }
 
@@ -4414,7 +4266,7 @@ public class SpecimenController extends BaseStudyController
             {
                 status = status.createMutable();
                 status.setSortOrder(statusOrder);
-                SpecimenManager.getInstance().updateRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().updateRequestStatus(getUser(), status);
             }
         }
     }
@@ -4469,7 +4321,7 @@ public class SpecimenController extends BaseStudyController
                             status.setLabel(label);
                             status.setFinalState(isFinalState);
                             status.setSpecimensLocked(specimensLocked);
-                            SpecimenManager.getInstance().updateRequestStatus(getUser(), status);
+                            SpecimenRequestManager.get().updateRequestStatus(getUser(), status);
                         }
                     }
                 }
@@ -4479,19 +4331,19 @@ public class SpecimenController extends BaseStudyController
             {
                 SpecimenRequestStatus status = new SpecimenRequestStatus();
                 status.setLabel(form.getNewLabel());
-                List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
+                List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
                 status.setSortOrder(statuses.size());
                 status.setContainer(getContainer());
                 status.setFinalState(form.isNewFinalState());
                 status.setSpecimensLocked(form.isNewSpecimensLocked());
-                SpecimenManager.getInstance().createRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().createRequestStatus(getUser(), status);
             }
 
-            StatusSettings settings = SpecimenManager.getInstance().getStatusSettings(getContainer());
+            StatusSettings settings = SettingsManager.get().getStatusSettings(getContainer());
             if (settings.isUseShoppingCart() != form.isUseShoppingCart())
             {
                 settings.setUseShoppingCart(form.isUseShoppingCart());
-                SpecimenManager.getInstance().saveStatusSettings(getContainer(), settings);
+                SettingsManager.get().saveStatusSettings(getContainer(), settings);
             }
             return true;
         }
@@ -4502,7 +4354,7 @@ public class SpecimenController extends BaseStudyController
             if (form.getNextPage() != null && form.getNextPage().length() > 0)
                 return new ActionURL(form.getNextPage());
             else
-                return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+                return getManageStudyURL();
         }
     }
 
@@ -4567,7 +4419,7 @@ public class SpecimenController extends BaseStudyController
 
     private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container)
     {
-        List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(container, getUser());
+        List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, getUser());
         Map<Integer, SpecimenRequestStatus> idToStatus = new HashMap<>();
         for (SpecimenRequestStatus status : statuses)
             idToStatus.put(status.getRowId(), status);
@@ -4585,7 +4437,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(getContainer(), form.getId());
+            SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getId());
             if (actor != null)
                 actor.delete();
 
@@ -4610,11 +4462,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(IdForm form, BindException errors) throws Exception
         {
-            List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
-            SpecimenRequestStatus status = SpecimenManager.getInstance().getRequestStatus(getContainer(), form.getId());
+            List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
+            SpecimenRequestStatus status = SpecimenRequestManager.get().getRequestStatus(getContainer(), form.getId());
             if (status != null)
             {
-                SpecimenManager.getInstance().deleteRequestStatus(getUser(), status);
+                SpecimenRequestManager.get().deleteRequestStatus(status);
                 int[] remainingIds = new int[statuses.size() - 1];
                 int idx = 0;
                 for (SpecimenRequestStatus remainingStatus : statuses)
@@ -4645,12 +4497,12 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(ManageRequestInputsForm form, BindException errors) throws Exception
         {
-            SpecimenManager.SpecimenRequestInput[] inputs = new SpecimenManager.SpecimenRequestInput[form.getTitle().length];
+            SpecimenRequestInput[] inputs = new SpecimenRequestInput[form.getTitle().length];
             for (int i = 0; i < form.getTitle().length; i++)
             {
                 String title = form.getTitle()[i];
                 String helpText = form.getHelpText()[i];
-                inputs[i] = new SpecimenManager.SpecimenRequestInput(title, helpText, i);
+                inputs[i] = new SpecimenRequestInput(title, helpText, i);
             }
 
             if (form.getMultiline() != null)
@@ -4668,14 +4520,14 @@ public class SpecimenController extends BaseStudyController
                 for (int index : form.getRememberSiteValue())
                     inputs[index].setRememberSiteValue(true);
             }
-            SpecimenManager.getInstance().saveNewSpecimenRequestInputs(getContainer(), inputs);
+            SpecimenRequestManager.get().saveNewSpecimenRequestInputs(getContainer(), inputs);
             return true;
         }
 
         @Override
         public ActionURL getSuccessURL(ManageRequestInputsForm manageRequestInputsForm)
         {
-            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+            return getManageStudyURL();
         }
     }
 
@@ -4780,18 +4632,18 @@ public class SpecimenController extends BaseStudyController
 
     public static class ManageRequestInputsBean
     {
-        private SpecimenManager.SpecimenRequestInput[] _inputs;
-        private Container _container;
-        private String _contextPath;
+        private final SpecimenRequestInput[] _inputs;
+        private final Container _container;
+        private final String _contextPath;
 
         public ManageRequestInputsBean(ViewContext context) throws SQLException
         {
             _container = context.getContainer();
-            _inputs = SpecimenManager.getInstance().getNewSpecimenRequestInputs(_container);
+            _inputs = SpecimenRequestManager.get().getNewSpecimenRequestInputs(_container);
             _contextPath = context.getContextPath();
         }
 
-        public SpecimenManager.SpecimenRequestInput[] getInputs()
+        public SpecimenRequestInput[] getInputs()
         {
             return _inputs;
         }
@@ -4858,13 +4710,13 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors)
         {
-            if (!SpecimenManager.getInstance().isSampleRequestEnabled(getContainer(), false))
+            if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), false))
                 throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
 
             // try to get the settings from the form, just in case this is a reshow:
             RequestNotificationSettings settings = form;
             if (settings == null || settings.getReplyTo() == null)
-                settings = SpecimenManager.getInstance().getRequestNotificationSettings(getContainer());
+                settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
 
             return new JspView<>("/org/labkey/study/view/specimen/manageNotifications.jsp", settings, errors);
         }
@@ -4891,14 +4743,14 @@ public class SpecimenController extends BaseStudyController
             if (errors.hasErrors())
                 return false;
 
-            SpecimenManager.getInstance().saveRequestNotificationSettings(getContainer(), settings);
+            SettingsManager.get().saveRequestNotificationSettings(getContainer(), settings);
             return true;
         }
 
         @Override
         public ActionURL getSuccessURL(RequestNotificationSettings form)
         {
-            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+            return getManageStudyURL();
         }
 
         @Override
@@ -4929,7 +4781,7 @@ public class SpecimenController extends BaseStudyController
             // try to get the settings from the form, just in case this is a reshow:
             DisplaySettings settings = form.getBean();
             if (settings == null || settings.getLastVialEnum() == null)
-                settings = SpecimenManager.getInstance().getDisplaySettings(getContainer());
+                settings = SettingsManager.get().getDisplaySettings(getContainer());
 
             return new JspView<>("/org/labkey/study/view/specimen/manageDisplay.jsp", settings);
         }
@@ -4938,7 +4790,7 @@ public class SpecimenController extends BaseStudyController
         public boolean handlePost(DisplaySettingsForm form, BindException errors)
         {
             DisplaySettings settings = form.getBean();
-            SpecimenManager.getInstance().saveDisplaySettings(getContainer(), settings);
+            SettingsManager.get().saveDisplaySettings(getContainer(), settings);
 
             return true;
         }
@@ -4946,7 +4798,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(DisplaySettingsForm displaySettingsForm)
         {
-            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+            return getManageStudyURL();
         }
 
         @Override
@@ -5134,7 +4986,7 @@ public class SpecimenController extends BaseStudyController
                     form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
                 }
             }
-            StudyJspView<Object> view = new StudyJspView<>(study, "manageComments.jsp", form, errors);
+            StudyJspView<Object> view = new StudyJspView<>(study, "/org/labkey/study/view/manageComments.jsp", form, errors);
             view.setTitle("Comment Configuration");
 
             return view;
@@ -5165,7 +5017,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(ManageCommentsForm form)
         {
-            return new ActionURL(StudyController.ManageStudyAction.class, getContainer());
+            return getManageStudyURL();
         }
 
         @Override
@@ -5418,7 +5270,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView("/org/labkey/study/view/specimen/configRequestabilityRules.jsp");
+            return new JspView("/org/labkey/specimen/view/configRequestabilityRules.jsp");
         }
 
         @Override
@@ -5427,68 +5279,6 @@ public class SpecimenController extends BaseStudyController
             setHelpTopic("coordinateSpecimens#requestability");
             _addManageStudy(root);
             root.addChild("Configure Requestability Rules");
-        }
-    }
-
-
-
-    /** WEB PARTS **/
-
-    public static class SpecimenReportWebPartFactory extends BaseWebPartFactory
-    {
-        public static final String REPORT_TYPE_PARAMETER_NAME = "reportType";
-
-        public SpecimenReportWebPartFactory()
-        {
-            super("Specimen Report", true, true, LOCATION_BODY);
-        }
-
-        @Override
-        public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull WebPart part)
-        {
-            SpecimenVisitReportParameters factory = getFactory(context, part);
-
-            JspView<SpecimenVisitReportParameters> reportView = new JspView<>("/org/labkey/study/view/specimen/specimenVisitReport.jsp", factory);
-            WebPartView configView = new JspView<>("/org/labkey/study/view/specimen/autoReportList.jsp", new ReportConfigurationBean(factory, false, part.getIndex()));
-            ActionURL url = new ActionURL(factory.getAction(), context.getContainer());
-
-            VBox outer = new VBox(configView, reportView);
-            outer.setTitleHref(url);
-            outer.setFrame(WebPartView.FrameType.PORTAL);
-            outer.setTitle("Specimen Report: " + factory.getLabel());
-
-            return outer;
-        }
-
-        private SpecimenVisitReportParameters getFactory(ViewContext context, WebPart part)
-        {
-            @Nullable String name = part.getPropertyMap().get(REPORT_TYPE_PARAMETER_NAME);
-            ReportConfigurationBean bean = new ReportConfigurationBean(context);
-            Set<String> categories = bean.getCategories();
-
-            // First element of first category is the default (should be "TypeSummary")
-            SpecimenVisitReportParameters factory = bean.getFactories(categories.iterator().next()).get(0);
-            assert "TypeSummary".equals(factory.getReportType());
-
-            if (null == name)
-                return factory;
-
-            for (String category : categories)
-            {
-                for (SpecimenVisitReportParameters candidate : bean.getFactories(category))
-                {
-                    if (candidate.getReportType().equals(name))
-                        return candidate;
-                }
-            }
-
-            return factory;
-        }
-
-        @Override
-        public HttpView getEditView(WebPart webPart, ViewContext context)
-        {
-            return new JspView<>("/org/labkey/study/view/specimen/customizeSpecimenReportWebPart.jsp", webPart);
         }
     }
 
@@ -5512,12 +5302,12 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             initRequest(form);
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), _requestId);
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
             if (request == null)
                 throw new NotFoundException();
 
-            if (!SpecimenManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
-                    SpecimenManager.getInstance().isInFinalState(request))
+            if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request) ||
+                    SpecimenRequestManager.get().isInFinalState(request))
             {
                 return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
             }
@@ -5529,14 +5319,20 @@ public class SpecimenController extends BaseStudyController
         protected void validatePermission(User user, BindException errors)
         {
             checkPermissions();
-            SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), _requestId);
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
 
-            if (!SpecimenManager.getInstance().hasEditRequestPermissions(getUser(), request) ||
-                    SpecimenManager.getInstance().isInFinalState(request))
+            if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request) ||
+                    SpecimenRequestManager.get().isInFinalState(request))
             {
                 // No permission
                 errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
             }
+        }
+
+        @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, RequestSpecimensPermission.class);
         }
 
         @Override
@@ -5575,18 +5371,18 @@ public class SpecimenController extends BaseStudyController
             {
                 // Get all the specimen objects. If it throws an exception then there was an error and we'll
                 // root around to figure out what to report
-                SpecimenManager specimenManager = SpecimenManager.getInstance();
+                SpecimenManagerNew specimenManager = SpecimenManagerNew.get();
                 try
                 {
-                    SpecimenRequest request = specimenManager.getRequest(getContainer(), _requestId);
-                    List<Vial> vials = specimenManager.getVials(getContainer(), getUser(), globalIds);
+                    SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
+                    List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), globalIds);
 
                     if (vials != null && vials.size() == globalIds.length)
                     {
                         // All the specimens exist;
                         // Check for Availability and then add them to the request.
                         // There still may be errors (like someone already has requested that specimen) which will be
-                        // caught by createRequestSampleMapping
+                        // caught by createRequestSpecimenMapping
 
                         for (Vial s : vials)
                         {
@@ -5600,7 +5396,7 @@ public class SpecimenController extends BaseStudyController
                         {
                             ArrayList<Vial> vialList = new ArrayList<>(vials.size());
                             vialList.addAll(vials);
-                            specimenManager.createRequestSampleMapping(getUser(), request, vialList, true, true);
+                            SpecimenRequestManager.get().createRequestSpecimenMapping(getUser(), request, vialList, true, true);
                         }
                     }
                     else
@@ -5611,9 +5407,9 @@ public class SpecimenController extends BaseStudyController
                 catch (RequestabilityManager.InvalidRuleException e)
                 {
                     errorList.add("The request could not be created because a requestability rule is configured incorrectly. " +
-                            "Please report this problem to an administrator.  Error details: " + e.getMessage());
+                            "Please report this problem to an administrator. Error details: " + e.getMessage());
                 }
-                catch (SpecimenManager.SpecimenRequestException e)
+                catch (SpecimenRequestException e)
                 {
                     // There was an error; some id had no specimen matching
                     boolean hasSpecimenError = false;
@@ -5716,11 +5512,11 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(SpecimenWebPartForm form, BindException errors)
         {
-            RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
+            RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
             ArrayList<String[]> groupings = settings.getSpecimenWebPartGroupings();
             form.setGrouping1(groupings.get(0));
             form.setGrouping2(groupings.get(1));
-            form.setColumns(SpecimenManager.getInstance().getGroupedValueAllowedColumns());
+            form.setColumns(SpecimenRequestManager.get().getGroupedValueAllowedColumns());
             return new JspView<>("/org/labkey/study/view/specimen/manageSpecimenWebPart.jsp", form);
         }
 
@@ -5744,12 +5540,12 @@ public class SpecimenController extends BaseStudyController
             StudyImpl study = getStudy(container);
             if (study != null)
             {
-                RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(container);
+                RepositorySettings settings = SettingsManager.get().getRepositorySettings(container);
                 ArrayList<String[]> groupings = new ArrayList<>(2);
                 groupings.add(form.getGrouping1());
                 groupings.add(form.getGrouping2());
                 settings.setSpecimenWebPartGroupings(groupings);
-                SpecimenManager.getInstance().saveRepositorySettings(container, settings);
+                SettingsManager.get().saveRepositorySettings(container, settings);
                 response.put("success", true);
                 return response;
             }
@@ -5883,7 +5679,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/study/view/specimen/pivot.jsp");
+            return new JspView<>("/org/labkey/specimen/view/pivot.jsp");
         }
 
         @Override

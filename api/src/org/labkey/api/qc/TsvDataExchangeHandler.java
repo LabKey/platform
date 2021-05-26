@@ -1038,6 +1038,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     {
                         File file = entry.getValue();
                         String type = entry.getKey();
+                        LOG.debug("processing transformed data file: type=" + type + ", file=" + file.getPath());
 
                         File workingDir = getWorkingDirectory(context);
                         if (workingDir == null)
@@ -1049,10 +1050,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         }
                         else
                         {
-                            // Copy to the working directory
+                            // Move to the working directory
                             File tempDirCopy = new File(workingDir, file.getName());
                             if (!file.equals(tempDirCopy))
                             {
+                                LOG.debug("moving to working directory=" + tempDirCopy);
                                 FileUtils.moveFile(file, tempDirCopy);
                                 file = tempDirCopy;
                             }
@@ -1064,6 +1066,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         ExpData data = ExperimentService.get().getExpDataByURL(file, context.getContainer());
                         if (data == null)
                         {
+                            LOG.debug("exp.data doesn't exist, creating new one");
                             data = DefaultAssayRunCreator.createData(context.getContainer(), file, "transformed output", new DataType(type), true);
                             data.setName(file.getName());
                         }

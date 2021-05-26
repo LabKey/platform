@@ -44,7 +44,6 @@ public interface QCStateImportExportHelper
 
     /**
      * Relative priority to other helpers, a lower number represents a higher priority
-     * @return
      */
     int getPriority();
 
@@ -53,8 +52,12 @@ public interface QCStateImportExportHelper
     boolean isQCStateInUse(Container container, QCState state);
 
     QCState insertQCState(User user, QCState state);
+    QCState updateQCState(User user, QCState state);
 
-    void setDefaultAssayQCState(Container container, User user, Integer stateId);
+    /**
+     * The default QC state for data linked (published) to the study
+     */
+    void setDefaultPublishedDataQCState(Container container, User user, Integer stateId);
     void setDefaultPipelineQCState(Container container, User user, Integer stateId);
     void setDefaultDirectEntryQCState(Container container, User user, Integer stateId);
     void setShowPrivateDataByDefault(Container container, User user, boolean showPrivate);

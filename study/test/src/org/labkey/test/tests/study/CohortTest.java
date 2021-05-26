@@ -79,6 +79,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         log("Check advanced cohort features.");
         _containerHelper.createProject(PROJECT_NAME, "Study");
+        _containerHelper.enableModule("Specimen");
         importStudyFromZip(COHORT_STUDY_ZIP);
         clickProject(PROJECT_NAME);
         new PortalHelper(this).addWebPart("Specimens");

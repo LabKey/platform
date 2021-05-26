@@ -53,9 +53,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI;
 
 /**
  * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example
@@ -75,6 +80,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @NotNull protected SchemaType _userSchema;
 
     private final @NotNull TableRules _rules;
+    private Set<FieldKey> _rulesOmittedColumns = null;
+    private Set<FieldKey> _rulesTransformedColumns = null;
 
     public FilteredTable(@NotNull TableInfo table, @NotNull SchemaType userSchema)
     {
@@ -118,6 +125,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _userSchema.getDefaultContainerFilter();
     }
 
+    /**
+     * Allow {@link TableRules} to be applied to this table.
+     */
     public boolean supportTableRules()
     {
         return false;
@@ -130,6 +140,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         super.afterConstruct();
         if (getRealTable() instanceof AbstractTableInfo)
             ((AbstractTableInfo)getRealTable()).afterConstruct();
+
+        applyTableRules();
     }
 
     @Override
@@ -304,6 +316,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
+    /**
+     * Create a wrapped copy of the underlying column.
+     *
+     * wrapColumnFromJoinedTable is just like {@link #wrapColumn(ColumnInfo)} except the underlying
+     * column may come from a table that is joined to the FilteredTable's parent table.
+     *
+     * For example, the {@link org.labkey.api.exp.query.ExpDataClassDataTable} query table joins
+     * together the exp.data table and the provisioned expdataclass.* table. To create wrapped
+     * columns from the provisioned SchemaTableInfo, we must use {@link #wrapColumnFromJoinedTable(String, ColumnInfo)}
+     * instead of {@link #wrapColumn(ColumnInfo)} since ExpDataClassDataTable uses exp.data as it's root table.
+     */
     public MutableColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
     {
         return copyColumnFromJoinedTable(alias, underlyingColumn);
@@ -317,21 +340,25 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             ret.setKeyField(false);
         }
-        if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != underlyingColumn.getPHI() && underlyingColumn.isShouldLog())
-        {
-            ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
-        }
         assert ret.getParentTable() == this;
         return ret;
     }
 
+    /**
+     * Create a wrapped copy of the underlying column.
+     * TODO: Describe how this is different from {@link #addWrapColumn(ColumnInfo)}
+     */
     public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
         return wrapColumnFromJoinedTable(alias, underlyingColumn);
     }
 
-    public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    /**
+     * Create a wrapped copy of the underlying column.
+     * TODO: Describe how this is different from {@link #addWrapColumn(ColumnInfo)}
+     */
+     public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
@@ -460,7 +487,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), alias, columnMap);
         ret.append("\n").append(filterFrag).append(") ").append(alias);
         return skipTransform ? ret : getTransformedFromSQL(ret);
     }
@@ -488,21 +515,21 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _aliasManager;
     }
 
-    @Override
-    public MutableColumnInfo addColumn(MutableColumnInfo column)
+
+    /**
+     * Returns true if at least one of the columns on the table has been omitted by the table rules.
+     */
+    public final boolean hasRulesTransformedColumns()
     {
-        checkLocked();
-        MutableColumnInfo ret = column;
+        return _rulesTransformedColumns != null && !_rulesTransformedColumns.isEmpty();
+    }
 
-        // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
-        if (_rules.getColumnInfoFilter().test(column))
-        {
-            ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
-            getAliasManager().ensureAlias(column);
-            ret = super.addColumn((MutableColumnInfo)transformed);
-        }
-
-        return ret;
+    /**
+     * Returns true if at least one of the columns on the table has been omitted by the table rules.
+     */
+    public final boolean hasRulesOmittedColumns()
+    {
+        return _rulesOmittedColumns != null && !_rulesOmittedColumns.isEmpty();
     }
 
     @Override
@@ -516,28 +543,88 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return result;
     }
 
+    /**
+     * Create a new AliasColumn over the underlying column and add it to this table.
+     * TODO: Describe how this is different from {@link #wrapColumn(ColumnInfo)}
+     */
     public MutableColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         BaseColumnInfo ret = new AliasedColumn(this, name, column);
 
-        if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
-        {
-            ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
-        }
         propagateKeyField(column, ret);
         addColumn(ret);
         return ret;
     }
 
-    public Set<FieldKey> getPHIDataLoggingColumns()
+    // Choke point for TableRules column filtering and transforming, e.g., respecting PHI annotations
+    protected void applyTableRules()
     {
-        return Collections.emptySet();
+        final Set<FieldKey> phiDataLoggingColumns = getPHIDataLoggingColumns();
+        final String loggingComment = getPHILoggingComment(phiDataLoggingColumns);
+
+        for (var column : getMutableColumns())
+        {
+            MutableColumnInfo transformed;
+            if (_rules.getColumnInfoFilter().test(column))
+            {
+                transformed = _rules.getColumnInfoTransformer().apply(column);
+                getAliasManager().ensureAlias(column);
+                replaceColumn(transformed, column);
+
+                if (column != transformed)
+                {
+                    if (_rulesTransformedColumns == null)
+                        _rulesTransformedColumns = new HashSet<>();
+                    _rulesTransformedColumns.add(column.getFieldKey());
+                }
+
+                if (PHI.NotPHI != transformed.getPHI() && transformed.isShouldLog() && !phiDataLoggingColumns.isEmpty())
+                {
+                    transformed.setColumnLogging(new ColumnLogging(true, transformed.getFieldKey(), transformed.getParentTable(), phiDataLoggingColumns, loggingComment, getSelectQueryAuditProvider()));
+                }
+            }
+            else
+            {
+                removeColumn(column);
+                if (_rulesOmittedColumns == null)
+                    _rulesOmittedColumns = new HashSet<>();
+                _rulesOmittedColumns.add(column.getFieldKey());
+            }
+        }
     }
 
-    public String getPHILoggingComment()
+    public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
     {
-        return "";
+        if (!supportTableRules() || getUserSchema().getUser().isServiceUser())
+            return Collections.emptySet();
+
+        Set<FieldKey> loggingColumns = new LinkedHashSet<>();
+        if (!getColumns().isEmpty()) // it shouldn't be, as it should at least have the standard tracking columns even on initial creation
+        {
+            for (ColumnInfo pkCol : getPkColumns())
+                loggingColumns.add(pkCol.getFieldKey());
+
+            final PHI maxAllowed = this.getUserMaxAllowedPhiLevel();
+
+            // Also log any participantId columns, but only if the user is allowed to see them. Otherwise the value wouldn't be in the SELECT list to log.
+            getColumns().stream()
+                    .filter(c -> PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()) && c.getPHI().isLevelAllowed(maxAllowed))
+                    .map(ColumnInfo::getFieldKey)
+                    .forEach(loggingColumns::add);
+        }
+        return loggingColumns;
+    }
+
+    protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
+    {
+        if (!supportTableRules() || getUserSchema().getUser().isServiceUser())
+            return "";
+
+        return dataLoggingColumns
+                .stream()
+                .map(FieldKey::getName)
+                .collect(Collectors.joining(", ", "PHI accessed in " + getPublicSchemaName() + "." + getPublicName() + ". Data shows ", "."));
     }
 
     /**
@@ -548,6 +635,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
+    /**
+     * Create a new AliasColumn over the underlying column and add it to this table.
+     * TODO: Describe how this is different from {@link #wrapColumn(ColumnInfo)}
+     */
     public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         return addWrapColumn(column.getName(), column);

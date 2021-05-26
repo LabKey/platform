@@ -28,7 +28,9 @@ import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -72,11 +74,13 @@ import java.util.stream.Collectors;
 // track changes we've implemented for each version over time.
 public abstract class PostgreSql91Dialect extends SqlDialect
 {
-    protected static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+    public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
+
+    private HtmlString _adminWarning = null;
 
     protected InClauseGenerator _inClauseGenerator = null;
 
@@ -84,22 +88,27 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
     // standard_conforming_strings in on by default; before 9.1, it was off by default. We check the server setting
     // when we prepare a new DbScope and use this when we escape and parse string literals.
-    protected Boolean _standardConformingStrings = null;
+    private boolean _standardConformingStrings = true;
+    private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
 
-    // Standard constructor used by subclasses
-    protected PostgreSql91Dialect()
+    public boolean getStandardConformingStrings()
     {
+        return _standardConformingStrings;
     }
 
-    // Constructor used to test standardConformingStrings setting
-    protected PostgreSql91Dialect(boolean standardConformingStrings)
+    public void setStandardConformingStrings(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
     }
 
-    public Boolean getStandardConformingStrings()
+    public PostgreSqlServerType getServerType()
     {
-        return _standardConformingStrings;
+        return _serverType;
+    }
+
+    public void setServerType(PostgreSqlServerType serverType)
+    {
+        _serverType = serverType;
     }
 
     @Override
@@ -795,6 +804,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // When the PostgreSQLColumnMetaDataReader reads meta data, it returns these scale values for all domains.
     private void initializeUserDefinedTypes(DbScope scope)
     {
+        // Skip domains query if connecting to LabKey Server - it has no user-defined types
+        if (getServerType() == PostgreSqlServerType.LabKey)
+            return;
+
         Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
         selector.forEach(rs -> {
             String schemaName = rs.getString("domain_schema");
@@ -823,7 +836,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private String getDomainKey(String schemaName, String domainName)
     {
-        // Domain names are now returned from column metadata fully qualified and quoted, so save them that way. See #26149.
+        // Domain names are returned from column metadata fully qualified and quoted, so save them that way. See #26149.
         return ("public".equals(schemaName) ? domainName : "\"" + schemaName + "\".\"" + domainName + "\"");
     }
 
@@ -834,16 +847,22 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
     private void determineSettings(DbScope scope)
     {
-        Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
-        _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
+        if (getServerType() == PostgreSqlServerType.PostgreSQL)
+        {
+            Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+            _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
+        }
     }
 
 
-    // Does this datasource include our sort array function?  The LabKey datasource should always have it, but external datasources might not
+    // Does this datasource include our sort array function? The LabKey datasource should always have it, but external datasources might not
     private void determineIfArraySortFunctionExists(DbScope scope)
     {
-        Selector selector = new SqlSelector(scope, "SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'");
-        _arraySortFunctionExists.set(selector.exists());
+        if (getServerType() == PostgreSqlServerType.PostgreSQL)
+        {
+            Selector selector = new SqlSelector(scope, "SELECT * FROM pg_catalog.pg_namespace n INNER JOIN pg_catalog.pg_proc p ON pronamespace = n.oid WHERE nspname = 'core' AND proname = 'sort'");
+            _arraySortFunctionExists.set(selector.exists());
+        }
 
         // Array sort function should always exist in LabKey scope (for now)
         assert !scope.isLabKeyScope() || _arraySortFunctionExists.get();
@@ -1866,5 +1885,30 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public boolean supportsBatchGeneratedKeys()
     {
         return true;
+    }
+
+    @Override
+    public boolean allowAsynchronousExecute()
+    {
+        return true;
+    }
+
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
+    @Override
+    public void addAdminWarningMessages(Warnings warnings)
+    {
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
+    }
+
+    @Override
+    public boolean isProcedureExists(DbScope scope, String schema, String name)
+    {
+        // Don't bother querying LabKey for stored procedures
+        return getServerType() != PostgreSqlServerType.LabKey && super.isProcedureExists(scope, schema, name);
     }
 }

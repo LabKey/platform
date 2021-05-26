@@ -57,7 +57,7 @@ public class ListItemType implements AttachmentType
         List<String> selectStatements = new LinkedList<>();
 
         ContainerManager.getAllChildren(ContainerManager.getRoot()).forEach(c -> {
-            Map<String, ListDefinition> map = svc.getLists(c);
+            Map<String, ListDefinition> map = svc.getLists(c, null, true);
             map.forEach((k, v) -> {
                 Domain domain = v.getDomain();
                 if (null != domain && domain.getProperties().stream().anyMatch(p -> p.getPropertyType() == PropertyType.ATTACHMENT))

@@ -16,6 +16,7 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpMaterial;
 
@@ -29,7 +30,7 @@ import java.util.Date;
  */
 public interface ParticipantVisit
 {
-    public static final String ASSAY_RUN_MATERIAL_NAMESPACE = "AssayRunMaterial";
+    String ASSAY_RUN_MATERIAL_NAMESPACE = "AssayRunMaterial";
 
     Container getStudyContainer();
 
@@ -43,5 +44,6 @@ public interface ParticipantVisit
 
     Date getDate();
 
-    ExpMaterial getMaterial();
+    @Nullable
+    ExpMaterial getMaterial(boolean createIfNeeded);
 }

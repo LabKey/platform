@@ -15,11 +15,13 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,7 +55,7 @@ public class DataIteratorContext
 
     int _maxRowErrors = 1;
 
-    private Map<Enum, Object> _configParameters;
+    private final Map<Enum, Object> _configParameters = new HashMap<>();
 
     public DataIteratorContext()
     {
@@ -172,6 +174,7 @@ public class DataIteratorContext
         return _dontUpdateColumnNames;
     }
 
+    @NotNull
     public Set<String> getAlternateKeys()
     {
         return _alternateKeys;
@@ -189,10 +192,19 @@ public class DataIteratorContext
     /** Extra parameters associated with the DataIterator sequence. */
     public void setConfigParameters(Map<Enum, Object> configParameters)
     {
-        _configParameters = configParameters;
+        if (null == configParameters)
+            _configParameters.clear();
+        else
+            _configParameters.putAll(configParameters);
     }
 
-    @Nullable
+    public void putConfigParameter(Enum key, Object value)
+    {
+        _configParameters.put(key, value);
+    }
+
+
+    @NotNull
     public Map<Enum, Object> getConfigParameters()
     {
         return _configParameters;

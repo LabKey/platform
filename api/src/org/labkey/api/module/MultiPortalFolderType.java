@@ -140,10 +140,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 {
                     // Not a container tab or it is and the container exists -- go make a tab!
                     String label = portalPage.getCaption() != null ?
-                            portalPage.getCaption() :
-                            folderTab.isDefaultTab() ?
-                                    getStartPageLabel(ctx) :
-                                    folderTab.getCaption(ctx);
+                        portalPage.getCaption() :
+                        folderTab.isDefaultTab() ?
+                            getStartPageLabel(ctx) :
+                            folderTab.getCaption(ctx);
 
                     NavTree nav = new NavTree(label, folderTab.getURL(container, ctx.getUser()));
                     nav.setId("portal:" + portalPage.getPageId());

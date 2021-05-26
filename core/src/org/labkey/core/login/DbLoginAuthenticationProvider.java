@@ -15,18 +15,17 @@
  */
 package org.labkey.core.login;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.PasswordRule;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -40,10 +39,8 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,7 +54,7 @@ import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEG
 public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
     @Override
-    public List<DbLoginConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> ignored)
+    public DbLoginConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings ignored)
     {
         Map<String, Object> properties = Map.of(
             "RowId", 0,
@@ -65,9 +62,9 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             "Name", getName()
         );
 
-        Map<String, String> stringProperties = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+        Map<String, String> stringProperties = DbLoginManager.getProperties();
 
-        return Collections.singletonList(new DbLoginConfiguration(this, stringProperties, properties));
+        return new DbLoginConfiguration(this, stringProperties, properties);
     }
 
     @Override

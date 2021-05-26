@@ -19,13 +19,16 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -90,7 +93,7 @@ public class SampleTypeWebPart extends QueryView
         super.populateButtonBar(view, bar);
 
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteSampleTypesAction.class, getContainer());
-        deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        deleteURL.addReturnURL(getViewContext().getActionURL());
 
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteSampleTypesAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
@@ -101,7 +104,7 @@ public class SampleTypeWebPart extends QueryView
         bar.add(deleteButton);
 
         ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
-        urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        urlInsert.addReturnURL(getViewContext().getActionURL());
         ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Type", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(DesignSampleTypePermission.class);
         createNewButton.setURL(urlInsert);
@@ -111,6 +114,17 @@ public class SampleTypeWebPart extends QueryView
         ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials");
         showAllButton.setDisplayPermission(ReadPermission.class);
         bar.add(showAllButton);
+
+//      Deferred--Uncomment if supporting SampleType-level links is desired
+//        StudyUrls studyUrls = PageFlowUtil.urlProvider(StudyUrls.class);
+//        if (studyUrls != null)
+//        {
+//            ActionURL linkToStudyURL = studyUrls.getLinkToStudyURL(getContainer(), (ExpSampleType)null);
+//            linkToStudyURL.addParameter("sampleTypeIds", true);
+//            ActionButton linkToStudyButton = new ActionButton(linkToStudyURL, "Link to Study");
+//            linkToStudyButton.setDisplayPermission(InsertPermission.class);
+//            bar.add(linkToStudyButton);
+//        }
     }
 
     @Override

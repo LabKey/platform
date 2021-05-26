@@ -41,7 +41,7 @@
     }
 </script>
 <labkey:form action="<%=urlFor(CustomizeParticipantViewAction.class)%>" name="editorForm" method="POST">
-    <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl())%>">
+    <%=generateReturnUrlFormField(bean)%>
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
     <table>

@@ -60,6 +60,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -184,10 +187,12 @@ public class StudyPublishTest extends StudyPHIExportTest
         RReportHelper _rReportHelper = new RReportHelper(this);
         _rReportHelper.ensureRConfig();
 
-        _pipelineJobs += 2;
         importStudy();
-        startSpecimenImport(_pipelineJobs);
-        waitForPipelineJobsToComplete(_pipelineJobs, "study import", false);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            startSpecimenImport(++_pipelineJobs);
+        }
+        waitForPipelineJobsToComplete(++_pipelineJobs, "study import", false);
 
         setParticipantIdPreface(ID_PREFIX, ID_DIGITS);
         setStudyProperties(STUDY_LABEL, STUDY_INVESTIGATOR, STUDY_GRANT, STUDY_DESCRIPTION);
@@ -216,8 +221,11 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Create some lists
         _listHelper.importListArchive(getFolderName(), LIST_ARCHIVE);
 
-        // Set some specimen fields as PHI-protected to test exclusion with snapshot and refresh
-        setSpecimenFieldsPhi(SPECIMEN_PHI_FIELDS);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // Set some specimen fields as PHI-protected to test exclusion with snapshot and refresh
+            setSpecimenFieldsPhi(SPECIMEN_PHI_FIELDS);
+        }
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
@@ -235,25 +243,34 @@ public class StudyPublishTest extends StudyPHIExportTest
         publishStudy(PUB2_NAME, PUB2_DESCRIPTION, PublishLocation.root, PUB2_GROUPS, PUB2_DATASETS, PUB2_VISITS, PUB2_VIEWS, PUB2_REPORTS, PUB2_LISTS, false, false);
         publishStudy(PUB3_NAME, PUB3_DESCRIPTION, PublishLocation.project, PUB3_GROUPS, PUB3_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, false, true, false, true);
 
-        // load specimen set B to test the specimen refresh for the published studies
-        startSpecimenImport(++_pipelineJobs, StudyHelper.SPECIMEN_ARCHIVE_B);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // load specimen set B to test the specimen refresh for the published studies
+            startSpecimenImport(++_pipelineJobs, StudyHelper.SPECIMEN_ARCHIVE_B);
+        }
     }
 
     @Override
     protected void doVerifySteps()
     {
         verifyPipelineJobLinks(PUB3_NAME, PUB2_NAME, PUB1_NAME);
-        // published with specimens
-        verifyPublishedStudy(PUB1_NAME, getProjectName(), GROUP1_PTIDS, PUB1_DATASETS, PUB1_DEPENDENT_DATASETS, PUB1_VISITS, PUB1_VIEWS, PUB1_REPORTS, PUB1_LISTS, true, true, PUB1_EXPECTED_SPECIMENS);
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            // published with specimens
+            verifyPublishedStudy(PUB1_NAME, getProjectName(), GROUP1_PTIDS, PUB1_DATASETS, PUB1_DEPENDENT_DATASETS, PUB1_VISITS, PUB1_VIEWS, PUB1_REPORTS, PUB1_LISTS, true, true, PUB1_EXPECTED_SPECIMENS);
+        }
         // publish without specimens
         verifyPublishedStudy(PUB2_NAME, PUB2_NAME, PTIDS_WITHOUT_SPECIMENS, PUB2_DATASETS, PUB2_DEPENDENT_DATASETS, PUB2_VISITS, PUB2_VIEWS, PUB2_REPORTS, PUB2_LISTS, false, false, PUB2_EXPECTED_SPECIMENS);
-        // concat group 2 and group 3 ptids for the last publisehd study ptid list
+        // concat group 2 and group 3 ptids for the last published study ptid list
         ArrayList<String> group2and3ptids = new ArrayList<>();
         group2and3ptids.addAll(Arrays.asList(GROUP2_PTIDS));
         group2and3ptids.addAll(Arrays.asList(GROUP3_PTIDS));
         verifyPublishedStudy(PUB3_NAME, getProjectName(), group2and3ptids.toArray(new String[group2and3ptids.size()]), PUB3_DATASETS, PUB3_DEPENDENT_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, PUB3_EXPECTED_SPECIMENS, false, true, false, true);
 
-        verifySpecimenRefresh();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            verifySpecimenRefresh();
+        }
         setupForStudySnapshotTable();
         verifyStudySnapshotTable();
 
@@ -314,7 +331,7 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         //Assert webparts/wikis are present
         waitForElement(Locator.xpath("//div[@name='webpart']"));
-        List<String> expectedWebParts = Arrays.asList(
+        List<String> expectedWebParts = new ArrayList<>(Arrays.asList(
                 "Study Overview",
                 "Data Pipeline",
                 "Datasets",
@@ -323,7 +340,11 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Test Wiki Title",
                 "Lists",
                 "snapshot"
-        );
+        ));
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            expectedWebParts.remove("Specimens");
+        }
         List<String> webPartTitles = (new PortalHelper(this)).getWebPartTitles();
         Assert.assertEquals("Wrong webparts", expectedWebParts, webPartTitles);
 
@@ -356,7 +377,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            new DatasetPropertiesPage(getDriver()).clickViewData();
+            DataRegionTable dataTable = new DatasetPropertiesPage(getDriver()).clickViewData().getDataRegion();
+            assertTrue("Expect > 0 records", dataTable.getDataRowCount() > 0 );
+            assertThat("expect all participant data to be present and have values",
+                    dataTable.getColumnDataAsText("Mouse Id"), not(hasItem("")));
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -365,7 +389,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             pushLocation();
             clickAndWait(Locator.linkWithText(dataset));
-            new DatasetPropertiesPage(getDriver()).clickViewData();
+            DataRegionTable dataTable = new DatasetPropertiesPage(getDriver()).clickViewData().getDataRegion();
+            assertTrue("Expect > 0 records", dataTable.getDataRowCount() > 0 );
+            assertThat("expect all participant data to be present",
+                    dataTable.getColumnDataAsText("Mouse Id"), not(hasItem("")));
             if (alternateIDs)
                 assertTextNotPresent(ptids);
             popLocation();
@@ -496,97 +523,100 @@ public class StudyPublishTest extends StudyPHIExportTest
             }
         }
 
-        // Verify published specimens
-        clickTab("Specimen Data");
-        if (includeSpecimens)
+        if (_studyHelper.isSpecimenModulePresent())
         {
-            waitForText("By Vial Group");
-            sleep(2000); // the link moves while the specimen search form finishes layout
-            waitAndClickAndWait(Locator.linkWithText("By Individual Vial"));
-            waitForElement(Locator.paginationText(expectedSpecimenCount));
-
-            // verify that the alternate IDs are used
-            if (alternateIDs)
-                assertTextPresent("PUBLISHED-", 2*expectedSpecimenCount); // once for mouse ID link and once for mouse ID display
-
-            //TODO: verify date shifting
-
-            // verify PHI-protected specimen fields were removed
-            DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
-            for (String field : SPECIMEN_PHI_FIELDS)
-            {
-                Filter.Operator filterOperator = removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK;
-                SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
-                command.setFilters(Arrays.asList(new Filter(field, null, filterOperator)));
-                Connection connection = createDefaultConnection();
-                SelectRowsResponse response;
-
-                try
-                {
-                    response = command.execute(connection, getCurrentContainerPath());
-                }
-                catch (IOException | CommandException e)
-                {
-                    throw new RuntimeException(e);
-                }
-
-                if ((removePhiColumns && (response.getRowCount().intValue() != 0))
-                        || (!removePhiColumns && (response.getRowCount().intValue() != 10)))
-                {
-                    // Fail with a useful screenshot
-                    t1.ensureColumnPresent(field);
-                    t1.setFilter(field, filterOperator.getDisplayValue(), null);
-                    assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount().intValue(), t1.getDataRowCount());
-                    fail("PHI column was not exported as expected: " + (removePhiColumns ? "PHI not removed" : "PHI removed") + " for " + field);
-                }
-            }
-
-            // verify that the vials are filtered by the correct ptids and visits
-            _customizeViewsHelper.openCustomizeViewPanel();
-            _customizeViewsHelper.showHiddenItems();
-            _customizeViewsHelper.addColumn("SequenceNum");
-            _customizeViewsHelper.applyCustomView();
-            DataRegionTable t2 = new DataRegionTable("SpecimenDetail", this);
-            if (!alternateIDs) // we only know the IDs if they are not alternateIDs
-            {
-                t2.setFilter("MouseId", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(ptids));
-                assertTextPresent("No data to show.");
-                t2.clearFilter("MouseId");
-            }
-            t2.setFilter("SequenceNum", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(visits));
-            assertTextPresent("No data to show.");
-            t2.clearFilter("SequenceNum");
-
-            // verify that the request related specimen reports are hidden
+            // Verify published specimens
             clickTab("Specimen Data");
-            sleep(2000); // the link moves while the specimen search form finishes layout
-            waitAndClick(Locator.tagContainingText("span", "Specimen Reports")); // expand
-            waitAndClickAndWait(Locator.linkWithText("View Available Reports"));
-            assertTextNotPresent("Requested Vials by Type and Timepoint");
-            assertElementPresent(Locator.linkWithText("show options"), 6);
-        }
-        else
-        {
-            waitForText(WAIT_FOR_JAVASCRIPT, "No specimens found.");
-        }
-        // verify that the specimen request options are hidden from the manage study page
-        goToManageStudy();
-        assertTextNotPresent("Specimen Repository Settings", "Repository Type", "Display and Behavior", "Specimen Request Settings");
-        assertTextPresent("Note: specimen repository and request settings are not available for published studies.");
-        // verify that the additive, derivative, etc. tables were populated correctly
-        goToQueryView("study", "SpecimenAdditive", false);
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 42, 42) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
-        beginAt(getCurrentRelativeURL().replace("SpecimenAdditive", "SpecimenDerivative"));
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 99, 99) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
-        beginAt(getCurrentRelativeURL().replace("SpecimenDerivative", "SpecimenPrimaryType"));
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 59, 59) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
-        beginAt(getCurrentRelativeURL().replace("SpecimenPrimaryType", "Location"));
-        assertElementPresent(includeSpecimens ? Locator.paginationText(1, 24, 24) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            if (includeSpecimens)
+            {
+                waitForText("By Vial Group");
+                sleep(2000); // the link moves while the specimen search form finishes layout
+                waitAndClickAndWait(Locator.linkWithText("By Individual Vial"));
+                waitForElement(Locator.paginationText(expectedSpecimenCount));
 
-        // verify masked clinic information
-        if (maskClinicNames)
-        {
-            verifyMaskedClinics(8);
+                // verify that the alternate IDs are used
+                if (alternateIDs)
+                    assertTextPresent("PUBLISHED-", 2 * expectedSpecimenCount); // once for mouse ID link and once for mouse ID display
+
+                //TODO: verify date shifting
+
+                // verify PHI-protected specimen fields were removed
+                DataRegionTable t1 = new DataRegionTable("SpecimenDetail", this);
+                for (String field : SPECIMEN_PHI_FIELDS)
+                {
+                    Filter.Operator filterOperator = removePhiColumns ? Filter.Operator.NONBLANK : Filter.Operator.ISBLANK;
+                    SelectRowsCommand command = new SelectRowsCommand("study", "SpecimenEvent");
+                    command.setFilters(Arrays.asList(new Filter(field, null, filterOperator)));
+                    Connection connection = createDefaultConnection();
+                    SelectRowsResponse response;
+
+                    try
+                    {
+                        response = command.execute(connection, getCurrentContainerPath());
+                    }
+                    catch (IOException | CommandException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+
+                    if ((removePhiColumns && (response.getRowCount().intValue() != 0))
+                            || (!removePhiColumns && (response.getRowCount().intValue() != 10)))
+                    {
+                        // Fail with a useful screenshot
+                        t1.ensureColumnPresent(field);
+                        t1.setFilter(field, filterOperator.getDisplayValue(), null);
+                        assertEquals("SelectRows didn't return the same number of rows as contained in data region (both should have been zero)", response.getRowCount().intValue(), t1.getDataRowCount());
+                        fail("PHI column was not exported as expected: " + (removePhiColumns ? "PHI not removed" : "PHI removed") + " for " + field);
+                    }
+                }
+
+                // verify that the vials are filtered by the correct ptids and visits
+                _customizeViewsHelper.openCustomizeViewPanel();
+                _customizeViewsHelper.showHiddenItems();
+                _customizeViewsHelper.addColumn("SequenceNum");
+                _customizeViewsHelper.applyCustomView();
+                DataRegionTable t2 = new DataRegionTable("SpecimenDetail", this);
+                if (!alternateIDs) // we only know the IDs if they are not alternateIDs
+                {
+                    t2.setFilter("MouseId", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(ptids));
+                    assertTextPresent("No data to show.");
+                    t2.clearFilter("MouseId");
+                }
+                t2.setFilter("SequenceNum", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(visits));
+                assertTextPresent("No data to show.");
+                t2.clearFilter("SequenceNum");
+
+                // verify that the request related specimen reports are hidden
+                clickTab("Specimen Data");
+                sleep(2000); // the link moves while the specimen search form finishes layout
+                waitAndClick(Locator.tagContainingText("span", "Specimen Reports")); // expand
+                waitAndClickAndWait(Locator.linkWithText("View Available Reports"));
+                assertTextNotPresent("Requested Vials by Type and Timepoint");
+                assertElementPresent(Locator.linkWithText("show options"), 6);
+            }
+            else
+            {
+                waitForText(WAIT_FOR_JAVASCRIPT, "No specimens found.");
+            }
+            // verify that the specimen request options are hidden from the manage study page
+            goToManageStudy();
+            assertTextNotPresent("Specimen Repository Settings", "Repository Type", "Display and Behavior", "Specimen Request Settings");
+            assertTextPresent("Note: specimen repository and request settings are not available for published studies.");
+            // verify that the additive, derivative, etc. tables were populated correctly
+            goToQueryView("study", "SpecimenAdditive", false);
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 42, 42) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            beginAt(getCurrentRelativeURL().replace("SpecimenAdditive", "SpecimenDerivative"));
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 99, 99) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            beginAt(getCurrentRelativeURL().replace("SpecimenDerivative", "SpecimenPrimaryType"));
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 59, 59) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+            beginAt(getCurrentRelativeURL().replace("SpecimenPrimaryType", "Location"));
+            assertElementPresent(includeSpecimens ? Locator.paginationText(1, 24, 24) : Locator.xpath("//tr/td/em[text() = 'No data to show.']"));
+
+            // verify masked clinic information
+            if (maskClinicNames)
+            {
+                verifyMaskedClinics(8);
+            }
         }
         goToProjectHome();
     }
@@ -733,11 +763,14 @@ public class StudyPublishTest extends StudyPHIExportTest
             click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
-        if (!includeSpecimens) uncheckCheckbox(Locator.name("includeSpecimens"));
-        if (refreshSpecimens) checkCheckbox(Locator.radioButtonByNameAndValue("specimenRefresh", "true"));
-        clickButton("Next", 0);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // Wizard page 5 : Specimens
+            waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
+            if (!includeSpecimens) uncheckCheckbox(Locator.name("includeSpecimens"));
+            if (refreshSpecimens) checkCheckbox(Locator.radioButtonByNameAndValue("specimenRefresh", "true"));
+            clickButton("Next", 0);
+        }
 
         // Wizard Page 6 : Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
@@ -839,14 +872,17 @@ public class StudyPublishTest extends StudyPHIExportTest
         verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyWizardVisitList, "Screening", "Grp1:F/U/Grp2:V#2", "G1: V#2/G2: V#3");
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens
-        waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
-        Assert.assertTrue(Locator.checkboxByName("includeSpecimens").findElement(getDriver()).isSelected());
-        clickButton("Next", 0);
+        // Wizard page 5 : Specimens, if present & active
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Specimens']"));
+            Assert.assertTrue(Locator.checkboxByName("includeSpecimens").findElement(getDriver()).isSelected());
+            clickButton("Next", 0);
+        }
 
         // Wizard Page 6 : Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Specimen Settings", "Treatment Data");
+        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View", "Participant Comment Settings", "Protocol Documents", "Treatment Data");
         clickButton("Next", 0);
 
         // Wizard page 7 : Lists
@@ -881,7 +917,8 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "Webpart properties and layout",
                 "Wikis and their attachments",
                 "Files",
-                "QC State Settings");
+                "QC State Settings",
+                "Sample Types and Data Classes");
         clickButton("Next", 0);
 
         // Wizard page 11 : Publish Options
@@ -1129,7 +1166,10 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         Map<String, String[]> colsToCheck = new HashMap<>();
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon"});
-        colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1137,7 +1177,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         DataRegionTable dt = new DataRegionTable("query", getDriver());
         dt.setContainerFilter(DataRegionTable.ContainerFilterType.CURRENT_AND_SUBFOLDERS);
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon", "PublishedSubStudy"});
-        colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"true", "false", "false", "false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1149,7 +1192,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickAndWait(Locator.linkContainingText("view data"));
 
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
-        colsToCheck.put("Refresh", new String[]{"false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1172,7 +1218,10 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickAndWait(Locator.linkContainingText("view data"));
 
         colsToCheck.put("Destination", new String[]{"PublishedStudy", "PublishedToProject", "PublishedNonAnon"});
-        colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"true", "false", "false"});
+        }
 
         verifyDataRegion(colsToCheck);
 
@@ -1196,12 +1245,18 @@ public class StudyPublishTest extends StudyPHIExportTest
         clickAndWait(Locator.linkContainingText("view data"));
 
         colsToCheck.put("Destination", new String[0]);
-        colsToCheck.put("Refresh", new String[0]);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[0]);
+        }
         verifyDataRegion(colsToCheck);
 
         dt.goToView("Folder Filter", "Current folder and subfolders");
         colsToCheck.put("Destination", new String[]{"PublishedSubStudy"});
-        colsToCheck.put("Refresh", new String[]{"false"});
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            colsToCheck.put("Refresh", new String[]{"false"});
+        }
         verifyDataRegion(colsToCheck);
 
         stopImpersonating();

@@ -37,6 +37,7 @@ public class GWTProtocol implements IsSerializable
     private String _name;
     private String _description;
     private String _providerName;
+    private String domainKindName;
 
     private Map<String, String> _protocolParameters;
 
@@ -64,6 +65,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowTransformationScript;
     private boolean _allowPlateMetadata;
 
+    // UNDONE: update 'autoCopy' to 'autoLink' for the two members below and align ui-components and tests accordingly
     private GWTContainer _autoCopyTargetContainer;
     private String _autoCopyTargetContainerId;
     private boolean _saveScriptFiles;
@@ -136,6 +138,16 @@ public class GWTProtocol implements IsSerializable
     public void setProviderName(String providerName)
     {
         _providerName = providerName;
+    }
+
+    public String getDomainKindName()
+    {
+        return domainKindName;
+    }
+
+    public void setDomainKindName(String domainKindName)
+    {
+        this.domainKindName = domainKindName;
     }
 
     public List<String> getAvailablePlateTemplates()

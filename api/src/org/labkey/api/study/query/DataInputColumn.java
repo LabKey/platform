@@ -15,8 +15,10 @@
  */
 package org.labkey.api.study.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.view.ActionURL;
 
 /**
 * User: jeckels
@@ -26,7 +28,7 @@ public abstract class DataInputColumn extends PublishResultsQueryView.InputColum
 {
     protected final ColumnInfo _requiredColumn;
 
-    public DataInputColumn(String caption, String formElementName, boolean editable, String completionBase, PublishResultsQueryView.ResolverHelper resolverHelper,
+    public DataInputColumn(String caption, String formElementName, boolean editable, @Nullable ActionURL completionBase, PublishResultsQueryView.ResolverHelper resolverHelper,
                            ColumnInfo requiredColumn)
     {
         super(caption, editable, formElementName, completionBase, resolverHelper);

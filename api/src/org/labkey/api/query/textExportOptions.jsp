@@ -127,9 +127,7 @@
 
             var doTsvExport = function(isSign) {
                 var exportRegionName = <%=q(exportRegionName)%>;
-                var url = isSign ?
-                        new URL(<%=q(model.getSignTsvURL().getURIString())%>) :
-                        new URL(<%=q(model.getTsvURL().getURIString())%>);
+                var url = isSign ? <%=jsURL(model.getSignTsvURL())%> : <%=jsURL(model.getTsvURL())%>;
                 if (exportSelectedEl.is(':checked')) {
                     url.searchParams.set(exportRegionName + '.showRows', "SELECTED");
                     url.searchParams.set(exportRegionName + '.selectionKey', dr.selectionKey);
@@ -149,11 +147,13 @@
                     window.location = url;
                 }
                 else {
-                    LABKEY.requiresScript(['Ext4', 'SignSnapshotPanel.js'], function() {
-                        Ext4.onReady(function() {
-                            Ext4.create('LABKEY.Query.SignSnapshotPanel', {
-                                url: url,
-                                emailInput: '<%=h(model.getEmail())%>'
+                    LABKEY.requiresExt4Sandbox(function() {
+                        LABKEY.requiresScript('SignSnapshotPanel.js', function() {
+                            Ext4.onReady(function() {
+                                Ext4.create('LABKEY.Query.SignSnapshotPanel', {
+                                    url: url,
+                                    emailInput: <%=q(model.getEmail())%>
+                                });
                             });
                         });
                     });

@@ -19,6 +19,9 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.CohortFilter" %>
+<%@ page import="org.labkey.api.study.Params" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
@@ -26,8 +29,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
-<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.SharedFormParameters" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DefaultDatasetReportAction" %>
@@ -62,7 +63,7 @@
     String subjectNoun = StudyService.get().getSubjectNounSingular(container);
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
-    CohortImpl selectedCohort = null;
+    Cohort selectedCohort = null;
     List<CohortImpl> cohorts = null;
 
     if (showCohorts)
@@ -95,7 +96,7 @@
 
 %><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
 &nbsp;<%= link("Views", new ActionURL(BeginAction.class, container))%>&nbsp;
-&nbsp;<%= link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
+ <%= bean.showSpecimens ? link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container)) : HtmlString.EMPTY_STRING%>
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.size() && !hasHiddenData; i++)
@@ -116,9 +117,9 @@
         if (showCohorts)
         {
     %>
-    <input type="hidden" name="<%= h(CohortFilterFactory.Params.cohortFilterType.name()) %>"
+    <input type="hidden" name="<%= h(Params.cohortFilterType.name()) %>"
            value="<%= h(CohortFilter.Type.PTID_CURRENT.name()) %>">
-    <%= h(subjectNoun) %>'s current cohort: <select name="<%= h(CohortFilterFactory.Params.cohortId.name()) %>"
+    <%= h(subjectNoun) %>'s current cohort: <select name="<%= h(Params.cohortId.name()) %>"
                                                     onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%

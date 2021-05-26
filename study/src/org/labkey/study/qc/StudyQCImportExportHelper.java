@@ -41,7 +41,7 @@ public class StudyQCImportExportHelper implements QCStateImportExportHelper
         if (pipelineImportState != null)
             qcXml.setPipelineImportDefault(pipelineImportState.getLabel());
 
-        QCState assayCopyState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultAssayQCState());
+        QCState assayCopyState = getQCStateFromRowId(ctx.getContainer(), study.getDefaultPublishDataQCState());
         if (assayCopyState != null)
             qcXml.setAssayDataDefault(assayCopyState.getLabel());
 
@@ -73,13 +73,19 @@ public class StudyQCImportExportHelper implements QCStateImportExportHelper
     }
 
     @Override
-    public void setDefaultAssayQCState(Container container, User user, Integer stateId)
+    public QCState updateQCState(User user, QCState state)
+    {
+        return QCStateManager.getInstance().updateQCState(user, state);
+    }
+
+    @Override
+    public void setDefaultPublishedDataQCState(Container container, User user, Integer stateId)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study != null)
         {
             study = study.createMutable();
-            study.setDefaultAssayQCState(stateId);
+            study.setDefaultPublishDataQCState(stateId);
             StudyManager.getInstance().updateStudy(user, study);
         }
     }

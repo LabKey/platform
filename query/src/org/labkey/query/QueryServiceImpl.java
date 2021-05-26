@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2008-2019 LabKey Corporation
  *
@@ -30,15 +31,16 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -57,6 +59,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -84,7 +87,10 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.controllers.QueryController;
+import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.olap.rolap.RolapCubeDef;
+import org.labkey.query.olap.rolap.RolapCubeDef.DimensionDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -144,11 +150,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 import static org.labkey.query.audit.QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT;
 
 
-public class QueryServiceImpl extends AuditHandler implements QueryService
+public class QueryServiceImpl implements QueryService
 {
     private static final Logger LOG = LogManager.getLogger(QueryServiceImpl.class);
     private static final ResourceRootProvider QUERY_AND_ASSAY_PROVIDER = new ResourceRootProvider()
@@ -202,7 +207,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
-    private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<? extends Controller>, Pair<Module, String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
 
     private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
@@ -247,7 +252,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public static final CompareType WHERE = new CompareType("WHERE", "where", "WHERE", true /* dataValueRequired */, "sql", OperatorType.WHERE)
     {
         @Override
-        protected WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new WhereClause((String) value);
         }
@@ -263,7 +268,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             super(new FieldKey(null, "*"), WHERE, value);
             _displayFilterText = true;
 
-            String expression = (String)getParamVals()[0];
+            String expression = (String) getParamVals()[0];
             List<QueryParseException> errors = new ArrayList<>();
             QExpr parseResult;
             if (isBlank(value))
@@ -284,7 +289,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            return (String)getParamVals()[0];
+            return (String) getParamVals()[0];
         }
 
         @Override
@@ -308,7 +313,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr)expr.childList().get(0);
+                methodName = (QExpr) expr.childList().get(0);
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -327,7 +332,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            String expression = (String)getParamVals()[0];
+            String expression = (String) getParamVals()[0];
             if (isBlank(expression))
                 return new SQLFragment("1=1");
             // reparse because we have a dialect now
@@ -358,7 +363,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr)expr.childList().get(0);
+                methodName = (QExpr) expr.childList().get(0);
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -367,9 +372,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             for (QNode child : expr.children())
             {
                 if (child == methodName)
-                    ret.appendChild(new QField(null, ((QExpr)child).getFieldKey().getName(), child));
+                    ret.appendChild(new QField(null, ((QExpr) child).getFieldKey().getName(), child));
                 else
-                    ret.appendChild(bind((QExpr)child, columnMap));
+                    ret.appendChild(bind((QExpr) child, columnMap));
             }
             return ret;
         }
@@ -399,7 +404,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
     static public QueryServiceImpl get()
     {
-        return (QueryServiceImpl)QueryService.get();
+        return (QueryServiceImpl) QueryService.get();
     }
 
     static class CacheListener implements org.labkey.api.cache.CacheListener
@@ -416,7 +421,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public long metadataLastModified()
     {
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
-            _metadataLastModified.get() : Long.MIN_VALUE;
+                _metadataLastModified.get() : Long.MIN_VALUE;
     }
 
     /** Invalidate the value used for the "Last-Modified" time stamp. */
@@ -431,8 +436,8 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && !((UserSchema)schema).isFolder())
-            return (UserSchema)schema;
+        if (schema instanceof UserSchema && !((UserSchema) schema).isFolder())
+            return (UserSchema) schema;
 
         return null;
     }
@@ -441,8 +446,8 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && !((UserSchema)schema).isFolder())
-            return (UserSchema)schema;
+        if (schema instanceof UserSchema && !((UserSchema) schema).isFolder())
+            return (UserSchema) schema;
 
         return null;
     }
@@ -565,10 +570,10 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     /**
      * Get all custom query definitions (sql and metadata xml) or metadata xml overrides for built-in tables.
      *
-     * @param schemaName When not null include session queries (if there is a request) and file-based module queries.
-     * @param inheritable When true, search up the container hierarchy.
-     * @param includeSnapshots When true, include snapshot queries.
-     * @param includeCustomQueries When true, include custom queries and their metadata xml.
+     * @param schemaName              When not null include session queries (if there is a request) and file-based module queries.
+     * @param inheritable             When true, search up the container hierarchy.
+     * @param includeSnapshots        When true, include snapshot queries.
+     * @param includeCustomQueries    When true, include custom queries and their metadata xml.
      * @param includeMetadataOverride When true, include metadata xml overrides for built-in tables.
      */
     private Map<Entry<String, String>, QueryDefinition> getAllQueryDefs(
@@ -691,10 +696,10 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         modules = ModuleLoader.getInstance().orderModules(modules);
 
         return MODULE_QUERY_DEF_CACHE.streamResourceMaps(modules)
-            .map(mmap -> mmap.get(path))
-            .flatMap(Collection::stream)
-            .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
-            .collect(Collectors.toList());
+                .map(mmap -> mmap.get(path))
+                .flatMap(Collection::stream)
+                .map(queryDef -> new ModuleCustomQueryDefinition(queryDef, SchemaKey.fromString(schemaName), user, container))
+                .collect(Collectors.toList());
     }
 
     public void uncacheModuleResources(Module module)
@@ -712,9 +717,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         public MultiValuedMap<Path, ModuleQueryDef> load(Stream<? extends Resource> resources, Module module)
         {
             return unmodifiable(resources
-                .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
-                .map(resource -> new ModuleQueryDef(module, resource))
-                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
+                    .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
+                    .map(resource -> new ModuleQueryDef(module, resource))
+                    .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -749,7 +754,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     private @NotNull Map<String, CustomView> getCustomViewMap(@NotNull User user, @NotNull Container container, @Nullable User owner, String schema, String query,
-            boolean includeInherited, boolean sharedOnly)
+                                                              boolean includeInherited, boolean sharedOnly)
     {
         // Check for a custom query that matches
         Map<Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true, true, false);
@@ -772,7 +777,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     protected Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, QueryDefinition qd,
-           boolean inheritable, boolean sharedOnly)
+                                                       boolean inheritable, boolean sharedOnly)
     {
         Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
 
@@ -791,7 +796,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             // The database custom views are in priority order so check if the view has already been added
             if (!views.containsKey(cstmView.getName()))
                 views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
-            //if the module-based view has set overridable=true, we allow the DB view to override it
+                //if the module-based view has set overridable=true, we allow the DB view to override it
             else if (views.get(cstmView.getName()) instanceof ModuleCustomView && views.get(cstmView.getName()).isOverridable())
             {
                 CustomViewImpl view = new CustomViewImpl(qd, cstmView);
@@ -817,26 +822,26 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
         // find out if there are any module custom views to deal with
         MODULE_CUSTOM_VIEW_CACHE.streamResourceMaps(container)
-            .flatMap(mmap -> mmap.keys().stream())
-            .forEach(path -> {
-                if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
-                {
-                    moduleViewSchemas.add(AssayService.ASSAY_DIR_NAME);
-                }
-                else if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
-                {
-                    // after the queries directory, paths should contain schema and query name information
-                    if (path.size() >= 3)
+                .flatMap(mmap -> mmap.keys().stream())
+                .forEach(path -> {
+                    if (AssayService.ASSAY_DIR_NAME.equals(path.get(0)) || AssayService.ASSAY_DIR_NAME.equals(path.get(1)))
                     {
-                        String[] parts = new String[path.size() - 2];
-                        for (int i=0; i < path.size()-2; i++)
-                            parts[i] = path.get(i+1);
-
-                        SchemaKey schemaKey = SchemaKey.fromParts(parts);
-                        moduleViewSchemas.add(schemaKey.toString());
+                        moduleViewSchemas.add(AssayService.ASSAY_DIR_NAME);
                     }
-                }
-            });
+                    else if (MODULE_QUERIES_DIRECTORY.equals(path.get(0)))
+                    {
+                        // after the queries directory, paths should contain schema and query name information
+                        if (path.size() >= 3)
+                        {
+                            String[] parts = new String[path.size() - 2];
+                            for (int i = 0; i < path.size() - 2; i++)
+                                parts[i] = path.get(i + 1);
+
+                            SchemaKey schemaKey = SchemaKey.fromParts(parts);
+                            moduleViewSchemas.add(schemaKey.toString());
+                        }
+                    }
+                });
 
         Map<Path, CustomView> views = new HashMap<>();
 
@@ -861,7 +866,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
                         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
                         {
-                            Path key = new Path(schema.getPath().toString(), view.getQueryDefinition().getName(), StringUtils.defaultString(view.getName(),""));
+                            Path key = new Path(schema.getPath().toString(), view.getQueryDefinition().getName(), StringUtils.defaultString(view.getName(), ""));
                             if (!views.containsKey(key))
                                 views.put(key, view);
                         }
@@ -873,7 +878,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
         for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, null, null, owner, inheritable, sharedOnly))
         {
-            Path key = new Path(cstmView.getSchema(), cstmView.getQueryName(), StringUtils.defaultString(cstmView.getName(),""));
+            Path key = new Path(cstmView.getSchema(), cstmView.getQueryName(), StringUtils.defaultString(cstmView.getName(), ""));
             // The database custom views are in priority order so check if the view has already been added
             if (!views.containsKey(key))
             {
@@ -895,7 +900,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     {
         for (QuerySchema querySchema : schema.getSchemas(false))
         {
-            if (querySchema instanceof UserSchema && !((UserSchema)querySchema).isFolder())
+            if (querySchema instanceof UserSchema && !((UserSchema) querySchema).isFolder())
             {
                 UserSchema userSchema = schema.getUserSchema(querySchema.getName());
                 if (userSchema != null)
@@ -971,8 +976,8 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     private List<CustomView> _getCustomViews(final @NotNull User user, final Container container, final @Nullable User owner, final @Nullable String schemaName, final @Nullable String queryName,
-            final boolean includeInherited,
-            final boolean sharedOnly)
+                                             final boolean includeInherited,
+                                             final boolean sharedOnly)
     {
         final Collection<CustomView> views;
 
@@ -1042,10 +1047,10 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         // query in ALL modules... and then filter for active at this level.
 
         return MODULE_CUSTOM_VIEW_CACHE.streamResourceMaps(currentModules)
-            .map(mmap -> mmap.get(path))
-            .flatMap(Collection::stream)
-            .map(view -> new ModuleCustomView(qd, view))
-            .collect(Collectors.toList());
+                .map(mmap -> mmap.get(path))
+                .flatMap(Collection::stream)
+                .map(view -> new ModuleCustomView(qd, view))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -1062,9 +1067,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         {
             // Note: Can't use standard filter (getFilter(suffix)) below since we must allow ".qview.xml"
             return unmodifiable(resources
-                .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
-                .map(ModuleCustomViewDef::new)
-                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
+                    .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
+                    .map(ModuleCustomViewDef::new)
+                    .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -1189,9 +1194,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schemaName)
     {
         return QueryManager.get().getQuerySnapshots(container, schemaName)
-            .stream()
-            .map(QuerySnapshotDefImpl::new)
-            .collect(Collectors.toList());
+                .stream()
+                .map(QuerySnapshotDefImpl::new)
+                .collect(Collectors.toList());
     }
 
     private static class ContainerSchemaKey implements Serializable
@@ -1295,7 +1300,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         {
             if (obj instanceof SessionQuery)
             {
-                SessionQuery sq = (SessionQuery)obj;
+                SessionQuery sq = (SessionQuery) obj;
                 if (!_sql.equals(sq._sql))
                     return false;
                 if (_metadata == null && sq._metadata != null)
@@ -1347,7 +1352,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     @Override
     public QueryDefinition getSessionQuery(ViewContext context, Container container, String schemaName, String queryName)
     {
-        return getSessionQuery(context.getSession(), container, context.getUser(), schemaName,queryName);
+        return getSessionQuery(context.getSession(), container, context.getUser(), schemaName, queryName);
     }
 
     public QueryDefinition getSessionQuery(HttpSession session, Container container, User user, String schemaName, String queryName)
@@ -1421,7 +1426,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
                 else
                     ret = new QAliasedColumn(ret.getName(), ret.getAlias(), ret);
                 if (null != titleURL)
-                    ((QAliasedColumn)ret).setURL(titleURL);
+                    ((QAliasedColumn) ret).setURL(titleURL);
             }
 
             return ret;
@@ -1536,7 +1541,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns,
                                                         @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
-        HashMap<FieldKey,ColumnInfo> hm = new HashMap<>();
+        HashMap<FieldKey, ColumnInfo> hm = new HashMap<>();
         Set<ColumnInfo> involvedColumns = new HashSet<>();
         return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, hm, involvedColumns);
     }
@@ -1544,8 +1549,8 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
     // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
     private List<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
-                                                         @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns,
-                                                         Map<FieldKey,ColumnInfo> columnMap /* IN/OUT */, Set<ColumnInfo> allInvolvedColumns /* IN/OUT */)
+                                                   @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns,
+                                                   Map<FieldKey, ColumnInfo> columnMap /* IN/OUT */, Set<ColumnInfo> allInvolvedColumns /* IN/OUT */)
     {
         AliasManager manager = new AliasManager(table, columns);
 
@@ -1564,11 +1569,11 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
         // foreign keys
         // pass one - collect columns with foreign keys
-        Map<FieldKey,ColumnInfo> columnsWithLookups = new TreeMap<>();
+        Map<FieldKey, ColumnInfo> columnsWithLookups = new TreeMap<>();
         for (ColumnInfo column : columns)
         {
             FieldKey fkOuter = column.getFieldKey();
-            while (null != (fkOuter=fkOuter.getParent()))
+            while (null != (fkOuter = fkOuter.getParent()))
             {
                 if (columnsWithLookups.containsKey(fkOuter))
                     break;
@@ -1647,7 +1652,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
 
-    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, Map<FieldKey,ColumnInfo> columnMap, AliasManager manager,
+    private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
                                                      ArrayList<ColumnInfo> ret, Set<ColumnInfo> allInvolvedColumns, boolean addSortKeysOnly)
     {
         if (col.getSortFieldKeys() != null || null != col.getMvColumnName())
@@ -1694,7 +1699,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
 
-    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey,ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
+    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
     {
         if (fieldKey == null)
             return null;
@@ -1965,9 +1970,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             if (column.isUnselectable())
                 continue;
 
-        // #35181: indicator won't show up when explicitly requested from executeSql. Removing this old check solves this.
-        //    if (column.isMvIndicatorColumn())
-        //        continue;
+            // #35181: indicator won't show up when explicitly requested from executeSql. Removing this old check solves this.
+            //    if (column.isMvIndicatorColumn())
+            //        continue;
 
             ret.add(column);
         }
@@ -2208,9 +2213,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         public MultiValuedMap<Path, ModuleQueryMetadataDef> load(Stream<? extends Resource> resources, Module module)
         {
             return unmodifiable(resources
-                .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
-                .map(ModuleQueryMetadataDef::new)
-                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
+                    .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
+                    .map(ModuleQueryMetadataDef::new)
+                    .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -2243,13 +2248,13 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
     @Override
-    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
+    public void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments)
     {
         registerPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, QueryManager.get().getDbSchema().getSqlDialect());
     }
 
     @Override
-    public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public void registerPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
         Method.addPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, dialect);
     }
@@ -2313,14 +2318,14 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
     @Override
     public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
-	{
+    {
         TableInfo table = createTable(schema, sql, tableMap, strictColumnList);
 
         QueryLogging queryLogging = new QueryLogging();
         SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-		return new SqlSelector(table.getSchema().getScope(), sqlf, queryLogging).getResultSet(cached);
-	}
+        return new SqlSelector(table.getSchema().getScope(), sqlf, queryLogging).getResultSet(cached);
+    }
 
 
     @Override
@@ -2345,9 +2350,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     {
         Map<String, Object> parameterMap = null == in ? Collections.emptyMap() :
                 in instanceof CaseInsensitiveHashMap ? in :
-                new CaseInsensitiveHashMap<>(in);
+                        new CaseInsensitiveHashMap<>(in);
 
-        for (Pair<SQLFragment, Integer> paramWithFragment :frag.getParamsWithFragments())    // list contains params from any CTEs
+        for (Pair<SQLFragment, Integer> paramWithFragment : frag.getParamsWithFragments())    // list contains params from any CTEs
         {
             SQLFragment paramFragment = paramWithFragment.getKey();
             Integer paramIndex = paramWithFragment.getValue();
@@ -2357,7 +2362,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             if (!(o instanceof ParameterDecl))
                 continue;
 
-            ParameterDecl p = (ParameterDecl)o;
+            ParameterDecl p = (ParameterDecl) o;
             String name = p.getName();
             Object value = p.getDefault();
             boolean required = p.isRequired();
@@ -2366,7 +2371,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             if (parameterMap.containsKey(name))
             {
                 value = parameterMap.get(p.getName());
-                if (value instanceof String && ((String)value).isEmpty())
+                if (value instanceof String && ((String) value).isEmpty())
                     value = null;
                 provided = true;
             }
@@ -2383,7 +2388,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
             catch (ConversionException e)
             {
-                throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + value + "' to a " + p.getJdbcType() + " for column '" + p.getName() + "'"));
+                throw new RuntimeSQLException(new SQLGenerationException(ConvertHelper.getStandardConversionErrorMessage(value, p.getName(), p.getJdbcType().getJavaClass())));
             }
         }
     }
@@ -2397,7 +2402,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         {
             if (!(o instanceof ParameterDecl))
                 continue;
-            ParameterDecl p = (ParameterDecl)o;
+            ParameterDecl p = (ParameterDecl) o;
             throw new NamedParameterNotProvided(p.getName());
         }
     }
@@ -2410,7 +2415,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
-		ResultSet rs = new SqlSelector(table.getSchema().getScope(), sql, queryLogging).getResultSet(cache, cache);
+        ResultSet rs = new SqlSelector(table.getSchema().getScope(), sql, queryLogging).getResultSet(cache, cache);
 
         // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
         // close the underlying ResultSet before returning since it won't be accessible anywhere else
@@ -2437,10 +2442,10 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         return getSelectSQL(table, selectColumns, filter, sort, maxRows, offset, forceSort, QueryLogging.emptyQueryLogging());
     }
 
-	@Override
+    @Override
     public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
-	{
+    {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
         QueryProfiler.getInstance().ensureListenerEnvironment();
@@ -2456,9 +2461,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         // Don't add a sort if we're running a custom query and it has its own ORDER BY clause
         boolean viewHasSort = sort != null && !sort.getSortList().isEmpty();
         boolean viewHasLimit = maxRows > 0 || offset > 0 || Table.NO_ROWS == maxRows;
-        boolean queryHasSort = table instanceof QueryTableInfo && ((QueryTableInfo)table).hasSort();
+        boolean queryHasSort = table instanceof QueryTableInfo && ((QueryTableInfo) table).hasSort();
         SqlDialect dialect = table.getSqlDialect();
-        
+
         if (!viewHasSort)
         {
             if ((viewHasLimit || forceSort) && (!queryHasSort || dialect.isSqlServer()))
@@ -2540,7 +2545,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
         if (null != table.getUserSchema() && !queryLogging.isReadOnly())
             queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
-                                         shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
+                    shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
         else if (!shouldLogNameLoggings.isEmpty())
             throw new UnauthorizedException("Column logging is required but cannot set query logging object.");
 
@@ -2579,7 +2584,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             ColumnInfo prev;
             for (ColumnInfo column : allColumns)
             {
-                if (null != (prev = aliases.put(column.getAlias(),column)))
+                if (null != (prev = aliases.put(column.getAlias(), column)))
                 {
                     if (prev != column)
                         ExceptionUtil.logExceptionToMothership(null, new Exception("Duplicate alias in column list: " + table.getSchema() + "." + table.getName() + "." + column.getFieldKey().toSQLString() + " as " + column.getAlias()));
@@ -2588,7 +2593,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
                 column.declareJoins(tableAlias, joins);
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
-                selectFrag.append(" AS " );
+                selectFrag.append(" AS ");
                 selectFrag.append(dialect.makeLegalIdentifier(column.getAlias()));
                 strComma = ",\n";
             }
@@ -2613,43 +2618,43 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             }
         }
 
-		SQLFragment fromFrag = new SQLFragment("FROM ");
+        SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = allColumns.stream()
-                .map(col -> col instanceof WrappedColumn ? ((WrappedColumn)col).getWrappedColumn() : col)
+                .map(col -> col instanceof WrappedColumn ? ((WrappedColumn) col).getWrappedColumn() : col)
                 .map(ColumnInfo::getFieldKey)
                 .collect(Collectors.toSet());
         SQLFragment getfromsql = table.getFromSQL(tableAlias, fieldKeySet);
         fromFrag.append(getfromsql);
         fromFrag.append(" ");
 
-		for (Entry<String, SQLFragment> entry : joins.entrySet())
-		{
-			fromFrag.append("\n").append(entry.getValue());
-		}
+        for (Entry<String, SQLFragment> entry : joins.entrySet())
+        {
+            fromFrag.append("\n").append(entry.getValue());
+        }
 
-		SQLFragment filterFrag = null;
+        SQLFragment filterFrag = null;
 
-		if (filter != null)
-		{
-			filterFrag = filter.getSQLFragment(dialect, columnMap);
-		}
+        if (filter != null)
+        {
+            filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
+        }
 
         String orderBy = null;
 
-		if (sort != null)
-		{
-			orderBy = sort.getOrderByClause(dialect, columnMap);
-		}
+        if (sort != null)
+        {
+            orderBy = sort.getOrderByClause(dialect, columnMap);
+        }
 
-		if ((filterFrag == null || filterFrag.getSQL().length()==0) && sort == null && Table.ALL_ROWS == maxRows && offset == 0)
-		{
-			selectFrag.append("\n").append(fromFrag);
-			return selectFrag;
-		}
+        if ((filterFrag == null || filterFrag.getSQL().length() == 0) && sort == null && Table.ALL_ROWS == maxRows && offset == 0)
+        {
+            selectFrag.append("\n").append(fromFrag);
+            return selectFrag;
+        }
 
-		SQLFragment nestedFrom = new SQLFragment();
-		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x");
-		SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, maxRows, offset);
+        SQLFragment nestedFrom = new SQLFragment();
+        nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x");
+        SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, maxRows, offset);
 
         if (AppProps.getInstance().isDevMode())
         {
@@ -2660,32 +2665,32 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             ret = SQLFragment.prettyPrint(t);
         }
 
-	    return ret;
+        return ret;
     }
 
 
     private static Sort createDefaultSort(Collection<ColumnInfo> columns)
-	{
-		Sort sort = new Sort();
-		addSortableColumns(sort, columns, true);
+    {
+        Sort sort = new Sort();
+        addSortableColumns(sort, columns, true);
 
-		if (sort.getSortList().size() == 0)
-		{
-			addSortableColumns(sort, columns, false);
-		}
+        if (sort.getSortList().size() == 0)
+        {
+            addSortableColumns(sort, columns, false);
+        }
 
-		return sort;
-	}
+        return sort;
+    }
 
 
-	/* see if columns in column.getSortFieldKeys() are resolvable, so we avoid proposing a default sort that won't work */
-	private static List<ColumnInfo> resolveSortFieldKeys(ColumnInfo col, Map<FieldKey,ColumnInfo>  selectColumns)
+    /* see if columns in column.getSortFieldKeys() are resolvable, so we avoid proposing a default sort that won't work */
+    private static List<ColumnInfo> resolveSortFieldKeys(ColumnInfo col, Map<FieldKey, ColumnInfo> selectColumns)
     {
         List<FieldKey> sortFieldKeys = col.getSortFieldKeys();
         if (null != sortFieldKeys && !sortFieldKeys.isEmpty())
         {
             // fast way: see if all columns are already selected
-            if (sortFieldKeys.stream().allMatch(f ->null != selectColumns.get(f)))
+            if (sortFieldKeys.stream().allMatch(f -> null != selectColumns.get(f)))
                 return sortFieldKeys.stream().map(selectColumns::get).collect(Collectors.toList());
             // slow way: use QueryService
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(col.getParentTable(), sortFieldKeys);
@@ -2699,28 +2704,28 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     }
 
 
-	private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
-	{
+    private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
+    {
 	    /* There is a bit of a chicken-and-egg problem here
 	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
 	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
 	     */
-	    Map<FieldKey,ColumnInfo> available = new HashMap<>();
+        Map<FieldKey, ColumnInfo> available = new HashMap<>();
 	    columns.forEach(c -> {if (!available.containsKey(c.getFieldKey())) available.put(c.getFieldKey(),c);});
 
-		for (ColumnInfo column : columns)
-		{
-			if (usePrimaryKey && !column.isKeyField())
-				continue;
+        for (ColumnInfo column : columns)
+        {
+            if (usePrimaryKey && !column.isKeyField())
+                continue;
             List<ColumnInfo> sortFields = resolveSortFieldKeys(column, available);
-			if (sortFields != null && !sortFields.isEmpty())
-			{
-			    // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
-			    sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
+            if (sortFields != null && !sortFields.isEmpty())
+            {
+                // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
+                sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
                 return;
-			}
-		}
-	}
+            }
+        }
+    }
 
     @Nullable
     private static ColumnInfo getColumnForDataLogging(TableInfo table, FieldKey fieldKey)
@@ -2790,7 +2795,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     @Override
     public void registerSchemaLinkAction(@NotNull Class<? extends Controller> actionClass, @NotNull Module module, @NotNull String linkLabel)
     {
-        synchronized(_schemaLinkActions)
+        synchronized (_schemaLinkActions)
         {
             if (_schemaLinkActions.containsKey(actionClass))
                 throw new IllegalStateException("Schema link action : " + actionClass.getName() + " has previously been registered.");
@@ -2873,7 +2878,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     {
         HashMap<Environment, Object> env = environments.get();
         env.clear();
-        env.putAll((HashMap<Environment, Object>)o);
+        env.putAll((HashMap<Environment, Object>) o);
     }
 
 
@@ -2881,6 +2886,49 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     public void clearEnvironment()
     {
         environments.get().clear();
+    }
+
+    @Override
+    public AuditHandler getDefaultAuditHandler()
+    {
+        return new AbstractAuditHandler()
+        {
+            @Override
+            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+            {
+                return createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row);
+            }
+
+            @Override
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow)
+            {
+                return createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow);
+            }
+
+            private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
+            {
+                QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
+                DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
+                if (tx != null)
+                    event.setTransactionId(tx.getAuditId());
+
+                if (c.getProject() != null)
+                    event.setProjectId(c.getProject().getId());
+                event.setSchemaName(tinfo.getPublicSchemaName());
+                event.setQueryName(tinfo.getPublicName());
+
+                FieldKey rowPk = tinfo.getAuditRowPk();
+                if (rowPk != null && row != null)
+                {
+                    if (row.containsKey(rowPk.toString()))
+                    {
+                        Object pk = row.get(rowPk.toString());
+                        event.setRowPk(String.valueOf(pk));
+                    }
+                }
+                return event;
+            }
+        };
     }
 
     @Override
@@ -2924,60 +2972,6 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 
 
     @Override
-    public void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount)
-    {
-        if (table.supportsAuditTracking())
-        {
-            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
-
-            if (auditType == SUMMARY)
-            {
-                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, null, dataRowCount, null);
-
-                AuditLogService.get().addEvent(user, event);
-            }
-        }
-    }
-
-    @Override
-    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
-    {
-        return createAuditRecord(c, tinfo, action.getCommentDetailed(), row);
-    }
-
-    @Override
-    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
-    {
-        // not doing anything with userComment at the moment
-        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), row);
-    }
-
-
-    private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
-    {
-        QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
-        DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
-        if (tx != null)
-            event.setTransactionId(tx.getAuditId());
-
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
-        event.setSchemaName(tinfo.getPublicSchemaName());
-        event.setQueryName(tinfo.getPublicName());
-
-        FieldKey rowPk = tinfo.getAuditRowPk();
-        if (rowPk != null && row != null)
-        {
-            if (row.containsKey(rowPk.toString()))
-            {
-                Object pk = row.get(rowPk.toString());
-                event.setRowPk(String.valueOf(pk));
-            }
-        }
-        return event;
-    }
-
     public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -3090,6 +3084,35 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         return result.toString();
     }
 
+    @Override
+    public List<String> getRolapConfigIds(Container c)
+    {
+        return ServerManager.getDescriptors(c).stream()
+            .filter(d->!d.usesMondrian())
+            .map(OlapSchemaDescriptor::getId)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<QueryService.Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension)
+    {
+        OlapSchemaDescriptor descriptor = ServerManager.getDescriptor(c, configId);
+
+        if (null == descriptor)
+            throw new IllegalArgumentException("OLAP schema descriptor not found: " + configId);
+
+        RolapCubeDef rolap = descriptor.getRolapCubeDefinitionByName(cubeName);
+
+        if (null == rolap)
+            throw new IllegalArgumentException("Unable to find cube definition for cubeName: " + cubeName);
+
+        DimensionDef def = rolap.getDimension(dimension);
+
+        if (null == def)
+            throw new IllegalArgumentException("Unable to find dimension " + dimension);
+
+        return new ArrayList<>(def.getHierarchies());
+    }
 
     /*
     public Set<ColumnInfo> getIncomingLookups(User user, Container c, TableInfo targetTable, Set<SchemaKey> schemaKeys)
@@ -3160,6 +3183,26 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
     {
         return _queryAnalysisService;
     }
+
+
+
+
+    /* registry of ColumnInfoTransformer use to build common columns */
+    Map<String, ColumnInfoTransformer> columnTransformerMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
+
+    @Override
+    public void registerColumnInfoTransformer(@NotNull String uri, @NotNull ColumnInfoTransformer t)
+    {
+        if (null != columnTransformerMap.put(uri, t))
+            throw new ConfigurationException("More than one ColumnTransformer registered for " + uri);
+    }
+
+    @Override
+    public ColumnInfoTransformer findColumnInfoTransformer(String conceptURI)
+    {
+        return columnTransformerMap.get(conceptURI);
+    }
+
 
     public static class TestCase extends Assert
     {

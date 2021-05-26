@@ -16,6 +16,8 @@
 package org.labkey.api.compliance;
 
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.column.ColumnInfoFilter;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 
 import java.util.function.UnaryOperator;
 
@@ -42,7 +44,16 @@ public interface TableRules
         }
     };
 
+    /**
+     * Only add columns to the TableInfo that are allowed by the ColumnInfoFilter.
+     */
     ColumnInfoFilter getColumnInfoFilter();
+
+    /**
+     * Columns that are allowed by the ColumnInfoFilter will be transformed by
+     * the ColumnInfoTransformer.  The transform may return the same column instance or a new column.
+     */
     ColumnInfoTransformer getColumnInfoTransformer();
+
     UnaryOperator<SQLFragment> getSqlTransformer();
 }

@@ -209,7 +209,7 @@
   <table tableName="List" tableDbType="TABLE">
       <buttonBarOptions position="top" includeStandardButtons="true">
       </buttonBarOptions>
-      <description>Contains one row for every list managered in this container.</description>
+      <description>Contains one row for every list managed in this container.</description>
       <tableUrl>/list/grid.view?listId=${ListId}</tableUrl>
       <titleColumn>Name</titleColumn>
       <pkColumnName>ListId</pkColumnName>
@@ -240,6 +240,7 @@
           <column columnName="KeyType" />
           <column columnName="TitleColumn" />
           <column columnName="Description" />
+          <column columnName="Category"/>
           <column columnName="DiscussionSetting" />
           <column columnName="AllowDelete" />
           <column columnName="AllowUpload" />
@@ -302,6 +303,8 @@
           <description>Contains the time this material was last updated in the search index</description>
       </column>
       <column columnName="ObjectId"/>
+      <column columnName="RootMaterialLSID"/>
+      <column columnName="AliquotedFromLSID"/>
     </columns>
     <description>Contains a row per material or sample described in this folder. These correspond to physical items, such as vials or tissue blocks.</description>
   </table>
@@ -352,6 +355,8 @@
       <column columnName="ParentCol"/>
       <column columnName="NameExpression"/>
       <column columnName="LabelColor"/>
+      <column columnName="MetricUnit"/>
+      <column columnName="AutoLinkTargetContainer"/>
       <column columnName="CreatedBy">
         <fk>
           <fkColumnName>UserId</fkColumnName>
@@ -458,7 +463,11 @@
       <column columnName="RedactedText"/>
       <column columnName="MvIndicatorStorageColumnName"/>
       <column columnName="TextExpression"/>
+      <column columnName="SourceOntology"/>
+      <column columnName="ConceptImportColumn"/>
+      <column columnName="ConceptLabelColumn"/>
       <column columnName="PrincipalConceptCode"/>
+      <column columnName="DerivationDataScope"/>
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">
@@ -935,6 +944,8 @@
       <column columnName="Container"/>
       <column columnName="LastIndexed"/>
       <column columnName="ObjectId"/>
+      <column columnName="RootMaterialLSID"/>
+      <column columnName="AliquotedFromLSID"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">

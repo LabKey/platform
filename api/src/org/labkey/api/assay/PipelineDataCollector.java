@@ -22,7 +22,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -36,6 +37,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * Data collector that supplies files the user previously selected through the pipeline/file browser.
@@ -57,34 +60,34 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return new HtmlView(getHTML(context));
     }
 
-    public String getHTML(ContextType context)
+    public HtmlString getHTML(ContextType context)
     {
         Map<String, File> files = getCurrentFilesForDisplay(context);
         if (files.isEmpty())
         {
-            return "<div class=\"labkey-error\">No files have been selected.</div>";
+            return unsafe("<div class=\"labkey-error\">No files have been selected.</div>");
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("<ul>");
+        HtmlStringBuilder html = HtmlStringBuilder.of();
+        html.startTag("ul");
         for (File file : files.values())
         {
-            sb.append("<li>");
-            sb.append(PageFlowUtil.filter(file.getName()));
-            sb.append("</li>");
+            html.startTag("li");
+            html.append(file.getName());
+            html.endTag("li");
         }
-        sb.append("</ul>");
+        html.endTag("ul");
         int additionalSets = getAdditionalFileSetCount(context);
         if (additionalSets > 0)
         {
-            sb.append(" (");
-            sb.append(additionalSets);
-            sb.append(" more run");
-            sb.append(additionalSets > 1 ? "s" : "");
-            sb.append(" available)");
+            html.append(" (");
+            html.append(additionalSets);
+            html.append(" more run");
+            html.append(additionalSets > 1 ? "s" : "");
+            html.append(" available)");
         }
 
-        return sb.toString();
+        return html.getHtmlString();
     }
 
     /**

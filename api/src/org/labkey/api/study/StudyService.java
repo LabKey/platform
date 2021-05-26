@@ -23,28 +23,33 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.FolderTab;
 import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +67,7 @@ public interface StudyService
     String SPECIMEN_SEARCH_WEBPART = "Specimen Search (Experimental)";
     String SPECIMEN_BROWSE_WEBPART = "Specimen Browse (Experimental)";
 
-    String SPECIMEN_TOOLS_WEBPART_NAME = "Specimen Tools";
-    String DATA_TOOLS_WEBPART_NAME = "Study Data Tools";
+    String STUDY_TOOLS_WEBPART_NAME = "Study Data Tools";
 
     String DATASPACE_FOLDERTYPE_NAME = "Dataspace";
 
@@ -72,6 +76,12 @@ public interface StudyService
     {
         return ServiceRegistry.get().getService(StudyService.class);
     }
+
+    /**
+     * Useful for associating permissions and roles that live in API or other modules with the study module
+     * @return The Study module's {@code Class}
+     */
+    Class<? extends Module> getStudyModuleClass();
 
     /**
      * Get the {@link Study} for the {@link Container} if it exists.
@@ -134,31 +144,13 @@ public interface StudyService
 
     ActionURL getDatasetURL(Container container, int datasetId);
 
-    /**
-     * Returns the set of datasets which have ever had data copied from the provided protocol
-     */
-    Set<? extends Dataset> getDatasetsForAssayProtocol(ExpProtocol protocol);
-
-    // Not used... delete? Was used by migrateToNabSpecimen()
-    Map<? extends Dataset, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol);
-
-    /**
-     * Returns the set of datasets which currently contain rows from the provided runs. The user may not have
-     * permission to read or modify all of the datasets that are returned.
-     */
-    Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
-
     DbSchema getDatasetSchema();
 
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
-    void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
-
     void addStudyAuditEvent(Container container, User user, String comment);
 
     List<SecurableResource> getSecurableResources(Container container, User user);
-
-    Set<Role> getStudyRoles();
 
     String getSubjectNounSingular(Container container);
 
@@ -192,8 +184,6 @@ public interface StudyService
     Set<? extends Study> getAllStudies(Container root);
 
     boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
-
-    DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target);
 
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 
@@ -230,5 +220,47 @@ public interface StudyService
 
     List<StudyManagementOption> getManagementOptions();
 
+    /**
+     *  Methods below are needed only for modules that depend on study-api (currently just specimen). Consider moving
+     *  these to a separate interface that lives in study-api.
+     */
+
+    @Deprecated // Use SpecimenSchema instead
+    DbSchema getStudySchema();
+
+    UserSchema getStudyQuerySchema(Study study, User user);
+
     void registerManagementOption(StudyManagementOption option);
+
+    // Do any of the tables that study manages reference this location?
+    boolean isLocationInUse(Location loc);
+
+    void appendLocationInUseClauses(SQLFragment sql, String locationTableAlias, String exists);
+
+    interface StudyTabProvider
+    {
+        void addStudyTabs(Collection<FolderTab> tabs);
+    }
+
+    void registerStudyTabProvider(StudyTabProvider provider);
+
+    Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer);
+
+    Study getStudyForVisits(@NotNull Study study);
+
+    boolean showCohorts(Container container, @Nullable User user);
+
+    /**
+     * Unfortunately, LastSpecimenLoad is stored in study.Study
+     */
+    Date getLastSpecimenLoad(@NotNull Study study);
+    void setLastSpecimenLoad(@NotNull Study study, User user, Date lastSpecimenLoad);
+
+    List<? extends Visit> getVisits(Study study, SimpleFilter filter, Sort sort);
+
+    void saveLocationSettings(Study study, User user, @Nullable Boolean allowReqLocRepository, @Nullable Boolean allowReqLocClinic, @Nullable Boolean allowReqLocSal, @Nullable Boolean allowReqLocEndpoint);
+
+    Collection<String> getParticipantIds(Study study, User user);
+
+    boolean participantExists(Study study, String participantId);
 }

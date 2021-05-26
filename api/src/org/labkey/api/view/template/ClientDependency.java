@@ -26,7 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -69,7 +69,7 @@ public abstract class ClientDependency
 
     static
     {
-        ExperimentalFeatureService.get().addFeatureListener(AppProps.EXPERIMENTAL_JAVASCRIPT_API, (feature, enabled) -> CACHE.clear());
+        ContextListener.addModuleChangeListener(m -> CACHE.clear());
     }
 
     public enum TYPE
@@ -319,17 +319,9 @@ public abstract class ClientDependency
     {
         requestedPath = requestedPath.replaceAll("^/", "");
 
-        //as a convenience, if no extension provided, assume it's a library
+        // As a convenience, if no extension provided, assume it's a library
         if (StringUtils.isEmpty(FileUtil.getExtension(requestedPath)))
             requestedPath = requestedPath + TYPE.lib.getExtension();
-
-        // When experimental @labkey/api flag is disabled replace requests for clientapi_core with labkey_api_js.
-        // The results are cached so this can only take effect upon a cleared cache.
-        if ("clientapi_core.lib.xml".equalsIgnoreCase(requestedPath) &&
-            !ExperimentalFeatureService.get().isFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_API))
-        {
-            requestedPath = "labkey_api_js.lib.xml";
-        }
 
         Path path = Path.parse(requestedPath).normalize();
 

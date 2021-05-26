@@ -91,7 +91,7 @@ public abstract class CompareType
     public static final CompareType EQUAL = new CompareType("Equals", "eq", "EQUAL", true, " = ?", OperatorType.EQ)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new EqualsCompareClause(fieldKey, this, value);
         }
@@ -135,7 +135,7 @@ public abstract class CompareType
     public static final CompareType NEQ = new CompareType("Does Not Equal", "neq", "NOT_EQUAL", true, " <> ?", OperatorType.NEQ)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new NotEqualsCompareClause(fieldKey, this, value);
         }
@@ -383,7 +383,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -418,7 +418,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -450,7 +450,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -492,7 +492,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -534,7 +534,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             String namedSet = null;
             if (value != null && StringUtils.isNotBlank(value.toString()))
@@ -553,7 +553,7 @@ public abstract class CompareType
     {
         // Each compare type uses CompareClause by default
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             String namedSet = null;
             if (value != null && StringUtils.isNotBlank(value.toString()))
@@ -571,7 +571,7 @@ public abstract class CompareType
     public static final CompareType BETWEEN = new CompareType("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -622,7 +622,7 @@ public abstract class CompareType
     public static final CompareType NOT_BETWEEN = new CompareType("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
     {
         @Override
-        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             if (value instanceof Collection)
             {
@@ -673,7 +673,7 @@ public abstract class CompareType
     public static final CompareType MEMBER_OF = new CompareType("Is Member Of", "memberof", "MEMBER_OF", true, " is member of", OperatorType.MEMBEROF)
     {
         @Override
-        protected MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new MemberOfClause(fieldKey, value);
         }
@@ -736,7 +736,7 @@ public abstract class CompareType
     public static final CompareType MV_INDICATOR = new CompareType("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
     {
         @Override
-        protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new MvClause(fieldKey, false);
         }
@@ -751,7 +751,7 @@ public abstract class CompareType
     public static final CompareType NO_MV_INDICATOR = new CompareType("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
     {
         @Override
-        protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new MvClause(fieldKey, true);
         }
@@ -771,7 +771,7 @@ public abstract class CompareType
     public static final CompareType Q = new CompareType("Search", "q", "Q", true /* dataValueRequired */, "sql", OperatorType.Q)
     {
         @Override
-        protected QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        public QClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
             return new QClause((String) value);
         }
@@ -906,13 +906,14 @@ public abstract class CompareType
     }
 
 
-    private String _preferredURLKey;
+    private final String _preferredURLKey;
     private final OperatorType.Enum _xmlType;
-    private Set<String> _urlKeys = new CaseInsensitiveHashSet();
-    private String _displayValue;
-    private boolean _dataValueRequired;
-    private String _sql;
-    private String _scriptName;
+    private final Set<String> _urlKeys = new CaseInsensitiveHashSet();
+    private final String _displayValue;
+    private final boolean _dataValueRequired;
+    private final String _sql;
+    private final String _scriptName;
+
     private String _valueSeparator;
 
     protected CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
@@ -957,7 +958,9 @@ public abstract class CompareType
                     // TODO what do we do with malformed parameters???
                     JSONArray array = new JSONArray(value);
                     for (int i = 0; i < array.length(); i++)
-                        values.add(array.get(i).toString());
+                    {
+                        values.add(Objects.toString(array.get(i), null));
+                    }
                 }
                 catch (JSONException ex)
                 {
@@ -1073,7 +1076,7 @@ public abstract class CompareType
     }
 
     // Each compare type uses CompareClause by default
-    protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+    public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
     {
         return new CompareClause(fieldKey, this, value);
     }
@@ -1249,6 +1252,37 @@ public abstract class CompareType
         }
     }
 
+    // Return the non-URL-encoded filter value for filter types that support multiple parameter values
+    @NotNull
+    static String toCollectionURLParamValue(final Collection<?> paramVals, final String multiValueSep, final boolean includeNull)
+    {
+        boolean containsSeparator = paramVals.stream().filter(Objects::nonNull).map(Objects::toString).anyMatch(s -> s.contains(multiValueSep));
+        if (containsSeparator)
+        {
+            JSONArray json = new JSONArray(paramVals);
+            if (includeNull)
+                json.put((Object)null);
+
+            return JSON_MARKER_START + json + JSON_MARKER_END;
+        }
+        else
+        {
+            StringBuilder sb = new StringBuilder();
+            String separator = "";
+            for (Object value : paramVals)
+            {
+                sb.append(separator);
+                separator = multiValueSep;
+                sb.append(value == null ? "" : value.toString());
+            }
+            if (includeNull)
+            {
+                sb.append(separator);
+            }
+            return sb.toString();
+        }
+    }
+
     // Issue 39395: ClassCastException when rendering conditional formats in issue reports
     // Widen numeric types before calling compareTo to avoid ClassCastException comparing Long to Integer
     private static int compareTo(@NotNull Comparable a, @NotNull Comparable b)
@@ -1262,7 +1296,7 @@ public abstract class CompareType
             return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
         }
 
-        return ((Comparable)a).compareTo(b);
+        return a.compareTo(b);
     }
 
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
@@ -1336,11 +1370,8 @@ public abstract class CompareType
             lookupQueryName = ((PropertyDescriptor)col).getLookupQuery();
         }
 
-        if ("core".equalsIgnoreCase(lookupSchemaName) &&
-                ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName)))
-            return true;
-
-        return false;
+        return "core".equalsIgnoreCase(lookupSchemaName) &&
+                ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName));
     }
 
     // TODO: How can I tell if this column is the core.Users DisplayName display column?
@@ -1353,8 +1384,7 @@ public abstract class CompareType
         if (col instanceof LookupColumn || (col instanceof AliasedColumn && ((AliasedColumn)col).getColumn() instanceof LookupColumn))
         {
             String propertyURI = col.getPropertyURI();
-            if (propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName")))
-                return true;
+            return propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName"));
         }
 
         return false;
@@ -1365,10 +1395,7 @@ public abstract class CompareType
         JdbcType type = colInfo.getJdbcType();
         switch (type)
         {
-            case INTEGER:
-            case TINYINT:
-            case SMALLINT:
-            {
+            case INTEGER, TINYINT, SMALLINT -> {
                 // Treat the empty string as null
                 stringValue = StringUtils.trimToNull(stringValue);
                 if (stringValue == null)
@@ -1381,24 +1408,20 @@ public abstract class CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to an integer for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Integer.class);
                 }
             }
-
-            case BIGINT:
-            {
+            case BIGINT -> {
                 try
                 {
                     return Long.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a long for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Long.class);
                 }
             }
-
-            case BOOLEAN:
-            {
+            case BOOLEAN -> {
                 try
                 {
                     // Treat the empty string as null
@@ -1411,29 +1434,21 @@ public abstract class CompareType
                 }
                 catch (Exception e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a boolean for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Boolean.class);
                 }
             }
-
-            case TIMESTAMP:
-            case DATE:
-            case TIME:
-            {
+            case TIMESTAMP, DATE, TIME -> {
                 try
                 {
                     return ConvertUtils.convert(stringValue, Date.class);
                 }
                 catch (ConversionException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a date for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Date.class);
                 }
             }
-
             //FALL THROUGH! (Decimal is better than nothing)
-            case DECIMAL:
-            case REAL:
-            case DOUBLE:
-            {
+            case DECIMAL, REAL, DOUBLE -> {
                 try
                 {
                     // Treat the empty string as null
@@ -1446,14 +1461,17 @@ public abstract class CompareType
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + stringValue + "' to a number for column '" + colInfo.getName() + "'"));
+                    throwConversionException(stringValue, colInfo, Number.class);
                 }
             }
         }
-
         return stringValue;
     }
 
+    private static void throwConversionException(String value, ColumnRenderProperties column, Class<?> expectedClass)
+    {
+        throw new RuntimeSQLException(new SQLGenerationException(ConvertHelper.getStandardConversionErrorMessage(value, column.getName(), expectedClass)));
+    }
 
     public static Date asDate(Object v)
     {
@@ -1515,7 +1533,7 @@ public abstract class CompareType
         assert d.get(Calendar.SECOND) == 0;
         assert d.get(Calendar.MINUTE) == 0;
         assert d.get(Calendar.HOUR_OF_DAY) == 0;
-        
+
         Calendar cal = (Calendar)d.clone();
         cal.add(Calendar.DAY_OF_MONTH, 1);
         return cal;
@@ -1682,7 +1700,7 @@ public abstract class CompareType
             return dateValue.compareTo(param) >= 0;
         }
     }
-    
+
 
     static class DateGteCompareClause extends DateCompareClause
     {
@@ -1773,10 +1791,10 @@ public abstract class CompareType
         private Object validateValue(Object value)
         {
             if (value == null)
-                throw new IllegalArgumentException(_comparison._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
+                throw new IllegalArgumentException(getCompareType()._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             if (value instanceof String && ((String)value).length() == 0)
-                throw new IllegalArgumentException(_comparison._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
+                throw new IllegalArgumentException(getCompareType()._displayValue + " filter on '" + _fieldKey + "' column requires exactly two non-null and non-empty parameter values separated by comma");
 
             return value;
         }
@@ -1787,23 +1805,33 @@ public abstract class CompareType
             Object[] values = getParamVals();
             if (values != null && values.length == 2 && values[0] != null && values[1] != null)
             {
-                StringBuilder sb = new StringBuilder();
-                sb.append(values[0].toString());
-                sb.append(SEPARATOR);
-                sb.append(values[1].toString());
-
-                return sb.toString();
+                return CompareType.toCollectionURLParamValue(Arrays.asList(getParamVals()), SEPARATOR, false);
             }
             return null;
         }
     }
 
+
+    static final private char[] charsToBeEscaped = new char[] { '%', '_', '[' };
+    /** Note that we've intentionally chosen something other than the default of backslash */
+    static final private char defaultEscapeChar = '!';
+
+    public static String escapeLikePattern(String value, char escapeChar)
+    {
+        String strEscape = new String(new char[] { escapeChar } );
+        value = StringUtils.replace(value, strEscape, strEscape + strEscape);
+        for (char ch : charsToBeEscaped)
+        {
+            if (ch == escapeChar)
+                continue;
+            String strCh = new String(new char[] { ch});
+            value = StringUtils.replace(value, strCh, strEscape + strCh);
+        }
+        return value;
+    }
+
     abstract private static class LikeClause extends CompareClause
     {
-        static final private char[] charsToBeEscaped = new char[] { '%', '_', '[' };
-        /** Note that we've intentionally chosen something other than the default of backslash */
-        static final private char escapeChar = '!';
-
         private final String _unescapedValue;
 
         protected LikeClause(FieldKey fieldKey, CompareType compareType, Object value)
@@ -1815,21 +1843,12 @@ public abstract class CompareType
         /** Takes a string and replaces all special LIKE characters (such as %) with their escaped equivalents */
         public static String escapeLikePattern(String value)
         {
-            String strEscape = new String(new char[] { escapeChar } );
-            value = StringUtils.replace(value, strEscape, strEscape + strEscape);
-            for (char ch : charsToBeEscaped)
-            {
-                if (ch == escapeChar)
-                    continue;
-                String strCh = new String(new char[] { ch});
-                value = StringUtils.replace(value, strCh, strEscape + strCh);
-            }
-            return value;
+            return CompareType.escapeLikePattern(value, defaultEscapeChar);
         }
 
         public static String sqlEscape()
         {
-            return " ESCAPE '" + escapeChar + "'";
+            return " ESCAPE '" + defaultEscapeChar + "'";
         }
 
         @Override
@@ -1979,7 +1998,7 @@ public abstract class CompareType
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
+            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape();
         }
 
         @Override
@@ -2009,7 +2028,7 @@ public abstract class CompareType
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
-            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")"; 
+            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")";
         }
 
         @Override

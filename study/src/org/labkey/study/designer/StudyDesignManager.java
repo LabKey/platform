@@ -39,28 +39,38 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
-import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.designer.DesignerController;
-import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.query.StudyPersonnelDomainKind;
+import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.query.studydesign.AbstractStudyDesignDomainKind;
+import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
+import org.labkey.study.query.studydesign.StudyProductDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
+import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -73,6 +83,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.PRODUCT_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME;
+import static org.labkey.study.query.StudyQuerySchema.TREATMENT_TABLE_NAME;
 
 /**
  * User: Mark Igra
@@ -441,13 +457,16 @@ public class StudyDesignManager
         }
         List<String> errors = new ArrayList<>();
 
-        Dataset subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
+        Dataset subjectDataset = StudyPublishManager.getInstance().createDataset(user, new DatasetDefinition.Builder("Subjects")
+                .setStudy(study)
+                .setDemographicData(true));
+
         study = study.createMutable();
         study.setParticipantCohortDatasetId(subjectDataset.getDatasetId());
         study.setParticipantCohortProperty("Cohort");
         StudyManager.getInstance().updateStudy(user, study);
 
-        AssayPublishService.get().publishAssayData(user, parent, studyFolder, "Subjects", null, participantDataset, nameMap, errors);
+        StudyPublishService.get().publishData(user, parent, studyFolder, "Subjects", Pair.of(Dataset.PublishSource.Assay, null), participantDataset, nameMap, errors);
         if (errors.size() > 0) //We were supposed to check these coming in
             throw new RuntimeException(StringUtils.join(errors, '\n'));
 
@@ -668,5 +687,21 @@ public class StudyDesignManager
         {
             return Collections.emptyList();
         }
+    }
+
+    // Proactively create the domains at study creation time to avoid problems with lazy creation, #42641
+    public void ensureStudyDesignDomains(Container c, User user)
+    {
+        ensureDomain(new StudyProductDomainKind(), PRODUCT_TABLE_NAME, c, user);
+        ensureDomain(new StudyProductAntigenDomainKind(), PRODUCT_ANTIGEN_TABLE_NAME, c, user);
+        ensureDomain(new StudyTreatmentProductDomainKind(), TREATMENT_PRODUCT_MAP_TABLE_NAME, c, user);
+        ensureDomain(new StudyTreatmentDomainKind(), TREATMENT_TABLE_NAME, c, user);
+        ensureDomain(new StudyPersonnelDomainKind(), PERSONNEL_TABLE_NAME, c, user);
+    }
+
+    private void ensureDomain(AbstractStudyDesignDomainKind domainKind, String tableName, Container c, User user)
+    {
+        String domainURI = domainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, tableName, c, null);
+        PropertyService.get().ensureDomain(c, user, domainURI, tableName);
     }
 }

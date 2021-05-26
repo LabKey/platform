@@ -505,7 +505,8 @@ public class MailHelper
      */
     public static class BulkEmailer extends Thread
     {
-        private final Map<Collection<String>, MimeMessage> _map = new HashMap<>(10);
+        private final Map<Collection<String>, MimeMessage> _messageMap = new HashMap<>(10);
+        private final Map<Collection<String>, String> _containerMap = new HashMap<>(10);
         private final User _user;
 
         // User is for audit purposes
@@ -515,31 +516,51 @@ public class MailHelper
         }
 
         // Send message to multiple recipients
+        public void addMessage(Collection<String> emails, MimeMessage m, @Nullable Container c)
+        {
+            _messageMap.put(emails, m);
+
+            if (c != null)
+                _containerMap.put(emails, c.getId());
+        }
+
+        // Send message to multiple recipients
         public void addMessage(Collection<String> emails, MimeMessage m)
         {
-            _map.put(emails, m);
+            addMessage(emails, m, null);
         }
 
         // Send message to single recipient
         public void addMessage(String email, MimeMessage m)
         {
-            _map.put(Collections.singleton(email), m);
+            addMessage(Collections.singleton(email), m, null);
+        }
+
+        // Send message to single recipient
+        public void addMessage(String email, MimeMessage m, Container c)
+        {
+            addMessage(Collections.singleton(email), m, c);
         }
 
         @Override
         public void run()
         {
-            for (Map.Entry<Collection<String>, MimeMessage> entry : _map.entrySet())
+            for (Map.Entry<Collection<String>, MimeMessage> entry : _messageMap.entrySet())
             {
                 Collection<String> emails = entry.getKey();
                 MimeMessage m = entry.getValue();
+                String containerId = _containerMap.get(emails);
+                Container c = null;
+
+                if (containerId != null)
+                    c = ContainerManager.getForId(containerId);
 
                 for (String email : emails)
                 {
                     try
                     {
                         m.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
-                        MailHelper.send(m, _user, null);
+                        MailHelper.send(m, _user, c);
                     }
                     catch (MessagingException e)
                     {

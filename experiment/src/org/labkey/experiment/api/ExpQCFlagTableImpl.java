@@ -65,7 +65,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
     public ExpQCFlagTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, cf);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
         public UpdateService(TableInfo queryTable)
         {
-            super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), _columnMapping);
+            super(queryTable, ExperimentService.get().getTinfoAssayQCFlag(), ExpQCFlagTableImpl.this._columnMapping);
         }
 
         @Override

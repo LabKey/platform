@@ -43,7 +43,6 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlStreamFile(Container c);
     ActionURL urlReportSections(Container c);
     ActionURL urlManageViews(Container c);
-    ActionURL urlDeleteReport(Container c);
     ActionURL urlExportCrosstab(Container c);
     ActionURL urlShareReport(Container c, Report r);
     // Thumbnail or icon, depending on ImageType

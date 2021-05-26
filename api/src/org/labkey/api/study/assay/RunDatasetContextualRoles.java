@@ -37,6 +37,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyDatasetLinkedColumn;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -54,7 +55,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
     /**
      * Returns a contextual ReaderRole if the user has permission to
      * <b>at least one of</b> the study datasets that the run results have
-     * been copied to.
+     * been linked to.
      *
      * @return a singleton ReaderRole set or null
      */
@@ -80,7 +81,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
     /**
      * Returns a contextual ReaderRole if the user has permission to
      * <b>at least one of</b> the study datasets that the run results have
-     * been copied to.
+     * been linked to.
      *
      * @param container the container
      * @param user the user
@@ -129,7 +130,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
                 datasetColumnNames.add(columnName);
         }
 
-        // table contains no dataset columns if results haven't been copied
+        // table contains no dataset columns if results haven't been linked
         if (datasetColumnNames.size() == 0)
             return null;
 
@@ -144,13 +145,13 @@ public class RunDatasetContextualRoles implements HasContextualRoles
         {
             for (ColumnInfo datasetColumn : datasetColumns)
             {
-                if (!(datasetColumn instanceof StudyDatasetColumn))
+                if (!(datasetColumn instanceof StudyDatasetLinkedColumn))
                     continue;
                 Integer datasetId = (Integer)result.get(datasetColumn.getName());
                 if (datasetId == null)
                     continue;
 
-                Container studyContainer = ((StudyDatasetColumn)datasetColumn).getStudyContainer();
+                Container studyContainer = ((StudyDatasetLinkedColumn)datasetColumn).getStudyContainer();
                 Dataset dataset = StudyService.get().getDataset(studyContainer, datasetId.intValue());
                 SecurityPolicy policy = dataset.getPolicy();
                 if (policy.hasPermission(user, ReadPermission.class))

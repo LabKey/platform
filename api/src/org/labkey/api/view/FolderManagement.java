@@ -54,14 +54,16 @@ public class FolderManagement
                 if (c.isRoot())
                 {
                     TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(this).get(action.getClass());
-                    PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, provider.getText(), null);
+                    PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, provider.getText(), action.getClass(), c);
                 }
+                else
+                {
+                    if (c.isContainerTab())
+                        root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
 
-                if (c.isContainerTab())
-                    root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
-
-                root.addChild(c.getName(), c.getStartURL(user));
-                root.addChild("Folder Management");
+                    root.addChild(c.getName(), c.getStartURL(user));
+                    root.addChild("Folder Management");
+                }
             }
 
             @Override
@@ -92,8 +94,7 @@ public class FolderManagement
             void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic(new HelpTopic("customizeLook"));
-                root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-                root.addChild("Look and Feel Settings");
+                PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Look and Feel Settings", action.getClass(), c);
             }
 
             @Override
@@ -190,7 +191,7 @@ public class FolderManagement
     /**
      * Base action class for management actions that only need to display a view (no post handling).
      */
-    private static abstract class ManagementViewAction extends SimpleViewAction<Void> implements ManagementAction
+    private static abstract class ManagementViewAction extends SimpleViewAction<Object> implements ManagementAction
     {
         @Override
         public ModelAndView handleRequest() throws Exception
@@ -201,7 +202,7 @@ public class FolderManagement
         }
 
         @Override
-        public ModelAndView getView(Void form, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             return wrapViewInTabStrip(this, getType(), getTabView(), errors);
         }

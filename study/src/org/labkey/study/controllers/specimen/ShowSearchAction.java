@@ -19,14 +19,15 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenSearchBean;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.specimen.SpecimenSearchBean;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -45,7 +46,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     @Override
     public ModelAndView getView(SearchForm form, boolean reshow, BindException errors)
     {
-        _study = StudyManager.getInstance().getStudy(getContainer());
+        _study = StudyService.get().getStudy(getContainer());
         if (null == _study)
             throw new NotFoundException("No study exists in this folder.");
 
@@ -57,7 +58,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         bean.setWebPartId(1);
         setTitle(_title);
 
-        return new JspView<>("/org/labkey/study/view/specimen/search.jsp", bean);
+        return new JspView<>("/org/labkey/specimen/view/search.jsp", bean);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     @Override
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = SpecimenController.getSamplesURL(getContainer());
+        ActionURL url = SpecimenController.getSpecimensURL(getContainer());
         url.addParameter("showVials", Boolean.toString(form.isShowVials()));
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {
@@ -87,7 +88,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     public void addNavTrail(NavTree root)
     {
         setHelpTopic("specimenShopping");
-        root.addChild(_study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
+        root.addChild(_study.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
         root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
         root.addChild(_title);
     }

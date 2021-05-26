@@ -15,21 +15,23 @@
  */
 package org.labkey.api.qc;
 
+import org.labkey.api.view.ActionURL;
+
 public class AbstractManageQCStatesBean
 {
-    private String _returnUrl;
+    private ActionURL _returnUrl;
     protected QCStateHandler _qcStateHandler;
     protected AbstractManageQCStatesAction _manageAction;
     protected Class<? extends AbstractDeleteQCStateAction> _deleteAction;
     protected String _noun;
     protected String _dataNoun;
 
-    public AbstractManageQCStatesBean(String returnUrl)
+    public AbstractManageQCStatesBean(ActionURL returnUrl)
     {
         _returnUrl = returnUrl;
     }
 
-    public String getReturnUrl()
+    public ActionURL getReturnUrl()
     {
         return _returnUrl;
     }

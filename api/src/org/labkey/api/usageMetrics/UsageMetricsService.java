@@ -29,7 +29,7 @@ import java.util.Map;
  *         UsageMetricsService svc = UsageMetricsService.get();
  *         if (null != svc)
  *         {
- *             svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, NAME, () -> {
+ *             svc.registerUsageMetrics(moduleName, () -> {
  *                 Map<String, Object> metric = new HashMap<>();
  *                 metric.put("etlRunCount", new SqlSelector(DbSchema.get("dataintegration", DbSchemaType.Module), "SELECT COUNT(*) FROM dataintegration.TransformRun").getObject(Long.class));
  *                 return metric;
@@ -51,19 +51,15 @@ public interface UsageMetricsService
     }
 
     /** @return map of module name to a map of metric names/values */
-    @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics(UsageReportingLevel level);
+    @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics();
 
     /**
      *  Method to register a module's metrics. Call from doStartup() / startupAfterSpringConfiguration()
-     *  Metrics can be included at UsageReportingLevel LOW or MEDIUM. Note that metrics reported at MEDIUM level
-     *  are a superset of what is reported at LOW level.
-     *  If a given module has one set of metrics which should be included at LOW level, and an additional set
-     *  to report at MEDIUM level, call this method twice.
+     *  Metrics can be included at UsageReportingLevel OFF or ON. Usage metrics will only be sent for ON.
      *
-     * @param level The UsageReportingLevel at which to include these metrics, LOW or MEDIUM.
      * @param moduleName The name of the module
      * @param metrics Implementation of the functional interface UsageMetricsProvider.getUsageMetrics() method. Typically
      *                this will return a map of metric name -> value pairs.
      */
-    void registerUsageMetrics(UsageReportingLevel level, String moduleName, UsageMetricsProvider metrics);
+    void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
 }

@@ -44,7 +44,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 {
     private ExpProtocolApplicationImpl _sourceApp;
     private List<ExpProtocolApplication> _successorAppList;
-    private List<Integer> _successorRunIdList = Collections.emptyList();
+    private List<Integer> _successorRunIdList = null;
 
     // For serialization
     protected AbstractRunItemImpl() {}
@@ -79,7 +79,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     public List<ExpRun> getSuccessorRuns()
     {
         if (null == _successorRunIdList)
-            throw new IllegalStateException("successorRunIdList not populated");
+            throw new IllegalStateException("successorRunIdList not populated for '" + this.getName() + "'");
         List<ExpRun> result = new ArrayList<>();
         for (Integer integer : _successorRunIdList)
         {

@@ -48,6 +48,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -71,7 +72,6 @@ import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.designer.StudyDesignVersion;
 import org.labkey.study.designer.XMLSerializer;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
-import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.VaccineStudyWebPart;
 import org.springframework.validation.BindException;
@@ -90,6 +90,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.study.publish.StudyPublishService.SOURCE_LSID_PROPERTY_NAME;
 
 /**
  * User: jgarms
@@ -466,12 +468,13 @@ public class DesignerController extends SpringActionController
                     {
                         HashMap<String, Object> newMap = new HashMap<>(getParticipants().get(i));
                         newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
+                        newMap.put(SOURCE_LSID_PROPERTY_NAME, null);
                         participantMaps.add(newMap);
                     }
                     Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()),
                             form.getFolderName(), form.getBeginDate(), form.getSubjectNounSingular(), form.getSubjectNounPlural(),
                             form.getSubjectColumnName(), _info, participantMaps, getSpecimens());
-                    _successURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
+                    _successURL = urlProvider(ProjectUrls.class).getStartURL(study.getContainer());
                     return true;
             }
             return false;
@@ -546,7 +549,7 @@ public class DesignerController extends SpringActionController
         //Now see if the study already exists.
         if (info.isActive())
         {
-            throw new RedirectException(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
+            throw new RedirectException(urlProvider(ProjectUrls.class).getStartURL(info.getContainer()));
         }
 
         //Make sure we haven't done some crazy back/forward thing

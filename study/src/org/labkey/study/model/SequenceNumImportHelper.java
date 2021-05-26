@@ -22,14 +22,18 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.importer.ImportHelperService.SequenceNumTranslator;
 import org.labkey.api.util.DateUtil;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -40,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 2012-10-11
  * Time: 10:49 AM
  */
-public class SequenceNumImportHelper
+public class SequenceNumImportHelper implements SequenceNumTranslator
 {
     final TimepointType _timetype;
     final Date _startDate;
@@ -48,7 +52,6 @@ public class SequenceNumImportHelper
     final Double _defaultSequenceNum;
     final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<>();
     final SequenceVisitMap _sequenceNumMap;
-
 
     public SequenceNumImportHelper(@NotNull Study study, @Nullable DatasetDefinition def)
     {
@@ -97,7 +100,7 @@ public class SequenceNumImportHelper
                 if (null == d || d instanceof Date)
                     date = (Date) d;
                 else
-                    date = new Date(DateUtil.parseDateTime(String.valueOf(d)));
+                    date = new Date(ConvertHelper.convert(d, Timestamp.class).getTime());
             }
             catch (ConversionException x)
             {
@@ -148,7 +151,7 @@ public class SequenceNumImportHelper
         return (int)((d.getTime()-epochLocal) / TimeUnit.DAYS.toMillis(1));
     }
 
-
+    @Override
     public Double translateSequenceNum(@Nullable Object seq, @Nullable Object d)
     {
         Double sequencenum = null;
@@ -185,7 +188,7 @@ translateToDouble:
             if (!_timetype.isVisitBased())
             {
                 if (null != date)
-                    sequencenum = StudyManager.sequenceNumFromDate(date);
+                    sequencenum = StudyUtils.sequenceNumFromDate(date);
                 else
                     sequencenum =  VisitImpl.DEMOGRAPHICS_VISIT;
                 return sequencenum;

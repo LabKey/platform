@@ -182,6 +182,11 @@ public interface SearchService
          */
         void setReady();
 
+        default void addRunnable(@NotNull SearchService.PRIORITY pri, @NotNull Runnable r)
+        {
+            addRunnable(r, pri);
+        }
+
         void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
 
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
@@ -302,8 +307,8 @@ public interface SearchService
                     Path path = url.getParsedPath();
                     if (path.startsWith(contextPath))
                     {
-                        int pos = contextPath.size() + 1;
-                        if (path.size() > pos && c.getId().equals(path.get(pos)))
+                        int pos = path.size() - 2; // look to see if second to last path part is GUID
+                        if (pos>=0 && c.getId().equals(path.get(pos)))
                         {
                             path = path.subpath(0,pos)
                                     .append(c.getParsedPath())

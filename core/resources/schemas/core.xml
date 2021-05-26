@@ -24,7 +24,9 @@
       <column columnName="EntityId"/>
       <column columnName="CreatedBy"/>
       <column columnName="Created"/>
-      <column columnName="Parent"/>
+      <column columnName="Parent">
+        <conceptURI>http://www.labkey.org/types#containerId</conceptURI>
+      </column>
       <column columnName="Name"/>
       <column columnName="SortOrder"/>
       <column columnName="Description"/>

@@ -20,13 +20,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.model.ParticipantMapper;
+import org.labkey.api.study.writer.SimpleStudyExportContext;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.Vial;
 import org.labkey.study.xml.StudyDocument;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,17 +37,11 @@ import java.util.function.Consumer;
  * Date: May 16, 2009
  * Time: 2:43:07 PM
  */
-public class StudyExportContext extends AbstractContext
+public class StudyExportContext extends SimpleStudyExportContext
 {
     private final List<DatasetDefinition> _datasets = new LinkedList<>();
     private final Set<Integer> _datasetIds = new HashSet<>();
-    private final PHI _phiLevel;
-    private final boolean _maskClinic;
-    private final ParticipantMapper _participantMapper;
 
-    private Set<Integer> _visitIds = null;
-    private List<String> _participants = new ArrayList<>();
-    private List<Vial> _vials = null;
     private Consumer<StudyDocument.Study> _studyXmlModifier = study -> {};  // By default, make no changes to exported study XML
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, LoggerGetter logger)
@@ -64,10 +57,7 @@ public class StudyExportContext extends AbstractContext
 
     public StudyExportContext(StudyImpl study, User user, Container c, Set<String> dataTypes, PHI phiLevel, ParticipantMapper participantMapper, boolean maskClinic, LoggerGetter logger)
     {
-        super(user, c, StudyXmlWriter.getStudyDocument(), dataTypes, logger, null);
-        _phiLevel = phiLevel;
-        _participantMapper = participantMapper;
-        _maskClinic = maskClinic;
+        super(user, c, getStudyDocument(), dataTypes, phiLevel, participantMapper, maskClinic, logger, null);
 
         if (_datasets.size() == 0)
             initializeDatasets(study);
@@ -79,39 +69,24 @@ public class StudyExportContext extends AbstractContext
         setDatasets(initDatasets);
     }
 
-    @Override
-    public PHI getPhiLevel()
+    private static StudyDocument getStudyDocument()
     {
-        return _phiLevel;
-    }
-
-    @Override
-    public boolean isShiftDates()
-    {
-        return getParticipantMapper().isShiftDates();
-    }
-
-    @Override
-    public boolean isAlternateIds()
-    {
-        return getParticipantMapper().isAlternateIds();
-    }
-
-    @Override
-    public boolean isMaskClinic()
-    {
-        return _maskClinic;
+        StudyDocument doc = StudyDocument.Factory.newInstance();
+        doc.addNewStudy();
+        return doc;
     }
 
     private void initializeDatasets(StudyImpl study)
     {
+        // TODO, add support for sample datasets
         boolean includeCRF = getDataTypes().contains(StudyArchiveDataTypes.CRF_DATASETS);
         boolean includeAssay = getDataTypes().contains(StudyArchiveDataTypes.ASSAY_DATASETS);
         boolean includeDatasetData = getDataTypes().contains(StudyArchiveDataTypes.DATASET_DATA);
 
         for (DatasetDefinition dataset : study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER))
         {
-            if (includeDatasetData || (!dataset.isAssayData() && includeCRF) || (dataset.isAssayData() && includeAssay))
+            Dataset.PublishSource publishSource = dataset.getPublishSource();
+            if (includeDatasetData || (!dataset.isPublishedData() && includeCRF) || ((publishSource == Dataset.PublishSource.Assay) && includeAssay))
             {
                 _datasets.add(dataset);
                 _datasetIds.add(dataset.getDatasetId());
@@ -143,41 +118,6 @@ public class StudyExportContext extends AbstractContext
             _datasets.add(dataset);
             _datasetIds.add(dataset.getDatasetId());
         }
-    }
-
-    public ParticipantMapper getParticipantMapper()
-    {
-        return _participantMapper;
-    }
-
-    public Set<Integer> getVisitIds()
-    {
-        return _visitIds;
-    }
-
-    public void setVisitIds(Set<Integer> visits)
-    {
-        _visitIds = visits;
-    }
-
-    public List<String> getParticipants()
-    {
-        return _participants;
-    }
-
-    public void setParticipants(List<String> participants)
-    {
-        _participants = participants;
-    }
-
-    public List<Vial> getVials()
-    {
-        return _vials;
-    }
-
-    public void setVials(List<Vial> vials)
-    {
-        _vials = vials;
     }
 
     public Consumer<StudyDocument.Study> getStudyXmlModifier()

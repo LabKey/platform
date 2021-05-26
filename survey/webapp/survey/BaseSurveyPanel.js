@@ -980,24 +980,28 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     getDirtyValues : function(form) {
         var values = {};
         Ext4.each(form.getFields().items, function(field){
-            if (field.submitValue && field.isDirty() && (field.isHidden() || field.isValid()))
+            if (field.submitValue && (field.isHidden() || field.isValid()))
             {
-                // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radio fields
-                if (field.getXType() == 'radiogroup') {
-                    // skip the radiogroup itself in favor of the radiofields
-                }
-                else if (field.getXType() == 'checkboxgroup') {
-                    if (field.getName()) {
-                        values[field.getName()] = field.getValue();
+                // issue 42580 submit checkbox values even if the field is not dirty
+                if (field.isDirty() || field.xtype === "checkbox")
+                {
+                    // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radio fields
+                    if (field.getXType() == 'radiogroup') {
+                        // skip the radiogroup itself in favor of the radiofields
                     }
-                }
-                else if (field.getXType() == "radiofield") {
-                    if (field.getValue()) { // this will be true for only the selected radio field in the group
-                        this.addFieldValue(values, field.getName(), field.getGroupValue());
+                    else if (field.getXType() == 'checkboxgroup') {
+                        if (field.getName()) {
+                            values[field.getName()] = field.getValue();
+                        }
                     }
-                }
-                else {
-                    this.addFieldValue(values, field.getName(), field.getSubmitValue());
+                    else if (field.getXType() == "radiofield") {
+                        if (field.getValue()) { // this will be true for only the selected radio field in the group
+                            this.addFieldValue(values, field.getName(), field.getGroupValue());
+                        }
+                    }
+                    else {
+                        this.addFieldValue(values, field.getName(), field.getSubmitValue());
+                    }
                 }
             }
         }, this);
@@ -1060,8 +1064,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     leavePage : function(pageId) {
-        if (this.returnURL)
-            window.location = this.returnURL;
+        if (this.returnUrl)
+            window.location = this.returnUrl;
         else if (pageId)
             window.location = LABKEY.ActionURL.buildURL('project', 'begin', null, { pageId: pageId });
         else

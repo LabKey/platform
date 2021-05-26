@@ -33,6 +33,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.query.AbstractMethodInfo;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
@@ -52,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 public abstract class Method
@@ -270,10 +272,10 @@ public abstract class Method
             @Override
             public MethodInfo getMethodInfo()
             {
-                return new AbstractQueryMethodInfo(_jdbcType)
+                return new AbstractMethodInfo(_jdbcType)
                 {
                     @Override
-                    public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         assert arguments.length == 2 || arguments.length == 3;
                         if (arguments.length == 2)
@@ -362,7 +364,7 @@ public abstract class Method
                 return new JdbcMethodInfoImpl(_name, _jdbcType)
                 {
                     @Override
-                    public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         if (arguments.length == 2)
                         {
@@ -373,7 +375,7 @@ public abstract class Method
                             argumentsThree[2] = new SQLFragment(String.valueOf(Integer.MAX_VALUE/2));
                             arguments = argumentsThree;
                         }
-                        return super.getSQL(query, dialect, arguments);
+                        return super.getSQL(dialect, arguments);
                     }
                 };
             }
@@ -426,7 +428,6 @@ public abstract class Method
         // ========== Methods above this line have been documented ==========
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
-
     }
 
 
@@ -475,7 +476,7 @@ public abstract class Method
         labkeyMethod.put(name.toLowerCase(), m);
     }
 
-    public static void addPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
+    public static void addPassthroughMethod(String name, @Nullable String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
         PassthroughMethod m = new PassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments);
         if (dialect.isPostgreSQL())
@@ -493,7 +494,7 @@ public abstract class Method
     }
 
 
-    static class JdbcMethodInfoImpl extends AbstractQueryMethodInfo
+    static class JdbcMethodInfoImpl extends AbstractMethodInfo
     {
         String _name;
 
@@ -504,7 +505,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             return dialect.formatJdbcFunction(_name, arguments);
         }
@@ -519,7 +520,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] argumentsIN)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] argumentsIN)
         {
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
@@ -528,7 +529,7 @@ public abstract class Method
                 if (i != null)
                     arguments[0] = new SQLFragment(i.name());
             }
-            return super.getSQL(query, dialect, arguments);
+            return super.getSQL(dialect, arguments);
         }
     }
 
@@ -565,7 +566,7 @@ public abstract class Method
     }
 
 
-    class ConvertInfo extends AbstractQueryMethodInfo
+    class ConvertInfo extends AbstractMethodInfo
     {
         public ConvertInfo()
         {
@@ -601,7 +602,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] fragments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] fragments)
         {
             JdbcType jdbcType = null;
             SQLFragment length = null;
@@ -683,7 +684,7 @@ public abstract class Method
         }
     }
 
-    static class PassthroughInfo extends AbstractQueryMethodInfo
+    static class PassthroughInfo extends AbstractMethodInfo
     {
         private final String _name;
         private final String _declaringSchemaName;
@@ -714,7 +715,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             if (_declaringSchemaName != null)
@@ -746,16 +747,16 @@ public abstract class Method
         // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
 		@Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
 		{
             boolean supportsRoundDouble = dialect.supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
             if (unitRound)
             {
                 if (supportsRoundDouble)
-                    return super.getSQL(query, dialect, new SQLFragment[] {arguments[0], new SQLFragment("0")});
+                    return super.getSQL(dialect, new SQLFragment[] {arguments[0], new SQLFragment("0")});
                 else
-                    return super.getSQL(query, dialect, new SQLFragment[] {arguments[0]});
+                    return super.getSQL(dialect, new SQLFragment[] {arguments[0]});
             }
 
             int i = Integer.MIN_VALUE;
@@ -769,14 +770,14 @@ public abstract class Method
             }
 
             if (supportsRoundDouble || i == Integer.MIN_VALUE)
-                return super.getSQL(query, dialect, arguments);
+                return super.getSQL(dialect, arguments);
 
             // fall back, only supports simple integer
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
             scaled.append(")*").append(Math.pow(10,i));
-            SQLFragment ret = super.getSQL(query, dialect, new SQLFragment[] {scaled});
+            SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
             ret.append("/");
             ret.append(Math.pow(10,i));
             return ret;
@@ -784,7 +785,7 @@ public abstract class Method
 	}
 
 
-    class AgeMethodInfo extends AbstractQueryMethodInfo
+    class AgeMethodInfo extends AbstractMethodInfo
     {
         AgeMethodInfo()
         {
@@ -792,7 +793,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             if (arguments.length == 2)
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
@@ -809,7 +810,7 @@ public abstract class Method
     }
 
 
-    class AgeInYearsMethodInfo extends AbstractQueryMethodInfo
+    class AgeInYearsMethodInfo extends AbstractMethodInfo
     {
         AgeInYearsMethodInfo()
         {
@@ -817,7 +818,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
@@ -845,7 +846,7 @@ public abstract class Method
     }
 
 
-    class AgeInMonthsMethodInfo extends AbstractQueryMethodInfo
+    class AgeInMonthsMethodInfo extends AbstractMethodInfo
     {
         AgeInMonthsMethodInfo()
         {
@@ -854,7 +855,7 @@ public abstract class Method
 
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
             MethodInfo month = labkeyMethod.get("month").getMethodInfo();
@@ -884,7 +885,7 @@ public abstract class Method
     }
 
 
-    class StartsWithInfo extends AbstractQueryMethodInfo
+    class StartsWithInfo extends AbstractMethodInfo
     {
         StartsWithInfo()
         {
@@ -892,7 +893,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             // try to turn second argument into pattern
             SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
@@ -923,7 +924,7 @@ public abstract class Method
 
 
 
-    class IsEqualInfo extends AbstractQueryMethodInfo
+    class IsEqualInfo extends AbstractMethodInfo
     {
         IsEqualInfo()
         {
@@ -931,7 +932,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             SQLFragment a = arguments[0];
@@ -947,7 +948,7 @@ public abstract class Method
         }
     }
 
-    class VersionMethodInfo extends AbstractQueryMethodInfo
+    class VersionMethodInfo extends AbstractMethodInfo
     {
         VersionMethodInfo()
         {
@@ -955,13 +956,13 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             return new SQLFragment("CAST(" + (new DecimalFormat("0.000#")).format(AppProps.getInstance().getSchemaVersion()) + " AS NUMERIC(15,4))");
         }
     }
 
-    class UserIdInfo extends AbstractQueryMethodInfo
+    class UserIdInfo extends AbstractMethodInfo
     {
         UserIdInfo()
         {
@@ -969,7 +970,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(new Callable(){
@@ -996,7 +997,7 @@ public abstract class Method
         }
     }
 
-    class UserNameInfo extends AbstractQueryMethodInfo
+    class UserNameInfo extends AbstractMethodInfo
     {
         UserNameInfo()
         {
@@ -1004,7 +1005,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add((Callable) () -> {
@@ -1018,7 +1019,7 @@ public abstract class Method
     }
 
 
-    class FolderInfo extends AbstractQueryMethodInfo
+    static class FolderInfo extends AbstractQueryMethodInfo
     {
         final boolean path;
 
@@ -1045,7 +1046,7 @@ public abstract class Method
     }
 
 
-    class ModulePropertyInfo extends AbstractQueryMethodInfo
+    static class ModulePropertyInfo extends AbstractQueryMethodInfo
     {
         ModulePropertyInfo()
         {
@@ -1081,8 +1082,7 @@ public abstract class Method
             return new SQLFragment("CAST(NULL AS VARCHAR)");
         }
     }
-
-    class JavaConstantInfo extends AbstractQueryMethodInfo
+    class JavaConstantInfo extends AbstractMethodInfo
     {
         JavaConstantInfo()
         {
@@ -1090,7 +1090,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             getProperty:
             {
@@ -1150,7 +1150,7 @@ public abstract class Method
     }
 
 
-    class ContextPathInfo extends AbstractQueryMethodInfo
+    class ContextPathInfo extends AbstractMethodInfo
     {
         ContextPathInfo()
         {
@@ -1158,7 +1158,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
             ret.add(AppProps.getInstance().getContextPath());
@@ -1167,7 +1167,7 @@ public abstract class Method
     }
 
 
-    class IsMemberInfo extends AbstractQueryMethodInfo
+    class IsMemberInfo extends AbstractMethodInfo
     {
         IsMemberInfo()
         {
@@ -1175,7 +1175,7 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment groupArg = arguments[0];
             SQLFragment userArg = arguments.length > 1 ? arguments[1] : null;
@@ -1270,7 +1270,7 @@ public abstract class Method
     }
 
 
-    class OverlapsMethodInfo extends AbstractQueryMethodInfo
+    class OverlapsMethodInfo extends AbstractMethodInfo
     {
         OverlapsMethodInfo()
         {
@@ -1278,7 +1278,7 @@ public abstract class Method
         }
         
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
             ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
@@ -1288,6 +1288,30 @@ public abstract class Method
         }
     }
 
+    class SimilarToMethodInfo extends AbstractMethodInfo
+    {
+        SimilarToMethodInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append("((").append(arguments[0]).append(")");
+            ret.append(" SIMILAR TO ");
+            ret.append("(").append(arguments[1]).append(")");
+            if (arguments.length == 3)
+            {
+                ret.append(" ESCAPE (").append(arguments[2]).append(")");
+            }
+            ret.append(")");
+            return ret;
+        }
+    }
+
+
     class GreatestAndLeastInfo extends PassthroughInfo
     {
         public GreatestAndLeastInfo(String method)
@@ -1296,14 +1320,17 @@ public abstract class Method
         }
 
         @Override
-        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             if (dialect.supportsNativeGreatestAndLeast())
-                return super.getSQL(query, dialect, arguments);
+                return super.getSQL(dialect, arguments);
             else
                 return dialect.getGreatestAndLeastSQL(_name, arguments);
         }
     }
+
+
+
 
     public static SQLFragment escapeLikePattern(SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
     {
@@ -1372,6 +1399,7 @@ public abstract class Method
         postgresMethods.put("char_length",new PassthroughMethod("char_length",JdbcType.INTEGER,1,1));
         postgresMethods.put("character_length",new PassthroughMethod("character_length",JdbcType.INTEGER,1,1));
         postgresMethods.put("chr",new PassthroughMethod("chr",JdbcType.VARCHAR,1,1));
+        postgresMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         postgresMethods.put("decode",new PassthroughMethod("decode",JdbcType.VARCHAR,2,2));
         postgresMethods.put("encode",new PassthroughMethod("encode",JdbcType.VARCHAR,2,2));
         postgresMethods.put("initcap",new PassthroughMethod("initcap",JdbcType.VARCHAR,1,1));
@@ -1391,6 +1419,10 @@ public abstract class Method
         postgresMethods.put("repeat",new PassthroughMethod("repeat",JdbcType.VARCHAR,2,2));
         postgresMethods.put("replace",new PassthroughMethod("replace",JdbcType.VARCHAR,3,3));
         postgresMethods.put("rpad",new PassthroughMethod("rpad",JdbcType.VARCHAR,2,3));
+        postgresMethods.put("similar_to", new PassthroughMethod("similar_to", JdbcType.BOOLEAN, 2, 3) {
+            @Override
+            public MethodInfo getMethodInfo() { return new SimilarToMethodInfo(); }
+        });
         postgresMethods.put("split_part",new PassthroughMethod("split_part",JdbcType.VARCHAR,3,3));
         postgresMethods.put("strpos",new PassthroughMethod("strpos",JdbcType.VARCHAR,2,2));
         postgresMethods.put("substr",new PassthroughMethod("substr",JdbcType.VARCHAR,2,3));
@@ -1403,6 +1435,85 @@ public abstract class Method
         postgresMethods.put("to_number",new PassthroughMethod("to_number",JdbcType.DECIMAL,2,2));
         postgresMethods.put("string_to_array",new PassthroughMethod("string_to_array",JdbcType.VARCHAR,2,2));
         postgresMethods.put("unnest",new PassthroughMethod("unnest",JdbcType.VARCHAR,1,1));
+
+        addPostgresJsonMethods();
+    }
+
+    /**
+     * Wire up JSON and JSONB data type support for Postgres, as described here:
+     * https://www.postgresql.org/docs/9.5/functions-json.html
+     */
+    private static void addPostgresJsonMethods()
+    {
+        // Pretend that the JSON operators are a function instead so that we don't need them to be fully supported
+        // for query parsing
+        postgresMethods.put("json_op", new Method(JdbcType.VARCHAR, 3, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new AbstractMethodInfo(JdbcType.VARCHAR)
+                {
+                    private final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
+                            "?", "?|", "?&", "||", "-", "#-");
+
+                    @Override
+                    public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                    {
+                        SQLFragment rawOperator = arguments[1];
+                        String operatorRawString = rawOperator.getSQL();
+                        if (!rawOperator.getParams().isEmpty() || !operatorRawString.startsWith("'") || !operatorRawString.endsWith("'"))
+                        {
+                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                        }
+
+                        String strippedOperator = operatorRawString.substring(1, operatorRawString.length() - 1);
+                        if (!ALLOWED_OPERATORS.contains(strippedOperator))
+                        {
+                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                        }
+
+                        return new SQLFragment("(").append(arguments[0]).append(")").
+                                append(strippedOperator).
+                                append("(").append(arguments[2]).append(")");
+                    }
+                };
+            }
+        });
+
+        postgresMethods.put("to_json", new PassthroughMethod("to_json", JdbcType.OTHER, 1, 1));
+        postgresMethods.put("to_jsonb", new PassthroughMethod("to_jsonb", JdbcType.OTHER, 1, 1));
+        postgresMethods.put("array_to_json", new PassthroughMethod("array_to_json", JdbcType.OTHER, 1, 2));
+        postgresMethods.put("row_to_json", new PassthroughMethod("row_to_json", JdbcType.OTHER, 1, 2));
+
+        addJsonPassthroughMethod("build_array", JdbcType.OTHER, 1, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("build_object", JdbcType.OTHER, 1, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("object", JdbcType.OTHER, 1, 2);
+
+        addJsonPassthroughMethod("array_length", JdbcType.INTEGER, 1, 1);
+        addJsonPassthroughMethod("each", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("each_text", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("extract_path", JdbcType.OTHER, 2, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("extract_path_text", JdbcType.VARCHAR, 2, Integer.MAX_VALUE);
+        addJsonPassthroughMethod("object_keys", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("populate_record", JdbcType.OTHER, 2, 2);
+        addJsonPassthroughMethod("populate_recordset", JdbcType.OTHER, 2, 2);
+        addJsonPassthroughMethod("array_elements", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("array_elements_text", JdbcType.VARCHAR, 1, 1);
+        addJsonPassthroughMethod("typeof", JdbcType.VARCHAR, 1, 1);
+        addJsonPassthroughMethod("to_record", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("to_recordset", JdbcType.OTHER, 1, 1);
+        addJsonPassthroughMethod("strip_nulls", JdbcType.OTHER, 1, 1);
+
+        postgresMethods.put("jsonb_set", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_insert", new PassthroughMethod("jsonb_set", JdbcType.OTHER, 3, 4));
+        postgresMethods.put("jsonb_pretty", new PassthroughMethod("jsonb_pretty", JdbcType.VARCHAR, 1, 1));
+    }
+
+    private static void addJsonPassthroughMethod(String name, JdbcType type, int minArgs, int maxArgs)
+    {
+        postgresMethods.put("json_" + name, new PassthroughMethod("json_" + name, type, minArgs, maxArgs));
+        postgresMethods.put("jsonb_" + name, new PassthroughMethod("jsonb_" + name, type, minArgs, maxArgs));
     }
 
     final static Map<String, Method> mssqlMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
@@ -1413,6 +1524,7 @@ public abstract class Method
         mssqlMethods.put("char", chr);
         mssqlMethods.put("chr", chr);   // postgres and oracle use 'chr' (see 15473)
         mssqlMethods.put("charindex",new PassthroughMethod("charindex",JdbcType.INTEGER,2,3));
+        mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference",new PassthroughMethod("difference",JdbcType.INTEGER,2,2));
         mssqlMethods.put("isnumeric",new PassthroughMethod("isnumeric",JdbcType.BOOLEAN,1,1));
         mssqlMethods.put("len",new PassthroughMethod("len",JdbcType.INTEGER,1,1));

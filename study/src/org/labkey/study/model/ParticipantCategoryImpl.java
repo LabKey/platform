@@ -19,16 +19,12 @@ import org.json.JSONObject;
 import org.labkey.api.data.AbstractParticipantCategory;
 import org.labkey.api.data.AbstractParticipantGroup;
 import org.labkey.api.study.ParticipantCategory;
-
-
-/**
- * User: klum
- * Date: Jun 8, 2011
- * Time: 2:49:27 PM
- */
+import org.labkey.api.study.model.ParticipantGroup;
 
 /**
  * Represents a category of participants in related groups.
+ * User: klum
+ * Date: Jun 8, 2011
  */
 public class ParticipantCategoryImpl extends AbstractParticipantCategory<String>
 {

@@ -64,12 +64,9 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
 
                     <div className="configurations__config-section-title">
                         <span className="bold-text"> Login Form Configurations </span>
-                        <LabelHelpTip
-                            title="Tip"
-                            body={() => {
-                                return <div> {LOGIN_FORM_TIP_TEXT} </div>;
-                            }}
-                        />
+                        <LabelHelpTip title="Tip">
+                            <div> {LOGIN_FORM_TIP_TEXT} </div>
+                        </LabelHelpTip>
                     </div>
 
                     {primaryTabLoginForm}
@@ -77,13 +74,10 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
 
                 <div>
                     <div className="configurations__config-section-title">
-                        <span className="bold-text"> Single Sign On Configurations </span>
-                        <LabelHelpTip
-                            title="Tip"
-                            body={() => {
-                                return <div> {SSO_TIP_TEXT} </div>;
-                            }}
-                        />
+                        <span className="bold-text"> Single Sign-On Configurations </span>
+                        <LabelHelpTip title="Tip">
+                            <div> {SSO_TIP_TEXT} </div>
+                        </LabelHelpTip>
                     </div>
 
                     {primaryTabSSO}

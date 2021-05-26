@@ -24,13 +24,11 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.study.model.QCStateSet;
 
 import java.io.IOException;
@@ -44,15 +42,18 @@ import java.util.List;
  */
 public class PublishedRecordQueryView extends DatasetQueryView
 {
-    private String _sourceLsid;
-    private int _protocolId;
-    private int _recordCount;
+    private final String _sourceLsid;
+    private final int _publishSourceId;
+    private final int _recordCount;
+    private final Dataset.PublishSource _publishSource;
 
-    public PublishedRecordQueryView(UserSchema schema, DatasetQuerySettings settings, String sourceLsid, int protocolId, int recordCount)
+    public PublishedRecordQueryView(UserSchema schema, DatasetQuerySettings settings, String sourceLsid,
+                                    Dataset.PublishSource source, int publishSourceId, int recordCount)
     {
         super(schema, settings, null);
         _sourceLsid = sourceLsid;
-        _protocolId = protocolId;
+        _publishSource = source;
+        _publishSourceId = publishSourceId;
         _recordCount = recordCount;
 
         setQcStateSet(getStateSet(schema.getContainer()));
@@ -88,28 +89,18 @@ public class PublishedRecordQueryView extends DatasetQueryView
     @Override
     protected DataRegion createDataRegion()
     {
-        DataRegion rgn = new PublishedRecordDataRegion(_recordCount, _protocolId, _sourceLsid);
+        DataRegion rgn = new PublishedRecordDataRegion();
         configureDataRegion(rgn);
         return rgn;
     }
 
-    private static class PublishedRecordDataRegion extends DataRegion
+    private class PublishedRecordDataRegion extends DataRegion
     {
-        private static final String MISSING_ROWS_MSG = "%s rows that were previously copied in this event have been recalled (or deleted)." +
-                " The audit record(s) of the deleted rows can be found in the <a href=\"%s\">copy-to-study history view</a>, or the" +
+        private static final String MISSING_ROWS_MSG = "%s rows that were previously linked in this event have been recalled (or deleted)." +
+                " The audit record(s) of the deleted rows can be found in the <a href=\"%s\">link to study history view</a>, or the" +
                 " study dataset history view.";
 
-        private int _recordCount;
-        private int _protocolId;
         private int _count;
-        private String _sourceLsid;
-
-        public PublishedRecordDataRegion(int recordCount, int protocolId, String sourceLsid)
-        {
-            _recordCount = recordCount;
-            _protocolId = protocolId;
-            _sourceLsid = sourceLsid;
-        }
 
         @Override
         protected int renderTableContents(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
@@ -124,16 +115,14 @@ public class PublishedRecordQueryView extends DatasetQueryView
             super.renderFormEnd(ctx, out);
             if (_count < _recordCount)
             {
-                ExpRun expRun = ExperimentService.get().getExpRun(_sourceLsid);
-                Container c = ctx.getContainer();
-                if (expRun != null && expRun.getContainer() != null)
-                    c = expRun.getContainer();
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
-                if (_count == 0)
-                    out.write(String.format(MISSING_ROWS_MSG, "All", AssayPublishService.get().getPublishHistory(c, protocol)));
-                else
-
-                    out.write(String.format(MISSING_ROWS_MSG, _recordCount - _count, AssayPublishService.get().getPublishHistory(c, protocol)));
+                Container c = _publishSource.resolveSourceLsidContainer(_sourceLsid);
+                if (c != null)
+                {
+                    if (_count == 0)
+                        out.write(String.format(MISSING_ROWS_MSG, "All", StudyPublishService.get().getPublishHistory(c, _publishSource, _publishSourceId)));
+                    else
+                        out.write(String.format(MISSING_ROWS_MSG, _recordCount - _count, StudyPublishService.get().getPublishHistory(c, _publishSource, _publishSourceId)));
+                }
             }
         }
    }

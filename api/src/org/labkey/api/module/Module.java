@@ -18,7 +18,6 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.Factory;
-import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -96,7 +95,6 @@ public interface Module extends Comparable<Module>
      */
     String getName();
 
-
     /**
      * Can this module be enabled in this container?
      */
@@ -109,12 +107,6 @@ public interface Module extends Comparable<Module>
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */
     @Nullable Double getSchemaVersion();
-
-    @Deprecated // Use getFormattedSchemaVersion() or getReleaseVersion() instead, as appropriate
-    default String getFormattedVersion()
-    {
-        return ObjectUtils.defaultIfNull(getFormattedSchemaVersion(), "");
-    }
 
     @Nullable default String getFormattedSchemaVersion()
     {
@@ -152,7 +144,7 @@ public interface Module extends Comparable<Module>
      */
     @Nullable String getBuildType();
 
-    /** License name: e.g. "Apache 2.0", "GPL-2.0", "MIT" */
+    /** License name: e.g. "Apache 2.0", "LabKey Software License" */
     @Nullable String getLicense();
 
     /** License URL: e.g. "http://www.apache.org/licenses/LICENSE-2.0" */
@@ -258,9 +250,9 @@ public interface Module extends Comparable<Module>
      * @return the integration tests that this module provides
      */
     @JsonIgnore
-    default @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    default @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
     {
-        return getIntegrationTests().stream().map(c -> (Factory<Class>)() -> c).collect(Collectors.toList());
+        return getIntegrationTests().stream().map(c -> (Factory<Class<?>>)() -> c).collect(Collectors.toList());
     }
 
     /**

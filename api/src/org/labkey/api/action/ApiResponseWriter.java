@@ -27,12 +27,14 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ExpectedException;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpStatusException;
-import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
@@ -49,6 +51,8 @@ import java.util.Stack;
  */
 public abstract class ApiResponseWriter implements AutoCloseable
 {
+    private static final String RESPONSE_FORMAT_ATTRIBUTE = ApiResponseWriter.class.getName() + "$responseFormat";
+
      /*
      * (MAB) This code defaults to using setting the response to SC_BAD_REQUEST
      * when any error is encountered.  I think this is wrong.  Expected
@@ -60,13 +64,34 @@ public abstract class ApiResponseWriter implements AutoCloseable
 
     private boolean serializeViaJacksonAnnotations = false;
 
+    /**
+     * @return either the response format that has already been associated with the request, or the default if it's unset
+     */
+    public static Format getResponseFormat(@Nullable HttpServletRequest request, ApiResponseWriter.Format defaultFormat)
+    {
+        ApiResponseWriter.Format result = request == null ? null : (ApiResponseWriter.Format) request.getAttribute(RESPONSE_FORMAT_ATTRIBUTE);
+        return result == null ? defaultFormat : result;
+    }
+
+    /**
+     * Store the preferred response format (JSON, XML, etc) as an attribute on the request so that we can send
+     * the appropriate kind of content, regardless of success or error
+     */
+    public static void setResponseFormat(HttpServletRequest request, ApiResponseWriter.Format format)
+    {
+        request.setAttribute(RESPONSE_FORMAT_ATTRIBUTE, format);
+    }
+
     protected static class StreamState
     {
-        private String _name;
+        private final String _name;
         private String _separator;
-        private int _level = 0;
+        private final int _level;
 
-        public StreamState() {}
+        public StreamState()
+        {
+            this(null);
+        }
         public StreamState(String name)
         {
             this(name, 0);
@@ -74,6 +99,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         public StreamState(String name, int level)
         {
             _name = name;
+            _level = level;
         }
 
         public String getName() { return _name;}
@@ -143,6 +169,22 @@ public abstract class ApiResponseWriter implements AutoCloseable
         public abstract ApiResponseWriter createWriter(HttpServletResponse response, String contentTypeOverride, ObjectMapper objectMapper) throws IOException;
 
         public abstract boolean isJson();
+
+        public static Format getFormatByName(@Nullable String name, Format defaultFormat)
+        {
+            if (name == null)
+            {
+                return defaultFormat;
+            }
+            for (Format f : values())
+            {
+                if (f.toString().equalsIgnoreCase(name))
+                {
+                    return f;
+                }
+            }
+            throw new BadRequestException("Unknown response format requested: " + name);
+        }
     }
 
     private final HttpServletResponse _response;
@@ -168,9 +210,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
     /**
      * Entry-point for writing a response back to the client in the desired format.
      * The object argument may be an response object to be serialized or an {@link ApiResponse} instance.
-     *
-     * @param obj
-     * @throws IOException
      */
     public final void writeResponse(Object obj) throws IOException
     {
@@ -250,6 +289,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         jsonObj.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
         jsonObj.put("exceptionClass", e.getClass().getName());
         jsonObj.put("stackTrace", e.getStackTrace());
+        jsonObj.put("success", status == HttpServletResponse.SC_OK);
 
         try
         {
@@ -379,6 +419,10 @@ public abstract class ApiResponseWriter implements AutoCloseable
         if (error instanceof PropertyValidationError)
             key = ((PropertyValidationError) error).getProperty();
 
+        String help = null;
+        if (error.getHelp() != null)
+            help = error.getHelp().getHelpTopicHref();
+
         JSONObject jsonError = new JSONObject();
 
         // these are the Ext expected property names
@@ -387,6 +431,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
         // TODO deprecate these with a new API version
         jsonError.putOpt("field", key);
         jsonError.put("message", msg);
+        jsonError.putOpt("help", help);
 
         parent.put(jsonError);
     }
@@ -453,6 +498,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             String key = error.getObjectName();
             String propertyId = (null != error.getCodes() && error.getCodes().length > 0 ? error.getCodes()[0] : key);
             String severity = ValidationException.SEVERITY.ERROR.toString();
+            String help = null;
 
             if (error instanceof FieldError)
             {
@@ -466,6 +512,8 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 severity = fieldWarning.getSeverity();
                 key = fieldWarning.getField();
                 propertyId = fieldWarning.getObjectName();
+                if (fieldWarning.getHelp() != null)
+                    help = fieldWarning.getHelp().getHelpTopicHref();
             }
 
             JSONObject jsonError = new JSONObject();
@@ -476,6 +524,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             jsonError.put("field", key);
             jsonError.put("message", msg);
             jsonError.put("severity", severity);
+            jsonError.putOpt("help", help);
 
             if (null == exceptionMessage)
                 exceptionMessage = msg;

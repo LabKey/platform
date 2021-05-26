@@ -114,9 +114,9 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
                 {
                     HtmlStringBuilder moduleWarning = HtmlStringBuilder.of("")
                             .append("This report is defined in the '" + m.getName() + "' module in directory '" + f.getParent() + "'.")
-                            .append(HtmlString.unsafe("<br>"))
+                            .append(HtmlString.BR)
                             .append("Changes to this report will be reflected in all usages across different folders on the server.")
-                            .append(HtmlString.unsafe("<br>"));
+                            .append(HtmlString.BR);
                     bean.addWarning(moduleWarning.getHtmlString());
                 }
             }

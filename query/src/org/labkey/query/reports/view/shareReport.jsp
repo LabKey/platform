@@ -47,7 +47,7 @@
         Container container = getContainer();
         String reportName = report.getDescriptor().getResourceName();
         ActionURL returnUrl = bean.getReturnActionURL(bean.getDefaultUrl(container));
-        String completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURLPrefix(container);
+        ActionURL completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURL(container);
         ActionURL reportUrl = report.getRunReportURL(getViewContext());
 
         String messageSubject = bean.getMessageSubject() != null ? bean.getMessageSubject()
@@ -85,7 +85,7 @@
             <br/>
 
             <input type="hidden" name="<%=ReportDescriptor.Prop.reportId%>" value="<%=h(bean.getReportId())%>">
-            <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
+            <%=generateReturnUrlFormField(bean)%>
             <%= button("Submit").submit(true) %>
             <%= button("Cancel").href(returnUrl) %>
         </labkey:form>

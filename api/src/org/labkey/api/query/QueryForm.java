@@ -421,6 +421,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return getQueryDef().canEdit(getUser());
     }
 
+    public boolean canEditMetadata()
+    {
+        return getQueryDef().canEditMetadata(getUser());
+    }
+
     public String getQueryViewActionURL()
     {
         return _queryViewActionURL;

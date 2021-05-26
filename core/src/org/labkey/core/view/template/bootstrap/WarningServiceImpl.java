@@ -97,6 +97,13 @@ public class WarningServiceImpl implements WarningService
     @Override
     public Warnings getWarnings(ViewContext context)
     {
+        if (null == context)
+            throw new IllegalStateException("ViewContext was null");
+        if (null == context.getUser())
+            throw new IllegalStateException("ViewContext.getUser() was null");
+        if (null == context.getRequest())
+            throw new IllegalStateException("ViewContext.getUser() was null");
+
         // Collect warnings
         List<HtmlString> warningMessages = new LinkedList<>();
         User user = context.getUser();
@@ -137,10 +144,10 @@ public class WarningServiceImpl implements WarningService
                 html.append(messages.get(0));
             else
             {
-                html.append(HtmlString.unsafe("<ul>"));
+                html.startTag("ul");
                 for (HtmlString msg : messages)
-                    html.append(HtmlString.unsafe("<li>")).append(msg).append(HtmlString.unsafe("</li>"));
-                html.append(HtmlString.unsafe("</ul>"));
+                    html.startTag("li").append(msg).endTag("li");
+                html.endTag("ul");
             }
         }
     }

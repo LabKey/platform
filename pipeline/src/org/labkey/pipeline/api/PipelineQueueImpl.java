@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ConnectionWrapper;
@@ -37,9 +38,12 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -115,7 +119,6 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             // when running through Enterprise Pipeline
             QueryService.get().clearEnvironment();
 
-            notifyDone(job);
             ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
             boolean removed = _running.remove(job);
             assert removed;
@@ -258,6 +261,29 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return ret;
     }
 
+    @Override
+    @NotNull
+    public Map<String, Integer> getQueuePositions()
+    {
+        Map<String, Integer> result = new HashMap<>();
+        synchronized (_running)
+        {
+            for (PipelineJob pipelineJob : _running)
+            {
+                result.put(pipelineJob.getJobGUID(), 1);
+            }
+        }
+        int position = _running.isEmpty() ? 0 : 1;
+        synchronized (_pending)
+        {
+            for (PipelineJob pipelineJob : _pending)
+            {
+                result.put(pipelineJob.getJobGUID(), ++position);
+            }
+        }
+        return result;
+    }
+
     //
     // JUNIT
     //
@@ -268,7 +294,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
         // For serialization
         protected TestJob() {}
-        
+
         TestJob(Container c, AtomicInteger counter)
         {
             super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));

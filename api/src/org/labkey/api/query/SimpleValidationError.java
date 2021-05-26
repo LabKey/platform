@@ -22,6 +22,8 @@ package org.labkey.api.query;
 */
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.HelpTopic;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 
@@ -34,29 +36,34 @@ public class SimpleValidationError implements ValidationError
     private final Throwable _cause;
     private final ValidationException.SEVERITY _severity;
     private final String _fieldName;
+    private final @Nullable HelpTopic _help;
 
     public SimpleValidationError(@NotNull String message)
     {
-        _message = message;
-        _cause = null;
-        _severity = ValidationException.SEVERITY.ERROR;
-        _fieldName = null;
+        this(message, null, ValidationException.SEVERITY.ERROR, null);
     }
 
     public SimpleValidationError(@NotNull String message, @NotNull String fieldName, @NotNull ValidationException.SEVERITY severity)
+    {
+        this(message, fieldName, severity, null);
+    }
+
+    public SimpleValidationError(@NotNull String message, @NotNull String fieldName, @NotNull ValidationException.SEVERITY severity, @Nullable HelpTopic help)
     {
         _message = message;
         _cause = null;
         _severity = severity;
         _fieldName = fieldName;
+        _help = help;
     }
 
     public SimpleValidationError(SQLException x)
     {
         _message = x.getMessage();
         _cause = x;
-        _severity = null;
+        _severity = ValidationException.SEVERITY.ERROR;
         _fieldName = null;
+        _help = null;
     }
 
     @Override
@@ -74,6 +81,11 @@ public class SimpleValidationError implements ValidationError
     public ValidationException.SEVERITY getSeverity()
     {
         return _severity;
+    }
+
+    public HelpTopic getHelp()
+    {
+        return _help;
     }
 
     @Override
@@ -108,7 +120,7 @@ public class SimpleValidationError implements ValidationError
             if (includeWarnings)
             {
                 // client (ui-components) distinguishes between server side warnings and client side warnings based on the below objectName passed in the constructor
-                FieldWarning fieldWarning = new FieldWarning("ServerWarning", this._fieldName, getMessage());
+                FieldWarning fieldWarning = new FieldWarning("ServerWarning", this._fieldName, getMessage(), _help);
                 errors.addError(fieldWarning);
             }
         }
@@ -120,9 +132,12 @@ public class SimpleValidationError implements ValidationError
 
     public static class FieldWarning extends FieldError
     {
-        public FieldWarning(String objectName, String field, String defaultMessage)
+        private final HelpTopic _help;
+
+        public FieldWarning(String objectName, String field, String defaultMessage, @Nullable HelpTopic help)
         {
             super(objectName, field, defaultMessage);
+            _help = help;
         }
 
         public String getSeverity()
@@ -130,5 +145,9 @@ public class SimpleValidationError implements ValidationError
             return ValidationException.SEVERITY.WARN.toString();
         }
 
+        public @Nullable HelpTopic getHelp()
+        {
+            return _help;
+        }
     }
 }

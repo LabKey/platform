@@ -23,13 +23,7 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.reports.ReportService" %>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
@@ -43,7 +37,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Arrays" %>
@@ -53,13 +46,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
-    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), "study");
     JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
-
-    String currentUrl = bean.getRedirectUrl();
-    if (currentUrl == null)
-        currentUrl = getActionURL().getLocalURIString();
 
     StudyManager manager = StudyManager.getInstance();
     Study study = manager.getStudy(getContainer());
@@ -67,7 +55,6 @@
     User user = (User) request.getUserPrincipal();
     List<DatasetDefinition> datasets = manager.getDatasetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
-    boolean updateAccess = study.getContainer().hasPermission(user, UpdatePermission.class);
 %>
 
 <table class="labkey-data-region">
@@ -118,27 +105,7 @@
         %></th>
     </tr>
     <%
-
-        for (Report report : ReportService.get().getReports(user, study.getContainer(), Integer.toString(datasetId)))
-        {
-            if (updateAccess)
-            {
-    %>
-    <tr style="<%=text(expanded ? "" : "display:none")%>">
-        <td>
-            <a href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">[remove]</a>
-        </td>
-    </tr>
-    <%
-        }
-    %>
-    <tr style="<%=text(expanded ? "" : "display:none")%>">
-        <td><img
-                src="<%=h(new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">
-        </td>
-    </tr>
-    <%
-        }
+        // TODO Issue 40643: Support viewing reports/charts for demographics dataset (see participantAll.jsp usages of ReportService.get().getReports())
 
         int row = 0;
 
@@ -174,10 +141,9 @@
             datasetRow = dataset.getDatasetRow(user, lsid);
         }
 
-        boolean editAccess = dataset.canWrite(user);
         if (datasetRow == null)
         {
-            if (editAccess)
+            if (dataset.canInsert(user))
             {
                 ActionURL addAction = new ActionURL(DatasetController.InsertAction.class, getContainer());
                 addAction.addParameter("datasetId", datasetId);
@@ -192,7 +158,7 @@
             continue;
         }
 
-        if (editAccess)
+        if (dataset.canUpdate(user))
         {
     %>
     <tr class="labkey-alternate-row" style="<%=text(expanded ? "" : "display:none")%>">

@@ -38,7 +38,8 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -872,7 +873,7 @@ public class Table
 
         if (null != filter)
         {
-            SQLFragment fragment = filter.getSQLFragment(table, null);
+            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
             whereSQL.append(fragment.getSQL());
             parametersWhere.addAll(fragment.getParams());
             whereAND = " AND ";
@@ -917,7 +918,17 @@ public class Table
             }
 
             if (!fields.containsKey(column.getName()))
+            {
+                // CONSIDER column.isImportHash()
+                if (DataIntegrationService.Columns.TransformImportHash.getColumnName().equals(column.getName()))
+                {
+                    setSQL.append(comma);
+                    setSQL.append(column.getSelectName());
+                    setSQL.append("=NULL");
+                    comma = ", ";
+                }
                 continue;
+            }
 
             Object value = fields.get(column.getName());
             setSQL.append(comma);
@@ -1021,7 +1032,7 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
-        SQLFragment where = filter.getSQLFragment(table, null);
+        SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
 
         String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
         int result = new SqlExecutor(table.getSchema()).execute(deleteSQL, where.getParams().toArray());
@@ -1673,12 +1684,8 @@ public class Table
             translate.selectAll();
             translate.addBuiltInColumns(dic, JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
-            DataIteratorBuilder load = TableInsertDataIterator.create(
-                    translate,
-                    testTable,
-                    dic
-            );
-            new Pump(load, dic).run();
+            DataIteratorBuilder load = new TableInsertDataIteratorBuilder(translate, testTable);
+            new Pump(load.getDataIterator(dic), dic).run();
 
             assertFalse(dic.getErrors().hasErrors());
 

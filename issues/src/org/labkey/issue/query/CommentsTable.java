@@ -32,10 +32,9 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.Issue;
@@ -72,7 +71,6 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         addColumn(issueIdColumn);
 
         var createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
-        UserIdForeignKey.initColumn(createdBy);
         addColumn(createdBy);
 
         addWrapColumn(_rootTable.getColumn("Created"));

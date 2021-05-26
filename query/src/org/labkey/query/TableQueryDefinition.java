@@ -31,6 +31,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
@@ -46,6 +47,7 @@ import org.labkey.query.sql.Query;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -177,7 +179,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
     @Override
-    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
+    public TableInfo createTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, @Nullable Query query, boolean skipSuggestedColumns)
     {
         try
         {
@@ -198,7 +200,19 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     @Override
     public boolean canEdit(User user)
     {
-        return super.canEdit(user);
+        return false;
+    }
+
+    @Override
+    public boolean canEditMetadata(User user)
+    {
+        return super.canEdit(getUser());
+    }
+
+    @Override
+    public boolean canDelete(User user)
+    {
+        return false;
     }
 
 
@@ -225,9 +239,9 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
 
     @Override
-    public boolean isTableQueryDefinition()
+    public boolean isUserDefined()
     {
-        return true;
+        return false;
     }
 
 
@@ -260,5 +274,25 @@ public class TableQueryDefinition extends QueryDefinitionImpl
         if (null == _title)
             _title = getName();
         return _title;
+    }
+
+    @Override
+    public Collection<QueryChangeListener.QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
+    {
+        if (getMetadataXml() == null)
+        {
+            QueryDef qdef = QueryManager.get().getQueryDef(container, getSchemaName(), getName(), false);
+            if (qdef != null)
+            {
+                // delete the query in order to reset the metadata over a built-in query, but don't
+                // fire the listener because we haven't actually deleted the table. See issue 40365
+                QueryManager.get().delete(qdef);
+            }
+            return Collections.emptyList();
+        }
+        else
+        {
+            return super.save(user, container, fireChangeEvent);
+        }
     }
 }

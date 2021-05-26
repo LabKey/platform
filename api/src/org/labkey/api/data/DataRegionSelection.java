@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,14 +59,24 @@ public class DataRegionSelection
     public static final String DATA_REGION_SELECTION_KEY = "dataRegionSelectionKey";
     private static final Object lock = new Object();
 
+    // set/updated using query-setSnapshotSelection
+    // can be used to hold an arbitrary set of selections in session
+    // example usage: set an filtered set of selected values in session
+    public static final String SNAPSHOT_SELECTED_VALUES = ".snapshotSelectValues";
+
     private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create)
+    {
+        return getSet(context, key, create, false);
+    }
+
+    private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create, boolean useSnapshot)
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
 
         if (key != null)
         {
-            key = context.getContainer().getPath() + key + SELECTED_VALUES;
+            key = context.getContainer().getPath() + key + (useSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES);
             HttpSession session = context.getRequest().getSession(false);
             if (session != null)
             {
@@ -100,7 +112,16 @@ public class DataRegionSelection
 
 
     /**
-     * Get selected items from the request parameters (includes only the current page of a data region and no selected items from session state).
+     * Get selected items from the request parameters including both current page's selection and session state
+     * @return an unmodifiable copy of the selected item ids
+     */
+    public static @NotNull Set<String> getSelected(ViewContext context)
+    {
+        return getSelected(context, null, true);
+    }
+
+    /**
+     * Get selected items from the request parameters including both current page's selection and session state
      * @param context Used to get the selection key
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
@@ -111,7 +132,7 @@ public class DataRegionSelection
     }
 
     /**
-     * Tests if selected items are in the request parameters (includes only the current page of a data region and no selected items from session state).
+     * Tests if selected items are in the request parameters or session state
      * @param context Used to get the selection key
      * @return true if there are selected item ids, false if not
      */
@@ -121,7 +142,18 @@ public class DataRegionSelection
     }
 
     /**
-     * Get selected items from the request parameters as integers (includes only the current page of a data region and no selected items from session state).
+     * Get selected items from the request parameters as integers including both current page's selection and session
+     * state and clears the state
+     * @param context Used to get the selection key
+     * @return an unmodifiable copy of the selected item ids
+     */
+    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context)
+    {
+        return asInts(getSelected(context, true));
+    }
+
+    /**
+     * Get selected items from the request parameters as integers including both current page's selection and session state
      * @param context Used to get the selection key
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
@@ -175,6 +207,12 @@ public class DataRegionSelection
         return asInts(getSelected(context, key, clearSession));
     }
 
+    public static @NotNull Set<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
+    {
+        Set<String> selected = getSet(context, key, false, true);
+        return asInts(selected == null ? new HashSet<>() : selected);
+    }
+
     private static @NotNull Set<Integer> asInts(Set<String> ids)
     {
         Set<Integer> result = new LinkedHashSet<>();
@@ -193,14 +231,18 @@ public class DataRegionSelection
         return result;
     }
 
-    /**
-     * Sets the checked state for the given ids in the session state.
-     */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked)
+    {
+        return setSelected(context, key, selection, checked, false);
+    }
+        /**
+         * Sets the checked state for the given ids in the session state.
+         */
+    public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
         synchronized (lock)
         {
-            Set<String> selectedValues = getSet(context, key, true);
+            Set<String> selectedValues = getSet(context, key, true, useSnapshot);
 
             if (checked)
                 selectedValues.addAll(selection);
@@ -212,12 +254,17 @@ public class DataRegionSelection
 
     private static void clearAll(HttpSession session, String path, String key)
     {
+        clearAll(session, path, key, false);
+    }
+
+    private static void clearAll(HttpSession session, String path, String key, boolean isSnapshot)
+    {
         assert key != null : "DataRegion selection key required";
         if (session == null)
             return;
         synchronized (lock)
         {
-            session.removeAttribute(path + key + SELECTED_VALUES);
+            session.removeAttribute(path + key + (isSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES));
         }
     }
 
@@ -237,13 +284,17 @@ public class DataRegionSelection
      */
     public static void clearAll(ViewContext context, @Nullable String key)
     {
+        clearAll(context, key, false);
+    }
+
+    public static void clearAll(ViewContext context, @Nullable String key, boolean isSnapshot)
+    {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
         if (key != null)
             clearAll(context.getRequest().getSession(false),
-                context.getContainer().getPath(), key);
+                context.getContainer().getPath(), key, isSnapshot);
     }
-
 
     /**
      * Removes all selection state from the session for the key given by request parameter DATA_REGION_SELECTION_KEY.
@@ -267,7 +318,7 @@ public class DataRegionSelection
         return getSelected(view, form.getQuerySettings().getSelectionKey());
     }
 
-    public static List<String> getSelected(QueryView view, String key) throws IOException
+    private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
     {
         // Turn off features of QueryView
         view.setPrintView(true);
@@ -276,8 +327,6 @@ public class DataRegionSelection
         view.setShowPaginationCount(false);
         view.setShowDetailsColumn(false);
         view.setShowUpdateColumn(false);
-
-        ViewContext context = view.getViewContext();
 
         TableInfo table = view.getTable();
 
@@ -294,6 +343,16 @@ public class DataRegionSelection
 
         setDataRegionColumnsForSelection(rgn, rc, view, table );
 
+        return Pair.of(rgn, rc);
+    }
+
+    public static List<String> getSelected(QueryView view, String key) throws IOException
+    {
+        Pair<DataRegion, RenderContext> dataRegionContext = getDataRegionContext(view);
+        DataRegion rgn = dataRegionContext.first;
+        RenderContext rc = dataRegionContext.second;
+        ViewContext context = view.getViewContext();
+
         try (Timing ignored = MiniProfiler.step("getSelected"); Results results = rgn.getResults(rc))
         {
             return getSelectedItems(context, key, rc, rgn, results);
@@ -304,6 +363,43 @@ public class DataRegionSelection
         }
     }
 
+    public static List<String> getValidatedIds(List<String> selection, QueryForm form) throws IOException
+    {
+        UserSchema schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException();
+
+        QueryView view = schema.createView(form, null);
+
+        Pair<DataRegion, RenderContext> dataRegionContext = getDataRegionContext(view);
+        DataRegion rgn = dataRegionContext.first;
+        RenderContext ctx = dataRegionContext.second;
+
+        List<String> validatedIds = new ArrayList<>();
+        try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
+        {
+            if (rs == null)
+                return validatedIds;
+
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            while (rs.next())
+            {
+                ctx.setRow(factory.getRowMap(rs));
+                if (rgn.isRecordSelectorEnabled(ctx))
+                {
+                    String value = rgn.getRecordSelectorValue(ctx);
+                    if (selection.contains(value))
+                        validatedIds.add(value);
+                }
+            }
+            return validatedIds;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+    }
 
     /**
      * Sets the selection for all items in the given query form's view

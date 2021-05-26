@@ -167,7 +167,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row.");
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row, id " + oldRowMap.get("RowId"));
 
         if (null != dataObjectMap)
         {
@@ -175,7 +175,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             OntologyObject objectToDelete = OntologyManager.getOntologyObject(container, objectLsid);
             ProvenanceService pvs = ProvenanceService.get();
 
-            if (null != objectToDelete && null != pvs)
+            if (null != objectToDelete)
             {
                 pvs.deleteObjectProvenance(objectToDelete.getObjectId());
                 OntologyManager.deleteOntologyObject(objectLsid, container, false);

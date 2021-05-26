@@ -62,7 +62,7 @@
 <div class="container">
     <div class="row">
         <div class="col-md-12">
-            <%= text(pageConfig.renderSiteMessages(getViewContext())) %>
+            <%=pageConfig.renderSiteMessages(getViewContext())%>
             <% if (pageConfig.showHeader() != PageConfig.TrueFalse.False && null != pageConfig.getAppBar())
                {
                    String trail = renderTrail(pageConfig.getAppBar().getNavTrail());

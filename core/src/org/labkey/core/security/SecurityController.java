@@ -58,8 +58,11 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.*;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -125,10 +128,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.util.PageFlowUtil.filter;
@@ -230,19 +235,15 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public String getCompleteUserURLPrefix(Container container)
+        public ActionURL getCompleteUserURL(Container container)
         {
-            ActionURL url = new ActionURL(CompleteUserAction.class, container);
-            url.addParameter("prefix", "");
-            return url.getLocalURIString();
+            return new ActionURL(CompleteUserAction.class, container).addParameter("prefix", "");
         }
 
         @Override
-        public String getCompleteUserReadURLPrefix(Container container)
+        public ActionURL getCompleteUserReadURL(Container container)
         {
-            ActionURL url = new ActionURL(CompleteUserReadAction.class, container);
-            url.addParameter("prefix", "");
-            return url.getLocalURIString();
+            return new ActionURL(CompleteUserReadAction.class, container).addParameter("prefix", "");
         }
 
         @Override
@@ -352,7 +353,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class BeginAction extends SimpleRedirectAction
+    public class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
         public URLHelper getRedirectURL(Object o)
@@ -366,7 +367,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetMaxPhiLevelAction extends ReadOnlyApiAction
+    public class GetMaxPhiLevelAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -406,7 +407,7 @@ public class SecurityController extends SpringActionController
     }
 
 
-    public class FolderPermissionsView extends JspView<FolderPermissionsView>
+    public static class FolderPermissionsView extends JspView<FolderPermissionsView>
     {
         public final String resource;
         public final ActionURL doneURL;
@@ -528,7 +529,6 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL(PermissionsAction.class, getContainer());
         }
-
     }
 
     public static class PermissionsForm extends ReturnUrlForm
@@ -597,14 +597,10 @@ public class SecurityController extends SpringActionController
             return confirmed;
         }
 
+        @SuppressWarnings("unused")
         public void setConfirmed(boolean confirmed)
         {
             this.confirmed = confirmed;
-        }
-
-        public void setNames(String names)
-        {
-            this.names = names;
         }
 
         public String getNames()
@@ -612,11 +608,18 @@ public class SecurityController extends SpringActionController
             return this.names;
         }
 
+        @SuppressWarnings("unused")
+        public void setNames(String names)
+        {
+            this.names = names;
+        }
+
         public String[] getDelete()
         {
             return delete;
         }
 
+        @SuppressWarnings("unused")
         public void setDelete(String[] delete)
         {
             this.delete = delete;
@@ -627,6 +630,7 @@ public class SecurityController extends SpringActionController
             return sendEmail;
         }
 
+        @SuppressWarnings("unused")
         public void setSendEmail(boolean sendEmail)
         {
             this.sendEmail = sendEmail;
@@ -637,6 +641,7 @@ public class SecurityController extends SpringActionController
             return mailPrefix;
         }
 
+        @SuppressWarnings("unused")
         public void setMailPrefix(String messagePrefix)
         {
             this.mailPrefix = messagePrefix;
@@ -1035,11 +1040,10 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            try (ExcelWriter ew = new ExcelWriter(rgn.getResults(ctx), rgn.getDisplayColumns())
+            try (ExcelWriter ew = new ExcelWriter(()->rgn.getResults(ctx), rgn.getDisplayColumns())
                 {
                     @Override
-                    public void renderGrid (RenderContext ctx, Sheet sheet, List < ExcelColumn > visibleColumns) throws
-                    SQLException, MaxRowsExceededException
+                    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException, SQLException, IOException
                     {
                         for (Pair<Integer, String> memberGroup : memberGroups)
                         {
@@ -1245,9 +1249,11 @@ public class SecurityController extends SpringActionController
         private String newUsers;
         private String _cloneUser;
         private boolean _skipProfile;
-        private HtmlStringBuilder _message = HtmlStringBuilder.of("");
         private String _provider = null;
 
+        private final HtmlStringBuilder _message = HtmlStringBuilder.of("");
+
+        @SuppressWarnings("unused")
         public void setProvider(String provider)
         {
             _provider = provider;
@@ -1258,6 +1264,7 @@ public class SecurityController extends SpringActionController
             return _provider;
         }
 
+        @SuppressWarnings("unused")
         public void setNewUsers(String newUsers)
         {
             this.newUsers = newUsers;
@@ -1268,6 +1275,7 @@ public class SecurityController extends SpringActionController
             return this.newUsers;
         }
 
+        @SuppressWarnings("unused")
         public void setSendMail(boolean sendMail)
         {
             this.sendMail = sendMail;
@@ -1278,17 +1286,20 @@ public class SecurityController extends SpringActionController
             return this.sendMail;
         }
 
+        @SuppressWarnings("unused")
         public void setCloneUser(String cloneUser){_cloneUser = cloneUser;}
+
         public String getCloneUser(){return _cloneUser;}
+
+        @SuppressWarnings("unused")
+        public void setSkipProfile(boolean skipProfile)
+        {
+            _skipProfile = skipProfile;
+        }
 
         public boolean isSkipProfile()
         {
             return _skipProfile;
-        }
-
-        public void setSkipProfile(boolean skipProfile)
-        {
-            _skipProfile = skipProfile;
         }
 
         public void addMessage(String message)
@@ -1325,7 +1336,7 @@ public class SecurityController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
-            root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
+            root.addChild("Site Users", urlProvider(UserUrls.class).getSiteUsersURL());
             root.addChild("Add Users");
         }
 
@@ -1350,7 +1361,7 @@ public class SecurityController extends SpringActionController
                     if (userToClone == null)
                         errors.addError(new FormattedError("Failed to clone user permissions " + PageFlowUtil.filter(emailToClone) + ": User email does not exist in the system"));
                 }
-                catch (ValidEmail.InvalidEmailException e)
+                catch (InvalidEmailException e)
                 {
                     errors.addError(new FormattedError("Failed to clone user permissions " + PageFlowUtil.filter(cloneUser.trim()) + ": Invalid email address"));
                 }
@@ -1387,7 +1398,7 @@ public class SecurityController extends SpringActionController
 
                 if (HtmlString.isBlank(result) && user != null)
                 {
-                    ActionURL url = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
+                    ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), user.getUserId(), returnURL);
                     result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user.  Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
                 }
                 else if (userToClone != null)
@@ -1528,7 +1539,7 @@ public class SecurityController extends SpringActionController
                     SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
                 }
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 out.write("Invalid email address: " + PageFlowUtil.filter(rawEmail));
             }
@@ -1564,12 +1575,12 @@ public class SecurityController extends SpringActionController
                         throw new UnauthorizedException();
                     }
                 }
-                catch (ValidEmail.InvalidEmailException e)
+                catch (InvalidEmailException e)
                 {
                     throw new NotFoundException("Invalid email address: " + form.getEmail());
                 }
             }
-                return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
+            return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
         }
     }
 
@@ -1586,35 +1597,84 @@ public class SecurityController extends SpringActionController
 
 
     /**
-     * Invalidate existing password and send new password link
+     * Base class for admin password actions
      */
-    @RequiresPermission(UpdateUserPermission.class)
-    public class AdminResetPasswordAction extends ConfirmAction<EmailForm>
+    private abstract static class AdminPasswordAction extends ConfirmAction<EmailForm>
     {
+        abstract String getTitle();
+        abstract String getVerb();
+        abstract HtmlString getConfirmationMessage(boolean loginExists, String emailAddress);
+
         @Override
         public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
         {
-            setTitle("Confirm Password Reset");
+            setTitle(getTitle());
 
-            String message;
             boolean loginExists = false;
 
             try
             {
                 loginExists = SecurityManager.loginExists(new ValidEmail(emailForm.getEmail()));
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
             }
 
+            return new HtmlView(getConfirmationMessage(loginExists, emailForm.getEmail()));
+        }
 
-            if (loginExists)
-                message = "You are about to clear the user's current password, send the user a reset password email, and force the user to pick a new password to access the site.";
-            else
-                message = "You are about to send the user a reset password email, letting the user pick a password to access the site.";
+        @Override
+        public void validateCommand(EmailForm form, Errors errors)
+        {
+            String rawEmail = form.getEmail();
 
-            return new HtmlView(message);
+            try
+            {
+                ValidEmail email = new ValidEmail(rawEmail);
+
+                // don't let non-site admin delete/reset password of site admin
+                User formUser = UserManager.getUser(email);
+                if (formUser != null && !getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
+                    errors.reject(ERROR_MSG, "Permission denied: not authorized to " + getVerb() + " password for a Site Admin user.");
+            }
+            catch (InvalidEmailException e)
+            {
+                errors.reject(ERROR_MSG, getVerb() + " failed: invalid email address.");
+            }
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(EmailForm emailForm)
+        {
+            return emailForm.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+        }
+    }
+
+    /**
+     * Invalidate existing password and send new password link
+     */
+    @RequiresPermission(UpdateUserPermission.class)
+    public class AdminResetPasswordAction extends AdminPasswordAction
+    {
+        @Override
+        String getTitle()
+        {
+            return "Confirm Password Reset";
+        }
+
+        @Override
+        String getVerb()
+        {
+            return "reset";
+        }
+
+        @Override
+        HtmlString getConfirmationMessage(boolean loginExists, String emailAddress)
+        {
+            return HtmlString.of(loginExists ?
+                "You are about to clear the user's current password, send the user a reset password email, and force the user to pick a new password to access the site." :
+                "You are about to send the user a reset password email, letting the user pick a password to access the site.");
         }
 
         private boolean _loginExists;
@@ -1628,7 +1688,7 @@ public class SecurityController extends SpringActionController
                 _loginExists = SecurityManager.loginExists(email);
                 SecurityManager.adminRotatePassword(email, errors, getContainer(), getUser(), getMailHelpText(form.getEmail()));
             }
-            catch (ValidEmail.InvalidEmailException e)
+            catch (InvalidEmailException e)
             {
                 //Should be caught in validation
                 errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
@@ -1638,47 +1698,22 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(EmailForm form, Errors errors)
-        {
-            String rawEmail = form.getEmail();
-
-            try
-            {
-                ValidEmail email = new ValidEmail(rawEmail);
-
-                // don't let non-site admin reset password of site admin
-                User formUser = UserManager.getUser(email);
-                if (formUser != null && !getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
-                    errors.reject("Permission denied: not authorized to reset password for a Site Admin user.");
-
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                errors.reject(" failed: invalid email address.");
-            }
-        }
-
-        @Override
         public ModelAndView getSuccessView(EmailForm form)
         {
             ActionURL actionURL = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", form.getEmail());
 
-            String page = String.format("<p>%1$s: Password %2$s.</p><p>Email sent. Click <a href=\"%3$s\" target=\"_blank\">here</a> to see the email.</p>%4$s",
-                    PageFlowUtil.filter(form.getEmail()),
-                    _loginExists ? "reset" : "created",
-                    actionURL.getLocalURIString(),
-                    PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
+            String page = String.format(
+                "<p>%1$s: Password %2$s.</p><p>Email sent. Click <a href=\"%3$s\" target=\"_blank\">here</a> to see the email.</p>%4$s",
+                PageFlowUtil.filter(form.getEmail()),
+                _loginExists ? "reset" : "created",
+                actionURL.getLocalURIString(),
+                PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             setTitle("Password Reset Success");
-            return new HtmlView(page);
-        }
 
-        @Override
-        public @NotNull URLHelper getSuccessURL(EmailForm emailForm)
-        {
-            return emailForm.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+            return new HtmlView(page);
         }
 
         @Override
@@ -1686,11 +1721,12 @@ public class SecurityController extends SpringActionController
         {
             String errorMessage = PageFlowUtil.filter(getErrorMessage(errors));
 
-            String page = String.format("<p>%1$s: Password %2$s.</p><p>%3$s</p>%4$s",
-                    PageFlowUtil.filter(form.getEmail()),
-                    _loginExists ? "reset" : "created",
-                    errorMessage,
-                    PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
+            String page = String.format(
+                "<p>%1$s: Password %2$s.</p><p>%3$s</p>%4$s",
+                PageFlowUtil.filter(form.getEmail()),
+                _loginExists ? "reset" : "created",
+                errorMessage,
+                PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -1730,6 +1766,80 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    /**
+     * Delete existing password
+     */
+    @RequiresPermission(UpdateUserPermission.class)
+    public class AdminDeletePasswordAction extends AdminPasswordAction
+    {
+        @Override
+        String getTitle()
+        {
+            return "Delete Password";
+        }
+
+        @Override
+        String getVerb()
+        {
+            return "delete";
+        }
+
+        @Override
+        HtmlString getConfirmationMessage(boolean loginExists, String emailAddress)
+        {
+            if (!loginExists)
+                throw new NotFoundException(emailAddress + " does not seem to have a password");
+
+            List<String> authMethods = new LinkedList<>();
+
+            Collection<LoginFormAuthenticationConfiguration> formConfigs = AuthenticationManager.getActiveConfigurations(LoginFormAuthenticationConfiguration.class);
+            String ldapDetails = formConfigs.stream()
+                .filter(ac->null != ac.getDomain())
+                .filter(ac->!AuthenticationManager.ALL_DOMAINS.equals(ac.getDomain()))
+                .filter(ac->StringUtils.endsWithIgnoreCase(emailAddress, "@" + ac.getDomain()))
+                .map(AuthenticationConfiguration::getDescription)
+                .collect(Collectors.joining(", "));
+            if (!ldapDetails.isBlank())
+                authMethods.add("LDAP (" + ldapDetails + ")");
+
+            Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationManager.getActiveConfigurations(SSOAuthenticationConfiguration.class);
+            if (!ssoConfigs.isEmpty())
+            {
+                authMethods.add("SSO (" +
+                    ssoConfigs.stream()
+                        .map(AuthenticationConfiguration::getDescription)
+                        .collect(Collectors.joining(", ")) +
+                    ")"
+                );
+            }
+
+            String guidance;
+
+            if (authMethods.isEmpty())
+                guidance = "have no way to login!";
+            else
+                guidance = "be able to login via " + String.join(" or ", authMethods) + " only.";
+
+            return HtmlString.of("Are you sure you want to delete the current password for " + emailAddress + "? Once deleted, this user will " + guidance);
+        }
+
+        @Override
+        public boolean handlePost(EmailForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                ValidEmail email = new ValidEmail(form.getEmail());
+                SecurityManager.adminDeletePassword(email, getUser());
+            }
+            catch (InvalidEmailException e)
+            {
+                //Should be caught in validation
+                errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
+            }
+
+            return !errors.hasErrors();
+        }
+    }
 
     public static class GroupDiagramViewFactory implements SecurityManager.ViewFactory
     {
@@ -1804,8 +1914,9 @@ public class SecurityController extends SpringActionController
 
     private static class GroupDiagramForm
     {
-        boolean _hideUnconnected = false;
+        private boolean _hideUnconnected = false;
 
+        @SuppressWarnings("unused")
         public void setHideUnconnected(boolean hideUnconnected)
         {
             _hideUnconnected = hideUnconnected;
@@ -2038,7 +2149,7 @@ public class SecurityController extends SpringActionController
             SecurityController controller = new SecurityController();
 
             // @RequiresPermission(ReadPermission.class)
-            assertForReadPermission(user,
+            assertForReadPermission(user, false,
                 controller.new CompleteUserReadAction()
             );
 

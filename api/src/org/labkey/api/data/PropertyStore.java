@@ -48,11 +48,11 @@ public interface PropertyStore
      * Returns a sequential, CLOSEABLE Stream of all Containers that have a saved property map matching the specified user
      * and category. This is intended primarily for gathering usage metrics across a LabKey instance; this approach is likely
      * more efficient than enumerating all containers and loading property maps, since it pre-filters and avoids filling the
-     * cached with misses.
+     * cache with misses.
      *
      * @param user The user of interest
      * @param category The property set category
-     * @return A stream of PropertyMaps THAT MUST BE CLOSED via try-with-resources or in a finally block
+     * @return A stream of container objects. This stream MUST BE CLOSED via try-with-resources or in a finally block.
      */
     Stream<Container> streamMatchingContainers(User user, String category);
 }

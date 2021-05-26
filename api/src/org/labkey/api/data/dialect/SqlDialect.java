@@ -27,6 +27,7 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
@@ -58,7 +59,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -229,6 +229,10 @@ public abstract class SqlDialect
         _sqlTypeNameMap.put("UNKNOWN", Types.OTHER);
         _sqlTypeNameMap.put("VARBINARY", Types.VARBINARY);
         _sqlTypeNameMap.put("VARCHAR", Types.VARCHAR);
+
+        // Some databases call Types.TIMESTAMP "TIMESTAMP" and some call it "DATETIME"
+        // however we always want to accept "DATETIME" which can be used unambiguously in schema.xml
+        _sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
 
         addSqlTypeNames(_sqlTypeNameMap);
     }
@@ -926,6 +930,12 @@ public abstract class SqlDialect
         return getTableResolver().getForeignKeyResolver(scope, schemaName, tableName);
     }
 
+    // Pass-through by default. Dialects can override if they need special handling.
+    public JdbcMetaDataResultSetFactory getJdbcMetaDataResultSetFactory(JdbcMetaDataResultSetFactory jdbcMetaDataResultSetFactory)
+    {
+        return jdbcMetaDataResultSetFactory;
+    }
+
     public abstract boolean canExecuteUpgradeScripts();
 
     public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)
@@ -1088,7 +1098,7 @@ public abstract class SqlDialect
     }
 
 
-    // Trying to be DataSource implementation agnostic here.  DataSource interface doesn't provide access to any of
+    // Trying to be DataSource-implementation agnostic here. DataSource interface doesn't provide access to any of
     // these properties, but we don't want to cast to a specific implementation class, so use reflection to get them.
     public static class DataSourceProperties
     {
@@ -1144,16 +1154,7 @@ public abstract class SqlDialect
 
         public String getPassword() throws ServletException
         {
-            // Special handling for Tomcat JDBC connection pool; getPassword() returns a fixed string
-            if ("org.apache.tomcat.jdbc.pool.DataSource".equals(_ds.getClass().getName()))
-            {
-                Properties props = callGetter("getDbProperties");
-                return props.getProperty("password");
-            }
-            else
-            {
-                return getProperty("getPassword");
-            }
+            return getProperty("getPassword");
         }
 
         public Integer getMaxTotal()
@@ -1193,7 +1194,6 @@ public abstract class SqlDialect
                 return null;
             }
         }
-
     }
 
 
@@ -1622,4 +1622,8 @@ public abstract class SqlDialect
     {
         return false;
     }
+
+    // Does this driver allow stmt.executeBatch() to be called on different thread?
+    // Seems to work reliably for postgres but not mssql
+    public boolean allowAsynchronousExecute() { return false; }
 }

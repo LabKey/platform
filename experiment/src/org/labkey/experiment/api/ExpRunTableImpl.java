@@ -83,7 +83,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     public ExpRunTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, cf);
         Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
     }
 
@@ -865,12 +865,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return new TableSelector(getQueryTable(), new SimpleFilter(FieldKey.fromParts(Column.RowId), rowId), null).getMap();
             }
             return null;
-        }
-
-        @Override
-        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        {
-            throw new UnsupportedOperationException();
         }
 
         @Override

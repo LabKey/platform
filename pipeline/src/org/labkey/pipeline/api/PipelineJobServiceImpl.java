@@ -30,6 +30,13 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.CheckboxField;
+import org.labkey.api.formSchema.Field;
+import org.labkey.api.formSchema.FormSchema;
+import org.labkey.api.formSchema.Option;
+import org.labkey.api.formSchema.SelectField;
+import org.labkey.api.formSchema.TextField;
+import org.labkey.api.formSchema.TextareaField;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -53,6 +60,8 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
+import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
@@ -116,20 +125,19 @@ public class PipelineJobServiceImpl implements PipelineJobService
         final PipelineStatusFile.StatusWriter statusWriter;
         switch (locationType)
         {
-            case WebServer:
+            case WebServer -> {
                 jobStore = new PipelineJobStoreImpl();
                 statusWriter = PipelineServiceImpl.get();
-                break;
-            case RemoteServer:
+            }
+            case RemoteServer -> {
                 jobStore = new PipelineJobMarshaller();
                 statusWriter = new JMSStatusWriter();
-                break;
-            case RemoteExecutionEngine:
+            }
+            case RemoteExecutionEngine -> {
                 jobStore = new PipelineJobMarshaller();
                 statusWriter = new NoOpPipelineStatusWriter();
-                break;
-            default:
-                throw new IllegalStateException("Unexpected LocationType: " + locationType);
+            }
+            default -> throw new IllegalStateException("Unexpected LocationType: " + locationType);
         }
         pjs.setJobStore(jobStore);
         pjs.setStatusWriter(statusWriter);
@@ -137,12 +145,12 @@ public class PipelineJobServiceImpl implements PipelineJobService
         return pjs;
     }
     
-    private final Map<TaskId, TaskPipeline> _taskPipelineStore;
-    private final Map<TaskId, TaskFactory> _taskFactoryStore;
+    private final Map<TaskId, TaskPipeline<?>> _taskPipelineStore;
+    private final Map<TaskId, TaskFactory<?>> _taskFactoryStore;
     private final Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories;
 
-    private static final ModuleResourceCache<Map<TaskId, TaskFactory>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("TaskFactory cache", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
-    private static final ModuleResourceCache<Map<TaskId, TaskPipeline>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("TaskPipeline cache", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
+    private static final ModuleResourceCache<Map<TaskId, TaskFactory<?>>> TASK_FACTORY_CACHE = ModuleResourceCaches.create("TaskFactory cache", new TaskFactoryCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_TASKS_DIR)));
+    private static final ModuleResourceCache<Map<TaskId, TaskPipeline<?>>> TASK_PIPELINE_CACHE = ModuleResourceCaches.create("TaskPipeline cache", new TaskPipelineCacheHandler(), ResourceRootProvider.getStandard(new Path(MODULE_PIPELINE_DIR, MODULE_PIPELINES_DIR)));
 
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
@@ -209,13 +217,14 @@ public class PipelineJobServiceImpl implements PipelineJobService
      * @return the definitive TaskPipeline for this id
      */
     @Override
-    public @Nullable TaskPipeline getTaskPipeline(TaskId id)
+    public <T extends TaskPipelineSettings> @Nullable TaskPipeline<T> getTaskPipeline(TaskId id)
     {
-        TaskPipeline pipeline;
+        TaskPipeline<T> pipeline;
 
         synchronized (_taskPipelineStore)
         {
-            pipeline = _taskPipelineStore.get(id);
+            //noinspection unchecked
+            pipeline = (TaskPipeline<T>) _taskPipelineStore.get(id);
         }
 
         // Null pipeline could mean a task pipeline defined by a module that no longer exists, #32082. Or it could mean
@@ -226,7 +235,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
             if (null != module)
             {
-                pipeline = TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
+                //noinspection unchecked
+                pipeline = (TaskPipeline<T>)TASK_PIPELINE_CACHE.getResourceMap(module).get(id);
             }
         }
 
@@ -235,12 +245,12 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     @NotNull
     @Override
-    public TaskPipeline getTaskPipeline(String taskIdString)
+    public TaskPipeline<?> getTaskPipeline(String taskIdString)
     {
         try
         {
             TaskId taskId = new TaskId(taskIdString);
-            TaskPipeline pipeline = getTaskPipeline(taskId);
+            TaskPipeline<?> pipeline = getTaskPipeline(taskId);
             if (pipeline == null)
                 throw new NotFoundException("The pipeline '" + taskId + "' was not found.");
             return pipeline;
@@ -263,7 +273,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public void addTaskPipeline(TaskPipeline pipeline)
+    public void addTaskPipeline(TaskPipeline<?> pipeline)
     {
         synchronized (_taskPipelineStore)
         {
@@ -300,12 +310,12 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @NotNull
-    public Collection<TaskPipeline> getTaskPipelines(@NotNull Module module)
+    public Collection<TaskPipeline<?>> getTaskPipelines(@NotNull Module module)
     {
-        Collection<TaskPipeline> pipelines = new ArrayList<>();
+        Collection<TaskPipeline<?>> pipelines = new ArrayList<>();
         synchronized (_taskPipelineStore)
         {
-            for (TaskPipeline pipeline : _taskPipelineStore.values())
+            for (TaskPipeline<?> pipeline : _taskPipelineStore.values())
             {
                 if (module.equals(pipeline.getDeclaringModule()))
                     pipelines.add(pipeline);
@@ -319,14 +329,14 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     @NotNull
     @Override
-    public Collection<TaskPipeline> getTaskPipelines(@Nullable Container container)
+    public Collection<TaskPipeline<?>> getTaskPipelines(@Nullable Container container)
     {
         return getTaskPipelines(container, null);
     }
 
     @NotNull
     @Override
-    public <T extends TaskPipeline> Collection<T> getTaskPipelines(@Nullable Container container, @Nullable Class<T> inter)
+    public <T extends TaskPipeline<?>> Collection<T> getTaskPipelines(@Nullable Container container, @Nullable Class<T> inter)
     {
         Collection<Module> allModules = ModuleLoader.getInstance().getModules();
         Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
@@ -334,8 +344,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         for (Module module : allModules)
         {
-            Collection<TaskPipeline> pipelines = getTaskPipelines(module);
-            for (TaskPipeline tp : pipelines)
+            Collection<TaskPipeline<?>> pipelines = getTaskPipelines(module);
+            for (TaskPipeline<?> tp : pipelines)
             {
                 if (tp != null && (inter == null || inter.isInstance(tp)) && !(tp.isActiveModuleRequired() && !activeModules.contains(module)))
                     pipelineList.add((T) tp);
@@ -347,7 +357,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     @Override
     @Nullable
-    public TaskFactory getTaskFactory(TaskId id)
+    public TaskFactory<?> getTaskFactory(TaskId id)
     {
         synchronized (_taskFactoryStore)
         {
@@ -372,7 +382,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public void addTaskFactory(TaskFactory factory)
+    public void addTaskFactory(TaskFactory<?> factory)
     {
         synchronized (_taskFactoryStore)
         {
@@ -386,7 +396,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
      * NOTE: Don't use this for registering standard TaskFactories.
      */
     @Override
-    public void addLocalTaskFactory(TaskId pipelineId, TaskFactory factory)
+    public void addLocalTaskFactory(TaskId pipelineId, TaskFactory<?> factory)
     {
         if (!factory.getId().getName().startsWith(pipelineId.getName() + LOCAL_TASK_PREFIX))
             throw new IllegalArgumentException("local TaskFactory name '" + factory.getId() + "' must be prefixed with TaskPipeline name '" + pipelineId + "'.");
@@ -408,9 +418,9 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @NotNull
-    private Collection<TaskFactory> getTaskFactories(@NotNull Module module)
+    private Collection<TaskFactory<?>> getTaskFactories(@NotNull Module module)
     {
-        Collection<TaskFactory> factories = new ArrayList<>();
+        Collection<TaskFactory<?>> factories = new ArrayList<>();
         synchronized (_taskFactoryStore)
         {
             factories.addAll(_taskFactoryStore.values().stream()
@@ -425,14 +435,14 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     @Override
     @NotNull
-    public Collection<TaskFactory> getTaskFactories(Container container)
+    public Collection<TaskFactory<?>> getTaskFactories(Container container)
     {
         Collection<Module> activeModules = container == null ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
-        ArrayList<TaskFactory> pipelineList = new ArrayList<>();
+        List<TaskFactory<?>> pipelineList = new ArrayList<>();
 
         for (Module module : activeModules)
         {
-            Collection<TaskFactory> factories = getTaskFactories(module);
+            Collection<TaskFactory<?>> factories = getTaskFactories(module);
             pipelineList.addAll(factories);
         }
 
@@ -449,7 +459,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public TaskFactory createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir)
+    public TaskFactory<?> createTaskFactory(TaskId taskId, TaskType xtask, Path tasksDir)
     {
         SchemaType schemaType = xtask.schemaType();
         synchronized (_taskFactoryFactories)
@@ -495,7 +505,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         // Remove any locally defined tasks that start with the pipeline's id
         String prefix = pipelineId.getName() + LOCAL_TASK_PREFIX;
-        for (TaskFactory factory : getTaskFactories((Container)null))
+        for (TaskFactory<?> factory : getTaskFactories((Container)null))
         {
             if (StringUtils.startsWith(factory.getId().getName(), prefix))
                 removeTaskFactory(factory.getId());
@@ -531,6 +541,51 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public PipelineStatusFile.JobStore getJobStore()
     {
         return _jobStore;
+    }
+
+    @Override
+    public FormSchema getFormSchema(Container container)
+    {
+        List<Option<String>> typeOptions = new ArrayList<>();
+        for (PipelineTriggerType pipelineTriggerType : PipelineTriggerRegistry.get().getTypes())
+        {
+            typeOptions.add(new Option<>(pipelineTriggerType.getName(), pipelineTriggerType.getName()));
+        }
+
+        String typeDefaultValue = null;
+
+        if (!typeOptions.isEmpty())
+            typeDefaultValue = typeOptions.get(0).getValue();
+
+        List<Option<String>> taskOptions = new ArrayList<>();
+        List<FileAnalysisTaskPipeline> tasks = getTaskPipelines(container)
+                .stream()
+                .filter(FileAnalysisTaskPipeline.class::isInstance)
+                .map(FileAnalysisTaskPipeline.class::cast)
+                .filter(FileAnalysisTaskPipeline::isAllowForTriggerConfiguration)
+                .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription()))
+                .collect(Collectors.toList());
+
+        for (FileAnalysisTaskPipeline task : tasks)
+            taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
+
+        String usernameHelpText = "The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions.";
+        String assayProviderHelpText = "Use this provider for running assay import runs.";
+        String baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
+        String usernameHref = baseHref + "runasusername";
+        String assayProviderHref = baseHref + "assayprovider";
+
+        List<Field> fields = List.of(
+                new TextField("name", "Name", null, true, ""),
+                new TextareaField("description", "Description", null, false, ""),
+                new SelectField<>("type", "Type", null, true, typeDefaultValue, typeOptions),
+                new SelectField<>("pipelineId", "Pipeline Task", "Select a Pipeline Task", true, null, taskOptions),
+                new TextField("username", "Run as Username", null, false, null, usernameHelpText, usernameHref),
+                new TextField("assay provider", "Assay Provider", null, false, null, assayProviderHelpText, assayProviderHref),
+                new CheckboxField("enabled", "Enable this Trigger", false, true)
+        );
+
+        return new FormSchema(fields);
     }
 
     public void setJobStore(PipelineStatusFile.JobStore jobStore)
@@ -612,9 +667,9 @@ public class PipelineJobServiceImpl implements PipelineJobService
     }
 
     @Override
-    public void registerRemoteExecutionEngine(RemoteExecutionEngine engine)
+    public void registerRemoteExecutionEngine(RemoteExecutionEngine<?> engine)
     {
-        for (RemoteExecutionEngine existingEngine : _remoteExecutionEngines)
+        for (RemoteExecutionEngine<?> existingEngine : _remoteExecutionEngines)
         {
             if (engine.getType().equals(existingEngine.getType()))
             {
@@ -628,7 +683,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public void setRemoteExecutionEngines(@NotNull List<RemoteExecutionEngine<?>> remoteExecutionEngines)
     {
         Set<String> locations = new CaseInsensitiveHashSet();
-        for (RemoteExecutionEngine engine : remoteExecutionEngines)
+        for (RemoteExecutionEngine<?> engine : remoteExecutionEngines)
         {
             if (!locations.add(engine.getConfig().getLocation()))
             {
@@ -837,7 +892,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     @NotNull
     @Override
-    public AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline)
+    public AbstractFileAnalysisProtocolFactory<?> getProtocolFactory(TaskPipeline<?> taskPipeline)
     {
         AbstractFileAnalysisProvider provider = (AbstractFileAnalysisProvider)
                 PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
@@ -854,7 +909,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
     public static class TestCase extends Assert
     {
-        private static final File TEMP_DIR = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"), "PipelineToolTest"));;
+        private static final File TEMP_DIR = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"), "PipelineToolTest"));
         private static final File TOOL_DIR = new File(TEMP_DIR, "A");
         private static final File TOOL_DIR_2 = new File(TEMP_DIR, "B");
         private static final String TOOL_PATH = TOOL_DIR + File.pathSeparator + TOOL_DIR_2;
@@ -1081,7 +1136,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
                 if (null != pipelinetest)
                 {
-                    assertEquals("Task pipelines from pipelinetest module", 10, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task pipelines from pipelinetest module", 11, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
                     assertEquals("Task factories from pipelinetest module", 3, TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
                 }
 

@@ -30,6 +30,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AdminConsoleAction;
@@ -292,13 +293,11 @@ public class LoggerController extends SpringActionController
         @Override
         public void validateCommand(Object target, Errors errors)
         {
-
         }
 
         @Override
         public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
-            getPageConfig().setTitle("Manage Log4J Loggers");
             return new JspView<>("/org/labkey/core/admin/logger/manage.jsp", null, errors);
         }
 
@@ -317,6 +316,7 @@ public class LoggerController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Manage Log4J Loggers", getClass(), getContainer());
         }
     }
 

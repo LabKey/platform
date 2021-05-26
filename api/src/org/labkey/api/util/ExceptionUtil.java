@@ -307,7 +307,10 @@ public class ExceptionUtil
                     {
                         ViewContext viewContext = HttpView.currentContext();
                         logMessage += "\nCurrent URL: " + viewContext.getActionURL();
-                        logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
+                        if (null != viewContext.getUser())
+                        {
+                            logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
+                        }
                     }
                     LOG.error(logMessage);
                 }
@@ -772,8 +775,7 @@ public class ExceptionUtil
             log.error("Unhandled exception: " + message, unhandledException);
         }
 
-        boolean isJSON = request.getContentType() != null && request.getContentType().contains(ApiJsonWriter.CONTENT_TYPE_JSON);
-        boolean isXML = request.getContentType() != null && request.getContentType().contains(ApiXmlWriter.CONTENT_TYPE);
+        ApiResponseWriter.Format responseFormat = ApiResponseWriter.getResponseFormat(request, null);
 
         if (response.isCommitted())
         {
@@ -797,8 +799,7 @@ public class ExceptionUtil
                 }
             }
         }
-        // TODO: Possibly respect "respFormat" parameter as found in ApiAction first?
-        else if (isJSON || isXML)
+        else if (responseFormat != null)
         {
             try
             {
@@ -818,11 +819,7 @@ public class ExceptionUtil
                 if (responseStatusMessage != null || message != null)
                     errorResponse.put("exception", StringUtils.defaultString(message,responseStatusMessage));
 
-                ApiResponseWriter writer;
-                if (isJSON)
-                    writer = ApiResponseWriter.Format.JSON.createWriter(response, null, null);
-                else
-                    writer = ApiResponseWriter.Format.XML.createWriter(response, null, null);
+                ApiResponseWriter writer = responseFormat.createWriter(response, null, null);
 
                 errorResponse.render(writer);
                 writer.close();
@@ -846,7 +843,6 @@ public class ExceptionUtil
 
     private static void renderErrorPage(Throwable ex, int responseStatus, String message, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, ErrorRenderer.ErrorType errorType, User user, Logger log, boolean startupFailure)
     {
-        // 7629: Error page redesign -- development in-progress. This path shows the new error view.
         ErrorRenderer renderer = getErrorRenderer(responseStatus, message, ex, request, false, startupFailure);
 
         if (ex instanceof UnauthorizedException)
@@ -883,6 +879,8 @@ public class ExceptionUtil
         try
         {
             renderer.setErrorType(errorType);
+            // Issue 41891: do not add google analytics on error pages.
+            pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
 
             if (HttpView.hasCurrentView())
             {
@@ -896,12 +894,16 @@ public class ExceptionUtil
 
             addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
         }
+        catch (ConfigurationException ce)
+        {
+            throw ce;
+        }
         catch (Exception e)
         {
-            // config exceptions that occur before jsps have been initialized
-            if (ex instanceof ConfigurationException && null != ModuleLoader.getInstance().getStartupFailure())
+            // non config exceptions like SqlScriptException that occur during startup
+            if (null != ModuleLoader.getInstance().getStartupFailure())
             {
-                throw new ConfigurationException(ex.getMessage());
+                throw new ConfigurationException(ex.getMessage(), ex);
             }
 
             // try to render just the react app
@@ -943,9 +945,17 @@ public class ExceptionUtil
         var title = responseStatus + ": " + ErrorView.ERROR_PAGE_TITLE;
         if (null != ex)
         {
-            title += " -- " + ex.getMessage();
+            if (null != ex.getMessage())
+            {
+                title += " -- " + ex.getMessage();
+            }
+            else
+            {
+                title += " -- " + ex.toString();
+            }
         }
         pageConfig.setTitle(title, false);
+        response.setStatus(responseStatus);
         errorView.getView().render(errorView.getModel(), request, response);
     }
 

@@ -111,7 +111,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (null == queryDef)
             throw new NotFoundException("Could not find the query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'!");
 
-        boolean isUserDefined = !queryDef.isTableQueryDefinition();
+        boolean isUserDefined = queryDef.isUserDefined();
 
         //a few basic props about the query
         //this needs to be populated before attempting to get the table info
@@ -124,7 +124,8 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         resp.put("canEdit", canEdit);
         resp.put("canDelete", queryDef.canDelete(user));
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
-        resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
+        // CONSIDER: do we want to separate the 'canEditMetadata' property and 'isMetadataOverridable' properties to differentiate between cabability and the permission check?
+        resp.put("isMetadataOverrideable", queryDef.isMetadataEditable() && queryDef.canEditMetadata(user));
 
         if (isUserDefined)
             resp.put("moduleName", queryDef.getModuleName());
@@ -146,7 +147,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 return resp;
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             resp.put("exception", e.getMessage());
             return resp;
@@ -165,8 +166,6 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             }
         }
 
-        if (!isUserDefined && tinfo.isMetadataOverrideable())
-            resp.put("isMetadataOverrideable", true);
 
         ActionURL auditHistoryUrl = QueryService.get().getAuditHistoryURL(user, container, tinfo);
         if (auditHistoryUrl != null)

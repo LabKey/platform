@@ -39,12 +39,11 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.LabKeyScriptEngine;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -68,7 +67,6 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
@@ -326,12 +324,6 @@ public class ReportUtil
         int width = 640;
         int height = 480;
 
-        ReportDescriptor descriptor = r.getDescriptor();
-        if (descriptor instanceof ChartReportDescriptor)
-        {
-            width = ((ChartReportDescriptor)descriptor).getWidth();
-            height = ((ChartReportDescriptor)descriptor).getHeight();
-        }
         renderErrorImage(outputStream, width, height, errorMessage);
     }
 
@@ -421,7 +413,7 @@ public class ReportUtil
         {
             // trusted analysts can only create reports on sandboxed engine instances
             // TODO can this differ from the engine returned by the instantiated report?
-            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             ScriptEngine engine = svc.getEngineByExtension(context.getContainer(), extension);
             return engine instanceof LabKeyScriptEngine && ((LabKeyScriptEngine)engine).isSandboxed();
         }

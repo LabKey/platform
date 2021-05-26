@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -34,6 +35,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -54,6 +56,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
@@ -74,6 +77,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -110,7 +114,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     private boolean _bulkLoad = false;
     private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
     private VirtualFile _att = null;
-    private AttachmentParentFactory _attachmentParentFactory;
+
+    /* AbstractQueryUpdateService is generally responsible for some shared functionality
+     *   - triggers
+     *   - coercion/validation
+     *   - detailed logging
+     *   - attachements
+     *
+     *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
+    */
+    protected boolean _enableExistingRecordsDataIterator = true;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -124,7 +137,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return _queryTable;
     }
 
-    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
         return getQueryTable().hasPermission(user, acl);
     }
@@ -173,16 +187,27 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
+    protected final DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
     {
         if (null == errors)
             errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(forImport);
         context.setConfigParameters(configParameters);
+        configureDataIteratorContext(context);
         return context;
     }
 
+    /**
+     *  if QUS want to use something other than PK's to select existing rows for merge it can override this method
+     * Used only for generating  ExistingRecordDataIterator at the moment
+     */
+    protected Set<String> getSelectKeys(DataIteratorContext context)
+    {
+        if (!context.getAlternateKeys().isEmpty())
+            return context.getAlternateKeys();
+        return null;
+    }
 
     /*
      * construct the core DataIterator transformation pipeline for this table, may be just StandardDataIteratorBuilder.
@@ -190,12 +215,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      */
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
-
-        DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
+        DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user);
+        if (_enableExistingRecordsDataIterator)
+        {
+            // some tables need to generate PK's, so they need to add ExistingRecordDataIterator in persistRows() (after generating PK, before inserting)
+            dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
+        }
+        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
-
         return dib;
     }
 
@@ -206,7 +234,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
-    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
+    protected int _importRowsUsingInsertRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
     {
         MapDataIterator mapIterator = DataIteratorUtil.wrapMap(rows, true);
         List<Map<String, Object>> list = new ArrayList<>();
@@ -276,7 +304,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             return 0;
         else
         {
-            QueryService.get().addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count);
+            AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count, auditType);
             return count;
         }
     }
@@ -326,22 +355,30 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
+    /* can be used for simple book keeping tasks, per row processing belongs in a data iterator */
+    protected void afterInsertUpdate(int count, BatchValidationException errors)
+    {}
 
     @Override
-    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        return _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        configureDataIteratorContext(context);
+        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        afterInsertUpdate(count, context.getErrors());
+        return count;
     }
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(context),errors,configParameters,extraScriptContext);
+        int count = _importRowsUsingInsertRows(user, container, rows.getDataIterator(context), errors, extraScriptContext);
+        afterInsertUpdate(count, errors);
+        return count;
     }
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         throw new UnsupportedOperationException("merge is not supported for all tables");
     }
@@ -352,8 +389,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected abstract Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-        throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
+        throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new UnsupportedOperationException("Not implemented by this QueryUpdateService");
+    }
 
 
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
@@ -366,6 +406,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
+        afterInsertUpdate(count, context.getErrors());
 
         if (context.getErrors().hasErrors())
             return null;
@@ -387,7 +428,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
         else
         {
-            colNames = new CaseInsensitiveHashSet();
+            // Preserve casing by using wrapped CaseInsensitiveHashMap instead of CaseInsensitiveHashSet
+            colNames = Sets.newCaseInsensitiveHashSet();
             for (Map<String,Object> row : rows)
                 colNames.addAll(row.keySet());
         }
@@ -464,18 +506,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null);
 
         return result;
     }
 
-    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, List<Map<String, Object>>... parameters)
+    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows)
     {
         if (!isBulkLoad())
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
             String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-            getQueryTable().addAuditEvent(user, container, auditBehavior, userComment, auditAction, parameters);
+            getQueryTable().getAuditHandler(auditBehavior)
+                    .addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
         }
     }
 
@@ -515,6 +558,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         try
         {
             List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, extraScriptContext);
+            afterInsertUpdate(null==ret?0:ret.size(), errors);
             if (errors.hasErrors())
                 return null;
             return ret;
@@ -542,6 +586,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             if (col != null && value != null &&
                     !col.getJavaObjectClass().isInstance(value) &&
                     !(value instanceof AttachmentFile) &&
+                    !(value instanceof MultipartFile) &&
                     !(value instanceof String[]) &&
                     !(col.getFk() instanceof MultiValuedForeignKey))
             {
@@ -625,10 +670,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+        afterInsertUpdate(null==result?0:result.size(), errors);
+
         if (errors.hasErrors())
             throw errors;
 
-        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, oldRows, result);
+        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows);
 
         return result;
     }
@@ -692,7 +739,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
+        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result, null);
 
         return result;
     }
@@ -717,7 +764,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         int result = truncateRows(user, container);
 
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
-        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters);
+        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters, null, null);
 
         return result;
     }
@@ -803,21 +850,31 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return file;
     }
 
-    protected void setAttachmentDirectory(VirtualFile att)
+    /**
+     * Is used by the AttachmentDataIterator to point to the location of the serialized
+     * attachment files.
+     */
+    public void setAttachmentDirectory(VirtualFile att)
     {
         _att = att;
     }
+
+    @Nullable
     protected VirtualFile getAttachmentDirectory()
     {
         return _att;
     }
 
-    protected void setAttachmentParentFactory(AttachmentParentFactory ap)
+    /**
+     * QUS instances that allow import of attachments through the AttachmentDataIterator should furnish a factory
+     * implementation in order to resolve the attachment parent on incoming attachment files.
+     * @return
+     */
+    @Nullable
+    protected AttachmentParentFactory getAttachmentParentFactory()
     {
-        _attachmentParentFactory = ap;
+        return null;
     }
-    protected AttachmentParentFactory getAttachmentParentFactory() { return _attachmentParentFactory; }
-
 
     /** Translate between the column name that query is exposing to the column name that actually lives in the database */
     protected static void aliasColumns(Map<String, String> columnMapping, Map<String, Object> row)
@@ -869,6 +926,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @BeforeClass
         public static void createList() throws Exception
         {
+            if (null == ListService.get())
+                return;
             deleteList();
 
             TabLoader testData = getTestData();
@@ -906,6 +965,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Before
         public void resetList() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
@@ -916,6 +977,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @AfterClass
         public static void deleteList() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             ListService s = ListService.get();
@@ -944,6 +1007,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void INSERT() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
@@ -962,6 +1027,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void UPSERT() throws Exception
         {
+            if (null == ListService.get())
+                return;
             /* not sure how you use/test ImportOptions.UPSERT
              * the only row returning QUS method is insertRows(), which doesn't let you specify the InsertOption?
              */
@@ -970,6 +1037,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void IMPORT() throws Exception
         {
+            if (null == ListService.get())
+                return;
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
@@ -988,6 +1057,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void MERGE() throws Exception
         {
+            if (null == ListService.get())
+                return;
             INSERT();
             assertEquals("Wrong number of rows after INSERT", 3, getRows().size());
 
@@ -998,8 +1069,25 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             var mergeRows = new ArrayList<Map<String,Object>>();
             mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
             mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
-            BatchValidationException errors = new BatchValidationException();
-            var count = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            BatchValidationException errors = new BatchValidationException()
+            {
+                @Override
+                public void addRowError(ValidationException vex)
+                {
+                    Logger.getLogger(AbstractQueryUpdateService.class).error("test error", vex);
+                    fail(vex.getMessage());
+                }
+            };
+            int count=0;
+            try (var tx = rTableInfo.getSchema().getScope().ensureTransaction())
+            {
+                var ret = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+                if (!errors.hasErrors())
+                {
+                    tx.commit();
+                    count = ret;
+                }
+            }
             assertFalse("mergeRows error(s): " + errors.getMessage(), errors.hasErrors());
             assertEquals(count,2);
             var rows = getRows();
@@ -1015,6 +1103,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void REPLACE() throws Exception
         {
+            if (null == ListService.get())
+                return;
             assert(getRows().size()==0);
             INSERT();
 
@@ -1043,6 +1133,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         @Test
         public void IMPORT_IDENTITY()
         {
+            if (null == ListService.get())
+                return;
             // TODO
         }
     }

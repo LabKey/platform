@@ -25,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
@@ -47,14 +47,11 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -82,14 +79,18 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -102,11 +103,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
@@ -116,7 +119,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
     public static SampleTypeServiceImpl get()
     {
@@ -429,70 +432,16 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
     }
 
-    @Override
-    public String getDefaultSampleTypeLsid()
-    {
-        return new Lsid.LsidBuilder("SampleSource", "Default").toString();
-    }
-
-    @Override
-    public String getDefaultSampleTypeMaterialLsidPrefix()
-    {
-        return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
-    }
-
-
     public DbScope.Transaction ensureTransaction()
     {
         return getExpSchema().getScope().ensureTransaction();
     }
-
-
-    public void deleteDefaultSampleType()
-    {
-        SQLFragment sql = new SQLFragment()
-                .append("SELECT ms.rowId, dd.domainId\n")
-                .append("FROM ").append(ExperimentService.get().getTinfoSampleType(), "ms").append("\n")
-                .append("INNER JOIN ").append(OntologyManager.getTinfoDomainDescriptor(), "dd").append("\n")
-                .append("ON ms.lsid = dd.domainUri\n")
-                .append("WHERE ms.lsid = ?").add(getDefaultSampleTypeLsid());
-        SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), sql);
-
-        Map<String, Object> row = ss.getMap();
-        if (row != null)
-        {
-            try (DbScope.Transaction tx = ensureTransaction())
-            {
-                Integer rowId = (Integer) row.get("rowId");
-                Integer domainId = (Integer) row.get("domainId");
-
-                DbSequenceManager.delete(ContainerManager.getSharedContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, rowId);
-
-                Domain d = PropertyService.get().getDomain(domainId);
-                if (d != null)
-                {
-                    d.delete(null);
-                }
-
-                Table.delete(getTinfoMaterialSource(), rowId);
-
-                tx.commit();
-                LOG.info("Deleted the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleType");
-            }
-            catch (DomainNotFoundException e)
-            {
-                LOG.info("Failed to delete the default " + ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME + " SampleType, domain not found");
-            }
-        }
-    }
-
 
     @Override
     public Lsid getSampleTypeLsid(String sourceName, Container container)
     {
         return Lsid.parse(ExperimentService.get().generateLSID(container, ExpSampleType.class, sourceName));
     }
-
 
     /**
      * Delete all exp.Material from the SampleType. If container is not provided,
@@ -537,6 +486,19 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleType() and deleteDomainObjects()?
             truncateSampleType(source, user, null);
+
+            StudyService studyService = StudyService.get();
+            if (studyService != null)
+            {
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, Dataset.PublishSource.SampleType))
+                {
+                    dataset.delete(user);
+                }
+            }
+            else
+            {
+                LOG.warn("Could not delete datasets associated with this protocol: Study service not available.");
+            }
 
             Domain d = source.getDomain();
             d.delete(user);
@@ -598,13 +560,13 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null, null);
+                parentCol, nameExpression, templateInfo, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
+                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable Container autoLinkTargetContainer)
         throws ExperimentException
     {
         if (name == null)
@@ -647,6 +609,11 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
         if (labelColor != null && labelColor.length() > labelColorMax)
             throw new ExperimentException("Label color may not exceed " + labelColorMax + " characters.");
+
+        // Validate the metricUnit length
+        int metricUnitMax = materialSourceTable.getColumn("MetricUnit").getScale();
+        if (metricUnit != null && metricUnit.length() > metricUnitMax)
+            throw new ExperimentException("Metric unit may not exceed " + metricUnitMax + " characters.");
 
         Lsid lsid = getSampleTypeLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
@@ -707,6 +674,8 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         source.setLabelColor(labelColor);
+        source.setMetricUnit(metricUnit);
+        source.setAutoLinkTargetContainer(autoLinkTargetContainer);
         source.setContainer(c);
         source.setMaterialParentImportAliasMap(importAliasJson);
 
@@ -812,7 +781,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             _formatter = DateTimeFormatter.ofPattern(pattern);
         }
 
-        public String getSequenceName(@Nullable Date date)
+        public Pair<String,Integer> getSequenceName(@Nullable Date date)
         {
             LocalDateTime ldt;
             if (date == null)
@@ -820,27 +789,47 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             else
                 ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
             String suffix = _formatter.format(ldt);
-            return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
+            // NOTE: it would make sense to use the dbsequence "id" feature here.
+            // e.g. instead of name=org.labkey.api.exp.api.ExpMaterial:DAILY:2021-05-25 id=0
+            // we could use name=org.labkey.api.exp.api.ExpMaterial:DAILY id=20210525
+            // however, that would require a fix up on upgrade.
+            return new Pair<>("org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix, 0);
         }
 
         public long next(Date date)
         {
-            String seqName = getSequenceName(date);
-            DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
-            return seq.next();
+            return getDbSequence(date).next();
+        }
+
+        public DbSequence getDbSequence(Date date)
+        {
+            Pair<String,Integer> seqName = getSequenceName(date);
+            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
+            return seq;
         }
     }
 
+
     @Override
-    public Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
+    public Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate)
     {
-        Map<String, Long> counts = new HashMap<>();
-        counts.put("dailySampleCount",   SampleSequenceType.DAILY.next(counterDate));
-        counts.put("weeklySampleCount",  SampleSequenceType.WEEKLY.next(counterDate));
-        counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
-        counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
-        return counts;
+        final var dailySampleCount = SampleSequenceType.DAILY.getDbSequence(counterDate);
+        final var weeklySampleCount = SampleSequenceType.WEEKLY.getDbSequence(counterDate);
+        final var monthlySampleCount = SampleSequenceType.MONTHLY.getDbSequence(counterDate);
+        final var yearlySampleCount = SampleSequenceType.YEARLY.getDbSequence(counterDate);
+
+        return (counts) ->
+        {
+            if (null==counts)
+                counts = new HashMap<>();
+            counts.put("dailySampleCount",   dailySampleCount.next());
+            counts.put("weeklySampleCount",  weeklySampleCount.next());
+            counts.put("monthlySampleCount", monthlySampleCount.next());
+            counts.put("yearlySampleCount",  yearlySampleCount.next());
+            return counts;
+        };
     }
+
 
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
@@ -864,7 +853,9 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
             }
 
             st.setLabelColor(options.getLabelColor());
+            st.setMetricUnit(options.getMetricUnit());
             st.setImportAliasMap(options.getImportAliases());
+            st.setAutoLinkTargetContainer(ContainerManager.getForId(options.getAutoLinkTargetContainerId()));
         }
 
         ValidationException errors;
@@ -893,17 +884,17 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         return true;
     }
 
-    protected String getCommentDetailed(QueryService.AuditAction action)
+    public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {
-        String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action);
+        String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action, isUpdate);
         return StringUtils.isEmpty(comment) ? action.getCommentDetailed() : comment;
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow)
     {
         // not doing anything with userComment at the moment
-        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow, action);
+        return createAuditRecord(c, getCommentDetailed(action, !existingRow.isEmpty()), action, row, existingRow);
     }
 
     @Override
@@ -919,7 +910,7 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         // we want to include the fields that indicate parent lineage has changed.
         // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
         updatedRow.forEach((fieldName, value) -> {
-            if (fieldName.startsWith(ExpData.DATA_INPUT_PARENT) || fieldName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
+            if (fieldName.toLowerCase().startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) || fieldName.toLowerCase().startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
                 if (!originalRow.containsKey(fieldName))
                 {
                     modifiedRow.put(fieldName, value);
@@ -929,10 +920,18 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row)
     {
-        return createAuditRecord(c, comment, row, null, null);
+        return createAuditRecord(c, comment, null, row, null);
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
+    // move to UploadSamplesHelper?
+    private boolean isInputFieldKey(String fieldKey)
+    {
+        int slash = fieldKey.indexOf('/');
+        return  slash==ExpData.DATA_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpData.DATA_INPUT_PARENT) ||
+                slash==ExpMaterial.MATERIAL_INPUT_PARENT.length() && StringUtils.startsWithIgnoreCase(fieldKey,ExpMaterial.MATERIAL_INPUT_PARENT);
+    }
+
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
         var tx = getExpSchema().getScope().getCurrentTransaction();
@@ -942,20 +941,18 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
 
-        if (updatedRow != null)
-        {
-            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
-            event.setLineageUpdate(parentFields.isPresent());
-        }
-
+        var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
         {
+            Optional<String> parentFields = row.keySet().stream().filter(this::isInputFieldKey).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+
             String sampleTypeLsid = null;
-            if (row.containsKey(CPAS_TYPE))
-                sampleTypeLsid =  String.valueOf(row.get(CPAS_TYPE));
+            if (staticsRow.containsKey(CPAS_TYPE))
+                sampleTypeLsid =  String.valueOf(staticsRow.get(CPAS_TYPE));
             // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
-            if (sampleTypeLsid == null && row.containsKey("sampleset"))
-                sampleTypeLsid = String.valueOf(row.get("sampleset"));
+            if (sampleTypeLsid == null && staticsRow.containsKey("sampleset"))
+                sampleTypeLsid = String.valueOf(staticsRow.get("sampleset"));
             if (sampleTypeLsid != null)
             {
                 ExpSampleType sampleType = SampleTypeService.get().getSampleTypeByType(sampleTypeLsid, c);
@@ -965,12 +962,14 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
                     event.setSampleTypeId(sampleType.getRowId());
                 }
             }
-            if (row.containsKey(LSID))
-                event.setSampleLsid(String.valueOf(row.get(LSID)));
-            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
-                event.setSampleId((Integer) row.get(ROW_ID));
-            if (row.containsKey(NAME))
-                event.setSampleName(String.valueOf(row.get(NAME)));
+            if (staticsRow.containsKey(LSID))
+                event.setSampleLsid(String.valueOf(staticsRow.get(LSID)));
+            if (staticsRow.containsKey(ROW_ID) && staticsRow.get(ROW_ID) != null)
+                event.setSampleId((Integer) staticsRow.get(ROW_ID));
+            if (staticsRow.containsKey(NAME))
+                event.setSampleName(String.valueOf(staticsRow.get(NAME)));
+            // NOTE: to avoid a diff in the audit log make sure row("rowid") is correct! (not the unused generated value)
+            row.put(ROW_ID,staticsRow.get(ROW_ID));
         }
 
         if (action != null)
@@ -1017,5 +1016,35 @@ public class SampleTypeServiceImpl extends AuditHandler implements SampleTypeSer
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
+    }
+
+    @Override
+    public long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
+    {
+        long max = 0;
+        String aliquotNamePrefix = sampleName + "-";
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
+        filter.addCondition(FieldKey.fromParts("Name"), aliquotNamePrefix, STARTS_WITH);
+
+        TableSelector selector = new TableSelector(getTinfoMaterial(), Collections.singleton("Name"), filter, null);
+        final List<String> aliquotIds = new ArrayList<>();
+        selector.forEach(String.class, fullname -> aliquotIds.add(fullname.replace(aliquotNamePrefix, "")));
+
+        for (String aliquotId : aliquotIds)
+        {
+            try
+            {
+                long id = Long.parseLong(aliquotId);
+                if (id > max)
+                    max = id;
+            }
+            catch (NumberFormatException ignored) {
+                ;
+            }
+        }
+
+        return max;
     }
 }

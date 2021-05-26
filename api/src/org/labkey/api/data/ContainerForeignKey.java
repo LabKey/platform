@@ -29,11 +29,20 @@ import org.labkey.api.view.ActionURL;
  */
 public class ContainerForeignKey extends QueryForeignKey
 {
+    /**
+     * @deprecated relying on ContainerIdColumnInfoTransformer is preferred()
+     */
+     @Deprecated
     static public <COL extends MutableColumnInfo> COL initColumn(COL column, UserSchema schema)
     {
         return initColumn(column, schema, null);
     }
 
+
+    /**
+     * @deprecated relying on ContainerIdColumnInfoTransformer is preferred()
+     */
+    @Deprecated
     static public <COL extends MutableColumnInfo> COL initColumn(@NotNull COL column, UserSchema schema, final ActionURL url)
     {
         column.setFk(new ContainerForeignKey(schema));

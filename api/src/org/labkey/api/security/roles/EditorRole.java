@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.permissions.ShareReportPermission;
@@ -45,7 +46,8 @@ public class EditorRole extends AbstractRole
                 DeletePermission.class,
                 EditSharedViewPermission.class,
                 ShareReportPermission.class, EditSharedReportPermission.class,
-                SharedParticipantGroupPermission.class
+                SharedParticipantGroupPermission.class,
+                ManagePicklistsPermission.class
         );
     }
 

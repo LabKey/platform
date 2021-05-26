@@ -50,7 +50,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -668,7 +668,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
             if (scriptDir != null && scriptDir.exists())
             {
-                final LabkeyScriptEngineManager manager = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+                final LabKeyScriptEngineManager manager = LabKeyScriptEngineManager.get();
 
                 Collection<? extends Resource> scripts = scriptDir.list();
                 List<File> moduleScriptFiles = new ArrayList<>(scripts.size());
@@ -678,7 +678,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     {
                         String ext = r.getPath().extension();
                         FileResource fileResource = (FileResource) r;
-                        if (manager.getEngineByExtension(protocol.getContainer(), ext, LabkeyScriptEngineManager.EngineContext.pipeline) != null)
+                        if (manager.getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline) != null)
                         {
                             moduleScriptFiles.add(fileResource.getFile());
                         }

@@ -262,7 +262,7 @@ public class PageFlowUtil
                 case 'm':
                     if (encodeLinks)
                     {
-                        CharSequence sub = s.subSequence(i, s.length() - 1);
+                        CharSequence sub = s.subSequence(i, s.length());
                         if (StringUtilsLabKey.startsWithURL(sub))
                         {
                             Matcher m = urlPatternStart.matcher(sub);
@@ -366,7 +366,7 @@ public class PageFlowUtil
         return PageFlowUtil.jsString(PageFlowUtil.filter(s));
     }
 
-    static public String jsString(CharSequence cs)
+    public static String jsString(CharSequence cs)
     {
         if (cs == null)
             return "''";
@@ -375,12 +375,17 @@ public class PageFlowUtil
     }
 
     @Deprecated // usages look wrong to me -- they should just use q()?
-    static public HtmlString jsString(HtmlString hs)
+    public static HtmlString jsString(HtmlString hs)
     {
         return HtmlString.unsafe(jsString(hs.toString()));
     }
 
-    static public String jsString(String s)
+    public static String jsString(ActionURL url)
+    {
+        return jsString(url.getLocalURIString());
+    }
+
+    public static String jsString(String s)
     {
         if (s == null)
             return "''";
@@ -1419,7 +1424,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 35 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 33 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
@@ -1516,7 +1521,7 @@ public class PageFlowUtil
             t.transform(new DOMSource(node), new StreamResult(out));
             out.close();
 
-            return new String(out.toByteArray(), StringUtilsLabKey.DEFAULT_CHARSET).trim();
+            return out.toString(StringUtilsLabKey.DEFAULT_CHARSET).trim();
         }
         catch (TransformerFactoryConfigurationError e)
         {
@@ -1576,6 +1581,7 @@ public class PageFlowUtil
                 resources.add(ClientDependency.fromPath("Ext3"));
 
             // TODO: Turn this into a lib.xml
+            // core/css/core.js requires jQuery
             resources.add(ClientDependency.fromPath("internal/jQuery"));
             resources.add(ClientDependency.fromPath("core/css/core.js"));
 
@@ -1655,7 +1661,7 @@ public class PageFlowUtil
 
         Set<String> preIncludedCss = getExtJSStylesheets(c, resources);
         for (String cssPath : preIncludedCss)
-            F.format(link, staticResourceUrl(cssPath));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl(cssPath)));
 
         if (includeDefaultResources)
         {
@@ -1869,7 +1875,7 @@ public class PageFlowUtil
         {
             return staticResourcePrefix + slash + resourcePath;
         }
-        if (resourcePath.contains(".cache."))        // CONSIDER: move DavController.alwaysCache() somewhere we can call it
+        if (resourcePath.contains(".cache.") || resourcePath.endsWith(".ttf") || resourcePath.endsWith(".woff2"))        // CONSIDER: move DavController.alwaysCache() somewhere we can call it
             return AppProps.getInstance().getContextPath() + slash + resourcePath;
         else
             return AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
@@ -1898,7 +1904,7 @@ public class PageFlowUtil
             .append(HtmlString.unsafe("</script>\n"));
     }
 
-    private static HtmlString getScriptTag(String path)
+    public static HtmlString getScriptTag(String path)
     {
         return HtmlStringBuilder.of()
             .append(HtmlString.unsafe("<script src=\""))
@@ -2108,7 +2114,6 @@ public class PageFlowUtil
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
-        experimental.put(AppProps.EXPERIMENTAL_STRICT_RETURN_URL, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 
@@ -2145,11 +2150,14 @@ public class PageFlowUtil
         // property instead of hard-coding formats on the client.
         json.put("extDateInputFormat", ExtUtil.toExtDateFormat(DateUtil.getStandardDateFormatString()));
 
-        SecurityLogger.indent("jsInitObject");
-        json.put("user", User.getUserProps(user, container));
-        if (user.isImpersonated())
-            json.put("impersonatingUser", User.getUserProps(user.getImpersonatingUser(), container));
-        SecurityLogger.outdent();
+        if (null != user)
+        {
+            SecurityLogger.indent("jsInitObject");
+            json.put("user", User.getUserProps(user, container));
+            if (user.isImpersonated())
+                json.put("impersonatingUser", User.getUserProps(user.getImpersonatingUser(), container));
+            SecurityLogger.outdent();
+        }
 
         if (null != container)
         {
@@ -2165,6 +2173,7 @@ public class PageFlowUtil
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
+            projectProps.put("title", project.getTitle());
             projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }
@@ -2191,7 +2200,7 @@ public class PageFlowUtil
             HttpServletRequest request = viewContext.getRequest();
             if (request != null)
             {
-                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter("returnUrl"))));
+                json.put("login", AuthenticationManager.getLoginPageConfiguration(getTermsOfUseProject(project, request.getParameter(ActionURL.Param.returnUrl.name()))));
                 if (includePostParameters && "post".equalsIgnoreCase(request.getMethod()))
                     json.put("postParameters", request.getParameterMap());
                 String tok = CSRFUtil.getExpectedToken(request, null);
@@ -2606,6 +2615,24 @@ public class PageFlowUtil
         private boolean isLegalId(String id)
         {
             return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
+        }
+
+        @Test
+        public void testFilterURL()
+        {
+            String html;
+
+            html = filter("click here http://this/is/a/test.view.", true, true);
+            assertTrue(html.contains("href=\"http:"));
+            assertTrue(html.contains("view</a>."));
+
+            html = filter("click here http://this/is/a/test.view ", true, true);
+            assertTrue(html.contains("href=\"http:"));
+            assertTrue(html.contains("view</a>"));
+
+            html = filter("click here http://this/is/a/test.view", true, true);
+            assertTrue(html.contains("href=\"http:"));
+            assertTrue(html.contains("view</a>"));
         }
     }
 

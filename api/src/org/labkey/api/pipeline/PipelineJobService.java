@@ -18,6 +18,8 @@ package org.labkey.api.pipeline;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
@@ -122,7 +124,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
     List<? extends RemoteExecutionEngine<?>> getRemoteExecutionEngines();
 
     /** Registers a remote execution engine. Intended for calling during module startup */
-    void registerRemoteExecutionEngine(RemoteExecutionEngine engine);
+    void registerRemoteExecutionEngine(RemoteExecutionEngine<?> engine);
 
     /**
      * @param exeRel if relative, interpreted based on either the installPath or tools directory
@@ -172,4 +174,6 @@ public interface PipelineJobService extends TaskPipelineRegistry
         /** Any external computational resource to which something on the web server submits jobs via {@link RemoteExecutionEngine} */
         RemoteExecutionEngine
     }
+
+    public FormSchema getFormSchema(Container container);
 }

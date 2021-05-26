@@ -16,9 +16,9 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.study.StudySchema;
 
 public class SimpleSpecimenTable extends AbstractSpecimenTable
 {
@@ -29,7 +29,7 @@ public class SimpleSpecimenTable extends AbstractSpecimenTable
 
     public SimpleSpecimenTable(StudyQuerySchema schema, ContainerFilter cf, boolean skipPermissionChecks)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
+        super(schema, SpecimenSchema.get().getTableInfoSpecimen(schema.getContainer()), cf, skipPermissionChecks, true);
         setName("SimpleSpecimen");
 
         getMutableColumn(StudyService.get().getSubjectColumnName(getContainer())).clearFk();

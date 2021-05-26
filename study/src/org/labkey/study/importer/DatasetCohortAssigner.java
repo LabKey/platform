@@ -19,6 +19,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
@@ -58,7 +59,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            StudyImpl study = ctx.getStudy();
+            StudyImpl study = ctx.getStudyImpl();
             DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
 
             ctx.getLogger().info("Loading " + getDescription());

@@ -45,15 +45,27 @@ import java.util.regex.Matcher;
 public class ModuleHtmlView extends HtmlView
 {
     public static final Path VIEWS_PATH = Path.parse("views");
+    public static final Path GENERATED_VIEWS_PATH = Path.parse("views/gen");
 
     private static final Logger LOG = LogManager.getLogger(ModuleHtmlView.class);
-    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
+    private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getStandard(GENERATED_VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
 
     private final ModuleHtmlViewDefinition _viewdef;
 
     public static Path getStandardPath(String viewName)
     {
         return VIEWS_PATH.append(viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+    }
+
+    public static Path getGeneratedViewPath(String viewName)
+    {
+        return GENERATED_VIEWS_PATH.append(viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+    }
+
+    public static Path getViewPath(Module module, String viewName)
+    {
+        Path standardPath = getStandardPath(viewName);
+        return exists(module, standardPath) ? standardPath : getGeneratedViewPath(viewName);
     }
 
     /**
@@ -69,12 +81,12 @@ public class ModuleHtmlView extends HtmlView
      */
     public static boolean exists(Module module, String viewName)
     {
-        return exists(module, getStandardPath(viewName));
+        return exists(module, getStandardPath(viewName)) || exists(module, getGeneratedViewPath(viewName));
     }
 
     public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull String viewName)
     {
-        return get(module, getStandardPath(viewName));
+        return get(module, getViewPath(module, viewName));
     }
 
     public static @Nullable ModuleHtmlView get(@NotNull Module module, @NotNull Path path)
@@ -112,10 +124,10 @@ public class ModuleHtmlView extends HtmlView
     }
 
 
-    public HtmlString replaceTokensForView(String html, ViewContext context, @Nullable WebPart webpart)
+    public HtmlString replaceTokensForView(HtmlString html, ViewContext context, @Nullable WebPart webpart)
     {
-        if (null == html)
-            return null;
+        if (HtmlString.isBlank(html))
+            return html;
 
         String wrapperDivId = "ModuleHtmlView_" + UniqueID.getServerSessionScopedUID();
         int id = null == webpart ? DEFAULT_WEB_PART_ID : webpart.getRowId();
@@ -133,7 +145,7 @@ public class ModuleHtmlView extends HtmlView
 
         String webpartContext = config.toString();
 
-        String ret = replaceTokens(html, context);
+        String ret = replaceTokens(html.toString(), context);
         ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", Matcher.quoteReplacement(webpartContext));
         return HtmlString.unsafe("<div id=\"" + wrapperDivId + "\">" + ret + "</div>");
     }

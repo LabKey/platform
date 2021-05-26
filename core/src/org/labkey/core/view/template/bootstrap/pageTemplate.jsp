@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
-<%@ page import="org.apache.logging.log4j.LogManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -47,7 +46,8 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <%= text(model.getMetaTags(url)) %>
+    <%= model.getMetaTags(url) %>
+    <%= model.getPreloadTags() %>
     <title><%= h(model.getTitle()) %></title>
     <% if (me.isAppTemplate()) { %>
     <%= PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies()) %>
@@ -62,7 +62,7 @@
            String script = AnalyticsService.getTrackingScript();
            if (StringUtils.isNotEmpty(script))
            {
-               if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+               if (null != getContainer() && getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                {
                     %><!-- see <%= text(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
                }

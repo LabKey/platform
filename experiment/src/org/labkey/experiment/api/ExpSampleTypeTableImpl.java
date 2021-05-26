@@ -41,7 +41,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
 {
     public ExpSampleTypeTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoSampleType(), schema, new ExpSampleTypeImpl(new MaterialSource()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoSampleType(), schema, cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
     }
@@ -53,7 +53,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         {
             case Folder:
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
-                ContainerForeignKey.initColumn(columnInfo, _userSchema, new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer()));
+                columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer())));
                 return columnInfo;
             case Description:
             case LSID:
@@ -61,6 +61,8 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case Name:
             case NameExpression:
             case LabelColor:
+            case MetricUnit:
+            case AutoLinkTargetContainer:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
             case Created:
@@ -95,6 +97,8 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.Description);
         addColumn(ExpSampleTypeTable.Column.NameExpression).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LabelColor).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.MetricUnit).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.AutoLinkTargetContainer).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.Created);

@@ -31,6 +31,7 @@ public class DatasetDomainKindProperties implements Cloneable
     private String _sourceAssayUrl;
     private String _dataSharing;
     private boolean _useTimeKeyField = false;
+    private boolean _strictFieldValidation = true; // Set as false to skip validation check in DatasetDomainKind.createDomain (used in Rlabkey labkey.domain.createAndLoad)
 
     private int _domainId;
 
@@ -79,7 +80,7 @@ public class DatasetDomainKindProperties implements Cloneable
             _category = ds.getViewCategory().getLabel();
         }
 
-        ExpProtocol protocol = ds.getAssayProtocol();
+        ExpProtocol protocol = (ExpProtocol)ds.resolvePublishSource();
         if (protocol != null)
         {
             _sourceAssayName = protocol.getName();
@@ -305,5 +306,15 @@ public class DatasetDomainKindProperties implements Cloneable
     public void setCategoryName(String categoryName)
     {
         _categoryName = categoryName;
+    }
+
+    public boolean isStrictFieldValidation()
+    {
+        return _strictFieldValidation;
+    }
+
+    public void setStrictFieldValidation(boolean strictFieldValidation)
+    {
+        _strictFieldValidation = strictFieldValidation;
     }
 }

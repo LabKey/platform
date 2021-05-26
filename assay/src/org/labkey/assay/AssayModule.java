@@ -43,7 +43,10 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
@@ -71,13 +74,15 @@ import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
 import javax.servlet.ServletContext;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
+import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
 
 public class AssayModule extends SpringModule
 {
@@ -92,7 +97,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.003;
+        return 21.000;
     }
 
     @Override
@@ -111,7 +116,7 @@ public class AssayModule extends SpringModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory, assayList2WebPartFactory
         );
     }
@@ -140,6 +145,9 @@ public class AssayModule extends SpringModule
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
         PropertyService.get().registerDomainKind(new AssayRunDomainKind());
         PropertyService.get().registerDomainKind(new AssayResultDomainKind());
+
+        ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
+        ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_ID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
 
         RoleManager.registerRole(new AssayDesignerRole());
     }
@@ -252,7 +260,8 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
-            ModuleAssayCache.TestCase.class
+            ModuleAssayCache.TestCase.class,
+            AssayIntegrationTestCase.class
         );
     }
 

@@ -108,7 +108,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public ExpDataTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, new ExpDataImpl(new Data()), cf);
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, cf);
 
         addAllowablePermission(UpdatePermission.class);
         addAllowablePermission(InsertPermission.class);
@@ -120,6 +120,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.RowId).setHidden(true);
         addColumn(Column.Name);
         addColumn(Column.Description);
+        var aliasCol = addColumn(Column.Alias);
+        aliasCol.setHidden(true);
         addColumn(Column.DataClass);
         ExpSchema schema = getExpSchema();
         addColumn(Column.Run).setFk(schema.getRunIdForeignKey(getContainerFilter()));
@@ -331,6 +333,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 return runId;
             case Flag:
                 return createFlagColumn(alias);
+            case Alias:
+                return createAliasColumn(alias, ExperimentService.get()::getTinfoDataAliasMap);
             case DownloadLink:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
@@ -689,19 +693,6 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             addCondition(getColumn("classId"), _dataClass.getRowId());
         }
     }
-
-    @Override
-    public String urlFlag(boolean flagged)
-    {
-        String ret = null;
-        DataType type = getDataType();
-        if (type != null)
-            ret = type.urlFlag(flagged);
-        if (ret != null)
-            return ret;
-        return super.urlFlag(flagged);
-    }
-
 
     @Override
     public MutableColumnInfo addInputRunCountColumn(String alias)

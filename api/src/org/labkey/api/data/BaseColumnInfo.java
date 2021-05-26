@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -70,8 +71,6 @@ import java.util.Set;
 /**
  * Represents a column (be it a real column in a table or a calculated expression) that's part of
  * a {@link TableInfo}. Knows how to generate SQL to get its own value.
- *
- * TODO consider also a MutableColumnInfo interface
  */
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
@@ -292,6 +291,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
+        setPrecision(col.getPrecision());
         if (col instanceof BaseColumnInfo)
         {
             _sqlTypeName = ((BaseColumnInfo) col)._sqlTypeName;
@@ -395,7 +395,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
+        setSourceOntology(col.getSourceOntology());
+        setConceptImportColumn(col.getConceptImportColumn());
+        setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
+
+        setDerivationDataScope(col.getDerivationDataScope());
     }
 
     /*
@@ -469,7 +474,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
         setCalculated(col.isCalculated());
 
+        setSourceOntology(col.getSourceOntology());
+        setConceptImportColumn(col.getConceptImportColumn());
+        setConceptLabelColumn(col.getConceptLabelColumn());
         setPrincipalConceptCode(col.getPrincipalConceptCode());
+
+        setDerivationDataScope(col.getDerivationDataScope());
     }
 
 
@@ -587,6 +597,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         checkLocked();
         _conceptURI = conceptURI;
+        if (STORAGE_UNIQUE_ID_CONCEPT_URI.equals(conceptURI))
+        {
+            _hasDbSequence = true;
+            _shownInInsertView = false;
+            _isUserEditable = false;
+        }
     }
 
     @Override
@@ -1243,8 +1259,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
-        if (xmlCol.isSetPrincipalConceptCode())
-            setPrincipalConceptCode(xmlCol.getPrincipalConceptCode());
+
+        var os = OntologyService.get();
+        if (null != os)
+        {
+            os.parseXml(xmlCol, this);
+        }
     }
 
     @Override
@@ -1909,6 +1929,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         super.setScale(scale);
     }
 
+    @Override
+    public void setPrecision(int precision)
+    {
+        checkLocked();
+        super.setPrecision(precision);
+    }
+
 
     /** @return whether the column is part of the primary key for the table */
     @Override
@@ -2094,84 +2121,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _validators = copyFixedList(validators);
     }
 
-    // TODO: fix up OORIndicator
-
-    public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-    {
-        checkLocked();
-        if (null==parent && (null == remap || remap.isEmpty()))
-            return;
-
-        // TODO should mvColumnName be a fieldkey so we can reparent etc?
-        if (null != getMvColumnName())
-        {
-            FieldKey r = null==remap ? null : remap.get(getMvColumnName());
-            if (null != r && r.getParent()==null)
-                setMvColumnName(r);
-        }
-
-        remapUrlFieldKeys(parent, remap);
-        remapTextExpressionFieldKeys(parent, remap);
-        remapForeignKeyFieldKeys(parent, remap);
-        remapSortFieldKeys(parent, remap);
-        remapDisplayColumnFactory(parent, remap);
-    }
-
-
-    public void remapUrlFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-    {
-        StringExpression se = getURL();
-        if (se instanceof FieldKeyStringExpression && se != AbstractTableInfo.LINK_DISABLER)
-        {
-            FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
-            setURL(remapped);
-        }
-    }
-
-    public void remapTextExpressionFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-    {
-        StringExpression se = getTextExpression();
-        if (se instanceof FieldKeyStringExpression)
-        {
-            FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
-            setTextExpression(remapped);
-        }
-    }
-
-
-    public void remapForeignKeyFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-    {
-        ForeignKey fk = getFk();
-        if (fk == null)
-            return;
-        ForeignKey remappedFk = fk.remapFieldKeys(parent, remap);
-        setFk(remappedFk);
-    }
-
-
-    public void remapSortFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-    {
-        if (_sortFieldKeys == null)
-            return;
-
-        List<FieldKey> remappedKeys = new ArrayList<>();
-        for (FieldKey key : _sortFieldKeys)
-        {
-            remappedKeys.add(FieldKey.remap(key, parent, remap));
-        }
-
-        setSortFieldKeys(remappedKeys);
-    }
-
-    public void remapDisplayColumnFactory(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-    {
-        DisplayColumnFactory factory = getDisplayColumnFactory();
-        if (DEFAULT_FACTORY == factory || !(factory instanceof RemappingDisplayColumnFactory))
-            return;
-
-        RemappingDisplayColumnFactory remapped = ((RemappingDisplayColumnFactory) factory).remapFieldKeys(parent, remap);
-        setDisplayColumnFactory(remapped);
-    }
 
     @Override
     public void checkLocked()

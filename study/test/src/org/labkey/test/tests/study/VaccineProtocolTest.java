@@ -181,9 +181,9 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
         clickAndWait(Locator.linkContainingText(TEST_RUN1));
         click(Locator.name(".toggle"));
-        clickButton("Copy to Study");
+        clickButton("Link to Study");
         clickButton("Next");
-        clickButton("Copy to Study");
+        clickButton("Link to Study");
         navigateToFolder(getProjectName(), STUDY_FOLDER);
 
         portalHelper.addWebPart("Datasets");

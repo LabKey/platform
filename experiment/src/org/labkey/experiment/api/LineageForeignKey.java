@@ -268,7 +268,7 @@ class LineageForeignKey extends AbstractForeignKey
 
         protected TableInfo init()
         {
-            addLineageColumn("All", null, null, null);
+            addLineageColumn("All", null, null, null, null);
             addLevelColumn(LevelColumnType.Data);
             addLevelColumn(LevelColumnType.Material);
             addLevelColumn(LevelColumnType.ExperimentRun);
@@ -287,12 +287,12 @@ class LineageForeignKey extends AbstractForeignKey
             addColumn(col);
         }
 
-        void addLineageColumn(String name, Integer depth, String expType, String cpasType)
+        void addLineageColumn(String name, Integer depth, String expType, String cpasType, String runProtocolLsid)
         {
 //            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
-            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType));
+            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid));
             applyDisplayColumn(col, depth, expType, cpasType, null);
             addColumn(col);
         }
@@ -305,7 +305,7 @@ class LineageForeignKey extends AbstractForeignKey
         final String expType;
         final String cpasType;
 
-        public _MultiValuedForeignKey(Path cacheKeyPrefix, Integer depth, String expType, String cpasType)
+        public _MultiValuedForeignKey(Path cacheKeyPrefix, Integer depth, String expType, String cpasType, String runProtocolLsid)
         {
             super(new LookupForeignKey("self", "Name")
             {
@@ -328,7 +328,7 @@ class LineageForeignKey extends AbstractForeignKey
                             {
                                 objectids = new SQLFragment("(SELECT objectid FROM ").append(_seedTable.getFromSQL("qq")).append(")");
                             }
-                            var ret = new LineageTableInfo("Foo", _userSchema, objectids, _parents, depth, expType, cpasType);
+                            var ret = new LineageTableInfo("Foo", _userSchema, objectids, _parents, depth, expType, cpasType, runProtocolLsid);
                             ret.setLocked(true);
                             return ret;
                             });
@@ -462,7 +462,7 @@ class LineageForeignKey extends AbstractForeignKey
         @Override
         protected TableInfo init()
         {
-            addLineageColumn("All", null, _expType, null);
+            addLineageColumn("All", null, _expType, null, null);
             // TODO: Nearest
 
             // First level children or parents
@@ -471,12 +471,12 @@ class LineageForeignKey extends AbstractForeignKey
             // NOTE: the first data or material generation, we must skip the run generation -- hence depth of 2.
             // NOTE: If we ever add the magic Inputs and Outputs columns to the Runs table, we'll need to change the depths.
             int depth = _expType.equals("ExperimentRuns") ? 1 : 2;
-            addLineageColumn("First", depth, _expType, null);
+            addLineageColumn("First", depth, _expType, null, null);
 
             for (ExpObject item : _items.get())
             {
                 String cpasType = item.getLSID();
-                addLineageColumn(item.getName(), null, _expType, cpasType);
+                addLineageColumn(item.getName(), null, _expType, cpasType, null);
             }
 
             return this;

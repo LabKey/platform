@@ -17,8 +17,10 @@ package org.labkey.api.admin;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.PHI;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
@@ -48,6 +50,15 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     boolean isFailForUndefinedVisits();
     boolean isDataTypeSelected(String dataType);
     Activity getActivity();
+    boolean isAddExportComment();
+
+    // At some point, we'll likely add an advanced option in the Import UI to allow a user to choose an audit behavior type
+    // during import, but for current purposes, we are implementing this only for certain folder types.
+    @Nullable
+    default AuditBehaviorType getAuditBehaviorType() throws Exception
+    {
+        return null;
+    }
 
     // These methods let writers add and get module-specific context information
     <K extends ImportContext> void addContext(Class<K> contextClass, K context);

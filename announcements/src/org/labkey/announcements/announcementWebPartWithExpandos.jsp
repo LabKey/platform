@@ -31,7 +31,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4");
+        dependencies.add("internal/jQuery");
     }
 %>
 <%
@@ -118,50 +118,52 @@ TD.message-short .message-less, TD.message-short .message-more
 <script type="text/javascript">
 
     var messageMore, messageLess;
-    Ext4.onReady(function() {
+
+    LABKEY.Utils.onReady(function() {
+        $ = jQuery;
 
         messageMore = function(elem) {
-            var more = Ext4.get(elem);
-            var parent = more.parent("TD.message");
-            parent.removeCls("message-collapsed");
-            parent.addCls("message-expanded");
+            var more = $(elem);
+            var parent = more.parents("TD.message:first");
+            parent.removeClass("message-collapsed");
+            parent.addClass("message-expanded");
             return false;
         };
 
         messageLess = function(elem) {
-            var more = Ext4.get(elem);
-            var parent = more.parent("TD.message");
-            parent.removeCls("message-expanded");
-            parent.addCls("message-collapsed");
+            var more = $(elem);
+            var parent = more.parents("TD.message:first");
+            parent.removeClass("message-expanded");
+            parent.addClass("message-collapsed");
             return false;
         };
 
         var messageFixup = function(e) {
-            var container = Ext4.get(e);
-            var parent = container.parent("TD.message");
-            var text = Ext4.fly(Ext4.query("DIV.message-text", parent.dom)[0]);
-            if (parent.hasCls("message-expanded"))
+            var container = $(e);
+            var parent = container.parents("TD.message");
+            var text = parent.find("DIV.message-text:first");
+            if (parent.hasClass("message-expanded"))
                 return;
-            if (text.dom.scrollHeight <= <%=maxHeight%>)
+            if (text.prop("scrollHeight") <= <%=maxHeight%>)
             {
-                parent.removeCls("message-collapsed");
-                parent.addCls("message-short");
+                parent.removeClass("message-collapsed");
+                parent.addClass("message-short");
             }
             else
             {
-                parent.removeCls("message-short");
-                parent.addCls("message-collapsed");
+                parent.removeClass("message-short");
+                parent.addClass("message-collapsed");
             }
         };
 
         var messageOnResize = function(id) {
-            var table = Ext4.get(id);
-            var messages = Ext4.query("DIV.message-container", table.dom);
-            Ext4.each(messages, messageFixup);
+            var table = $('#'+id);
+            var messages = table.find("DIV.message-container");
+            messages.each(function(i,el){messageFixup(el);});
         };
 
         messageOnResize(<%=q(tableId)%>);
-        Ext4.EventManager.onWindowResize(function(){messageOnResize(<%=q(tableId)%>);});
+        $(window).resize(function(){messageOnResize(<%=q(tableId)%>);});
     });
 </script>
 <!--ANNOUNCEMENTS-->
@@ -193,7 +195,7 @@ for (AnnouncementModel a : bean.announcementModels)
         if (a.getResponseCount() > 0)
             out.print(unsafe(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)")));
         %></td>
-        <td width="20%" align="center" class="message-creator"><%=text(AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false))%></td>
+        <td width="20%" align="center" class="message-creator"><%=AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false)%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>

@@ -21,6 +21,7 @@ public class ListDomainKindProperties implements Cloneable
     private boolean allowUpload = true;
     private boolean allowExport = true;
 
+    private String category = null;
     private int discussionSetting = ListDefinition.DiscussionSetting.None.getValue();
 
     //Index Entire List as a Single Document
@@ -54,6 +55,7 @@ public class ListDomainKindProperties implements Cloneable
         titleColumn = copyFrom.titleColumn;
         description = copyFrom.description;
         lastIndexed = copyFrom.lastIndexed;
+        category = copyFrom.category;
         discussionSetting = copyFrom.discussionSetting;
         allowDelete = copyFrom.allowDelete;
         allowUpload = copyFrom.allowUpload;
@@ -178,6 +180,16 @@ public class ListDomainKindProperties implements Cloneable
     public void setAllowExport(boolean allowExport)
     {
         this.allowExport = allowExport;
+    }
+
+    public String getCategory()
+    {
+        return category;
+    }
+
+    public void setCategory(String category)
+    {
+        this.category = category;
     }
 
     public int getDiscussionSetting()

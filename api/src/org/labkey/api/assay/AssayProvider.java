@@ -39,8 +39,9 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayPublishKey;
+import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -54,6 +55,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,6 +125,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     String getName();
 
+    /** A user-facing short name for the assay provider. Typically matches the official name, but handy for renames */
+    default String getLabel()
+    {
+        return getName();
+    }
+
     /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter
      * or omit special characters. */
     String getResourceName();
@@ -147,13 +155,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @Nullable
     Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol);
 
-    Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
+    Set<Container> getAssociatedStudyContainers(ExpProtocol protocol, Collection<Integer> rowIds);
 
     /** @return the URL used to import data when the user still needs to upload data files */
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL copyToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, AssayPublishKey> dataKeys, List<String> errors);
+    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, Map<Integer, PublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
@@ -161,7 +169,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer);
 
-    Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toCopy);
+    Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer, ExpProtocol toLink);
 
     boolean isFileLinkPropertyAllowed(ExpProtocol protocol, Domain domain);
 
@@ -208,7 +216,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     Class<? extends Controller> getDataImportAction();
 
     /**
-     * Returns true if the given provider can display a useful details page for dataset data that has been copied.
+     * Returns true if the given provider can display a useful details page for dataset data that has been linked.
      * If a provider is a simple GPAT, then it does not have a useful details page
      */
     boolean hasUsefulDetailsPage();
@@ -234,7 +242,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
-    void setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
+    ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
 
     @NotNull
     List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);

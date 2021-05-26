@@ -18,7 +18,6 @@ package org.labkey.query;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
@@ -28,7 +27,6 @@ import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -50,10 +48,9 @@ import org.labkey.api.query.RExportScriptFactory;
 import org.labkey.api.query.SasExportScriptFactory;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.URLExportScriptFactory;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
@@ -127,7 +124,6 @@ import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -138,6 +134,8 @@ public class QueryModule extends DefaultModule
     public QueryModule()
     {
         QueryService.setInstance(new QueryServiceImpl());
+        BuiltInColumnTypes.registerStandardColumnTransformers();
+
         QueryDriver.register();
         ReportAndDatasetChangeDigestProvider.set(new ReportAndDatasetChangeDigestProviderImpl());
     }
@@ -151,7 +149,7 @@ public class QueryModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 21.000;
     }
 
     @Override
@@ -191,13 +189,11 @@ public class QueryModule extends DefaultModule
         ReportService.get().addGlobalItemFilterType(QuerySnapshotService.TYPE);
 
         ReportService.get().registerDescriptor(new ReportDescriptor());
-        ReportService.get().registerDescriptor(new ChartReportDescriptor());
         ReportService.get().registerDescriptor(new QueryReportDescriptor());
         ReportService.get().registerDescriptor(new RReportDescriptor());
         ReportService.get().registerDescriptor(new JavaScriptReportDescriptor());
 
         ReportService.get().registerReport(new QueryReport());
-        ReportService.get().registerReport(new ChartQueryReport());
         ReportService.get().registerReport(new RReport());
         ReportService.get().registerReport(new ExternalScriptEngineReport());
         ReportService.get().registerReport(new InternalScriptEngineReport());
@@ -229,7 +225,7 @@ public class QueryModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
+        return List.of(
             new DataViewsWebPartFactory(),
             new QueryWebPartFactory(),
             new ReportsWebPartFactory()
@@ -354,9 +350,9 @@ public class QueryModule extends DefaultModule
     }
 
     @Override
-    public @NotNull List<Factory<Class>> getIntegrationTestFactories()
+    public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
     {
-        List<Factory<Class>> ret = new ArrayList<>(super.getIntegrationTestFactories());
+        List<Factory<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
         return ret;
@@ -401,11 +397,5 @@ public class QueryModule extends DefaultModule
         json.put("hasEditQueriesPermission", hasEditQueriesPermission);
 
         return json;
-    }
-
-    @Override
-    public @Nullable UpgradeCode getUpgradeCode()
-    {
-        return new QueryUpgradeCode();
     }
 }

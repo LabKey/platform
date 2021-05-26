@@ -6,19 +6,14 @@
     <bean id="studyPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
         <property name="factoryImpls">
             <list>
-                <bean class="org.labkey.study.importer.StudyImportInitialTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.StudyImportDatasetTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.StudyImportSpecimenTask$Factory"/>
                 <bean class="org.labkey.study.importer.StudyImportFinalTask$Factory"/>
-
-                <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.StandaloneSpecimenTask$Factory"/>
-
-                <bean class="org.labkey.study.pipeline.SpecimenReloadTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.StudyReloadSourceTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
+                <bean class="org.labkey.study.importer.StudyImportInitialTask$Factory"/>
                 <bean class="org.labkey.study.importer.StudyReloadTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.FileAnalysisSpecimenTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.StudyImportDatasetTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.StudyReloadSourceTask$Factory"/>
+                <bean class="org.labkey.api.specimen.pipeline.StudyImportSpecimenTask$Factory"/>
             </list>
         </property>
 
@@ -36,22 +31,10 @@
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportDatasetTask</value></constructor-arg>
                             </bean>
                             <bean id="specimenTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportSpecimenTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StudyImportSpecimenTask</value></constructor-arg>
                             </bean>
                             <bean id="finalTask" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportFinalTask</value></constructor-arg>
-                            </bean>
-                        </list>
-                    </property>
-                </bean>
-
-                <!-- Standalone specimen import pipeline -->
-                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
-                    <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.SpecimenBatch"/>
-                    <property name="taskProgressionSpec">
-                        <list>
-                            <bean id="standaloneSpecimenTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneSpecimenTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>
@@ -64,21 +47,6 @@
                         <list>
                             <bean id="standaloneDatasetTask" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneDatasetTask</value></constructor-arg>
-                            </bean>
-                        </list>
-                    </property>
-                </bean>
-
-                <!-- Specimen reload job pipeline -->
-                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
-                    <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.SpecimenReloadJob"/>
-                    <property name="taskProgressionSpec">
-                        <list>
-                            <bean id="importTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.SpecimenReloadTask</value></constructor-arg>
-                            </bean>
-                            <bean id="specimenReloadTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneSpecimenTask</value></constructor-arg>
                             </bean>
                         </list>
                     </property>
@@ -99,7 +67,7 @@
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportDatasetTask</value></constructor-arg>
                             </bean>
                             <bean id="reloadSpecimenTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StudyImportSpecimenTask</value></constructor-arg>
+                                <constructor-arg><value type="java.lang.Class">org.labkey.api.specimen.pipeline.StudyImportSpecimenTask</value></constructor-arg>
                             </bean>
                             <bean id="reloadFinalTask" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.importer.StudyImportFinalTask</value></constructor-arg>
@@ -133,6 +101,37 @@
                         </list>
                     </property>
                     <property name="helpText" value="The selected Pipeline task can only be initiated on Excel, .tsv, and .txt files." />
+                    <property name="customFields">
+                        <list>
+                            <bean class="org.labkey.api.formSchema.RadioField">
+                                <constructor-arg index="0" value="default.action"/>
+                                <constructor-arg index="1" value="Action"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="replace" />
+                                <constructor-arg index="4">
+                                    <list>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="append"/>
+                                            <constructor-arg index="1" value="Merge"/>
+                                        </bean>
+                                        <bean class="org.labkey.api.formSchema.Option">
+                                            <constructor-arg index="0" value="replace"/>
+                                            <constructor-arg index="1" value="Replace"/>
+                                        </bean>
+                                    </list>
+                                </constructor-arg>
+                                <constructor-arg index="5" value="Choose Merge to merge values in file with existing list, Replace to replace existing values."/>
+                            </bean>
+
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="allowDomainUpdates"/>
+                                <constructor-arg index="1" value="Allow Domain Updates"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="true"/>
+                                <constructor-arg index="4" value="Enable to allow domain updates"/>
+                            </bean>
+                        </list>
+                    </property>
                 </bean>
 
                 <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
@@ -157,31 +156,25 @@
                         </list>
                     </property>
                     <property name="helpText" value="The selected Pipeline task should only be initiated on a studyload.txt file underneath a pipeline root, and will only analyze exploded study archives. It will not accept compressed (.zip) study archives." />
-                </bean>
+                    <property name="customFields">
+                        <list>
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="skipQueryValidation"/>
+                                <constructor-arg index="1" value="Validate All Queries After Reload"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to validate queries after reload is complete"/>
+                            </bean>
 
-                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
-                    <constructor-arg value="specimenImportTask"/>
-                    <property name="description" value="Imports specimen data using data file"/>
-                    <property name="protocolObjectId" value="specimen.specimenImport"/>
-                    <property name="protocolName" value="Specimen Import"/>
-                    <property name="protocolFactoryName" value="specimenImport"/>
-                    <property name="defaultDisplayState" value="hidden"/>
-                    <property name="allowForTriggerConfiguration" value="true"/>
-                    <property name="initialInputExts">
-                        <list>
-                            <ref bean="zipFileType"/>
-                            <ref bean="tsvFileType"/>
-                            <ref bean="specimensFileType"/>
-                        </list>
-                    </property>
-                    <property name="taskProgressionSpec">
-                        <list>
-                            <bean id="specimenImportTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.FileAnalysisSpecimenTask</value></constructor-arg>
+                            <bean class="org.labkey.api.formSchema.CheckboxField">
+                                <constructor-arg index="0" value="failForUndefinedVisits"/>
+                                <constructor-arg index="1" value="Fail for Undefined Visits"/>
+                                <constructor-arg index="2" value="false" />
+                                <constructor-arg index="3" value="false"/>
+                                <constructor-arg index="4" value="Enable to fail when undefined visits are encountered"/>
                             </bean>
                         </list>
                     </property>
-                    <property name="helpText" value="The selected Pipeline task can only be initiated on .zip and .tsv files."/>
                 </bean>
             </list>
         </property>
@@ -199,11 +192,4 @@
     <bean id="txtFileType" class="org.labkey.api.util.FileType">
         <constructor-arg value=".txt"/>
     </bean>
-    <bean id="zipFileType" class="org.labkey.api.util.FileType">
-        <constructor-arg value=".zip"/>
-    </bean>
-    <bean id="specimensFileType" class="org.labkey.api.util.FileType">
-        <constructor-arg value=".specimens"/>
-    </bean>
-
 </beans>

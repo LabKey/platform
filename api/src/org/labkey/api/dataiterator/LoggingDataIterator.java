@@ -169,6 +169,12 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     }
 
     @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord();
+    }
+
+    @Override
     public boolean supportsGetMap()
     {
         return _data instanceof MapDataIterator && ((MapDataIterator)_data).supportsGetMap();

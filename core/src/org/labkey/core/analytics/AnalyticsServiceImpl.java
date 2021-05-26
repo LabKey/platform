@@ -162,7 +162,9 @@ public class AnalyticsServiceImpl implements AnalyticsService
     {
         ActionURL actionUrl = context.cloneActionURL();
         Container container = context.getContainer();
-        if (!container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
+
+        // Adding a null check for container as on rendering the error page, container can be null for a not found page
+        if (null != container && !container.hasPermission(UserManager.getGuestUser(), ReadPermission.class))
         {
             actionUrl.deleteParameters();
             actionUrl.setExtraPath(container.getId());
@@ -216,6 +218,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
     public String getTrackingScript(ViewContext context)
     {
         if (!showTrackingScript(context))
+            return "";
+
+        ActionURL url = context.getActionURL();
+        if (null == url)
             return "";
 
         boolean isSecure = context.getActionURL().getScheme().startsWith("https");

@@ -106,7 +106,7 @@ public class QueryCache
             TableInfo ti = qd.getTable(errors, true);
             if (errors.size() > 0)
             {
-                _log.error("Unable to create tabbed report item for query: " + schemaPath + "." + queryName);
+                _log.error("Unable to create tabbed report item for query: " + schemaPath + "." + queryName + " in " + targetContainer.getPath());
                 for (QueryException e : errors)
                 {
                     _log.error(e.getMessage(), e);

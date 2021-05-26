@@ -15,39 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.view.GWTView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("clientapi/ext3"); // This is required for our list/dataset/etc designers
-    }
-%>
 <%
     HttpView me = HttpView.currentView();
     GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
 %>
 <div id="<%= h(bean.getModuleName()) %>-Root" class="<%=h(bean.getLoadingStyleName())%>"></div>
 <%
-String contextPath = request.getContextPath();
 String jsPath = bean.getModuleName() + "/" + bean.getModuleName() + ".nocache.js";
-String hashedPath = contextPath + "/" + jsPath + "?" + PageFlowUtil.getServerSessionHash();
 %>
 <script id="__gwt_marker_<%=h(bean.getModuleName())%>"></script>
-<script type="text/javascript" src="<%=h(hashedPath)%>"></script>
+<%=getScriptTag(jsPath)%>
 <script type="text/javascript">
     <!-- Pass through name/value property map to GWT app so it can initialize itself appropriately -->
-<%= text(GWTView.PROPERTIES_OBJECT_NAME) %> = {<%
-    String comma ="\n\t";
-    for (Map.Entry<String, String> entry : bean.getProperties().entrySet())
-    {
-        %><%=text(comma)%><%=q(entry.getKey())%>:<%=q(entry.getValue())%><%
-        comma=",\n\t";
-    }
-%>}
+<%=unsafe(GWTView.PROPERTIES_OBJECT_NAME)%> = <%=new JSONObject(bean.getProperties()).getJavaScriptFragment(3)%>;
 </script>

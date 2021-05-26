@@ -93,6 +93,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String SAMPLE_DERIVATION_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleDerivationProtocol";
     String SAMPLE_DERIVATION_PROTOCOL_NAME = "Sample Derivation Protocol";
 
+    String SAMPLE_ALIQUOT_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleAliquotProtocol";
+    String SAMPLE_ALIQUOT_PROTOCOL_NAME = "Sample Aliquot Protocol";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -111,12 +114,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 
+    @Nullable
     ExpRun getExpRun(int rowid);
 
     List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
 
     ExpRun getExpRun(String lsid);
 
+    /** @return a list of ExpRuns ordered by the RowId */
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
     List<? extends ExpRun> getExpRunsForJobId(int jobId);
@@ -255,23 +260,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     List<? extends ExpMaterial> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType);
 
-    /**
-     * Get materials with the given names, optionally within the provided sample type.
-     * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
-     * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
-     * will be ignored.
-     *
-     * @param container       Samples will be found within this container, project, or shared container.
-     * @param user            Samples will only be resolved within containers that the user has ReadPermission.
-     * @param sampleNames     The set of samples to be resolved by name.
-     * @param sampleType      Optional sample type that the samples must live in.
-     * @param throwIfMissing  Throw ExperimentException if any of the sampleNames do not exist.
-     * @param createIfMissing Create missing samples in the given <code>sampleType</code>.
-     * @return Resolved samples
-     * @throws ExperimentException
-     */
-    @NotNull List<? extends ExpMaterial> getExpMaterials(Container container, @Nullable User user, Set<String> sampleNames, @Nullable ExpSampleType sampleType, boolean throwIfMissing, boolean createIfMissing) throws ExperimentException;
-
     /* This version of createExpMaterial() takes name from lsid.getObjectId() */
     ExpMaterial createExpMaterial(Container container, Lsid lsid);
 
@@ -283,8 +271,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
      *
-     * @param container       Sample will be found within this container, project, or shared container.
-     * @param user            Sample will only be resolved within containers that the user has ReadPermission.
+     * @param c       Sample will be found within this container, project, or shared container.
+     * @param u            Sample will only be resolved within containers that the user has ReadPermission.
      * @param rowId           The sample rowId.
      * @param sampleType      Optional sample type that the sample must live in.
      */
@@ -385,6 +373,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
+
+    /**
+     * Find the ExpData objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpData> getParentDatas(Container c, User user, ExpMaterial start);
+
+    /**
+     * Find the ExpMaterial objects, if any, that are parents of the <code>start</code> ExpMaterial.
+     */
+    @NotNull
+    Set<ExpMaterial> getParentMaterials(Container c, User user, ExpMaterial start);
 
     /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
@@ -728,6 +728,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
 
     void onMaterialsCreated(List<? extends ExpMaterial> materials, Container container, User user);
+
+    // creates a non-assay backed sample aliquot protocol
+    ExpProtocol ensureSampleAliquotProtocol(User user) throws ExperimentException;
 
     // creates a non-assay backed sample derivation protocol
     ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException;

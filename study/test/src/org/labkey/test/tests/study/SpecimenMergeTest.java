@@ -90,9 +90,9 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected void importFirstFileSet()
     {
         File[] archives = new File[]{
-                LAB19_SPECIMENS,
-                LAB20_SPECIMENS,
-                LAB21_SPECIMENS
+            LAB19_SPECIMENS,
+            LAB20_SPECIMENS,
+            LAB21_SPECIMENS
         };
         SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), archives, SPECIMEN_TEMP_DIR, FOLDER_NAME, pipelineJobCount);
         importer.setExpectError(true);
@@ -107,15 +107,13 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected void setUpSteps()
     {
         _containerHelper.createProject(PROJECT_NAME, null);
-
         _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "Study", null);
+        _containerHelper.enableModule("Specimen");
         clickButton("Create Study");
-        click(Locator.radioButtonByNameAndValue("simpleRepository", "true"));
         clickButton("Create Study");
 
         setPipelineRoot(_studyDataRoot);
         clickFolder("My Study");
         clickAndWait(Locator.linkWithText("Manage Files"));
     }
-
 }

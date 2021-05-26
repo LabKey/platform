@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.util.GUID.makeGUID;
 
@@ -90,7 +91,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
-    public ListDefinitionImpl(Container container, String name, KeyType keyType, TemplateInfo templateInfo)
+    public ListDefinitionImpl(Container container, String name, KeyType keyType, @Nullable Category category, TemplateInfo templateInfo)
     {
         _new = true;
         ListDef.ListDefBuilder builder = new ListDef.ListDefBuilder();
@@ -98,8 +99,9 @@ public class ListDefinitionImpl implements ListDefinition
         builder.setName(name);
         builder.setEntityId(makeGUID());
         builder.setKeyType(keyType.toString());
+        builder.setCategory(category);
         _def = builder;
-        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType);
+        Lsid lsid = ListDomainKind.generateDomainURI(name, container, keyType, category);
         _domain = PropertyService.get().createDomain(container, lsid.toString(), name, templateInfo);
     }
 
@@ -177,6 +179,21 @@ public class ListDefinitionImpl implements ListDefinition
     {
         edit().setKeyType(type.toString());
     }
+
+    @Override
+    public Category getCategory()
+    {
+        return _def.getCategory();
+    }
+
+    @Override
+    public void setCategory(Category category)
+    {
+        edit().setCategory(category);
+    }
+
+    @Override
+    public int getCreatedBy() { return _def.getCreatedBy(); }
 
     @Override
     public DiscussionSetting getDiscussionSetting()
@@ -377,6 +394,8 @@ public class ListDefinitionImpl implements ListDefinition
         save(user, true);
     }
 
+    private static final ReentrantLock _saveLock = new ReentrantLock();
+
     @Override
     public void save(User user, boolean ensureKey) throws Exception
     {
@@ -386,7 +405,7 @@ public class ListDefinitionImpl implements ListDefinition
             assert getKeyType() != null : "Invalid Key Type for List: " + getName();
         }
 
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_saveLock))
         {
             if (ensureKey)
                 ensureKey();
@@ -708,8 +727,8 @@ public class ListDefinitionImpl implements ListDefinition
 
         if (returnAndCancelUrl != null)
         {
-            url.addParameter(ActionURL.Param.cancelUrl, returnAndCancelUrl.getLocalURIString());
-            url.addParameter(ActionURL.Param.returnUrl, returnAndCancelUrl.getLocalURIString());
+            url.addCancelURL(returnAndCancelUrl);
+            url.addReturnURL(returnAndCancelUrl);
         }
 
         return url;

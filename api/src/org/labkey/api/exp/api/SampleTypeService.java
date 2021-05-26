@@ -20,15 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -37,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public interface SampleTypeService
 {
@@ -76,7 +74,7 @@ public interface SampleTypeService
 
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                   String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor)
+                                   String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit, @Nullable Container autoLinkTargetContainer)
             throws ExperimentException, SQLException;
 
     @NotNull
@@ -120,16 +118,30 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container scope, @NotNull User user, int rowId);
 
-    String getDefaultSampleTypeLsid();
-    String getDefaultSampleTypeMaterialLsidPrefix();
-
     Lsid getSampleTypeLsid(String name, Container container);
 
     /**
      * Increment and get the sample counters for the given date, or the current date if no date is supplied.
      * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
+     * <p>
+     * In a loop getSampleCountsFunction() is preferred.
      */
-    Map<String, Long> incrementSampleCounts(@Nullable Date counterDate);
+    default Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
+    {
+        return getSampleCountsFunction(counterDate).apply(null);
+    }
+
+    /**
+     * Increment and get the sample counters for the given date, or the current date if no date is supplied.
+     * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
+     *
+     * You can pass in a Map<> to reuse, or just pass in null each time. e.g.
+     *      once:
+     *          fn = getSampleCountsFunction(date);
+     *      then:
+     *          counts = fn.apply(null);
+     */
+    Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate);
 
     void deleteSampleType(int rowId, Container c, User user) throws ExperimentException;
 
@@ -140,9 +152,10 @@ public interface SampleTypeService
 
     boolean parentAliasHasCorrectFormat(String parentAlias);
 
-    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, List<Map<String, Object>>... params);
-
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
 
     void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
+
+    // find the max sequence number with '${sampleName}-' prefix
+    long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
 }

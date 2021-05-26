@@ -1059,3 +1059,47 @@ Ext4.override(Ext4.tree.Column, {
         '</tpl>'
     ]
 });
+
+// issue : 40894 quick tips width being set too narrow
+// The problem was fixed in Ext 5.0.1 but not backported to earlier versions :
+// EXTJS-12511 Narrow tooltips in Safari Mac
+// EXTJS-13334 Tooltip is horizontally squished in Safari
+//
+// This override was found in a stackoverflow posting : https://stackoverflow.com/questions/15834689/extjs-4-2-tooltips-not-wide-enough-to-see-contents
+if (Ext4.isSafari || Ext4.isGecko) {
+    Ext4.override(Ext4.tip.QuickTip, {
+        helperElId: 'ext-quicktips-tip-helper',
+        initComponent: function ()
+        {
+            var me = this;
+
+            me.target = me.target || Ext4.getDoc();
+            me.targets = me.targets || {};
+            me.callParent();
+
+            me.on('move', function ()
+            {
+                var offset = me.hasCls('x-tip-form-invalid') ? 35 : 12,
+                        helperEl = Ext4.fly(me.helperElId) || Ext4.fly(
+                                Ext4.DomHelper.createDom({
+                                    tag: 'div',
+                                    id: me.helperElId,
+                                    style: {
+                                        position: 'absolute',
+                                        left: '-1000px',
+                                        top: '-1000px',
+                                        'font-size': '12px',
+                                        'font-family': 'tahoma, arial, verdana, sans-serif'
+                                    }
+                                }, Ext4.getBody())
+                        );
+
+                if (me.html && (me.html !== helperEl.getHTML() || me.getWidth() !== (helperEl.dom.clientWidth + offset)))
+                {
+                    helperEl.update(me.html);
+                    me.setWidth(Ext4.Number.constrain(helperEl.dom.clientWidth + offset, me.minWidth, me.maxWidth));
+                }
+            }, this);
+        }
+    });
+}

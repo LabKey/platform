@@ -41,6 +41,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.WebPartFactory;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -203,7 +204,7 @@ public class ModulePropertiesTestCase extends Assert
         @Override
         protected Collection<WebPartFactory> createWebPartFactories()
         {
-            return new HashSet<>();
+            return Collections.emptyList();
         }
     }
 

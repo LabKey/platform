@@ -25,6 +25,7 @@ import org.labkey.test.categories.DailyB;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
 import org.labkey.test.pages.test.TestActions;
+import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.net.URI;
@@ -38,7 +39,7 @@ import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJEC
 
 @Category({DailyB.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 4)
-public class MothershipReportTest extends BaseWebDriverTest
+public class MothershipReportTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private MothershipHelper _mothershipHelper;
 
@@ -79,7 +80,7 @@ public class MothershipReportTest extends BaseWebDriverTest
     {
         // TODO: Test others
 
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
         assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
@@ -90,7 +91,7 @@ public class MothershipReportTest extends BaseWebDriverTest
     @Test
     public void testJsonMetrics()
     {
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         assertTextPresent("jsonMetrics",
                 "modules",
                 "CoreController", // in the module page hit counts
@@ -121,7 +122,7 @@ public class MothershipReportTest extends BaseWebDriverTest
     {
         log("Simulate receiving a report behind a load balancer");
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, forwardedFor);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         assertEquals("Incorrect forwarded IP address", forwardedFor, installDetail.getServerIP());
     }
@@ -131,7 +132,7 @@ public class MothershipReportTest extends BaseWebDriverTest
     {
         log("Send test server host name from base server url");
         String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         assertEquals("Incorrect server host name", hostName, installDetail.getServerHostName());
     }

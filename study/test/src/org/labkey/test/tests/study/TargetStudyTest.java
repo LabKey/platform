@@ -81,7 +81,10 @@ public class TargetStudyTest extends AbstractAssayTest
     {
         log("** Setup");
         setupEnvironment();
-        setupSpecimens();
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            setupSpecimens();
+        }
         setupLabels();
         setupAssay();
 
@@ -91,7 +94,7 @@ public class TargetStudyTest extends AbstractAssayTest
         assertNotNull(_study1ContainerId);
 
         uploadRuns();
-        copyToStudy();
+        linkToStudy();
     }
 
 
@@ -202,20 +205,23 @@ public class TargetStudyTest extends AbstractAssayTest
         assertEquals(_study2Label, table.getDataAsText(4, "Target Study"));
         assertEquals(_study3Label, table.getDataAsText(5, "Target Study"));
 
-        log("** Check SpecimenID resolved the PTID in the study");
-        assertEquals("999320812", table.getDataAsText(0, "Participant ID"));
-        assertEquals("999320396", table.getDataAsText(1, "Participant ID"));
-        assertEquals("999320396", table.getDataAsText(2, "Participant ID"));
-        assertEquals(" ", table.getDataAsText(3, "Participant ID"));
-        assertEquals("999320706", table.getDataAsText(4, "Participant ID"));
-        assertEquals(" ", table.getDataAsText(5, "Participant ID"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            log("** Check SpecimenID resolved the PTID in the study");
+            assertEquals("999320812", table.getDataAsText(0, "Participant ID"));
+            assertEquals("999320396", table.getDataAsText(1, "Participant ID"));
+            assertEquals("999320396", table.getDataAsText(2, "Participant ID"));
+            assertEquals(" ", table.getDataAsText(3, "Participant ID"));
+            assertEquals("999320706", table.getDataAsText(4, "Participant ID"));
+            assertEquals(" ", table.getDataAsText(5, "Participant ID"));
+        }
     }
 
-    protected void copyToStudy()
+    protected void linkToStudy()
     {
         DataRegionTable table = new DataRegionTable("Data", this);
         table.checkAllOnPage();
-        clickButton("Copy to Study");
+        clickButton("Link to Study");
 
         log("** Check TargetStudy dropdowns");
         final String study1OptionText = "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + " (" + _study1Label + ")";
@@ -245,8 +251,8 @@ public class TargetStudyTest extends AbstractAssayTest
         clickButton("Re-Validate");
         assertTextNotPresent("You must specify a Target Study for all selected rows.");
 
-        log("** Copy to studies");
-        clickButton("Copy to Study");
+        log("** Link to studies");
+        clickButton("Link to Study");
 
         beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/dataset.view?datasetId=5001");
         DataRegionTable dataset = new DataRegionTable("Dataset", this);

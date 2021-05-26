@@ -17,16 +17,14 @@ package org.labkey.api.assay.query;
 
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.DetailsColumn;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,22 +53,12 @@ public class RunListDetailsQueryView extends RunListQueryView
     {
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();
-        rgn.addDisplayColumn(0, new SimpleDisplayColumn()
-        {
-            @Override
-            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-            {
-                Object runId = ctx.getRow().get(_dataIdColumn);
-                if (runId != null)
-                {
-                    ActionURL url = new ActionURL(_detailsActionClass, ctx.getContainer()).addParameter(_detailsIdColumn, "" + runId);
-                    if (!_extraDetailsUrlParams.isEmpty())
-                        url.addParameters(_extraDetailsUrlParams);
+        ActionURL url = new ActionURL(_detailsActionClass, getContainer());
+        if (!_extraDetailsUrlParams.isEmpty())
+            url.addParameters(_extraDetailsUrlParams);
+        DetailsURL detailsURL = new DetailsURL(url, Collections.singletonMap(_detailsIdColumn, _dataIdColumn));
+        rgn.addDisplayColumn(new DetailsColumn(detailsURL, view.getTable()));
 
-                    out.write(PageFlowUtil.link("run details").href(url).title("View run details").toString());
-                }
-            }
-        });
         return view;
     }
 

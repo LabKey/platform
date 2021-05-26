@@ -25,9 +25,9 @@ import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -87,7 +87,10 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
@@ -111,7 +114,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
-import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -148,6 +151,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -162,38 +166,38 @@ import java.util.zip.ZipOutputStream;
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
-            GetAssayBatchAction.class,
-            GetAssayBatchesAction.class,
-            SaveAssayBatchAction.class,
-            GetAssayRunAction.class,
-            GetAssayRunsAction.class,
-            SaveAssayRunsAction.class,
-            ImportRunApiAction.class,
-            UploadWizardAction.class,
-            TransformResultsAction.class,
-            PlateBasedUploadWizardAction.class,
-            PipelineDataCollectorRedirectAction.class,
-            DeleteAction.class,
-            DesignerAction.class,
-            ImportAction.class,
-            TsvImportAction.class,
-            TemplateAction.class,
-            AssayBatchesAction.class,
-            AssayBatchDetailsAction.class,
-            AssayRunsAction.class,
-            AssayRunDetailsAction.class,
-            AssayResultsAction.class,
-            AssayResultDetailsAction.class,
-            ReimportRedirectAction.class,
-            ShowSelectedRunsAction.class,
-            ShowSelectedDataAction.class,
-            SetDefaultValuesAssayAction.class,
-            AssayDetailRedirectAction.class,
-            SaveProtocolAction.class,
-            GetProtocolAction.class,
-            DeleteProtocolAction.class,
-            AssayPlateMetadataTemplateAction.class
-        );
+        GetAssayBatchAction.class,
+        GetAssayBatchesAction.class,
+        SaveAssayBatchAction.class,
+        GetAssayRunAction.class,
+        GetAssayRunsAction.class,
+        SaveAssayRunsAction.class,
+        ImportRunApiAction.class,
+        UploadWizardAction.class,
+        TransformResultsAction.class,
+        PlateBasedUploadWizardAction.class,
+        PipelineDataCollectorRedirectAction.class,
+        DeleteAction.class,
+        DesignerAction.class,
+        ImportAction.class,
+        TsvImportAction.class,
+        TemplateAction.class,
+        AssayBatchesAction.class,
+        AssayBatchDetailsAction.class,
+        AssayRunsAction.class,
+        AssayRunDetailsAction.class,
+        AssayResultsAction.class,
+        AssayResultDetailsAction.class,
+        ReimportRedirectAction.class,
+        ShowSelectedRunsAction.class,
+        ShowSelectedDataAction.class,
+        SetDefaultValuesAssayAction.class,
+        AssayDetailRedirectAction.class,
+        SaveProtocolAction.class,
+        GetProtocolAction.class,
+        DeleteProtocolAction.class,
+        AssayPlateMetadataTemplateAction.class
+    );
 
     public AssayController()
     {
@@ -325,7 +329,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
         assayProperties.put("reRunSupport", provider.getReRunSupport());
-        assayProperties.put("templateLink", PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
+        assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
@@ -371,7 +375,7 @@ public class AssayController extends SpringActionController
     private static Map<String, Object> serializeAssayLinks(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
         Map<String, Object> links = new HashMap<>();
-        AssayUrls urlProvider = PageFlowUtil.urlProvider(AssayUrls.class);
+        AssayUrls urlProvider = urlProvider(AssayUrls.class);
 
         links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
         links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
@@ -491,7 +495,7 @@ public class AssayController extends SpringActionController
 
             final Container currentContainer = getContainer();
             final User user = getUser();
-            final ProjectUrls projectUrls = PageFlowUtil.urlProvider(ProjectUrls.class);
+            final ProjectUrls projectUrls = urlProvider(ProjectUrls.class);
 
             ContainerTree tree = new ContainerTree("/", getUser(), DesignAssayPermission.class, null)
             {
@@ -502,7 +506,7 @@ public class AssayController extends SpringActionController
                     //the current container
                     ActionURL returnURL = (c.hasPermission(user, ReadPermission.class)) ? projectUrls.getStartURL(c) : projectUrls.getStartURL(currentContainer);
 
-                    ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnURL);
+                    ActionURL copyURL = urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnURL);
                     html.append("<a href=\"");
                     html.append(copyURL.getEncodedLocalURIString());
                     html.append("\">");
@@ -510,7 +514,7 @@ public class AssayController extends SpringActionController
                     html.append("</a>");
                 }
             };
-            ActionURL copyHereURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
+            ActionURL copyHereURL = urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
             HtmlView fileTree = new HtmlView(HtmlStringBuilder.of()
                     .append(HtmlString.unsafe("<table><tr><td><b>Select destination folder:</b></td></tr>"))
                     .append(tree.getHtmlString())
@@ -537,7 +541,7 @@ public class AssayController extends SpringActionController
         @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
-            throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol()));
+            throw new RedirectException(urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol()));
         }
 
         @Override
@@ -622,42 +626,107 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignAssayPermission.class)
-    public class ChooseAssayTypeAction extends FormViewAction<CreateAssayForm>
+    public class AssayProviderBean
     {
-        private Container _createIn;
+        String name;
+        String description;
+        List<String> fileTypes;
 
-        @Override
-        public void validateCommand(CreateAssayForm form, Errors errors)
+        public String getName()
         {
+            return name;
         }
 
-        @Override
-        public boolean handlePost(CreateAssayForm form, BindException errors)
+        public void setName(String name)
         {
-            if (form.getProviderName() == null || PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), form.getProviderName(), null) == null)
+            this.name = name;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
+        }
+
+        public List<String> getFileTypes()
+        {
+            return fileTypes;
+        }
+
+        public void setFileTypes(List<String> fileTypes)
+        {
+            this.fileTypes = fileTypes;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(DesignAssayPermission.class)
+    public class GetAssayTypeSelectOptionsAction extends ReadOnlyApiAction<Object>
+    {
+        private List<AssayProviderBean> getProviders()
+        {
+            List<AssayProvider> providers = new ArrayList<>(AssayService.get().getAssayProviders());
+
+            // Remove AssayProviders without a designer action
+            providers.removeIf(provider -> provider.getDesignerAction() == null);
+
+            FileContentService fileContentService = FileContentService.get();
+            boolean isCloudRoot = fileContentService != null && fileContentService.isCloudRoot(getContainer());
+
+            List<AssayProviderBean> beans = new ArrayList<>();
+            AssayProviderBean bean;
+            for (AssayProvider provider : providers)
             {
-                errors.addError(new LabKeyError("Please select an assay type."));
-                return false;
+                // Is cloud setup and assay doesn't support cloud, then do not include
+                if(isCloudRoot && null != provider.getPipelineProvider() && !provider.getPipelineProvider().supportsCloud())
+                    continue;
+
+                bean = new AssayProviderBean();
+                bean.setName(provider.getName());
+                bean.setDescription(provider.getDescription());
+                bean.setFileTypes(provider.getDataType().getFileType().getSuffixes());
+                beans.add(bean);
             }
-            _createIn = form.getCreateContainer();
 
-            return true;
+            beans.sort(Comparator.comparing(AssayProviderBean::getName));
+            return beans;
         }
 
         @Override
-        public ActionURL getSuccessURL(CreateAssayForm form)
+        public ApiResponse execute(Object o, BindException errors)
         {
-            ActionURL returnURL = form.getReturnActionURL();
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_createIn, form.getProviderName(), returnURL);
-        }
+            ApiSimpleResponse response = new ApiSimpleResponse();
 
+            response.put("providers", getProviders());
+
+            Map<String, String> locations = new LinkedHashMap<>();
+            String defaultLocation = null;
+            for (Pair<Container, String> entry : AssayService.get().getLocationOptions(getContainer(), getUser()))
+            {
+                locations.put(entry.getKey().getPath(), entry.getValue());
+                if (defaultLocation == null)
+                    defaultLocation = entry.getKey().getPath();
+            }
+
+            response.put("defaultLocation", defaultLocation);
+            response.put("locations", locations);
+
+            return response;
+        }
+    }
+
+    @RequiresPermission(DesignAssayPermission.class)
+    public class ChooseAssayTypeAction extends SimpleViewAction<Object>
+    {
         @Override
-        public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            ChooseAssayBean bean = new ChooseAssayBean();
-            bean._actionURL = form.getReturnActionURL();
-            return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
+            ModuleHtmlView view = ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), ModuleHtmlView.getGeneratedViewPath("assayTypeSelect"));
+            return view;
         }
 
         @Override
@@ -1591,7 +1660,7 @@ public class AssayController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             Container c = getContainer();
-            ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
+            ActionURL batchListURL = urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
             super.addNavTrail(root);
             root.addChild(_protocol.getName() + " Batches", batchListURL);
@@ -1608,10 +1677,20 @@ public class AssayController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> containersInfo = new ArrayList<>();
 
-            AssayPublishService service = AssayPublishService.get();
+            StudyPublishService service = StudyPublishService.get();
             if (service != null)
             {
-                for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
+                // issue 42415 : for assays at either the shared or project scope, allow a linkage target which
+                // translates to a study in the current assay import folder
+                if (getContainer().isProject() || getContainer().equals(ContainerManager.getSharedContainer()))
+                {
+                    containersInfo.add(Map.of(
+                            "id", StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER.getId(),
+                            "name", StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER.getName(),
+                            "path", "(Assay import folder)"));
+                }
+
+                for (Study study : StudyPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
                 {
                     Container container = study.getContainer();
                     Map<String, Object> containerInfo = new HashMap<>();

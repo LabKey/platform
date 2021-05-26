@@ -341,7 +341,7 @@ public class StudySnapshot
         {
             if (def.getLists() != null && def.getLists().length > 0)
             {
-                if (def.getLists().length == ListService.get().getLists(ctx.getContainer()).size())
+                if (def.getLists().length == ListService.get().getLists(ctx.getContainer(), ctx.getUser(), true).size())
                 {
                     lists = null; // indicates all selected
                 }

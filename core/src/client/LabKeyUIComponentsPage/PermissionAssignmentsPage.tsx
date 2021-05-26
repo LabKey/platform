@@ -14,8 +14,6 @@ import {
 } from "@labkey/components";
 import { getServerContext } from "@labkey/api";
 
-type Props = PermissionsProviderProps;
-
 interface State {
     policy: SecurityPolicy
     loading: boolean
@@ -23,9 +21,9 @@ interface State {
     message: string
 }
 
-class PermissionAssignmentsPageImpl extends React.PureComponent<Props, State> {
+class PermissionAssignmentsPageImpl extends React.PureComponent<PermissionsProviderProps, State> {
 
-    constructor(props: Props) {
+    constructor(props: PermissionsProviderProps) {
         super(props);
 
         this.state = {
@@ -89,5 +87,5 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<Props, State> {
     }
 }
 
-export const PermissionAssignmentsPage = PermissionsPageContextProvider<Props>(PermissionAssignmentsPageImpl);
+export const PermissionAssignmentsPage = PermissionsPageContextProvider(PermissionAssignmentsPageImpl);
 

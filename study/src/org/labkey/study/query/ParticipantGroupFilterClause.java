@@ -21,7 +21,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.study.model.ParticipantGroup;
+import org.labkey.api.study.model.ParticipantGroup;
 
 import java.util.Collections;
 import java.util.List;

@@ -26,6 +26,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.NullPreventingSet;
+import org.labkey.api.compliance.PhiTransformedColumnInfo;
+import org.labkey.api.ontology.Concept;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DateUtil;
@@ -674,6 +677,10 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" " + _displayClass);
         }
+        if (isPhiProtected())
+        {
+            out.write(" labkey-phi-protected");
+        }
         out.write("\""); // end of "class"
 
         StringBuilder tooltip = new StringBuilder();
@@ -681,17 +688,41 @@ public abstract class DisplayColumn extends RenderColumn
         {
             tooltip.append(getDescription());
         }
-        if (null != getColumnInfo() && !getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
+
+        if (null != getColumnInfo())
         {
-            boolean suffix = tooltip.length() > 0;
-            if (suffix)
+            if (!getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
             {
-                tooltip.append(" (");
+                boolean suffix = tooltip.length() > 0;
+                if (suffix)
+                {
+                    tooltip.append(" (");
+                }
+                tooltip.append(getColumnInfo().getFieldKey().toString());
+                if (suffix)
+                {
+                    tooltip.append(")");
+                }
             }
-            tooltip.append(getColumnInfo().getFieldKey().toString());
-            if (suffix)
+
+            if (null != getColumnInfo().getPrincipalConceptCode())
             {
-                tooltip.append(")");
+                String conceptDisplay = getColumnInfo().getPrincipalConceptCode();
+                var ontologyService = OntologyService.get();
+                if (null != ontologyService)
+                {
+                    Concept concept = ontologyService.resolveCode(getColumnInfo().getPrincipalConceptCode());
+                    if (null != concept)
+                        conceptDisplay = concept.getLabel() + " (" + conceptDisplay + ")";
+                }
+                tooltip.append("\nConcept Annotation: " + conceptDisplay);
+            }
+
+            if (isPhiProtected())
+            {
+                if (tooltip.length() > 0)
+                    tooltip.append("\n");
+                tooltip.append("(PHI protected data removed)");
             }
         }
 
@@ -800,6 +831,11 @@ public abstract class DisplayColumn extends RenderColumn
                         filteredColSet.contains(this.getColumnInfo().getDisplayField().getFieldKey())));
         }
         return false;
+    }
+
+    private boolean isPhiProtected()
+    {
+        return getColumnInfo() instanceof PhiTransformedColumnInfo;
     }
 
     private NavTree getPopupNavTree(RenderContext ctx, String baseId, Sort sort, boolean filtered)

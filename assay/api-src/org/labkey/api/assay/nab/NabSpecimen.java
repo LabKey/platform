@@ -39,6 +39,7 @@ public class NabSpecimen
     private int _objectId;          // TODO: remove when we remove use of exp.Object
     private int _protocolId;
     private String _virusLsid;
+    private String _fitParameters;
 
     public int getDataId()
     {
@@ -198,5 +199,15 @@ public class NabSpecimen
     public void setVirusLsid(String virusLsid)
     {
         _virusLsid = virusLsid;
+    }
+
+    public String getFitParameters()
+    {
+        return _fitParameters;
+    }
+
+    public void setFitParameters(String fitParameters)
+    {
+        _fitParameters = fitParameters;
     }
 }

@@ -18,9 +18,9 @@ package org.labkey.query.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -61,6 +61,7 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -84,7 +85,7 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
-import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
@@ -118,6 +119,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
@@ -130,6 +132,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.SortHelpers;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -184,6 +187,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.util.DOM.SPAN;
@@ -198,9 +202,6 @@ public class ReportsController extends SpringActionController
     private static final Logger _log = LogManager.getLogger(ReportsController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
     private static final MimeMap _mimeMap = new MimeMap();
-
-    public static final String TAB_SOURCE = "source";
-    public static final String TAB_VIEW = "report";
 
     public static class ReportUrlsImpl implements ReportUrls
     {
@@ -268,12 +269,6 @@ public class ReportsController extends SpringActionController
         public ActionURL urlManageViews(Container c)
         {
             return new ActionURL(ManageViewsAction.class, c);
-        }
-
-        @Override
-        public ActionURL urlDeleteReport(Container c)
-        {
-            return new ActionURL(DeleteReportAction.class, c);
         }
 
         @Override
@@ -357,34 +352,6 @@ public class ReportsController extends SpringActionController
     public ReportsController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class DeleteReportAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            String reportId = getViewContext().getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
-            String forwardUrl = getViewContext().getRequest().getParameter(ReportUtil.FORWARD_URL);
-            Report report = null;
-
-            if (reportId != null)
-                report = ReportService.get().getReport(getContainer(), NumberUtils.toInt(reportId));
-
-            if (report != null)
-            {
-                if (!report.canDelete(getUser(), getContainer()))
-                    throw new UnauthorizedException();
-                ReportService.get().deleteReport(getViewContext(), report);
-            }
-            return HttpView.redirect(forwardUrl);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
     }
 
     public static class CreateSessionForm
@@ -994,7 +961,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class RunReportAction extends SimpleViewAction<ReportDesignBean>
     {
-        Report _report;
+        private Report _report;
 
         @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
@@ -1095,7 +1062,7 @@ public class ReportsController extends SpringActionController
         {
             if (_report != null && getContainer().hasPermission(getUser(), AdminPermission.class))
             {
-                return PageFlowUtil.urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
+                return urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
                         addParameter(ReportDescriptor.Prop.reportId, _report.getDescriptor().getReportId().toString());
             }
 
@@ -1785,6 +1752,9 @@ public class ReportsController extends SpringActionController
                 defaultURL = new ReportUrlsImpl().urlReportDetails(getContainer(), r);
             }
 
+            if (defaultURL == null)
+                defaultURL = new ActionURL(ManageViewsAction.class, getContainer());
+
             return uploadForm.getReturnActionURL(defaultURL);
         }
     }
@@ -2229,7 +2199,6 @@ public class ReportsController extends SpringActionController
         private String selectedSchemaName;
         private String selectedQueryName;
         private String selectedViewName;
-        private ActionURL srcURL;
 
         public String getSelectedSchemaName()
         {
@@ -2261,15 +2230,6 @@ public class ReportsController extends SpringActionController
             this.selectedViewName = selectedViewName;
         }
 
-        public ActionURL getSrcURL()
-        {
-            return srcURL;
-        }
-
-        public void setSrcURL(ActionURL srcURL)
-        {
-            this.srcURL = srcURL;
-        }
     }
 
     @RequiresPermission(InsertPermission.class)
@@ -2280,13 +2240,6 @@ public class ReportsController extends SpringActionController
         {
             initialize(form);
             return new JspView<>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
-        }
-
-        @Override
-        public void initialize(QueryReportForm form) throws Exception
-        {
-            form.setSrcURL(getViewContext().getActionURL());
-            super.initialize(form);
         }
 
         @Override
@@ -2823,7 +2776,7 @@ public class ReportsController extends SpringActionController
                 int startingDefaultDisplayOrder = 0;
                 Set<String> defaultCategories = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-                getViewContext().put("returnUrl", form.getReturnUrl());
+                getViewContext().put(ActionURL.Param.returnUrl.name(), form.getReturnActionURL());
 
                 // get the data view information from all visible providers
                 List<DataViewInfo> views = new ArrayList<>();
@@ -2955,6 +2908,57 @@ public class ReportsController extends SpringActionController
         return props;
     }
 
+
+    static final Comparator<ViewCategory> categoryComparator = (c1, c2) ->
+    {
+        int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
+        if (order == 0)
+            return c1.getLabel().compareToIgnoreCase(c2.getLabel());
+        else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))
+            return 1;
+        else if (c2.getLabel().equalsIgnoreCase("Uncategorized"))
+            return -1;
+        else if (c1.getDisplayOrder() == 0)
+            return 1;
+        else if (c2.getDisplayOrder() == 0)
+            return -1;
+        return order;
+    };
+
+    static class CategoryHelper implements Comparable<CategoryHelper>
+    {
+        public final ViewCategory category;
+        public final Path path;
+        public final List<DataViewInfo> views = new ArrayList<>();
+        public final TreeSet<CategoryHelper> children = new TreeSet<>();
+
+        CategoryHelper(ViewCategory vc, Path p)
+        {
+            category = vc;
+            path = p;
+        }
+
+        @Override
+        public int compareTo(@NotNull ReportsController.CategoryHelper other)
+        {
+            return categoryComparator.compare(this.category, other.category);
+        }
+    }
+
+    static CategoryHelper addCategoryHelper(Map<Integer,CategoryHelper> map, ViewCategory vc)
+    {
+        if (null==vc) return null;
+        if (map.containsKey(vc.getRowId()))
+            return map.get(vc.getRowId());
+        ViewCategory parent = vc.getParentCategory();
+        CategoryHelper parentHelper = addCategoryHelper(map,parent);
+        Path path = null==parentHelper ? new Path(vc.getLabel()) : parentHelper.path.append(vc.getLabel());
+        CategoryHelper ret = new CategoryHelper(vc, path);
+        map.put(vc.getRowId(),ret);
+        return ret;
+    }
+
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     public class BrowseDataTreeAction extends ReadOnlyApiAction<BrowseDataForm>
@@ -2987,12 +2991,14 @@ public class ReportsController extends SpringActionController
 
             HttpServletResponse resp = getViewContext().getResponse();
             resp.setContentType("application/json");
-            resp.getWriter().write(getTreeData(form).toString());
+
+            List<DataViewInfo> views = getTreeData(form);
+            resp.getWriter().write(buildTree(views, true).toString());
 
             return null;
         }
 
-        private JSONObject getTreeData(BrowseDataForm form) throws Exception
+        private List<DataViewInfo> getTreeData(BrowseDataForm form) throws Exception
         {
             List<DataViewProvider.Type> visibleDataTypes = getVisibleDataTypes(form);
 
@@ -3000,7 +3006,7 @@ public class ReportsController extends SpringActionController
             Set<String> defaultCategories = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
             if (null != form.getReturnUrl())
-                getViewContext().put("returnUrl", form.getReturnUrl());
+                getViewContext().put(ActionURL.Param.returnUrl.name(), form.getReturnActionURL());
 
             // get the data view information from all visible providers
             List<DataViewInfo> views = new ArrayList<>();
@@ -3046,162 +3052,105 @@ public class ReportsController extends SpringActionController
                         category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                 }
             }
-
-            return buildTree(views);
+            return views;
         }
 
-        private JSONObject buildTree(List<DataViewInfo> views)
+
+        private JSONObject buildTree(List<DataViewInfo> views, boolean collapseByLabel)
         {
-            Comparator<ViewCategory> t = (c1, c2) ->
-            {
-                int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
-                if (order == 0)
-                    return c1.getLabel().compareToIgnoreCase(c2.getLabel());
-                else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))
-                    return 1;
-                else if (c2.getLabel().equalsIgnoreCase("Uncategorized"))
-                    return -1;
-                else if (c1.getDisplayOrder() == 0)
-                    return 1;
-                else if (c2.getDisplayOrder() == 0)
-                    return -1;
-                return order;
-            };
-
-            // Get all categories -- group views by them
-            Map<Integer, List<DataViewInfo>> groups = new HashMap<>();
-            Map<Integer, ViewCategory> categories = new HashMap<>();
-            TreeSet<ViewCategory> order = new TreeSet<>(t);
-
             ViewCategoryManager vcm = ViewCategoryManager.getInstance();
+
+            // get the collection of all distinct categories
+            Map<Integer, CategoryHelper> categories = new HashMap<>();
             for (DataViewInfo view : views)
             {
                 ViewCategory og = view.getCategory();
-
                 if (null != og)
                 {
                     if (og.getLabel().equalsIgnoreCase("Uncategorized"))
-                    {
-                        // Because 'Uncategorized' is not a real persisted category
-                        int rowId = og.getRowId(); // == 0
-                        if (!groups.containsKey(rowId))
-                            groups.put(rowId, new ArrayList<>());
-
-                        groups.get(rowId).add(view);
-                        categories.put(rowId, og);
-                        order.add(og);
-                    }
+                        addCategoryHelper(categories, og);
                     else
-                    {
-                        ViewCategory vc = vcm.getCategory(og.getContainerId(), og.getRowId()); // ask the real authority
-
-                        if (null != vc)
-                        {
-                            int rowId = vc.getRowId();
-                            ViewCategory parent = vc.getParentCategory();
-
-                            if (!groups.containsKey(rowId))
-                                groups.put(rowId, new ArrayList<>());
-                            groups.get(rowId).add(view);
-                            categories.put(rowId, vc);
-
-                            // if child is handled before parent
-                            if (null != parent)
-                            {
-                                int pid = parent.getRowId();
-                                if (!categories.containsKey(pid))
-                                {
-                                    categories.put(pid, parent);
-
-                                    if (!groups.containsKey(pid))
-                                        groups.put(pid, new ArrayList<>());
-
-                                    order.add(parent);
-                                }
-                            }
-                            else
-                            {
-                                order.add(vc);
-                            }
-                        }
-                    }
+                        addCategoryHelper(categories, vcm.getCategory(og.getContainerId(), og.getRowId()));
                 }
             }
 
-            // Construct category tree
-            Map<Integer, TreeSet<ViewCategory>> tree = new HashMap<>();
-
-            for (Integer ckey : groups.keySet())
+            Map<Integer, Path> mapRowidPath = new HashMap<>();
+            Map<Path, CategoryHelper> mapPathHelper = new HashMap<>();
+            if (collapseByLabel)
             {
-                ViewCategory c = categories.get(ckey);
-
-                if (!tree.containsKey(ckey))
+                // For each distinct path pick one CategoryHelper
+                for (CategoryHelper helper : categories.values())
+                    mapRowidPath.put(helper.category.getRowId(), helper.path);
+                String localContainerId = getContainer().getId();
+                for (CategoryHelper helper : categories.values())
                 {
-                    tree.put(ckey, new TreeSet<>(t));
-                }
-
-                ViewCategory p = c.getParentCategory();
-                if (null != p)
-                {
-                    if (!tree.containsKey(p.getRowId()))
+                    CategoryHelper existing = mapPathHelper.putIfAbsent(helper.path, helper);
+                    if (null != existing)
                     {
-                        tree.put(p.getRowId(), new TreeSet<>(t));
+                        // and here is the whole point, pick one, probably doesn't matter that much, but pick the local one if possible
+                        if (!localContainerId.equals(existing.category.getContainerId()) && localContainerId.equals(helper.category.getContainerId()))
+                            mapPathHelper.put(helper.path, helper);
+                        else if (helper.compareTo(existing) < 0)   // try to be a little deterministic, choose the 'first' one
+                            mapPathHelper.put(helper.path, helper);
                     }
-                    tree.get(p.getRowId()).add(c);
                 }
             }
 
-            // create output
+            // virtual map RowId->Helper
+            // if collapseByLabel==true use mapPathHelper indirection so ViewCategory objects with the sample path map to the same CategoryHelper
+            // else if collapseByLabel==false just use simple map by rowid so each distinct ViewCategory has its own CategoryHelper
+            Function<Integer, CategoryHelper> mapRowIdHelper = collapseByLabel ?
+                    (i) -> mapPathHelper.get(mapRowidPath.get(i))   :
+                    (i) -> categories.get(i);
 
-            // Construct root node
+            // add views to their assigned categories
+            for (DataViewInfo view : views)
+            {
+                CategoryHelper h = mapRowIdHelper.apply(view.getCategory().getRowId());
+                h.views.add(view);
+            }
+
+            // construct tree by adding categories as children to their parents
+            CategoryHelper rootHelper = new CategoryHelper(null, Path.rootPath);
+            for (CategoryHelper helper : categories.values())
+            {
+                CategoryHelper parent = mapRowIdHelper.apply(helper.category.getParent());
+                if (null == parent)
+                    parent = rootHelper;
+                parent.children.add(helper);
+            }
+
+            // Construct response
             JSONObject root = new JSONObject();
-            JSONArray rootChildren = new JSONArray();
-
-            for (ViewCategory vc : order)
-            {
-                JSONObject category = new JSONObject();
-                category.put("name", vc.getLabel());
-                category.put("icon", false);
-                category.put("expanded", true);
-                category.put("cls", "dvcategory");
-                category.put("children", processChildren(vc, groups, tree));
-                category.put("rowId", vc.getRowId());
-
-                rootChildren.put(category);
-            }
-
+            JSONObject tree = convertTree(rootHelper);
+            JSONArray children = (JSONArray)tree.get("children");
             root.put("name", ".");
             root.put("expanded", true);
-            root.put("children", rootChildren);
-
+            root.put("children", children);
             return root;
         }
 
-        private JSONArray processChildren(ViewCategory vc, Map<Integer, List<DataViewInfo>> groups, Map<Integer, TreeSet<ViewCategory>> tree)
+        private JSONObject convertTree(CategoryHelper helper) // ViewCategory vc, Map<Integer, List<DataViewInfo>> groups, Map<Integer, TreeSet<ViewCategory>> tree)
         {
-            JSONArray children = new JSONArray();
-
-            // process other categories
-            if (tree.get(vc.getRowId()).size() > 0)
+            // generate category JSON
+            JSONObject category = new JSONObject();
+            category.put("icon", false);
+            category.put("expanded", true);
+            category.put("cls", "dvcategory");
+            if (null != helper.category)
             {
-                // has its own sub-categories
-                for (ViewCategory v : tree.get(vc.getRowId()))
-                {
-                    JSONObject category = new JSONObject();
-                    category.put("name", v.getLabel());
-                    category.put("icon", false);
-                    category.put("expanded", true);
-                    category.put("cls", "dvcategory");
-                    category.put("children", processChildren(v, groups, tree));
-                    category.put("rowId", v.getRowId());
-
-                    children.put(category);
-                }
+                category.put("name", helper.category.getLabel());
+                category.put("rowId", helper.category.getRowId());
             }
-            ArrayList<JSONObject> views = new ArrayList<>();
+
+            // process sub-categories
+            JSONArray children = new JSONArray();
+            for (CategoryHelper h : helper.children)
+                children.put(convertTree(h));
 
             // process views
-            for (DataViewInfo view : groups.get(vc.getRowId()))
+            ArrayList<JSONObject> views = new ArrayList<>();
+            for (DataViewInfo view : helper.views)
             {
                 JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
                 viewJson.put("name", view.getName());
@@ -3210,19 +3159,16 @@ public class ReportsController extends SpringActionController
                 viewJson.put("iconCls", view.getIconCls());
                 views.add(viewJson);
             }
-
             Comparator<JSONObject>naturalOrderComparator = (JSONObject a, JSONObject b) ->
-                SortHelpers.compareNatural(a.get("name"), b.get("name"));
+                    SortHelpers.compareNatural(a.get("name"), b.get("name"));
             if(_sortOrder == SortOrder.ALPHABETICAL)
-            {
                 views.sort(naturalOrderComparator);
-            }
-            for (JSONObject view : views)
-            {
-                children.put(view);
-            }
 
-            return children;
+            for (JSONObject view : views)
+                children.put(view);
+
+            category.put("children", children);
+            return category;
         }
 
         private List<DataViewProvider.Type> getVisibleDataTypes(BrowseDataForm form)
@@ -3977,10 +3923,6 @@ public class ReportsController extends SpringActionController
         {
             ReportDescriptor reportDescriptor = _report.getDescriptor();
             reportDescriptor.setProperty(ReportDescriptor.Prop.showInParticipantView, form.isShowInParticipantView());
-            if (_report instanceof ChartReport)
-            {
-                reportDescriptor.setProperty(ReportDescriptor.Prop.filterParam, form.isShowInParticipantView() ? "participantId" : "");
-            }
             ReportService.get().saveReport(getViewContext(), reportDescriptor.getReportKey(), _report);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -4020,10 +3962,14 @@ public class ReportsController extends SpringActionController
             PipeRoot root = PipelineService.get().findPipelineRoot(c);
 
             RReport report = new RReport();
+            report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.runInBackground, "true");
             report.getDescriptor().setProperty(ScriptReportDescriptor.Prop.knitrFormat, "r");
 
             RReportJob job = new RReportJob(ReportsPipelineProvider.NAME, info, report, root);
+            testSerialize(job, _log);
 
+            job = new RReportJob(ReportsPipelineProvider.NAME, info,
+                    new ModuleReportIdentifier(ModuleLoader.getInstance().getModule("query"), Path.parse("/test/test.R")), root);
             testSerialize(job, _log);
         }
     }

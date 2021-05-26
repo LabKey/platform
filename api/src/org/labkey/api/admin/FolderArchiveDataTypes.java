@@ -28,7 +28,7 @@ public class FolderArchiveDataTypes
     public static final String FULL_TEXT_SEARCH_SETTINGS = "Full-text search settings";
     public static final String WEBPART_PROPERTIES_AND_LAYOUT = "Webpart properties and layout";
     public static final String CONTAINER_SPECIFIC_MODULE_PROPERTIES = "Container specific module properties";
-    public static final String EXPERIMENTS_AND_RUNS = "Experiments and runs";
+    public static final String EXPERIMENTS_AND_RUNS = "Experiments, Protocols, and Runs";
     public static final String LISTS = "Lists";
     public static final String QUERIES = "Queries";
     public static final String GRID_VIEWS = "Grid Views";
@@ -42,4 +42,6 @@ public class FolderArchiveDataTypes
     public static final String STUDY = "Study";
     public static final String FILES = "Files";
     public static final String ETLS = "ETL Definitions";
+    public static final String SAMPLE_TYPES_AND_DATA_CLASSES = "Sample Types and Data Classes";
+    public static final String INVENTORY = "Inventory locations and items";
 }

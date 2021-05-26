@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -31,7 +32,7 @@ public abstract class AutoCompleteTag extends SimpleTagBase
 {
     private String _name;
     private String _id;
-    private String _url;
+    private ActionURL _url;
     private String _value;
 
     public String getName()
@@ -54,19 +55,14 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         _id = id;
     }
 
-    public String getUrl()
+    public ActionURL getUrl()
     {
         return _url;
     }
 
-    public void setUrl(String url)
-    {
-        _url = url;
-    }
-
     public void setUrl(ActionURL url)
     {
-        _url = url.getLocalURIString();
+        _url = url;
     }
 
     public String getValue()
@@ -82,21 +78,24 @@ public abstract class AutoCompleteTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        // TODO: HtmlString
+        // TODO: SafeToRenderBuilder
 
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("<script type=\"text/javascript\">");
-        sb.append("LABKEY.requiresScript('completion',function(){\n");
-        sb.append("Ext4.onReady(function(){\n" +
-            "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-            "            renderTo: " + PageFlowUtil.jsString(renderId) + ",\n" +
-            "            completionUrl: " + PageFlowUtil.jsString(getUrl()) + ",\n");
-        sb.append(getTagConfig());
-        sb.append("})})});\n");
-        sb.append("</script>\n");
-        sb.append("<div id=\"").append(renderId).append("\"></div>");
+        StringBuilder sb = new StringBuilder()
+            .append("<script type=\"text/javascript\">\n")
+            .append("    LABKEY.requiresScript('completion',function(){\n")
+            .append("        Ext4.onReady(function(){\n")
+            .append("            Ext4.create('LABKEY.element.AutoCompletionField', {\n")
+            .append("                renderTo: ").append(PageFlowUtil.jsString(renderId)).append(",\n")
+            .append("                completionUrl: ").append(PageFlowUtil.jsString(getUrl().getLocalURIString())).append(",\n")
+            .append(getTagConfig(StringUtils.repeat(' ', 16)))
+            .append("            })\n")
+            .append("        })\n")
+            .append("    });\n")
+            .append("</script>\n")
+            .append("<div id=\"")
+            .append(renderId)
+            .append("\"></div>");
 
         Writer out = getWriter();
 
@@ -109,12 +108,12 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         return getOut();
     }
 
-    protected abstract String getTagConfig();
+    protected abstract String getTagConfig(String padding);
 
-    protected void addOptionalAttrs(StringBuilder sb)
+    protected void addOptionalAttrs(StringBuilder sb, String padding)
     {
         // optional attribute
         if (getId() != null)
-            sb.append("                id : ").append(PageFlowUtil.jsString(getId())).append(",\n");
+            sb.append(padding).append("    id           : ").append(PageFlowUtil.jsString(getId())).append(",\n");
     }
 }

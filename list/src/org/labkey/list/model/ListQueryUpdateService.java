@@ -53,6 +53,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.view.ListItemAttachmentParent;
 
@@ -81,25 +82,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     {
         super(queryTable, dbTable, createMVMapping(queryTable.getList().getDomain()));
         _list = (ListDefinitionImpl) list;
-        setAttachmentParentFactory(new ListItemAttachmentParentFactory());
     }
 
     @Override
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption insertOption, Map<Enum, Object> configParameters)
+    public void configureDataIteratorContext(DataIteratorContext context)
     {
-        DataIteratorContext context = super.getDataIteratorContext(errors, insertOption, configParameters);
-        if (insertOption.batch)
+        if (context.getInsertOption().batch)
         {
             context.setMaxRowErrors(100);
             context.setFailFast(false);
         }
 
-        Map<Enum, Object> options = new HashMap<>();
-        options.put(ConfigParameters.TrimStringRight, Boolean.TRUE);
-        context.setConfigParameters(options);
-        return context;
+        context.putConfigParameter(ConfigParameters.TrimStringRight, Boolean.TRUE);
     }
 
+    @Override
+    protected @Nullable AttachmentParentFactory getAttachmentParentFactory()
+    {
+        return new ListItemAttachmentParentFactory();
+    }
 
     @Override
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> listRow) throws InvalidKeyException
@@ -137,13 +138,6 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-    {
-        throw new IllegalStateException("Method not used by ListQueryUpdateService");
-    }
-
-
-    @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
@@ -153,7 +147,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
-        List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+        List<Map<String, Object>> result = this._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
 
         if (null != result)
         {
@@ -178,9 +172,21 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+    @Override
+    protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        return super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+    }
+
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
                                        @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, boolean useMerge)
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setFailFast(false);
         context.setInsertOption(useMerge ? InsertOption.MERGE : InsertOption.IMPORT);    // this method is used by ListImporter and BackgroundListImporter
@@ -218,6 +224,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
                          @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to update data into this table.");
+
         return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
@@ -226,8 +235,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors,
                           Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
-        int count = super._importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list, false);
         return count;
@@ -238,6 +250,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                                                 @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to update data into this table.");
+
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
         if (result.size() > 0)
             ListManager.get().indexList(_list, false);
@@ -403,6 +418,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
+        if (!_list.isVisible(user))
+            throw new UnauthorizedException("You do not have permission to delete data from this table.");
+
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
         if (null != result)

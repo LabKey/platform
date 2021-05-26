@@ -264,8 +264,11 @@ public class SharedStudyTest extends BaseWebDriverTest
         click(Locator.css(".studyWizardVisitList .x-grid3-hd-checker  div"));
         clickButton("Next", 0);
 
-        // Wizard page 5 : Specimens
-        clickButton("Next", 0);
+        // Wizard page 5 : Specimens, if present & active
+        if (_studyHelper.isSpecimenModuleActive())
+        {
+            clickButton("Next", 0);
+        }
 
         // Wizard Page 6 : Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
@@ -356,7 +359,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         beginAt(WebTestHelper.buildURL("dataset", getProjectName(), "insert", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
 
-        assertEquals("403: Error Page -- User does not have permission to edit this dataset", getDriver().getTitle());
+        assertEquals("403: Error Page -- User does not have permission to insert into this dataset", getDriver().getTitle());
         assertElementNotPresent(Locator.css("table.labkey-data-region"));
     }
 

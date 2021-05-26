@@ -93,27 +93,10 @@
     <input type="hidden" name="defaultTimepointDuration" value="<%=form.getDefaultTimepointDuration()%>">
 <% } %>
 
-        <labkey:panel title="Specimen Management">
-            <p>
-                The standard specimen repository allows you to upload a list of available specimens. The advanced specimen repository
-                relies on an external set of tools to track movement of specimens between locations. The advanced system also enables a customizable specimen
-                request system.
-            </p>
-            <table class="lk-fields-table">
-                <tr>
-                    <td style="vertical-align:top;" class="lk-study-property">Repository Type</td>
-                    <td align="left">
-                        <input type="radio" name="simpleRepository" value="true"<%=checked(form.isSimpleRepository())%>> Standard Specimen Repository<br/>
-                        <input type="radio" name="simpleRepository" value="false"<%=checked(!form.isSimpleRepository())%>> Advanced (External) Specimen Repository
-                    </td>
-                </tr>
-            </table>
-        </labkey:panel>
-
         <labkey:panel title="Security">
             <table class="lk-fields-table">
                 <tr>
-                    <td class="lk-study-property">Security Mode<%=helpPopup("Study Security", SecurityType.getHTMLDescription(), true)%></td>
+                    <td class="lk-study-property">Security Mode<%=helpPopup("Study Security", SecurityType.getHTMLDescription())%></td>
                     <td align="left">
                         <select name="securityString">
                             <%

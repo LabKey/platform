@@ -55,6 +55,7 @@ public interface ProvenanceService
     String DATA_OUTPUTS = "dataOutputs";
     String PROPERTIES = "properties";
 
+    @NotNull
     static ProvenanceService get()
     {
         ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
@@ -65,6 +66,11 @@ public interface ProvenanceService
     {
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
     }
+
+    /**
+     * Determines whether the provider returned supports provenance;
+     */
+    boolean isProvenanceSupported();
 
     void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
 
@@ -97,10 +103,14 @@ public interface ProvenanceService
      */
     void deleteRunProvenance(int runId);
 
-    /**
-     * Delete provenance for assay result rows.
-     */
-    void deleteAssayResultProvenance(@NotNull SQLFragment sqlFragment);
+    void deleteProvenanceByLsids(
+            Container c, User user, @NotNull Collection<String> lsids,
+            boolean deleteEdgesAndOntologyObjects, Collection<String> deleteEmptyRunsForProtocol);
+
+    void deleteProvenanceByLsids(
+            Container c, User user, @NotNull SQLFragment lsidInFrag,
+            boolean deleteOntologyObjects, Collection<String> deleteEmptyRunsForProtocol);
+
 
     /**
      * Delete provenance for a assay result row.
@@ -115,12 +125,14 @@ public interface ProvenanceService
     /**
      * Get the ExpRun referenced by the set of LSIDs
      */
-    List<? extends ExpRun> getRuns(Set<String> lsids);
+    List<? extends ExpRun> getRuns(Collection<String> lsids);
+    List<? extends ExpRun> getRuns(SQLFragment lsidInFrag);
 
     /**
      * Get the ExpRun referenced by the set of LSIDs
      */
-    Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids);
+    Map<String, Set<ExpRun>> getRunsByLsid(Collection<String> lsids);
+    Map<String, Set<ExpRun>> getRunsByLsid(SQLFragment lsidInFrag);
 
     /**
      * Start a recording session, place RecordedActionSet in http session state and

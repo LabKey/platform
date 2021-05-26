@@ -45,12 +45,14 @@ import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -86,6 +88,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ListManager implements SearchService.DocumentProvider
 {
@@ -127,8 +130,17 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getLists(Container container)
     {
+        return getLists(container, null, true);
+    }
+
+    public Collection<ListDef> getLists(Container container, @Nullable User user, boolean includeAllLists)
+    {
         List<ListDef> ownLists = _listDefCache.get(container.getId());
-        return getAllScopedLists(ownLists, container);
+        Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
+        if (includeAllLists)
+            return scopedLists;
+        else
+            return scopedLists.stream().filter(listDef -> listDef.isVisible(user)).collect(Collectors.toList());
     }
 
     private Collection<ListDef> getAllScopedLists(Collection<ListDef> ownLists, Container container)
@@ -340,7 +352,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         Runnable r = () -> {
-            Map<String, ListDefinition> lists = ListService.get().getLists(c);
+            Map<String, ListDefinition> lists = ListService.get().getLists(c, null, true);
 
             try
             {
@@ -384,8 +396,17 @@ public class ListManager implements SearchService.DocumentProvider
 
             Runnable r = () ->
             {
-                ListDefinition list = ListDefinitionImpl.of(def);
-                indexList(task, list, designChange, false);
+                Container c = def.lookupContainer();
+                if (c == null || ContainerManager.isDeleting(c))
+                {
+                    LOG.info("List container has been deleted or is being deleted; not indexing list '" + def.getName() + "");
+                }
+                else
+                {
+                    //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
+                    ListDefinition list = ListService.get().getList(c, def.getListId());
+                    indexList(task, list, designChange, false);
+                }
             };
 
             task.addRunnable(r, SearchService.PRIORITY.item);
@@ -1222,6 +1243,28 @@ public class ListManager implements SearchService.DocumentProvider
         validatorImporters.add(new ValidatorImporter(domain.getTypeId(), pds.properties, user));
 
         return true;
+    }
+
+    public static class ListUpgradeCode implements UpgradeCode
+    {
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void addImportHashColumn(final ModuleContext context)
+        {
+            if (null!=context && context.isNewInstall())
+                return;
+
+            StorageProvisioner sp = StorageProvisioner.get();
+            ListManager lm = ListManager.get();
+            ArrayList<ListDef> all = new TableSelector(lm.getListMetadataTable(), null, null).getArrayList(ListDef.class);
+
+            for (var l : all)
+            {
+                int domainId = l.getDomainId();
+                Domain d = PropertyService.get().getDomain(domainId);
+                if (null != d && null != d.getStorageTableName())
+                    sp.ensureBaseProperties(d);
+            }
+        }
     }
 
     public static class TestCase extends Assert

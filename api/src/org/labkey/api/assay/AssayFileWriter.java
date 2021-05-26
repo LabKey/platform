@@ -17,6 +17,8 @@
 package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
@@ -51,6 +53,8 @@ import java.util.TreeMap;
  */
 public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends AssayProvider>>
 {
+    private static final Logger LOG = LogManager.getLogger(AssayFileWriter.class);
+
     public static final String DIR_NAME = "assaydata";
     public static final String ARCHIVED_DIR_NAME = "archived";
     public static final String TEMP_DIR_NAME = "uploadTemp";
@@ -199,13 +203,25 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         Map<String, File> savedFiles = new TreeMap<>();
         if (context.getRequest() instanceof MultipartHttpServletRequest)
         {
+            PipeRoot root = getPipelineRoot(context.getContainer());
             File dir = getFileTargetDir(context);
 
             for (String key : files.keySet())
             {
-                File savedFile = new File(dir, files.get(key).getName());
-                FileUtils.copyFile(files.get(key), savedFile);
-                savedFiles.put(key, savedFile);
+                // Copy the user uploaded files not already under the pipeline root to the temp directory.
+                File file = files.get(key);
+                if (!root.isUnderRoot(file))
+                {
+                    File savedFile = new File(dir, file.getName());
+                    LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is not under pipeline root. copying to savedFile=" + savedFile.getPath());
+                    FileUtils.copyFile(file, savedFile);
+                    file = savedFile;
+                }
+                else
+                {
+                    LOG.debug("savePipelineFiles: file '" + file.getPath() + "' is already under pipeline root. not copying");
+                }
+                savedFiles.put(key, file);
             }
         }
         else

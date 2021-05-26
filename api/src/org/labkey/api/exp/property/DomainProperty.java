@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
@@ -45,6 +46,7 @@ public interface DomainProperty extends ImportAliasable
     FacetingBehaviorType getFacetingBehavior();
     boolean isRequired();
     boolean isHidden();
+    boolean isDeleted();
     boolean isShownInInsertView();
     boolean isShownInUpdateView();
     boolean isShownInDetailsView();
@@ -125,6 +127,20 @@ public interface DomainProperty extends ImportAliasable
      */
     void setSchemaImport(boolean isSchemaImport);
 
+    String getSourceOntology();
+    void setSourceOntology(String sourceOntology);
+    String getConceptImportColumn();
+    void setConceptImportColumn(String conceptImportColumn);
+    String getConceptLabelColumn();
+    void setConceptLabelColumn(String conceptLabelColumn);
     void setPrincipalConceptCode(String code);
     String getPrincipalConceptCode();
+
+    void setDerivationDataScope(String type);
+    String getDerivationDataScope();
+
+    default boolean isUniqueIdField()
+    {
+        return ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_CONCEPT_URI.equals(this.getConceptURI());
+    }
 }

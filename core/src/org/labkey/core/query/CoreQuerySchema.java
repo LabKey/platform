@@ -30,7 +30,6 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.AuthenticationManager;
@@ -42,6 +41,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
+import org.labkey.api.security.permissions.SeeUserDetailsPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.util.PageFlowUtil;
@@ -214,7 +215,6 @@ public class CoreQuerySchema extends UserSchema
         groups.addColumn(col);
 
         col = groups.wrapColumn(principalsBase.getColumn("Container"));
-        col.setReadOnly(true);
         groups.addColumn(col);
 
         List<FieldKey> defCols = new ArrayList<>();
@@ -647,7 +647,18 @@ public class CoreQuerySchema extends UserSchema
         {
             if (!getMustCheckPermissions())
                 SecurityLogger.log("getMustCheckPermissions()==false", getUser(), null, true);
-            return !getMustCheckPermissions() || super.canReadSchema();
+            if (!getMustCheckPermissions())
+                return true;
+            User user = getUser();
+            if (null == user)
+                return false;
+            if (getContainer().isRoot())
+            {
+                // NOTE: as usual does not override TableInfo.hasPermission()
+                if (getContainer().hasOneOf(user, Set.of(SeeUserDetailsPermission.class, TroubleShooterPermission.class)))
+                    return true;
+            }
+            return super.canReadSchema();
         }
         finally
         {
@@ -727,10 +738,6 @@ public class CoreQuerySchema extends UserSchema
             wrapAllColumns(true);
 
             getMutableColumn(FieldKey.fromParts("RowId")).setHidden(true);
-            ContainerForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("Container")), userSchema);
-            UserIdForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("CreatedBy")));
-            UserIdForeignKey.initColumn(getMutableColumn(FieldKey.fromParts("ModifiedBy")));
-
             var parentCol = getMutableColumn(FieldKey.fromParts("Parent"));
             parentCol.setFk(new LookupForeignKey("RowId", "Label"){
 

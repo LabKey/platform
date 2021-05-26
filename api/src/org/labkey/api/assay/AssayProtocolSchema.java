@@ -33,12 +33,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -55,10 +53,9 @@ import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -78,11 +75,9 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyContainerFilter;
-import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -368,7 +363,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     /** Implementations may return null if they don't have any data associated with them */
     @Nullable
-    public abstract TableInfo createDataTable(ContainerFilter cf, boolean includeCopiedToStudyColumns);
+    public abstract TableInfo createDataTable(ContainerFilter cf, boolean includeLinkedToStudyColumns);
 
     public ExpRunTable createRunsTable(ContainerFilter cf)
     {
@@ -412,7 +407,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         // Add the batch column, but replace the lookup with one to the assay's Batches table.
         var batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.Batch);
-        // Issue 23399: Batch properties not accessible from copy to study Nab assay.
+        // Issue 23399: Batch properties not accessible from copy (link) to study Nab assay.
         // Propagate run table's container filter to batch table
         batchColumn.setFk(
                 QueryForeignKey
@@ -782,114 +777,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
         col.setURL(fkse.remapFieldKeys(null, map));
     }
 
-    /**
-     * Transform an illegal name into a safe version. All non-letter characters
-     * become underscores, and the first character must be a letter. Retain this implementation for backwards
-     * compatibility with copied to study column names. See issue 41030.
-     */
-    private String sanitizeName(String originalName)
-    {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true; // first character is special
-        for (int i = 0; i < originalName.length(); i++)
-        {
-            char c = originalName.charAt(i);
-            if (AliasManager.isLegalNameChar(c, first))
-            {
-                sb.append(c);
-                first = false;
-            }
-            else if (!first)
-            {
-                sb.append('_');
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Adds columns to an assay data table, providing a link to any datasets that have
-     * had data copied into them.
-     * @return The names of the added columns that should be visible
-     */
-    public Set<String> addCopiedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
-    {
-        Set<String> visibleColumnNames = new HashSet<>();
-        StudyService svc = StudyService.get();
-
-        if (null != svc)
-        {
-            int datasetIndex = 0;
-            Set<String> usedColumnNames = new HashSet<>();
-            for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
-            {
-                if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
-                {
-                    continue;
-                }
-
-                String datasetIdColumnName = "dataset" + datasetIndex++;
-                final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
-                datasetColumn.setHidden(true);
-                datasetColumn.setUserEditable(false);
-                datasetColumn.setShownInInsertView(false);
-                datasetColumn.setShownInUpdateView(false);
-                datasetColumn.setReadOnly(true);
-                table.addColumn(datasetColumn);
-
-                String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                        "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
-
-                String studyName = assayDataset.getStudy().getLabel();
-                if (studyName == null)
-                    continue; // No study in that folder
-
-                String studyColumnName;
-                if (sanitizeName(studyName).isEmpty())
-                {
-                    // issue 41472 include the prefix as part of the sanitization process
-                    studyColumnName = sanitizeName("copied_to_" + studyName);
-                }
-                else
-                    studyColumnName = "copied_to_" + sanitizeName(studyName);
-
-                // column names must be unique. Prevent collisions
-                while (usedColumnNames.contains(studyColumnName))
-                    studyColumnName = studyColumnName + datasetIndex;
-                usedColumnNames.add(studyColumnName);
-
-                final ExprColumn studyCopiedColumn = new ExprColumn(table,
-                        studyColumnName,
-                        new SQLFragment(studyCopiedSql),
-                        JdbcType.VARCHAR,
-                        datasetColumn);
-                final String copiedToStudyColumnCaption = "Copied to " + studyName;
-                studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
-                studyCopiedColumn.setUserEditable(false);
-                studyCopiedColumn.setReadOnly(true);
-                studyCopiedColumn.setShownInInsertView(false);
-                studyCopiedColumn.setShownInUpdateView(false);
-                studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
-
-                table.addColumn(studyCopiedColumn);
-
-                visibleColumnNames.add(studyCopiedColumn.getName());
-            }
-            if (setVisibleColumns)
-            {
-                List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
-                for (String columnName : visibleColumnNames)
-                {
-                    visibleColumns.add(new FieldKey(null, columnName));
-                }
-                table.setDefaultVisibleColumns(visibleColumns);
-            }
-        }
-
-        return visibleColumnNames;
-    }
-
-
     private static void fixupPropertyURLs(MutableColumnInfo fk)
     {
         for (ColumnInfo c : fk.getParentTable().getColumns())
@@ -916,9 +803,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 public TableInfo getLookupTableInfo()
                 {
                     FilteredTable table = new FilteredTable<>(DbSchema.get("study", DbSchemaType.Module).getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
-                    ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
+                    AliasedColumn col = new AliasedColumn(table, "Folder", table.getRealTable().getColumn("Container"));
                     col.setKeyField(true);
-                    ContainerForeignKey.initColumn(col, AssayProtocolSchema.this);
                     table.addColumn(col);
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));
                     table.setPublic(false);

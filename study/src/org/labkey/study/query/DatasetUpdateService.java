@@ -15,17 +15,26 @@
  */
 package org.labkey.study.query;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.qc.QCState;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
@@ -33,14 +42,16 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
-import org.labkey.study.StudyServiceImpl;
+import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.visitmanager.PurgeParticipantsTask;
+import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -52,6 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 
 /*
 * User: Dave
@@ -68,9 +81,28 @@ import java.util.Set;
  */
 public class DatasetUpdateService extends AbstractQueryUpdateService
 {
+    // These are that can be passed into DatasetUpdateService via DataIteratorContext.configParameters.
+    // These used to be passed to DatasetDataIterator via
+    // DatasetDefinition.importDatasetData()->DatasetDefinition.insertData().
+    // Moving these options into DataInteratorContext allows for even more consistency and code sharing
+    // also see QueryUpdateService.ConfigParameters.Logger
+    public enum Config
+    {
+        CheckForDuplicates,     // expected: enum CheckForDuplicates
+        DefaultQCState,         // expected: class QCState
+        SkipResyncStudy,        // expected: Boolean
+
+        // NOTE: There really has to be better way to handle the functionality of StudyImportContext.getTableIdMap()
+        // NOTE: Could this be handled by a method on StudySchema or something???
+        // see StudyImportContext.getTableIdMapMap()
+        StudyImportMaps       // expected: Map<String,Map<Object,Object>>
+    }
+
+    private static final Logger LOG = LogManager.getLogger(DatasetUpdateService.class);
+
     private final DatasetDefinition _dataset;
-    private Set<String> _potentiallyNewParticipants = new HashSet<>();
-    private Set<String> _potentiallyDeletedParticipants = new HashSet<>();
+    private final Set<String> _potentiallyNewParticipants = new HashSet<>();
+    private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
     /** Mapping for MV column names */
@@ -85,7 +117,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             _columnMapping = createMVMapping(domain);
     }
 
-    protected boolean hasPermission(User user, Class<? extends Permission> acl)
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
         if (StudySecurityEscalator.isEscalated()) {
             return true;
@@ -120,7 +153,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
-        if (count > 0)
+        if (count > 0 && Boolean.TRUE != context.getConfigParameterBoolean(Config.SkipResyncStudy))
         {
             StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
@@ -146,14 +179,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
 
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
+        if (!isBulkLoad())
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
+
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
+
         if (null != result && result.size() > 0)
         {
             for (Map<String, Object> row : result)
             {
-                if (!isBulkLoad())
-                    StudyServiceImpl.addDatasetAuditEvent(user, _dataset, null, row);
-
                 try
                 {
                     String participantID = getParticipant(row, user, container);
@@ -172,27 +206,78 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return result;
     }
 
+    protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
+    {
+        // If we're using a managed GUID as a key, wire it up here so that it's available to trigger scripts
+        if (_dataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER &&
+                _dataset.getKeyManagementType() == Dataset.KeyManagementType.GUID &&
+                _dataset.getKeyPropertyName() != null)
+        {
+            return new DataIteratorBuilder()
+            {
+                @Override
+                public DataIterator getDataIterator(DataIteratorContext context)
+                {
+                    DataIterator input = in.getDataIterator(context);
+                    if (null == input)
+                        return null;           // Can happen if context has errors
 
+                    final SimpleTranslator result = new SimpleTranslator(input, context);
+
+                    boolean foundKeyCol = false;
+                    for (int c = 1; c <= input.getColumnCount(); c++)
+                    {
+                        ColumnInfo col = input.getColumnInfo(c);
+
+                        // Incoming data has a matching field
+                        if (col.getName().equalsIgnoreCase(_dataset.getKeyPropertyName()))
+                        {
+                            // make sure guid is not null (12884)
+                            result.addCoaleseColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
+                            foundKeyCol = true;
+                        }
+                        else
+                        {
+                            // Pass it through as-is
+                            result.addColumn(c);
+                        }
+                    }
+
+                    if (!foundKeyCol)
+                    {
+                        // Inject a column with a new GUID
+                        ColumnInfo key = getQueryTable().getColumn(_dataset.getKeyPropertyName());
+                        result.addColumn(new BaseColumnInfo(key), new SimpleTranslator.GuidColumn());
+                    }
+
+                    return result;
+                }
+            };
+        }
+        return in;
+    }
+    
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
-        DatasetDefinition.CheckForDuplicates dupePolicy;
-        if (isBulkLoad())
+        if (null == context.getConfigParameter(Config.DefaultQCState))
         {
-            dupePolicy = DatasetDefinition.CheckForDuplicates.never;
+            context.putConfigParameter(Config.DefaultQCState, StudyManager.getInstance().getDefaultQCState(_dataset.getStudy()));
         }
-        else if (context.getInsertOption().mergeRows)
+
+        if (null == context.getConfigParameter(Config.CheckForDuplicates))
         {
-            dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
+            DatasetDefinition.CheckForDuplicates dupePolicy;
+            if (isBulkLoad())
+                dupePolicy = DatasetDefinition.CheckForDuplicates.never;
+            else if (context.getInsertOption().mergeRows)
+                dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
+            else
+                dupePolicy = DatasetDefinition.CheckForDuplicates.sourceAndDestination;
+            context.putConfigParameter(Config.CheckForDuplicates, dupePolicy);
         }
-        else
-        {
-            dupePolicy = DatasetDefinition.CheckForDuplicates.sourceAndDestination;
-        }
-        // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
-        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
-                dupePolicy, context, defaultQCState, null, false);
+
+        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, context);
         return insert;
     }
 
@@ -203,6 +288,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         try
         {
             boolean hasRowId = _dataset.getKeyManagementType() == Dataset.KeyManagementType.RowId;
+
+            if (null != rows)
+            {
+                // TODO: consider creating DataIterator metadata to mark "internal" cols (not to be returned via API)
+                DataIterator it = etl.getDataIterator(context);
+                DataIteratorBuilder cleanMap = new MapDataIterator.MapDataIteratorImpl(it, true, CaseInsensitiveHashSet.of(
+                        it.getColumnInfo(0).getName()
+                ));
+                etl = cleanMap;
+            }
 
             if (!hasRowId)
             {
@@ -226,29 +321,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
     }
 
-
-    @Override
-    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
-    {
-        throw new IllegalStateException();
-//        List<String> errors = new ArrayList<String>();
-//        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDatasetId(), row, errors);
-//
-//        if(errors.size() > 0)
-//        {
-//            ValidationException e = new ValidationException();
-//            for(String err : errors)
-//                e.addError(new SimpleValidationError(err));
-//            throw e;
-//        }
-//
-//        //update the lsid
-//        row.put("lsid", newLsid);
-//        _potentiallyNewParticipants.add(getParticipant(row, user, container));
-//        _participantVisitResyncRequired = true;
-//
-//        return row;
-    }
 
     private @NotNull String getParticipant(Map<String, Object> row, User user, Container container) throws ValidationException, QueryUpdateServiceException
     {
@@ -285,22 +357,19 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     static class PurgeParticipantCommitTask implements Runnable
     {
-        public Container _container;
-        public Set<String> _potentiallyDeletedParticipants = new HashSet<>();
+        private final Container _container;
+        private final Set<String> _potentiallyDeletedParticipants;
 
-        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants) {
+        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants)
+        {
             _container = container;
-            Set<String> copySet = new HashSet<>(potentiallyDeletedParticipants);
-            _potentiallyDeletedParticipants = copySet;
+            _potentiallyDeletedParticipants = new HashSet<>(potentiallyDeletedParticipants);
         }
 
         @Override
         public void run()
         {
-            HashMap<Container, Set<String>> potentiallyDeletedParticipantsMap = new HashMap<>();
-            potentiallyDeletedParticipantsMap.put(_container, _potentiallyDeletedParticipants);
-            PurgeParticipantsTask purgeParticipantsTask = new PurgeParticipantsTask(potentiallyDeletedParticipantsMap );
-            purgeParticipantsTask.run();
+            new ParticipantPurger(_container, _potentiallyDeletedParticipants, LOG::info, LOG::error).purgeParticipants();
         }
 
         @Override
@@ -440,6 +509,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected int truncateRows(User user, Container container)
     {
        return _dataset.deleteRows((Date) null);
+    }
+
+    @Override
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<Enum, Object> updatedParams = configParameters;
+        if (updatedParams == null)
+            updatedParams = new HashMap<>();
+        updatedParams.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.SUMMARY);
+        return super.truncateRows(user, container, updatedParams, extraScriptContext);
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

@@ -16,7 +16,10 @@
 package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+
+import java.io.IOException;
 
 public class DisplayField extends Input
 {
@@ -26,15 +29,16 @@ public class DisplayField extends Input
     }
 
     @Override
-    protected void doInput(StringBuilder sb)
+    protected void doInput(Appendable sb) throws IOException
     {
         sb.append("<p class=\"form-control-static\">");
-        renderValueIfNonEmpty(sb::append);
+        if (!HtmlString.isEmpty(getValue()))
+            sb.append(h(getValue()));
         sb.append("</p>");
     }
 
     @Override
-    protected void doLabel(StringBuilder sb)
+    protected void doLabel(Appendable sb) throws IOException
     {
         boolean needsLayoutWrapping = Layout.HORIZONTAL.equals(getLayout()) && needsWrapping();
 
@@ -47,14 +51,14 @@ public class DisplayField extends Input
             cls += " col-sm-3 col-lg-2";
 
         if (StringUtils.isNotEmpty(cls))
-            sb.append(" class=\"").append(PageFlowUtil.filter(cls)).append("\"");
+            sb.append(" class=\"").append(h(cls)).append("\"");
 
         sb.append(">");
 
         if (getLabel() != null)
-            sb.append(PageFlowUtil.filter(getLabel())).append(":");
+            sb.append(h(getLabel())).append(":");
 
-        if (Layout.INLINE.equals(getLayout()) && StringUtils.isNotEmpty(getContextContent()))
+        if (Layout.INLINE.equals(getLayout()) && !HtmlString.isEmpty(getContextContent()))
             super.doContextField(sb);
 
         sb.append("</span> ");
