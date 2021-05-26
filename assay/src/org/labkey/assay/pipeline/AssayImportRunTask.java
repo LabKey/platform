@@ -47,6 +47,7 @@ import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -99,6 +100,103 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 factory._protocolName = xtask.getProtocolName();
 
             return factory;
+        }
+    }
+
+    public static class FileAnalysisFactory extends Factory
+    {
+        private List<Map<String, Object>> _rawData;             // used in the case of multi-sheet excel or zip files
+
+        public FileAnalysisFactory()
+        {
+            super(AssayImportRunTask.class);
+        }
+
+        @Override
+        public String getStatusName()
+        {
+            return "ASSAY RUN IMPORT";
+        }
+
+        @Override
+        public boolean isJobComplete(PipelineJob job)
+        {
+            return false;
+        }
+
+        @Override
+        public PipelineJob.Task createTask(PipelineJob job)
+        {
+            return new AssayImportRunTask(this, job);
+        }
+
+        @Override
+        public List<String> getProtocolActionNames()
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<FileType> getInputTypes()
+        {
+            return Collections.emptyList();
+        }
+
+        /**
+         * Alternatively for file analysis tasks, we can get the output files from the
+         * triggered location
+         */
+        @Override
+        List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
+        {
+            FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
+            List<RecordedAction.DataFile> outputs = new ArrayList<>();
+
+            // guaranteed to have a single file upload
+            assert support.getInputFiles().size() == 1;
+
+            File dataFile = support.getInputFiles().get(0);
+            outputs.add(new RecordedAction.DataFile(dataFile.toURI(), "RESULTS-DATA", false, false));
+
+            if (ExcelLoader.isExcel(dataFile))
+            {
+                parseExcelFile(dataFile);
+            }
+            else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
+            {
+
+            }
+            return outputs;
+        }
+
+        @Override
+        List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
+        {
+            return _rawData;
+        }
+
+        private void parseExcelFile(File dataFile) throws PipelineJobException
+        {
+            try
+            {
+                // check to see if this is a multi-sheet format
+                ExcelLoader loader = new ExcelLoader(dataFile, true);
+                if (loader.getSheetNames().size() > 1)
+                {
+                    if (loader.getSheetNames().contains("results"))
+                    {
+                        loader.setSheetName("results");
+                        _rawData = loader.load();
+                    }
+                    else
+                        // instead of throwing we may just want to default to the first sheet as the results data
+                        throw new PipelineJobException("Expected a sheet named results to contain the results data for the assay run.");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
         }
     }
 
@@ -196,7 +294,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             if (providerName.startsWith("${") && providerName.endsWith("}"))
             {
-                String propertyName = providerName.substring(2, providerName.length()-3);
+                String propertyName = providerName.substring(2, providerName.length()-1);
                 String value = job.getParameters().get(propertyName);
                 if (value == null)
                     throw new PipelineJobException("Assay provider name for job parameter " + providerName + " required");
@@ -254,6 +352,15 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             throw new PipelineJobException("Assay protocol not found: " + protocolName);
         }
 
+        List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
+        {
+            return Collections.emptyList();
+        }
+
+        List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
+        {
+            return null;
+        }
     }
 
     public AssayImportRunTask(Factory factory, PipelineJob job)
@@ -261,31 +368,39 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         super(factory, job);
     }
 
+    public AssayImportRunTask(FileAnalysisFactory factory, PipelineJob job)
+    {
+        super(factory, job);
+    }
+
     // Get the outputs of the last action in the job sequence
     private List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
     {
-        RecordedActionSet actionSet = job.getActionSet();
-        List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
-        if (actions.size() < 1)
-            throw new PipelineJobException("No recorded actions");
-
-        List<RecordedAction.DataFile> outputs = new ArrayList<>();
-
-        RecordedAction lastAction = actions.get(actions.size()-1);
-        for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
+        List<RecordedAction.DataFile> outputs = _factory.getOutputs(job);
+        if (outputs.isEmpty())
         {
-            if (dataFile.isTransient())
-                continue;
+            RecordedActionSet actionSet = job.getActionSet();
+            List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
+            if (actions.size() < 1)
+                throw new PipelineJobException("No recorded actions");
 
-            URI uri = dataFile.getURI();
-            if (uri != null && "file".equals(uri.getScheme()))
+            outputs = new ArrayList<>();
+
+            RecordedAction lastAction = actions.get(actions.size()-1);
+            for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
             {
-                File file = new File(uri);
-                if (NetworkDrive.exists(file))
-                    outputs.add(dataFile);
+                if (dataFile.isTransient())
+                    continue;
+
+                URI uri = dataFile.getURI();
+                if (uri != null && "file".equals(uri.getScheme()))
+                {
+                    File file = new File(uri);
+                    if (NetworkDrive.exists(file))
+                        outputs.add(dataFile);
+                }
             }
         }
-
         return outputs;
     }
 
@@ -444,9 +559,16 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             File uploadedData = new File(matchedFile.getURI());
             factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, uploadedData));
 
+            // Add raw data if specified, either raw data or uploaded file can be used but not both
+            List<Map<String, Object>> rawData = _factory.getRawData(getJob());
+            if (rawData != null)
+                factory.setRawData(rawData);
+
             factory.setBatchProperties(getBatchProperties());
 
             factory.setRunProperties(getRunProperties());
+
+            //factory.setRawPlateMetadata();
 
             factory.setTargetStudy(getTargetStudy());
 
