@@ -65,7 +65,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         _container = c;
         _userComment = (String) _context.getConfigParameter(AuditConfigs.AuditUserComment);
         _auditAction = auditAction;
-        _auditHandler = table.getAuditHandler();
+        _auditHandler = table.getAuditHandler(DETAILED);
 
         assert DETAILED == table.getAuditBehavior() || DETAILED == context.getConfigParameter(AuditConfigs.AuditBehavior);
         assert !context.getInsertOption().mergeRows || _data.supportsGetExistingRecord();
