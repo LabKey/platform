@@ -745,6 +745,7 @@ public class ListController extends SpringActionController
         {
             initRequest(form);
             setShowImportOptions(_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger);
+            setSuccessMessageSuffix("imported");
             return getDefaultImportView(form, errors);
         }
 
