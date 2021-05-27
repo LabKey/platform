@@ -31,7 +31,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const {authConfig, modalType} = this.props;
         const fieldValues: any = {};
         this.props.modalType.settingsFields.forEach(field => {
-            const value = this.props.authConfig[field.name] != null ? this.props.authConfig[field.name] : "";
+            const value = this.props.authConfig[field.name] != null ? this.props.authConfig[field.name] : '';
             fieldValues[field.name] = field.name in this.props.authConfig ? value : field.defaultValue;
         });
 
@@ -68,7 +68,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
 
         Object.keys(this.state.fieldValues).map(item => {
             const itemValue = this.state.fieldValues[item];
-            if (itemValue !== null && itemValue !== "") {
+            if (itemValue !== null && itemValue !== '' && itemValue.trim() !== '') {
                 form.append(item, itemValue);
             }
         });
