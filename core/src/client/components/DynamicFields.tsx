@@ -17,7 +17,6 @@ interface TextInputProps extends InputFieldProps {
 export class TextInput extends PureComponent<TextInputProps> {
     render() {
         const { description, caption, required, canEdit, requiredFieldEmpty, onChange, name, type, value } = this.props;
-        const inputValue = value != null ? value : "";
 
         return (
             <div className="modal__text-input">
@@ -37,7 +36,7 @@ export class TextInput extends PureComponent<TextInputProps> {
                     <FormControl
                         name={name}
                         type={type}
-                        value={inputValue}
+                        value={value}
                         onChange={onChange}
                         className={
                             'modal__text-input-field' + (requiredFieldEmpty ? ' modal__text-input-field--error' : '')

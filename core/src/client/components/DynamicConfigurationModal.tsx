@@ -31,7 +31,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const {authConfig, modalType} = this.props;
         const fieldValues: any = {};
         this.props.modalType.settingsFields.forEach(field => {
-            fieldValues[field.name] = field.name in this.props.authConfig ? this.props.authConfig[field.name] : field.defaultValue;
+            const value = this.props.authConfig[field.name] != null ? this.props.authConfig[field.name] : "";
+            fieldValues[field.name] = field.name in this.props.authConfig ? value : field.defaultValue;
         });
 
         if (modalType.sso) {
