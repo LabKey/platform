@@ -1579,129 +1579,6 @@ public class OntologyManager
         {
             throw ExceptionFramework.Spring.translate(getExpSchema().getScope(), "insertPropertyIfNotExists", sqlx);
         }
-
-
-/*        TableInfo t = get();
-        SQLFragment sql = new SQLFragment();
-
-        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map<String, Object> m = null;
-        for (PropertyDescriptor pd : pds)
-        {
-            m = f.toMap(pd, m);
-
-            // handle upgrade scenarios gracefully (e.g. don't throw SQLException if this is called before module upgrade)
-        boolean hasPrincipalConceptCode = null != t.getColumn("principalconceptcode");
-        boolean hasSourceOntology = null != t.getColumn("sourceontology");
-        boolean hasConceptSubtree = null != t.getColumn("conceptsubtree");
-
-        sql.append("INSERT INTO exp.propertydescriptor (" +
-                "propertyuri, name, storagecolumnname, description, rangeuri, concepturi, label, " +
-                "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
-                "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
-                "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, derivationdatascope" +
-                (hasSourceOntology ? ", sourceontology, conceptimportcolumn, conceptlabelcolumn" : "") +
-                (hasPrincipalConceptCode ? ", principalconceptcode" : "") +
-                (hasConceptSubtree ? ", conceptsubtree" : "") +
-                ")\n");
-        sql.append("SELECT " +
-                "? as propertyuri, " +
-                "? as name, " +
-                "? as storagecolumnname, " +
-                "? as description, " +
-                "? as rangeuri, " +
-                "? as concepturi, " +
-                "? as label, " +
-                "? as format, " +
-                "? as container, " +
-                "? as project, " +
-                "? as lookupcontainer, " +
-                "? as lookupschema, " +
-                "? as lookupquery, " +
-                "? as defaultvaluetype, " +
-                "? as hidden, " +
-                "? as mvenabled, " +
-                "? as importaliases, " +
-                "? as url, " +
-                "? as shownininsertview, " +
-                "? as showninupdateview, " +
-                "? as shownindetailsview, " +
-                "? as dimension, " +
-                "? as measure, " +
-                "? as scale, " +
-                "? as recommendedvariable, " +
-                "? as defaultscale, " +
-                "cast(? as int)  as createdby, " +
-                "{fn now()} as created, " +
-                "cast(? as int) as modifiedby, " +
-                "{fn now()} as modified, " +
-                "? as facetingbehaviortype, " +
-                "? as phi, " +
-                "? as redactedText, " +
-                "? as excludefromshifting, " +
-                "? as mvindicatorstoragecolumnname, " +
-                "? as derivationdatascope" +
-                (hasSourceOntology ? ", ? as sourceontology, ? as conceptimportcolumn, ? as conceptlabelcolumn" : "") +
-                (hasPrincipalConceptCode ? ", ? as principalconceptcode" : "") +
-                (hasConceptSubtree ? ", ? as conceptsubtree" : "") +
-                "\n");
-        sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
-
-        sql.add(pd.getPropertyURI());
-        sql.add(pd.getName());
-        sql.add(pd.getStorageColumnName());
-        sql.add(pd.getDescription());
-        sql.add(pd.getRangeURI());
-        sql.add(pd.getConceptURI());
-        sql.add(pd.getLabel());
-        sql.add(pd.getFormat());
-        sql.add(pd.getContainer());
-        sql.add(pd.getProject());
-        sql.add(pd.getLookupContainer());
-        sql.add(pd.getLookupSchema());
-        sql.add(pd.getLookupQuery());
-        sql.add(pd.getDefaultValueType());
-        sql.add(pd.isHidden());
-        sql.add(pd.isMvEnabled());
-        sql.add(pd.getImportAliases());
-        sql.add(pd.getURL());
-        sql.add(pd.isShownInInsertView());
-        sql.add(pd.isShownInUpdateView());
-        sql.add(pd.isShownInDetailsView());
-        sql.add(pd.isDimension());
-        sql.add(pd.isMeasure());
-        sql.add(pd.getScale());
-        sql.add(pd.isRecommendedVariable());
-        sql.add(pd.getDefaultScale());
-        sql.add(user); // createdby
-        // created
-        sql.add(user); // modifiedby
-        // modified
-        sql.add(pd.getFacetingBehaviorType());
-        sql.add(pd.getPHI());
-        sql.add(pd.getRedactedText());
-        sql.add(pd.isExcludeFromShifting());
-        sql.add(pd.getMvIndicatorStorageColumnName());
-        sql.add(pd.getDerivationDataScope());
-        // ontology metadata
-        if (hasSourceOntology)
-        {
-            sql.add(pd.getSourceOntology());
-            sql.add(pd.getConceptImportColumn());
-            sql.add(pd.getConceptLabelColumn());
-        }
-        if (hasPrincipalConceptCode)
-            sql.add(pd.getPrincipalConceptCode());
-        if (hasConceptSubtree)
-            sql.add(pd.getConceptSubtree());
-
-        // WHERE
-        sql.add(pd.getPropertyURI());
-        sql.add(pd.getContainer());
-
-        int rowcount = (new SqlExecutor(t.getSchema())).execute(sql);
-*/
     }
 
 
@@ -2465,7 +2342,7 @@ public class OntologyManager
             m = f.toMap(pd, m);
             stmt.clearParameters();
             stmt.putAll(m);
-           stmt.addBatch();
+            stmt.addBatch();
         }
         stmt.executeBatch();
     }
