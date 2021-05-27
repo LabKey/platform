@@ -480,7 +480,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     for (GWTPropertyDescriptor pd : properties)
                     {
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
-                            throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                        {
+                            if (arguments.isStrictFieldValidation())
+                                throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                        }
                         else
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }

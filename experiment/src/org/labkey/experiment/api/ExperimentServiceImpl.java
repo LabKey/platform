@@ -6559,11 +6559,14 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             String propertyName = pd.getName().toLowerCase();
             if (lowerReservedNames.contains(propertyName))
-                throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
+            {
+                if (options.isStrictFieldValidation())
+                    throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
+            }
             else if (domain.getPropertyByName(propertyName) != null) // issue 25275
                 throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain.");
-
-            DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
+            else
+                DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
 
         Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
