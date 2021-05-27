@@ -68,7 +68,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
 
         Object.keys(this.state.fieldValues).map(item => {
             const itemValue = this.state.fieldValues[item];
-            if (itemValue !== null && itemValue !== '' && itemValue.trim() !== '') {
+            if (itemValue !== null && itemValue !== '' && (typeof itemValue !== 'string' || itemValue.trim() !== '')) {
                 form.append(item, itemValue);
             }
         });
