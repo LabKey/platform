@@ -1,1 +1,1 @@
---ALTER TABLE exp.PropertyDescriptor ADD ConceptSubtree NVARCHAR(MAX) NULL;
+ALTER TABLE exp.PropertyDescriptor ADD ConceptSubtree NVARCHAR(MAX) NULL;
