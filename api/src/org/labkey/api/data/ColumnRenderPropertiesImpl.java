@@ -903,12 +903,14 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @Override
     public void setSourceOntology(String sourceOntology)
     {
+        assert _checkLocked();
         _sourceOntology = sourceOntology;
     }
 
     @Override
     public void setConceptSubtree(String path)
     {
+        assert _checkLocked();
         _conceptSubtree = path;
     }
 
@@ -927,6 +929,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @Override
     public void setConceptImportColumn(String conceptImportColumn)
     {
+        assert _checkLocked();
         _conceptImportColumn = conceptImportColumn;
     }
 
@@ -939,6 +942,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     @Override
     public void setConceptLabelColumn(String conceptLabelColumn)
     {
+        assert _checkLocked();
         _conceptLabelColumn = conceptLabelColumn;
     }
     /* /Ontology */
