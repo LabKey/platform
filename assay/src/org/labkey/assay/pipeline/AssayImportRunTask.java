@@ -16,7 +16,9 @@
 package org.labkey.assay.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
@@ -58,6 +60,8 @@ import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InaccessibleObjectException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -103,9 +107,16 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
     }
 
+    /**
+     * A factory for file analysis task implementations
+     */
     public static class FileAnalysisFactory extends Factory
     {
-        private List<Map<String, Object>> _rawData;             // used in the case of multi-sheet excel or zip files
+        private static final String PROP_KEY = "name";
+        private static final String PROP_VALUE = "value";
+        private static final String RESULTS_SHEET = "results";
+        private static final String RUN_PROPS_SHEET = "runProperties";
+        private static final String BATCH_PROPS_SHEET = "batchProperties";
 
         public FileAnalysisFactory()
         {
@@ -149,51 +160,128 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         @Override
         List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
         {
-            FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
             List<RecordedAction.DataFile> outputs = new ArrayList<>();
-
-            // guaranteed to have a single file upload
-            assert support.getInputFiles().size() == 1;
-
-            File dataFile = support.getInputFiles().get(0);
+            File dataFile = getDataFile(job);
+            job.getLogger().info("Importing output data file : " + dataFile.getName());
             outputs.add(new RecordedAction.DataFile(dataFile.toURI(), "RESULTS-DATA", false, false));
 
-            if (ExcelLoader.isExcel(dataFile))
-            {
-                parseExcelFile(dataFile);
-            }
-            else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
-            {
-
-            }
             return outputs;
         }
 
-        @Override
-        List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
+        private File getDataFile(PipelineJob job)
         {
-            return _rawData;
+            FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
+
+            // guaranteed to have a single file upload
+            assert support.getInputFiles().size() == 1;
+            return support.getInputFiles().get(0);
         }
 
-        private void parseExcelFile(File dataFile) throws PipelineJobException
+        @Override
+        @Nullable
+        List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
         {
+            File dataFile = getDataFile(job);
             try
             {
-                // check to see if this is a multi-sheet format
-                ExcelLoader loader = new ExcelLoader(dataFile, true);
-                if (loader.getSheetNames().size() > 1)
+                if (ExcelLoader.isExcel(dataFile))
                 {
-                    if (loader.getSheetNames().contains("results"))
+                    job.getLogger().info("Processing excel file: " + dataFile.getName());
+                    // check to see if this is a multi-sheet format
+                    ExcelLoader loader = new ExcelLoader(dataFile, true);
+                    List<String> sheets = loader.getSheetNames();
+                    if (sheets.size() > 1)
                     {
-                        loader.setSheetName("results");
-                        _rawData = loader.load();
+                        job.getLogger().info("Processing excel multi-sheet format");
+
+                        // if a sheet name with results exist, use that as the results data, otherwise
+                        // default to the first sheet in the workbook
+                        if (sheets.contains(RESULTS_SHEET))
+                        {
+                            job.getLogger().info("Found sheet named : " + RESULTS_SHEET + ", loading into results data.");
+                            loader.setSheetName(RESULTS_SHEET);
+                        }
+                        else
+                            job.getLogger().info("Couldn't find sheet named : " + RESULTS_SHEET + ", loading data from the first sheet.");
+                        return loader.load();
                     }
-                    else
-                        // instead of throwing we may just want to default to the first sheet as the results data
-                        throw new PipelineJobException("Expected a sheet named results to contain the results data for the assay run.");
+                }
+                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                {
                 }
             }
             catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+            return null;
+        }
+
+        @Override
+        @NotNull Map<String, Object> getBatchProperties(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            try
+            {
+                if (ExcelLoader.isExcel(dataFile))
+                {
+                    return loadProperties(dataFile, BATCH_PROPS_SHEET, job.getLogger());
+                }
+                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                {
+                }
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+            return Collections.emptyMap();
+        }
+
+        @Override
+        @NotNull Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            try
+            {
+                if (ExcelLoader.isExcel(dataFile))
+                {
+                    return loadProperties(dataFile, RUN_PROPS_SHEET, job.getLogger());
+                }
+                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                {
+                }
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+            return Collections.emptyMap();
+        }
+
+        private Map<String, Object> loadProperties(File dataFile, String sheetName, Logger log) throws PipelineJobException
+        {
+            try
+            {
+                ExcelLoader loader = new ExcelLoader(dataFile, true);
+                Map<String, Object> properties = new HashMap<>();
+                if (loader.getSheetNames().contains(sheetName))
+                {
+                    log.info("Found sheet named : " + sheetName + ", loading properties from this sheet.");
+
+                    loader.setSheetName(sheetName);
+                    for (Map<String, Object> row : loader.load())
+                    {
+                        if (row.containsKey(PROP_KEY) && row.containsKey(PROP_VALUE))
+                            properties.put(String.valueOf(row.get(PROP_KEY)), row.get(PROP_VALUE));
+                        else
+                            throw new PipelineJobException("Batch or run properties must have column headers of : name and value " +
+                                    "to be parsed correctly.");
+                    }
+                }
+                return properties;
+            }
+            catch (IOException e)
             {
                 throw new PipelineJobException(e);
             }
@@ -357,9 +445,22 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyList();
         }
 
+        @Nullable
         List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
         {
             return null;
+        }
+
+        @NotNull
+        Map<String, Object> getBatchProperties(PipelineJob job) throws PipelineJobException
+        {
+            return Collections.emptyMap();
+        }
+
+        @NotNull
+        Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
+        {
+            return Collections.emptyMap();
         }
     }
 
@@ -491,14 +592,22 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         return props;
     }
 
-    private Map<String, Object> getBatchProperties()
+    private Map<String, Object> getBatchProperties() throws PipelineJobException
     {
-        return getPrefixedProperties("assay batch property, ");
+        Map<String, Object> props = new HashMap<>();
+        props.putAll(getPrefixedProperties("assay batch property, "));
+        props.putAll(_factory.getBatchProperties(getJob()));
+
+        return props;
     }
 
-    private Map<String, Object> getRunProperties()
+    private Map<String, Object> getRunProperties() throws PipelineJobException
     {
-        return getPrefixedProperties("assay run property, ");
+        Map<String, Object> props = new HashMap<>();
+        props.putAll(getPrefixedProperties("assay run property, "));
+        props.putAll(_factory.getRunProperties(getJob()));
+
+        return  props;
     }
 
     /**
