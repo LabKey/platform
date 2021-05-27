@@ -67,7 +67,10 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         }
 
         Object.keys(this.state.fieldValues).map(item => {
-            form.append(item, this.state.fieldValues[item]);
+            const itemValue = this.state.fieldValues[item];
+            if (itemValue !== null && itemValue !== "") {
+                form.append(item, itemValue);
+            }
         });
 
         Ajax.request({
