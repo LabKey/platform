@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.collections4.ListUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
@@ -58,6 +59,7 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -127,7 +129,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public AuditHandler getAuditHandler()
+    public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
     {
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
@@ -136,7 +138,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         else
         {
-            return super.getAuditHandler();
+            return super.getAuditHandler(auditBehaviorType);
         }
     }
 
@@ -848,20 +850,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder builder = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampleset")
-                    .setIndexFunction(lsids -> () ->
-                    {
-                        SearchService ss = SearchService.get();
-                        if (ss != null)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+                    .setFileLinkDirectory("sampleset");
+            SearchService ss = SearchService.get();
+            if (null != ss)
+            {
+                persist.setIndexFunction(lsids -> () ->
+                    ListUtils.partition(lsids, 100).forEach(sublist ->
+                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
-                            {
-                                ss.defaultTask().addRunnable(() -> expMaterial.index(null), SearchService.PRIORITY.bulk);
-                            }
-                        }
-                    }));
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
+                                expMaterial.index(ss.defaultTask());
+                        })
+                    )
+                );
+            }
 
+            DataIteratorBuilder builder = LoggingDataIterator.wrap(persist);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
