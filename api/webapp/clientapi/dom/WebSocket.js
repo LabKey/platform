@@ -34,6 +34,7 @@ LABKEY.WebSocket = new function ()
     var $ = jQuery;
     var _websocket = null;
     var _callbacks = {};
+    var _modalShowing = false;
 
     function openWebsocket() {
         _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
@@ -102,7 +103,6 @@ LABKEY.WebSocket = new function ()
     function showDisconnectedMessage() {
         displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.");
         // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
-        // CONSIDER: Once reconnected, reload the page unless page is dirty -- LABKEY.isDirty()
     }
 
     function isSessionInvalidBackgroundHideEnabled() {
@@ -139,9 +139,14 @@ LABKEY.WebSocket = new function ()
             $('#lk-utils-modal-backdrop').remove();
             modal.hide();
         }
+
+        _modalShowing = false;
     }
 
     function displayModal(title, message) {
+        if (_modalShowing) return;
+        _modalShowing = true;
+
         toggleBackgroundVisible(true);
 
         if (LABKEY.Utils.modal) {
@@ -189,10 +194,8 @@ LABKEY.WebSocket = new function ()
     // initial call will open the WebSocket to at least handle the logout and session timeout events
     // other apps or code can register their own event listeners as well via addServerEventListener
     var initWebSocket = function() {
-        if ('WebSocket' in window) {
-            if (null === _websocket) {
-                openWebsocket();
-            }
+        if ('WebSocket' in window && null === _websocket) {
+            openWebsocket();
         }
     };
 
