@@ -34,6 +34,7 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
@@ -56,6 +57,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -507,6 +509,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected int truncateRows(User user, Container container)
     {
        return _dataset.deleteRows((Date) null);
+    }
+
+    @Override
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<Enum, Object> updatedParams = configParameters;
+        if (updatedParams == null)
+            updatedParams = new HashMap<>();
+        updatedParams.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.SUMMARY);
+        return super.truncateRows(user, container, updatedParams, extraScriptContext);
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

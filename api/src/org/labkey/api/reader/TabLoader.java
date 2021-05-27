@@ -309,7 +309,7 @@ public class TabLoader extends DataLoader
         value = StringUtils.trimToEmpty(value);
         if ("\\N".equals(value))
             return _preserveEmptyString ? null : "";
-        if (_unescapeBackslashes)
+        if (_unescapeBackslashes && value.indexOf('\\') >= 0)   // unescapeJava() is really slow
         {
             try
             {
