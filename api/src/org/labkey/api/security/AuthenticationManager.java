@@ -1098,8 +1098,14 @@ public class AuthenticationManager
      */
     public static @NotNull Map<String, String> getAuthenticationAttributes(HttpServletRequest request)
     {
-        Map<String, String> attributeMap = null;
         HttpSession session = request.getSession(false);
+
+        return getAuthenticationAttributes(session);
+    }
+
+    public static @NotNull Map<String, String> getAuthenticationAttributes(HttpSession session)
+    {
+        Map<String, String> attributeMap = null;
 
         if (null != session)
             attributeMap = (Map<String, String>)session.getAttribute(SecurityManager.AUTHENTICATION_ATTRIBUTES_KEY);
