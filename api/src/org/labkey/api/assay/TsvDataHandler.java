@@ -63,7 +63,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
 
     static
     {
-        FileType fileType = new FileType(Arrays.asList(".tsv", ".csv", ".xls", ".xlsx", ".txt", ".fna", ".fasta"), ".tsv");
+        FileType fileType = new FileType(Arrays.asList(".tsv", ".csv", ".xls", ".xlsx", ".txt", ".fna", ".fasta", ".zip"), ".tsv");
         fileType.setExtensionsMutuallyExclusive(false);
         DATA_TYPE = new AssayDataType(NAMESPACE, fileType);
     }

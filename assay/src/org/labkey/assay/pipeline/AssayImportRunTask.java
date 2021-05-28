@@ -46,9 +46,12 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
@@ -56,12 +59,12 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InaccessibleObjectException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -114,9 +117,9 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
     {
         private static final String PROP_KEY = "name";
         private static final String PROP_VALUE = "value";
-        private static final String RESULTS_SHEET = "results";
-        private static final String RUN_PROPS_SHEET = "runProperties";
-        private static final String BATCH_PROPS_SHEET = "batchProperties";
+        private static final String RESULTS_NAME = "results";
+        private static final String RUN_PROPS_NAME = "runProperties";
+        private static final String BATCH_PROPS_NAME = "batchProperties";
 
         public FileAnalysisFactory()
         {
@@ -211,18 +214,30 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
                         // if a sheet name with results exist, use that as the results data, otherwise
                         // default to the first sheet in the workbook
-                        if (sheets.contains(RESULTS_SHEET))
+                        if (sheets.contains(RESULTS_NAME))
                         {
-                            job.getLogger().info("Found sheet named : " + RESULTS_SHEET + ", loading into results data.");
-                            loader.setSheetName(RESULTS_SHEET);
+                            job.getLogger().info("Found sheet named : " + RESULTS_NAME + ", loading into results data.");
+                            loader.setSheetName(RESULTS_NAME);
                         }
                         else
-                            job.getLogger().info("Couldn't find sheet named : " + RESULTS_SHEET + ", loading data from the first sheet.");
+                            job.getLogger().info("Couldn't find sheet named : " + RESULTS_NAME + ", loading data from the first sheet.");
                         return loader.load();
                     }
                 }
                 else if (FileUtil.getExtension(dataFile).equals("zip"))
                 {
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> RESULTS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+
+                    if (results != null && results.length == 1)
+                    {
+                        File resultFile = results[0];
+                        job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
+                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
+
+                        return loader.load();
+                    }
                 }
             }
             catch (Exception e)
@@ -240,10 +255,21 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 if (ExcelLoader.isExcel(dataFile))
                 {
-                    return loadProperties(dataFile, BATCH_PROPS_SHEET, job.getLogger());
+                    return loadProperties(dataFile, BATCH_PROPS_NAME, job.getLogger());
                 }
                 else if (FileUtil.getExtension(dataFile).equals("zip"))
                 {
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> BATCH_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                    if (results != null && results.length == 1)
+                    {
+                        File resultFile = results[0];
+                        job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
+                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
+
+                        return loadProperties(loader);
+                    }
                 }
             }
             catch (Exception e)
@@ -261,10 +287,21 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 if (ExcelLoader.isExcel(dataFile))
                 {
-                    return loadProperties(dataFile, RUN_PROPS_SHEET, job.getLogger());
+                    return loadProperties(dataFile, RUN_PROPS_NAME, job.getLogger());
                 }
                 else if (FileUtil.getExtension(dataFile).equals("zip"))
                 {
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> RUN_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                    if (results != null && results.length == 1)
+                    {
+                        File resultFile = results[0];
+                        job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
+                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
+
+                        return loadProperties(loader);
+                    }
                 }
             }
             catch (Exception e)
@@ -274,32 +311,71 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyMap();
         }
 
+        @Override
+        void cleanUp(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            if (FileUtil.getExtension(dataFile).equals("zip"))
+            {
+                File dir = getExplodedZipDir(job, dataFile);
+                FileUtil.deleteDir(dir, job.getLogger());
+            }
+        }
+
         private Map<String, Object> loadProperties(File dataFile, String sheetName, Logger log) throws PipelineJobException
         {
             try
             {
                 ExcelLoader loader = new ExcelLoader(dataFile, true);
-                Map<String, Object> properties = new HashMap<>();
                 if (loader.getSheetNames().contains(sheetName))
                 {
                     log.info("Found sheet named : " + sheetName + ", loading properties from this sheet.");
 
                     loader.setSheetName(sheetName);
-                    for (Map<String, Object> row : loader.load())
-                    {
-                        if (row.containsKey(PROP_KEY) && row.containsKey(PROP_VALUE))
-                            properties.put(String.valueOf(row.get(PROP_KEY)), row.get(PROP_VALUE));
-                        else
-                            throw new PipelineJobException("Batch or run properties must have column headers of : name and value " +
-                                    "to be parsed correctly.");
-                    }
+                    return loadProperties(loader);
                 }
-                return properties;
+                return Collections.emptyMap();
             }
             catch (IOException e)
             {
                 throw new PipelineJobException(e);
             }
+        }
+
+        private Map<String, Object> loadProperties(DataLoader loader) throws PipelineJobException
+        {
+            Map<String, Object> properties = new HashMap<>();
+            for (Map<String, Object> row : loader.load())
+            {
+                if (row.containsKey(PROP_KEY) && row.containsKey(PROP_VALUE))
+                    properties.put(String.valueOf(row.get(PROP_KEY)), row.get(PROP_VALUE));
+                else
+                    throw new PipelineJobException("Batch or run properties must have column headers of : name and value " +
+                            "to be parsed correctly.");
+            }
+            return properties;
+        }
+
+        private void ensureExplodedZip(PipelineJob job, File dataFile) throws PipelineJobException
+        {
+            File explodedDir = getExplodedZipDir(job, dataFile);
+            if (!explodedDir.exists())
+            {
+                try
+                {
+                    ZipUtil.unzipToDirectory(dataFile, explodedDir, job.getLogger());
+                }
+                catch (IOException e)
+                {
+                    throw new PipelineJobException(e);
+                }
+            }
+        }
+
+        private File getExplodedZipDir(PipelineJob job, File dataFile)
+        {
+            File analysisDir = ((AbstractFileAnalysisJob)job).getAnalysisDirectory();
+            return new File(analysisDir, String.format("%s-expanded", dataFile.getName()));
         }
     }
 
@@ -476,6 +552,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
         {
             return Collections.emptyMap();
+        }
+
+        void cleanUp(PipelineJob job) throws PipelineJobException
+        {
         }
     }
 
@@ -732,6 +812,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             // Consider these actions complete.  Saves the exp run's URL into the job status.
             getJob().clearActionSet(run);
+            _factory.cleanUp(getJob());
 
             tx.commit();
         }
