@@ -22,7 +22,6 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -337,17 +336,17 @@ public class LineageTableInfo extends VirtualTable
             // giant union query
             SQLFragment sql = new SQLFragment();
             sql.append(
-                    "SELECT container, CAST('Data' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
+                    "SELECT container, CAST('Data' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid, CAST(NULL AS VARCHAR(200)) AS RunProtocolLsid\n" +
                     "FROM exp.Data\n" +
                     "\n" +
                     "UNION ALL\n" +
                     "\n" +
-                    "SELECT container, CAST('Material' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
+                    "SELECT container, CAST('Material' AS VARCHAR(50)) AS exptype, CAST(cpastype AS VARCHAR(200)) AS cpastype, name, lsid, rowid, CAST(NULL AS VARCHAR(200)) AS RunProtocolLsid\n" +
                     "FROM exp.Material\n" +
                     "\n" +
                     "UNION ALL\n" +
                     "\n" +
-                    "SELECT container, CAST('ExperimentRun' AS VARCHAR(50)) AS exptype, CAST(NULL AS VARCHAR(200)) AS cpastype, name, lsid, rowid\n" +
+                    "SELECT container, CAST('ExperimentRun' AS VARCHAR(50)) AS exptype, CAST(NULL AS VARCHAR(200)) AS cpastype, name, lsid, rowid, protocolLsid AS RunProtocolLsid\n" +
                     "FROM exp.ExperimentRun\n");
             return sql;
         }
