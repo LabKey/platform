@@ -87,12 +87,12 @@ public class ParameterMapStatement implements AutoCloseable
         _dialect = from._dialect;
         _map = from._map;
         _parameters = new Parameter[from._parameters.length];
-        for (int i = 0; i < from._parameters.length; i++)
-            _parameters[i] = from._parameters[i].copy(_stmt);
         _exceptionFramework = from._exceptionFramework;
         try
         {
             _stmt = createStatement(_conn, _sqlf);
+            for (int i = 0; i < from._parameters.length; i++)
+                _parameters[i] = from._parameters[i].copy(_stmt);
         }
         catch (SQLException x)
         {
