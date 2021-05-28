@@ -95,7 +95,9 @@ LABKEY.WebSocket = new function ()
                             setTimeout(showDisconnectedMessage, 1000);
                         }
                     });
-                }, 1000);
+                    // Note the extra second (5s in this case) for the timeout before we query whoami, this
+                    // is to allow time for the server login from the other tab to take hold.
+                }, 5000);
             }
         }
     }
