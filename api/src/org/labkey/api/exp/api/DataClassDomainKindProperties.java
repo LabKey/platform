@@ -13,6 +13,7 @@ public class DataClassDomainKindProperties
     private String nameExpression;
     private Integer sampleType;
     private String category;
+    private boolean _strictFieldValidation = true; // Set as false to skip validation check in ExperimentServiceImpl.createDataClass (used in Rlabkey labkey.domain.createAndLoad)
 
     public DataClassDomainKindProperties()
     {}
@@ -129,5 +130,15 @@ public class DataClassDomainKindProperties
     public void setDomainId(int domainId)
     {
         this.domainId = domainId;
+    }
+
+    public boolean isStrictFieldValidation()
+    {
+        return _strictFieldValidation;
+    }
+
+    public void setStrictFieldValidation(boolean strictFieldValidation)
+    {
+        _strictFieldValidation = strictFieldValidation;
     }
 }

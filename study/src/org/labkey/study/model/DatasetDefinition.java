@@ -1633,7 +1633,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
 
         @Override
-        public AuditHandler getAuditHandler()
+        public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
         {
             return new DatasetAuditHandler();
         }
@@ -1642,9 +1642,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     private class DatasetAuditHandler extends AbstractAuditHandler
     {
         @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
         {
-            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount);
+            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType);
         }
 
         @Override

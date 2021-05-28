@@ -27,9 +27,9 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -79,6 +79,7 @@ import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -356,8 +357,8 @@ public abstract class UploadSamplesHelper
                                                                                        String dataType /*sample type or source type name*/)
             throws ValidationException, ExperimentException
     {
-        Map<ExpMaterial, String> parentMaterials = new HashMap<>();
-        Map<ExpData, String> parentData = new HashMap<>();
+        Map<ExpMaterial, String> parentMaterials = new LinkedHashMap<>();
+        Map<ExpData, String> parentData = new LinkedHashMap<>();
         Set<String> parentDataTypesToRemove = new CaseInsensitiveHashSet();
         Set<String> parentSampleTypesToRemove = new CaseInsensitiveHashSet();
 

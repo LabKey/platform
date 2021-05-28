@@ -1,6 +1,6 @@
 import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react'
-import {ActionURL, Ajax, getServerContext, Utils} from "@labkey/api";
-import {AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME} from '@labkey/components';
+import { ActionURL, Ajax, getServerContext, Utils } from "@labkey/api";
+import { AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME, App as LabKeyApp } from '@labkey/components';
 import { Button, Panel } from "react-bootstrap";
 
 import "./AssayTypeSelect.scss";
@@ -87,6 +87,7 @@ export const App: FC<any> = memo(props => {
                         showContainerSelect={true}
                         onChange={onChange}
                         selectedTab={tab}
+                        hasPremium={LabKeyApp.hasPremiumModule()}
                     />
                 </Panel.Body>
             </Panel>

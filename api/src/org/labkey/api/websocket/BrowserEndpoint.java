@@ -17,6 +17,7 @@ package org.labkey.api.websocket;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 
@@ -81,6 +82,7 @@ public abstract class BrowserEndpoint
                 config.getUserProperties().put("httpSession", httpSession);
 
             config.getUserProperties().put("userId", null == user ? 0 : user.getUserId());
+            config.getUserProperties().put("attributes", AuthenticationManager.getAuthenticationAttributes(httpSession));
         }
     }
 
