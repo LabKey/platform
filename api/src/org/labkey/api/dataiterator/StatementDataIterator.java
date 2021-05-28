@@ -48,6 +48,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.io.IOException;
 import java.sql.BatchUpdateException;
@@ -589,13 +591,20 @@ public class StatementDataIterator extends AbstractDataIterator
                     m.executeBatch();
                     log("</executeBatch() on " + m + ">");
                 }
-                catch (SQLException x)
+                catch (DataAccessException dae)
                 {
-                    if (x instanceof BatchUpdateException && null != x.getNextException())
-                        x = x.getNextException();
-                    // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
-                    //noinspection ThrowableResultOfMethodCallIgnored
-                    getRowError().addGlobalError(x);
+                    // for backward compatibility use the underlying SQLException (could update tests, etc)
+                    if (dae.getCause() instanceof SQLException)
+                    {
+                        SQLException x = (SQLException)dae.getCause();
+                        if (x instanceof BatchUpdateException && null != x.getNextException())
+                            x = x.getNextException();
+                        // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        getRowError().addGlobalError(x);
+                        throw _context.getErrors();
+                    }
+                    getRowError().addGlobalError(dae);
                     throw _context.getErrors();
                 }
             }
@@ -713,17 +722,17 @@ public class StatementDataIterator extends AbstractDataIterator
             }
 
             @Override
-            public void executeBatch() throws SQLException
+            public void executeBatch()
             {
                 if (0 == _errorWhen.getAndDecrement())
-                    throw new SQLException("boom");
+                    throw new DataIntegrityViolationException("boom");
             }
 
             @Override
-            public boolean execute() throws SQLException
+            public boolean execute()
             {
                 if (0 == _errorWhen.getAndDecrement())
-                    throw new SQLException("boom");
+                    throw new DataIntegrityViolationException("boom");
                 return true;
             }
 
