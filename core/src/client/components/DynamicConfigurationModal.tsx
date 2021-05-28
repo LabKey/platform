@@ -31,7 +31,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const {authConfig, modalType} = this.props;
         const fieldValues: any = {};
         this.props.modalType.settingsFields.forEach(field => {
-            fieldValues[field.name] = field.name in this.props.authConfig ? this.props.authConfig[field.name] : field.defaultValue;
+            const value = this.props.authConfig[field.name] != null ? this.props.authConfig[field.name] : '';
+            fieldValues[field.name] = field.name in this.props.authConfig ? value : field.defaultValue;
         });
 
         if (modalType.sso) {
@@ -66,7 +67,10 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         }
 
         Object.keys(this.state.fieldValues).map(item => {
-            form.append(item, this.state.fieldValues[item]);
+            const itemValue = this.state.fieldValues[item];
+            if (itemValue !== null && itemValue !== '' && (typeof itemValue !== 'string' || itemValue.trim() !== '')) {
+                form.append(item, itemValue);
+            }
         });
 
         Ajax.request({
