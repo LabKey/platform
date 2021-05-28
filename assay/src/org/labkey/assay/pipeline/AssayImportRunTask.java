@@ -153,6 +153,21 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyList();
         }
 
+        @Override
+        protected @NotNull AssayProvider getProvider(PipelineJob job) throws PipelineJobException
+        {
+            String providerName = job.getParameters().get("pipeline, assay provider");
+            if (providerName != null)
+            {
+                AssayProvider provider = AssayService.get().getProvider(providerName);
+                if (provider == null)
+                    throw new PipelineJobException("Assay provider not found: " + providerName);
+
+                return provider;
+            }
+            return super.getProvider(job);
+        }
+
         /**
          * Alternatively for file analysis tasks, we can get the output files from the
          * triggered location
@@ -374,7 +389,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @NotNull
-        private AssayProvider getProvider(PipelineJob job) throws PipelineJobException
+        protected AssayProvider getProvider(PipelineJob job) throws PipelineJobException
         {
             String providerName = _providerName;
             if (providerName == null)
@@ -397,7 +412,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @NotNull
-        private ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
+        protected ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
         {
             Container c = job.getContainer();
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
