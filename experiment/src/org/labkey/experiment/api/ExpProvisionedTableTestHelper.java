@@ -22,9 +22,12 @@ import org.labkey.api.util.TestContext;
 import java.io.StringWriter;
 import java.sql.Clob;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.hasItem;
 
 public class ExpProvisionedTableTestHelper
 {
@@ -111,6 +114,13 @@ public class ExpProvisionedTableTestHelper
     public List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName) throws Exception
     {
         return this.updateRows(c, rowsToUpdate, oldKeys, tableName, null);
+    }
+
+    static void assertMultiValue(Collection<Object> values, Collection<String> expected) throws Exception
+    {
+        Assert.assertNotNull(values);
+        for (var expect : expected)
+            Assert.assertThat(values, hasItem(expect));
     }
 
     static void assertMultiValue(Object value, String... expected) throws Exception
