@@ -121,7 +121,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public List<String> renderURLs(RenderContext ctx)
     {
-        return values(ctx, super::renderURL);
+        return values(ctx, _column::renderURL);
     }
 
     @Override
@@ -171,7 +171,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public List<Object> getDisplayValues(RenderContext ctx)
     {
-        return values(ctx, super::getDisplayValue);
+        return values(ctx, _column::getDisplayValue);
     }
 
     @Override
@@ -183,13 +183,13 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public List<String> getTsvFormattedValues(RenderContext ctx)
     {
-        return values(ctx, super::getTsvFormattedValue);
+        return values(ctx, _column::getTsvFormattedValue);
     }
 
     @Override
     public List<String> getFormattedTexts(RenderContext ctx)
     {
-        return values(ctx, super::getFormattedText);
+        return values(ctx, _column::getFormattedText);
     }
 
     @Override
@@ -201,7 +201,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public List<Object> getJsonValues(RenderContext ctx)
     {
-        return values(ctx, super::getJsonValue);
+        return values(ctx, _column::getJsonValue);
     }
 
     @Override
@@ -215,6 +215,6 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public Object getInputValue(RenderContext ctx)
     {
-        return values(ctx, super::getInputValue);
+        return values(ctx, _column::getInputValue);
     }
 }
