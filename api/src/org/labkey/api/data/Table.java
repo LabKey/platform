@@ -136,7 +136,7 @@ public class Table
     }
 
 
-    public static void setParameters(PreparedStatement stmt, Collection<?> parameters, List<Parameter> jdbcParameters) throws SQLException
+    public static void setParameters(PreparedStatement stmt, Collection<?> parameters, List<Parameter> jdbcParameters)
     {
         if (null == parameters)
             return;
@@ -157,6 +157,7 @@ public class Table
             i++;
         }
     }
+
 
     /** @return if this is a statement that starts with SELECT and contains FROM, ignoring comment lines that start with "--" */
     public static boolean isSelect(String sql)
@@ -211,16 +212,16 @@ public class Table
             }
             stmt.executeBatch();
         }
-        catch (SQLException e)
+        catch (SQLException|RuntimeSQLException e)
         {
-            if (e instanceof BatchUpdateException)
+            SQLException sqlx = e instanceof RuntimeSQLException ? ((RuntimeSQLException)e).getSQLException() : (SQLException)e;
+            if (sqlx instanceof BatchUpdateException)
             {
-                if (null != e.getNextException())
-                    e = e.getNextException();
+                if (null != sqlx.getNextException())
+                    sqlx = sqlx.getNextException();
             }
-
-            logException(new SQLFragment(sql), conn, e, Level.WARN);
-            throw(e);
+            logException(new SQLFragment(sql), conn, sqlx, Level.WARN);
+            throw sqlx;
         }
         finally
         {

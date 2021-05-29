@@ -385,7 +385,7 @@ public class ParameterMapStatement implements AutoCloseable
                 }
             }
         }
-        catch (SQLException x)
+        catch (RuntimeSQLException x)
         {
             throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", x);
         }
@@ -469,8 +469,9 @@ public class ParameterMapStatement implements AutoCloseable
                 throw new IllegalStateException("Can't set constant parameter: " + name);
             p.setValue(value);
         }
-        catch (SQLException sqlx)
+        catch (RuntimeSQLException e)
         {
+            SQLException sqlx = e.getSQLException();
             SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(_scope.getDataSource());
             DataAccessException translated = translator.translate("Message", null, sqlx);
             if (translated instanceof DataIntegrityViolationException)
@@ -491,7 +492,7 @@ public class ParameterMapStatement implements AutoCloseable
                     p.setValue(e.getValue());
             }
         }
-        catch (SQLException sqlx)
+        catch (RuntimeSQLException sqlx)
         {
             throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", sqlx);
         }

@@ -27,6 +27,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
@@ -48,6 +49,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.UnexpectedException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -275,6 +277,8 @@ public class StatementDataIterator extends AbstractDataIterator
     protected void onFirst()
     {
         init();
+        for (var stmt : _stmts)
+            stmt.setExceptionFramework(ExceptionFramework.JDBC);
     }
 
     protected void afterExecute(ParameterMapStatement stmt, int batchSize, int rowNumber)
@@ -413,29 +417,36 @@ public class StatementDataIterator extends AbstractDataIterator
             checkBackgroundException();
             return hasNextRow;
         }
-        catch (SQLException x)
+        catch (RuntimeSQLException rtsqlx)
         {
-            if (x instanceof BatchUpdateException && null != x.getNextException())
-                x = x.getNextException();
-            if (StringUtils.startsWith(x.getSQLState(), "22") || RuntimeSQLException.isConstraintException(x))
+            SQLException sqlx = rtsqlx.getSQLException();
+            if (sqlx instanceof BatchUpdateException && null != sqlx.getNextException())
+                sqlx = sqlx.getNextException();
+            if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
             {
-                getRowError().addGlobalError(x);
+                getRowError().addGlobalError(sqlx);
 //              see bug21719
 //              Sometimes (always?) Postgres leaves the connection unusable after a constraint exception, so we can't continue even if we want to
                 throw _errors;
             }
             // table does not exist
-            else if (SqlDialect.isObjectNotFoundException(x))
+            else if (SqlDialect.isObjectNotFoundException(sqlx))
             {
                 OptimisticConflictException opt = OptimisticConflictException.create(Table.ERROR_TABLEDELETED);
                 getRowError().addGlobalError(opt);
                 throw _errors;
             }
-            throw new RuntimeSQLException(x);
+            throw new RuntimeSQLException(sqlx);
+        }
+        catch (DataAccessException x)
+        {
+            assert false : "Should not be here";
+            throw x;
         }
     }
 
-    private void processBatch(int batchSize, int rowNumber) throws SQLException, BatchValidationException
+
+    private void processBatch(int batchSize, int rowNumber) throws BatchValidationException
     {
         assert _execute.start();
 
@@ -591,21 +602,21 @@ public class StatementDataIterator extends AbstractDataIterator
                     m.executeBatch();
                     log("</executeBatch() on " + m + ">");
                 }
-                catch (DataAccessException dae)
+                catch (RuntimeSQLException rtsqlx)
                 {
                     // for backward compatibility use the underlying SQLException (could update tests, etc)
-                    if (dae.getCause() instanceof SQLException)
-                    {
-                        SQLException x = (SQLException)dae.getCause();
-                        if (x instanceof BatchUpdateException && null != x.getNextException())
-                            x = x.getNextException();
-                        // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        getRowError().addGlobalError(x);
-                        throw _context.getErrors();
-                    }
-                    getRowError().addGlobalError(dae);
+                    SQLException sqlx = rtsqlx.getSQLException();
+                    if (sqlx instanceof BatchUpdateException && null != sqlx.getNextException())
+                        sqlx = sqlx.getNextException();
+                    // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
+                    //noinspection ThrowableResultOfMethodCallIgnored
+                    getRowError().addGlobalError(sqlx);
                     throw _context.getErrors();
+                }
+                catch (DataAccessException x)
+                {
+                    assert false : "Should not be here";
+                    throw x;
                 }
             }
             assert _queue.isClosed();
