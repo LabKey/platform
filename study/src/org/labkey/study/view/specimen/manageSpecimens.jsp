@@ -37,7 +37,6 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenWebPartAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -122,7 +121,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
                         <td class="lk-study-prop-desc">Configure the specimen groupings in the specimen web part</td>
-                        <td><%= link("Configure Specimen Groupings", ManageSpecimenWebPartAction.class) %></td>
+                        <td><%= link("Configure Specimen Groupings", SpecimenService.get().getManageSpecimenWebPartActionClass()) %></td>
                     </tr>
 
                     <% if (numberOfTransforms == 1) { %>

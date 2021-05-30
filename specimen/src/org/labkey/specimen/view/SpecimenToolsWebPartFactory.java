@@ -1,5 +1,6 @@
 package org.labkey.specimen.view;
 
+import org.labkey.api.specimen.actions.ShowSearchAction;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.SpecimenUrls;
@@ -32,7 +33,7 @@ public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
         String iconBase = portalCtx.getContextPath() + "/study/tools/";
         List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
-        ActionURL vialSearchURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getShowSearchURL(portalCtx.getContainer());
+        ActionURL vialSearchURL = new ActionURL(ShowSearchAction.class, portalCtx.getContainer());
         vialSearchURL.addParameter("showVials", true);
         items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 

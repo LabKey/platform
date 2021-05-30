@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.actions.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
-<%@ page import="org.labkey.api.study.Study"%>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider"%>
+<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteActorAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorOrderAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>

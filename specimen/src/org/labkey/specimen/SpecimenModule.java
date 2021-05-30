@@ -38,6 +38,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.action.SpecimenApiController;
+import org.labkey.specimen.action.SpecimenController2;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
@@ -101,6 +102,7 @@ public class SpecimenModule extends SpringModule
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
 
+        addController("specimen2", SpecimenController2.class);
         addController("specimen-api", SpecimenApiController.class, "study-samples-api", "specimens-api");
 
         // Register early -- some modules don't declare a runtime dependency on specimen module, but will use the

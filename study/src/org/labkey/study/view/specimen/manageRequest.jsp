@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
@@ -41,7 +42,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ExtendedSpecimenRequestAction" %>

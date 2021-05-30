@@ -16,20 +16,20 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.specimen.actions.ShowUploadSpecimensAction" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.GetSpecimenExcelAction" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ShowUploadSpecimensAction.UploadSpecimensForm> me = (JspView<ShowUploadSpecimensAction.UploadSpecimensForm>) HttpView.currentView();
     ShowUploadSpecimensAction.UploadSpecimensForm bean = me.getModelBean();
     Container c = getContainer();
-    Study study = StudyManager.getInstance().getStudy(c);
+    Study study = StudyService.get().getStudy(c);
 %>
 <labkey:errors/>
 Use this form to insert or update specimens in the repository.<br>

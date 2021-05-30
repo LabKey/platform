@@ -52,6 +52,7 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.ShowUploadSpecimensAction;
 import org.labkey.api.specimen.actions.VialRequestForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -121,9 +122,9 @@ import java.util.Set;
  */
 public class SpecimenUtils
 {
-    private final BaseStudyController _controller;
+    private final SpecimenController _controller;
 
-    public SpecimenUtils(BaseStudyController controller)
+    public SpecimenUtils(SpecimenController controller)
     {
         // private constructor to prevent external instantiation
         _controller = controller;

@@ -53,7 +53,9 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.specimen.action.SpecimenController2;
 import org.labkey.specimen.pipeline.SpecimenReloadJob;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -389,13 +391,6 @@ public class SpecimenServiceImpl implements SpecimenService
         _changeListeners.add(listener);
     }
 
-    @Override
-    public void fireSpecimensChanged(Container c, User user, Logger logger)
-    {
-        for (SpecimenChangeListener l : _changeListeners)
-            l.specimensChanged(c, user, logger);
-    }
-
     private static final SpecimenTablesTemplate _specimenTablesTemplate = new DefaultSpecimenTablesTemplate();
 
     @Nullable
@@ -460,5 +455,18 @@ public class SpecimenServiceImpl implements SpecimenService
     public void registerRequestCustomizer(SpecimenRequestCustomizer customizer)
     {
         _specimenRequestCustomizer = customizer;
+    }
+
+    @Override
+    public void fireSpecimensChanged(Container c, User user, Logger logger)
+    {
+        for (SpecimenChangeListener l : _changeListeners)
+            l.specimensChanged(c, user, logger);
+    }
+
+    @Override
+    public Class<? extends Controller> getManageSpecimenWebPartActionClass()
+    {
+        return SpecimenController2.ManageSpecimenWebPartAction.class;
     }
 }
