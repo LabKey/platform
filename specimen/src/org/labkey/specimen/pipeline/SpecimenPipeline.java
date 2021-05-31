@@ -10,7 +10,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;
-import org.labkey.specimen.action.SpecimenController2.ImportSpecimenDataAction;
+import org.labkey.specimen.actions.SpecimenController2.ImportSpecimenDataAction;
 
 import java.io.File;
 

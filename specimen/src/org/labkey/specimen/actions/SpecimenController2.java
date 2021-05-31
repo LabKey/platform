@@ -1,4 +1,4 @@
-package org.labkey.specimen.action;
+package org.labkey.specimen.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

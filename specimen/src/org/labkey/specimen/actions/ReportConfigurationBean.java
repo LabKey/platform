@@ -1,4 +1,4 @@
-package org.labkey.specimen.action;
+package org.labkey.specimen.actions;
 
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;

@@ -22,7 +22,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.specimen.action.SpecimenReportActions;
+import org.labkey.specimen.actions.SpecimenReportActions;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -6,9 +6,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
-import org.labkey.specimen.action.ReportConfigurationBean;
-import org.labkey.specimen.action.SpecimenController2;
-import org.labkey.specimen.action.SpecimenController2.AutoReportListAction;
+import org.labkey.specimen.actions.ReportConfigurationBean;
+import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController2.AutoReportListAction;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

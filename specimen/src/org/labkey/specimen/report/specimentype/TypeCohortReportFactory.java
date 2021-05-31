@@ -20,7 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.specimen.report.SpecimenVisitReport;
 import org.labkey.specimen.report.SpecimenVisitReportAction;
-import org.labkey.specimen.action.SpecimenReportActions;
+import org.labkey.specimen.actions.SpecimenReportActions;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Params;

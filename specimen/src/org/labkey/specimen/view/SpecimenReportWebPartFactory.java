@@ -2,7 +2,7 @@ package org.labkey.specimen.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.specimen.action.ReportConfigurationBean;
+import org.labkey.specimen.actions.ReportConfigurationBean;
 import org.labkey.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;

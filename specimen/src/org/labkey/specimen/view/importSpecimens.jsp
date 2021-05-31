@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.specimen.pipeline.SpecimenArchive"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.specimen.action.SpecimenController2.ImportSpecimensBean" %>
-<%@ page import="org.labkey.specimen.action.SpecimenController2.SubmitSpecimenBatchImportAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ImportSpecimensBean" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.SubmitSpecimenBatchImportAction" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.zip.ZipException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

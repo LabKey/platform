@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.specimen.action.ReportConfigurationBean" %>
+<%@ page import="org.labkey.specimen.actions.ReportConfigurationBean" %>
 <%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>

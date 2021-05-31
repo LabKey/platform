@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.specimen.action.ShowGroupMembersAction" %>
+<%@ page import="org.labkey.specimen.actions.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
