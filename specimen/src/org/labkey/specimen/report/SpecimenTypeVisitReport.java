@@ -16,14 +16,13 @@
 package org.labkey.specimen.report;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.specimen.SpecimenManager;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.specimen.action.SpecimenReportActions;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -144,7 +143,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
                 for (Iterator<String> it = summary.getParticipantIds().iterator(); it.hasNext();)
                 {
                     String participantId = it.next();
-                    ActionURL url = SpecimenMigrationService.get().getTypeParticipantReportURL(_container);
+                    ActionURL url = new ActionURL(SpecimenReportActions.TypeParticipantReportAction.class, _container);
                     url.addParameter("participantId", participantId);
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.typeLevel, getTypeLevelEnum().name());
                     url.addParameter(SpecimenVisitReportParameters.PARAMS.statusFilterName, getStatusFilterName());

@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SpringActionController;
@@ -35,9 +36,7 @@ import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.RequestIdForm;
-import org.labkey.api.specimen.actions.SpecimenApiForm;
-import org.labkey.api.specimen.actions.VialRequestForm;
+import org.labkey.api.specimen.actions.IdTypes;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -79,6 +78,23 @@ public class SpecimenApiController extends SpringActionController
     public SpecimenApiController()
     {
         setActionResolver(_resolver);
+    }
+
+    public static class SpecimenApiForm implements HasViewContext
+    {
+        private ViewContext _viewContext;
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
+
+        @Override
+        public void setViewContext(ViewContext viewContext)
+        {
+            _viewContext = viewContext;
+        }
     }
 
     public static class GetRequestsForm extends SpecimenApiForm
@@ -249,6 +265,21 @@ public class SpecimenApiController extends SpringActionController
         }
     }
 
+    public static class RequestIdForm extends SpecimenApiForm
+    {
+        private int _requestId;
+
+        public int getRequestId()
+        {
+            return _requestId;
+        }
+
+        public void setRequestId(int requestId)
+        {
+            _requestId = requestId;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.1)
     public class GetRequestAction extends ReadOnlyApiAction<RequestIdForm>
@@ -392,6 +423,32 @@ public class SpecimenApiController extends SpringActionController
         return request;
     }
 
+    public static class VialRequestForm extends RequestIdForm
+    {
+        private String _idType;
+        private String[] _vialIds;
+
+        public String[] getVialIds()
+        {
+            return _vialIds;
+        }
+
+        public void setVialIds(String[] vialIds)
+        {
+            _vialIds = vialIds;
+        }
+
+        public String getIdType()
+        {
+            return _idType;
+        }
+
+        public void setIdType(String idType)
+        {
+            _idType = idType;
+        }
+    }
+
     @RequiresPermission(RequestSpecimensPermission.class)
     @ApiVersion(9.1)
     public class AddVialsToRequestAction extends MutatingApiAction<VialRequestForm>
@@ -428,9 +485,9 @@ public class SpecimenApiController extends SpringActionController
     private Vial getVial(String vialId, String idType)
     {
         Vial vial;
-        if (VialRequestForm.IdTypes.GlobalUniqueId.name().equals(idType))
+        if (IdTypes.GlobalUniqueId.name().equals(idType))
             vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), vialId);
-        else if (VialRequestForm.IdTypes.RowId.name().equals(idType))
+        else if (IdTypes.RowId.name().equals(idType))
         {
             try
             {
@@ -445,7 +502,7 @@ public class SpecimenApiController extends SpringActionController
         else
         {
             throw new RuntimeException("Invalid ID type \"" + idType + "\": only \"" +
-                    VialRequestForm.IdTypes.GlobalUniqueId.name() + "\" and \"" + VialRequestForm.IdTypes.RowId.name() +
+                    IdTypes.GlobalUniqueId.name() + "\" and \"" + IdTypes.RowId.name() +
                     "\" are valid parameter values.");
         }
         if (vial == null)

@@ -29,6 +29,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
+import org.labkey.specimen.action.ShowSearchAction;
 import org.labkey.specimen.action.SpecimenReportActions;
 import org.labkey.specimen.action.ShowUploadSpecimensAction;
 import org.labkey.specimen.action.ShowGroupMembersAction;
@@ -162,6 +163,12 @@ public class SpecimenModule extends SpringModule
             public ActionURL getAutoReportListURL(Container c)
             {
                 return new ActionURL(SpecimenController2.AutoReportListAction.class, c);
+            }
+
+            @Override
+            public ActionURL getShowSearchURL(Container c, boolean showVials)
+            {
+                return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
             }
         });
      }

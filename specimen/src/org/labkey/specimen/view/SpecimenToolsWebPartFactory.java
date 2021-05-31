@@ -1,6 +1,6 @@
 package org.labkey.specimen.view;
 
-import org.labkey.api.specimen.actions.ShowSearchAction;
+import org.labkey.specimen.action.ShowSearchAction;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.SpecimenUrls;
@@ -12,7 +12,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.specimen.action.SpecimenController2;
 import org.labkey.specimen.action.SpecimenController2.AutoReportListAction;
 
 import java.util.ArrayList;

@@ -26,8 +26,6 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.ShowSearchAction;
-import org.labkey.api.specimen.actions.SpecimenWebPartForm;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
@@ -170,6 +168,43 @@ public class SpecimenController2 extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addBaseSpecimenNavTrail(root);
+        }
+    }
+
+    public static class SpecimenWebPartForm
+    {
+        private String[] _grouping1;
+        private String[] _grouping2;
+        private String[] _columns;
+
+        public String[] getGrouping1()
+        {
+            return _grouping1;
+        }
+
+        public void setGrouping1(String[] grouping1)
+        {
+            _grouping1 = grouping1;
+        }
+
+        public String[] getGrouping2()
+        {
+            return _grouping2;
+        }
+
+        public void setGrouping2(String[] grouping2)
+        {
+            _grouping2 = grouping2;
+        }
+
+        public String[] getColumns()
+        {
+            return _columns;
+        }
+
+        public void setColumns(String[] columns)
+        {
+            _columns = columns;
         }
     }
 

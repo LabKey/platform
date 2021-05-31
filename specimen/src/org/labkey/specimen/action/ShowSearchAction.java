@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.action;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSearchBean;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
@@ -91,7 +90,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     {
         setHelpTopic("specimenShopping");
         root.addChild(_study.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-        root.addChild("Specimen Overview", SpecimenMigrationService.get().getOverviewURL(getContainer()));
+        root.addChild("Specimen Overview", new ActionURL(SpecimenController2.OverviewAction.class, getContainer()));
         root.addChild(_title);
     }
 

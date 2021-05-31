@@ -17,9 +17,8 @@
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
-<%@ page import="org.labkey.api.specimen.actions.ShowSearchAction"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -72,7 +71,7 @@
     }
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=link("Search").href(urlFor(ShowSearchAction.class).addParameter("showVials", bean.isShowingVials()))%>&nbsp;
+<%=link("Search").href(SpecimenMigrationService.get().getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
 <%=link("Reports", SpecimenMigrationService.get().getAutoReportListURL(getContainer())) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())

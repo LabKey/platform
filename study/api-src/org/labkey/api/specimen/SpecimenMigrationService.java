@@ -26,4 +26,5 @@ public interface SpecimenMigrationService
     ActionURL getUploadSpecimensURL(Container c);
     ActionURL getTypeParticipantReportURL(Container c);
     ActionURL getAutoReportListURL(Container c);
+    ActionURL getShowSearchURL(Container c, boolean showVials);
 }
