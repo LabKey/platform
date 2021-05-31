@@ -53,7 +53,6 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.ShowUploadSpecimensAction;
 import org.labkey.api.specimen.actions.VialRequestForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -310,8 +309,8 @@ public class SpecimenUtils
         if (getViewContext().hasPermission(AdminPermission.class))
         {
             Button upload = new Button.ButtonBuilder("Import Specimens")
-                    .href(new ActionURL(ShowUploadSpecimensAction.class, getContainer()))
-                    .build();
+                .href(SpecimenMigrationService.get().getUploadSpecimensURL(getContainer()))
+                .build();
             buttons.add(upload);
         }
 

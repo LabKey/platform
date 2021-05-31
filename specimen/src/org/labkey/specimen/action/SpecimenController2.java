@@ -27,7 +27,6 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.ShowSearchAction;
-import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.actions.SpecimenWebPartForm;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
@@ -66,7 +65,11 @@ public class SpecimenController2 extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(
         SpecimenController2.class,
+
+        ShowGroupMembersAction.class,
         ShowSearchAction.class,
+        ShowUploadSpecimensAction.class,
+        ShowUploadSpecimensAction.ImportCompleteAction.class,
 
         // Report actions from SpecimenReportActions
         SpecimenReportActions.ParticipantSummaryReportAction.class,
@@ -143,6 +146,11 @@ public class SpecimenController2 extends SpringActionController
         addRootNavTrail(root, getUser());
         ActionURL overviewURL = new ActionURL(OverviewAction.class, getContainer());
         root.addChild("Specimen Overview", overviewURL);
+    }
+
+    private ActionURL getManageStudyURL()
+    {
+        return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -577,6 +585,24 @@ public class SpecimenController2 extends SpringActionController
                 throw new NotFoundException("Specimen event not found");
 
             return new Pair<>(event, form.getName());
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class AutoReportListAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            return new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("exploreSpecimens");
+            addBaseSpecimenNavTrail(root);
+            root.addChild("Specimen Reports");
         }
     }
 }

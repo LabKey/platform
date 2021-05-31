@@ -18,15 +18,14 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.specimen.actions.ShowSearchAction"%>
-<%@ page import="org.labkey.api.specimen.actions.ShowUploadSpecimensAction" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
+<%@ page import="org.labkey.api.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission" %>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.specimen.view.SpecimenWebPart" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowCreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ViewRequestsAction" %>
@@ -220,7 +219,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(new ActionURL(AutoReportListAction.class, c))%>">View Available Reports</a></td>
+                                    <a href="<%=h(SpecimenMigrationService.get().getAutoReportListURL(getContainer()))%>">View Available Reports</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -335,7 +334,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(new ActionURL(ShowUploadSpecimensAction.class,c))%>">Import Specimens</a></td>
+                                    <a href="<%=h(SpecimenMigrationService.get().getUploadSpecimensURL(getContainer()))%>">Import Specimens</a></td>
                             </tr>
                             </tbody>
                         </table>

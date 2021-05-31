@@ -26,7 +26,6 @@
 <%
     JspView<ManageRequestInputsBean> me = (JspView<ManageRequestInputsBean>) HttpView.currentView();
     ManageRequestInputsBean bean = me.getModelBean();
-    String contextPath = bean.getContextPath();
 
     String tdButtons = "<a href=\"#\" onClick=\"return moveRow(this, true);\"><i class=\"fa fa-arrow-up\"></i></a>\n" +
             "<a href=\"#\" onClick=\"return moveRow(this, false);\"><i class=\"fa fa-arrow-down\"></i></a>\n" +

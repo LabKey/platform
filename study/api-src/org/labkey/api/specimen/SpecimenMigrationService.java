@@ -1,5 +1,6 @@
 package org.labkey.api.specimen;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
@@ -21,4 +22,8 @@ public interface SpecimenMigrationService
 
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getOverviewURL(Container c);
+    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
+    ActionURL getUploadSpecimensURL(Container c);
+    ActionURL getTypeParticipantReportURL(Container c);
+    ActionURL getAutoReportListURL(Container c);
 }

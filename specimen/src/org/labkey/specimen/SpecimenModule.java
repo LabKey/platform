@@ -29,6 +29,9 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
+import org.labkey.specimen.action.SpecimenReportActions;
+import org.labkey.specimen.action.ShowUploadSpecimensAction;
+import org.labkey.specimen.action.ShowGroupMembersAction;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
@@ -128,6 +131,37 @@ public class SpecimenModule extends SpringModule
             public ActionURL getOverviewURL(Container c)
             {
                 return new ActionURL(OverviewAction.class, c);
+            }
+
+            @Override
+            public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl)
+            {
+                ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
+                url.addParameter("id", Integer.toString(rowId));
+                if (locationId != null)
+                    url.addParameter("locationId", locationId);
+                if (returnUrl != null)
+                    url.addReturnURL(returnUrl);
+
+                return url;
+            }
+
+            @Override
+            public ActionURL getUploadSpecimensURL(Container c)
+            {
+                return new ActionURL(ShowUploadSpecimensAction.class, c);
+            }
+
+            @Override
+            public ActionURL getTypeParticipantReportURL(Container c)
+            {
+                return new ActionURL(SpecimenReportActions.TypeParticipantReportAction.class, c);
+            }
+
+            @Override
+            public ActionURL getAutoReportListURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.AutoReportListAction.class, c);
             }
         });
      }

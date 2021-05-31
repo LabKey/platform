@@ -87,11 +87,7 @@ import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
 import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.actions.ReportConfigurationBean;
 import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
-import org.labkey.api.specimen.actions.ShowGroupMembersAction;
-import org.labkey.api.specimen.actions.ShowUploadSpecimensAction;
-import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.actions.ViewRequestsHeaderBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -217,9 +213,6 @@ public class SpecimenController extends BaseStudyController
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         SpecimenController.class,
-        ShowUploadSpecimensAction.class,
-        ShowUploadSpecimensAction.ImportCompleteAction.class,
-        ShowGroupMembersAction.class,
         ParticipantCommentAction.SpecimenCommentInsertAction.class,
         ParticipantCommentAction.SpecimenCommentUpdateAction.class
     );
@@ -294,24 +287,6 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl)
-        {
-            ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
-            url.addParameter("id", Integer.toString(rowId));
-            if (locationId != null)
-                url.addParameter("locationId", locationId);
-            url.addReturnURL(returnUrl);
-
-            return url;
-        }
-
-        @Override
-        public ActionURL getAutoReportListURL(Container c)
-        {
-            return new ActionURL(AutoReportListAction.class, c);
-        }
-
-        @Override
         public ActionURL getSpecimenEventsURL(Container c, @Nullable ActionURL returnURL)
         {
             ActionURL url = new ActionURL(SpecimenEventsAction.class, c);
@@ -330,12 +305,6 @@ public class SpecimenController extends BaseStudyController
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
-        }
-
-        @Override
-        public ActionURL getUploadSpecimensURL(Container c)
-        {
-            return new ActionURL(ShowUploadSpecimensAction.class, c);
         }
 
         @Override
@@ -370,21 +339,6 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getCompleteSpecimenURL(Container c, String type)
         {
             return new ActionURL(SpecimenController.CompleteSpecimenAction.class, c).addParameter("type", type);
-        }
-
-        @Override
-        public ActionURL getTypeParticipantReportURL(Container c)
-        {
-            return new ActionURL(SpecimenReportActions.TypeParticipantReportAction.class, c);
-        }
-
-        @Override
-        public void addSpecimenNavTrail(NavTree root, String childTitle, Container c)
-        {
-            ActionURL overviewURL = SpecimenMigrationService.get().getOverviewURL(c);
-            root.addChild("Specimen Overview", overviewURL);
-            root.addChild("Available Reports", new ActionURL(SpecimenController.AutoReportListAction.class, c));
-            root.addChild(childTitle);
         }
     }
 
@@ -571,7 +525,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
         {
-            StudyImpl study = getStudyThrowIfNull();
+            Study study = getStudyThrowIfNull();
 
             _vialView = form.isShowVials();
             CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), _vialView ? "SpecimenDetail" : "SpecimenSummary");
@@ -3094,24 +3048,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class AutoReportListAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/specimen/view/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("exploreSpecimens");
-            addBaseSpecimenNavTrail(root);
-            root.addChild("Specimen Reports");
-        }
-    }
-
     private enum CommentsConflictResolution
     {
         SKIP,
@@ -3633,7 +3569,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        protected JspView<Study> getJspView(Study study)
         {
             return new JspView<>("/org/labkey/study/view/specimen/manageActorOrder.jsp", study);
         }
@@ -3697,7 +3633,7 @@ public class SpecimenController extends BaseStudyController
             return getJspView(getStudyRedirectIfNull());
         }
 
-        protected abstract JspView<StudyImpl> getJspView(StudyImpl study);
+        protected abstract JspView<Study> getJspView(Study study);
 
         @Override
         public void addNavTrail(NavTree root)
@@ -3726,7 +3662,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        protected JspView<Study> getJspView(Study study)
         {
             return new JspView<>("/org/labkey/study/view/specimen/manageActors.jsp", study);
         }
@@ -3815,7 +3751,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        protected JspView<Study> getJspView(Study study)
         {
             return new JspView<>("/org/labkey/study/view/specimen/manageStatusOrder.jsp", study);
         }
@@ -3872,7 +3808,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        protected JspView<Study> getJspView(Study study)
         {
             return new JspView<>("/org/labkey/study/view/specimen/manageStatuses.jsp", study);
         }

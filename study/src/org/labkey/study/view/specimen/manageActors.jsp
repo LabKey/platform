@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.actions.ShowGroupMembersAction" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
@@ -71,7 +71,7 @@
                         updateMembersLink = urlFor(ManageActorsAction.class).addParameter("showMemberSites", actor.getRowId());
                 }
                 else
-                    updateMembersLink = urlFor(ShowGroupMembersAction.class).addParameter("id", actor.getRowId());
+                    updateMembersLink = SpecimenMigrationService.get().getShowGroupMembersURL(getContainer(), actor.getRowId(), null, null);
         %>
         <tr>
             <td align="center">&nbsp;</td>
@@ -92,7 +92,7 @@
                         <%
                             for (LocationImpl location : LocationManager.get().getLocations(study.getContainer()))
                             {
-                            %><a href="<%=h(urlFor(ShowGroupMembersAction.class).addParameter("id", actor.getRowId()).addParameter("locationId", location.getRowId()))%>"><%= h(location.getDisplayName()) %></a><br><%
+                            %><a href="<%=h(SpecimenMigrationService.get().getShowGroupMembersURL(getContainer(), actor.getRowId(), location.getRowId(), null))%>"><%= h(location.getDisplayName()) %></a><br><%
                             }
                         }
                         else

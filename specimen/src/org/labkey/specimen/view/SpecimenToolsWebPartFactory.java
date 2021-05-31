@@ -12,6 +12,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.specimen.action.SpecimenController2;
+import org.labkey.specimen.action.SpecimenController2.AutoReportListAction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +44,7 @@ public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
                 items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", PageFlowUtil.urlProvider(SpecimenUrls.class).getShowCreateSpecimenRequestURL(portalCtx.getContainer())));
         }
-        items.add(new StudyToolsWebPart.Item("Specimen Reports", iconBase + "specimen_report.png", PageFlowUtil.urlProvider(SpecimenUrls.class).getAutoReportListURL(portalCtx.getContainer())));
+        items.add(new StudyToolsWebPart.Item("Specimen Reports", iconBase + "specimen_report.png", new ActionURL(AutoReportListAction.class, portalCtx.getContainer())));
 
         if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
             items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings.png", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(portalCtx.getContainer())));

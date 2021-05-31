@@ -29,7 +29,6 @@ import org.labkey.api.view.NavTree;
  */
 public interface SpecimenUrls extends UrlProvider
 {
-    ActionURL getAutoReportListURL(Container c);
     ActionURL getCommentURL(Container c, String globalUniqueId);
     ActionURL getCompleteSpecimenURL(Container c, String type);
     ActionURL getDeleteRequestURL(Container c, String id);
@@ -40,14 +39,9 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getRequestDetailsURL(Container c, String requestId);
     ActionURL getRequestDetailsURL(Container c, int requestId);
     ActionURL getShowCreateSpecimenRequestURL(Container c);
-    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
     ActionURL getSpecimenEventsURL(Container c, @Nullable ActionURL returnURL);
     ActionURL getSpecimensURL(Container c);
     ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getSubmitRequestURL(Container c, String id);
-    ActionURL getTypeParticipantReportURL(Container c);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-    ActionURL getUploadSpecimensURL(Container c);
-
-    void addSpecimenNavTrail(NavTree root, String childTitle, Container c);
 }

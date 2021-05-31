@@ -18,6 +18,7 @@ package org.labkey.api.specimen.notifications;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -103,7 +104,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
 
     private HtmlString getConfigureEmailsLinkHTML(ActionURL currentUrl)
     {
-        ActionURL url = PageFlowUtil.urlProvider(SpecimenUrls.class).getShowGroupMembersURL(
+        ActionURL url = SpecimenMigrationService.get().getShowGroupMembersURL(
             getActor().getContainer(),
             getActor().getRowId(),
             getLocation() != null ? getLocation().getRowId() : null,
