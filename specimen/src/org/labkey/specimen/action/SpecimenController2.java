@@ -1,31 +1,57 @@
 package org.labkey.specimen.action;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.ShowSearchAction;
 import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.actions.SpecimenWebPartForm;
+import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.pipeline.SpecimenArchive;
 import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.study.MapArrayExcelWriter;
+import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.specimen.pipeline.SpecimenBatch;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 // TEMPORARY: Move specimen actions from study SpecimenController to here. Once all actions are moved, we'll rename this.
 public class SpecimenController2 extends SpringActionController
@@ -60,6 +86,31 @@ public class SpecimenController2 extends SpringActionController
         if (null == _study)
             _study = StudyService.get().getStudy(getContainer());
         return _study;
+    }
+
+    @NotNull
+    public Study getStudyThrowIfNull() throws IllegalStateException
+    {
+        Study study = StudyService.get().getStudy(getContainer());
+        if (null == study)
+        {
+            // We expected to find a study
+            throw new NotFoundException("No study found.");
+        }
+        return study;
+    }
+
+    @NotNull
+    public Study getStudyRedirectIfNull()
+    {
+        Study study = StudyService.get().getStudy(getContainer());
+        if (null == study)
+        {
+            // redirect to the study home page, where admins will see a 'create study' button,
+            // and non-admins will simply see a message that no study exists.
+            throw new RedirectException(urlProvider(StudyUrls.class).getBeginURL(getContainer()));
+        }
+        return study;
     }
 
     @RequiresPermission(ManageDisplaySettingsPermission.class)
@@ -117,6 +168,311 @@ public class SpecimenController2 extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/specimen/view/pivot.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+    public static class PipelineForm extends PipelinePathForm
+    {
+        private String replaceOrMerge = "replace";
+
+        public String getReplaceOrMerge()
+        {
+            return replaceOrMerge;
+        }
+
+        public void setReplaceOrMerge(String replaceOrMerge)
+        {
+            this.replaceOrMerge = replaceOrMerge;
+        }
+
+        public boolean isMerge()
+        {
+            return "merge".equals(this.replaceOrMerge);
+        }
+    }
+
+    public static void submitSpecimenBatch(Container c, User user, ActionURL url, File f, PipeRoot root, boolean merge) throws IOException
+    {
+        if (null == f || !f.exists() || !f.isFile())
+            throw new NotFoundException();
+
+        SpecimenBatch batch = new SpecimenBatch(new ViewBackgroundInfo(c, user, url), f, root, merge);
+        batch.submit();
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class SubmitSpecimenBatchImportAction extends FormHandlerAction<PipelineForm>
+    {
+        @Override
+        public void validateCommand(PipelineForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(PipelineForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
+            boolean first = true;
+            for (File f : form.getValidatedFiles(c))
+            {
+                // Only possibly overwrite when the first archive is loaded:
+                boolean merge = !first || form.isMerge();
+                submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, merge);
+                first = false;
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(PipelineForm pipelineForm)
+        {
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+    }
+
+    /**
+     * Legacy method hit via WGET/CURL to programmatically initiate a specimen import; no longer used by the UI,
+     * but this method should be kept around until we receive verification that the URL is no longer being hit
+     * programmatically.
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class SubmitSpecimenImport extends FormHandlerAction<PipelineForm>
+    {
+        @Override
+        public void validateCommand(PipelineForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(PipelineForm form, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            String path = form.getPath();
+            File f = null;
+
+            PipeRoot root = PipelineService.get().findPipelineRoot(c);
+            if (path != null)
+            {
+                if (root != null)
+                    f = root.resolvePath(path);
+            }
+
+            submitSpecimenBatch(c, getUser(), getViewContext().getActionURL(), f, root, form.isMerge());
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(PipelineForm pipelineForm)
+        {
+            return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+    }
+
+
+    public static class ImportSpecimensBean
+    {
+        private final String _path;
+        private final List<SpecimenArchive> _archives;
+        private final List<String> _errors;
+        private final Container _container;
+        private final String[] _files;
+
+        private boolean noSpecimens = false;
+        private boolean _defaultMerge = false;
+        private boolean _isEditableSpecimens = false;
+
+        public ImportSpecimensBean(Container container, List<SpecimenArchive> archives,
+                                   String path, String[] files, List<String> errors)
+        {
+            _path = path;
+            _files = files;
+            _archives = archives;
+            _errors = errors;
+            _container = container;
+        }
+
+        public List<SpecimenArchive> getArchives()
+        {
+            return _archives;
+        }
+
+        public String getPath()
+        {
+            return _path;
+        }
+
+        public String[] getFiles()
+        {
+            return _files;
+        }
+
+        public List<String> getErrors()
+        {
+            return _errors;
+        }
+
+        public Container getContainer()
+        {
+            return _container;
+        }
+
+        public boolean isNoSpecimens()
+        {
+            return noSpecimens;
+        }
+
+        public void setNoSpecimens(boolean noSpecimens)
+        {
+            this.noSpecimens = noSpecimens;
+        }
+
+        public boolean isDefaultMerge()
+        {
+            return _defaultMerge;
+        }
+
+        public void setDefaultMerge(boolean defaultMerge)
+        {
+            _defaultMerge = defaultMerge;
+        }
+
+        public boolean isEditableSpecimens()
+        {
+            return _isEditableSpecimens;
+        }
+
+        public void setEditableSpecimens(boolean editableSpecimens)
+        {
+            _isEditableSpecimens = editableSpecimens;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ImportSpecimenDataAction extends SimpleViewAction<PipelineForm>
+    {
+        private String[] _filePaths = null;
+
+        @Override
+        public ModelAndView getView(PipelineForm form, BindException bindErrors)
+        {
+            List<File> dataFiles = form.getValidatedFiles(getContainer());
+            List<SpecimenArchive> archives = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+            _filePaths = form.getFile();
+            for (File dataFile : dataFiles)
+            {
+                if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
+                {
+                    throw new NotFoundException();
+                }
+
+                if (!dataFile.canRead())
+                    errors.add("Can't read data file: " + dataFile);
+
+                SpecimenArchive archive = new SpecimenArchive(dataFile);
+                archives.add(archive);
+            }
+
+            ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
+            boolean isEmpty = SpecimenManagerNew.get().isSpecimensEmpty(getContainer(), getUser());
+            if (isEmpty)
+            {
+                bean.setNoSpecimens(true);
+            }
+            else if (SettingsManager.get().getRepositorySettings(getStudyThrowIfNull().getContainer()).isSpecimenDataEditable())
+            {
+                bean.setDefaultMerge(true);         // Repository is editable; make Merge the default
+                bean.setEditableSpecimens(true);
+            }
+
+            return new JspView<>("/org/labkey/specimen/view/importSpecimens.jsp", bean);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            String msg;
+            if (_filePaths.length == 1)
+                msg = _filePaths[0];
+            else
+                msg = _filePaths.length + " specimen archives";
+            root.addChild("Import Study Batch - " + msg);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class GetSpecimenExcelAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            List<Map<String,Object>> defaultSpecimens = new ArrayList<>();
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(),
+                    getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
+            for (ExcelColumn col : xlWriter.getColumns())
+                col.setCaption(importer.label(col.getName()));
+
+            xlWriter.write(getViewContext().getResponse());
+
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+    static class SpecimenEventForm
+    {
+        private String _id;
+        private Container _targetStudy;
+
+        public String getId()
+        {
+            return _id;
+        }
+
+        public void setId(String id)
+        {
+            _id = id;
+        }
+
+        public Container getTargetStudy()
+        {
+            return _targetStudy;
+        }
+
+        public void setTargetStudy(Container targetStudy)
+        {
+            _targetStudy = targetStudy;
+        }
+    }
+
+    @SuppressWarnings("unused") // Referenced in SpecimenForeignKey
+    @RequiresPermission(ReadPermission.class)
+    public static class SpecimenEventsRedirectAction extends SimpleViewAction<SpecimenEventForm>
+    {
+        @Override
+        public ModelAndView getView(SpecimenEventForm form, BindException errors)
+        {
+            if (form.getId() != null && form.getTargetStudy() != null)
+            {
+                Vial vial = SpecimenManagerNew.get().getVial(form.getTargetStudy(), getUser(), form.getId());
+                if (vial != null)
+                {
+                    ActionURL url = urlProvider(SpecimenUrls.class).getSpecimenEventsURL(form.getTargetStudy(), null).addParameter("id", vial.getRowId());
+                    throw new RedirectException(url);
+                }
+            }
+            return new HtmlView("<span class='labkey-error'>Unable to resolve the Specimen ID and target Study</span>");
         }
 
         @Override

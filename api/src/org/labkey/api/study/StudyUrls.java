@@ -30,6 +30,7 @@ import org.springframework.web.servlet.mvc.Controller;
  */
 public interface StudyUrls extends UrlProvider
 {
+    ActionURL getBeginURL(Container container);
     ActionURL getCompletionURL(Container studyContainer, CompletionType type);
     ActionURL getCreateStudyURL(Container container);
     ActionURL getManageStudyURL(Container container);
@@ -46,5 +47,6 @@ public interface StudyUrls extends UrlProvider
     ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol);
     ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType);
     ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol);
+
     void addManageStudyNavTrail(NavTree root, Container container, User user);
 }

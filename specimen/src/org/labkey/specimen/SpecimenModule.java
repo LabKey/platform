@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
@@ -44,6 +45,7 @@ import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.pipeline.SampleMindedTransform;
 import org.labkey.specimen.pipeline.SampleMindedTransformTask;
+import org.labkey.specimen.pipeline.SpecimenPipeline;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
@@ -120,6 +122,7 @@ public class SpecimenModule extends SpringModule
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
+        PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
 
         SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
             new SpecimenSettingsWriter(),

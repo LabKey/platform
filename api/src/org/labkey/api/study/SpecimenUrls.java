@@ -42,7 +42,7 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getRequestDetailsURL(Container c, int requestId);
     ActionURL getShowCreateSpecimenRequestURL(Container c);
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
-    ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL);
+    ActionURL getSpecimenEventsURL(Container c, @Nullable ActionURL returnURL);
     ActionURL getSpecimensURL(Container c);
     ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getSubmitRequestURL(Container c, String id);

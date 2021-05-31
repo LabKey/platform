@@ -268,6 +268,12 @@ public class StudyController extends BaseStudyController
     public static class StudyUrlsImpl implements StudyUrls
     {
         @Override
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        @Override
         public ActionURL getCompletionURL(Container studyContainer, CompletionType type)
         {
             if (studyContainer == null)

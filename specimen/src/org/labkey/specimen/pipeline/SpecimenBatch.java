@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipeRoot;
@@ -23,9 +23,9 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.specimen.SpecimensPage;
+import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.pipeline.StudyBatch;
-import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -44,8 +44,6 @@ import java.io.Serializable;
 public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJobSupport
 {
     private boolean _isMerge;
-
-    public static final FileType ARCHIVE_FILE_TYPE = new FileType(".specimens");
 
     // For serialization
     protected SpecimenBatch() {}

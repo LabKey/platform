@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.GetSpecimenExcelAction" %>
+<%@ page import="org.labkey.specimen.action.SpecimenController2.GetSpecimenExcelAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
