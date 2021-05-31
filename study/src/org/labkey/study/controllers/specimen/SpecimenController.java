@@ -98,9 +98,7 @@ import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
-import org.labkey.api.specimen.query.SpecimenEventQueryView;
 import org.labkey.api.specimen.query.SpecimenQueryView;
-import org.labkey.api.specimen.query.SpecimenRequestQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
@@ -160,7 +158,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -243,7 +240,13 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSpecimensURL(Container c, boolean showVials)
         {
-            return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, true);
+            return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, showVials);
+        }
+
+        @Override
+        public ActionURL getSelectedSpecimensURL(Container c, boolean showVials)
+        {
+            return new ActionURL(SelectedSpecimensAction.class, c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, showVials);
         }
 
         @Override
@@ -283,17 +286,6 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getRequestDetailsURL(Container c, String requestId)
         {
             return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
-        }
-
-        @Override
-        public ActionURL getSpecimenEventsURL(Container c, @Nullable ActionURL returnURL)
-        {
-            ActionURL url = new ActionURL(SpecimenEventsAction.class, c);
-
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
-
-            return url;
         }
 
         @Override
@@ -746,97 +738,6 @@ public class SpecimenController extends BaseStudyController
         public void setVialView(boolean vialView)
         {
             _vialView = vialView;
-        }
-    }
-
-    public static class SpecimenEventBean extends ReturnUrlForm
-    {
-        private Vial _vial;
-
-        public SpecimenEventBean(Vial vial, String returnUrl)
-        {
-            _vial = vial;
-            setReturnUrl(returnUrl);
-        }
-
-        public Vial getVial()
-        {
-            return _vial;
-        }
-
-        public void setVial(Vial vial)
-        {
-            _vial = vial;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class SpecimenEventsAction extends SimpleViewAction<ViewEventForm>
-    {
-        private boolean _showingSelectedSpecimens;
-
-        @Override
-        public ModelAndView getView(ViewEventForm viewEventForm, BindException errors)
-        {
-            Study study = getStudyThrowIfNull();
-            _showingSelectedSpecimens = viewEventForm.isSelected();
-            Vial vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), viewEventForm.getId());
-            if (vial == null)
-                throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
-
-            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/study/view/specimen/specimen.jsp",
-                    new SpecimenEventBean(vial, viewEventForm.getReturnUrl()));
-            summaryView.setTitle("Vial Summary");
-
-            SpecimenEventQueryView vialHistoryView = SpecimenEventQueryView.createView(getViewContext(), vial);
-            vialHistoryView.setTitle("Vial History");
-
-            VBox vbox;
-
-            if (SettingsManager.get().getRepositorySettings(getStudyRedirectIfNull().getContainer()).isEnableRequests())
-            {
-                List<Integer> requestIds = SpecimenRequestManager.get().getRequestIdsForSpecimen(vial);
-                SimpleFilter requestFilter;
-                WebPartView relevantRequests;
-
-                if (!requestIds.isEmpty())
-                {
-                    requestFilter = new SimpleFilter();
-                    StringBuilder whereClause = new StringBuilder();
-                    for (int i = 0; i < requestIds.size(); i++)
-                    {
-                        if (i > 0)
-                            whereClause.append(" OR ");
-                        whereClause.append("RequestId = ?");
-                    }
-                    requestFilter.addWhereClause(whereClause.toString(), requestIds.toArray());
-                    SpecimenRequestQueryView queryView = SpecimenRequestQueryView.createView(getViewContext(), requestFilter);
-                    queryView.setExtraLinks(true);
-                    relevantRequests = queryView;
-                }
-                else
-                    relevantRequests = new JspView("/org/labkey/specimen/view/relevantRequests.jsp");
-                relevantRequests.setTitle("Relevant Vial Requests");
-                vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
-            }
-            else
-            {
-                vbox = new VBox(summaryView, vialHistoryView);
-            }
-
-            return vbox;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBaseSpecimenNavTrail(root);
-            if (_showingSelectedSpecimens)
-            {
-                root.addChild("Selected Specimens", new ActionURL(SelectedSpecimensAction.class,
-                        getContainer()).addParameter(SpecimenViewTypeForm.PARAMS.showVials, "true"));
-            }
-            root.addChild("Vial History");
         }
     }
 

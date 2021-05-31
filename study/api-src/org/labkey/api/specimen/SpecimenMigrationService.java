@@ -29,4 +29,5 @@ public interface SpecimenMigrationService
     ActionURL getSpecimenRequestConfigRequiredURL(Container c);
     ActionURL getConfigureRequestabilityRulesURL(Container c);
     ActionURL getViewRequestsURL(Container c);
+    ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
 }

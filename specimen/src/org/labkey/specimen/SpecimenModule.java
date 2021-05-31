@@ -181,6 +181,12 @@ public class SpecimenModule extends SpringModule
             {
                 return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
             }
+
+            @Override
+            public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
+            {
+                return new ActionURL(SpecimenController2.SpecimenEventsAction.class, c).addReturnURL(returnURL);
+            }
         });
      }
 

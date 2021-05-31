@@ -13,6 +13,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -27,10 +28,13 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.IdForm;
+import org.labkey.api.specimen.actions.SpecimenEventBean;
 import org.labkey.api.specimen.actions.ViewRequestsHeaderBean;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
+import org.labkey.api.specimen.query.SpecimenEventQueryView;
 import org.labkey.api.specimen.query.SpecimenRequestQueryView;
 import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
@@ -52,6 +56,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.WebPartView;
 import org.labkey.specimen.pipeline.SpecimenBatch;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -586,7 +591,7 @@ public class SpecimenController2 extends SpringActionController
                 Vial vial = SpecimenManagerNew.get().getVial(form.getTargetStudy(), getUser(), form.getId());
                 if (vial != null)
                 {
-                    ActionURL url = urlProvider(SpecimenUrls.class).getSpecimenEventsURL(form.getTargetStudy(), null).addParameter("id", vial.getRowId());
+                    ActionURL url = new ActionURL(SpecimenEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
                     throw new RedirectException(url);
                 }
             }
@@ -731,6 +736,101 @@ public class SpecimenController2 extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addSpecimenRequestsNavTrail(root);
+        }
+    }
+
+    public static class ViewEventForm extends IdForm
+    {
+        private boolean _selected;
+        private boolean _vialView;
+
+        public boolean isSelected()
+        {
+            return _selected;
+        }
+
+        public void setSelected(boolean selected)
+        {
+            _selected = selected;
+        }
+
+        public boolean isVialView()
+        {
+            return _vialView;
+        }
+
+        public void setVialView(boolean vialView)
+        {
+            _vialView = vialView;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class SpecimenEventsAction extends SimpleViewAction<ViewEventForm>
+    {
+        private boolean _showingSelectedSpecimens;
+
+        @Override
+        public ModelAndView getView(ViewEventForm viewEventForm, BindException errors)
+        {
+            Study study = getStudyThrowIfNull();
+            _showingSelectedSpecimens = viewEventForm.isSelected();
+            Vial vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), viewEventForm.getId());
+            if (vial == null)
+                throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
+
+            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/study/view/specimen/specimen.jsp",
+                    new SpecimenEventBean(vial, viewEventForm.getReturnUrl()));
+            summaryView.setTitle("Vial Summary");
+
+            SpecimenEventQueryView vialHistoryView = SpecimenEventQueryView.createView(getViewContext(), vial);
+            vialHistoryView.setTitle("Vial History");
+
+            VBox vbox;
+
+            if (SettingsManager.get().getRepositorySettings(getStudyRedirectIfNull().getContainer()).isEnableRequests())
+            {
+                List<Integer> requestIds = SpecimenRequestManager.get().getRequestIdsForSpecimen(vial);
+                SimpleFilter requestFilter;
+                WebPartView relevantRequests;
+
+                if (!requestIds.isEmpty())
+                {
+                    requestFilter = new SimpleFilter();
+                    StringBuilder whereClause = new StringBuilder();
+                    for (int i = 0; i < requestIds.size(); i++)
+                    {
+                        if (i > 0)
+                            whereClause.append(" OR ");
+                        whereClause.append("RequestId = ?");
+                    }
+                    requestFilter.addWhereClause(whereClause.toString(), requestIds.toArray());
+                    SpecimenRequestQueryView queryView = SpecimenRequestQueryView.createView(getViewContext(), requestFilter);
+                    queryView.setExtraLinks(true);
+                    relevantRequests = queryView;
+                }
+                else
+                    relevantRequests = new JspView("/org/labkey/specimen/view/relevantRequests.jsp");
+                relevantRequests.setTitle("Relevant Vial Requests");
+                vbox = new VBox(summaryView, vialHistoryView, relevantRequests);
+            }
+            else
+            {
+                vbox = new VBox(summaryView, vialHistoryView);
+            }
+
+            return vbox;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBaseSpecimenNavTrail(root);
+            if (_showingSelectedSpecimens)
+            {
+                root.addChild("Selected Specimens", urlProvider(SpecimenUrls.class).getSpecimensURL(getContainer(), true));
+            }
+            root.addChild("Vial History");
         }
     }
 }

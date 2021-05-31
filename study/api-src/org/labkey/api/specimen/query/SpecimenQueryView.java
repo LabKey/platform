@@ -44,6 +44,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -209,7 +210,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     protected static ActionURL getHistoryLinkURL(ViewContext ctx, String containerId)
     {
         Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
-        return PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimenEventsURL(container, ctx.getActionURL());
+        return SpecimenMigrationService.get().getSpecimenEventsURL(container, ctx.getActionURL());
     }
 
     private class SpecimenRestrictedDataRegion extends SpecimenDataRegion
