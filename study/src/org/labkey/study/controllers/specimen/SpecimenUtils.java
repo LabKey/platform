@@ -203,7 +203,7 @@ public class SpecimenUtils
         if (settings.isEnableRequests())
         {
             MenuButton requestMenuButton = new MenuButton("Request Options");
-            requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpecimenController.ViewRequestsAction.class));
+            requestMenuButton.addMenuItem("View Existing Requests", SpecimenMigrationService.get().getViewRequestsURL(getContainer()));
             if (!commentsMode)
             {
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
@@ -530,7 +530,7 @@ public class SpecimenUtils
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
         if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
-            throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
+            throw new RedirectException(SpecimenMigrationService.get().getSpecimenRequestConfigRequiredURL(getContainer()));
     }
 
 

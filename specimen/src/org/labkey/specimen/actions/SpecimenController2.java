@@ -10,6 +10,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.module.FolderType;
@@ -26,10 +27,14 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.ViewRequestsHeaderBean;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
+import org.labkey.api.specimen.query.SpecimenRequestQueryView;
 import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
+import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.view.SpecimenWebPart;
@@ -55,6 +60,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -122,7 +128,7 @@ public class SpecimenController2 extends SpringActionController
         return study;
     }
 
-    public void addRootNavTrail(NavTree root, User user)
+    public void addRootNavTrail(NavTree root)
     {
         Study study = getStudyRedirectIfNull();
         Container c = getContainer();
@@ -130,7 +136,7 @@ public class SpecimenController2 extends SpringActionController
         FolderType folderType = c.getFolderType();
         if ("study".equals(folderType.getDefaultModule().getName()))
         {
-            rootURL = folderType.getStartURL(c, user);
+            rootURL = folderType.getStartURL(c, getUser());
         }
         else
         {
@@ -141,14 +147,31 @@ public class SpecimenController2 extends SpringActionController
 
     private void addBaseSpecimenNavTrail(NavTree root)
     {
-        addRootNavTrail(root, getUser());
+        addRootNavTrail(root);
         ActionURL overviewURL = new ActionURL(OverviewAction.class, getContainer());
         root.addChild("Specimen Overview", overviewURL);
+    }
+
+    private void addSpecimenRequestsNavTrail(NavTree root)
+    {
+        addBaseSpecimenNavTrail(root);
+        root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+    }
+
+    private void addManageStudyNavTrail(NavTree root)
+    {
+        urlProvider(StudyUrls.class).addManageStudyNavTrail(root, getContainer(), getUser());
     }
 
     private ActionURL getManageStudyURL()
     {
         return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
+    }
+
+    public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
+    {
+        if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
+            throw new RedirectException(new ActionURL(SpecimenRequestConfigRequiredAction.class, getContainer()));
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -624,7 +647,7 @@ public class SpecimenController2 extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class AutoReportListAction extends SimpleViewAction
+    public class AutoReportListAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -638,6 +661,76 @@ public class SpecimenController2 extends SpringActionController
             setHelpTopic("exploreSpecimens");
             addBaseSpecimenNavTrail(root);
             root.addChild("Specimen Reports");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class SpecimenRequestConfigRequiredAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            return new JspView<>("/org/labkey/specimen/view/configurationRequired.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addRootNavTrail(root);
+            root.addChild("Unable to Request Specimens");
+        }
+    }
+
+    @RequiresPermission(ManageRequestSettingsPermission.class)
+    public class ConfigureRequestabilityRulesAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+            return new JspView<>("/org/labkey/specimen/view/configRequestabilityRules.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("coordinateSpecimens#requestability");
+            addManageStudyNavTrail(root);
+            root.addChild("Configure Requestability Rules");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class ViewRequestsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            requiresLogin();
+            SpecimenRequestQueryView grid = SpecimenRequestQueryView.createView(getViewContext());
+            grid.setExtraLinks(true);
+            grid.setShowCustomizeLink(false);
+            grid.setShowDetailsColumn(false);
+            if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
+            {
+                ActionButton insertButton = new ActionButton(urlProvider(SpecimenUrls.class).getShowCreateSpecimenRequestAction(getContainer()), "Create New Request", ActionButton.Action.LINK);
+                grid.setButtons(Collections.singletonList(insertButton));
+            }
+            else
+            {
+                grid.setButtons(Collections.emptyList());
+            }
+
+            JspView<ViewRequestsHeaderBean> header = new JspView<>("/org/labkey/specimen/view/viewRequestsHeader.jsp",
+                    new ViewRequestsHeaderBean(getViewContext(), grid));
+
+            return new VBox(header, grid);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestsNavTrail(root);
         }
     }
 }

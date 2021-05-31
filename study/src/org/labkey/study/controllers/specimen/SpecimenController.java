@@ -88,7 +88,6 @@ import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
-import org.labkey.api.specimen.actions.ViewRequestsHeaderBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
@@ -340,6 +339,12 @@ public class SpecimenController extends BaseStudyController
         {
             return new ActionURL(SpecimenController.CompleteSpecimenAction.class, c).addParameter("type", type);
         }
+
+        @Override
+        public ActionURL getShowCreateSpecimenRequestAction(Container c)
+        {
+            return new ActionURL(ShowCreateSpecimenRequestAction.class, c);
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -362,7 +367,7 @@ public class SpecimenController extends BaseStudyController
     private void addSpecimenRequestsNavTrail(NavTree root)
     {
         addBaseSpecimenNavTrail(root);
-        root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        root.addChild("Specimen Requests", SpecimenMigrationService.get().getViewRequestsURL(getContainer()));
     }
 
     private void addSpecimenRequestNavTrail(NavTree root, int requestId)
@@ -1205,41 +1210,6 @@ public class SpecimenController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             addSpecimenRequestNavTrail(root, _requestId);
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public class ViewRequestsAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            requiresLogin();
-            SpecimenRequestQueryView grid = SpecimenRequestQueryView.createView(getViewContext());
-            grid.setExtraLinks(true);
-            grid.setShowCustomizeLink(false);
-            grid.setShowDetailsColumn(false);
-            if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
-            {
-                ActionButton insertButton = new ActionButton(ShowCreateSpecimenRequestAction.class, "Create New Request", ActionButton.Action.LINK);
-                grid.setButtons(Collections.singletonList(insertButton));
-            }
-            else
-            {
-                grid.setButtons(Collections.emptyList());
-            }
-
-            JspView<ViewRequestsHeaderBean> header = new JspView<>("/org/labkey/specimen/view/viewRequestsHeader.jsp",
-                    new ViewRequestsHeaderBean(getViewContext(), grid));
-
-            return new VBox(header, grid);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addSpecimenRequestsNavTrail(root);
         }
     }
 
@@ -2419,23 +2389,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class SpecimenRequestConfigRequired extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            return new JspView("/org/labkey/specimen/view/configurationRequired.jsp");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            _addNavTrail(root);
-            root.addChild("Unable to Request Specimens");
-        }
-    }
-
     @RequiresPermission(ManageRequestRequirementsPermission.class)
     public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
     {
@@ -2667,7 +2620,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(IdForm form)
         {
-            return new ActionURL(ViewRequestsAction.class, getContainer());
+            return SpecimenMigrationService.get().getViewRequestsURL(getContainer());
         }
     }
 
@@ -4238,8 +4191,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors)
         {
-            if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), false))
-                throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
+            getUtils().ensureSpecimenRequestsConfigured(false);
 
             // try to get the settings from the form, just in case this is a reshow:
             RequestNotificationSettings settings = form;
@@ -4665,25 +4617,6 @@ public class SpecimenController extends BaseStudyController
             RequestabilityManager.getInstance().saveRules(getContainer(), getUser(), rules);
 
             return new ApiSimpleResponse(Collections.<String, Object>singletonMap("savedCount", rules.size()));
-        }
-    }
-
-    @RequiresPermission(ManageRequestSettingsPermission.class)
-    public class ConfigureRequestabilityRulesAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView("/org/labkey/specimen/view/configRequestabilityRules.jsp");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("coordinateSpecimens#requestability");
-            _addManageStudy(root);
-            root.addChild("Configure Requestability Rules");
         }
     }
 

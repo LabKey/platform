@@ -21,7 +21,6 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
 
 /**
  * User: adam
@@ -44,4 +43,5 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getSubmitRequestURL(Container c, String id);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+    ActionURL getShowCreateSpecimenRequestAction(Container c);
 }

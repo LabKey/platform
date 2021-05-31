@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
@@ -30,7 +31,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ConfigureRequestabilityRulesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
@@ -198,7 +198,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Requestability Rules</td>
                         <td class="lk-study-prop-desc">Manage the rules used to determine specimen availability for request</td>
-                        <td><%= link("Manage Requestability Rules", urlFor(ConfigureRequestabilityRulesAction.class)) %></td>
+                        <td><%= link("Manage Requestability Rules", SpecimenMigrationService.get().getConfigureRequestabilityRulesURL(getContainer())) %></td>
                     </tr>
                 </table>
             </labkey:panel>

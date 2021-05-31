@@ -20,8 +20,6 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.query.CustomView" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.specimen.actions.ReportConfigurationBean" %>
-<%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
 <%@ page import="org.labkey.api.study.Params" %>
@@ -35,6 +33,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="org.labkey.specimen.actions.ReportConfigurationBean" %>
+<%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

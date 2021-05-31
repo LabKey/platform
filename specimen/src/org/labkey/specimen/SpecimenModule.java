@@ -29,10 +29,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.specimen.actions.ShowSearchAction;
-import org.labkey.specimen.actions.SpecimenReportActions;
-import org.labkey.specimen.actions.ShowUploadSpecimensAction;
-import org.labkey.specimen.actions.ShowGroupMembersAction;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
@@ -45,6 +41,9 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.specimen.actions.ShowGroupMembersAction;
+import org.labkey.specimen.actions.ShowSearchAction;
+import org.labkey.specimen.actions.ShowUploadSpecimensAction;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController2;
 import org.labkey.specimen.actions.SpecimenController2.OverviewAction;
@@ -154,12 +153,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getTypeParticipantReportURL(Container c)
-            {
-                return new ActionURL(SpecimenReportActions.TypeParticipantReportAction.class, c);
-            }
-
-            @Override
             public ActionURL getAutoReportListURL(Container c)
             {
                 return new ActionURL(SpecimenController2.AutoReportListAction.class, c);
@@ -169,6 +162,24 @@ public class SpecimenModule extends SpringModule
             public ActionURL getShowSearchURL(Container c, boolean showVials)
             {
                 return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
+            }
+
+            @Override
+            public ActionURL getSpecimenRequestConfigRequiredURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.SpecimenRequestConfigRequiredAction.class, c);
+            }
+
+            @Override
+            public ActionURL getConfigureRequestabilityRulesURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ConfigureRequestabilityRulesAction.class, c);
+            }
+
+            @Override
+            public ActionURL getViewRequestsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
             }
         });
      }

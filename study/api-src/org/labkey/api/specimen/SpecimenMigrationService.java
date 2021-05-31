@@ -24,7 +24,9 @@ public interface SpecimenMigrationService
     ActionURL getOverviewURL(Container c);
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
     ActionURL getUploadSpecimensURL(Container c);
-    ActionURL getTypeParticipantReportURL(Container c);
     ActionURL getAutoReportListURL(Container c);
     ActionURL getShowSearchURL(Container c, boolean showVials);
+    ActionURL getSpecimenRequestConfigRequiredURL(Container c);
+    ActionURL getConfigureRequestabilityRulesURL(Container c);
+    ActionURL getViewRequestsURL(Container c);
 }
