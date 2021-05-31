@@ -35,8 +35,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ActionButton;
@@ -79,11 +77,11 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
 import org.labkey.api.specimen.actions.IdForm;
@@ -128,7 +126,6 @@ import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
-import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenService;
@@ -279,12 +276,6 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getOverviewURL(Container c)
-        {
-            return new ActionURL(OverviewAction.class, c);
-        }
-
-        @Override
         public ActionURL getShowCreateSpecimenRequestURL(Container c)
         {
             return new ActionURL(ShowCreateSpecimenRequestAction.class, c);
@@ -390,30 +381,10 @@ public class SpecimenController extends BaseStudyController
         @Override
         public void addSpecimenNavTrail(NavTree root, String childTitle, Container c)
         {
-            ActionURL overviewURL = new ActionURL(OverviewAction.class, c);
+            ActionURL overviewURL = SpecimenMigrationService.get().getOverviewURL(c);
             root.addChild("Specimen Overview", overviewURL);
             root.addChild("Available Reports", new ActionURL(SpecimenController.AutoReportListAction.class, c));
             root.addChild(childTitle);
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class OverviewAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object form, BindException errors)
-        {
-            if (null == StudyService.get().getStudy(getContainer()))
-                return new HtmlView("This folder does not contain a study.");
-            SpecimenSearchWebPart specimenSearch = new SpecimenSearchWebPart(true);
-            SpecimenWebPart specimenSummary = new SpecimenWebPart(true, StudyService.get().getStudy(getContainer()));
-            return new VBox(specimenSummary, specimenSearch);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBaseSpecimenNavTrail(root);
         }
     }
 
@@ -430,7 +401,7 @@ public class SpecimenController extends BaseStudyController
     private void addBaseSpecimenNavTrail(NavTree root)
     {
         _addNavTrail(root);
-        ActionURL overviewURL = new ActionURL(OverviewAction.class, getContainer());
+        ActionURL overviewURL = SpecimenMigrationService.get().getOverviewURL(getContainer());
         root.addChild("Specimen Overview", overviewURL);
     }
 
@@ -1090,7 +1061,7 @@ public class SpecimenController extends BaseStudyController
 
                 if (SpecimenRequestManager.get().hasEditRequestPermissions(context.getUser(), specimenRequest) && !_finalState)
                 {
-                    ActionButton addButton = new ActionButton(new ActionURL(OverviewAction.class, getContainer()), "Specimen Search");
+                    ActionButton addButton = new ActionButton(SpecimenMigrationService.get().getOverviewURL(getContainer()), "Specimen Search");
                     ActionButton deleteButton = new ActionButton(RemoveRequestSpecimensAction.class, "Remove Selected");
                     _specimenQueryView.addHiddenFormField("id", "" + specimenRequest.getRowId());
                     buttons.add(addButton);
@@ -3570,56 +3541,6 @@ public class SpecimenController extends BaseStudyController
             root.addChild("Set vial comments");
         }
     }
-
-
-    public static class SpecimenEventAttachmentForm
-    {
-        private int _eventId;
-        private String _name;
-
-        public int getEventId()
-        {
-            return _eventId;
-        }
-
-        public void setEventId(int eventId)
-        {
-            _eventId = eventId;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-    }
-
-
-    public static ActionURL getDownloadURL(SpecimenRequestEvent event, String name)
-    {
-        return new ActionURL(DownloadAction.class, event.getContainer())
-            .addParameter("eventId", event.getRowId())
-            .addParameter("name", name);
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends BaseDownloadAction<SpecimenEventAttachmentForm>
-    {
-        @Override
-        public @Nullable Pair<AttachmentParent, String> getAttachment(SpecimenEventAttachmentForm form)
-        {
-            SpecimenRequestEvent event = SpecimenRequestManager.get().getRequestEvent(getContainer(), form.getEventId());
-            if (event == null)
-                throw new NotFoundException("Specimen event not found");
-
-            return new Pair<>(event, form.getName());
-        }
-    }
-
 
     @RequiresPermission(AdminPermission.class)
     public class ShowManageRepositorySettingsAction extends SimpleViewAction

@@ -31,6 +31,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
@@ -297,7 +298,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         Study s = StudyService.get().getStudy(getContainer());
 
         root.addChild(s.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-        root.addChild("Specimen Overview", PageFlowUtil.urlProvider(SpecimenUrls.class).getOverviewURL(getContainer()));
+        root.addChild("Specimen Overview", SpecimenMigrationService.get().getOverviewURL(getContainer()));
         root.addChild("Upload Specimens");
     }
 
@@ -320,7 +321,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             Study study = StudyService.get().getStudy(getContainer());
 
             root.addChild(study.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-            root.addChild("Specimen Overview", PageFlowUtil.urlProvider(SpecimenUrls.class).getOverviewURL(getContainer()));
+            root.addChild("Specimen Overview", SpecimenMigrationService.get().getOverviewURL(getContainer()));
             root.addChild("Sample Import Complete");
         }
     }

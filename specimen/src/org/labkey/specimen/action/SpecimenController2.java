@@ -8,8 +8,11 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.module.FolderType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -21,26 +24,31 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.ShowSearchAction;
 import org.labkey.api.specimen.actions.SpecimenReportActions;
 import org.labkey.api.specimen.actions.SpecimenWebPartForm;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
 import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.specimen.pipeline.SpecimenBatch;
 import org.springframework.validation.BindException;
@@ -111,6 +119,50 @@ public class SpecimenController2 extends SpringActionController
             throw new RedirectException(urlProvider(StudyUrls.class).getBeginURL(getContainer()));
         }
         return study;
+    }
+
+    public void addRootNavTrail(NavTree root, User user)
+    {
+        Study study = getStudyRedirectIfNull();
+        Container c = getContainer();
+        ActionURL rootURL;
+        FolderType folderType = c.getFolderType();
+        if ("study".equals(folderType.getDefaultModule().getName()))
+        {
+            rootURL = folderType.getStartURL(c, user);
+        }
+        else
+        {
+            rootURL = urlProvider(StudyUrls.class).getBeginURL(c);
+        }
+        root.addChild(study.getLabel(), rootURL);
+    }
+
+    private void addBaseSpecimenNavTrail(NavTree root)
+    {
+        addRootNavTrail(root, getUser());
+        ActionURL overviewURL = new ActionURL(OverviewAction.class, getContainer());
+        root.addChild("Specimen Overview", overviewURL);
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class OverviewAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            if (null == StudyService.get().getStudy(getContainer()))
+                return new HtmlView("This folder does not contain a study.");
+            SpecimenSearchWebPart specimenSearch = new SpecimenSearchWebPart(true);
+            SpecimenWebPart specimenSummary = new SpecimenWebPart(true, StudyService.get().getStudy(getContainer()));
+            return new VBox(specimenSummary, specimenSearch);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBaseSpecimenNavTrail(root);
+        }
     }
 
     @RequiresPermission(ManageDisplaySettingsPermission.class)
@@ -478,6 +530,53 @@ public class SpecimenController2 extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    public static class SpecimenEventAttachmentForm
+    {
+        private int _eventId;
+        private String _name;
+
+        public int getEventId()
+        {
+            return _eventId;
+        }
+
+        public void setEventId(int eventId)
+        {
+            _eventId = eventId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+    }
+
+    public static ActionURL getDownloadURL(SpecimenRequestEvent event, String name)
+    {
+        return new ActionURL(DownloadAction.class, event.getContainer())
+            .addParameter("eventId", event.getRowId())
+            .addParameter("name", name);
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class DownloadAction extends BaseDownloadAction<SpecimenEventAttachmentForm>
+    {
+        @Override
+        public @Nullable Pair<AttachmentParent, String> getAttachment(SpecimenEventAttachmentForm form)
+        {
+            SpecimenRequestEvent event = SpecimenRequestManager.get().getRequestEvent(getContainer(), form.getEventId());
+            if (event == null)
+                throw new NotFoundException("Specimen event not found");
+
+            return new Pair<>(event, form.getName());
         }
     }
 }

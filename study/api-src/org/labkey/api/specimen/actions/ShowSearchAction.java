@@ -19,6 +19,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSearchBean;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
@@ -90,7 +91,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     {
         setHelpTopic("specimenShopping");
         root.addChild(_study.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-        root.addChild("Specimen Overview", PageFlowUtil.urlProvider(SpecimenUrls.class).getOverviewURL(getContainer()));
+        root.addChild("Specimen Overview", SpecimenMigrationService.get().getOverviewURL(getContainer()));
         root.addChild(_title);
     }
 
@@ -98,6 +99,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     {
         private boolean _showAdvanced = false;
         private SearchParam[] _searchParams;
+
         public static class SearchParam
         {
             private String _compareType;
@@ -134,6 +136,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
                 _columnName = columnName;
             }
         }
+
         public SearchForm()
         {
             _searchParams = new SearchParam[100];

@@ -1,5 +1,6 @@
 package org.labkey.api.specimen;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.view.ActionURL;
@@ -19,4 +20,5 @@ public interface SpecimenMigrationService
     }
 
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
+    ActionURL getOverviewURL(Container c);
 }

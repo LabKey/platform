@@ -267,7 +267,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         VisitService.setInstance(new VisitServiceImpl());
         ImportHelperService.setInstance(new ImportHelperServiceImpl());
         StudyInternalService.setInstance(new StudyInternalServiceImpl());
-        SpecimenMigrationService.setInstance(SpecimenController::getDownloadURL);
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
