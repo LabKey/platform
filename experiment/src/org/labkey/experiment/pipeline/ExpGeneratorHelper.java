@@ -54,6 +54,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -315,7 +316,7 @@ public class ExpGeneratorHelper
 
         // Set up the inputs to the whole run
         ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Run inputs");
-        ExpProtocolApplication outputApp = run.addProtocolApplication(user, expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
+        ExpProtocolApplicationImpl outputApp = run.addProtocolApplication(user, expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
         for (Map.Entry<URI, String> runInput : runInputsWithRoles.entrySet())
         {
             URI uri = runInput.getKey();
@@ -377,8 +378,9 @@ public class ExpGeneratorHelper
             // material inputs
             for (String lsid : action.getMaterialInputs())
             {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                ExpMaterialImpl material = (ExpMaterialImpl) ExperimentService.get().getExpMaterial(lsid);
                 material.setRun(run);
+                material.markAsPopulated((ExpProtocolApplicationImpl) stepApp);
                 stepApp.addMaterialInput(user, material, null, null);
             }
 
@@ -391,6 +393,7 @@ public class ExpGeneratorHelper
                 if (action.isEnd())
                 {
                     material.setRun(run);
+                    material.markAsPopulated((ExpProtocolApplicationImpl) stepApp);
                     material.addSuccessorRunId(run.getRowId());
                     stepApp.addMaterialInput(user, material, null, null);
                 }
@@ -457,7 +460,8 @@ public class ExpGeneratorHelper
             {
                 URI uri = entry.getKey();
                 String role = entry.getValue();
-                ExpData data = addData(container, user, datas, uri, source);
+                ExpDataImpl data = (ExpDataImpl) addData(container, user, datas, uri, source);
+                data.markAsPopulated(outputApp);
                 outputApp.addDataInput(user, data, role);
             }
         }
@@ -540,8 +544,9 @@ public class ExpGeneratorHelper
 
     static private void addMaterialInput(ExpRun run, ExpProtocolApplication app, String lsid, User user)
     {
-        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        ExpMaterialImpl material = (ExpMaterialImpl) ExperimentService.get().getExpMaterial(lsid);
         material.setRun(run);
+        material.markAsPopulated((ExpProtocolApplicationImpl) app);
         app.addMaterialInput(user, material, null, null);
     }
 
