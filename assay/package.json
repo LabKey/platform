@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.*"
   },
   "dependencies": {
-    "@labkey/components": "2.37.0-fb-build-pkg-updates-0621.2"
+    "@labkey/components": "2.38.0-fb-build-pkg-updates-0621.0"
   },
   "devDependencies": {
     "@labkey/build": "2.1.0-fb-build-pkg-updates-0621.1"

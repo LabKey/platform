@@ -14,7 +14,7 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=pipeline webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "2.37.0-fb-build-pkg-updates-0621.2"
+    "@labkey/components": "2.38.0-fb-build-pkg-updates-0621.0"
   },
   "devDependencies": {
     "@labkey/build": "2.1.0-fb-build-pkg-updates-0621.1",
