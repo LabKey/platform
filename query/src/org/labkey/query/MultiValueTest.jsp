@@ -1,67 +1,62 @@
-/*
- * Copyright (c) 2016-2018 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.labkey.query;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableList;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
-import org.labkey.api.util.TestContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.query.controllers.QueryController;
-import org.springframework.mock.web.MockHttpServletResponse;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-/**
- * User: kevink
- * Date: 5/27/16
- */
-public class MultiValueTest
-{
+<%@ page import="com.fasterxml.jackson.databind.JsonNode" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="com.fasterxml.jackson.databind.node.ArrayNode" %>
+<%@ page import="com.fasterxml.jackson.databind.node.ObjectNode" %>
+<%@ page import="com.google.common.collect.ImmutableList" %>
+<%@ page import="org.junit.After" %>
+<%@ page import="org.junit.Assert" %>
+<%@ page import="org.junit.Before" %>
+<%@ page import="org.junit.Test" %>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Table" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.exp.query.ExpMaterialTable" %>
+<%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.query.BatchValidationException" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.query.QueryParam" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
+<%@ page import="org.springframework.mock.web.MockHttpServletResponse" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
+<%@ page import="static org.junit.Assert.assertThat" %>
+<%@ page import="static org.junit.Assert.assertEquals" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias" %>
+<%@ page import="static org.labkey.api.exp.query.ExpMaterialTable.Column.Name" %>
+<%@ page import="com.fasterxml.jackson.core.JsonPointer" %>
+<%@ page import="org.labkey.api.study.MasterPatientIndexService" %>
+<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="static org.junit.Assert.assertNotNull" %>
+<%@ page import="static org.junit.Assert.assertTrue" %>
+<%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
+<%!
+    final String aliasPrefix = "MultiValueTest-";
     Container c;
 
     User getUser()
     {
         return TestContext.get().getUser();
     }
-
 
     @Before
     public void setUp()
@@ -77,6 +72,8 @@ public class MultiValueTest
     public void tearDown()
     {
         ContainerManager.deleteAll(c, TestContext.get().getUser());
+
+        Table.delete(ExperimentService.get().getTinfoAlias(), new SimpleFilter(FieldKey.fromParts("name"), aliasPrefix, CompareType.STARTS_WITH));
     }
 
     @Test
@@ -251,6 +248,90 @@ public class MultiValueTest
         Assert.assertEquals(speciesId4, verifySpecies4);
     }
 
+    // Issue 43241: SM: Display of dates from Input columns for sample types does not use project date format
+    @Test
+    public void testSampleAlias() throws Exception
+    {
+        //
+        // SETUP - create a Sample with >1 alias
+        //
+
+        // set a date format
+        var props = LookAndFeelProperties.getWriteableInstance(c);
+        props.setDefaultDateTimeFormat("'kevink' dd-MM-yyyy");
+        props.save();
+
+        String materialLsid = ExperimentService.get().generateLSID(c, ExpMaterial.class, "TestMaterial");
+        var material = ExperimentService.get().createExpMaterial(c, materialLsid, "TestMaterial");
+        material.save(getUser());
+
+        // insert some aliases
+        var alias1 = Table.insert(getUser(), ExperimentService.get().getTinfoAlias(), CaseInsensitiveHashMap.of("name", aliasPrefix + "1-" + new GUID()));
+        var alias2 = Table.insert(getUser(), ExperimentService.get().getTinfoAlias(), CaseInsensitiveHashMap.of("name", aliasPrefix + "2-" + new GUID()));
+
+        // insert sample -> alias junction entries
+        ExperimentService.get().getTinfoMaterialAliasMap();
+        Table.insert(getUser(), ExperimentService.get().getTinfoMaterialAliasMap(), CaseInsensitiveHashMap.of(
+                "container", c.getEntityId(),
+                "alias", alias1.get("rowId"),
+                "lsid", materialLsid
+        ));
+        Table.insert(getUser(), ExperimentService.get().getTinfoMaterialAliasMap(), CaseInsensitiveHashMap.of(
+                "container", c.getEntityId(),
+                "alias", alias2.get("rowId"),
+                "lsid", materialLsid
+        ));
+
+        // verify we have set up correctly
+        var aliases = material.getAliases();
+        assertThat(aliases, hasItems(alias1.get("name"), alias2.get("name")));
+
+        //
+        // VERIFY - query the aliases and verify the date is formatted correctly
+        //
+
+        ActionURL selectUrl = new ActionURL(QueryController.SelectRowsAction.class, c);
+        selectUrl.addParameter(QueryParam.schemaName, "exp");
+        selectUrl.addParameter(QueryParam.queryName, "Materials");
+        selectUrl.addParameter("query." + QueryParam.columns, "Alias/Created");
+        selectUrl.addFilter("query", FieldKey.fromParts("rowId"), CompareType.EQUAL, material.getRowId());
+        selectUrl.addParameter("includeMetadata", false);
+        // enable the multi-value array response and "formattedValue"
+        selectUrl.addParameter("apiVersion", "17.1");
+
+        MockHttpServletResponse resp = ViewServlet.GET(selectUrl, getUser(), null);
+        Assert.assertEquals(200, resp.getStatus());
+        String content = resp.getContentAsString();
+        //System.out.println("query response:\n" + content);
+
+        ObjectMapper om = new ObjectMapper();
+        ObjectNode n = om.readValue(content, ObjectNode.class);
+        Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
+        ArrayNode rows = n.withArray("rows");
+
+        JsonNode row0 = rows.get(0);
+        // JSON Pointer uses "~1" to encode "/" in "Alias/Created"
+        ArrayNode row0aliases = (ArrayNode)row0.at("/data/Alias~1Created");
+        Assert.assertEquals("Expected two aliases, got:\n" + row0aliases,
+                2, row0aliases.size());
+
+        for (var row0alias : row0aliases)
+        {
+            // JSON formatted date value
+            String value = row0alias.get("value").asText();
+            Assert.assertNotNull(value);
+
+            // formatted with container date format
+            String formattedValue = row0alias.get("formattedValue").asText();
+            Assert.assertTrue("Expected date format to be applied, got: " + formattedValue,
+                    formattedValue.startsWith("kevink "));
+
+            // don't care what the json format looks like, as long as it is different
+            Assert.assertNotEquals(value, formattedValue);
+        }
+
+    }
+
     private void throwErrors(BatchValidationException errors) throws BatchValidationException
     {
         if (errors.hasErrors())
@@ -258,4 +339,5 @@ public class MultiValueTest
             throw errors;
         }
     }
-}
+
+%>
