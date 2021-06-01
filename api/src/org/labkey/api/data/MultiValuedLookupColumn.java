@@ -58,7 +58,8 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public DisplayColumn getRenderer()
     {
-        return new MultiValuedDisplayColumn(super.getRenderer());
+        // NOTE: Calling `new MultiValuedDisplayColumn(super.getRenderer())` will re-wrap the MVDC which results in arrays of arrays of values
+        return getDisplayColumnFactory().createRenderer(this);
     }
 
     @Override
