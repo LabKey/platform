@@ -24,10 +24,14 @@ import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -72,6 +76,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * User: kevink
@@ -120,6 +125,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         private static final String RESULTS_NAME = "results";
         private static final String RUN_PROPS_NAME = "runProperties";
         private static final String BATCH_PROPS_NAME = "batchProperties";
+        private static final String PLATE_METADATA_NAME = "plateMetadata";
+
+        private static final String PROTOCOL_NAME_KEY = "name";
+        private static final String PROTOCOL_ID_KEY = "id";
 
         public FileAnalysisFactory()
         {
@@ -157,8 +166,55 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @Override
+        protected @NotNull ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
+        {
+            ExpProtocol protocol = resolveProtocol(job);
+            if (protocol != null)
+                return protocol;
+            return super.getProtocol(job, provider);
+        }
+
+        /**
+         * Resolve the protocol from the name capture group of either : name or id
+         */
+        @Nullable
+        private ExpProtocol resolveProtocol(PipelineJob job)
+        {
+            Map<String, String> params = job.getParameters();
+            if (params.containsKey(PROTOCOL_ID_KEY) && params.containsKey(PROTOCOL_NAME_KEY))
+            {
+                job.getLogger().error("Protocol ID and name cannot be specified at the same time.");
+                return null;
+            }
+
+            if (params.containsKey(PROTOCOL_ID_KEY))
+            {
+                return ExperimentService.get().getExpProtocol(Integer.parseInt(params.get(PROTOCOL_ID_KEY)));
+            }
+            else if (params.containsKey(PROTOCOL_NAME_KEY))
+            {
+                Optional<ExpProtocol> protocol = AssayService.get().getAssayProtocols(job.getContainer()).stream()
+                        .filter(p -> p.getName().equals(params.get(PROTOCOL_NAME_KEY)))
+                        .findFirst();
+
+                if (protocol.isPresent())
+                    return protocol.get();
+            }
+            return null;
+        }
+
+        @Override
         protected @NotNull AssayProvider getProvider(PipelineJob job) throws PipelineJobException
         {
+            ExpProtocol protocol = resolveProtocol(job);
+            if (protocol != null)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider != null)
+                    return provider;
+            }
+
+            // try to resolve using the assay provider param
             String providerName = job.getParameters().get("pipeline, assay provider");
             if (providerName != null)
             {
@@ -309,6 +365,38 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 throw new PipelineJobException(e);
             }
             return Collections.emptyMap();
+        }
+
+        @Override
+        @Nullable Map<String, AssayPlateMetadataService.MetadataLayer> getPlateMetadata(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                try
+                {
+                    // plate metadata is only supported for zip archives because on JSON formats are currently supported
+                    if (FileUtil.getExtension(dataFile).equals("zip"))
+                    {
+                        ensureExplodedZip(job, dataFile);
+                        File dir = getExplodedZipDir(job, dataFile);
+                        File[] results = dir.listFiles((dir1, name) -> PLATE_METADATA_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                        if (results != null && results.length == 1)
+                        {
+                            File metadataFile = results[0];
+                            job.getLogger().info("Found plate metadata file named : " + metadataFile + ", attempting to parse JSON metadata.");
+                            return svc.parsePlateMetadata(metadataFile);
+                        }
+                    }
+                }
+                catch (ExperimentException e)
+                {
+                    throw new PipelineJobException(e);
+                }
+            }
+            return null;
         }
 
         @Override
@@ -473,7 +561,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             if (providerName.startsWith("${") && providerName.endsWith("}"))
             {
-                String propertyName = providerName.substring(2, providerName.length()-1);
+                String propertyName = providerName.substring(2, providerName.length() - 1);
                 String value = job.getParameters().get(propertyName);
                 if (value == null)
                     throw new PipelineJobException("Assay provider name for job parameter " + providerName + " required");
@@ -504,7 +592,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             if (protocolName.startsWith("${") && protocolName.endsWith("}"))
             {
-                String propertyName = protocolName.substring(2, protocolName.length()-1);
+                String propertyName = protocolName.substring(2, protocolName.length() - 1);
                 String value = job.getParameters().get(propertyName);
                 if (value == null)
                     throw new PipelineJobException("Assay protocol name for job parameter " + protocolName + " required");
@@ -552,6 +640,12 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
         {
             return Collections.emptyMap();
+        }
+
+        @Nullable
+        Map<String, AssayPlateMetadataService.MetadataLayer> getPlateMetadata(PipelineJob job) throws PipelineJobException
+        {
+            return null;
         }
 
         void cleanUp(PipelineJob job) throws PipelineJobException
@@ -772,7 +866,20 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             factory.setRunProperties(getRunProperties());
 
-            //factory.setRawPlateMetadata();
+            // add plate metadata if the provider supports it and the protocol has it enabled
+            if (provider.isPlateMetadataEnabled(protocol))
+            {
+                Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = _factory.getPlateMetadata(getJob());
+                if (plateMetadata != null)
+                {
+                    factory.setRawPlateMetadata(plateMetadata);
+
+                    // create an expdata object to track the metadata
+                    ExpData plateData = DefaultAssayRunCreator.createData(container, null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+                    plateData.save(user);
+                    factory.setOutputDatas(Map.of(plateData, ExpDataRunInput.DEFAULT_ROLE));
+                }
+            }
 
             factory.setTargetStudy(getTargetStudy());
 
