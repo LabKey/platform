@@ -25,7 +25,6 @@ import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.CohortService;
@@ -41,6 +40,7 @@ import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewForm;
+import org.labkey.specimen.actions.SpecimenController2.CompleteSpecimenAction;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -460,7 +460,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
         else
         {
-            ActionURL completionUrl = PageFlowUtil.urlProvider(SpecimenUrls.class).getCompleteSpecimenURL(getContainer(), "ParticipantId");
+            ActionURL completionUrl = new ActionURL(CompleteSpecimenAction.class, getContainer()).addParameter("type", "ParticipantId");
             String initValue = selectedParticipantId != null ? selectedParticipantId : participantIds.iterator().next();
 
             StringWriter writer = new StringWriter();

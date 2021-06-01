@@ -2,15 +2,20 @@ package org.labkey.specimen.actions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -22,6 +27,7 @@ import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenManagerNew;
@@ -29,17 +35,26 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSearchWebPart;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.IdForm;
+import org.labkey.api.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.actions.SpecimenEventBean;
 import org.labkey.api.specimen.actions.ViewRequestsHeaderBean;
+import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.pipeline.SpecimenArchive;
 import org.labkey.api.specimen.query.SpecimenEventQueryView;
 import org.labkey.api.specimen.query.SpecimenRequestQueryView;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.api.specimen.security.permissions.ManageNotificationsPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestRequirementsPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.MapArrayExcelWriter;
@@ -47,8 +62,13 @@ import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -56,6 +76,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.specimen.pipeline.SpecimenBatch;
 import org.springframework.validation.BindException;
@@ -530,7 +551,7 @@ public class SpecimenController2 extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetSpecimenExcelAction extends SimpleViewAction
+    public class GetSpecimenExcelAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -832,5 +853,562 @@ public class SpecimenController2 extends SpringActionController
             }
             root.addChild("Vial History");
         }
+    }
+
+    private boolean isNullOrBlank(String toCheck)
+    {
+        return ((toCheck == null) || toCheck.equals(""));
+    }
+
+    @RequiresPermission(ManageNotificationsPermission.class)
+    public class ManageNotificationsAction extends FormViewAction<RequestNotificationSettings>
+    {
+        @Override
+        public void validateCommand(RequestNotificationSettings form, Errors errors)
+        {
+            String replyTo = form.getReplyTo();
+            if (replyTo == null || replyTo.length() == 0)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Reply-to cannot be empty.");
+            }
+            else if (!RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(replyTo))
+            {
+                try
+                {
+                    new ValidEmail(replyTo);
+                }
+                catch(ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, replyTo + " is not a valid email address.");
+                }
+            }
+
+            String subjectSuffix = form.getSubjectSuffix();
+            if (subjectSuffix == null || subjectSuffix.length() == 0)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Subject suffix cannot be empty.");
+            }
+
+            try
+            {
+                form.getNewRequestNotifyAddresses();
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getBadEmail() + " is not a valid email address.");
+            }
+
+            try
+            {
+                form.getCCAddresses();
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, e.getBadEmail() + " is not a valid email address.");
+            }
+        }
+
+        @Override
+        public ModelAndView getView(RequestNotificationSettings form, boolean reshow, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+
+            // try to get the settings from the form, just in case this is a reshow:
+            RequestNotificationSettings settings = form;
+            if (settings == null || settings.getReplyTo() == null)
+                settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
+
+            return new JspView<>("/org/labkey/specimen/view/manageNotifications.jsp", settings, errors);
+        }
+
+        @Override
+        public boolean handlePost(RequestNotificationSettings settings, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+
+            if (!settings.isNewRequestNotifyCheckbox())
+                settings.setNewRequestNotify(null);
+            else
+            {
+                if (isNullOrBlank(settings.getNewRequestNotify()))
+                    errors.reject(ERROR_MSG, "New request notify is blank and send email is checked");
+            }
+            if (!settings.isCcCheckbox())
+                settings.setCc(null);
+            else
+            {
+                if (isNullOrBlank(settings.getCc()))
+                    errors.reject(ERROR_MSG, "Always CC is blank and send email is checked");
+            }
+            if (errors.hasErrors())
+                return false;
+
+            SettingsManager.get().saveRequestNotificationSettings(getContainer(), settings);
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(RequestNotificationSettings form)
+        {
+            return getManageStudyURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("coordinateSpecimens#notify");
+            addManageStudyNavTrail(root);
+            root.addChild("Manage Notifications");
+        }
+    }
+
+    @RequiresPermission(ManageDisplaySettingsPermission.class)
+    public class ManageDisplaySettingsAction extends FormViewAction<DisplaySettingsForm>
+    {
+        @Override
+        public void validateCommand(DisplaySettingsForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(DisplaySettingsForm form, boolean reshow, BindException errors)
+        {
+            // try to get the settings from the form, just in case this is a reshow:
+            DisplaySettings settings = form.getBean();
+            if (settings == null || settings.getLastVialEnum() == null)
+                settings = SettingsManager.get().getDisplaySettings(getContainer());
+
+            return new JspView<>("/org/labkey/specimen/view/manageDisplay.jsp", settings);
+        }
+
+        @Override
+        public boolean handlePost(DisplaySettingsForm form, BindException errors)
+        {
+            DisplaySettings settings = form.getBean();
+            SettingsManager.get().saveDisplaySettings(getContainer(), settings);
+
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(DisplaySettingsForm displaySettingsForm)
+        {
+            return getManageStudyURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic(new HelpTopic("specimenRequest#display"));
+            addManageStudyNavTrail(root);
+            root.addChild("Manage Specimen Display Settings");
+        }
+    }
+
+    public static class DisplaySettingsForm extends BeanViewForm<DisplaySettings>
+    {
+        public DisplaySettingsForm()
+        {
+            super(DisplaySettings.class);
+        }
+    }
+
+    public static class UpdateRequestabilityRulesForm implements HasViewContext
+    {
+        private ViewContext _viewContext;
+        private String[] _ruleType;
+        private String[] _ruleData;
+        private String[] _markType;
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _viewContext;
+        }
+
+        @Override
+        public void setViewContext(ViewContext viewContext)
+        {
+            _viewContext = viewContext;
+        }
+
+        public String[] getRuleType()
+        {
+            return _ruleType;
+        }
+
+        @SuppressWarnings("unused")
+        public void setRuleType(String[] ruleType)
+        {
+            _ruleType = ruleType;
+        }
+
+        public String[] getRuleData()
+        {
+            return _ruleData;
+        }
+
+        @SuppressWarnings("unused")
+        public void setRuleData(String[] ruleData)
+        {
+            _ruleData = ruleData;
+        }
+
+        public String[] getMarkType()
+        {
+            return _markType;
+        }
+
+        public void setMarkType(String[] markType)
+        {
+            _markType = markType;
+        }
+    }
+
+    @RequiresPermission(ManageRequestSettingsPermission.class)
+    public static class UpdateRequestabilityRulesAction extends MutatingApiAction<UpdateRequestabilityRulesForm>
+    {
+        @Override
+        public ApiResponse execute(UpdateRequestabilityRulesForm form, BindException errors)
+        {
+            final List<RequestabilityManager.RequestableRule> rules = new ArrayList<>();
+            for (int i = 0; i < form.getRuleType().length; i++)
+            {
+                String typeName = form.getRuleType()[i];
+                RequestabilityManager.RuleType type = RequestabilityManager.RuleType.valueOf(typeName);
+                String dataString = form.getRuleData()[i];
+                rules.add(type.createRule(getContainer(), dataString));
+            }
+            RequestabilityManager.getInstance().saveRules(getContainer(), getUser(), rules);
+
+            return new ApiSimpleResponse(Collections.<String, Object>singletonMap("savedCount", rules.size()));
+        }
+    }
+
+    @RequiresPermission(ManageStudyPermission.class)
+    public class ManageRepositorySettingsAction extends FormViewAction<ManageRepositorySettingsForm>
+    {
+        @Override
+        public ModelAndView getView(ManageRepositorySettingsForm from, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/specimen/view/manageRepositorySettings.jsp", SettingsManager.get().getRepositorySettings(getContainer()));
+        }
+
+        @Override
+        public void validateCommand(ManageRepositorySettingsForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ManageRepositorySettingsForm form, BindException errors) throws Exception
+        {
+            RepositorySettings settings = SettingsManager.get().getRepositorySettings(getContainer());
+            settings.setSimple(form.isSimple());
+            settings.setEnableRequests(!form.isSimple() && form.isEnableRequests());
+            settings.setSpecimenDataEditable(!form.isSimple() && form.isSpecimenDataEditable());
+            SettingsManager.get().saveRepositorySettings(getContainer(), settings);
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ManageRepositorySettingsForm manageRepositorySettingsForm)
+        {
+            return getManageStudyURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("specimenAdminTutorial");
+            addManageStudyNavTrail(root);
+            root.addChild("Manage Repository Settings");
+        }
+    }
+
+    public static class ManageRepositorySettingsForm
+    {
+        private boolean _simple;
+        private boolean _enableRequests;
+        private boolean _specimenDataEditable;
+
+        public boolean isSimple()
+        {
+            return _simple;
+        }
+
+        public void setSimple(boolean simple)
+        {
+            _simple = simple;
+        }
+
+        public boolean isEnableRequests()
+        {
+            return _enableRequests;
+        }
+
+        public void setEnableRequests(boolean enableRequests)
+        {
+            _enableRequests = enableRequests;
+        }
+
+        public boolean isSpecimenDataEditable()
+        {
+            return _specimenDataEditable;
+        }
+
+        public void setSpecimenDataEditable(boolean specimenDataEditable)
+        {
+            _specimenDataEditable = specimenDataEditable;
+        }
+    }
+
+    public static class DefaultRequirementsForm
+    {
+        private int _originatorActor;
+        private String _originatorDescription;
+        private int _providerActor;
+        private String _providerDescription;
+        private int _receiverActor;
+        private String _receiverDescription;
+        private int _generalActor;
+        private String _generalDescription;
+        private String _nextPage;
+
+        public int getGeneralActor()
+        {
+            return _generalActor;
+        }
+
+        @SuppressWarnings("unused")
+        public void setGeneralActor(int generalActor)
+        {
+            _generalActor = generalActor;
+        }
+
+        public String getGeneralDescription()
+        {
+            return _generalDescription;
+        }
+
+        @SuppressWarnings("unused")
+        public void setGeneralDescription(String generalDescription)
+        {
+            _generalDescription = generalDescription;
+        }
+
+        public int getProviderActor()
+        {
+            return _providerActor;
+        }
+
+        @SuppressWarnings("unused")
+        public void setProviderActor(int providerActor)
+        {
+            _providerActor = providerActor;
+        }
+
+        public String getProviderDescription()
+        {
+            return _providerDescription;
+        }
+
+        @SuppressWarnings("unused")
+        public void setProviderDescription(String providerDescription)
+        {
+            _providerDescription = providerDescription;
+        }
+
+        public int getReceiverActor()
+        {
+            return _receiverActor;
+        }
+
+        @SuppressWarnings("unused")
+        public void setReceiverActor(int receiverActor)
+        {
+            _receiverActor = receiverActor;
+        }
+
+        public String getReceiverDescription()
+        {
+            return _receiverDescription;
+        }
+
+        @SuppressWarnings("unused")
+        public void setReceiverDescription(String receiverDescription)
+        {
+            _receiverDescription = receiverDescription;
+        }
+
+        public int getOriginatorActor()
+        {
+            return _originatorActor;
+        }
+
+        @SuppressWarnings("unused")
+        public void setOriginatorActor(int originatorActor)
+        {
+            _originatorActor = originatorActor;
+        }
+
+        public String getOriginatorDescription()
+        {
+            return _originatorDescription;
+        }
+
+        @SuppressWarnings("unused")
+        public void setOriginatorDescription(String originatorDescription)
+        {
+            _originatorDescription = originatorDescription;
+        }
+
+        public String getNextPage()
+        {
+            return _nextPage;
+        }
+
+        @SuppressWarnings("unused")
+        public void setNextPage(String nextPage)
+        {
+            _nextPage = nextPage;
+        }
+    }
+
+    @RequiresPermission(ManageRequestRequirementsPermission.class)
+    public class ManageDefaultReqsAction extends FormViewAction<DefaultRequirementsForm>
+    {
+        @Override
+        public void validateCommand(DefaultRequirementsForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(DefaultRequirementsForm defaultRequirementsForm, boolean reshow, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(true);
+            return new JspView<>("/org/labkey/specimen/view/manageDefaultReqs.jsp",
+                    new ManageReqsBean(getUser(), getContainer()));
+        }
+
+        @Override
+        public boolean handlePost(DefaultRequirementsForm form, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(true);
+            createDefaultRequirement(form.getOriginatorActor(), form.getOriginatorDescription(), SpecimenRequestRequirementType.ORIGINATING_SITE);
+            createDefaultRequirement(form.getProviderActor(), form.getProviderDescription(), SpecimenRequestRequirementType.PROVIDING_SITE);
+            createDefaultRequirement(form.getReceiverActor(), form.getReceiverDescription(), SpecimenRequestRequirementType.RECEIVING_SITE);
+            createDefaultRequirement(form.getGeneralActor(), form.getGeneralDescription(), SpecimenRequestRequirementType.NON_SITE_BASED);
+            return true;
+        }
+
+        private void createDefaultRequirement(Integer actorId, String description, SpecimenRequestRequirementType type)
+        {
+            if (actorId != null && actorId.intValue() > 0 && description != null && description.length() > 0)
+            {
+                SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
+                requirement.setContainer(getContainer());
+                requirement.setActorId(actorId);
+                requirement.setDescription(description);
+                requirement.setRequestId(-1);
+                SpecimenRequestRequirementProvider.get().createDefaultRequirement(getUser(), requirement, type);
+            }
+        }
+
+        @Override
+        public ActionURL getSuccessURL(DefaultRequirementsForm form)
+        {
+            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                return new ActionURL(form.getNextPage());
+            else
+                return getManageStudyURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("coordinateSpecimens#requirements");
+            addManageStudyNavTrail(root);
+            root.addChild("Manage Default Requirements");
+        }
+    }
+
+    @RequiresPermission(ManageRequestRequirementsPermission.class)
+    public class DeleteDefaultRequirementAction extends FormHandlerAction<IdForm>
+    {
+        @Override
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(IdForm form, BindException errors) throws Exception
+        {
+            SpecimenRequestRequirement requirement =
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getId());
+            // we should only be deleting default requirements (those without an associated request):
+            if (requirement != null && requirement.getRequestId() == -1)
+            {
+                SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement, false);
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(IdForm requirementForm)
+        {
+            return new ActionURL(ManageDefaultReqsAction.class, getContainer());
+        }
+    }
+
+    public static class CompleteSpecimenForm
+    {
+        private String _prefix;
+
+        public String getPrefix()
+        {
+            return _prefix;
+        }
+
+        public void setPrefix(String prefix)
+        {
+            _prefix = prefix;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class CompleteSpecimenAction extends ReadOnlyApiAction<CompleteSpecimenForm>
+    {
+        @Override
+        public ApiResponse execute(CompleteSpecimenForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            Study study = getStudy();
+            if (study == null)
+                throw new NotFoundException("No study exists in this folder.");
+
+            List<JSONObject> completions = new ArrayList<>();
+            for (AjaxCompletion completion : getAjaxCompletions(study))
+                completions.add(completion.toJSON());
+
+            response.put("completions", completions);
+            return response;
+        }
+    }
+
+    private List<AjaxCompletion> getAjaxCompletions(Study study)
+    {
+        List<AjaxCompletion> completions = new ArrayList<>();
+        String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";
+
+        completions.add(new AjaxCompletion(allString, allString));
+
+        for (String ptid : StudyService.get().getParticipantIds(study, getViewContext().getUser()))
+            completions.add(new AjaxCompletion(ptid, ptid));
+
+        return completions;
     }
 }

@@ -617,12 +617,6 @@ public class SpecimenUtils
         return new RequestedSpecimens(requestedSpecimens);
     }
 
-    @Migrate // TODO: Refactor SpecimenUtils and callers should use SpecimenRequestManager directly
-    public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
-    {
-        return SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), formValues, preferredLocation);
-    }
-
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();

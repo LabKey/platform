@@ -20,14 +20,19 @@ public interface SpecimenMigrationService
         ServiceRegistry.get().registerService(SpecimenMigrationService.class, impl);
     }
 
-    ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
+    ActionURL getAutoReportListURL(Container c);
+    ActionURL getCompleteSpecimenURL(Container c, String type);
+    ActionURL getConfigureRequestabilityRulesURL(Container c);
+    ActionURL getManageDisplaySettings(Container c);
+    ActionURL getManageNotificationsURL(Container c);
+    ActionURL getManageRepositorySettingsURL(Container c);
+    ActionURL getManageDefaultReqsSettingsURL(Container c);
     ActionURL getOverviewURL(Container c);
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
-    ActionURL getUploadSpecimensURL(Container c);
-    ActionURL getAutoReportListURL(Container c);
     ActionURL getShowSearchURL(Container c, boolean showVials);
-    ActionURL getSpecimenRequestConfigRequiredURL(Container c);
-    ActionURL getConfigureRequestabilityRulesURL(Container c);
-    ActionURL getViewRequestsURL(Container c);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
+    ActionURL getSpecimenRequestConfigRequiredURL(Container c);
+    ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
+    ActionURL getUploadSpecimensURL(Container c);
+    ActionURL getViewRequestsURL(Container c);
 }

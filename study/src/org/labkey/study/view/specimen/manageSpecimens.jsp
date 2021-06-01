@@ -32,13 +32,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Collection" %>
@@ -91,7 +87,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
                         <td class="lk-study-prop-desc">This study uses the <%=text(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
-                        <td><%=link("Change Repository Type", ShowManageRepositorySettingsAction.class)%></td>
+                        <td><%=link("Change Repository Type", SpecimenMigrationService.get().getManageRepositorySettingsURL(getContainer()))%></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Fields</td>
@@ -111,7 +107,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Display and Behavior</td>
                         <td class="lk-study-prop-desc">Manage warnings, comments, and workflow</td>
-                        <td><%= link("Manage Display and Behavior", ManageDisplaySettingsAction.class) %></td>
+                        <td><%= link("Manage Display and Behavior", SpecimenMigrationService.get().getManageDisplaySettings(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>
@@ -183,7 +179,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Request Requirements</td>
                         <td class="lk-study-prop-desc">Manage default requirements for new requests</td>
-                        <td><%= link("Manage Default Requirements", urlFor(ManageDefaultReqsAction.class)) %></td>
+                        <td><%= link("Manage Default Requirements", SpecimenMigrationService.get().getManageDefaultReqsSettingsURL(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Form</td>
@@ -193,7 +189,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Notifications</td>
                         <td class="lk-study-prop-desc">Manage specimen request notifications</td>
-                        <td><%= link("Manage Notifications", urlFor(ManageNotificationsAction.class)) %></td>
+                        <td><%= link("Manage Notifications", SpecimenMigrationService.get().getManageNotificationsURL(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Requestability Rules</td>

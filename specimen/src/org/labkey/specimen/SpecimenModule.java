@@ -159,6 +159,12 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
+            public ActionURL getCompleteSpecimenURL(Container c, String type)
+            {
+                return new ActionURL(SpecimenController2.CompleteSpecimenAction.class, c).addParameter("type", type);
+            }
+
+            @Override
             public ActionURL getShowSearchURL(Container c, boolean showVials)
             {
                 return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
@@ -186,6 +192,30 @@ public class SpecimenModule extends SpringModule
             public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
             {
                 return new ActionURL(SpecimenController2.SpecimenEventsAction.class, c).addReturnURL(returnURL);
+            }
+
+            @Override
+            public ActionURL getManageNotificationsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageNotificationsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageDisplaySettings(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageDisplaySettingsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageRepositorySettingsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageRepositorySettingsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageDefaultReqsSettingsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageDefaultReqsAction.class, c);
             }
         });
      }

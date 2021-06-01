@@ -3417,10 +3417,6 @@ study/src/org/labkey/study/view/snapshotSettings.jsp -text
 study/src/org/labkey/study/view/specimen/labSpecimenLists.jsp -text
 study/src/org/labkey/study/view/specimen/manageActorOrder.jsp -text
 study/src/org/labkey/study/view/specimen/manageActors.jsp -text
-study/src/org/labkey/study/view/specimen/manageDefaultReqs.jsp -text
-study/src/org/labkey/study/view/specimen/manageDisplay.jsp -text
-study/src/org/labkey/study/view/specimen/manageNotifications.jsp -text
-study/src/org/labkey/study/view/specimen/manageRepositorySettings.jsp -text
 study/src/org/labkey/study/view/specimen/manageRequest.jsp -text
 study/src/org/labkey/study/view/specimen/manageRequestInputs.jsp -text
 study/src/org/labkey/study/view/specimen/manageRequestStatus.jsp -text

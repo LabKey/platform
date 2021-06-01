@@ -16,7 +16,6 @@
 
 package org.labkey.api.study;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -29,7 +28,6 @@ import org.labkey.api.view.ActionURL;
 public interface SpecimenUrls extends UrlProvider
 {
     ActionURL getCommentURL(Container c, String globalUniqueId);
-    ActionURL getCompleteSpecimenURL(Container c, String type);
     ActionURL getDeleteRequestURL(Container c, String id);
     ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
     ActionURL getManageActorsURL(Container c);
