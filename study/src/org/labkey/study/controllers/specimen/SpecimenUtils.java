@@ -49,10 +49,11 @@ import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.VialRequestForm;
+import org.labkey.api.specimen.actions.IdTypes;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -121,9 +122,9 @@ import java.util.Set;
  */
 public class SpecimenUtils
 {
-    private final BaseStudyController _controller;
+    private final SpecimenController _controller;
 
-    public SpecimenUtils(BaseStudyController controller)
+    public SpecimenUtils(SpecimenController controller)
     {
         // private constructor to prevent external instantiation
         _controller = controller;
@@ -202,7 +203,7 @@ public class SpecimenUtils
         if (settings.isEnableRequests())
         {
             MenuButton requestMenuButton = new MenuButton("Request Options");
-            requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpecimenController.ViewRequestsAction.class));
+            requestMenuButton.addMenuItem("View Existing Requests", SpecimenMigrationService.get().getViewRequestsURL(getContainer()));
             if (!commentsMode)
             {
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
@@ -219,8 +220,8 @@ public class SpecimenUtils
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
-                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? VialRequestForm.IdTypes.RowId
-                                : VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
+                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? IdTypes.RowId
+                                : IdTypes.SpecimenHash) + "');}})}");
                     }
                 }
             }
@@ -308,8 +309,8 @@ public class SpecimenUtils
         if (getViewContext().hasPermission(AdminPermission.class))
         {
             Button upload = new Button.ButtonBuilder("Import Specimens")
-                    .href(new ActionURL(ShowUploadSpecimensAction.class, getContainer()))
-                    .build();
+                .href(SpecimenMigrationService.get().getUploadSpecimensURL(getContainer()))
+                .build();
             buttons.add(upload);
         }
 
@@ -529,7 +530,7 @@ public class SpecimenUtils
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
         if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
-            throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
+            throw new RedirectException(SpecimenMigrationService.get().getSpecimenRequestConfigRequiredURL(getContainer()));
     }
 
 
@@ -616,12 +617,6 @@ public class SpecimenUtils
         return new RequestedSpecimens(requestedSpecimens);
     }
 
-    @Migrate // TODO: Refactor SpecimenUtils and callers should use SpecimenRequestManager directly
-    public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
-    {
-        return SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), formValues, preferredLocation);
-    }
-
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
     {
         DataRegion rgn = new DataRegion();
@@ -662,7 +657,7 @@ public class SpecimenUtils
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenController.getDownloadURL(event, attachment.getName())) + "\">");
+                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(event, attachment.getName())) + "\">");
                     out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
                     out.write(PageFlowUtil.filter(attachment.getName()));
                     out.write("</a><br>");
