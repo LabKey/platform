@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.pipeline;
+package org.labkey.specimen.pipeline;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.SpecimenService;

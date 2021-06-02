@@ -158,6 +158,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -167,6 +168,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -198,6 +201,17 @@ public class SpecimenController extends BaseStudyController
     public SpecimenController()
     {
         setActionResolver(_actionResolver);
+    }
+
+    public static long[] toLongArray(Collection<String> intStrings)
+    {
+        if (intStrings == null)
+            return null;
+        long[] converted = new long[intStrings.size()];
+        int index = 0;
+        for (String intString : intStrings)
+            converted[index++] = Long.parseLong(intString);
+        return converted;
     }
 
     protected SpecimenUtils getUtils()
@@ -1311,6 +1325,54 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
+    public static List<Vial> getSpecimensFromRowIds(long[] requestedSampleIds, Container container, User user)
+    {
+        List<Vial> requestedVials = null;
+
+        if (requestedSampleIds != null)
+        {
+            List<Vial> vials = new ArrayList<>();
+            for (long requestedSampleId : requestedSampleIds)
+            {
+                Vial current = SpecimenManagerNew.get().getVial(container, user, requestedSampleId);
+                if (current != null)
+                    vials.add(current);
+            }
+            requestedVials = vials;
+        }
+
+        return requestedVials;
+    }
+
+    public static List<Vial> getSpecimensFromRowIds(Collection<String> ids, Container container, User user)
+    {
+        return getSpecimensFromRowIds(SpecimenController.toLongArray(ids), container, user);
+    }
+
+    public List<Vial> getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)
+    {
+        Set<String> formValues = null;
+        if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            formValues = DataRegionSelection.getSelected(getViewContext(), true);
+
+        if (formValues == null || formValues.isEmpty())
+            return null;
+
+        List<Vial> selectedVials;
+        if (fromGroupedView)
+        {
+            Map<String, List<Vial>> keyToVialMap =
+                    SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
+            List<Vial> vials = new ArrayList<>();
+            for (List<Vial> vialList : keyToVialMap.values())
+                vials.addAll(vialList);
+            selectedVials = new ArrayList<>(vials);
+        }
+        else
+            selectedVials = getSpecimensFromRowIds(formValues, getContainer(), getUser());
+        return selectedVials;
+    }
+
     public static class CreateSpecimenRequestForm extends ReturnUrlForm implements HiddenFormInputGenerator
     {
         public enum PARAMS
@@ -1470,35 +1532,65 @@ public class SpecimenController extends BaseStudyController
             _specimenIds = specimenIds;
         }
 
-        public RequestedSpecimens getSelectedSpecimens(SpecimenUtils utils) throws AmbiguousLocationException
+        public RequestedSpecimens getSelectedSpecimens(ViewContext ctx) throws AmbiguousLocationException
         {
+            Container container = ctx.getContainer();
+            User user = ctx.getUser();
+            HttpServletRequest request = ctx.getRequest();
+
             // first check for explicitly listed specimen row ids (this is the case when posting the final
             // specimen request form):
-            List<Vial> requestedSpecimens = utils.getSpecimensFromRowIds(getSpecimenRowIds());
+            List<Vial> requestedSpecimens = getSpecimensFromRowIds(getSpecimenRowIds(), container, user);
             if (requestedSpecimens != null && requestedSpecimens.size() > 0)
                 return new RequestedSpecimens(requestedSpecimens);
 
             Set<String> ids;
-            if ("post".equalsIgnoreCase(utils.getViewContext().getRequest().getMethod()) &&
-                    (utils.getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
+            if ("post".equalsIgnoreCase(request.getMethod()) &&
+                    (request.getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
             {
-                ids = DataRegionSelection.getSelected(utils.getViewContext(), null, true);
+                ids = DataRegionSelection.getSelected(ctx, null, true);
                 if (isFromGroupedView())
-                    return SpecimenRequestManager.get().getRequestableBySpecimenHash(utils.getViewContext().getContainer(), utils.getViewContext().getUser(), ids, getPreferredLocation());
+                    return SpecimenRequestManager.get().getRequestableBySpecimenHash(container, user, ids, getPreferredLocation());
                 else
-                    return utils.getRequestableByVialRowIds(ids);
+                    return getRequestableByVialRowIds(ids, container, user);
             }
             else if (_specimenIds != null && _specimenIds.length > 0)
             {
                 ids = new HashSet<>();
                 Collections.addAll(ids, _specimenIds);
                 if (isFromGroupedView())
-                    return SpecimenRequestManager.get().getRequestableBySpecimenHash(utils.getViewContext().getContainer(), utils.getViewContext().getUser(), ids, getPreferredLocation());
+                    return SpecimenRequestManager.get().getRequestableBySpecimenHash(container, user, ids, getPreferredLocation());
                 else
-                    return utils.getRequestableByVialGlobalUniqueIds(ids);
+                    return getRequestableByVialGlobalUniqueIds(ids, container, user);
             }
             else
                 return null;
+        }
+
+        private RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds, Container container, User user)
+        {
+            Set<Long> ids = new HashSet<>();
+            Arrays.stream(SpecimenController.toLongArray(rowIds)).forEach(ids::add);
+            List<Vial> requestedSpecimens = SpecimenManagerNew.get().getRequestableVials(container, user, ids);
+            return new RequestedSpecimens(requestedSpecimens);
+        }
+
+        private RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds, Container container, User user)
+        {
+            List<Vial> requestedVials = null;
+
+            if (globalUniqueIds != null)
+            {
+                List<Vial> vials = new ArrayList<>();
+                for (String globalUniqueId : globalUniqueIds)
+                {
+                    Vial match = SpecimenManagerNew.get().getVial(container, user, globalUniqueId);
+                    if (match != null)
+                        vials.add(match);
+                }
+                requestedVials = new ArrayList<>(vials);
+            }
+            return new RequestedSpecimens(requestedVials);
         }
     }
 
@@ -1748,7 +1840,7 @@ public class SpecimenController extends BaseStudyController
 
         try
         {
-            requested = form.getSelectedSpecimens(getUtils());
+            requested = form.getSelectedSpecimens(getViewContext());
         }
         catch (AmbiguousLocationException e)
         {
@@ -2944,7 +3036,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public boolean handlePost(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors) throws Exception
         {
-            List<Vial> selectedVials = getUtils().getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
+            List<Vial> selectedVials = getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
             if (selectedVials != null)
             {
                 for (Vial vial : selectedVials)
@@ -2988,7 +3080,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors)
         {
-            List<Vial> selectedVials = getUtils().getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
+            List<Vial> selectedVials = getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
 
             if (selectedVials == null || selectedVials.size() == 0)
             {
