@@ -48,6 +48,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -381,8 +382,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             {
                 // issue: 35002 - normalize Date values to avoid Timestamp/Date toString differences
                 // issue: 36472 - use iso format to show date-time values
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-                stringMap.put(entry.getKey(), formatter.format((Date) value));
+                String formatted = DateUtil.toISO((Date)value);
+                stringMap.put(entry.getKey(), formatted);
             }
             else
                 stringMap.put(entry.getKey(), value == null ? null : value.toString());

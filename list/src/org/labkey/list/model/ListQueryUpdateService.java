@@ -205,7 +205,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 {
                     //Make entry to audit log if anything was inserted
                     if (inserted > 0)
-                        ListManager.get().addAuditEvent(_list, user, "Bulk inserted " + inserted + " rows to list.");
+                        ListManager.get().addAuditEvent(_list, user, (useMerge ? "Bulk imported " : "Bulk inserted ") + inserted + " rows to list.");
 
                     transaction.commit();
                     ListManager.get().indexList(_list, false); // TODO: Add to a post-commit task?

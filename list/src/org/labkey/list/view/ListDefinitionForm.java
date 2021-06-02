@@ -19,6 +19,7 @@ package org.labkey.list.view;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
 
@@ -29,6 +30,7 @@ public class ListDefinitionForm extends ViewForm
     private boolean _showHistory = false;
     private Integer _listId = null;
     private String _name = null;
+    private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
     public ListDefinition getList()
     {
@@ -98,5 +100,15 @@ public class ListDefinitionForm extends ViewForm
     public void setName(String name)
     {
         _name = name;
+    }
+
+    public QueryUpdateService.InsertOption getInsertOption()
+    {
+        return _insertOption;
+    }
+
+    public void setInsertOption(QueryUpdateService.InsertOption insertOption)
+    {
+        _insertOption = insertOption;
     }
 }

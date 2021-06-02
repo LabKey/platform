@@ -16,9 +16,9 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.specimen.report.SpecimenReportTitle" %>
-<%@ page import="org.labkey.api.specimen.report.SpecimenVisitReport" %>
-<%@ page import="org.labkey.api.specimen.report.SpecimenVisitReportParameters" %>
+<%@ page import="org.labkey.specimen.report.SpecimenReportTitle" %>
+<%@ page import="org.labkey.specimen.report.SpecimenVisitReport" %>
+<%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
