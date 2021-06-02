@@ -104,7 +104,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         initializeProvider(auditUser);
     }
 
-    public AbstractAuditDomainKind getDomainKind()
+    protected AbstractAuditDomainKind getDomainKind()
     {
         assert null != domainKind;
         return domainKind;
