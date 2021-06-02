@@ -121,6 +121,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
     //optional non-unique title for the container
     private String _title;
 
+    private LockState _lockState = null;
+    private Date _expirationDate = null;
+
+    // Only one state for now, but we expect to add more in the future (e.g., ReadOnly)
+    public enum LockState
+    {
+        Inaccessible
+    }
+
     // UNDONE: BeanFactory for Container
 
     @JsonCreator
@@ -436,10 +445,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null != user)
         {
             @Nullable Container impersonationProject = user.getImpersonationProject();
+            @Nullable Container currentProject = getProject();
 
             // Root is never forbidden (site admin case), otherwise, impersonation project must match current project
-            if (null != impersonationProject && !impersonationProject.equals(getProject()))
+            if (null != impersonationProject && !impersonationProject.equals(currentProject))
                 return true;
+
+            // Handle locked projects
+            if (null != currentProject)
+            {
+                LockState lockState = currentProject.getLockState();
+
+                if (null != lockState)
+                    return ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, lockState);
+            }
         }
 
         return false;
@@ -479,7 +498,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
 
     /**
-     * Should use property check in the ContainerType interface instead of this expclit check
+     * Should use property check in the ContainerType interface instead of this explicit check
      * @return indication of whether this is a container tab or not.
      */
     public boolean isContainerTab()
@@ -801,8 +820,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
-                Map props = PropertyManager.getProperties(this, "defaultModules");
-                String defaultModuleName = (String) props.get("name");
+                Map<String, String> props = PropertyManager.getProperties(this, "defaultModules");
+                String defaultModuleName = props.get("name");
 
                 boolean initRequired = false;
                 if (null == defaultModuleName || null == ModuleLoader.getInstance().getModule(defaultModuleName))
@@ -1599,5 +1618,25 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public JdbcType getJdbcParameterType()
     {
         return JdbcType.VARCHAR;
+    }
+
+    public @Nullable LockState getLockState()
+    {
+        return _lockState;
+    }
+
+    public void setLockState(LockState lockState)
+    {
+        _lockState = lockState;
+    }
+
+    public @Nullable Date getExpirationDate()
+    {
+        return _expirationDate;
+    }
+
+    public void setExpirationDate(Date expirationDate)
+    {
+        _expirationDate = expirationDate;
     }
 }
