@@ -37,7 +37,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
-import static org.labkey.api.util.DOM.Attribute.*;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -61,6 +60,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.DOM.Attribute.*;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IFRAME;
@@ -117,7 +117,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new ActionListView(TestController.this);
+            return new ActionListView(TestController.this, actionDescriptor->BeginAction.class != actionDescriptor.getActionClass());
         }
 
         @Override
