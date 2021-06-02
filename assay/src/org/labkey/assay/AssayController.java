@@ -1681,7 +1681,7 @@ public class AssayController extends SpringActionController
             if (service != null)
             {
                 // issue 42415 : for assays at either the shared or project scope, allow a linkage target which
-                // translates to a study in the current assay import folder
+                // translates to a study in the current data import folder
                 if (getContainer().isProject() || getContainer().equals(ContainerManager.getSharedContainer()))
                 {
                     containersInfo.add(Map.of(
