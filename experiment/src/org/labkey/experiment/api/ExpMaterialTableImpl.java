@@ -850,7 +850,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         try
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampleset");
+                    .setFileLinkDirectory("sampletype");
             SearchService ss = SearchService.get();
             if (null != ss)
             {

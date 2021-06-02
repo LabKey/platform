@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.specimen.importer.RequestabilityManager"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.specimen.importer.RequestabilityManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -424,7 +424,7 @@
 
         Ext.Msg.wait("Saving...");
         Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("specimen", "updateRequestabilityRules"),
+            url : LABKEY.ActionURL.buildURL("specimen2", "updateRequestabilityRules"),
             method : 'POST',
             success: saveComplete,
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.displayAjaxErrorResponse, this, true),

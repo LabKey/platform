@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.EditDatasetRowForm;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -81,7 +82,7 @@ import java.util.Objects;
  * User: klum
  * Date: Sep 24, 2009
  */
-public abstract class InsertUpdateAction<Form extends DatasetController.EditDatasetRowForm> extends FormViewAction<Form>
+public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extends FormViewAction<Form>
 {
     private static final String DEFAULT_INSERT_VALUE_PREFIX = "default.";
 
