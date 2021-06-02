@@ -2841,9 +2841,9 @@ public class StudyController extends BaseStudyController
             Integer sourceRowId = null;
             for (Map<String,Object> row : data)
             {
-                String sourceLSID = (String)row.get("sourcelsid");
-                String datasetRowLsid = (String)row.get("lsid");
-                Integer rowId = (Integer)row.get("rowId");
+                String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
+                String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
+                Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
                 if (sourceLSID != null && datasetRowLsid != null)
                 {
                     sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
