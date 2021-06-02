@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -327,6 +328,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
     @Test
     public void testListAndSampleLineage() throws Exception
     {
+        Assume.assumeTrue("This test requires the list module.", ListService.get() != null);
         final User user = TestContext.get().getUser();
 
         // setup sample type
