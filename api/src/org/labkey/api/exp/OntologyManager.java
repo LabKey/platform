@@ -2272,7 +2272,7 @@ public class OntologyManager
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
             "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
             "sourceontology,conceptimportcolumn,conceptlabelcolumn,principalconceptcode,conceptsubtree," +
-            "recommendedvariable,derivationdatascope";
+            "recommendedvariable,derivationdatascope,storagecolumnname";
     static final String[] parametersArray = parameters.split(",");
 
     static ParameterMapStatement getInsertStmt(User user, TableInfo t, boolean ifNotExists) throws SQLException
