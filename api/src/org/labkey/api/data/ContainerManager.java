@@ -2231,7 +2231,8 @@ public class ContainerManager
 
     static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, lockState) -> false;
 
-    public static void registerLockedProjectHandler(LockedProjectHandler handler)
+    // Replaces any previously set LockedProjectHandler
+    public static void setLockedProjectHandler(LockedProjectHandler handler)
     {
         LOCKED_PROJECT_HANDLER = handler;
     }
