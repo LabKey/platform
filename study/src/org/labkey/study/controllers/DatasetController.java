@@ -18,7 +18,6 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
@@ -29,6 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.EditDatasetRowForm;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -277,17 +277,6 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm extends ReturnUrlForm
-    {
-        private String lsid;
-        private int datasetId;
-
-        public String getLsid() {return lsid;}
-        public void setLsid(String lsid) {this.lsid = lsid;}
-        public int getDatasetId() {return datasetId;}
-        public void setDatasetId(int datasetId) {this.datasetId = datasetId;}
-    }
-
     public static class DatasetAuditHistoryForm
     {
         private int auditRowId;
@@ -295,6 +284,5 @@ public class DatasetController extends BaseStudyController
         public int getAuditRowId() {return auditRowId;}
 
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
-
     }
 }

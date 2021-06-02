@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -75,6 +77,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleType
@@ -393,9 +396,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 throw new ExperimentException("Error creating name expression generator");
         }
 
-        try
+        try (NameGenerator.State state = nameGen.createState(true))
         {
-            nameGen.generateNames(maps, parentDatas, parentSamples, skipDuplicates, true);
+            DbSequence sequence = genIdSequence();
+            Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
+            nameGen.generateNames(state, maps, parentDatas, parentSamples, extraPropsFn, skipDuplicates);
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
@@ -429,14 +434,22 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (nameGen == null)
             throw new ExperimentException("Error creating name expression generator");
 
-        try
+        try (NameGenerator.State state = nameGen.createState(true))
         {
-            return nameGen.generateName(rowMap, parentDatas, parentSamples, true);
+            DbSequence sequence = genIdSequence();
+            Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
+            return nameGen.generateName(state, rowMap, parentDatas, parentSamples, extraPropsFn);
         }
         catch (NameGenerator.NameGenerationException e)
         {
             throw new ExperimentException("Failed to generate name for Sample", e);
         }
+    }
+
+    // The DbSequence used to generate the ${genId} column values
+    public DbSequence genIdSequence()
+    {
+        return DbSequenceManager.getPreallocatingSequence(getContainer(), SEQUENCE_PREFIX, getRowId(), 100);
     }
 
 

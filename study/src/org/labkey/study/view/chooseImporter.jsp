@@ -5,6 +5,11 @@
  */
 %>
 <%@ page import="com.google.common.collect.Iterables" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.util.Button" %>
@@ -12,14 +17,8 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
-<%@ page import="org.labkey.api.study.SpecimenUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -39,7 +38,7 @@
     HtmlString manageFoldersLink = h(urlProvider(AdminUrls.class).getFolderTypeURL(c));
     HtmlString labkeyEditionsLink = h("https://www.labkey.com/products-services/labkey-server/labkey-server-editions-feature-comparison/");
     HtmlString contactUsLink = h("https://www.labkey.com/about/contact/");
-    HtmlString manuallyImportSpecimensLink = h(urlProvider(SpecimenUrls.class).getUploadSpecimensURL(c));
+    HtmlString manuallyImportSpecimensLink = h(SpecimenMigrationService.get().getUploadSpecimensURL(c));
 %>
 
 <style type="text/css">
