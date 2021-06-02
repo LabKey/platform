@@ -628,14 +628,8 @@ public class PageFlowUtil
     {
         if (null == s)
             return "";
-        try
-        {
-            return PATTERN.matcher(URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET.name())).replaceAll("%20");
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        String enc = URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET);
+        return StringUtils.replace(enc, "+", "%20");
     }
 
     public static String encodeURIComponent(String s)
