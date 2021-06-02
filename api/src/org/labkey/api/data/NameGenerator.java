@@ -50,6 +50,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.util.SubstitutionFormat.dailySampleCount;
 import static org.labkey.api.util.SubstitutionFormat.monthlySampleCount;
 import static org.labkey.api.util.SubstitutionFormat.weeklySampleCount;
@@ -416,19 +417,16 @@ public class NameGenerator
                     String[] parts = colName.split("/", 2);
                     if (parts.length == 2)
                     {
-                        if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                        addInputs(parts, colName, value, allInputs, dataInputs, materialInputs);
+                    }
+                    else if (ctx.containsKey(PARENT_IMPORT_ALIAS_MAP_PROP))
+                    {
+                        Map<String, String> parentImportAliases = (Map<String, String>) ctx.get(PARENT_IMPORT_ALIAS_MAP_PROP);
+                        if (parentImportAliases.containsKey(colName))
                         {
-                            parentNames(value, colName).forEach(parentName -> {
-                                allInputs.add(parentName);
-                                dataInputs.add(parentName);
-                            });
-                        }
-                        else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
-                        {
-                            parentNames(value, colName).forEach(parentName -> {
-                                allInputs.add(parentName);
-                                materialInputs.add(parentName);
-                            });
+                            String colNameForAlias = parentImportAliases.get(colName);
+                            parts = colNameForAlias.split("/", 2);
+                            addInputs(parts, colNameForAlias, value, allInputs, dataInputs, materialInputs);
                         }
                     }
                 }
@@ -500,7 +498,29 @@ public class NameGenerator
             return NameGenerator.parentNames(value, parentColName).collect(Collectors.toList());
         }
 
+        private void addInputs(String[] parts, String colName, Object value, Set<String> allInputs, Set<String> dataInputs, Set<String> materialInputs)
+        {
+            if (parts.length == 2)
+            {
+                if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                {
+                    parentNames(value, colName).forEach(parentName -> {
+                        allInputs.add(parentName);
+                        dataInputs.add(parentName);
+                    });
+                }
+                else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
+                {
+                    parentNames(value, colName).forEach(parentName -> {
+                        allInputs.add(parentName);
+                        materialInputs.add(parentName);
+                    });
+                }
+            }
+        }
+
     }
+
 
     public class NameGenerationException extends Exception
     {

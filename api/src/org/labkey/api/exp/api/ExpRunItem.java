@@ -29,6 +29,8 @@ import java.util.List;
  */
 public interface ExpRunItem extends ExpObject, Identifiable
 {
+    String PARENT_IMPORT_ALIAS_MAP_PROP = "parentImportAliasMap";
+
     @Nullable
     String getDescription();
 

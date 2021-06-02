@@ -78,6 +78,7 @@ import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -85,6 +86,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 
 public abstract class UploadSamplesHelper
 {
@@ -827,7 +830,20 @@ public abstract class UploadSamplesHelper
                     generatedName = aliquotName;
                 }
                 else
-                    generatedName = nameGen.generateName(nameState, map);
+                {
+                    Supplier<Map<String, Object>> extraPropsFn = () -> {
+                        try
+                        {
+                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, sampletype.getImportAliasMap());
+                        }
+                        catch (IOException e)
+                        {
+                            return Collections.emptyMap();
+                        }
+                    };
+
+                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn);
+                }
                 generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
             }
             catch (NameGenerator.DuplicateNameException dup)
