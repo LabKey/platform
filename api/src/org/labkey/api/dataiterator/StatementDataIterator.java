@@ -736,14 +736,14 @@ public class StatementDataIterator extends AbstractDataIterator
             public void executeBatch()
             {
                 if (0 == _errorWhen.getAndDecrement())
-                    throw new DataIntegrityViolationException("boom");
+                    throw new RuntimeSQLException(new SQLException("boom"));
             }
 
             @Override
             public boolean execute()
             {
                 if (0 == _errorWhen.getAndDecrement())
-                    throw new DataIntegrityViolationException("boom");
+                    throw new RuntimeSQLException(new SQLException("boom"));
                 return true;
             }
 
