@@ -605,6 +605,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public void prepare(Container c)
+    {
+        _column.prepare(c);
+    }
+
+    @Override
     public String getFormatString()
     {
         return _column.getFormatString();
