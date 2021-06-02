@@ -87,14 +87,28 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
     public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
 
+    final AbstractAuditDomainKind domainKind;
+
+
     public AbstractAuditTypeProvider()
     {
+        domainKind = null;
+    }
+
+    public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
+    {
+        this.domainKind = domainKind;
+
         // Issue 20310: initialize AuditTypeProvider when registered during startup
         User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
         initializeProvider(auditUser);
     }
 
-    protected abstract AbstractAuditDomainKind getDomainKind();
+    public AbstractAuditDomainKind getDomainKind()
+    {
+        assert null != domainKind;
+        return domainKind;
+    }
 
     @Override
     public void initializeProvider(User user)

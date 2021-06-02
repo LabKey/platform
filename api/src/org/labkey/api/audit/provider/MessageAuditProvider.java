@@ -54,10 +54,9 @@ public class MessageAuditProvider extends AbstractAuditTypeProvider implements A
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public MessageAuditProvider()
     {
-        return new MessageAuditDomainKind();
+        super(new MessageAuditDomainKind());
     }
 
     @Override

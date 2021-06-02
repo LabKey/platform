@@ -174,10 +174,9 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
 
 
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public PublishAuditProvider()
     {
-        return new PublishAuditDomainKind();
+        super(new PublishAuditDomainKind());
     }
 
     @Override
