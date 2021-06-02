@@ -616,7 +616,6 @@ public class PageFlowUtil
         return s;
     }
 
-    private static final Pattern PATTERN = Pattern.compile("\\+");
 
     /**
      * URL Encode string.
