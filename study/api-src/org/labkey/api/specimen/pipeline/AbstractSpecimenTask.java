@@ -33,6 +33,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.model.VisitService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileType;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
@@ -49,6 +50,8 @@ import java.util.Date;
 */
 public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenTaskFactory<FactoryType>> extends PipelineJob.Task<TaskFactory>
 {
+    public static final FileType ARCHIVE_FILE_TYPE = new FileType(".specimens");
+
     protected AbstractSpecimenTask(FactoryType factory, PipelineJob job)
     {
         super(factory, job);
@@ -101,7 +104,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         {
             if (job != null)
                 job.setStatus("OPTIONAL POST TRANSFORMING STEP " + transformer.getName() + " DATA");
-            File specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
+            File specimenArchive = ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
             transformer.postTransform(job, inputFile, specimenArchive);
         }
     }
@@ -208,7 +211,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     {
                         if (job != null)
                             job.setStatus("TRANSFORMING " + transformer.getName() + " DATA");
-                        specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
+                        specimenArchive = ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
                         transformer.transform(job, inputFile, specimenArchive);
                         break;
                     }

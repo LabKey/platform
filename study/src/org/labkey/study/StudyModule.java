@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -71,7 +70,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -125,13 +123,13 @@ import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
-import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyDesignController;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.designer.DesignerController;
+import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.controllers.specimen.SpecimenController;
@@ -162,7 +160,6 @@ import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SpecimenPipeline;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -268,7 +265,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         VisitService.setInstance(new VisitServiceImpl());
         ImportHelperService.setInstance(new ImportHelperServiceImpl());
         StudyInternalService.setInstance(new StudyInternalServiceImpl());
-        SpecimenMigrationService.setInstance(SpecimenController::getDownloadURL);
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
@@ -362,12 +358,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    @Migrate // See TODOs below
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
-        // TODO: Move to specimen module
-        PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
 
         // This is in the First group because when a container is deleted,

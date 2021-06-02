@@ -82,6 +82,8 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         innerDataRegion.setTable(seedTable);
         innerDataRegion.addColumn(bound);
         innerDisplayColumn = innerDataRegion.getDisplayColumn(0);
+        // apply date and number formats
+        innerDataRegion.prepareDisplayColumns(schema.getContainer());
     }
 
     @Override

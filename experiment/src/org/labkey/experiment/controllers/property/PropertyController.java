@@ -281,6 +281,12 @@ public class PropertyController extends SpringActionController
                 if (templateGroup == null)
                     throw new NotFoundException("Domain template group '" + domainGroup + "' not found");
 
+                if (templateGroup.hasErrors())
+                {
+                    errors.reject(ERROR_MSG, "Domain template group '" + domainGroup + "' has errors: " + StringUtils.join(templateGroup.getErrors(), "\n"));
+                    return null;
+                }
+
                 if (domainTemplate != null)
                 {
                     DomainTemplate template = templateGroup.getTemplate(domainTemplate, kindName, true);
@@ -298,12 +304,6 @@ public class PropertyController extends SpringActionController
                 }
                 else
                 {
-                    if (templateGroup.hasErrors())
-                    {
-                        errors.reject(ERROR_MSG, "Domain template group '" + domainGroup + "' has errors: " + StringUtils.join(templateGroup.getErrors(), "\n"));
-                        return null;
-                    }
-
                     domains = templateGroup.createAndImport(getContainer(), getUser(), /*TODO: allow specifying a domain name for each template?, */ createDomain, importData);
                 }
             }

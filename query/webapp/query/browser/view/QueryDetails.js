@@ -57,6 +57,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             label: 'Calculated',
             description: 'This column contains a calculated expression'
         },
+        multiValue: {
+            abbreviation: 'MVFK',
+            label: 'Multi-Value Foreign Key',
+            description: 'This column is a multi-valued lookup'
+        },
         phi: {
             enumeration: {
                 PHI: {

@@ -73,7 +73,7 @@ public class ToolsController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new ActionListView(ToolsController.this);
+            return new ActionListView(ToolsController.this, actionDescriptor->BeginAction.class != actionDescriptor.getActionClass());
         }
 
         @Override

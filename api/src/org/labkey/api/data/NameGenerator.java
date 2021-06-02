@@ -46,6 +46,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -193,52 +194,31 @@ public class NameGenerator
         _exprHasLineageInputs = hasLineageInputs;
     }
 
-    public String generateName(@NotNull Map<String, Object> map)
-            throws NameGenerationException
-    {
-        try (State state = createState(false))
-        {
-            return state.nextName(map, null, null);
-        }
-    }
-
-    public String generateName(@NotNull Map<String, Object> map,
-                             @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                             boolean incrementSampleCounts)
-            throws NameGenerationException
-    {
-        try (State state = createState(incrementSampleCounts))
-        {
-            return state.nextName(map, parentDatas, parentSamples);
-        }
-    }
-
-    public void generateNames(@NotNull List<Map<String, Object>> maps,
+    public void generateNames(@NotNull State state,
+                              @NotNull List<Map<String, Object>> maps,
                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                              boolean skipDuplicates, boolean incrementSampleCounts)
+                              @Nullable Supplier<Map<String, Object>> extraPropsFn,
+                              boolean skipDuplicates)
             throws NameGenerationException
     {
-        try (State state = createState(incrementSampleCounts))
+        ListIterator<Map<String, Object>> li = maps.listIterator();
+        while (li.hasNext())
         {
-            ListIterator<Map<String, Object>> li = maps.listIterator();
-            while (li.hasNext())
+            Map<String, Object> map = li.next();
+            try
             {
-                Map<String, Object> map = li.next();
-                try
+                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFn);
+                map.put("name", name);
+            }
+            catch (DuplicateNameException dup)
+            {
+                if (skipDuplicates)
                 {
-                    String name = state.nextName(map, parentDatas, parentSamples);
-                    map.put("name", name);
+                    // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
+                    li.remove();
                 }
-                catch (DuplicateNameException dup)
-                {
-                    if (skipDuplicates)
-                    {
-                        // Issue 23384: SampleSet: import should ignore duplicate rows when ignore duplicates is selected
-                        li.remove();
-                    }
-                    else
-                        throw dup;
-                }
+                else
+                    throw dup;
             }
         }
     }
@@ -255,13 +235,14 @@ public class NameGenerator
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
     {
-        return state.nextName(rowMap, null, null);
+        return state.nextName(rowMap, null, null, null);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
-                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples) throws NameGenerationException
+                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
+                               @Nullable Supplier<Map<String, Object>> extraPropsFn) throws NameGenerationException
     {
-        return state.nextName(rowMap, parentDatas, parentSamples);
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn);
     }
 
 
@@ -296,7 +277,7 @@ public class NameGenerator
             _rowNumber = -1;
         }
 
-        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples)
+        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn)
                 throws NameGenerationException
         {
             if (_rowNumber == -1)
@@ -306,7 +287,7 @@ public class NameGenerator
             String name;
             try
             {
-                name = genName(rowMap, parentDatas, parentSamples);
+                name = genName(rowMap, parentDatas, parentSamples, extraPropsFn);
             }
             catch (IllegalArgumentException e)
             {
@@ -327,7 +308,8 @@ public class NameGenerator
 
         private String genName(@NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas,
-                               @Nullable Set<ExpMaterial> parentSamples)
+                               @Nullable Set<ExpMaterial> parentSamples,
+                               @Nullable Supplier<Map<String, Object>> extraPropsFn)
                 throws IllegalArgumentException
         {
             // If sample counters bound to a column are found, e.g. in the expression "${myDate:dailySampleCount}" the dailySampleCount is bound to myDate column,
@@ -346,6 +328,14 @@ public class NameGenerator
                 sampleCounts = getSampleCountsFunction.apply(null);
             }
 
+            // Always execute the extraPropsFn, if available, to increment the ${genId} counter in the non-QueryUpdateService code path.
+            // The DataClass and SampleType DataIterators increment the genId value using SimpleTranslator.addSequenceColumn()
+            Map<String, Object> extraProps = null;
+            if (extraPropsFn != null)
+            {
+                extraProps = extraPropsFn.get();
+            }
+
             // If a name is already provided, just use it as is
             Object currNameObj = rowMap.get("Name");
             if (currNameObj != null)
@@ -356,7 +346,7 @@ public class NameGenerator
             }
 
             // Add extra context variables
-            Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts);
+            Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps);
 
             String name = _parsedNameExpression.eval(ctx);
             if (name == null || name.length() == 0)
@@ -370,7 +360,8 @@ public class NameGenerator
                 @NotNull Map<String, Object> rowMap,
                 Set<ExpData> parentDatas,
                 Set<ExpMaterial> parentSamples,
-                @Nullable Map<String, Long> sampleCounts)
+                @Nullable Map<String, Long> sampleCounts,
+                @Nullable Map<String, Object> extraProps)
         {
             Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);
@@ -378,6 +369,8 @@ public class NameGenerator
             ctx.put("RandomId", StringUtilsLabKey.getUniquifier(4));
             if (sampleCounts != null)
                 ctx.putAll(sampleCounts);
+            if (extraProps != null)
+                ctx.putAll(extraProps);
             ctx.putAll(rowMap);
 
             // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map

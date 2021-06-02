@@ -22,8 +22,9 @@
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.specimen.SpecimenManager" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager"%>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
@@ -41,7 +42,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ExtendedSpecimenRequestAction" %>
@@ -89,7 +89,7 @@
     }
 
     SafeToRender specimenSearchButton = SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
-        button("Specimen Search").href(urlFor(ShowSearchAction.class).addParameter("showVials", "true")) : HtmlString.EMPTY_STRING;
+        button("Specimen Search").href(SpecimenMigrationService.get().getShowSearchURL(getContainer(), true)) : HtmlString.EMPTY_STRING;
     SafeToRender importVialIdsButton = SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
         button("Upload Specimen Ids").href(urlFor(ImportVialIdsAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING;
 

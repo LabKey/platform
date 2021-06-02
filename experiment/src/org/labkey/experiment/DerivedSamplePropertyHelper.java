@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.Lsid;
@@ -44,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Gets the sample-specific values from user-provided information when creating child samples from an existing set
@@ -62,6 +64,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     private final DomainProperty _nameProperty;
     private final NameGenerator _nameGenerator;
     private NameGenerator.State _state;
+    private Supplier<Map<String, Object>> _genIdFn;
 
     public DerivedSamplePropertyHelper(ExpSampleTypeImpl sampleType, int sampleCount, Container c, User user)
     {
@@ -160,6 +163,8 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             if (_state == null)
             {
                 _state = _nameGenerator.createState(true);
+                DbSequence sequence = _sampleType.genIdSequence();
+                _genIdFn = () -> Map.of("genId", sequence.next());
             }
 
             Map<String, Object> context = new CaseInsensitiveHashMap<>();
@@ -169,7 +174,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             }
             try
             {
-                return _nameGenerator.generateName(_state, context, null, parentSamples);
+                return _nameGenerator.generateName(_state, context, null, parentSamples, _genIdFn);
             }
             catch (NameGenerator.NameGenerationException e)
             {

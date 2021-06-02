@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
@@ -30,16 +31,10 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ConfigureRequestabilityRulesAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDefaultReqsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageDisplaySettingsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageNotificationsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenWebPartAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Collection" %>
@@ -92,7 +87,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
                         <td class="lk-study-prop-desc">This study uses the <%=text(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
-                        <td><%=link("Change Repository Type", ShowManageRepositorySettingsAction.class)%></td>
+                        <td><%=link("Change Repository Type", SpecimenMigrationService.get().getManageRepositorySettingsURL(getContainer()))%></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Fields</td>
@@ -112,7 +107,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Display and Behavior</td>
                         <td class="lk-study-prop-desc">Manage warnings, comments, and workflow</td>
-                        <td><%= link("Manage Display and Behavior", ManageDisplaySettingsAction.class) %></td>
+                        <td><%= link("Manage Display and Behavior", SpecimenMigrationService.get().getManageDisplaySettings(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>
@@ -122,7 +117,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
                         <td class="lk-study-prop-desc">Configure the specimen groupings in the specimen web part</td>
-                        <td><%= link("Configure Specimen Groupings", ManageSpecimenWebPartAction.class) %></td>
+                        <td><%= link("Configure Specimen Groupings", SpecimenService.get().getManageSpecimenWebPartActionClass()) %></td>
                     </tr>
 
                     <% if (numberOfTransforms == 1) { %>
@@ -184,7 +179,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Request Requirements</td>
                         <td class="lk-study-prop-desc">Manage default requirements for new requests</td>
-                        <td><%= link("Manage Default Requirements", urlFor(ManageDefaultReqsAction.class)) %></td>
+                        <td><%= link("Manage Default Requirements", SpecimenMigrationService.get().getManageDefaultReqsSettingsURL(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Form</td>
@@ -194,12 +189,12 @@
                     <tr>
                         <td class="lk-study-prop-label">Notifications</td>
                         <td class="lk-study-prop-desc">Manage specimen request notifications</td>
-                        <td><%= link("Manage Notifications", urlFor(ManageNotificationsAction.class)) %></td>
+                        <td><%= link("Manage Notifications", SpecimenMigrationService.get().getManageNotificationsURL(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Requestability Rules</td>
                         <td class="lk-study-prop-desc">Manage the rules used to determine specimen availability for request</td>
-                        <td><%= link("Manage Requestability Rules", urlFor(ConfigureRequestabilityRulesAction.class)) %></td>
+                        <td><%= link("Manage Requestability Rules", SpecimenMigrationService.get().getConfigureRequestabilityRulesURL(getContainer())) %></td>
                     </tr>
                 </table>
             </labkey:panel>
