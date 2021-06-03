@@ -113,9 +113,9 @@ import java.util.Map;
  */
 public class SpecimenUtils
 {
-    private final SpecimenController _controller;
+    private final SpringActionController _controller;
 
-    public SpecimenUtils(SpecimenController controller)
+    public SpecimenUtils(SpringActionController controller)
     {
         // private constructor to prevent external instantiation
         _controller = controller;
@@ -138,7 +138,7 @@ public class SpecimenUtils
 
     private Study getStudy() throws IllegalStateException
     {
-        return _controller.getStudyThrowIfNull();
+        return SpecimenController.getStudyThrowIfNull(getContainer());
     }
 
     public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
@@ -200,7 +200,7 @@ public class SpecimenUtils
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(SpecimenController.ShowCreateSpecimenRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
+                    String createRequestURL = urlFor(SpecimenMigrationService.get().getShowCreateSpecimenRequestActionClass()).addReturnURL(getViewContext().getActionURL()).toString();
 
                     requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
