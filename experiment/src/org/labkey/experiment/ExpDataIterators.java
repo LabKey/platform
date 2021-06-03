@@ -355,7 +355,7 @@ public class ExpDataIterators
                     _study = studyService.getStudy(targetContainer);
                 }
                 // Issue43234: Support '(Data import folder)' auto-link option
-                if (_study == null && targetContainer == ContainerManager.getSharedContainer() && studyService != null)
+                if (_study == null && targetContainer == StudyPublishService.AUTO_LINK_TARGET_IMPORT_FOLDER && studyService != null)
                     _study = studyService.getStudy(container);
             }
             final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
