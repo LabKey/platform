@@ -57,6 +57,7 @@ public interface StudyPublishService
     String SEQUENCENUM_PROPERTY_NAME = "SequenceNum";
     String DATE_PROPERTY_NAME = "Date";
     String SOURCE_LSID_PROPERTY_NAME = "SourceLSID";
+    String LSID_PROPERTY_NAME = "LSID";
     String ROWID_PROPERTY_NAME = "RowId";
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
