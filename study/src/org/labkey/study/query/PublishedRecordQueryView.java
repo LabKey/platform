@@ -115,7 +115,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             super.renderFormEnd(ctx, out);
             if (_count < _recordCount)
             {
-                Container c = _publishSource.resolveSourceLsidContainer(_sourceLsid);
+                Container c = _publishSource.resolveSourceLsidContainer(_sourceLsid, null);
                 if (c != null)
                 {
                     if (_count == 0)
