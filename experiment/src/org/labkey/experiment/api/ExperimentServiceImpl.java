@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
@@ -756,6 +757,35 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         setLastIndexed(getTinfoMaterial(), rowId, ms);
     }
+
+    public void setMaterialLastIndexed(List<Pair<Integer,Long>> updates)
+    {
+        if (null == updates || updates.isEmpty())
+            return;
+        try (Connection c = getSchema().getScope().getConnection())
+        {
+            Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+            Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
+            ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
+                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null);
+
+            ListUtils.partition(updates, 1000).forEach(sublist ->
+            {
+                for (Pair<Integer, Long> p : sublist)
+                {
+                    rowid.setValue(p.first);
+                    ts.setValue(new Timestamp(p.second));
+                    pm.addBatch();
+                }
+                pm.execute();
+            });
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 
     public void setMaterialSourceLastIndexed(int rowId, long ms)
     {

@@ -54,7 +54,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -372,10 +374,31 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                ExperimentServiceImpl.get().setMaterialLastIndexed(getRowId(), ms);
+                // setLastIndexed() can get called very rapidly after a bulk insert/update
+                // so we'll collect these instead of updating one at a time
+                synchronized (updateLastIndexedList)
+                {
+                    boolean wasEmpty = updateLastIndexedList.isEmpty();
+                    updateLastIndexedList.add(new Pair<>(getRowId(), ms));
+                    if (wasEmpty)
+                    {
+                        JobRunner.getDefault().execute(1000, () ->
+                        {
+                            List<Pair<Integer, Long>> copy = null;
+                            synchronized (updateLastIndexedList)
+                            {
+                                copy = List.copyOf(updateLastIndexedList);
+                                updateLastIndexedList.clear();
+                            }
+                            ExperimentServiceImpl.get().setMaterialLastIndexed(copy);
+                        });
+                    }
+                }
             }
         };
     }
+
+    static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
 
     private static void append(StringBuilder sb, @Nullable Identifiable identifiable)
     {
