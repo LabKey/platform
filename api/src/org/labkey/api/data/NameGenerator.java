@@ -116,7 +116,7 @@ public class NameGenerator
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any lineage input tokens
     //   (c) any replacement tokens that include a lookup, e.g., ${foo/bar}
-    private void initialize(Map<String, String> importAliases)
+    private void initialize(@Nullable Map<String, String> importAliases)
     {
         assert _parsedNameExpression != null;
 
