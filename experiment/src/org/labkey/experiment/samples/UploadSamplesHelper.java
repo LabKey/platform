@@ -854,11 +854,11 @@ public abstract class UploadSamplesHelper
             {
                 // Failed to generate a name due to some part of the expression not in the row
                 if (sampletype.hasNameExpression())
-                    addRowError("Failed to generate name for Sample on row " + e.getRowNumber());
+                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern '" + sampletype.getNameExpression() + "'. Check the syntax of the naming pattern and the data values for the sample.");
                 else if (sampletype.hasNameAsIdCol())
-                    addRowError("Name is required for Sample on row " + e.getRowNumber());
+                    addRowError("Name is required for sample on row " + e.getRowNumber());
                 else
-                    addRowError("All id columns are required for Sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
             }
         }
 
