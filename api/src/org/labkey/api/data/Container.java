@@ -60,6 +60,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
@@ -127,7 +128,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // Only one state for now, but we expect to add more in the future (e.g., ReadOnly)
     public enum LockState
     {
-        Inaccessible
+        Inaccessible()
+        {
+            @Override
+            public String getDescription()
+            {
+                return "inaccessible to everyone except administrators";
+            }
+        };
+
+        public abstract String getDescription();
     }
 
     // UNDONE: BeanFactory for Container

@@ -729,6 +729,18 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
+    public static void updateLockState(Container container, LockState lockState, User user)
+    {
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET LockState = ? WHERE RowID = ?");
+        new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
+
+        _removeFromCache(container);
+    }
+
     public static void updateType(Container container, String newType, User user)
     {
         //For some reason there is no primary key defined on core.containers
