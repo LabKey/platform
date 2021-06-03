@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.security.permissions;
+package org.labkey.specimen.security.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.study.StudyService;
@@ -21,14 +21,14 @@ import org.labkey.api.study.StudyService;
 /*
 * User: Dave
 * Date: May 18, 2009
-* Time: 11:40:13 AM
+* Time: 11:23:58 AM
 */
-public class LockSpecimensPermission extends AbstractPermission
+public class ManageRequestRequirementsPermission extends AbstractPermission
 {
-    public LockSpecimensPermission()
+    public ManageRequestRequirementsPermission()
     {
-        super("Lock Specimens",
-                "Allows locking of specimens",
+        super("Manage Specimen Request Default Requirements",
+                "Allows management of specimen request default requirements",
                 StudyService.get().getStudyModuleClass()); // TODO: Switch to SpecimenModule.class
     }
 }
