@@ -17,7 +17,7 @@
     "@labkey/components": "2.41.1-fb-remove-build-vars.0"
   },
   "devDependencies": {
-    "@labkey/build": "3.1.0-fb-remove-build-vars.1",
+    "@labkey/build": "3.1.0-fb-remove-build-vars.2",
     "@labkey/eslint-config-base": "0.0.8",
     "@labkey/eslint-config-react": "0.0.8"
   }
