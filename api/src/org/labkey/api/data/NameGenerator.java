@@ -138,7 +138,10 @@ public class NameGenerator
                 }
 
                 String sTok = token.toString().toLowerCase();
-                if (INPUT_PARENT.equalsIgnoreCase(sTok) || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok) || ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(sTok) || importAliases.containsKey(sTok))
+                if (INPUT_PARENT.equalsIgnoreCase(sTok)
+                        || ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(sTok)
+                        || ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(sTok)
+                        || (importAliases != null && importAliases.containsKey(sTok)))
                 {
                     hasLineageInputs = true;
                 }
