@@ -2004,7 +2004,7 @@ public class SpecimenController2 extends SpringActionController
                     new SelectSpecimenProviderBean(form, e.getPossibleLocations(), new ActionURL(ShowCreateSpecimenRequestAction.class, getContainer())), errors);
         }
 
-        return new JspView<>("/org/labkey/study/view/specimen/requestSpecimens.jsp",
+        return new JspView<>("/org/labkey/specimen/view/requestSpecimens.jsp",
                 new NewRequestBean(getViewContext(), requested, form, errors));
     }
 
