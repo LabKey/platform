@@ -93,7 +93,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     public AbstractAuditTypeProvider()
     {
-        domainKind = null;
+        this(null);
     }
 
     public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
