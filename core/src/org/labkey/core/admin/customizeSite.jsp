@@ -177,13 +177,9 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set default domain for user sign in and base server url (<%=bean.helpLink%>)</td>
+    <td colspan=2>Set base server url (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label">System default domain (default domain for user log in)</td>
-    <td><input type="text" id="defaultDomain" name="defaultDomain" size="50" value="<%= h(appProps.getDefaultDomain()) %>"></td>
-</tr>
 <tr>
     <td class="labkey-form-label">Base server URL (used to create links in emails sent by the system)</td>
     <td><input type="text" name="baseServerUrl" id="baseServerUrl" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>

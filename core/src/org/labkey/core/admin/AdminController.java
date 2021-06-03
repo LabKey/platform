@@ -1296,7 +1296,7 @@ public class AdminController extends SpringActionController
 
             WriteableAppProps props = AppProps.getWriteableInstance();
 
-            props.setDefaultDomain(form.getDefaultDomain());
+            AuthenticationManager.setDefaultDomain(form.getDefaultDomain());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setNavAccessOpen(form.isNavAccessOpen());
             props.setSSLRequired(form.isSslRequired());

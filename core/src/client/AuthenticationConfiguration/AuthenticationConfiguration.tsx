@@ -95,17 +95,18 @@ export class App extends PureComponent<{}, Partial<State>> {
         }
     };
 
-    checkGlobalAuthBox = (id: string): void => {
+    globalAuthOnChange = (id: string, value: any): void => {
         if (!this.state.canEdit) {
             return;
         }
         const globalSettingsDirtinessData = this.state.dirtinessData.globalSettings;
-        const oldState = this.state.globalSettings[id];
-        const newState = {...this.state.globalSettings, [id]: !oldState };
+        const newState = {...this.state.globalSettings, [id]: value };
+        const defaultDomainValidity = (id === "DefaultDomain" && !value.includes("@")) ? "" : this.state.error;
 
         this.setState(
             prevState => ({
                 ...prevState,
+                error: defaultDomainValidity,
                 globalSettings: { ...newState },
                 dirty: !isEquivalent(newState, globalSettingsDirtinessData)
             })
@@ -118,6 +119,11 @@ export class App extends PureComponent<{}, Partial<State>> {
 
         if (this.state.error) {
             this.setState({ error: undefined });
+        }
+
+        if (this.state.globalSettings.DefaultDomain.includes("@")) {
+            this.setState({ error: "The System Default Domain must not contain an '@' character."});
+            return;
         }
 
         const form = new FormData();
@@ -263,12 +269,10 @@ export class App extends PureComponent<{}, Partial<State>> {
 
         return (
             <div className="parent-panel">
-                {error && <Alert bsStyle="danger">{error}</Alert>}
-
                 <GlobalSettings
                     globalSettings={globalSettings as GlobalSettingsOptions}
                     canEdit={canEdit}
-                    checkGlobalAuthBox={this.checkGlobalAuthBox}
+                    globalAuthOnChange={this.globalAuthOnChange}
                     authCount={authCount}
                 />
 
@@ -284,6 +288,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                 />
 
                 {dirty && <Alert> {alertText} </Alert>}
+                {error && <Alert bsStyle="danger">{error}</Alert>}
 
                 {canEdit ?
                     <>

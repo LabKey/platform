@@ -240,6 +240,21 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
+    public static String getDefaultDomain()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(DEFAULT_DOMAIN);
+
+        return value == null ? "labkey.com" : value;
+    }
+
+    public static void setDefaultDomain(String value)
+    {
+        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        props.put(DEFAULT_DOMAIN, value);
+        props.save();
+    }
+
     public static boolean getAuthSetting(String key, boolean defaultValue)
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
@@ -257,19 +272,27 @@ public class AuthenticationManager
         addAuthSettingAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
-    public static void saveAuthSettings(User user, Map<String, Boolean> map)
+    public static void saveAuthSettings(User user, Map<String, Object> map)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
 
-        Map<String, Boolean> changed = map.entrySet().stream()
-            .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, Object> changed = map.entrySet().stream()
+                .filter(e->!e.getValue().equals(props.get(e.getKey())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (!changed.isEmpty())
         {
             changed.forEach((k, v)->{
-                props.put(k, Boolean.toString(v));
-                addAuthSettingAuditEvent(user, k, v ? "enabled" : "disabled");
+                boolean vIsBoolean = v instanceof Boolean;
+                props.put(k, vIsBoolean ? Boolean.toString((Boolean) v) : (String) v);
+                if (vIsBoolean)
+                {
+                    addAuthSettingAuditEvent(user, k, (Boolean) v ? "enabled" : "disabled");
+                }
+                else
+                {
+                    addAuthSettingAuditEvent(user, k, (String) v);
+                }
             });
 
             props.save();
@@ -535,6 +558,7 @@ public class AuthenticationManager
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
+    public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
 
