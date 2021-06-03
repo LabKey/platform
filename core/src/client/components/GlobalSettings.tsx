@@ -1,14 +1,16 @@
 import React, { PureComponent } from 'react';
 import { Panel, FormControl } from 'react-bootstrap';
 import { LabelHelpTip } from '@labkey/components';
+
 import FACheckBox from './FACheckBox';
-import {GlobalSettingsOptions} from "./models";
+import { GlobalSettingsOptions } from './models';
 
 const ROW_TEXTS = [
     {
         id: 'SelfRegistration',
         text: 'Allow self sign up',
-        tip: 'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
+        tip:
+            'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
     },
     {
         id: 'SelfServiceEmailChanges',
@@ -31,24 +33,23 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
     render() {
         const { globalAuthOnChange, defaultDomain } = this.props;
 
-        return(
+        return (
             <div className="global-settings__default-domain">
                 System Default Domain
                 <LabelHelpTip title="Tip">
                     <div>
                         <div> Default domain for user log in.</div>
-                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configAdmin">
-                            More info
-                        </a>
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configAdmin">More info</a>
                     </div>
                 </LabelHelpTip>
-
-                <span className='global-settings__default-domain-field'>
+                <span className="global-settings__default-domain-field">
                     <FormControl
                         name="DefaultDomain"
                         type="input"
                         value={defaultDomain}
-                        onChange={(e) => {globalAuthOnChange("DefaultDomain", e.target.value)}}
+                        onChange={e => {
+                            globalAuthOnChange('DefaultDomain', e.target.value);
+                        }}
                         className="form-control global-settings__default-domain-form"
                         placeholder="System default domain"
                     />
@@ -74,7 +75,6 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
         );
     }
 }
-
 
 interface Props {
     globalSettings: GlobalSettingsOptions;

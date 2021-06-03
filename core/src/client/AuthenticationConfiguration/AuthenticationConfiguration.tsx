@@ -5,8 +5,10 @@ import { LoadingSpinner, resolveErrorMessage } from '@labkey/components';
 
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
-import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
+
 import { Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions } from '../components/models';
+
+import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 
 interface State {
     error: string;
@@ -17,16 +19,16 @@ interface State {
     secondaryConfigurations: AuthConfig[];
     primaryProviders: AuthConfigProvider[];
     secondaryProviders: AuthConfigProvider[];
-    globalSettings: {[key: string]: any;};
+    globalSettings: { [key: string]: any };
     helpLink: string;
     canEdit: boolean;
-    dirtinessData: {[key: string]: AuthConfig[] };
+    dirtinessData: { [key: string]: AuthConfig[] };
     dirty: boolean;
     authCount: number;
 }
 
 export class App extends PureComponent<{}, Partial<State>> {
-    public actions: Actions;
+    actions: Actions;
     constructor(props) {
         super(props);
 
@@ -66,13 +68,17 @@ export class App extends PureComponent<{}, Partial<State>> {
     loadInitialConfigData = (): void => {
         Ajax.request({
             url: ActionURL.buildURL('login', 'initialMount.api'),
-            failure: Utils.getCallbackWrapper(error => {
-                console.error('Failed to load initial configuration', error);
-                this.setState({
-                    loading: false,
-                    initError: resolveErrorMessage(error),
-                });
-            }, undefined, true),
+            failure: Utils.getCallbackWrapper(
+                error => {
+                    console.error('Failed to load initial configuration', error);
+                    this.setState({
+                        loading: false,
+                        initError: resolveErrorMessage(error),
+                    });
+                },
+                undefined,
+                true
+            ),
             success: Utils.getCallbackWrapper(response => {
                 const { formConfigurations, ssoConfigurations, secondaryConfigurations } = response;
                 const dirtinessData = {
@@ -100,17 +106,15 @@ export class App extends PureComponent<{}, Partial<State>> {
             return;
         }
         const globalSettingsDirtinessData = this.state.dirtinessData.globalSettings;
-        const newState = {...this.state.globalSettings, [id]: value };
-        const defaultDomainValidity = (id === "DefaultDomain" && !value.includes("@")) ? "" : this.state.error;
+        const newState = { ...this.state.globalSettings, [id]: value };
+        const defaultDomainValidity = id === 'DefaultDomain' && !value.includes('@') ? '' : this.state.error;
 
-        this.setState(
-            prevState => ({
-                ...prevState,
-                error: defaultDomainValidity,
-                globalSettings: { ...newState },
-                dirty: !isEquivalent(newState, globalSettingsDirtinessData)
-            })
-        );
+        this.setState(prevState => ({
+            ...prevState,
+            error: defaultDomainValidity,
+            globalSettings: { ...newState },
+            dirty: !isEquivalent(newState, globalSettingsDirtinessData),
+        }));
     };
 
     saveChanges = (): void => {
@@ -121,8 +125,8 @@ export class App extends PureComponent<{}, Partial<State>> {
             this.setState({ error: undefined });
         }
 
-        if (this.state.globalSettings.DefaultDomain.includes("@")) {
-            this.setState({ error: "The System Default Domain must not contain an '@' character."});
+        if (this.state.globalSettings.DefaultDomain.includes('@')) {
+            this.setState({ error: "The System Default Domain must not contain an '@' character." });
             return;
         }
 
@@ -137,12 +141,7 @@ export class App extends PureComponent<{}, Partial<State>> {
             dirtyConfigType.map(configType => {
                 if (configType == 'formConfigurations') {
                     // slice to remove database config, which has a fixed position
-                    form.append(
-                        configType,
-                        this.getAuthConfigArray(this.state[configType])
-                            .slice(0, -1)
-                            .toString()
-                    );
+                    form.append(configType, this.getAuthConfigArray(this.state[configType]).slice(0, -1).toString());
                 } else {
                     form.append(configType, this.getAuthConfigArray(this.state[configType]).toString());
                 }
@@ -153,12 +152,16 @@ export class App extends PureComponent<{}, Partial<State>> {
             url: ActionURL.buildURL('login', 'saveSettings.api'),
             method: 'POST',
             form,
-            failure: Utils.getCallbackWrapper(error => {
-                console.error('Failed to save settings', error);
-                this.setState({
-                    error: resolveErrorMessage(error),
-                });
-            }, undefined, true),
+            failure: Utils.getCallbackWrapper(
+                error => {
+                    console.error('Failed to save settings', error);
+                    this.setState({
+                        error: resolveErrorMessage(error),
+                    });
+                },
+                undefined,
+                true
+            ),
             success: () => {
                 window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
             },
@@ -183,8 +186,8 @@ export class App extends PureComponent<{}, Partial<State>> {
         return configType.map(auth => auth.configuration);
     };
 
-    onDragEnd = (result: {[key: string]: any;}): void => {
-        const {globalSettings, dirtinessData} = this.state;
+    onDragEnd = (result: { [key: string]: any }): void => {
+        const { globalSettings, dirtinessData } = this.state;
 
         if (!result.destination) {
             return;
@@ -194,8 +197,8 @@ export class App extends PureComponent<{}, Partial<State>> {
 
         const items = reorder(this.state[configType], result.source.index, result.destination.index);
 
-        this.setState((state) => {
-            const newState = {...state, [configType]: items };
+        this.setState(state => {
+            const newState = { ...state, [configType]: items };
 
             const configTypes = ['formConfigurations', 'ssoConfigurations', 'secondaryConfigurations'];
             const dirtyStateAreas = configTypes.filter(configType => {
@@ -203,9 +206,9 @@ export class App extends PureComponent<{}, Partial<State>> {
                 const oldOrdering = state.dirtinessData[configType];
                 return !isEquivalent(newOrdering, oldOrdering);
             });
-            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({...globalSettings}, dirtinessData);
+            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({ ...globalSettings }, dirtinessData);
 
-            return {...newState, dirty};
+            return { ...newState, dirty };
         });
     };
 
@@ -214,22 +217,26 @@ export class App extends PureComponent<{}, Partial<State>> {
             url: ActionURL.buildURL('login', 'deleteConfiguration.api'),
             method: 'POST',
             params: { configuration },
-            failure: Utils.getCallbackWrapper(error => {
-                console.error('Failed to delete configuration', error);
-                this.setState({
-                    error: resolveErrorMessage(error),
-                });
-            }, undefined, true),
+            failure: Utils.getCallbackWrapper(
+                error => {
+                    console.error('Failed to delete configuration', error);
+                    this.setState({
+                        error: resolveErrorMessage(error),
+                    });
+                },
+                undefined,
+                true
+            ),
             success: Utils.getCallbackWrapper(() => {
-                this.setState((state) => ({
-                    [configType]: state[configType].filter(auth => auth.configuration !== configuration)
+                this.setState(state => ({
+                    [configType]: state[configType].filter(auth => auth.configuration !== configuration),
                 }));
             }),
         });
     };
 
     updateAuthRowsAfterSave = (config: string, configType: string): void => {
-        this.setState((state) => {
+        this.setState(state => {
             const prevState = state[configType];
             const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
 
@@ -254,18 +261,18 @@ export class App extends PureComponent<{}, Partial<State>> {
             primaryProviders,
             secondaryProviders,
             helpLink,
-            canEdit
+            canEdit,
         } = this.state;
 
         if (loading) {
-            return <LoadingSpinner/>;
+            return <LoadingSpinner />;
         }
 
         if (initError) {
             return <Alert bsStyle="danger">{initError}</Alert>;
         }
 
-        let authCount = formConfigurations.length + ssoConfigurations.length;
+        const authCount = formConfigurations.length + ssoConfigurations.length;
 
         return (
             <div className="parent-panel">
@@ -290,26 +297,23 @@ export class App extends PureComponent<{}, Partial<State>> {
                 {dirty && <Alert> {alertText} </Alert>}
                 {error && <Alert bsStyle="danger">{error}</Alert>}
 
-                {canEdit ?
+                {canEdit ? (
                     <>
-                        <Button
-                            className="labkey-button parent-panel__cancel-button"
-                            onClick={this.onCancel}
-                        >
+                        <Button className="labkey-button parent-panel__cancel-button" onClick={this.onCancel}>
                             Cancel
                         </Button>
-                        <Button className="labkey-button primary parent-panel__save-button pull-right" onClick={this.saveChanges}>
+                        <Button
+                            className="labkey-button primary parent-panel__save-button pull-right"
+                            onClick={this.saveChanges}
+                        >
                             Save and Finish
                         </Button>
                     </>
-                    :
-                    < Button
-                        className="labkey-button"
-                        onClick={this.onCancel}
-                    >
+                ) : (
+                    <Button className="labkey-button" onClick={this.onCancel}>
                         Done
                     </Button>
-                }
+                )}
             </div>
         );
     }
