@@ -71,6 +71,26 @@
                 .build());
     }
 %>
+
+<%-- Issue43119: <labkey:input type="checkbox"/> elements cause juddering and overlapping --%>
+<%-- on this page without overriding styles --%>
+<style>
+    .control-label {
+        width: 270px !important;
+    }
+
+    .col-lg-10 {
+        width: 45px !important;
+    }
+
+    .form-control-static {
+        width: 90vw  !important;
+    }
+
+    .form-group {
+        display: flex !important;
+    }
+</style>
 <script type="application/javascript">
 
     (function($){
