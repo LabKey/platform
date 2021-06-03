@@ -48,10 +48,9 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SampleTimelineAuditProvider()
     {
-        return new SampleTimelineAuditDomainKind();
+        super(new SampleTimelineAuditDomainKind());
     }
 
     @Override

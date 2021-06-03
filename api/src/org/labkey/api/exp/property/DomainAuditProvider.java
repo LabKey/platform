@@ -71,10 +71,9 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public DomainAuditProvider()
     {
-        return new DomainAuditDomainKind();
+        super(new DomainAuditDomainKind());
     }
 
     @Override

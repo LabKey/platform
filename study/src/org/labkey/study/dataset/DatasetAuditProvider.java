@@ -90,10 +90,9 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         return "Data about dataset creation, deletion, and modification";
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public DatasetAuditProvider()
     {
-        return new DatasetAuditDomainKind();
+        super(new DatasetAuditDomainKind());
     }
 
     @Override

@@ -46,10 +46,9 @@ public class StudyAuditProvider extends AbstractAuditTypeProvider implements Aud
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public StudyAuditProvider()
     {
-        return new StudyAuditDomainKind();
+        super(new StudyAuditDomainKind());
     }
 
     @Override

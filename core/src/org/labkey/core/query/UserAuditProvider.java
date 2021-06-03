@@ -78,10 +78,9 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         return "Data about user logins, impersonations, and modifications.";
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public UserAuditProvider()
     {
-        return new UserAuditDomainKind();
+        super(new UserAuditDomainKind());
     }
 
     @Override
