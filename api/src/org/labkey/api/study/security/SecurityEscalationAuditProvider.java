@@ -53,6 +53,11 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
 {
     private static Logger _log = LogManager.getLogger(SecurityEscalationAuditProvider.class);
 
+    protected SecurityEscalationAuditProvider()
+    {
+        super();
+    }
+
     protected SecurityEscalationAuditProvider(AbstractAuditDomainKind dk)
     {
         super(dk);
