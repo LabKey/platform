@@ -46,10 +46,9 @@ public class AuthenticationSettingsAuditTypeProvider extends AbstractAuditTypePr
         FieldKey.fromParts(COLUMN_NAME_CHANGES)
     );
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public AuthenticationSettingsAuditTypeProvider()
     {
-        return new AuthSettingsAuditDomainKind();
+        super(new AuthSettingsAuditDomainKind());
     }
 
     @Override

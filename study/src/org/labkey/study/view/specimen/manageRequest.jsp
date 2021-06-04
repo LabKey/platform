@@ -44,7 +44,6 @@
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequestAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ExtendedSpecimenRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ImportVialIdsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
@@ -417,7 +416,7 @@
             if (hasExtendedRequestView)
             {
         %>
-        <%= bean.isRequestManager() ? link("Update Extended Request", new ActionURL(ExtendedSpecimenRequestAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
+        <%= bean.isRequestManager() ? link("Update Extended Request", new ActionURL(SpecimenMigrationService.get().getExtendedSpecimenRequestActionClass(), c).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
         <%
             }
         %>

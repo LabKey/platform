@@ -68,7 +68,7 @@ public interface StudyPublishService
 
     // auto link to study target which defaults to the study in the folder the import occurs, using the shared folder
     // which should be safe from collisions since we don't allow assay creation there
-    Container AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER = ContainerManager.getSharedContainer();
+    Container AUTO_LINK_TARGET_IMPORT_FOLDER = ContainerManager.getSharedContainer();
 
     static void setInstance(StudyPublishService serviceImpl)
     {

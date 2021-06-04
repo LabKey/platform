@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowAPICreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenHeaderBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
 <%@ page import="java.util.Iterator" %>
@@ -40,7 +39,7 @@
 <%
     JspView<SpecimenHeaderBean> me = (JspView<SpecimenHeaderBean>) HttpView.currentView();
     SpecimenHeaderBean bean = me.getModelBean();
-    ActionURL createRequestURL = new ActionURL(ShowAPICreateSpecimenRequestAction.class, getContainer());
+    ActionURL createRequestURL = new ActionURL(SpecimenMigrationService.get().getShowAPICreateSpecimenRequestActionClass(), getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addReturnURL(getActionURL());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
