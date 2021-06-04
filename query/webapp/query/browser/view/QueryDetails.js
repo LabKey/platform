@@ -169,8 +169,13 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             if (this.attrMap.hasOwnProperty(attrName)) {
                 attr = this.attrMap[attrName];
                 let value = col[attrName];
-                if (attr.enumeration && attr.enumeration[value]) {
-                    attrs[value] = attr.enumeration[value];
+                if (attr.enumeration) {
+                    // Issue 43288: Trailing comma in column attribute list
+                    // Handle enumerations separately from other attribute values.
+                    // NOTE: The 'phi' enumeration doesn't include 'NotPHI' since it is the common case
+                    if (attr.enumeration[value] !== undefined) {
+                        attrs[value] = attr.enumeration[value];
+                    }
                 }
                 else if (attr.negate ? !value : value) {
                     if (attr.trump) {
