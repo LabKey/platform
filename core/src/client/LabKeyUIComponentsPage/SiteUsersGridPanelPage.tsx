@@ -13,8 +13,9 @@ import {
     SiteUsersGridPanel,
     fetchContainerSecurityPolicy,
     queryGridInvalidate,
-    SCHEMAS
-} from "@labkey/components";
+    SCHEMAS,
+    User,
+} from '@labkey/components';
 
 interface State {
     policy: SecurityPolicy
@@ -77,7 +78,9 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
     };
 
     render() {
+        const { rolesByUniqueName } = this.props;
         const { loading, error, message, policy } = this.state;
+        const user = new User(getServerContext().user);
 
         if (loading) {
             return <LoadingSpinner/>
@@ -91,10 +94,12 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
                 <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually update site users for this server.</Alert>
                 {message && <Alert bsStyle={'success'}>{message}</Alert>}
                 <SiteUsersGridPanel
+                    user={user}
+                    showDetailsPanel={user.isRootAdmin}
                     onCreateComplete={this.onSuccess}
                     onUsersStateChangeComplete={this.onSuccess}
                     policy={policy}
-                    rolesByUniqueName={this.props.rolesByUniqueName}
+                    rolesByUniqueName={rolesByUniqueName}
                 />
             </>
         )
