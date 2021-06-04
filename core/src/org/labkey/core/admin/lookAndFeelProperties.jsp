@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="java.util.Arrays" %>
@@ -47,6 +48,8 @@
         siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
+    boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
+    boolean isSMHostedOnly = !hasPremiumModule && ModuleLoader.getInstance().hasModule("SampleManagement");
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
@@ -102,7 +105,7 @@
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Show Navigation</td>
+    <td class="labkey-form-label">Show Project and Folder Navigation</td>
     <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         %>
@@ -110,6 +113,27 @@
         <label><input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
     </td>
 </tr>
+    <% if (hasPremiumModule || isSMHostedOnly)
+    {
+    %>
+<tr>
+    <%
+        FolderDisplayMode currentMenuDisplayMode = laf.getApplicationMenuDisplayMode();
+    %>
+    <td class="labkey-form-label">
+        Show Application Selection Menu
+        <div id="app-menu-warning" class="labkey-error" style=<%=currentMenuDisplayMode == FolderDisplayMode.ADMIN ? q("display:block;"): q("display:none;")%>>Users will not be able to navigate between applications and LabKey Server when this menu is hidden.</div>
+    </td>
+    <td>
+        <label><input onclick="document.getElementById('app-menu-warning').style.display='none'" type="radio" name="applicationMenuDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
+        <label><input onclick="document.getElementById('app-menu-warning').style.display='block'" type="radio" name="applicationMenuDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
+            <%=h(FolderDisplayMode.ADMIN.getDisplayString())%>
+        </label><br>
+    </td>
+</tr>
+    <%
+        }
+    %>
 <tr>
     <td class="labkey-form-label">Show LabKey Help menu item</td>
     <td><input type="checkbox" name="enableHelpMenu" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
@@ -310,6 +334,7 @@
 </labkey:form>
 <script type="text/javascript">
     var _form = new LABKEY.Form({ formElement: 'form-preferences'});
+    var _showAppMenuWarning = false;
 
     function confirmReset()
     {
@@ -321,5 +346,11 @@
         }
         else
             return false;
+    }
+
+    function setShowAppMenuWarning(show)
+    {
+        console.log("setting to ", show);
+        _showAppMenuWarning = show;
     }
 </script>

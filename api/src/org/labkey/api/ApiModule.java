@@ -82,6 +82,7 @@ import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -298,6 +299,9 @@ public class ApiModule extends CodeOnlyModule
         JSONObject complianceSettings = ComplianceService.get().getPageContextJson();
         if (complianceSettings != null)
             json.put("compliance", complianceSettings);
+
+        LookAndFeelProperties properties = LookAndFeelProperties.getInstance(context.getContainer());
+        json.put(LookAndFeelProperties.APPLICATION_MENU_DISPLAY_MODE, properties.getApplicationMenuDisplayMode());
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
