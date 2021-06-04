@@ -50,7 +50,10 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE_NAMESPACE_PREFIX;
 
 /**
  * User: kevink
@@ -306,5 +309,52 @@ public class ExperimentUpgradeCode implements UpgradeCode
     public static void recreateViewsAfterMaterialRowIdDbSequence(ModuleContext context)
     {
         ModuleLoader.getInstance().recreateViews(ModuleLoader.getInstance().getModule(context.getName()));
+    }
+
+    // called from exp-21.004-21.005.sql
+    // Issue 43246: Lineage query NPE while processing an UploadedFile
+    // Some exp.object for UploadedFile exp.data were orphaned when imported into an assay prior to Issue 41675 being fixed.
+    // This upgrade cleans the orphaned exp.object and rebuilds the exp.edges for the runs.
+    public static void deleteOrphanedUploadedFileObjects(ModuleContext context)
+    {
+        if (context.isNewInstall() || rebuildEdgesHasRun)
+            return;
+
+        // Find runs for exp.objects that have been orphaned
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT e.runId\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoEdge(), "e").append("\n")
+                .append("WHERE e.toObjectId IN (").append("\n")
+                .append("  SELECT objectId FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
+                .append("  WHERE o.objectUri LIKE 'urn:lsid:%:").append(UPLOADED_FILE_NAMESPACE_PREFIX).append("%'").append("\n")
+                .append("  AND NOT EXISTS (").append("\n")
+                .append("    SELECT d.RowId FROM ").append(ExperimentService.get().getTinfoData(), "d").append("\n")
+                .append("    WHERE d.LSID = o.objectUri").append("\n")
+                .append("  )").append("\n")
+                .append(")");
+
+        List<Integer> runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
+        if (!runs.isEmpty())
+        {
+            LOG.info("Syncing " + runs.size() + " runs...");
+            int runCount = 0;
+            for (Integer runId : runs)
+            {
+                ExperimentServiceImpl.get().syncRunEdges(runId);
+                if (++runCount % 1000 == 0)
+                    LOG.info("  fixed " + runCount + " runs...");
+            }
+            LOG.info("Synced " + runs.size() + " runs");
+        }
+
+        SQLFragment orphanedSql = new SQLFragment()
+                .append("SELECT objectUri FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
+                .append("  WHERE o.objectUri LIKE 'urn:lsid:%:").append(UPLOADED_FILE_NAMESPACE_PREFIX).append("%'").append("\n")
+                .append("  AND NOT EXISTS (").append("\n")
+                .append("    SELECT d.RowId FROM ").append(ExperimentService.get().getTinfoData(), "d").append("\n")
+                .append("    WHERE d.LSID = o.objectUri").append("\n")
+                .append(")");
+        int count = OntologyManager.deleteOntologyObjects(OntologyManager.getExpSchema(), orphanedSql, null, false);
+        LOG.info("Deleted " + count + " orphaned exp.objects");
     }
 }

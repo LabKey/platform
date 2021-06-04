@@ -32,7 +32,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -74,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.files.FileContentService.PIPELINE_LINK;
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 /**
  * User: klum
@@ -384,7 +384,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             {
                 _log.debug("Auto-creating ExpData object, as one was not already available. DataFileURL : " + dataFileUrl);
 
-                data = ExperimentService.get().createData(container, new DataType("UploadedFile"));
+                data = ExperimentService.get().createData(container, UPLOADED_FILE);
                 data.setName(resource.getName());
                 URI uri = null;
                 try
