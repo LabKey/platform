@@ -177,6 +177,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new ExpDataFileConverter(), File.class);
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
         _register(new DefaultScaleConverter(), DefaultScaleType.class);
+        _register(new LockStateConverter(), Container.LockState.class);
         _register(new SchemaKey.Converter(), SchemaKey.class);
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
@@ -753,6 +754,20 @@ public class ConvertHelper implements PropertyEditorRegistrar
             else
             {
                 return DefaultScaleType.valueOf(value.toString());
+            }
+        }
+    }
+
+    public static class LockStateConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (value == null || value.equals("null") || !type.equals(Container.LockState.class))
+                return null;
+            else
+            {
+                return Container.LockState.valueOf(value.toString());
             }
         }
     }
