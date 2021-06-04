@@ -2701,8 +2701,7 @@ public class ExperimentServiceImpl implements ExperimentService
         else
         {
             Identifiable to = identifiableMap.computeIfAbsent(objectId, this::fetchIdent);
-            String lsid = to.getLSID().replace("justbiotherapeutics.com", "justbio");
-            sb.append("{name=").append(to.getName()).append(", oid=").append(objectId).append(", lsid=").append(lsid).append("}");
+            sb.append("{name=").append(to.getName()).append(", oid=").append(objectId).append(", lsid=").append(to.getLSID()).append("}");
         }
     }
 
@@ -3676,7 +3675,6 @@ public class ExperimentServiceImpl implements ExperimentService
                                 UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
                                 TableInfo tableInfo = schema.getTable(dataset.getName());
 
-                                // TODO: add recall events for SampleType rows as well
                                 AssayProvider provider = AssayService.get().getProvider(protocol);
                                 if (provider != null)
                                 {
