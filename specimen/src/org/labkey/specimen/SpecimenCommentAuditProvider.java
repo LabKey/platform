@@ -64,10 +64,9 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         FieldKey.fromParts(COLUMN_NAME_COMMENT)
     );
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SpecimenCommentAuditProvider()
     {
-        return new SpecimenCommentAuditDomainKind();
+        super(new SpecimenCommentAuditDomainKind());
     }
 
     @Override

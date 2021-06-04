@@ -47,4 +47,9 @@ public enum ExceptionFramework
         };
 
     public abstract RuntimeException translate(DbScope scope, String task, SQLException e);
+
+    public RuntimeException translate(DbScope scope, String task, RuntimeSQLException e)
+    {
+        return translate(scope, task, e.getSQLException());
+    }
 }

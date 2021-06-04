@@ -55,10 +55,9 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public FileSystemAuditProvider()
     {
-        return new FileSystemAuditDomainKind();
+        super(new FileSystemAuditDomainKind());
     }
 
     @Override

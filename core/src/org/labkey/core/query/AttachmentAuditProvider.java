@@ -57,10 +57,9 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public AttachmentAuditProvider()
     {
-        return new AttachmentAuditDomainKind();
+        super(new AttachmentAuditDomainKind());
     }
 
     @Override

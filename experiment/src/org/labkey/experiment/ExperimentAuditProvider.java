@@ -76,10 +76,9 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public ExperimentAuditProvider()
     {
-        return new ExperimentAuditDomainKind();
+        super(new ExperimentAuditDomainKind());
     }
 
     @Override

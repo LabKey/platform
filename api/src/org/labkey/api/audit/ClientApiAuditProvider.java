@@ -76,10 +76,9 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     }
 
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public ClientApiAuditProvider()
     {
-        return new ClientApiAuditDomainKind();
+        super(new ClientApiAuditDomainKind());
     }
 
     @Override

@@ -57,10 +57,9 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SiteSettingsAuditProvider()
     {
-        return new SiteSettingsAuditDomainKind();
+        super(new SiteSettingsAuditDomainKind());
     }
 
     @Override

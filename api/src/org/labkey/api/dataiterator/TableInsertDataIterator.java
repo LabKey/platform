@@ -313,12 +313,6 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
 
     @Override
-    protected void onFirst()
-    {
-        init();
-    }
-
-    @Override
     @Nullable
     protected Parameter getMvParameter(@NotNull ParameterMapStatement stmt, @NotNull FieldKey mvFieldKey)
     {

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen;
+package org.labkey.specimen.actions;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
