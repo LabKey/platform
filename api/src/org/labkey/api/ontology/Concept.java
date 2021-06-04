@@ -20,4 +20,10 @@ public interface Concept
     @Nullable String getDescription();
 
     @Nullable URLHelper getURL();
+
+    @JsonProperty("ontology")
+    default String getOntologyAbbreviation()
+    {
+        return getOntology().getAbbreviation();
+    }
 }
