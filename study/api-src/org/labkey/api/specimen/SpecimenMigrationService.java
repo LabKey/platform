@@ -5,6 +5,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.view.ActionURL;
+import org.springframework.web.servlet.mvc.Controller;
 
 // Temporary service that provides entry points to ease migration of code from study module to specimen module
 // These should all go away once the migration is complete
@@ -21,7 +22,6 @@ public interface SpecimenMigrationService
     }
 
     ActionURL getAutoReportListURL(Container c);
-    ActionURL getCompleteSpecimenURL(Container c, String type);
     ActionURL getConfigureRequestabilityRulesURL(Container c);
     ActionURL getManageDisplaySettings(Container c);
     ActionURL getManageNotificationsURL(Container c);
@@ -35,4 +35,8 @@ public interface SpecimenMigrationService
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getUploadSpecimensURL(Container c);
     ActionURL getViewRequestsURL(Container c);
+
+    Class<? extends Controller> getShowCreateSpecimenRequestActionClass();
+    Class<? extends Controller> getShowAPICreateSpecimenRequestActionClass();
+    Class<? extends Controller> getExtendedSpecimenRequestActionClass();
 }

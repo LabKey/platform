@@ -43,10 +43,9 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public TransactionAuditProvider()
     {
-        return new TransactionAuditDomainKind();
+        super(new TransactionAuditDomainKind());
     }
 
     @Override

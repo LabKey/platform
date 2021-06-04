@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen;
+package org.labkey.specimen.view;
 
+import org.labkey.specimen.actions.SpecimenSearchBean;
 import org.labkey.api.view.JspView;
 
 /**

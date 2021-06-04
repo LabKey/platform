@@ -46,10 +46,9 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
         DEFAULT_VISIBLE_COLUMNS.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SelectQueryAuditProvider()
     {
-        return new SelectQueryAuditDomainKind();
+        super(new SelectQueryAuditDomainKind());
     }
 
     @Override
