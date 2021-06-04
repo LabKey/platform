@@ -2856,8 +2856,7 @@ public class ExperimentServiceImpl implements ExperimentService
         timer.start();
 
         LOG.debug((verifyEdgesNoInsert ? "Verifying" : "Rebuilding") + " edges for runId " + runId);
-        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction();
-            var x = verifyEdgesNoInsert ? SpringActionController.disallowSqlUpdates() : SpringActionController.ignoreSqlUpdates())
+        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
         {
             // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
             SQLFragment datas = new SQLFragment()
