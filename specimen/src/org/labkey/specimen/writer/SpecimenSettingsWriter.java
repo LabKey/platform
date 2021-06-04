@@ -20,7 +20,7 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.actions.ManageReqsBean;
+import org.labkey.specimen.actions.ManageReqsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;

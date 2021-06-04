@@ -1,8 +1,8 @@
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.actions;
 
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
-import org.labkey.api.specimen.query.SpecimenRequestQueryView;
+import org.labkey.specimen.query.SpecimenRequestQueryView;
 import org.labkey.api.view.ViewContext;
 
 import java.util.List;

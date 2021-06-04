@@ -19,7 +19,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.specimen.SpecimenSearchBean;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
