@@ -70,7 +70,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         ensureUnlocked();
         if (!Objects.equals(_object.getLSID(), lsid))
         {
-            _prevLsid = _object.getLSID();///
+            _prevLsid = _object.getLSID();
         }
         _object.setLSID(lsid);
     }
@@ -137,7 +137,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         {
             try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
             {
-                // Create a new exp.object if the LSID changed XXX
+                // Create a new exp.object if the LSID changed
                 if (_prevLsid != null && ensureObject)
                 {
                     assert !Objects.equals(_prevLsid, getLSID());
