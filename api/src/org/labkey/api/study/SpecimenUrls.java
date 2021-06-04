@@ -35,11 +35,9 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getRequestDetailsURL(Container c, String requestId);
     ActionURL getRequestDetailsURL(Container c, int requestId);
-    ActionURL getShowCreateSpecimenRequestURL(Container c);
     ActionURL getSpecimensURL(Container c);
     ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getSelectedSpecimensURL(Container c, boolean showVials);
     ActionURL getSubmitRequestURL(Container c, String id);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-    ActionURL getShowCreateSpecimenRequestAction(Container c);
 }

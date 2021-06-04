@@ -62,6 +62,7 @@ import org.labkey.specimen.view.SpecimenWebPartFactory;
 import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -159,12 +160,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getCompleteSpecimenURL(Container c, String type)
-            {
-                return new ActionURL(SpecimenController2.CompleteSpecimenAction.class, c).addParameter("type", type);
-            }
-
-            @Override
             public ActionURL getShowSearchURL(Container c, boolean showVials)
             {
                 return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
@@ -216,6 +211,24 @@ public class SpecimenModule extends SpringModule
             public ActionURL getManageDefaultReqsSettingsURL(Container c)
             {
                 return new ActionURL(SpecimenController2.ManageDefaultReqsAction.class, c);
+            }
+
+            @Override
+            public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ShowCreateSpecimenRequestAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getShowAPICreateSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ShowAPICreateSpecimenRequestAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getExtendedSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ExtendedSpecimenRequestAction.class;
             }
         });
      }

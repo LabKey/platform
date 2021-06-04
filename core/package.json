@@ -4,11 +4,11 @@
   "scripts": {
     "setup": "npm ci",
     "build": "npm run build-dev",
-    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map LK_MODULE_CONTAINER=platform LK_MODULE=core webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
+    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/views/authenticationConfiguration.* && rimraf resources/views/components.*",
     "copy-distributions": "npm run clean && node copy-distributions.js",
-    "start": "cross-env NODE_ENV=development LK_MODULE_CONTAINER=platform LK_MODULE=core webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
     "lint": "eslint --ext '*.ts,*.tsx'",
@@ -52,12 +52,12 @@
   },
   "dependencies": {
     "@labkey/api": "1.5.0",
-    "@labkey/components": "2.41.0-fb-smPermissionsUpdates.1",
+    "@labkey/components": "2.41.1",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.2.0"
   },
   "devDependencies": {
-    "@labkey/build": "3.0.0",
+    "@labkey/build": "3.1.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.8",
     "@types/enzyme-adapter-react-16": "1.0.6",

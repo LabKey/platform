@@ -260,17 +260,6 @@ public abstract class BaseStudyController extends SpringActionController
         return first.equals(second);
     }
 
-    public static long[] toLongArray(Collection<String> intStrings)
-    {
-        if (intStrings == null)
-            return null;
-        long[] converted = new long[intStrings.size()];
-        int index = 0;
-        for (String intString : intStrings)
-            converted[index++] = Long.parseLong(intString);
-        return converted;
-    }
-
     public static class BulkEditForm
     {
         private String _newLabel;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -23,6 +23,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.query.BaseSpecimenQueryView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;

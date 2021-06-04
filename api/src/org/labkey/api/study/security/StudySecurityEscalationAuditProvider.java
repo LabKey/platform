@@ -44,12 +44,13 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
         return AUDIT_LOG_TITLE;
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind() {
-        return new StudySecurityEscalationDomain();
+    public StudySecurityEscalationAuditProvider()
+    {
+        super(new StudySecurityEscalationDomain());
     }
 
-    public static class StudySecurityEscalationEvent extends SecurityEscalationEvent {
+    public static class StudySecurityEscalationEvent extends SecurityEscalationEvent
+    {
         @Override
         public String getEventType() {
             return EVENT_TYPE;
