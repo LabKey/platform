@@ -765,6 +765,7 @@ public abstract class UploadSamplesHelper
         final Container _container;
         final int _batchSize;
         boolean first = true;
+        Map<String, String> importAliasMap = null;
 
         String generatedName = null;
         String generatedLsid = null;
@@ -775,6 +776,14 @@ public abstract class UploadSamplesHelper
         {
             super(source, context);
             this.sampletype = sampletype;
+            try
+            {
+                this.importAliasMap = sampletype.getImportAliasMap();
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
             nameGen = sampletype.getNameGenerator();
             nameState = nameGen.createState(true);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
@@ -832,14 +841,10 @@ public abstract class UploadSamplesHelper
                 else
                 {
                     Supplier<Map<String, Object>> extraPropsFn = () -> {
-                        try
-                        {
-                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, sampletype.getImportAliasMap());
-                        }
-                        catch (IOException e)
-                        {
+                        if (importAliasMap != null)
+                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
+                        else
                             return Collections.emptyMap();
-                        }
                     };
 
                     generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn);
