@@ -24,6 +24,7 @@ public interface Concept
     @JsonProperty("ontology")
     default String getOntologyAbbreviation()
     {
-        return getOntology().getAbbreviation();
+        Ontology ontology = getOntology();
+        return ontology == null ? null : getOntology().getAbbreviation();
     }
 }
