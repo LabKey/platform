@@ -28,6 +28,7 @@ public interface SpecimenMigrationService
     ActionURL getManageNotificationsURL(Container c);
     ActionURL getManageRepositorySettingsURL(Container c);
     ActionURL getManageDefaultReqsSettingsURL(Container c);
+    ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getManageStatusesURL(Container c);
     ActionURL getOverviewURL(Container c);
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
@@ -37,8 +38,12 @@ public interface SpecimenMigrationService
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getUploadSpecimensURL(Container c);
     ActionURL getViewRequestsURL(Container c);
+    ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl);
 
     Class<? extends Controller> getShowCreateSpecimenRequestActionClass();
     Class<? extends Controller> getShowAPICreateSpecimenRequestActionClass();
     Class<? extends Controller> getExtendedSpecimenRequestActionClass();
+    Class<? extends Controller> getRemoveRequestSpecimensActionClass();
+    Class<? extends Controller> getImportVialIdsActionClass();
+    Class<? extends Controller> getManageRequestActionClass();
 }

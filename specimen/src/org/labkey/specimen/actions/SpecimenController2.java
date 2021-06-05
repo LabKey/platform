@@ -13,21 +13,34 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -36,9 +49,11 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.AmbiguousLocationException;
+import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -46,14 +61,19 @@ import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
 import org.labkey.api.specimen.actions.IdForm;
+import org.labkey.api.specimen.actions.ManageRequestBean;
 import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
 import org.labkey.api.specimen.actions.SpecimenEventBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
+import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.api.specimen.notifications.DefaultRequestNotification;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
@@ -61,6 +81,7 @@ import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
@@ -68,6 +89,8 @@ import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.api.specimen.view.NotificationBean;
+import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
@@ -81,16 +104,21 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
+import org.labkey.api.view.GridView;
+import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -107,15 +135,21 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.internet.InternetAddress;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -214,6 +248,12 @@ public class SpecimenController2 extends SpringActionController
     {
         addBaseSpecimenNavTrail(root);
         root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+    }
+
+    private void addSpecimenRequestNavTrail(NavTree root, int requestId)
+    {
+        addSpecimenRequestsNavTrail(root);
+        root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId, null));
     }
 
     private void addManageStudyNavTrail(NavTree root)
@@ -1996,7 +2036,7 @@ public class SpecimenController2 extends SpringActionController
             if (modifiedReturnURL != null && !createSpecimenRequestForm.isIgnoreReturnUrl())
                 return modifiedReturnURL;
             else
-                return getManageRequestURL(_specimenRequest.getRowId(), modifiedReturnURL != null ? modifiedReturnURL : null);
+                return getManageRequestURL(_specimenRequest.getRowId(), modifiedReturnURL);
         }
     }
 
@@ -2058,9 +2098,14 @@ public class SpecimenController2 extends SpringActionController
         }
     }
 
-    private ActionURL getManageRequestURL(int requestID, ActionURL returnUrl)
+    private ActionURL getManageRequestURL(int requestID, @Nullable ActionURL returnUrl)
     {
-        ActionURL url = urlProvider(SpecimenUrls.class).getManageRequestURL(getContainer());
+        return getManageRequestURL(getContainer(), requestID, returnUrl);
+    }
+
+    public static ActionURL getManageRequestURL(Container c, int requestID, @Nullable ActionURL returnUrl)
+    {
+        ActionURL url = new ActionURL(ManageRequestAction.class, c);
         url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
         if (returnUrl != null)
             url.addReturnURL(returnUrl);
@@ -2627,6 +2672,616 @@ public class SpecimenController2 extends SpringActionController
         public ActionURL getSuccessURL(IdForm idForm)
         {
             return new ActionURL(ManageStatusesAction.class, getContainer());
+        }
+    }
+
+    public void writeExportData(SpecimenQueryView view, String type) throws IOException
+    {
+        switch (type)
+        {
+            case "excel" -> view.exportToExcel(getViewContext().getResponse());
+            case "tsv" -> view.exportToTsv(getViewContext().getResponse());
+            default -> throw new IllegalArgumentException(type + " is not a supported export type.");
+        }
+    }
+
+    public static class ManageRequestForm extends IdForm
+    {
+        public enum PARAMS
+        {
+            newSite,
+            newActor,
+            newDescription,
+            export,
+            submissionResult,
+            returnUrl
+        }
+
+        private Integer _newSite;
+        private Integer _newActor;
+        private String _newDescription;
+        private String _export;
+        private Boolean _submissionResult;
+
+        public Integer getNewActor()
+        {
+            return _newActor;
+        }
+
+        public void setNewActor(Integer newActor)
+        {
+            _newActor = newActor;
+        }
+
+        public Integer getNewSite()
+        {
+            return _newSite;
+        }
+
+        public void setNewSite(Integer newSite)
+        {
+            _newSite = newSite;
+        }
+
+        public String getNewDescription()
+        {
+            return _newDescription;
+        }
+
+        public void setNewDescription(String newDescription)
+        {
+            _newDescription = newDescription;
+        }
+
+        public String getExport()
+        {
+            return _export;
+        }
+
+        public void setExport(String export)
+        {
+            _export = export;
+        }
+
+        public Boolean isSubmissionResult()
+        {
+            return _submissionResult;
+        }
+
+        public void setSubmissionResult(Boolean submissionResult)
+        {
+            _submissionResult = submissionResult;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class ManageRequestAction extends FormViewAction<ManageRequestForm>
+    {
+        private int _requestId;
+
+        @Override
+        public void validateCommand(ManageRequestForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ManageRequestForm form, boolean reshow, BindException errors) throws Exception
+        {
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (request == null)
+                throw new NotFoundException();
+
+            _requestId = request.getRowId();
+            ManageRequestBean bean = new ManageRequestBean(getViewContext(), request, form.getExport() != null,
+                    form.isSubmissionResult(), form.getReturnUrl());
+            if (form.getExport() != null)
+            {
+                bean.getSpecimenQueryView().getSettings().setMaxRows(Table.ALL_ROWS);   // #34998; exporting specimens in a request should include all of them
+                writeExportData(bean.getSpecimenQueryView(), form.getExport());
+                return null;
+            }
+            else
+            {
+                GridView attachmentsGrid = getRequestEventAttachmentsGridView(getViewContext().getRequest(), errors, _requestId);
+                SpecimenQueryView queryView = bean.getSpecimenQueryView();
+                if (null != queryView)
+                    queryView.setTitle("Associated Specimens");
+                HBox hbox = new HBox(new JspView<>("/org/labkey/study/view/specimen/manageRequest.jsp", bean), attachmentsGrid);
+                hbox.setTableWidth("");
+                return new VBox(hbox, queryView);
+            }
+        }
+
+        @Override
+        public boolean handlePost(ManageRequestForm form, BindException errors) throws Exception
+        {
+            if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
+                throw new UnauthorizedException("You do not have permissions to create new specimen request requirements!");
+
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (request == null)
+                throw new NotFoundException();
+
+            if (form.getNewActor() != null && form.getNewActor() > 0)
+            {
+                SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getNewActor());
+                if (actor != null)
+                {
+                    // an actor is valid if a site has been provided for a per-site actor, or if no site
+                    // has been provided for a non-site-specific actor. The UI should enforce this already,
+                    // so this is just a backup check.
+                    boolean validActor = (actor.isPerSite() && form.getNewSite() != null && form.getNewSite() > 0) ||
+                            (!actor.isPerSite() && (form.getNewSite() == null || form.getNewSite() <= 0));
+                    if (validActor)
+                    {
+                        SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
+                        requirement.setContainer(getContainer());
+                        if (form.getNewSite() != null && form.getNewSite() > 0)
+                            requirement.setSiteId(form.getNewSite());
+                        requirement.setActorId(form.getNewActor());
+                        requirement.setDescription(form.getNewDescription());
+                        requirement.setRequestId(request.getRowId());
+                        SpecimenRequestManager.get().createRequestRequirement(getUser(), requirement, true, true);
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ManageRequestForm manageRequestForm)
+        {
+            return getManageRequestURL(manageRequestForm.getId(), manageRequestForm.getReturnActionURL());
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestNavTrail(root, _requestId);
+        }
+    }
+
+    private static class AttachmentDisplayColumn extends SimpleDisplayColumn
+    {
+        private final HttpServletRequest _request;
+
+        public AttachmentDisplayColumn(HttpServletRequest request)
+        {
+            super();
+            _request = request;
+            setCaption("Attachments");
+        }
+
+        @Override
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            Map<String, Object> cols = ctx.getRow();
+            SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(cols);
+            Collection<Attachment> attachments = AttachmentService.get().getAttachments(event);
+
+            if (!attachments.isEmpty())
+            {
+                for (Attachment attachment : attachments)
+                {
+                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(event, attachment.getName())) + "\">");
+                    out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
+                    out.write(PageFlowUtil.filter(attachment.getName()));
+                    out.write("</a><br>");
+                }
+            }
+            else
+                out.write("&nbsp;");
+        }
+    }
+
+    public GridView getRequestEventAttachmentsGridView(HttpServletRequest request, BindException errors, int requestId)
+    {
+        DataRegion rgn = new DataRegion() {
+            private int i = 0;
+
+            @Override
+            protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+            {
+                // This is so we don't show rows that have no attachments
+                SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(ctx.getRow());
+                List<Attachment> attachments = AttachmentService.get().getAttachments(event);
+                if (!attachments.isEmpty())
+                {
+                    super.renderTableRow(ctx, out, showRecordSelectors, renderers, i++);
+                }
+            }
+        };
+
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
+        rgn.setTable(tableInfoRequestEvent);
+        rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntityId"));
+        rgn.getDisplayColumn("EntityId").setVisible(false);
+        rgn.getDisplayColumn("Created").setVisible(false);
+        rgn.setShowBorders(true);
+        rgn.setShowPagination(false);
+        DisplayColumn attachmentDisplayColumn = new AttachmentDisplayColumn(request);
+        rgn.addDisplayColumn(attachmentDisplayColumn);
+        GridView grid = new GridView(rgn, errors);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RequestId"), requestId);
+        filter.addCondition(FieldKey.fromString("RequirementId"), null, CompareType.ISBLANK);     // if null, then event is NOT a requirement
+        grid.setFilter(filter);
+        FieldKey fieldKey = FieldKey.fromString("Created");
+        Sort sort = new Sort();
+        sort.insertSortColumn(fieldKey, Sort.SortDirection.DESC);
+        grid.setSort(sort);
+        return grid;
+    }
+
+    public static class ModifySpecimenRequestForm extends IdForm implements HiddenFormInputGenerator
+    {
+        public enum PARAMS
+        {
+            specimenIds,
+            returnUrl
+        }
+
+        private String _specimenIds;
+
+        public String getSpecimenIds()
+        {
+            return _specimenIds;
+        }
+
+        public void setSpecimenIds(String specimenIds)
+        {
+            _specimenIds = specimenIds;
+        }
+
+        @Override
+        public String getHiddenFormInputs(ViewContext ctx)
+        {
+            StringBuilder builder = new StringBuilder();
+            if (getId() != 0)
+                builder.append("<input type=\"hidden\" name=\"id\" value=\"").append(getId()).append("\">\n");
+            if (_specimenIds != null)
+                builder.append("<input type=\"hidden\" name=\"specimenIds\" value=\"").append(PageFlowUtil.filter(_specimenIds)).append("\">");
+            return builder.toString();
+        }
+    }
+
+    private void requiresEditRequestPermissions(SpecimenRequest request)
+    {
+        if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request))
+            throw new UnauthorizedException();
+    }
+
+    // Additional permission checking takes place before handlePost()
+    @RequiresPermission(ReadPermission.class)
+    public class RemoveRequestSpecimensAction extends FormHandlerAction<ModifySpecimenRequestForm>
+    {
+        @Override
+        public void validateCommand(ModifySpecimenRequestForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ModifySpecimenRequestForm form, BindException errors) throws Exception
+        {
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            requiresEditRequestPermissions(request);
+            long[] ids = toLongArray(DataRegionSelection.getSelected(getViewContext(), true));
+            List<Long> specimenIds = new ArrayList<>();
+            for (long id : ids)
+                specimenIds.add(id);
+            try
+            {
+                SpecimenRequestManager.get().deleteRequestSpecimenMappings(getUser(), request, specimenIds, true);
+            }
+            catch (RequestabilityManager.InvalidRuleException e)
+            {
+                errors.reject(ERROR_MSG, "The specimens could not be removed because a requestability rule is configured incorrectly. " +
+                        "Please report this problem to an administrator. Error details: "  + e.getMessage());
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ModifySpecimenRequestForm addToSpecimenRequestForm)
+        {
+            return getManageRequestURL(addToSpecimenRequestForm.getId(), addToSpecimenRequestForm.getReturnActionURL());
+        }
+    }
+
+    @RequiresPermission(RequestSpecimensPermission.class)
+    public class ImportVialIdsAction extends AbstractQueryImportAction<IdForm>
+    {
+        private int _requestId = -1;
+
+        @Override
+        protected void initRequest(IdForm form) throws ServletException
+        {
+            _requestId = form.getId();
+            setHasColumnHeaders(false);
+            setImportMessage("Upload a list of Global Unique Identifiers from a TXT, CSV or Excel file or paste the list directly into the text box below. " +
+                    "The list must have only one column and no header row.");
+            setNoTableInfo();
+            setHideTsvCsvCombo(true);
+        }
+
+        @Override
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
+            if (request == null)
+                throw new NotFoundException();
+
+            if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request) ||
+                    SpecimenRequestManager.get().isInFinalState(request))
+            {
+                return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
+            }
+
+            return getDefaultImportView(form, errors);
+        }
+
+        @Override
+        protected void validatePermission(User user, BindException errors)
+        {
+            checkPermissions();
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
+
+            if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request) ||
+                    SpecimenRequestManager.get().isInFinalState(request))
+            {
+                // No permission
+                errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
+            }
+        }
+    }
+
+    public static class ManageRequestStatusForm extends IdForm
+    {
+        private int _status;
+        private String _comments;
+        private String _requestDescription;
+        private String[] _notificationIdPairs;
+        private boolean  _emailInactiveUsers;
+
+        public int getStatus()
+        {
+            return _status;
+        }
+
+        public void setStatus(int status)
+        {
+            _status = status;
+        }
+
+        public String getComments()
+        {
+            return _comments;
+        }
+
+        public void setComments(String comments)
+        {
+            _comments = comments;
+        }
+
+        public String[] getNotificationIdPairs()
+        {
+            return _notificationIdPairs;
+        }
+
+        public void setNotificationIdPairs(String[] notificationIdPairs)
+        {
+            _notificationIdPairs = notificationIdPairs;
+        }
+
+        public String getRequestDescription()
+        {
+            return _requestDescription;
+        }
+
+        public void setRequestDescription(String requestDescription)
+        {
+            _requestDescription = requestDescription;
+        }
+
+        public boolean isEmailInactiveUsers()
+        {
+            return _emailInactiveUsers;
+        }
+
+        public void setEmailInactiveUsers(boolean emailInactiveUsers)
+        {
+            _emailInactiveUsers = emailInactiveUsers;
+        }
+    }
+
+    public List<? extends NotificationRecipientSet> getNotifications(SpecimenRequest specimenRequest, String[] notificationIdPairs)
+    {
+        List<ActorNotificationRecipientSet> siteActors = new ArrayList<>();
+        if (notificationIdPairs == null || notificationIdPairs.length == 0)
+            return siteActors;
+        for (String notificationIdPair : notificationIdPairs)
+            siteActors.add(ActorNotificationRecipientSet.getFromFormValue(specimenRequest.getContainer(), notificationIdPair));
+        return siteActors;
+    }
+
+    public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
+    {
+        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
+
+        SpecimenRequest specimenRequest = notification.getSpecimenRequest();
+        String specimenList = null;
+        if (RequestNotificationSettings.SpecimensAttachmentEnum.InEmailBody == settings.getSpecimensAttachmentEnum())
+        {
+            specimenList = notification.getSpecimenListHTML(getViewContext());
+        }
+
+        NotificationBean notificationBean = new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel());
+        SpecimenRequestNotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(SpecimenRequestNotificationEmailTemplate.class, getContainer());
+        template.init(notificationBean);
+        if (settings.isReplyToCurrentUser())
+            template.setOriginatingUser(getUser());
+
+        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
+        template.renderSenderToMessage(message, getContainer());
+        message.setEncodedHtmlContent(template.renderBody(getContainer()));
+        message.setSubject(template.renderSubject(getContainer()));
+
+        boolean first = true;
+        for (NotificationRecipientSet recipient : notification.getRecipients())
+        {
+            for (String email : recipient.getEmailAddresses(includeInactiveUsers))
+            {
+                if (first)
+                {
+                    Address[] ccAddresses = settings.getCCAddresses();
+                    if (ccAddresses != null && ccAddresses.length > 0)
+                        message.setRecipients(Message.RecipientType.CC, ccAddresses);
+                    first = false;
+                }
+                else
+                    message.setRecipients(Message.RecipientType.CC, "");
+
+                try
+                {
+                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
+                    MailHelper.send(message, getUser(), getContainer());
+                }
+                catch (javax.mail.internet.AddressException | NullPointerException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());      // Bad address; also InternetAddress constructor can throw null
+                }
+            }
+            if (notification.getRequirement() != null)
+                SpecimenRequestManager.get().createRequestEvent(getUser(), notification.getRequirement(),
+                        RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
+            else
+                SpecimenRequestManager.get().createRequestEvent(getUser(), specimenRequest,
+                        RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
+        }
+    }
+
+    @RequiresPermission(RequestSpecimensPermission.class)
+    public class ManageRequestStatusAction extends FormViewAction<ManageRequestStatusForm>
+    {
+        private SpecimenRequest _specimenRequest;
+
+        @Override
+        public void validateCommand(ManageRequestStatusForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ManageRequestStatusForm form, boolean reshow, BindException errors)
+        {
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (_specimenRequest == null)
+                throw new NotFoundException();
+
+            return new JspView<>("/org/labkey/specimen/view/manageRequestStatus.jsp",
+                    new ManageRequestBean(getViewContext(), _specimenRequest, false, null, null), errors);
+        }
+
+        @Override
+        public boolean handlePost(final ManageRequestStatusForm form, BindException errors) throws Exception
+        {
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (_specimenRequest == null)
+                throw new NotFoundException();
+
+            boolean statusChanged = form.getStatus() != _specimenRequest.getStatusId();
+            boolean detailsChanged = !nullSafeEqual(form.getRequestDescription(), _specimenRequest.getComments());
+
+            List<AttachmentFile> files = getAttachmentFileList();
+            boolean hasAttachments = !files.isEmpty();
+
+            boolean hasComments = form.getComments() != null && form.getComments().length() > 0;
+            if (statusChanged || detailsChanged || hasComments || hasAttachments)
+            {
+                RequestEventType changeType;
+                String comment = "";
+                String eventSummary;
+                if (statusChanged || detailsChanged)
+                {
+                    if (statusChanged)
+                    {
+                        SpecimenRequestStatus prevStatus = SpecimenRequestManager.get().getRequestStatus(getContainer(), _specimenRequest.getStatusId());
+                        SpecimenRequestStatus newStatus = SpecimenRequestManager.get().getRequestStatus(getContainer(), form.getStatus());
+                        comment += "Status changed from \"" + (prevStatus != null ? prevStatus.getLabel() : "N/A") + "\" to \"" +
+                                (newStatus != null ? newStatus.getLabel() : "N/A") + "\"\n";
+                    }
+                    if (detailsChanged)
+                    {
+                        String prevDetails = _specimenRequest.getComments();
+                        String newDetails = form.getRequestDescription();
+                        comment += "Description changed from \"" + (prevDetails != null ? prevDetails : "N/A") + "\" to \"" +
+                                (newDetails != null ? newDetails : "N/A") + "\"\n";
+                    }
+                    eventSummary = comment;
+                    if (hasComments)
+                        comment += form.getComments();
+                    _specimenRequest = _specimenRequest.createMutable();
+                    _specimenRequest.setStatusId(form.getStatus());
+                    _specimenRequest.setComments(form.getRequestDescription());
+                    _specimenRequest.setModified(new Date());
+                    try
+                    {
+                        SpecimenRequestManager.get().updateRequest(getUser(), _specimenRequest);
+                    }
+                    catch (RequestabilityManager.InvalidRuleException e)
+                    {
+                        errors.reject(ERROR_MSG, "The request could not be updated because a requestability rule is configured incorrectly. " +
+                                "Please report this problem to an administrator. Error details: "  + e.getMessage());
+                        return false;
+                    }
+                    changeType = RequestEventType.REQUEST_STATUS_CHANGED;
+                }
+                else
+                {
+                    changeType = RequestEventType.COMMENT_ADDED;
+                    comment = form.getComments();
+                    eventSummary = "Comments added.";
+                }
+
+                SpecimenRequestEvent event;
+                try
+                {
+                    event = SpecimenRequestManager.get().createRequestEvent(getUser(), _specimenRequest, changeType, comment, files);
+                }
+                catch (Exception e)
+                {
+                    errors.reject(ERROR_MSG, "The request could not be updated because of an unexpected error. " +
+                            "Please report this problem to an administrator. Error details: "  + e.getMessage());
+                    return false;
+                }
+                try
+                {
+                    List<? extends NotificationRecipientSet> recipients = getNotifications(_specimenRequest, form.getNotificationIdPairs());
+                    DefaultRequestNotification notification = new DefaultRequestNotification(_specimenRequest, recipients,
+                            eventSummary, event, form.getComments(), null, getViewContext());
+                    sendNotification(notification, form.isEmailInactiveUsers(), errors);
+                }
+                catch (ConfigurationException | IOException e)
+                {
+                    errors.reject(ERROR_MSG, "The request was updated successfully, but the notification failed: " +  e.getMessage());
+                    return false;
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ManageRequestStatusForm manageRequestForm)
+        {
+            return getManageRequestURL(_specimenRequest.getRowId(), null);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
+            root.addChild("Update Request");
         }
     }
 }

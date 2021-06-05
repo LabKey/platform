@@ -184,12 +184,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getManageStatusesURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);
-            }
-
-            @Override
             public ActionURL getViewRequestsURL(Container c)
             {
                 return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
@@ -226,6 +220,12 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
+            public ActionURL getManageRequestStatusURL(Container c, int requestId)
+            {
+                return new ActionURL(SpecimenController2.ManageRequestStatusAction.class, c).addParameter("id", requestId);
+            }
+
+            @Override
             public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
             {
                 return SpecimenController2.ShowCreateSpecimenRequestAction.class;
@@ -241,6 +241,36 @@ public class SpecimenModule extends SpringModule
             public Class<? extends Controller> getExtendedSpecimenRequestActionClass()
             {
                 return SpecimenController2.ExtendedSpecimenRequestAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getRemoveRequestSpecimensActionClass()
+            {
+                return SpecimenController2.RemoveRequestSpecimensAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getImportVialIdsActionClass()
+            {
+                return SpecimenController2.ImportVialIdsAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getManageRequestActionClass()
+            {
+                return SpecimenController2.ManageRequestAction.class;
+            }
+
+            @Override
+            public ActionURL getManageStatusesURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl)
+            {
+                return SpecimenController2.getManageRequestURL(c, requestId, returnUrl);
             }
         });
      }

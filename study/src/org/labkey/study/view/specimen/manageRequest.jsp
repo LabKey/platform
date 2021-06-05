@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager"%>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
@@ -44,12 +45,8 @@
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequestAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ImportVialIdsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestBean" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.RequestHistoryAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitRequestAction" %>
@@ -90,7 +87,7 @@
     SafeToRender specimenSearchButton = SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
         button("Specimen Search").href(SpecimenMigrationService.get().getShowSearchURL(getContainer(), true)) : HtmlString.EMPTY_STRING;
     SafeToRender importVialIdsButton = SpecimenRequestManager.get().hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
-        button("Upload Specimen Ids").href(urlFor(ImportVialIdsAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING;
+        button("Upload Specimen Ids").href(urlFor(SpecimenMigrationService.get().getImportVialIdsActionClass()).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING;
 
     String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 %>
@@ -282,7 +279,7 @@
             {
     %>
                     This request is in a final state; no changes are allowed.<br>
-                    To make changes, you must <a href="<%=h(urlFor(ManageRequestStatusAction.class).addParameter("id", bean.getSpecimenRequest().getRowId()))%>">
+                    To make changes, you must <a href="<%=h(SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId()))%>">
                     change the request's status</a> to a non-final state.
     <%
             }
@@ -302,8 +299,7 @@
                                 .addParameter("listType", LabSpecimenListsBean.Type.PROVIDING.toString())) %>
                         </li>
                         <li>Update request status to indicate completion: <%= link("Update Request",
-                            urlFor(ManageRequestStatusAction.class)
-                                .addParameter("id", bean.getSpecimenRequest().getRowId())) %>
+                                SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) %>
                         </li>
                     </ul>
     <%
@@ -411,7 +407,7 @@
 <tr>
     <td>
         <%= link("View History", new ActionURL(RequestHistoryAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) %>&nbsp;
-        <%= bean.isRequestManager() ? link("Update Request", new ActionURL(ManageRequestStatusAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
+        <%= bean.isRequestManager() ? link("Update Request", SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
         <%
             if (hasExtendedRequestView)
             {
@@ -430,7 +426,7 @@
                     .addParameter("listType", LabSpecimenListsBean.Type.PROVIDING.toString())) : HtmlString.EMPTY_STRING %>
     </td>
 </tr>
-<labkey:form action="<%=urlFor(ManageRequestAction.class)%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
+<labkey:form action="<%=urlFor(SpecimenMigrationService.get().getManageRequestActionClass())%>" name="addRequirementForm" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId()%>">
         <tr class="labkey-wp-header">
             <th align="left">Current Requirements</th>

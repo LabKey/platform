@@ -12,6 +12,7 @@ import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class NotificationBean
     private final User _user;
     private final String _specimenList;
     private final String _studyName;
-    private final String _requestURI;
+    private final ActionURL _requestURL;
 
     private boolean _includeSpecimensInBody;
 
@@ -32,7 +33,7 @@ public class NotificationBean
         _user = context.getUser();
         _specimenList = specimenList;
         _studyName = studyName;
-        _requestURI = PageFlowUtil.urlProvider(SpecimenUrls.class).getManageRequestURL(context.getContainer()).getURIString();
+        _requestURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getManageRequestURL(context.getContainer(), getRequestId());
 
         _includeSpecimensInBody = null != specimenList;
     }
@@ -99,9 +100,9 @@ public class NotificationBean
         return _studyName;
     }
 
-    public String getRequestURI()
+    public ActionURL getRequestURL()
     {
-        return _requestURI;
+        return _requestURL;
     }
 
     public boolean getIncludeSpecimensInBody()

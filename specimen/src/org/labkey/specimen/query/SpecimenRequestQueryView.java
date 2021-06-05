@@ -43,6 +43,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController2.ManageRequestAction;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -132,7 +134,8 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
                     }
                 }
 
-                ActionURL detailsUrl = PageFlowUtil.urlProvider(SpecimenUrls.class).getRequestDetailsURL(ctx.getContainer(), "${requestId}");
+                ActionURL detailsUrl = new ActionURL(ManageRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");
+
                 content.append(PageFlowUtil.button("Details").href(detailsUrl));
             }
             content.append("</div>");

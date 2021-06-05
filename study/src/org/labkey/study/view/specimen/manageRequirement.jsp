@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
 <%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet"%>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement"%>
 <%@ page import="org.labkey.api.study.Location"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequirementAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestStatusAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementBean" %>
 <%@ page import="java.util.List" %>
@@ -52,7 +51,7 @@
 <labkey:errors />
 <table class="labkey-manage-display">
     <tr>
-        <td align="left"><%= link("View Request").href(urlFor(ManageRequestAction.class).addParameter("id", requirement.getRequestId()))%></td>
+        <td align="left"><%= link("View Request").href(SpecimenMigrationService.get().getManageRequestURL(getContainer(), requirement.getRequestId(), null))%></td>
     </tr>
 <%
     if (bean.isRequestManager() && bean.isFinalState())
@@ -64,7 +63,7 @@
     <tr>
         <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
-            To make changes, you must <a href="<%=h(urlFor(ManageRequestStatusAction.class).addParameter("id", requirement.getRequestId()))%>">
+            To make changes, you must <a href="<%=h(SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), requirement.getRequestId()))%>">
             change the request's status</a> to a non-final state.
         </td>
     </tr>
@@ -181,7 +180,7 @@
                         <td>
                             <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
                             <%= button("Delete Requirement").submit(true).onClick("this.form.action='" + h(deleteURL) + "'") %>&nbsp;
-                            <%= button("Cancel").href(urlFor(ManageRequestAction.class).addParameter("id", requirement.getRequestId())) %>
+                            <%= button("Cancel").href(SpecimenMigrationService.get().getManageRequestURL(getContainer(), requirement.getRequestId(), null)) %>
                         </td>
                     </tr>
                 </table>
