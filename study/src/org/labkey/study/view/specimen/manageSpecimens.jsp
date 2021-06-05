@@ -31,10 +31,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageActorsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Collection" %>
@@ -168,13 +166,13 @@
                         <td class="lk-study-prop-label">Statuses</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser()).size() %> specimen request
                             statuses</td>
-                        <td><%= link("Manage Request Statuses", urlFor(ManageStatusesAction.class)) %></td>
+                        <td><%= link("Manage Request Statuses", SpecimenMigrationService.get().getManageStatusesURL(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Actors</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestRequirementProvider.get().getActors(getContainer()).length %> specimen request
                             actors</td>
-                        <td><%= link("Manage Actors and Groups", urlFor(ManageActorsAction.class)) %></td>
+                        <td><%= link("Manage Actors and Groups", SpecimenMigrationService.get().getManageActorsURL(getContainer())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Requirements</td>

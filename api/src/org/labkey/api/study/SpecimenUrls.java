@@ -30,7 +30,6 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getCommentURL(Container c, String globalUniqueId);
     ActionURL getDeleteRequestURL(Container c, String id);
     ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-    ActionURL getManageActorsURL(Container c);
     ActionURL getManageRequestURL(Container c);
     ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getRequestDetailsURL(Container c, String requestId);

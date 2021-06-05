@@ -31,13 +31,13 @@ import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.specimen.actions.SpecimenController2.ManageActorsAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -148,7 +148,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     @Override
     public ActionURL getSuccessURL(UpdateGroupForm form)
     {
-        return form.getReturnActionURL(PageFlowUtil.urlProvider(SpecimenUrls.class).getManageActorsURL(getContainer()));
+        return form.getReturnActionURL(new ActionURL(ManageActorsAction.class, getContainer()));
     }
 
     @Override
@@ -157,9 +157,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         PageFlowUtil.urlProvider(StudyUrls.class).addManageStudyNavTrail(root, getContainer(), getUser());
 
         if (_location != null)
-            root.addChild("Manage Actors", PageFlowUtil.urlProvider(SpecimenUrls.class).getManageActorsURL(getContainer()).addParameter("showMemberSites", _actor.getRowId()));
+            root.addChild("Manage Actors", new ActionURL(ManageActorsAction.class, getContainer()).addParameter("showMemberSites", _actor.getRowId()));
         else
-            root.addChild("Manage Actors", PageFlowUtil.urlProvider(SpecimenUrls.class).getManageActorsURL(getContainer()));
+            root.addChild("Manage Actors", new ActionURL(ManageActorsAction.class, getContainer()));
 
         String title = _actor.getLabel();
         if (_location != null)

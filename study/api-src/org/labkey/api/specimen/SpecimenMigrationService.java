@@ -23,10 +23,12 @@ public interface SpecimenMigrationService
 
     ActionURL getAutoReportListURL(Container c);
     ActionURL getConfigureRequestabilityRulesURL(Container c);
+    ActionURL getManageActorsURL(Container c);
     ActionURL getManageDisplaySettings(Container c);
     ActionURL getManageNotificationsURL(Container c);
     ActionURL getManageRepositorySettingsURL(Container c);
     ActionURL getManageDefaultReqsSettingsURL(Container c);
+    ActionURL getManageStatusesURL(Container c);
     ActionURL getOverviewURL(Container c);
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
     ActionURL getShowSearchURL(Container c, boolean showVials);

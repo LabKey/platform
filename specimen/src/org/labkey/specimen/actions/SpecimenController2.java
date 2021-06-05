@@ -41,6 +41,7 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
+import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
@@ -51,6 +52,7 @@ import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
@@ -58,11 +60,14 @@ import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
+import org.labkey.api.specimen.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
@@ -111,6 +116,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -224,6 +230,15 @@ public class SpecimenController2 extends SpringActionController
     {
         if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
             throw new RedirectException(new ActionURL(SpecimenRequestConfigRequiredAction.class, getContainer()));
+    }
+
+    public static <T> boolean nullSafeEqual(T first, T second)
+    {
+        if (first == null && second == null)
+            return true;
+        if (first == null)
+            return false;
+        return first.equals(second);
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -2087,6 +2102,531 @@ public class SpecimenController2 extends SpringActionController
         {
             addSpecimenRequestsNavTrail(root);
             root.addChild("Extended Specimen Request");
+        }
+    }
+
+    public static class BulkEditForm
+    {
+        private String _newLabel;
+        private String _newId;
+        private String _nextPage;
+        private String _order;
+        private int[] _ids;
+        private String[] _labels;
+
+        public String getNewLabel()
+        {
+            return _newLabel;
+        }
+
+        public void setNewLabel(String newLabel)
+        {
+            _newLabel = newLabel;
+        }
+
+        public String getNextPage()
+        {
+            return _nextPage;
+        }
+
+        public void setNextPage(String nextPage)
+        {
+            _nextPage = nextPage;
+        }
+
+        public String getOrder()
+        {
+            return _order;
+        }
+
+        public void setOrder(String order)
+        {
+            _order = order;
+        }
+
+        public String[] getLabels()
+        {
+            return _labels;
+        }
+
+        public void setLabels(String[] labels)
+        {
+            _labels = labels;
+        }
+
+        public int[] getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(int[] ids)
+        {
+            _ids = ids;
+        }
+
+        public String getNewId()
+        {
+            return _newId;
+        }
+
+        public void setNewId(String newId)
+        {
+            _newId = newId;
+        }
+    }
+
+    private abstract class DisplayManagementSubpageAction<Form extends BulkEditForm> extends FormViewAction<Form>
+    {
+        private final String _jsp;
+        private final String _title;
+        private final String _helpTopic;
+
+        public DisplayManagementSubpageAction(String jsp, String title, String helpTopic)
+        {
+            _jsp = jsp;
+            _title = title;
+            _helpTopic = helpTopic;
+        }
+
+        @Override
+        public void validateCommand(Form target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Form form, boolean reshow, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+            return getJspView(getStudyRedirectIfNull());
+        }
+
+        protected abstract JspView<Study> getJspView(Study study);
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic(new HelpTopic(_helpTopic));
+            addManageStudyNavTrail(root);
+            root.addChild(_title);
+        }
+    }
+
+    public static class ActorEditForm extends BulkEditForm
+    {
+        boolean _newPerSite;
+
+        public boolean isNewPerSite()
+        {
+            return _newPerSite;
+        }
+
+        @SuppressWarnings("unused")
+        public void setNewPerSite(boolean newPerSite)
+        {
+            _newPerSite = newPerSite;
+        }
+    }
+
+    private Map<Integer, SpecimenRequestActor> getIdToRequestActorMap(Container container)
+    {
+        SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(container);
+        Map<Integer, SpecimenRequestActor> idToStatus = new HashMap<>();
+        for (SpecimenRequestActor actor : actors)
+            idToStatus.put(actor.getRowId(), actor);
+        return idToStatus;
+    }
+
+    @RequiresPermission(ManageSpecimenActorsPermission.class)
+    public class ManageActorsAction extends DisplayManagementSubpageAction<ActorEditForm>
+    {
+        public ManageActorsAction()
+        {
+            super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
+        }
+
+        @Override
+        protected JspView<Study> getJspView(Study study)
+        {
+            return new JspView<>("/org/labkey/specimen/view/manageActors.jsp", study);
+        }
+
+        @Override
+        public boolean handlePost(ActorEditForm form, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+
+            int[] rowIds = form.getIds();
+            String[] labels = form.getLabels();
+            if (labels != null)
+            {
+                for (String label : labels)
+                {
+                    if (label == null || label.length() == 0)
+                        errors.reject(ERROR_MSG, "Actor name cannot be empty.");
+                }
+            }
+            if (!errors.hasErrors())
+            {
+                if (rowIds != null && rowIds.length > 0)
+                {
+                    // get a map of id to actor objects before starting our updates; this prevents us from
+                    // blowing then repopulating the cache with each update:
+                    Map<Integer, SpecimenRequestActor> idToActor = getIdToRequestActorMap(getContainer());
+                    for (int i = 0; i < rowIds.length; i++)
+                    {
+                        int rowId = rowIds[i];
+                        String label = labels[i];
+                        SpecimenRequestActor actor = idToActor.get(rowId);
+                        if (actor != null && !nullSafeEqual(label, actor.getLabel()))
+                        {
+                            actor = actor.createMutable();
+                            actor.setLabel(label);
+                            actor.update(getUser());
+                        }
+                    }
+                }
+
+                if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+                {
+                    SpecimenRequestActor actor = new SpecimenRequestActor();
+                    actor.setLabel(form.getNewLabel());
+                    SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
+                    actor.setSortOrder(actors.length);
+                    actor.setContainer(getContainer());
+                    actor.setPerSite(form.isNewPerSite());
+                    actor.create(getUser());
+                }
+            }
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ActorEditForm form)
+        {
+            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                return new ActionURL(form.getNextPage());
+            else
+                return getManageStudyURL();
+        }
+    }
+
+    @RequiresPermission(ManageSpecimenActorsPermission.class)
+    public class ManageActorOrderAction extends DisplayManagementSubpageAction<BulkEditForm>
+    {
+        public ManageActorOrderAction()
+        {
+            super("manageActorOrder", "Manage Actor Order", "specimenRequest");
+        }
+
+        @Override
+        protected JspView<Study> getJspView(Study study)
+        {
+            return new JspView<>("/org/labkey/specimen/view/manageActorOrder.jsp", study);
+        }
+
+        @Override
+        public boolean handlePost(BulkEditForm form, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+
+            String order = form.getOrder();
+            if (order != null && order.length() > 0)
+            {
+                String[] rowIds = order.split(",");
+                // get a map of id to actor objects before starting our updates; this prevents us from
+                // blowing then repopulating the cache with each update:
+                Map<Integer, SpecimenRequestActor> idToActor = getIdToRequestActorMap(getContainer());
+                for (int i = 0; i < rowIds.length; i++)
+                {
+                    int rowId = Integer.parseInt(rowIds[i]);
+                    SpecimenRequestActor actor = idToActor.get(rowId);
+                    if (actor != null && actor.getSortOrder() != i)
+                    {
+                        actor = actor.createMutable();
+                        actor.setSortOrder(i);
+                        actor.update(getUser());
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(BulkEditForm bulkEditForm)
+        {
+            return new ActionURL(ManageActorsAction.class, getContainer());
+        }
+    }
+
+    @RequiresPermission(ManageRequestStatusesPermission.class)
+    public class DeleteActorAction extends FormHandlerAction<IdForm>
+    {
+        @Override
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(IdForm form, BindException errors)
+        {
+            SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getId());
+            if (actor != null)
+                actor.delete();
+
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(IdForm idForm)
+        {
+            return new ActionURL(ManageActorsAction.class, getContainer());
+        }
+    }
+
+    private void updateRequestStatusOrder(Container container, int[] rowIds, boolean fixedRowIncluded)
+    {
+        // get a map of id to status objects before starting our updates; this prevents us from
+        // blowing then repopulating the cache with each update:
+        Map<Integer, SpecimenRequestStatus> idToStatus = getIdToRequestStatusMap(container);
+        for (int i = 0; i < rowIds.length; i++)
+        {
+            int rowId = rowIds[i];
+            int statusOrder = fixedRowIncluded ? i : i + 1;     // One caller doesn't have the first (fixed) status
+            SpecimenRequestStatus status = idToStatus.get(rowId);
+            if (status != null && !status.isSystemStatus() && status.getSortOrder() != statusOrder)
+            {
+                status = status.createMutable();
+                status.setSortOrder(statusOrder);
+                SpecimenRequestManager.get().updateRequestStatus(getUser(), status);
+            }
+        }
+    }
+
+    private Map<Integer, SpecimenRequestStatus> getIdToRequestStatusMap(Container container)
+    {
+        List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, getUser());
+        Map<Integer, SpecimenRequestStatus> idToStatus = new HashMap<>();
+        for (SpecimenRequestStatus status : statuses)
+            idToStatus.put(status.getRowId(), status);
+        return idToStatus;
+    }
+
+    public static class StatusEditForm extends BulkEditForm
+    {
+        private int[] _finalStateIds = new int[0];
+        private int[] _specimensLockedIds = new int[0];
+        private boolean _newSpecimensLocked;
+        private boolean _newFinalState;
+        private boolean _useShoppingCart;
+
+        public int[] getFinalStateIds()
+        {
+            return _finalStateIds;
+        }
+
+        public void setFinalStateIds(int[] finalStateIds)
+        {
+            _finalStateIds = finalStateIds;
+        }
+
+        public boolean isNewFinalState()
+        {
+            return _newFinalState;
+        }
+
+        public void setNewFinalState(boolean newFinalState)
+        {
+            _newFinalState = newFinalState;
+        }
+
+        public boolean isNewSpecimensLocked()
+        {
+            return _newSpecimensLocked;
+        }
+
+        public void setNewSpecimensLocked(boolean newSpecimensLocked)
+        {
+            _newSpecimensLocked = newSpecimensLocked;
+        }
+
+        public int[] getSpecimensLockedIds()
+        {
+            return _specimensLockedIds;
+        }
+
+        public void setSpecimensLockedIds(int[] specimensLockedIds)
+        {
+            _specimensLockedIds = specimensLockedIds;
+        }
+
+        public boolean isUseShoppingCart()
+        {
+            return _useShoppingCart;
+        }
+
+        public void setUseShoppingCart(boolean useShoppingCart)
+        {
+            _useShoppingCart = useShoppingCart;
+        }
+    }
+
+    @RequiresPermission(ManageRequestStatusesPermission.class)
+    public class ManageStatusesAction extends DisplayManagementSubpageAction<StatusEditForm>
+    {
+        public ManageStatusesAction()
+        {
+            super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
+        }
+
+        @Override
+        protected JspView<Study> getJspView(Study study)
+        {
+            return new JspView<>("/org/labkey/specimen/view/manageStatuses.jsp", study);
+        }
+
+        @Override
+        public boolean handlePost(StatusEditForm form, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+
+            int[] rowIds = form.getIds();
+            String[] labels = form.getLabels();
+            if (rowIds != null && rowIds.length > 0)
+            {
+                // get a map of id to status objects before starting our updates; this prevents us from
+                // blowing then repopulating the cache with each update:
+                Map<Integer, SpecimenRequestStatus> idToStatus = getIdToRequestStatusMap(getContainer());
+                Set<Integer> finalStates = new HashSet<>(form.getFinalStateIds().length);
+                for (int id : form.getFinalStateIds())
+                    finalStates.add(id);
+                Set<Integer> lockedSpecimenStates = new HashSet<>(form.getSpecimensLockedIds().length);
+                for (int id : form.getSpecimensLockedIds())
+                    lockedSpecimenStates.add(id);
+
+                for (int i = 0; i < rowIds.length; i++)
+                {
+                    int rowId = rowIds[i];
+                    SpecimenRequestStatus status = idToStatus.get(rowId);
+                    if (status != null && !status.isSystemStatus())
+                    {
+                        String label = labels[i];
+                        boolean isFinalState = finalStates.contains(rowId);
+                        boolean specimensLocked = lockedSpecimenStates.contains(rowId);
+                        if (!nullSafeEqual(label, status.getLabel()) ||
+                                isFinalState != status.isFinalState() ||
+                                specimensLocked != status.isSpecimensLocked())
+                        {
+                            status = status.createMutable();
+                            status.setLabel(label);
+                            status.setFinalState(isFinalState);
+                            status.setSpecimensLocked(specimensLocked);
+                            SpecimenRequestManager.get().updateRequestStatus(getUser(), status);
+                        }
+                    }
+                }
+            }
+
+            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
+            {
+                SpecimenRequestStatus status = new SpecimenRequestStatus();
+                status.setLabel(form.getNewLabel());
+                List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
+                status.setSortOrder(statuses.size());
+                status.setContainer(getContainer());
+                status.setFinalState(form.isNewFinalState());
+                status.setSpecimensLocked(form.isNewSpecimensLocked());
+                SpecimenRequestManager.get().createRequestStatus(getUser(), status);
+            }
+
+            StatusSettings settings = SettingsManager.get().getStatusSettings(getContainer());
+            if (settings.isUseShoppingCart() != form.isUseShoppingCart())
+            {
+                settings.setUseShoppingCart(form.isUseShoppingCart());
+                SettingsManager.get().saveStatusSettings(getContainer(), settings);
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(StatusEditForm form)
+        {
+            if (form.getNextPage() != null && form.getNextPage().length() > 0)
+                return new ActionURL(form.getNextPage());
+            else
+                return getManageStudyURL();
+        }
+    }
+
+    @RequiresPermission(ManageSpecimenActorsPermission.class)
+    public class ManageStatusOrderAction extends DisplayManagementSubpageAction<BulkEditForm>
+    {
+        public ManageStatusOrderAction()
+        {
+            super("manageStatusOrder", "Manage Status Order", "specimenRequest");
+        }
+
+        @Override
+        protected JspView<Study> getJspView(Study study)
+        {
+            return new JspView<>("/org/labkey/specimen/view/manageStatusOrder.jsp", study);
+        }
+
+        @Override
+        public boolean handlePost(BulkEditForm form, BindException errors)
+        {
+            ensureSpecimenRequestsConfigured(false);
+
+            String order = form.getOrder();
+            if (order != null && order.length() > 0)
+            {
+                String[] rowIdStrings = order.split(",");
+                int[] rowIds = new int[rowIdStrings.length];
+                for (int i = 0; i < rowIdStrings.length; i++)
+                    rowIds[i] = Integer.parseInt(rowIdStrings[i]);
+                updateRequestStatusOrder(getContainer(), rowIds, false);
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(BulkEditForm bulkEditForm)
+        {
+            return new ActionURL(ManageStatusesAction.class, getContainer());
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class DeleteStatusAction extends FormHandlerAction<IdForm>
+    {
+        @Override
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(IdForm form, BindException errors) throws Exception
+        {
+            List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
+            SpecimenRequestStatus status = SpecimenRequestManager.get().getRequestStatus(getContainer(), form.getId());
+            if (status != null)
+            {
+                SpecimenRequestManager.get().deleteRequestStatus(status);
+                int[] remainingIds = new int[statuses.size() - 1];
+                int idx = 0;
+                for (SpecimenRequestStatus remainingStatus : statuses)
+                {
+                    if (remainingStatus.getRowId() != form.getId())
+                        remainingIds[idx++] = remainingStatus.getRowId();
+                }
+                updateRequestStatusOrder(getContainer(), remainingIds, true);
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(IdForm idForm)
+        {
+            return new ActionURL(ManageStatusesAction.class, getContainer());
         }
     }
 }
