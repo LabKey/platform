@@ -137,14 +137,7 @@ public class SpecimenModule extends SpringModule
             @Override
             public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl)
             {
-                ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
-                url.addParameter("id", Integer.toString(rowId));
-                if (locationId != null)
-                    url.addParameter("locationId", locationId);
-                if (returnUrl != null)
-                    url.addReturnURL(returnUrl);
-
-                return url;
+                return ShowGroupMembersAction.getShowGroupMembersURL(c, rowId, locationId, returnUrl);
             }
 
             @Override

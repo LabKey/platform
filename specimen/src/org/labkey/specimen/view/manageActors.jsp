@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenRequestActor" %>
-<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider"%>
-<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.specimen.actions.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteActorAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageActorOrderAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageActorsAction" %>
@@ -71,7 +71,7 @@
                         updateMembersLink = urlFor(ManageActorsAction.class).addParameter("showMemberSites", actor.getRowId());
                 }
                 else
-                    updateMembersLink = SpecimenMigrationService.get().getShowGroupMembersURL(getContainer(), actor.getRowId(), null, null);
+                    updateMembersLink = ShowGroupMembersAction.getShowGroupMembersURL(getContainer(), actor.getRowId(), null, null);
         %>
         <tr>
             <td align="center">&nbsp;</td>
@@ -92,7 +92,7 @@
                         <%
                             for (LocationImpl location : LocationManager.get().getLocations(study.getContainer()))
                             {
-                            %><a href="<%=h(SpecimenMigrationService.get().getShowGroupMembersURL(getContainer(), actor.getRowId(), location.getRowId(), null))%>"><%= h(location.getDisplayName()) %></a><br><%
+                            %><a href="<%=h(ShowGroupMembersAction.getShowGroupMembersURL(getContainer(), actor.getRowId(), location.getRowId(), null))%>"><%= h(location.getDisplayName()) %></a><br><%
                             }
                         }
                         else

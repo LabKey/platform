@@ -1,12 +1,12 @@
 package org.labkey.api.study;
 
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.model.ParticipantInfo;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.util.Map;
@@ -39,7 +39,7 @@ public interface StudyInternalService
     void generateNeededAlternateParticipantIds(Study study, User user);
 
     @Migrate
-    void sendNewRequestNotifications(SpringActionController controller, SpecimenRequest request, BindException errors) throws Exception;
+    void sendNewRequestNotifications(ViewContext context, SpecimenRequest request, BindException errors) throws Exception;
 
     void setLastSpecimenRequest(Study study, Integer lastSpecimenRequest);
 }

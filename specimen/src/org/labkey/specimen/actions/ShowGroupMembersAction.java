@@ -16,8 +16,10 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
@@ -51,6 +53,18 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 {
     private SpecimenRequestActor _actor;
     private LocationImpl _location;
+
+    public static ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl)
+    {
+        ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
+        url.addParameter("id", Integer.toString(rowId));
+        if (locationId != null)
+            url.addParameter("locationId", locationId);
+        if (returnUrl != null)
+            url.addReturnURL(returnUrl);
+
+        return url;
+    }
 
     @Override
     public void validateCommand(UpdateGroupForm target, Errors errors)

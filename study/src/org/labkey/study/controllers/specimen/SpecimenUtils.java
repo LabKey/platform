@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBarLineBreak;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -98,7 +97,6 @@ import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,27 +111,26 @@ import java.util.Map;
  */
 public class SpecimenUtils
 {
-    private final SpringActionController _controller;
+    private final ViewContext _context;
 
-    public SpecimenUtils(SpringActionController controller)
+    public SpecimenUtils(ViewContext context)
     {
-        // private constructor to prevent external instantiation
-        _controller = controller;
+        _context = context;
     }
 
     public ViewContext getViewContext()
     {
-        return _controller.getViewContext();
+        return _context;
     }
 
     private Container getContainer()
     {
-        return _controller.getViewContext().getContainer();
+        return _context.getContainer();
     }
 
     private User getUser()
     {
-        return _controller.getViewContext().getUser();
+        return _context.getUser();
     }
 
     private Study getStudy() throws IllegalStateException
@@ -423,21 +420,6 @@ public class SpecimenUtils
         }
     }
 
-    public void writeExportData(SpecimenQueryView view, String type) throws IOException
-    {
-        switch (type)
-        {
-            case "excel":
-                view.exportToExcel(_controller.getViewContext().getResponse());
-                break;
-            case "tsv":
-                view.exportToTsv(_controller.getViewContext().getResponse());
-                break;
-            default:
-                throw new IllegalArgumentException(type + " is not a supported export type.");
-        }
-    }
-
     public void sendNewRequestNotifications(SpecimenRequest request, BindException errors) throws Exception
     {
         RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(request.getContainer());
@@ -575,44 +557,6 @@ public class SpecimenUtils
         }
     }
 
-    public GridView getRequestEventAttachmentsGridView(HttpServletRequest request, BindException errors, int requestId)
-    {
-        DataRegion rgn = new DataRegion() {
-            private int i = 0;
-
-            @Override
-            protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
-            {
-                // This is so we don't show rows that have no attachments
-                SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(ctx.getRow());
-                List<Attachment> attachments = AttachmentService.get().getAttachments(event);
-                if (!attachments.isEmpty())
-                {
-                    super.renderTableRow(ctx, out, showRecordSelectors, renderers, i++);
-                }
-            }
-        };
-
-        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
-        rgn.setTable(tableInfoRequestEvent);
-        rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntityId"));
-        rgn.getDisplayColumn("EntityId").setVisible(false);
-        rgn.getDisplayColumn("Created").setVisible(false);
-        rgn.setShowBorders(true);
-        rgn.setShowPagination(false);
-        DisplayColumn attachmentDisplayColumn = new AttachmentDisplayColumn(request);
-        rgn.addDisplayColumn(attachmentDisplayColumn);
-        GridView grid = new GridView(rgn, errors);
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("RequestId"), requestId);
-        filter.addCondition(FieldKey.fromString("RequirementId"), null, CompareType.ISBLANK);     // if null, then event is NOT a requirement
-        grid.setFilter(filter);
-        FieldKey fieldKey = FieldKey.fromString("Created");
-        Sort sort = new Sort();
-        sort.insertSortColumn(fieldKey, Sort.SortDirection.DESC);
-        grid.setSort(sort);
-        return grid;
-    }
-
     public SimpleFilter getSpecimenListFilter(SpecimenRequest specimenRequest, LocationImpl srcLocation, SpecimenController.LabSpecimenListsBean.Type type)
     {
         SpecimenController.LabSpecimenListsBean bean = new SpecimenController.LabSpecimenListsBean(this, specimenRequest, type);
@@ -645,7 +589,7 @@ public class SpecimenUtils
     }
 
     public TSVGridWriter getSpecimenListTsvWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
-                                                   LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type) throws SQLException, IOException
+                                                   LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type)
     {
         DataRegion dr = createDataRegionForWriters(specimenRequest);
         RenderContext ctx = new RenderContext(getViewContext());

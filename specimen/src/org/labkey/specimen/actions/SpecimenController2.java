@@ -53,7 +53,6 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -66,7 +65,6 @@ import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
 import org.labkey.api.specimen.actions.SpecimenEventBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
-import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -2003,7 +2001,7 @@ public class SpecimenController2 extends SpringActionController
             {
                 try
                 {
-                    StudyInternalService.get().sendNewRequestNotifications(SpecimenController2.this, _specimenRequest, errors);
+                    StudyInternalService.get().sendNewRequestNotifications(getViewContext(), _specimenRequest, errors);
                 }
                 catch (ConfigurationException | IOException e)
                 {
@@ -2863,7 +2861,7 @@ public class SpecimenController2 extends SpringActionController
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(event, attachment.getName())) + "\">");
+                    out.write("<a href=\"" + PageFlowUtil.filter(getDownloadURL(event, attachment.getName())) + "\">");
                     out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
                     out.write(PageFlowUtil.filter(attachment.getName()));
                     out.write("</a><br>");

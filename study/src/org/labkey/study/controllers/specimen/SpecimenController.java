@@ -180,7 +180,7 @@ public class SpecimenController extends BaseStudyController
 
     protected SpecimenUtils getUtils()
     {
-        return new SpecimenUtils(this);
+        return new SpecimenUtils(getViewContext());
     }
 
     @Override

@@ -23,7 +23,6 @@ import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;

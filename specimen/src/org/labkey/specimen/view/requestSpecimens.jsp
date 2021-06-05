@@ -17,13 +17,13 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.specimen.SpecimenManager"%>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.CreateSpecimenRequestForm" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.HandleCreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.NewRequestBean" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ViewRequestsAction" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
@@ -221,7 +222,7 @@ function setDefaults()
                 <%
                     }
                 %>
-                <%= text(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(SpecimenMigrationService.get().getViewRequestsURL(getContainer())).toString()) %>
+                <%= text(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(new ActionURL(ViewRequestsAction.class, getContainer())).toString()) %>
             </td>
         </tr>
 
