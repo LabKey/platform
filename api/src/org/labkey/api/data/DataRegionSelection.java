@@ -207,9 +207,14 @@ public class DataRegionSelection
         return asInts(getSelected(context, key, clearSession));
     }
 
+    public static @NotNull Set<String> getSnapshotSelected(ViewContext context, @Nullable String key)
+    {
+        return getSet(context, key, false, true);
+    }
+
     public static @NotNull Set<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
     {
-        Set<String> selected = getSet(context, key, false, true);
+        Set<String> selected = getSnapshotSelected(context, key);
         return asInts(selected == null ? new HashSet<>() : selected);
     }
 
