@@ -17,6 +17,9 @@ package org.labkey.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
@@ -35,6 +38,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -47,6 +51,7 @@ import java.util.Set;
 
 import static org.labkey.api.security.AuthenticationManager.AUTHENTICATION_CATEGORY;
 import static org.labkey.api.security.AuthenticationManager.PROVIDERS_KEY;
+import static org.labkey.api.settings.AbstractSettingsGroup.SITE_CONFIG_USER;
 
 /**
  * User: adam
@@ -200,5 +205,50 @@ public class CoreUpgradeCode implements UpgradeCode
         Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
 
         return set;
+    }
+
+    /**
+     * Invoked at 21.004 to move the Default Domain (for user log in) from being stored in AppProps to PropertyManager
+     */
+    @DeferredUpgrade
+    public void migrateDefaultDomainSetting(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            // Removed from AppPropsImpl
+            final String DEFAULT_DOMAIN_PROP = "defaultDomain";
+
+            String defaultDomainFromAppProps = lookupStringValue(DEFAULT_DOMAIN_PROP, "");
+            AuthenticationManager.setDefaultDomain(defaultDomainFromAppProps);
+        }
+    }
+
+    public Map<String, String> getProperties(Container c)
+    {
+        // Copied from AppPropsImpl
+        final String SITE_CONFIG_NAME = "SiteConfig";
+        return PropertyManager.getProperties(SITE_CONFIG_USER, c, SITE_CONFIG_NAME);
+    }
+
+    protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
+    {
+        Map<String, String> props = getProperties(c);
+        String value = props.get(name);
+        return value != null ? value : defaultValue;
+    }
+
+    protected String lookupStringValue(String name, @Nullable String defaultValue)
+    {
+        Container root = null;
+
+        try
+        {
+            root = ContainerManager.getRoot();
+        }
+        catch (ContainerManager.RootContainerException e)
+        {
+        }
+
+        return null != root ? lookupStringValue(root, name, defaultValue) : defaultValue;
     }
 }

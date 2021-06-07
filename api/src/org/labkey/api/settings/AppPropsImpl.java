@@ -68,7 +68,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private volatile String _enlistmentId = null;
 
     static final String LOOK_AND_FEEL_REVISION = "logoRevision";
-    static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
     static final String BASE_SERVER_URL_PROP = "baseServerURL";
     static final String DEFAULT_LSID_AUTHORITY_PROP = "defaultLsidAuthority";
     static final String PIPELINE_TOOLS_DIR_PROP = "pipelineToolsDirectory";
@@ -621,7 +620,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 LOG.debug("Setting site settings config property '" + prop.getName() + "' to '" + prop.getValue() + "'");
                 switch (prop.getName())
                 {
-                    case DEFAULT_DOMAIN_PROP -> AuthenticationManager.setDefaultDomain(prop.getValue());
                     case BASE_SERVER_URL_PROP -> writeable.setBaseServerUrl(prop.getValue());
                     case PIPELINE_TOOLS_DIR_PROP -> writeable.setPipelineToolsDir(prop.getValue());
                     case SSL_REQUIRED -> writeable.setSSLRequired(Boolean.parseBoolean(prop.getValue()));

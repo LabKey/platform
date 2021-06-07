@@ -245,7 +245,7 @@ public class AuthenticationManager
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String value = props.get(DEFAULT_DOMAIN);
 
-        return value == null ? "labkey.com" : value;
+        return value == null ? "" : value;
     }
 
     public static void setDefaultDomain(String value)
