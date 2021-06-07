@@ -18,6 +18,7 @@ package org.labkey.experiment;
 import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -41,6 +42,13 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -48,6 +56,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -320,41 +329,99 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall() || rebuildEdgesHasRun)
             return;
 
-        // Find runs for exp.objects that have been orphaned
-        SQLFragment sql = new SQLFragment()
-                .append("SELECT e.runId\n")
-                .append("FROM ").append(ExperimentService.get().getTinfoEdge(), "e").append("\n")
-                .append("WHERE e.toObjectId IN (").append("\n")
-                .append("  SELECT objectId FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
-                .append("  WHERE o.objectUri LIKE 'urn:lsid:%:").append(UPLOADED_FILE_NAMESPACE_PREFIX).append("%'").append("\n")
-                .append("  AND NOT EXISTS (").append("\n")
-                .append("    SELECT d.RowId FROM ").append(ExperimentService.get().getTinfoData(), "d").append("\n")
-                .append("    WHERE d.LSID = o.objectUri").append("\n")
-                .append("  )").append("\n")
-                .append(")");
-
-        List<Integer> runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
-        if (!runs.isEmpty())
+        try
         {
-            LOG.info("Syncing " + runs.size() + " runs...");
-            int runCount = 0;
-            for (Integer runId : runs)
-            {
-                ExperimentServiceImpl.get().syncRunEdges(runId);
-                if (++runCount % 1000 == 0)
-                    LOG.info("  fixed " + runCount + " runs...");
-            }
-            LOG.info("Synced " + runs.size() + " runs");
+            ViewBackgroundInfo info = new ViewBackgroundInfo(ContainerManager.getRoot(), null, null);
+            PipeRoot root = PipelineService.get().findPipelineRoot(ContainerManager.getRoot());
+
+            // Create a new pipeline job and add it to the JobStore. Since this code runs before the module
+            // startBackgroundThreads(), the PipelineModule.startBackgroundThreads JobRestarter will pick up this
+            // new job and queue/run it.
+            DeleteOrphanedUploadedFileObjectsJob job = new DeleteOrphanedUploadedFileObjectsJob(info, root);
+            PipelineJobService.get().getStatusWriter().setStatus(job, PipelineJob.TaskStatus.waiting.toString(), null, true);
+            PipelineJobService.get().getJobStore().storeJob(job);
+            LOG.info("Queued DeleteOrphanedUploadedFileObjectsJob to run on startup");
+        }
+        catch (Exception e)
+        {
+            LOG.error("Unexpected error during DeleteOrphanedUploadedFileObjectsJob", e);
+        }
+    }
+
+    public static class DeleteOrphanedUploadedFileObjectsJob extends PipelineJob
+    {
+        /** For JSON serialization/deserialzation round-tripping
+         * @noinspection unused*/
+        protected DeleteOrphanedUploadedFileObjectsJob() {}
+
+        public DeleteOrphanedUploadedFileObjectsJob(ViewBackgroundInfo info, @NotNull PipeRoot root)
+        {
+            super(null, info, root);
+            setLogFile(new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("deleteOrphanedUploadedFileObjects", "log")));
         }
 
-        SQLFragment orphanedSql = new SQLFragment()
-                .append("SELECT objectUri FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
-                .append("  WHERE o.objectUri LIKE 'urn:lsid:%:").append(UPLOADED_FILE_NAMESPACE_PREFIX).append("%'").append("\n")
-                .append("  AND NOT EXISTS (").append("\n")
-                .append("    SELECT d.RowId FROM ").append(ExperimentService.get().getTinfoData(), "d").append("\n")
-                .append("    WHERE d.LSID = o.objectUri").append("\n")
-                .append(")");
-        int count = OntologyManager.deleteOntologyObjects(OntologyManager.getExpSchema(), orphanedSql, null, false);
-        LOG.info("Deleted " + count + " orphaned exp.objects");
+        @Override
+        public String getDescription()
+        {
+            return "Delete orphaned UploadedFile exp.object rows";
+        }
+
+        @Override
+        public URLHelper getStatusHref()
+        {
+            return null;
+        }
+
+        @Override
+        public void run()
+        {
+            setStatus(TaskStatus.running);
+
+            // Find runs for exp.objects that have been orphaned
+            SQLFragment sql = new SQLFragment()
+                    .append("SELECT e.runId\n")
+                    .append("FROM ").append(ExperimentService.get().getTinfoEdge(), "e").append("\n")
+                    .append("WHERE e.toObjectId IN (").append("\n")
+                    .append("  SELECT objectId FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
+                    .append("  WHERE o.objectUri LIKE 'urn:lsid:%:").append(UPLOADED_FILE_NAMESPACE_PREFIX).append("%'").append("\n")
+                    .append("  AND NOT EXISTS (").append("\n")
+                    .append("    SELECT d.RowId FROM ").append(ExperimentService.get().getTinfoData(), "d").append("\n")
+                    .append("    WHERE d.LSID = o.objectUri").append("\n")
+                    .append("  )").append("\n")
+                    .append(")");
+
+            List<Integer> runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
+            if (!runs.isEmpty())
+            {
+                getLogger().info("Syncing " + runs.size() + " runs...");
+                int runCount = 0;
+                for (Integer runId : runs)
+                {
+                    ExperimentServiceImpl.get().syncRunEdges(runId);
+                    if (++runCount % 1000 == 0)
+                    {
+                        getLogger().info("  fixed " + runCount + " runs...");
+                    }
+                }
+                getLogger().info("Synced " + runs.size() + " runs");
+            }
+            else
+            {
+                getLogger().info("No runs need to be synced");
+            }
+
+            getLogger().info("Deleting orphaned exp.objects...");
+            SQLFragment orphanedSql = new SQLFragment()
+                    .append("SELECT objectUri FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
+                    .append("  WHERE o.objectUri LIKE 'urn:lsid:%:").append(UPLOADED_FILE_NAMESPACE_PREFIX).append("%'").append("\n")
+                    .append("  AND NOT EXISTS (").append("\n")
+                    .append("    SELECT d.RowId FROM ").append(ExperimentService.get().getTinfoData(), "d").append("\n")
+                    .append("    WHERE d.LSID = o.objectUri").append("\n")
+                    .append(")");
+            int count = OntologyManager.deleteOntologyObjects(OntologyManager.getExpSchema(), orphanedSql, null, false);
+            getLogger().info("Deleted " + count + " orphaned exp.objects");
+
+            setStatus(TaskStatus.complete);
+        }
     }
 }
