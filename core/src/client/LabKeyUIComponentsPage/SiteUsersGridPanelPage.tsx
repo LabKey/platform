@@ -3,7 +3,8 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react'
-import { getServerContext, Utils } from '@labkey/api'
+import { List } from 'immutable';
+import { getServerContext, PermissionTypes, Utils } from '@labkey/api';
 import {
     Alert,
     LoadingSpinner,
@@ -80,7 +81,10 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
     render() {
         const { rolesByUniqueName } = this.props;
         const { loading, error, message, policy } = this.state;
-        const user = new User(getServerContext().user);
+        const user = new User({
+            ...getServerContext().user,
+            permissionsList: getServerContext().user.isRootAdmin ? List.of(PermissionTypes.UserManagement) : List<string>(),
+        });
 
         if (loading) {
             return <LoadingSpinner/>
