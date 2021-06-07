@@ -1564,9 +1564,10 @@ public class OntologyManager
 
     private static int insertPropertyIfNotExists(User user, PropertyDescriptor pd, PropertyDescriptor[] out)
     {
-        try
+        TableInfo t = getTinfoPropertyDescriptor();
+        try (Connection conn = t.getSchema().getScope().getConnection();
+            ParameterMapStatement stmt = getInsertStmt(conn, user, t, true);)
         {
-            ParameterMapStatement stmt = getInsertStmt(user, getTinfoPropertyDescriptor(), true);
             ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
             Map<String, Object> m = f.toMap(pd, null);
             stmt.putAll(m);
@@ -2276,7 +2277,7 @@ public class OntologyManager
             "excludefromshifting,mvindicatorstoragecolumnname,defaultscale";
     static final String[] parametersArray = parameters.split(",");
 
-    static ParameterMapStatement getInsertStmt(User user, TableInfo t, boolean ifNotExists) throws SQLException
+    static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists) throws SQLException
     {
         user = null==user ? User.guest : user;
         SQLFragment sql = new SQLFragment("INSERT INTO exp.propertydescriptor\n\t\t(");
@@ -2307,10 +2308,10 @@ public class OntologyManager
             sql.append("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
             sql.add(propertyuri).add(container);
         }
-        return new ParameterMapStatement(t.getSchema().getScope(), t.getSchema().getScope().getConnection(), sql, null);
+        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
     }
 
-    static ParameterMapStatement getUpdateStmt(User user, TableInfo t) throws SQLException
+    static ParameterMapStatement getUpdateStmt(Connection conn, User user, TableInfo t) throws SQLException
     {
         user = null==user ? User.guest : user;
         SQLFragment sql = new SQLFragment("UPDATE exp.propertydescriptor SET ");
@@ -2327,7 +2328,7 @@ public class OntologyManager
         sql.append(", modifiedby=" + user.getUserId() + ", modified={fn now()}");
         sql.append("\nWHERE propertyid=?");
         sql.add(new Parameter("propertyid", JdbcType.INTEGER));
-        return new ParameterMapStatement(t.getSchema().getScope(), t.getSchema().getScope().getConnection(), sql, null);
+        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
     }
 
 
@@ -2335,17 +2336,21 @@ public class OntologyManager
     {
         if (null == pds || 0 == pds.size())
             return;
-        ParameterMapStatement stmt = getInsertStmt(user, getTinfoPropertyDescriptor(), false);
-        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map<String, Object> m = null;
-        for (PropertyDescriptor pd : pds)
+        TableInfo t = getTinfoPropertyDescriptor();
+        try (Connection conn = t.getSchema().getScope().getConnection();
+             ParameterMapStatement stmt = getInsertStmt(conn, user, t, false))
         {
-            m = f.toMap(pd, m);
-            stmt.clearParameters();
-            stmt.putAll(m);
-            stmt.addBatch();
+            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            Map<String, Object> m = null;
+            for (PropertyDescriptor pd : pds)
+            {
+                m = f.toMap(pd, m);
+                stmt.clearParameters();
+                stmt.putAll(m);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
         }
-        stmt.executeBatch();
     }
 
 
@@ -2353,17 +2358,21 @@ public class OntologyManager
     {
         if (null == pds || 0 == pds.size())
             return;
-        ParameterMapStatement stmt = getUpdateStmt(user, getTinfoPropertyDescriptor());
-        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map<String, Object> m = null;
-        for (PropertyDescriptor pd : pds)
+        TableInfo t = getTinfoPropertyDescriptor();
+        try (Connection conn = t.getSchema().getScope().getConnection();
+             ParameterMapStatement stmt = getUpdateStmt(conn, user, t))
         {
-            m = f.toMap(pd, m);
-            stmt.clearParameters();
-            stmt.putAll(m);
-            stmt.addBatch();
+            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            Map<String, Object> m = null;
+            for (PropertyDescriptor pd : pds)
+            {
+                m = f.toMap(pd, m);
+                stmt.clearParameters();
+                stmt.putAll(m);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
         }
-        stmt.executeBatch();
     }
 
 
