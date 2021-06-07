@@ -1053,7 +1053,7 @@ public class ContainerManager
         {
             return getForPath("/");
         }
-        catch (IllegalStateException e)
+        catch (Exception e)
         {
             throw new RootContainerException("Root container can't be retrieved", e);
         }
