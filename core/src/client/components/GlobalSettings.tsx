@@ -55,23 +55,6 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
                     />
                 </span>
             </div>
-
-            // {/* VERSION 2*/}
-            //
-            // {/*<FormControl*/}
-            // {/*    name={"blah"}*/}
-            // {/*    type="input"*/}
-            // {/*    value={""}*/}
-            // {/*    onChange={() => {}}*/}
-            // {/*    className="form-control global-settings__default-domain-form1"*/}
-            // {/*    placeholder="System default domain"*/}
-            // {/*/>*/}
-            // {/*<LabelHelpTip title="Tip">*/}
-            // {/*<div>*/}
-            // {/*    <div> Default domain for user log in. </div>*/}
-            // {/*    <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configAdmin">More info</a>*/}
-            // {/*</div>*/}
-            // {/*</LabelHelpTip>*/}
         );
     }
 }
