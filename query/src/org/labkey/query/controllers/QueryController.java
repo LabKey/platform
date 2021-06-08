@@ -39,7 +39,10 @@ import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
@@ -4368,10 +4371,13 @@ public class QueryController extends SpringActionController
         @Override
         public boolean handlePost(F form, BindException errors) throws Exception
         {
-            try
+            try (DbScope.Transaction t = QueryManager.get().getDbSchema().getScope().ensureTransaction())
             {
                 form.doInsert();
+                auditSchemaAdminActivity(form.getBean(), "created", getContainer(), getUser());
                 QueryManager.get().updateExternalSchemas(getContainer());
+
+                t.commit();
             }
             catch (RuntimeSQLException e)
             {
@@ -4463,7 +4469,12 @@ public class QueryController extends SpringActionController
             if (def == null)
                 throw new NotFoundException();
 
-            QueryManager.get().delete(def);
+            try (DbScope.Transaction t = QueryManager.get().getDbSchema().getScope().ensureTransaction())
+            {
+                auditSchemaAdminActivity(def, "deleted", getContainer(), getUser());
+                QueryManager.get().delete(def);
+                t.commit();
+            }
             return true;
         }
 
@@ -4479,6 +4490,14 @@ public class QueryController extends SpringActionController
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
     }
+
+    private static void auditSchemaAdminActivity(AbstractExternalSchemaDef def, String action, Container container, User user)
+    {
+        String comment = StringUtils.capitalize(def.getSchemaType().toString()) + " schema '" + def.getUserSchemaName() + "' " + action;
+        AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container, comment);
+        AuditLogService.get().addEvent(user, event);
+    }
+
 
     private abstract static class BaseEditSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
     {
@@ -4540,10 +4559,12 @@ public class QueryController extends SpringActionController
             if (!getContainer().equals(fromDb.lookupContainer()))
                 throw new UnauthorizedException();
 
-            try
+            try (DbScope.Transaction t = QueryManager.get().getDbSchema().getScope().ensureTransaction())
             {
                 form.doUpdate();
+                auditSchemaAdminActivity(def, "updated", getContainer(), getUser());
                 QueryManager.get().updateExternalSchemas(getContainer());
+                t.commit();
             }
             catch (RuntimeSQLException e)
             {
