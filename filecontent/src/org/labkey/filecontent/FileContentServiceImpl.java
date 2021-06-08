@@ -47,7 +47,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -1031,7 +1030,7 @@ public class FileContentServiceImpl implements FileContentService
 
             if (data == null && create)
             {
-                data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                data = ExperimentService.get().createData(c, FileContentService.UPLOADED_FILE);
                 data.setName(file.getName());
                 data.setDataFileURI(file.toURI());
                 data.save(user);
@@ -1645,7 +1644,7 @@ public class FileContentServiceImpl implements FileContentService
             File childFile = new File(fileRoot, TXT_FILE);
             childFile.createNewFile();
 
-            ExpData data = ExperimentService.get().createData(subsubfolder, new DataType("FileContentTest"));
+            ExpData data = ExperimentService.get().createData(subsubfolder, UPLOADED_FILE);
             data.setDataFileURI(childFile.toPath().toUri());
             data.save(TestContext.get().getUser());
 
