@@ -49,7 +49,6 @@
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
     boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
-    boolean isSMHostedOnly = !hasPremiumModule && ModuleLoader.getInstance().hasModule("SampleManagement");
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
@@ -113,7 +112,7 @@
         <label><input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
     </td>
 </tr>
-    <% if (hasPremiumModule || isSMHostedOnly)
+    <% if (hasPremiumModule)
     {
     %>
 <tr>
@@ -132,7 +131,7 @@
     </td>
 </tr>
     <%
-        }
+    }
     %>
 <tr>
     <td class="labkey-form-label">Show LabKey Help menu item</td>
