@@ -126,6 +126,11 @@ public class JobRunner implements Executor
      * @param command
      * @param delay
      */
+    public void execute(long delay, Runnable command)
+    {
+        execute(command, delay);
+    }
+
     public void execute(Runnable command, long delay)
     {
         synchronized (_jobs)
