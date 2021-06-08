@@ -810,7 +810,7 @@ public class AnnouncementManager
         if (null == c || isSecure(c))
             return;
 
-        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads());
+        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads() + " _t_ ");
         sql.append(" WHERE Container = ?");
         sql.add(containerId);
         String and = " AND ";
@@ -822,7 +822,7 @@ public class AnnouncementManager
         }
         else
         {
-            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null, null);
+            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, "_t_").toSQLFragment(null, null);
             if (!modified.isEmpty())
                 sql.append(and).append(modified);
         }

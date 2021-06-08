@@ -96,7 +96,7 @@ public class ParameterMapStatement implements AutoCloseable
         }
         catch (SQLException x)
         {
-            throw _exceptionFramework.translate(_scope, "Duplicate statement", x);
+            throw _exceptionFramework.translate(_scope, "Copy statement", x);
         }
     }
 
