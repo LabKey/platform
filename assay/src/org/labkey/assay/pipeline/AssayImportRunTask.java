@@ -27,6 +27,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
@@ -432,7 +433,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
         private Map<String, Object> loadProperties(DataLoader loader) throws PipelineJobException
         {
-            Map<String, Object> properties = new HashMap<>();
+            Map<String, Object> properties = new CaseInsensitiveHashMap<>();
             for (Map<String, Object> row : loader.load())
             {
                 if (row.containsKey(PROP_KEY) && row.containsKey(PROP_VALUE))
