@@ -179,6 +179,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 
 /**
@@ -3446,7 +3447,7 @@ public class DavController extends SpringActionController
 
                 if (data == null)
                 {
-                    data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                    data = ExperimentService.get().createData(c, UPLOADED_FILE);
                     data.setName(FileUtil.getFileName(file));
                     data.setDataFileURI(file.toUri());
                 }
