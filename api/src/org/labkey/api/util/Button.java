@@ -59,7 +59,8 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     private final String onClick;
     private final String id;
     private final Map<String, String> attributes;
-    private final String tooltip;
+//    private final String tooltip;
+    private final String title;
     private final String typeCls;
     private final boolean disableOnClick;
     private final boolean dropdown;
@@ -85,7 +86,8 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         this.disableOnClick = builder.disableOnClick;
         this.enabled = builder.enabled;
         this.submit = builder.submit;
-        this.tooltip = builder.tooltip;
+//        this.tooltip = builder.tooltip;
+        this.title = builder.title;
         this.typeCls = builder.typeCls;
         this.usePost = builder.usePost;
         this.rel = builder.rel;
@@ -136,6 +138,11 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     public String getIconCls()
     {
         return iconCls;
+    }
+
+    public String getTitle()
+    {
+        return title;
     }
 
     public String getStyle()
@@ -231,13 +238,13 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     {
         boolean iconOnly = getIconCls() != null;
         String submitId = GUID.makeGUID();
-        final HtmlString tip = HtmlString.of(tooltip);
+        final HtmlString titleValue = HtmlString.of(getTitle());
         String hrefValue = (null == getHref()) ? "#" : getHref();
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, hrefValue, title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
-            .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
+            .at(Attribute.href, hrefValue, title, titleValue, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .data("tt", (HtmlString.isBlank(titleValue) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
             .cl(!isEnabled(), DISABLEDCLS)
