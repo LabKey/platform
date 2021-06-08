@@ -18,7 +18,9 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.Vial" %>
+<%@ page import="org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean" %>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -28,8 +30,6 @@
 <%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.UpdateCommentsAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.UpdateSpecimenCommentsBean" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -51,7 +51,7 @@
 
     NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getUser());
 %>
-<labkey:form action="<%=urlFor(UpdateCommentsAction.class)%>" name="updateComments" id="updateCommentForm" method="POST">
+<labkey:form action="<%=urlFor(SpecimenMigrationService.get().getUpdateCommentsActionClass())%>" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="copyToParticipant" value="false">
     <input type="hidden" name="deleteVialComment" value="false">
     <input type="hidden" name="copyParticipantId" value="0">

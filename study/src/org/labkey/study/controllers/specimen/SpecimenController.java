@@ -17,7 +17,6 @@
 package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.io.Charsets;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
@@ -50,21 +49,17 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.RequestEventType;
-import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.actions.SpecimensViewBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
@@ -78,7 +73,6 @@ import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageNewRequestFormPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.CohortFilter;
@@ -88,14 +82,11 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Link.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
@@ -125,6 +116,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
@@ -136,7 +128,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -144,7 +135,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * User: brittp
@@ -266,6 +256,12 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getDeleteRequestURL(Container c, String id)
         {
             return new ActionURL(DeleteRequestAction.class, c).addParameter("id", "${requestId}");
+        }
+
+        @Override
+        public Class<? extends Controller> getCopyParticipantCommentActionClass()
+        {
+            return CopyParticipantCommentAction.class;
         }
     }
 
@@ -1653,343 +1649,6 @@ public class SpecimenController extends BaseStudyController
         public void setQualityControlFlag(Boolean qualityControlFlag)
         {
             _qualityControlFlag = qualityControlFlag;
-        }
-    }
-    
-    public static class UpdateParticipantCommentsForm extends UpdateSpecimenCommentsForm
-    {
-        private boolean _copyToParticipant;
-        private boolean _deleteVialComment;
-        private int _copySpecimenId;
-        private String _copyParticipantId;
-
-        public boolean isCopyToParticipant()
-        {
-            return _copyToParticipant;
-        }
-
-        public void setCopyToParticipant(boolean copyToParticipant)
-        {
-            _copyToParticipant = copyToParticipant;
-        }
-
-        public boolean isDeleteVialComment()
-        {
-            return _deleteVialComment;
-        }
-
-        public void setDeleteVialComment(boolean deleteVialComment)
-        {
-            _deleteVialComment = deleteVialComment;
-        }
-
-        public int getCopySampleId()
-        {
-            return _copySpecimenId;
-        }
-
-        public void setCopySampleId(int copySpecimenId)
-        {
-            _copySpecimenId = copySpecimenId;
-        }
-
-        public String getCopyParticipantId()
-        {
-            return _copyParticipantId;
-        }
-
-        public void setCopyParticipantId(String copyParticipantId)
-        {
-            _copyParticipantId = copyParticipantId;
-        }
-    }
-
-    public static class UpdateSpecimenCommentsBean extends SpecimensViewBean
-    {
-        private final String _referrer;
-        private final String _currentComment;
-        private final boolean _mixedComments;
-        private final boolean _currentFlagState;
-        private final boolean _mixedFlagState;
-        private final Map<String, Map<String, Long>> _participantVisitMap;
-
-        public UpdateSpecimenCommentsBean(ViewContext context, List<Vial> vials, String referrer)
-        {
-            super(context, vials, false, false, true, true);
-            _referrer = referrer;
-            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
-            boolean mixedComments = false;
-            boolean mixedFlagState = false;
-            SpecimenComment prevComment = currentComments.get(vials.get(0));
-
-            for (int i = 1; i < vials.size() && (!mixedFlagState || !mixedComments); i++)
-            {
-                SpecimenComment comment = currentComments.get(vials.get(i));
-
-                // a missing comment indicates a 'false' for history conflict:
-                boolean currentFlagState = comment != null && comment.isQualityControlFlag();
-                boolean previousFlagState = prevComment != null && prevComment.isQualityControlFlag();
-                mixedFlagState = mixedFlagState || currentFlagState != previousFlagState;
-                String currentCommentString = comment != null ? comment.getComment() : null;
-                String previousCommentString = prevComment != null ? prevComment.getComment() : null;
-                mixedComments = mixedComments || !Objects.equals(previousCommentString, currentCommentString);
-                prevComment = comment;
-            }
-
-            _currentComment = !mixedComments && prevComment != null ? prevComment.getComment() : null;
-            _currentFlagState = mixedFlagState || (prevComment != null && prevComment.isQualityControlFlag());
-            _mixedComments = mixedComments;
-            _mixedFlagState = mixedFlagState;
-            _participantVisitMap = generateParticipantVisitMap(vials, BaseStudyController.getStudyRedirectIfNull(context.getContainer()));
-        }
-
-        protected Map<String, Map<String, Long>> generateParticipantVisitMap(List<Vial> vials, Study study)
-        {
-            Map<String, Map<String, Long>> pvMap = new TreeMap<>();
-
-            if (TimepointType.CONTINUOUS == study.getTimepointType())
-                return Collections.emptyMap();
-
-            boolean isDateStudy = TimepointType.DATE == study.getTimepointType();
-            Date startDate = isDateStudy ? study.getStartDate() : new Date();
-
-            for (Vial vial : vials)
-            {
-                Double visit;
-                if (isDateStudy)
-                    if (null != vial.getDrawTimestamp())
-                        visit = Double.valueOf((vial.getDrawTimestamp().getTime() - startDate.getTime()) / DateUtils.MILLIS_PER_DAY);
-                    else
-                        visit = null;
-                else
-                    visit = vial.getVisitValue();
-
-                if (visit != null)
-                {
-                    String ptid = vial.getPtid();
-                    Visit v = StudyManager.getInstance().getVisitForSequence(study, visit);
-                    if (ptid != null && v != null)
-                    {
-                        if (!pvMap.containsKey(ptid))
-                            pvMap.put(ptid, new HashMap<>());
-                        pvMap.get(ptid).put(v.getDisplayString(), vial.getRowId());
-                    }
-                }
-            }
-            return pvMap;
-        }
-
-        public String getReferrer()
-        {
-            return _referrer;
-        }
-
-        public String getCurrentComment()
-        {
-            return _currentComment;
-        }
-
-        public boolean isMixedComments()
-        {
-            return _mixedComments;
-        }
-
-        public boolean isCurrentFlagState()
-        {
-            return _currentFlagState;
-        }
-
-        public boolean isMixedFlagState()
-        {
-            return _mixedFlagState;
-        }
-
-        public Map<String, Map<String, Long>> getParticipantVisitMap()
-        {
-            return _participantVisitMap;
-        }
-    }
-
-    @RequiresPermission(SetSpecimenCommentsPermission.class)
-    public class ClearCommentsAction extends FormHandlerAction<UpdateSpecimenCommentsForm>
-    {
-        @Override
-        public void validateCommand(UpdateSpecimenCommentsForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors) throws Exception
-        {
-            List<Vial> selectedVials = getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
-            if (selectedVials != null)
-            {
-                for (Vial vial : selectedVials)
-                {
-                    // use the currently saved history conflict state; if it's been forced before, this will prevent it
-                    // from being cleared.
-                    SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
-                    if (comment != null)
-                    {
-                        SpecimenManager.get().setSpecimenComment(getUser(), vial, null,
-                                comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
-                    }
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(UpdateSpecimenCommentsForm updateSpecimenCommentsForm)
-        {
-            return new ActionURL(updateSpecimenCommentsForm.getReferrer());
-        }
-    }
-
-    @RequiresPermission(SetSpecimenCommentsPermission.class)
-    public class UpdateCommentsAction extends FormViewAction<UpdateParticipantCommentsForm>
-    {
-        private ActionURL _successUrl;
-
-        @Override
-        public void validateCommand(UpdateParticipantCommentsForm specimenCommentsForm, Errors errors)
-        {
-            if (specimenCommentsForm.isSaveCommentsPost() &&
-                    (specimenCommentsForm.getRowId() == null ||
-                     specimenCommentsForm.getRowId().length == 0))
-            {
-                errors.reject(null, "No vials were selected.");
-            }
-        }
-
-        @Override
-        public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors)
-        {
-            List<Vial> selectedVials = getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
-
-            if (selectedVials == null || selectedVials.size() == 0)
-            {
-                // are the vial IDs on the URL?
-                int[] rowId = specimenCommentsForm.getRowId();
-                if (rowId != null && rowId.length > 0)
-                {
-                    try
-                    {
-                        List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), rowId);
-                        selectedVials = new ArrayList<>(vials);
-                    }
-                    catch (SpecimenRequestException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                }
-                if (selectedVials == null || selectedVials.size() == 0)
-                    return new HtmlView("No vials selected. " + PageFlowUtil.link("back").href("javascript:back()"));
-            }
-
-            return new JspView<>("/org/labkey/study/view/specimen/updateComments.jsp",
-                    new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
-        }
-
-        @Override
-        public boolean handlePost(UpdateParticipantCommentsForm commentsForm, BindException errors) throws Exception
-        {
-            if (commentsForm.getRowId() == null)
-                return false;
-
-            User user = getUser();
-            Container container = getContainer();
-            List<Vial> vials = new ArrayList<>();
-            for (int rowId : commentsForm.getRowId())
-                vials.add(SpecimenManagerNew.get().getVial(container, user, rowId));
-
-            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
-
-            // copying or moving vial comments to participant level comments
-            if (commentsForm.isCopyToParticipant())
-            {
-                if (commentsForm.getCopySampleId() != -1)
-                {
-                    Vial vial = SpecimenManagerNew.get().getVial(container, user, commentsForm.getCopySampleId());
-                    if (vial != null)
-                    {
-                        _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
-                                addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
-                                addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
-                                addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                                addReturnURL(new URLHelper(commentsForm.getReferrer()));
-                    }
-                }
-                else
-                {
-                    _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
-                            addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
-                            addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                            addReturnURL(new URLHelper(commentsForm.getReferrer()));
-                }
-
-                // delete existing vial comments if move is specified
-                if (commentsForm.isDeleteVialComment())
-                {
-                    for (Vial vial : vials)
-                    {
-                        SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
-                        if (comment != null)
-                        {
-                            _successUrl.addParameter(ParticipantCommentForm.params.vialCommentsToClear, vial.getRowId());
-                        }
-                    }
-                }
-                return true;
-            }
-
-            for (Vial vial : vials)
-            {
-                SpecimenComment previousComment = currentComments.get(vial);
-
-                boolean newConflictState;
-                boolean newForceState;
-                if (commentsForm.isQualityControlFlag() != null && SettingsManager.get().getDisplaySettings(container).isEnableManualQCFlagging())
-                {
-                    // if a state has been specified in the post, we consider this to be 'forcing' the state:
-                    newConflictState = commentsForm.isQualityControlFlag().booleanValue();
-                    newForceState = true;
-                }
-                else
-                {
-                    // if we aren't forcing the state, just re-save whatever was previously saved:
-                    newConflictState = previousComment != null && previousComment.isQualityControlFlag();
-                    newForceState = previousComment != null && previousComment.isQualityControlFlagForced();
-                }
-                
-                if (previousComment == null || commentsForm.getConflictResolveEnum() == CommentsConflictResolution.REPLACE)
-                {
-                    SpecimenManager.get().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
-                            newConflictState, newForceState);
-                }
-                else if (commentsForm.getConflictResolveEnum() == CommentsConflictResolution.APPEND)
-                {
-                    SpecimenManager.get().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
-                            newConflictState, newForceState);
-                }
-                // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null
-                // so we no-op for this vial.
-            }
-            _successUrl = new ActionURL(commentsForm.getReferrer());
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(UpdateParticipantCommentsForm commentsForm)
-        {
-            return _successUrl;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBaseSpecimenNavTrail(root);
-            root.addChild("Set vial comments");
         }
     }
 

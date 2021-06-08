@@ -46,4 +46,6 @@ public interface SpecimenMigrationService
     Class<? extends Controller> getRemoveRequestSpecimensActionClass();
     Class<? extends Controller> getImportVialIdsActionClass();
     Class<? extends Controller> getManageRequestActionClass();
+    Class<? extends Controller> getClearCommentsActionClass();
+    Class<? extends Controller> getUpdateCommentsActionClass();
 }

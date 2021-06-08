@@ -61,12 +61,15 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
 import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.actions.ManageRequestBean;
+import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
 import org.labkey.api.specimen.actions.SpecimenEventBean;
+import org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
@@ -82,6 +85,7 @@ import org.labkey.api.specimen.security.permissions.ManageRequestStatusesPermiss
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
@@ -208,12 +212,18 @@ public class SpecimenController2 extends SpringActionController
     @NotNull
     public Study getStudyRedirectIfNull()
     {
-        Study study = StudyService.get().getStudy(getContainer());
+        return getStudyRedirectIfNull(getContainer());
+    }
+
+    @NotNull
+    public static Study getStudyRedirectIfNull(Container c)
+    {
+        Study study = StudyService.get().getStudy(c);
         if (null == study)
         {
             // redirect to the study home page, where admins will see a 'create study' button,
             // and non-admins will simply see a message that no study exists.
-            throw new RedirectException(urlProvider(StudyUrls.class).getBeginURL(getContainer()));
+            throw new RedirectException(urlProvider(StudyUrls.class).getBeginURL(c));
         }
         return study;
     }
@@ -879,7 +889,7 @@ public class SpecimenController2 extends SpringActionController
             if (vial == null)
                 throw new NotFoundException("Specimen " + viewEventForm.getId() + " does not exist.");
 
-            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/study/view/specimen/specimen.jsp",
+            JspView<SpecimenEventBean> summaryView = new JspView<>("/org/labkey/specimen/view/specimen.jsp",
                     new SpecimenEventBean(vial, viewEventForm.getReturnUrl()));
             summaryView.setTitle("Vial Summary");
 
@@ -3280,6 +3290,330 @@ public class SpecimenController2 extends SpringActionController
         {
             addSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
             root.addChild("Update Request");
+        }
+    }
+
+    private enum CommentsConflictResolution
+    {
+        SKIP,
+        APPEND,
+        REPLACE
+    }
+
+    public static class UpdateSpecimenCommentsForm
+    {
+        private String _comments;
+        private int[] _rowId;
+        private boolean _fromGroupedView;
+        private String _referrer;
+        private boolean _saveCommentsPost;
+        private String _conflictResolve;
+        private Boolean _qualityControlFlag;
+
+        public String getComments()
+        {
+            return _comments;
+        }
+
+        public void setComments(String comments)
+        {
+            _comments = comments;
+        }
+
+        public int[] getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(int[] rowId)
+        {
+            _rowId = rowId;
+        }
+
+        public boolean isFromGroupedView()
+        {
+            return _fromGroupedView;
+        }
+
+        public void setFromGroupedView(boolean fromGroupedView)
+        {
+            _fromGroupedView = fromGroupedView;
+        }
+
+        public String getReferrer()
+        {
+            return _referrer;
+        }
+
+        public void setReferrer(String referrer)
+        {
+            _referrer = referrer;
+        }
+
+        public boolean isSaveCommentsPost()
+        {
+            return _saveCommentsPost;
+        }
+
+        public void setSaveCommentsPost(boolean saveCommentsPost)
+        {
+            _saveCommentsPost = saveCommentsPost;
+        }
+
+        public String getConflictResolve()
+        {
+            return _conflictResolve;
+        }
+
+        public void setConflictResolve(String conflictResolve)
+        {
+            _conflictResolve = conflictResolve;
+        }
+
+        public CommentsConflictResolution getConflictResolveEnum()
+        {
+            return _conflictResolve == null ? CommentsConflictResolution.REPLACE : CommentsConflictResolution.valueOf(_conflictResolve);
+        }
+
+        public Boolean isQualityControlFlag()
+        {
+            return _qualityControlFlag;
+        }
+
+        public void setQualityControlFlag(Boolean qualityControlFlag)
+        {
+            _qualityControlFlag = qualityControlFlag;
+        }
+    }
+
+    public static class UpdateParticipantCommentsForm extends UpdateSpecimenCommentsForm
+    {
+        private boolean _copyToParticipant;
+        private boolean _deleteVialComment;
+        private int _copySpecimenId;
+        private String _copyParticipantId;
+
+        public boolean isCopyToParticipant()
+        {
+            return _copyToParticipant;
+        }
+
+        public void setCopyToParticipant(boolean copyToParticipant)
+        {
+            _copyToParticipant = copyToParticipant;
+        }
+
+        public boolean isDeleteVialComment()
+        {
+            return _deleteVialComment;
+        }
+
+        public void setDeleteVialComment(boolean deleteVialComment)
+        {
+            _deleteVialComment = deleteVialComment;
+        }
+
+        public int getCopySampleId()
+        {
+            return _copySpecimenId;
+        }
+
+        public void setCopySampleId(int copySpecimenId)
+        {
+            _copySpecimenId = copySpecimenId;
+        }
+
+        public String getCopyParticipantId()
+        {
+            return _copyParticipantId;
+        }
+
+        public void setCopyParticipantId(String copyParticipantId)
+        {
+            _copyParticipantId = copyParticipantId;
+        }
+    }
+
+    @RequiresPermission(SetSpecimenCommentsPermission.class)
+    public class ClearCommentsAction extends FormHandlerAction<UpdateSpecimenCommentsForm>
+    {
+        @Override
+        public void validateCommand(UpdateSpecimenCommentsForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(UpdateSpecimenCommentsForm updateSpecimenCommentsForm, BindException errors) throws Exception
+        {
+            List<Vial> selectedVials = getSpecimensFromPost(updateSpecimenCommentsForm.isFromGroupedView(), false);
+            if (selectedVials != null)
+            {
+                for (Vial vial : selectedVials)
+                {
+                    // use the currently saved history conflict state; if it's been forced before, this will prevent it
+                    // from being cleared.
+                    SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
+                    if (comment != null)
+                    {
+                        SpecimenManager.get().setSpecimenComment(getUser(), vial, null,
+                                comment.isQualityControlFlag(), comment.isQualityControlFlagForced());
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(UpdateSpecimenCommentsForm updateSpecimenCommentsForm)
+        {
+            return new ActionURL(updateSpecimenCommentsForm.getReferrer());
+        }
+    }
+
+    @RequiresPermission(SetSpecimenCommentsPermission.class)
+    public class UpdateCommentsAction extends FormViewAction<UpdateParticipantCommentsForm>
+    {
+        private ActionURL _successUrl;
+
+        @Override
+        public void validateCommand(UpdateParticipantCommentsForm specimenCommentsForm, Errors errors)
+        {
+            if (specimenCommentsForm.isSaveCommentsPost() &&
+                    (specimenCommentsForm.getRowId() == null ||
+                            specimenCommentsForm.getRowId().length == 0))
+            {
+                errors.reject(null, "No vials were selected.");
+            }
+        }
+
+        @Override
+        public ModelAndView getView(UpdateParticipantCommentsForm specimenCommentsForm, boolean reshow, BindException errors)
+        {
+            List<Vial> selectedVials = getSpecimensFromPost(specimenCommentsForm.isFromGroupedView(), false);
+
+            if (selectedVials == null || selectedVials.size() == 0)
+            {
+                // are the vial IDs on the URL?
+                int[] rowId = specimenCommentsForm.getRowId();
+                if (rowId != null && rowId.length > 0)
+                {
+                    try
+                    {
+                        List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), rowId);
+                        selectedVials = new ArrayList<>(vials);
+                    }
+                    catch (SpecimenRequestException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                }
+                if (selectedVials == null || selectedVials.size() == 0)
+                    return new HtmlView("No vials selected. " + PageFlowUtil.link("back").href("javascript:back()"));
+            }
+
+            return new JspView<>("/org/labkey/study/view/specimen/updateComments.jsp",
+                    new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
+        }
+
+        @Override
+        public boolean handlePost(UpdateParticipantCommentsForm commentsForm, BindException errors) throws Exception
+        {
+            if (commentsForm.getRowId() == null)
+                return false;
+
+            User user = getUser();
+            Container container = getContainer();
+            List<Vial> vials = new ArrayList<>();
+            for (int rowId : commentsForm.getRowId())
+                vials.add(SpecimenManagerNew.get().getVial(container, user, rowId));
+
+            Map<Vial, SpecimenComment> currentComments = SpecimenManager.get().getSpecimenComments(vials);
+
+            // copying or moving vial comments to participant level comments
+            if (commentsForm.isCopyToParticipant())
+            {
+                if (commentsForm.getCopySampleId() != -1)
+                {
+                    Vial vial = SpecimenManagerNew.get().getVial(container, user, commentsForm.getCopySampleId());
+                    if (vial != null)
+                    {
+                        _successUrl = new ActionURL(urlProvider(SpecimenUrls.class).getCopyParticipantCommentActionClass(), container).
+                                addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
+                                addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
+                                addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
+                                addReturnURL(new URLHelper(commentsForm.getReferrer()));
+                    }
+                }
+                else
+                {
+                    _successUrl = new ActionURL(urlProvider(SpecimenUrls.class).getCopyParticipantCommentActionClass(), container).
+                            addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
+                            addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
+                            addReturnURL(new URLHelper(commentsForm.getReferrer()));
+                }
+
+                // delete existing vial comments if move is specified
+                if (commentsForm.isDeleteVialComment())
+                {
+                    for (Vial vial : vials)
+                    {
+                        SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
+                        if (comment != null)
+                        {
+                            _successUrl.addParameter(ParticipantCommentForm.params.vialCommentsToClear, vial.getRowId());
+                        }
+                    }
+                }
+                return true;
+            }
+
+            for (Vial vial : vials)
+            {
+                SpecimenComment previousComment = currentComments.get(vial);
+
+                boolean newConflictState;
+                boolean newForceState;
+                if (commentsForm.isQualityControlFlag() != null && SettingsManager.get().getDisplaySettings(container).isEnableManualQCFlagging())
+                {
+                    // if a state has been specified in the post, we consider this to be 'forcing' the state:
+                    newConflictState = commentsForm.isQualityControlFlag().booleanValue();
+                    newForceState = true;
+                }
+                else
+                {
+                    // if we aren't forcing the state, just re-save whatever was previously saved:
+                    newConflictState = previousComment != null && previousComment.isQualityControlFlag();
+                    newForceState = previousComment != null && previousComment.isQualityControlFlagForced();
+                }
+
+                if (previousComment == null || commentsForm.getConflictResolveEnum() == CommentsConflictResolution.REPLACE)
+                {
+                    SpecimenManager.get().setSpecimenComment(getUser(), vial, commentsForm.getComments(),
+                            newConflictState, newForceState);
+                }
+                else if (commentsForm.getConflictResolveEnum() == CommentsConflictResolution.APPEND)
+                {
+                    SpecimenManager.get().setSpecimenComment(getUser(), vial, previousComment.getComment() + "\n" + commentsForm.getComments(),
+                            newConflictState, newForceState);
+                }
+                // If we haven't updated by now, our user has selected CommentsConflictResolution.SKIP and previousComments is non-null
+                // so we no-op for this vial.
+            }
+            _successUrl = new ActionURL(commentsForm.getReferrer());
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(UpdateParticipantCommentsForm commentsForm)
+        {
+            return _successUrl;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBaseSpecimenNavTrail(root);
+            root.addChild("Set vial comments");
         }
     }
 }

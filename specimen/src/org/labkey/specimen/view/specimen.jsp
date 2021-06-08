@@ -26,7 +26,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.UpdateCommentsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenEventBean> me = (JspView<SpecimenEventBean>) HttpView.currentView();
@@ -34,7 +34,7 @@
     Vial vial = bean.getVial();
     Location originatingLocation = LocationManager.get().getOriginatingLocation(vial);
     SpecimenComment comment = SpecimenManager.get().getSpecimenCommentForVial(vial);
-    ActionURL commentsLink = new ActionURL(UpdateCommentsAction.class, vial.getContainer());
+    ActionURL commentsLink = new ActionURL(SpecimenController2.UpdateCommentsAction.class, vial.getContainer());
     commentsLink.addParameter("rowId", vial.getRowId());
     commentsLink.addParameter("referrer", getActionURL().getLocalURIString());
 %>

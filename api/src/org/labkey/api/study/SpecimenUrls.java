@@ -21,6 +21,7 @@ import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
+import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * User: adam
@@ -40,4 +41,6 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getSelectedSpecimensURL(Container c, boolean showVials);
     ActionURL getSubmitRequestURL(Container c, String id);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
+
+    Class<? extends Controller> getCopyParticipantCommentActionClass();
 }

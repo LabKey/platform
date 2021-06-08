@@ -255,6 +255,18 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
+            public Class<? extends Controller> getClearCommentsActionClass()
+            {
+                return SpecimenController2.ClearCommentsAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getUpdateCommentsActionClass()
+            {
+                return SpecimenController2.UpdateCommentsAction.class;
+            }
+
+            @Override
             public ActionURL getManageStatusesURL(Container c)
             {
                 return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);

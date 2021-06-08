@@ -230,13 +230,13 @@ public class SpecimenUtils
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                String setCommentsURL = urlFor(SpecimenController.UpdateCommentsAction.class).toString();
+                String setCommentsURL = urlFor(SpecimenMigrationService.get().getUpdateCommentsActionClass()).toString();
                 NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + setCommentsURL +
                         "', 'post', 'rows')) " + jsRegionObject + ".form.submit(); return false;");
                 setItem.setId("Comments:Set");
 
-                String clearCommentsURL = urlFor(SpecimenController.ClearCommentsAction.class).toString();
+                String clearCommentsURL = urlFor(SpecimenMigrationService.get().getClearCommentsActionClass()).toString();
                 NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + clearCommentsURL +
                         "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials. " +
