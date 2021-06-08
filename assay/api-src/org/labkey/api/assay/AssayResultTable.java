@@ -311,6 +311,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var col = new AliasedColumn(this, "Properties", lsidColumn);
         col.setDescription("Includes all properties set for this row");
         col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setConceptURI(PropertiesDisplayColumn.CONCEPT_URI);
         col.setHidden(true);
         col.setUserEditable(false);
         col.setReadOnly(true);
