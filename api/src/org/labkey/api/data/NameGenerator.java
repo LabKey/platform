@@ -353,7 +353,7 @@ public class NameGenerator
             {
                 String currName = currNameObj.toString();
                 if (StringUtils.isNotBlank(currName))
-                    return currName;
+                    return currName.trim();
             }
 
             // Add extra context variables
