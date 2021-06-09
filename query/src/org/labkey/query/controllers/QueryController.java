@@ -5285,6 +5285,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
     @RequiresPermission(AdminPermission.class)
     public class ManageViewsAction extends SimpleViewAction<QueryForm>
     {
@@ -5313,6 +5314,7 @@ public class QueryController extends SpringActionController
     }
 
 
+    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
     @RequiresPermission(AdminPermission.class)
     public class InternalDeleteView extends ConfirmAction<InternalViewForm>
     {
@@ -5343,7 +5345,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-
+    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
     @RequiresPermission(AdminPermission.class)
     public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
     {
@@ -5391,7 +5393,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-
+    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
     @RequiresPermission(AdminPermission.class)
     public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
     {
