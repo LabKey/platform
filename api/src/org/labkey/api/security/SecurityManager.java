@@ -2808,10 +2808,7 @@ public class SecurityManager
                 if (!context.getContainer().isRoot())
                 {
                     LinkBuilder link = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).target("_blank").clearClasses();
-
-                    message.append(HtmlString.unsafe("<p>"));
-                    message.append("Add ").append(email.getEmailAddress()).append(" to a Project Group ").append(link).append(".");
-                    message.append(HtmlString.unsafe("</p>"));
+                    message.append(" Add ").append(email.getEmailAddress()).append(" to a Project Group ").append(link).append(".");
                 }
             }
             else
@@ -2855,10 +2852,7 @@ public class SecurityManager
         if (messageContentsURL != null && provider == null)
         {
             LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
-
-            message.append(HtmlString.unsafe("<p>"));
-            message.append("Click ").append(link).append(" to see the email.");
-            message.append(HtmlString.unsafe("</p>"));
+            message.append(" Click ").append(link).append(" to see the email.");
         }
 
         return message.getHtmlString();
