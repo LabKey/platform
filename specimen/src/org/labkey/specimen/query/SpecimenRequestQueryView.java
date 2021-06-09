@@ -43,7 +43,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.specimen.actions.SpecimenController2;
 import org.labkey.specimen.actions.SpecimenController2.ManageRequestAction;
 
 import java.io.IOException;

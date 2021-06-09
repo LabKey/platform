@@ -18,6 +18,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.CompareType;
@@ -34,14 +35,18 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -104,6 +109,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
@@ -154,6 +160,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -3041,6 +3048,131 @@ public class SpecimenController2 extends SpringActionController
                 // No permission
                 errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
             }
+        }
+
+        @Override
+        protected boolean canInsert(User user)
+        {
+            return getContainer().hasPermission(user, RequestSpecimensPermission.class);
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
+        {
+            List<String> errorList = new LinkedList<>();
+
+            ColumnDescriptor[] columns = new ColumnDescriptor[2];   // Only 1 actual column of type String
+            columns[0] = new ColumnDescriptor("Actual", String.class);
+            columns[1] = new ColumnDescriptor("Dummy", String.class);
+            dl.setColumns(columns);
+
+            List<Map<String, Object>> rows = dl.load();
+            String[] globalIds = new String[rows.size()];
+            int i = 0;
+            for (Map<String, Object> row : rows)
+            {
+                String idActual = (String)row.get("Actual");
+                if (idActual == null)
+                {
+                    errorList.add("Malformed input data.");
+                    break;
+                }
+
+                String idDummy = (String)row.get("Dummy");
+                if (idDummy != null)
+                {
+                    errorList.add("Only one id per line is allowed.");
+                    break;
+                }
+                globalIds[i] = idActual;
+                i += 1;
+            }
+
+            if (errorList.size() == 0)
+            {
+                // Get all the specimen objects. If it throws an exception then there was an error and we'll
+                // root around to figure out what to report
+                SpecimenManagerNew specimenManager = SpecimenManagerNew.get();
+                try
+                {
+                    SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
+                    List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), globalIds);
+
+                    if (vials != null && vials.size() == globalIds.length)
+                    {
+                        // All the specimens exist;
+                        // Check for Availability and then add them to the request.
+                        // There still may be errors (like someone already has requested that specimen) which will be
+                        // caught by createRequestSpecimenMapping
+
+                        for (Vial s : vials)
+                        {
+                            if (!s.isAvailable()) // || s.isLockedInRequest())
+                            {
+                                errorList.add(RequestabilityManager.makeSpecimenUnavailableMessage(s, null));
+                            }
+                        }
+
+                        if (errorList.size() == 0)
+                        {
+                            ArrayList<Vial> vialList = new ArrayList<>(vials.size());
+                            vialList.addAll(vials);
+                            SpecimenRequestManager.get().createRequestSpecimenMapping(getUser(), request, vialList, true, true);
+                        }
+                    }
+                    else
+                    {
+                        errorList.add("Duplicate Ids found.");
+                    }
+                }
+                catch (RequestabilityManager.InvalidRuleException e)
+                {
+                    errorList.add("The request could not be created because a requestability rule is configured incorrectly. " +
+                            "Please report this problem to an administrator. Error details: " + e.getMessage());
+                }
+                catch (SpecimenRequestException e)
+                {
+                    // There was an error; some id had no specimen matching
+                    boolean hasSpecimenError = false;
+                    for (String id : globalIds)
+                    {
+                        Vial vial = specimenManager.getVial(getContainer(), getUser(), id);
+                        if (vial == null)
+                        {
+                            errorList.add("Specimen " + id + " not found.");
+                            hasSpecimenError = true;
+                        }
+                    }
+
+                    if (!hasSpecimenError)
+                    {   // Expected one of them to not be found, so this is unusual
+                        errorList.add("Error adding all of the specimens together.");
+                    }
+                }
+            }
+
+            if (!errorList.isEmpty())
+            {
+                for (String error : errorList)
+                    errors.addRowError(new ValidationException(error));
+            }
+
+            if (errors.hasErrors())
+                return 0;
+            return rows.size();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestNavTrail(root, _requestId);
+            root.addChild("Upload Specimen Identifiers");
+        }
+
+        @Override
+        protected ActionURL getSuccessURL(IdForm form)
+        {
+            return getManageRequestURL(getContainer(), _requestId, null);
         }
     }
 
