@@ -30,7 +30,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
@@ -48,6 +47,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 /**
  * User: jeckels
@@ -268,7 +269,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
                                 if ((user != null && !user.isGuest()) && data == null)
                                 {
-                                    data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+                                    data = ExperimentService.get().createData(c, UPLOADED_FILE);
                                     data.setDataFileURI(file.toURI());
                                     data.setName(file.getName());
                                     data.save(user);

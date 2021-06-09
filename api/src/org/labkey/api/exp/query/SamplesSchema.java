@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -38,6 +39,8 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -101,7 +104,7 @@ public class SamplesSchema extends AbstractExpSchema
         super(path, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
-    protected Map<String, ExpSampleType> getSampleTypes()
+    public Map<String, ExpSampleType> getSampleTypes()
     {
         if (_sampleTypeMap == null)
         {
@@ -128,7 +131,20 @@ public class SamplesSchema extends AbstractExpSchema
         ExpSampleType st = getSampleTypes().get(name);
         if (st == null)
             return null;
-        return getSampleTable(st, cf);
+
+        AbstractTableInfo tableInfo = (AbstractTableInfo) createSampleTable(st, cf);
+
+        // Get linked to study columns
+        StudyPublishService studyPublishService = StudyPublishService.get();
+        if (studyPublishService != null)
+        {
+            int rowId = st.getRowId();
+            String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
+            studyPublishService.addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
+            return tableInfo;
+        }
+        
+        return tableInfo;
     }
 
     @Override
@@ -143,8 +159,14 @@ public class SamplesSchema extends AbstractExpSchema
         return queryView;
     }
 
+    /** Convenience method that takes a sample type instead of a string to provide a more robust mapping */
+    public ExpMaterialTable getTable(@NotNull ExpSampleType st, @Nullable ContainerFilter cf)
+    {
+        return (ExpMaterialTable) getTable(st.getName(), cf);
+    }
+
     /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
+    private ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
@@ -152,7 +174,6 @@ public class SamplesSchema extends AbstractExpSchema
         }
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
         ret.populate(st, true);
-        ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
     }
 

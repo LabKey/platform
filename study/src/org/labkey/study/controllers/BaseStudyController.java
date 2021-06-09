@@ -36,7 +36,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.StudyModule;
-import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -61,11 +60,6 @@ public abstract class BaseStudyController extends SpringActionController
     public static ActionURL getStudyOverviewURL(Container c)
     {
         return new ActionURL(StudyController.OverviewAction.class, c);
-    }
-
-    protected SpecimenUtils getUtils()
-    {
-        return new SpecimenUtils(this);
     }
 
     @Override
@@ -264,57 +258,6 @@ public abstract class BaseStudyController extends SpringActionController
         if (first == null)
             return false;
         return first.equals(second);
-    }
-
-    public static long[] toLongArray(Collection<String> intStrings)
-    {
-        if (intStrings == null)
-            return null;
-        long[] converted = new long[intStrings.size()];
-        int index = 0;
-        for (String intString : intStrings)
-            converted[index++] = Long.parseLong(intString);
-        return converted;
-    }
-
-    public static long[] toLongArray(String[] intStrings)
-    {
-        if (intStrings == null)
-            return null;
-        long[] converted = new long[intStrings.length];
-        int index = 0;
-        for (String intString : intStrings)
-            converted[index++] = Long.parseLong(intString);
-        return converted;
-    }
-
-    public static class IdForm
-    {
-        public enum PARAMS
-        {
-            id
-        }
-        
-        private int _id;
-
-        public IdForm()
-        {
-        }
-
-        public IdForm(int id)
-        {
-            _id = id;
-        }
-
-        public int getId()
-        {
-            return _id;
-        }
-
-        public void setId(int id)
-        {
-            _id = id;
-        }
     }
 
     public static class BulkEditForm

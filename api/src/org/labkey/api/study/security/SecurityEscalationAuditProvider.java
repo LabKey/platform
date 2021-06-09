@@ -53,6 +53,16 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
 {
     private static Logger _log = LogManager.getLogger(SecurityEscalationAuditProvider.class);
 
+    protected SecurityEscalationAuditProvider()
+    {
+        super();
+    }
+
+    protected SecurityEscalationAuditProvider(AbstractAuditDomainKind dk)
+    {
+        super(dk);
+    }
+
     /**
      * A name for the event to log as.  This shouldn't have any spaces, and uniquely
      * identifies this audit log type.  A good choice is the class name of the event class.

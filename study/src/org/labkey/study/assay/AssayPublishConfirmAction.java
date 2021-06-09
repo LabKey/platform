@@ -7,12 +7,16 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -28,6 +32,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -42,6 +47,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
 
 @RequiresPermission(InsertPermission.class)
 public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<AssayPublishConfirmAction.AssayPublishConfirmForm>
@@ -203,7 +211,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     protected Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getAdditionalColumns(AssayPublishConfirmForm form)
     {
-        Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
+        Map<ExtraColFieldKeys, FieldKey> additionalCols = new HashMap<>();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         String valueSource = form.getDefaultValueSource();
         DefaultValueSource defaultValueSource = DefaultValueSource.valueOf(valueSource);
@@ -211,20 +219,45 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
         AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
 
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SourceId, tableMetadata.getRunRowIdFieldKeyFromResults());
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ObjectId, tableMetadata.getResultRowIdFieldKey());
+        additionalCols.put(ExtraColFieldKeys.SourceId, tableMetadata.getRunRowIdFieldKeyFromResults());
+        additionalCols.put(ExtraColFieldKeys.ObjectId, tableMetadata.getResultRowIdFieldKey());
 
         // TODO : can we transition away from using the defaultValueSource and just query the tableMetadata
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(tableMetadata));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE));
+        additionalCols.put(ExtraColFieldKeys.ParticipantId, defaultValueSource.getParticipantIDFieldKey(tableMetadata));
+        additionalCols.put(ExtraColFieldKeys.VisitId, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT));
+        additionalCols.put(ExtraColFieldKeys.Date, defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE));
 
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SpecimenId, specimenIDFieldKey);
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SpecimenMatch, new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SpecimenPtid, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID"));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SpecimenVisit, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum"));
-        additionalCols.put(PublishResultsQueryView.ExtraColFieldKeys.SpecimenDate, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp"));
+        additionalCols.put(ExtraColFieldKeys.SpecimenId, specimenIDFieldKey);
+        additionalCols.put(ExtraColFieldKeys.SpecimenMatch, new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME));
+        additionalCols.put(ExtraColFieldKeys.SpecimenPtid, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "ParticipantID"));
+        additionalCols.put(ExtraColFieldKeys.SpecimenVisit, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "SequenceNum"));
+        additionalCols.put(ExtraColFieldKeys.SpecimenDate, new FieldKey(new FieldKey(specimenIDFieldKey, "Specimen"), "DrawTimestamp"));
+
+        UserSchema userSchema = getUserSchema(form);
+        QueryView view = new QueryView(userSchema, getQuerySettings(form), null);
+        DataView dataView = view.createDataView();
+        Map<FieldKey, ColumnInfo> selectColumns = dataView.getDataRegion().getSelectColumns();
+
+        // If there are any sample columns in the assay, we can try to match existing samples in the target study
+        List<ColumnInfo> sampleCols = selectColumns.values().stream()
+                .filter(c -> PropertyType.SAMPLE_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
+                .collect(Collectors.toList());
+
+        if (sampleCols.size() == 1)
+            additionalCols.put(ExtraColFieldKeys.SampleId, sampleCols.get(0).getFieldKey());
+
+        if ((additionalCols.get(ExtraColFieldKeys.Date) == null))
+        {
+            // issue 41982 : look for an alternate date column if the standard assay date field does not exist
+            List<ColumnInfo> dateCols = selectColumns.values().stream()
+                    .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
+                            (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
+                    .collect(Collectors.toList());
+
+            if (dateCols.size() == 1)
+                additionalCols.put(ExtraColFieldKeys.Date, dateCols.get(0).getFieldKey());
+        }
 
         // Add the TargetStudy FieldKey only if it exists on the Result domain.
         if (targetStudyDomainProperty != null && targetStudyDomainProperty.first == ExpProtocol.AssayDomainTypes.Result)

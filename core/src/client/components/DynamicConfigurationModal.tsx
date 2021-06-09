@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import { ActionURL, Ajax } from '@labkey/api';
+import { Ajax } from '@labkey/api';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput} from './DynamicFields';
@@ -31,7 +31,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const {authConfig, modalType} = this.props;
         const fieldValues: any = {};
         this.props.modalType.settingsFields.forEach(field => {
-            fieldValues[field.name] = field.name in this.props.authConfig ? this.props.authConfig[field.name] : field.defaultValue;
+            const value = this.props.authConfig[field.name] != null ? this.props.authConfig[field.name] : '';
+            fieldValues[field.name] = field.name in this.props.authConfig ? value : field.defaultValue;
         });
 
         if (modalType.sso) {
@@ -53,26 +54,27 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
     }
 
     saveEditedModal = (): void => {
-        const {modalType, authConfig, configType, closeModal, updateAuthRowsAfterSave} = this.props;
-
-        const baseUrl = ActionURL.getBaseURL(true);
-        const saveUrl = baseUrl + modalType.saveLink;
-        let form = new FormData();
+        const { modalType, authConfig, configType, closeModal, updateAuthRowsAfterSave } = this.props;
 
         if (this.areRequiredFieldsEmpty()) {
             return;
         }
+
+        let form = new FormData();
 
         if (authConfig.configuration) {
             form.append('configuration', authConfig.configuration.toString());
         }
 
         Object.keys(this.state.fieldValues).map(item => {
-            form.append(item, this.state.fieldValues[item]);
+            const itemValue = this.state.fieldValues[item];
+            if (itemValue !== null && itemValue !== '' && (typeof itemValue !== 'string' || itemValue.trim() !== '')) {
+                form.append(item, itemValue);
+            }
         });
 
         Ajax.request({
-            url: saveUrl,
+            url: modalType.saveLink,
             method: 'POST',
             form,
             scope: this,
@@ -167,7 +169,10 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
             queryString = {
                 server: fieldValues.servers,
                 principal: fieldValues.principalTemplate,
-                sasl: fieldValues.SASL,
+                sasl: fieldValues.sasl,
+                readAttributes: fieldValues.readAttributes,
+                attributeSearchBase: fieldValues.attributeSearchBase,
+                attributeFilterTemplate: fieldValues.attributeFilterTemplate
             };
         }
 
@@ -237,13 +242,13 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                         <div className="modal__test-button">
                             <Button
                                 className="labkey-button"
-                                onClick={() =>
-                                    window.open(
-                                        ActionURL.getBaseURL(true) +
-                                        modalType.testLink +
-                                        ActionURL.queryString(queryString)
-                                    )
-                                }
+                                onClick={() => {
+                                    const testLinkUrl = new URL(modalType.testLink, window.location.origin);
+                                    if (queryString) {
+                                        testLinkUrl.search = new URLSearchParams(queryString).toString();
+                                    }
+                                    window.open(testLinkUrl.href);
+                                }}
                             >
                                 Test
                             </Button>

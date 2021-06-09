@@ -1765,7 +1765,7 @@ public class QueryView extends WebPartView<Object>
             String name = view.getName();
             if (name == null)
             {
-                String label = Objects.toString(view.getLabel(), "default");
+                String label = Objects.toString(view.getLabel(), "Default");
 
                 item = new NavTree(label, (ActionURL) null);
                 item.setScript(getChangeViewScript(""));

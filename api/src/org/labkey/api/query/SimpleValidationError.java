@@ -24,6 +24,7 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HelpTopic;
+import org.springframework.dao.DataAccessException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 
@@ -58,6 +59,15 @@ public class SimpleValidationError implements ValidationError
     }
 
     public SimpleValidationError(SQLException x)
+    {
+        _message = x.getMessage();
+        _cause = x;
+        _severity = ValidationException.SEVERITY.ERROR;
+        _fieldName = null;
+        _help = null;
+    }
+
+    public SimpleValidationError(DataAccessException x)
     {
         _message = x.getMessage();
         _cause = x;

@@ -53,6 +53,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
@@ -190,8 +191,6 @@ import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
-import org.labkey.experiment.publish.SampleTypePublishConfirmAction;
-import org.labkey.experiment.publish.SampleTypePublishStartAction;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.beans.PropertyValue;
@@ -268,9 +267,7 @@ public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
-            ExperimentController.class,
-            SampleTypePublishStartAction.class,
-            SampleTypePublishConfirmAction.class
+            ExperimentController.class
     );
     private static final String GUEST_DIRECTORY_NAME = "guest";
 
@@ -715,10 +712,15 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            ActionURL linkToStudyHistoryURL = new ActionURL(); // Rosaline: TODO in LinkToStudyAction story
-            ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
-            linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
-            detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
+            var publish = StudyPublishService.get();
+            if (AuditLogService.get().isViewable() && publish != null)
+            {
+                ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(getContainer(), getUser());
+                ActionURL linkToStudyHistoryURL = publish.getPublishHistory(getContainer(), Dataset.PublishSource.SampleType, _sampleType.getRowId(), cf);
+                ActionButton linkToStudyHistoryButton = new ActionButton(linkToStudyHistoryURL, "Link to Study History", ActionButton.Action.LINK);
+                linkToStudyHistoryButton.setDisplayPermission(InsertPermission.class);
+                detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(linkToStudyHistoryButton);
+            }
 
             return new VBox(detailsView, queryView);
         }
@@ -727,7 +729,7 @@ public class ExperimentController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            ActionURL url = new ActionURL(ListSampleTypesAction.class, getContainer());
+            ActionURL url = ExperimentUrls.get().getShowSampleTypeListURL(getContainer());
             addRootNavTrail(root);
             root.addChild("Sample Types", url);
             root.addChild("Sample Type " + _sampleType.getName());
@@ -3207,11 +3209,17 @@ public class ExperimentController extends SpringActionController
         public Object execute(DeleteConfirmationForm deleteForm, BindException errors)
         {
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            Set<Integer> deletable = deleteForm.getIds(false);
+            List<Integer> deleteRequest = new ArrayList<>(deletable);
             List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
-            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials));
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials);
+
+            // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
+            response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, deletable, getUser(), getContainer()));
+
+            return success(response);
         }
     }
 
@@ -3452,7 +3460,28 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer(), "To delete a sample type, you must be in its folder or project."));
             }
 
-            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes));
+            List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
+            List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
+            if (StudyService.get() != null && StudyPublishService.get() != null)
+            {
+                for (ExpSampleType sampleType: sampleTypes)
+                {
+                    for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
+                    {
+                        ActionURL datasetURL = StudyService.get().getDatasetURL(getContainer(), dataset.getDatasetId());
+                        Pair<SecurableResource, ActionURL> entry = new Pair<>(dataset, datasetURL);
+                        if (dataset.canDeleteDefinition(getUser()))
+                        {
+                            deleteableDatasets.add(entry);
+                        }
+                        else
+                        {
+                            noPermissionDatasets.add(entry);
+                        }
+                    }
+                }
+            }
+            return new ConfirmDeleteView("Sample Type", ShowSampleTypeAction.class, sampleTypes, deleteForm, getRuns(sampleTypes), "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
         private List<ExpSampleType> getSampleTypes(DeleteForm deleteForm)
@@ -6356,20 +6385,6 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
-        @Override
-        public ActionURL getLinkToStudyURL(Container container)
-        {
-            return new ActionURL(SampleTypePublishStartAction.class, container);
-        }
-
-        @Override
-        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
-        {
-            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
-            if (sampleType != null)
-                url.addParameter("rowId", sampleType.getRowId());
-            return url;
-        }
     }
 
     private static abstract class BaseResolveLsidApiAction<F extends ResolveLsidsForm> extends ReadOnlyApiAction<F>
@@ -6446,6 +6461,44 @@ public class ExperimentController extends SpringActionController
             {
                 // should this require site admin permissions?
                 ExperimentServiceImpl.get().rebuildAllEdges();
+            }
+            return success();
+        }
+    }
+
+    private static class VerifyEdgesForm extends ExperimentRunForm
+    {
+        private Integer _limit;
+
+        public Integer getLimit()
+        {
+            return _limit;
+        }
+
+        public void setLimit(Integer limit)
+        {
+            _limit = limit;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class VerifyEdgesAction extends ReadOnlyApiAction<VerifyEdgesForm>
+    {
+        @Override
+        public Object execute(VerifyEdgesForm form, BindException errors)
+        {
+            if (form.getRowId() != 0 || form.getLsid() != null)
+            {
+                ExpRunImpl run = form.lookupRun();
+                if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                    throw new UnauthorizedException("Not permitted");
+
+                ExperimentServiceImpl.get().verifyRunEdges(run);
+            }
+            else
+            {
+                ExperimentServiceImpl.get().verifyAllEdges(getContainer(), form.getLimit());
             }
             return success();
         }

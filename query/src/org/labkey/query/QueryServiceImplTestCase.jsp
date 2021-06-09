@@ -134,7 +134,7 @@
         User user = TestContext.get().getUser();
         Container c = JunitUtil.getTestContainer();
         ListService s = ListService.get();
-        ListDefinition list = s.createList(c, tableName, ListDefinition.KeyType.Integer, null);
+        ListDefinition list = s.createList(c, tableName, ListDefinition.KeyType.Integer, null, null);
         list.setKeyName("A");
         Domain d = list.getDomain();
         d.addProperty(new PropertyStorageSpec("A", JdbcType.INTEGER));

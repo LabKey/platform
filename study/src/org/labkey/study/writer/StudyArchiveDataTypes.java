@@ -20,12 +20,16 @@ package org.labkey.study.writer;
  */
 public class StudyArchiveDataTypes
 {
-    public static final String ASSAY_DATASETS = "Assay Datasets";
+    public static final String ASSAY_DATASET_DATA = "Datasets: Assay Dataset Data";
+    public static final String ASSAY_DATASET_DEFINITIONS = "Datasets: Assay Dataset Definitions";
+    public static final String SAMPLE_TYPE_DATASET_DATA = "Datasets: Sample Dataset Data";
+    public static final String SAMPLE_TYPE_DATASET_DEFINITIONS = "Datasets: Sample Dataset Definitions";
+    public static final String STUDY_DATASETS_DATA = "Datasets: Study Dataset Data";
+    public static final String STUDY_DATASETS_DEFINITIONS = "Datasets: Study Dataset Definitions";
+    public static final String DATASET_DATA = "Dataset Data";
     public static final String ASSAY_SCHEDULE = "Assay Schedule";
     public static final String COHORT_SETTINGS = "Cohort Settings";
-    public static final String CRF_DATASETS = "CRF Datasets";
     public static final String CUSTOM_PARTICIPANT_VIEWS = "Custom Participant View";
-    public static final String DATASET_DATA = "Dataset Data";
     public static final String DATASET_DEFINITIONS = "Dataset Definitions";
     public static final String DATASET_SCHEMA_DEFINITION = "Dataset Schema Description";
     public static final String PARTICIPANT_COMMENTS = "Participant Comment Settings";

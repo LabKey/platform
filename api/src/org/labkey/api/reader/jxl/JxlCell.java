@@ -35,6 +35,7 @@ import org.labkey.api.util.DateUtil;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -147,6 +148,12 @@ public class JxlCell implements Cell
     }
 
     @Override
+    public void setCellValue(LocalDateTime value)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
     public void setCellValue(Calendar value)
     {
         throw new UnsupportedOperationException("method not yet supported");
@@ -166,6 +173,12 @@ public class JxlCell implements Cell
 
     @Override
     public void setCellFormula(String formula) throws FormulaParseException
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void removeFormula() throws IllegalStateException
     {
         throw new UnsupportedOperationException("method not yet supported");
     }
@@ -215,6 +228,12 @@ public class JxlCell implements Cell
             }
         }
         return new Date(_cell.getContents());
+    }
+
+    @Override
+    public LocalDateTime getLocalDateTimeCellValue()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
     }
 
     @Override
@@ -389,6 +408,12 @@ public class JxlCell implements Cell
 
     @Override
     public void setCellType(org.apache.poi.ss.usermodel.CellType cellType)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setBlank()
     {
         throw new UnsupportedOperationException("method not yet supported");
     }

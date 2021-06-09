@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.common.base.Enums;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +44,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.Container.LockState;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.exp.ExperimentException;
@@ -727,6 +729,18 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
+    public static void updateLockState(Container container, LockState lockState, User user)
+    {
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET LockState = ? WHERE RowID = ?");
+        new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
+
+        _removeFromCache(container);
+    }
+
     public static void updateType(Container container, String newType, User user)
     {
         //For some reason there is no primary key defined on core.containers
@@ -1039,7 +1053,7 @@ public class ContainerManager
         {
             return getForPath("/");
         }
-        catch (IllegalStateException e)
+        catch (Exception e)
         {
             throw new RootContainerException("Root container can't be retrieved", e);
         }
@@ -1577,7 +1591,7 @@ public class ContainerManager
     }
 
 
-    private static Map<String,Integer> deletingContainers = Collections.synchronizedMap(new HashMap<String,Integer>());
+    private static final Map<String,Integer> deletingContainers = Collections.synchronizedMap(new HashMap<>());
 
     public static boolean isDeleting(final Container c)
     {
@@ -2227,6 +2241,14 @@ public class ContainerManager
         MODULE_DEPENDENCY_PROVIDERS.forEach(action);
     }
 
+    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, lockState) -> false;
+
+    // Replaces any previously set LockedProjectHandler
+    public static void setLockedProjectHandler(LockedProjectHandler handler)
+    {
+        LOCKED_PROJECT_HANDLER = handler;
+    }
+
     public static Container createDefaultSupportContainer()
     {
         // create a "support" container. Admins can do anything,
@@ -2681,6 +2703,9 @@ public class ContainerManager
             String type = rs.getString("Type");
             String title = rs.getString("Title");
             boolean searchable = rs.getBoolean("Searchable");
+            String lockStateString = rs.getString("LockState");
+            LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).orNull() : null;
+            Date expirationDate = rs.getDate("ExpirationDate");
 
             Container dirParent = null;
             if (null != parentId)
@@ -2690,6 +2715,8 @@ public class ContainerManager
             d.setDescription(description);
             d.setType(type);
             d.setTitle(title);
+            d.setLockState(lockState);
+            d.setExpirationDate(expirationDate);
             return d;
         }
 

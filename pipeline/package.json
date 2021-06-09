@@ -1,0 +1,24 @@
+{
+  "name": "pipeline",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "npm ci",
+    "build": "npm run build-dev",
+    "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/views/*.*",
+    "lint": "eslint",
+    "lint-fix": "eslint --fix",
+    "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start-link": "cross-env LINK=true npm run start",
+    "build-dev": "npm run clean && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
+    "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
+  },
+  "dependencies": {
+    "@labkey/components": "2.41.1"
+  },
+  "devDependencies": {
+    "@labkey/build": "3.1.0",
+    "@labkey/eslint-config-base": "0.0.8",
+    "@labkey/eslint-config-react": "0.0.8"
+  }
+}

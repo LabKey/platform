@@ -24,10 +24,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
+import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.SpecimenService;
@@ -35,14 +38,21 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.specimen.action.SpecimenApiController;
+import org.labkey.specimen.actions.ShowGroupMembersAction;
+import org.labkey.specimen.actions.ShowSearchAction;
+import org.labkey.specimen.actions.ShowUploadSpecimensAction;
+import org.labkey.specimen.actions.SpecimenApiController;
+import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController2.OverviewAction;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.pipeline.SampleMindedTransform;
 import org.labkey.specimen.pipeline.SampleMindedTransformTask;
+import org.labkey.specimen.pipeline.SpecimenPipeline;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
@@ -52,6 +62,7 @@ import org.labkey.specimen.view.SpecimenWebPartFactory;
 import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -101,13 +112,126 @@ public class SpecimenModule extends SpringModule
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
 
+        addController("specimen2", SpecimenController2.class);
         addController("specimen-api", SpecimenApiController.class, "study-samples-api", "specimens-api");
 
         // Register early -- some modules don't declare a runtime dependency on specimen module, but will use the
         // service if it's available
         SpecimenService.setInstance(new SpecimenServiceImpl());
         EmailTemplateService.get().registerTemplate(SpecimenRequestNotificationEmailTemplate.class);
-    }
+
+        SpecimenMigrationService.setInstance(new SpecimenMigrationService()
+        {
+            @Override
+            public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
+            {
+                return SpecimenController2.getDownloadURL(event, name);
+            }
+
+            @Override
+            public ActionURL getOverviewURL(Container c)
+            {
+                return new ActionURL(OverviewAction.class, c);
+            }
+
+            @Override
+            public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl)
+            {
+                ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
+                url.addParameter("id", Integer.toString(rowId));
+                if (locationId != null)
+                    url.addParameter("locationId", locationId);
+                if (returnUrl != null)
+                    url.addReturnURL(returnUrl);
+
+                return url;
+            }
+
+            @Override
+            public ActionURL getUploadSpecimensURL(Container c)
+            {
+                return new ActionURL(ShowUploadSpecimensAction.class, c);
+            }
+
+            @Override
+            public ActionURL getAutoReportListURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.AutoReportListAction.class, c);
+            }
+
+            @Override
+            public ActionURL getShowSearchURL(Container c, boolean showVials)
+            {
+                return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
+            }
+
+            @Override
+            public ActionURL getSpecimenRequestConfigRequiredURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.SpecimenRequestConfigRequiredAction.class, c);
+            }
+
+            @Override
+            public ActionURL getConfigureRequestabilityRulesURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ConfigureRequestabilityRulesAction.class, c);
+            }
+
+            @Override
+            public ActionURL getViewRequestsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
+            {
+                return new ActionURL(SpecimenController2.SpecimenEventsAction.class, c).addReturnURL(returnURL);
+            }
+
+            @Override
+            public ActionURL getManageNotificationsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageNotificationsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageDisplaySettings(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageDisplaySettingsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageRepositorySettingsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageRepositorySettingsAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageDefaultReqsSettingsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageDefaultReqsAction.class, c);
+            }
+
+            @Override
+            public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ShowCreateSpecimenRequestAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getShowAPICreateSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ShowAPICreateSpecimenRequestAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getExtendedSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ExtendedSpecimenRequestAction.class;
+            }
+        });
+     }
 
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
@@ -118,6 +242,7 @@ public class SpecimenModule extends SpringModule
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
+        PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
 
         SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
             new SpecimenSettingsWriter(),

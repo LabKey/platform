@@ -44,10 +44,9 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public FileSystemBatchAuditProvider()
     {
-        return new FileSystemBatchAuditDomainKind();
+        super(new FileSystemBatchAuditDomainKind());
     }
 
     @Override

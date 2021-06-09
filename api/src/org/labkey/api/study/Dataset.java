@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -70,7 +71,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         Assay
                 {
                     @Override
-                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    public @Nullable ExpProtocol resolvePublishSource(Integer publishSourceId)
                     {
                         if (publishSourceId != null)
                             return ExperimentService.get().getExpProtocol(publishSourceId);
@@ -94,7 +95,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         if (publishSourceId != null)
                         {
-                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            ExpProtocol protocol = resolvePublishSource(publishSourceId);
                             if (protocol != null)
                             {
                                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
@@ -112,7 +113,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         if (publishSourceId != null)
                         {
-                            ExpProtocol protocol = (ExpProtocol)resolvePublishSource(publishSourceId);
+                            ExpProtocol protocol = resolvePublishSource(publishSourceId);
                             if (protocol != null)
                             {
                                 AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -124,7 +125,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
                     {
                         // for assays the source lsid is the run
                         ExpRun expRun = ExperimentService.get().getExpRun(sourceLsid);
@@ -133,11 +134,17 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 
                         return null;
                     }
+
+                    @Override
+                    protected String getAuditMessageSourceType()
+                    {
+                        return "assay";
+                    }
                 },
         SampleType
                 {
                     @Override
-                    public @Nullable ExpObject resolvePublishSource(Integer publishSourceId)
+                    public @Nullable ExpSampleType resolvePublishSource(Integer publishSourceId)
                     {
                         return SampleTypeService.get().getSampleType(publishSourceId);
                     }
@@ -156,7 +163,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         if (publishSourceId != null)
                         {
-                            ExpSampleType sampleType = (ExpSampleType)resolvePublishSource(publishSourceId);
+                            ExpSampleType sampleType = resolvePublishSource(publishSourceId);
                             if (sampleType != null)
                             {
                                 ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(sampleType);
@@ -173,14 +180,29 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid)
+                    public @Nullable Container resolveSourceLsidContainer(String sourceLsid, Integer sourceRowId)
                     {
-                        // for sample types the source lsid is the sample type
+                        if (sourceRowId != null)
+                        {
+                            ExpMaterial expMaterial = ExperimentService.get().getExpMaterial(sourceRowId);
+                            if (expMaterial != null)
+                                return expMaterial.getContainer();
+                        }
+
+                        // for sample types the source lsid is the sample type, fall back on this if the source
+                        // rowId (ExpMaterial) is not specified. Generally speaking ExpMaterial is more accurate
+                        // since a sample type may be scoped to a different container than the data is inserted into.
                         ExpSampleType sampleType = SampleTypeService.get().getSampleType(sourceLsid);
                         if (sampleType != null)
                             return sampleType.getContainer();
 
                         return null;
+                    }
+
+                    @Override
+                    protected String getAuditMessageSourceType()
+                    {
+                        return "sample type";
                     }
                 };
 
@@ -188,7 +210,19 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
         public abstract String getLabel(Integer publishSourceId);
         public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
-        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid);
+        public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Integer sourceRowId);
+
+        protected abstract String getAuditMessageSourceType();
+
+        public String getLinkToStudyAuditMessage(ExpObject source, int recordCount)
+        {
+            return recordCount + " row(s) were linked to a study from the " + getAuditMessageSourceType() + ": " + source.getName();
+        }
+
+        public String getRecallFromStudyAuditMessage(String label, int recordCount)
+        {
+            return recordCount + " row(s) were recalled from a study to the " + getAuditMessageSourceType() + ": " + label;
+        }
     }
 
     Set<String> getDefaultFieldNames();

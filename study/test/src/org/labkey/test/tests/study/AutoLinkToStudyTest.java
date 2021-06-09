@@ -58,7 +58,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         log("Creating an assay");
         goToManageAssays();
         _assayHelper.createAssayDesign("General", ASSAY_NAME)
-                .setAutoLinkTarget("(Assay import folder)")
+                .setAutoLinkTarget("(Data import folder)")
                 .clickSave();
 
         log("Importing the Assay run");

@@ -616,7 +616,6 @@ public class PageFlowUtil
         return s;
     }
 
-    private static final Pattern PATTERN = Pattern.compile("\\+");
 
     /**
      * URL Encode string.
@@ -628,14 +627,8 @@ public class PageFlowUtil
     {
         if (null == s)
             return "";
-        try
-        {
-            return PATTERN.matcher(URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET.name())).replaceAll("%20");
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        String enc = URLEncoder.encode(s, StringUtilsLabKey.DEFAULT_CHARSET);
+        return StringUtils.replace(enc, "+", "%20");
     }
 
     public static String encodeURIComponent(String s)
@@ -2115,7 +2108,6 @@ public class PageFlowUtil
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
-        experimental.put(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);

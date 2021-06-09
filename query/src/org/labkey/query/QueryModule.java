@@ -338,7 +338,6 @@ public class QueryModule extends DefaultModule
     {
         return Set.of(
             ModuleReportCache.TestCase.class,
-            MultiValueTest.class,
             OlapController.TestCase.class,
             Query.QueryTestCase.class,
             QueryController.TestCase.class,
@@ -353,6 +352,7 @@ public class QueryModule extends DefaultModule
     public @NotNull List<Factory<Class<?>>> getIntegrationTestFactories()
     {
         List<Factory<Class<?>>> ret = new ArrayList<>(super.getIntegrationTestFactories());
+        ret.add(new JspTestCase("/org/labkey/query/MultiValueTest.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
         ret.add(new JspTestCase("/org/labkey/query/QueryServiceImplTestCase.jsp"));
         return ret;

@@ -341,7 +341,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + pd.getPropertyType().getJavaType().getSimpleName());
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getPropertyType().getJavaType()));
                     }
                 }
                 assert ensure.stop();
@@ -543,7 +543,7 @@ public class OntologyManager
                             }
                             catch (ConversionException e)
                             {
-                                throw new ValidationException("Could not convert value '" + value + "' for field '" + pd.getName() + "'", pd.getName());
+                                throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), pd.getJavaClass()));
                             }
                         }
                     }
@@ -590,7 +590,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        throw new ValidationException("Could not convert '" + value + "' for field " + pd.getName() + ", should be of type " + propertyTypes[i].getJavaType().getSimpleName());
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, pd.getName(), propertyTypes[i].getJavaType()));
                     }
                 }
 
@@ -811,7 +811,7 @@ public class OntologyManager
     }
 
 
-    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, Container c, boolean deleteOwnedObjects)
+    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, @Nullable Container c, boolean deleteOwnedObjects)
     {
         // we have different levels of optimization possible here deleteOwned=true/false, scope=/<>exp
 
@@ -828,15 +828,29 @@ public class OntologyManager
         else
         {
             SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty().getSelectName()).append(" WHERE ObjectId IN\n").append("(SELECT ObjectId FROM ").append(String.valueOf(getTinfoObject())).append("\n").append(" WHERE Container = ? AND ObjectURI IN (");
-            sqlDeleteProperties.add(c.getId());
+            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty().getSelectName())
+                    .append(" WHERE ObjectId IN\n")
+                    .append("(SELECT ObjectId FROM ")
+                    .append(String.valueOf(getTinfoObject())).append("\n")
+                    .append(" WHERE ");
+            if (c != null)
+            {
+                sqlDeleteProperties.append(" Container = ?").add(c.getId());
+                sqlDeleteProperties.append(" AND ");
+            }
+            sqlDeleteProperties.append("ObjectUri IN (");
             sqlDeleteProperties.append(sub);
             sqlDeleteProperties.append("))");
             new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
             SQLFragment sqlDeleteObjects = new SQLFragment();
-            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE Container = ? AND ObjectURI IN (");
-            sqlDeleteObjects.add(c.getId());
+            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE ");
+            if (c != null)
+            {
+                sqlDeleteProperties.append(" Container = ?").add(c.getId());
+                sqlDeleteProperties.append(" AND ");
+            }
+            sqlDeleteObjects.append("ObjectURI IN (");
             sqlDeleteObjects.append(sub);
             sqlDeleteObjects.append(")");
             return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);

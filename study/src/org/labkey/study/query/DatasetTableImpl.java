@@ -103,6 +103,11 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
+    /**
+     * The sample LSID or the assay result LSID column is added to the dataset for assays that support it.
+     * @see AssayTableMetadata#getResultLsidFieldKey()
+     */
+    public static final String SOURCE_ROW_LSID = "SourceRowLsid";
 
     protected static final Logger LOG = LogManager.getLogger(DatasetTableImpl.class);
     protected final @NotNull DatasetDefinition _dsd;

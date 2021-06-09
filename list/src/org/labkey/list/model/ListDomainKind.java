@@ -55,6 +55,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -63,6 +64,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
@@ -259,9 +261,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return Collections.emptySet(); // TODO: Allow this to return the Key Column
     }
 
-    public static Lsid generateDomainURI(String name, Container c, ListDefinition.KeyType keyType)
+    public static Lsid generateDomainURI(String name, Container c, KeyType keyType, @Nullable ListDefinition.Category category)
     {
-        String type = getType(keyType);
+        String type = getType(keyType, category);
         StringBuilder typeURI = getBaseURI(name, type, c);
 
         // 13131: uniqueify the lsid for situations where a preexisting list was renamed
@@ -277,19 +279,22 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     public static Lsid createPropertyURI(String listName, String columnName, Container c, ListDefinition.KeyType keyType)
     {
-        StringBuilder typeURI = getBaseURI(listName, getType(keyType), c);
+        StringBuilder typeURI = getBaseURI(listName, getType(keyType, null), c);
         typeURI.append(".").append(PageFlowUtil.encode(columnName));
         return new Lsid(typeURI.toString());
     }
 
-    private static String getType(ListDefinition.KeyType keyType)
+    private static String getType(KeyType keyType, @Nullable ListDefinition.Category category)
     {
         String type;
         switch (keyType)
         {
             case Integer:
             case AutoIncrementInteger:
-                type = IntegerListDomainKind.NAMESPACE_PREFIX;
+                if (category != null)
+                    type = PicklistDomainKind.NAMESPACE_PREFIX;
+                else
+                    type = IntegerListDomainKind.NAMESPACE_PREFIX;
                 break;
             case Varchar:
                 type = VarcharListDomainKind.NAMESPACE_PREFIX;
@@ -377,10 +382,19 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 throw new ApiUsageException("List keyType provided does not exist.");
         }
 
+        ListDefinition.Category category;
+        try {
+            category = listProperties.getCategory() != null ? ListDefinition.Category.valueOf(listProperties.getCategory()) : null;
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ApiUsageException(String.format("List category type provided (%s) does not exist.", listProperties.getCategory()));
+        }
+
         if (!getSupportedKeyTypes().contains(keyType))
             throw new ApiUsageException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
 
-        ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
+        ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo, category);
         list.setKeyName(keyName);
 
         String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
@@ -598,6 +612,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         updatedListProps.setAllowUpload(newListProps.isAllowUpload());
         updatedListProps.setAllowExport(newListProps.isAllowExport());
         updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
+        updatedListProps.setCategory(newListProps.getCategory());
         updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
         updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());
         updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
@@ -695,4 +710,5 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     {
         var props = getBaseProperties(d);
     }
+
 }
