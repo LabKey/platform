@@ -2850,8 +2850,8 @@ public class SecurityManager
 
             if (!context.getContainer().isRoot())
             {
-                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).target("_blank").clearClasses();
-                message.append(" Add ").append(email.getEmailAddress()).append(" to a Project Group ").append(projectGroupLink).append(".");
+                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
+                message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".");
             }
         }
 
