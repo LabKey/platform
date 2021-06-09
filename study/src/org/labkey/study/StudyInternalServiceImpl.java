@@ -2,9 +2,12 @@ package org.labkey.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
+import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
@@ -50,5 +53,11 @@ public class StudyInternalServiceImpl implements StudyInternalService
     public Integer getLastSpecimenRequest(Study study)
     {
         return ((StudyImpl)study).getLastSpecimenRequest();
+    }
+
+    @Override
+    public SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
+    {
+        return new SpecimenUtils(context).getSpecimenQueryView(showVials, forExport, cachedFilterData, viewMode, cohortFilter);
     }
 }

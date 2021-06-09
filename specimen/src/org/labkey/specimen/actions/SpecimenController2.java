@@ -143,6 +143,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -295,6 +296,11 @@ public class SpecimenController2 extends SpringActionController
         if (first == null)
             return false;
         return first.equals(second);
+    }
+
+    private ActionURL urlFor(Class<? extends Controller> action)
+    {
+        return new ActionURL(action, getContainer());
     }
 
     public boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)

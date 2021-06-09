@@ -79,6 +79,7 @@ import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -98,7 +99,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SecurityType;
@@ -359,13 +359,13 @@ public class SpecimenController extends BaseStudyController
             _vialView = form.isShowVials();
             Set<String> lsids = getSelectionLsids();
             SpecimenQueryView view;
-            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), SpecimenQueryView.ViewType.SUMMARY.getQueryName());
+            CohortFilter cohortFilter = CohortService.get().getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), SpecimenQueryView.ViewType.SUMMARY.getQueryName());
             if (lsids != null)
             {
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), cohortFilter);
+                view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), cohortFilter);
             }
             else
-                view = getUtils().getSpecimenQueryView(form.isShowVials(), forExport, form.getViewModeEnum(), cohortFilter);
+                view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), form.isShowVials(), forExport, null, form.getViewModeEnum(), cohortFilter);
             view.setAllowExportExternalQuery(false);
             return view;
         }
@@ -408,8 +408,8 @@ public class SpecimenController extends BaseStudyController
             Study study = getStudyThrowIfNull();
 
             _vialView = form.isShowVials();
-            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), _vialView ? "SpecimenDetail" : "SpecimenSummary");
-            SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.getViewModeEnum(), cohortFilter);
+            CohortFilter cohortFilter = CohortService.get().getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), _vialView ? "SpecimenDetail" : "SpecimenSummary");
+            SpecimenQueryView view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), _vialView, forExport, null, form.getViewModeEnum(), cohortFilter);
             if (SpecimenUtils.isCommentsMode(getContainer(), form.getViewModeEnum()))
                 view.setRestrictRecordSelectors(false);
             return view;

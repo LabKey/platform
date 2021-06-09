@@ -139,11 +139,6 @@ public class SpecimenUtils
         return SpecimenController.getStudyThrowIfNull(getContainer());
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
-    {
-        return getSpecimenQueryView(showVials, forExport, null, viewMode, cohortFilter);
-    }
-
     private ActionURL urlFor(Class<? extends Controller> action)
     {
         return new ActionURL(action, getContainer());
