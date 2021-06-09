@@ -45,4 +45,10 @@ public class StudyInternalServiceImpl implements StudyInternalService
     {
         ((StudyImpl)study).setLastSpecimenRequest(lastSpecimenRequest);
     }
+
+    @Override
+    public Integer getLastSpecimenRequest(Study study)
+    {
+        return ((StudyImpl)study).getLastSpecimenRequest();
+    }
 }

@@ -48,6 +48,7 @@ import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.IdTypes;
+import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -216,7 +217,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.replaceParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                endCommentsURL.replaceParameter(SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 requestMenuButton.addMenuItem("Enable Request Mode", endCommentsURL);
             }
 
@@ -245,7 +246,7 @@ public class SpecimenUtils
                 clearItem.setId("Comments:Clear");
 
                 ActionURL endCommentsURL = getViewContext().getActionURL().clone();
-                endCommentsURL.replaceParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
+                endCommentsURL.replaceParameter(SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.REQUESTS.name());
                 NavTree exitItem = commentsMenuButton.addMenuItem("Exit Comments " + (manualQCEnabled ? "and QC " : "") + "mode", endCommentsURL);
                 exitItem.setId("Comments:Exit");
 
@@ -288,7 +289,7 @@ public class SpecimenUtils
             else
             {
                 ActionURL enableCommentsURL = getViewContext().getActionURL().clone();
-                enableCommentsURL.replaceParameter(SpecimenController.SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
+                enableCommentsURL.replaceParameter(SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name());
                 ActionButton commentsButton = new ActionButton("Enable Comments" + (manualQCEnabled ? "/QC" : ""), enableCommentsURL);
                 buttons.add(commentsButton);
             }

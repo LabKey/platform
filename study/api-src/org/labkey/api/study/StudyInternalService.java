@@ -42,4 +42,6 @@ public interface StudyInternalService
     void sendNewRequestNotifications(ViewContext context, SpecimenRequest request, BindException errors) throws Exception;
 
     void setLastSpecimenRequest(Study study, Integer lastSpecimenRequest);
+
+    Integer getLastSpecimenRequest(Study study);
 }

@@ -297,6 +297,12 @@ public class SpecimenController2 extends SpringActionController
         return first.equals(second);
     }
 
+    public boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
+    {
+        return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
+                (selectedMode == SpecimenQueryView.Mode.DEFAULT && SettingsManager.get().getDisplaySettings(container).isDefaultToCommentsMode());
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class OverviewAction extends SimpleViewAction
     {

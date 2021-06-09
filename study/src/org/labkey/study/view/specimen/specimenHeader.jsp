@@ -17,14 +17,14 @@
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
+<%@ page import="org.labkey.api.specimen.actions.SpecimenHeaderBean"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.study.StudyUrls"%>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenHeaderBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
