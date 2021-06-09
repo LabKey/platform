@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.query.QueryUpdateService;
@@ -43,6 +44,9 @@ import java.util.Map;
  */
 public interface FileContentService
 {
+    String UPLOADED_FILE_NAMESPACE_PREFIX = "UploadedFile";
+    DataType UPLOADED_FILE = new DataType(UPLOADED_FILE_NAMESPACE_PREFIX);
+
     String FILES_LINK = "@files";
     String FILE_SETS_LINK = "@filesets";
     String PIPELINE_LINK = "@pipeline";
