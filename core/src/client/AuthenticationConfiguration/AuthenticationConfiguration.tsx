@@ -106,14 +106,13 @@ export class App extends PureComponent<{}, Partial<State>> {
             return;
         }
         const globalSettingsDirtinessData = this.state.dirtinessData.globalSettings;
-        const newState = { ...this.state.globalSettings, [id]: value };
         const defaultDomainValidity = id === 'DefaultDomain' && !value.includes('@') ? '' : this.state.error;
 
         this.setState(prevState => ({
             ...prevState,
             error: defaultDomainValidity,
-            globalSettings: { ...newState },
-            dirty: !isEquivalent(newState, globalSettingsDirtinessData),
+            globalSettings: { ...prevState.globalSettings, [id]: value },
+            dirty: !isEquivalent({ ...prevState.globalSettings, [id]: value }, globalSettingsDirtinessData),
         }));
     };
 
