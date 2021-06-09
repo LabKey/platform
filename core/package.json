@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.5.0",
-    "@labkey/components": "2.41.1",
+    "@labkey/components": "2.44.0-applicationMenuUpdate.3",
     "@labkey/eslint-config-react": "0.0.8",
     "@labkey/themes": "1.2.0"
   },
