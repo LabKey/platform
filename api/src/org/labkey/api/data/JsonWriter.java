@@ -286,14 +286,16 @@ public class JsonWriter
         if (null != cinfo)
         {
             // CONSIDER: Is it better to serialize flat or nested as in the TableInfo.xsd document?
-            if (StringUtils.isNoneBlank(cinfo.getSourceOntology()))
-                props.put("sourceOntology", cinfo.getSourceOntology());
-            if (StringUtils.isNoneBlank(cinfo.getConceptImportColumn()))
-                props.put("conceptImportColumn", cinfo.getConceptImportColumn());
-            if (StringUtils.isNoneBlank(cinfo.getConceptLabelColumn()))
-                props.put("conceptLabelColumn", cinfo.getConceptLabelColumn());
             if (StringUtils.isNotBlank(cinfo.getPrincipalConceptCode()))
                 props.put("principalConceptCode", cinfo.getPrincipalConceptCode());
+            if (StringUtils.isNotBlank(cinfo.getSourceOntology()))
+                props.put("sourceOntology", cinfo.getSourceOntology());
+            if (StringUtils.isNotBlank(cinfo.getConceptSubtree()))
+                props.put("conceptSubtree", cinfo.getConceptSubtree());
+            if (StringUtils.isNotBlank(cinfo.getConceptImportColumn()))
+                props.put("conceptImportColumn", cinfo.getConceptImportColumn());
+            if (StringUtils.isNotBlank(cinfo.getConceptLabelColumn()))
+                props.put("conceptLabelColumn", cinfo.getConceptLabelColumn());
         }
 
         return props;

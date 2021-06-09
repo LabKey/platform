@@ -197,7 +197,7 @@ public class ParameterMapStatement implements AutoCloseable
         _exceptionFramework = f;
     }
 
-    
+
     private void init(PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
     {
         _dialect = _scope.getSqlDialect();
@@ -291,7 +291,7 @@ public class ParameterMapStatement implements AutoCloseable
     }
 
 
-    public boolean execute()
+    public int execute()
     {
         prepareParametersBeforeExecute();
 
@@ -305,6 +305,7 @@ public class ParameterMapStatement implements AutoCloseable
                 rs = _dialect.executeWithResults(_stmt);
             else
                 _stmt.execute();
+            int rowcount = _stmt.getUpdateCount();
 
             Integer firstInt = null, secondInt = null;
 
@@ -342,6 +343,8 @@ public class ParameterMapStatement implements AutoCloseable
 
             if (_selectRowId)
                 _rowId = firstInt;
+
+            return rowcount;
         }
         catch (SQLException x)
         {
@@ -351,8 +354,6 @@ public class ParameterMapStatement implements AutoCloseable
         {
             ResultSetUtil.close(rs);
         }
-
-        return true;
     }
 
 

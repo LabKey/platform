@@ -22,6 +22,7 @@ export interface AppContext {
     subscribeCollapse: (listener: CollapseChangeListener) => void;
     unsubscribeCollapse: () => void;
     onOpen: () => void;
+    columnName?: string;
 }
 
 interface Props {
@@ -42,6 +43,7 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         subscribeCollapse,
         unsubscribeCollapse,
         onOpen,
+        columnName = 'Concepts'
     } = props.context;
     const [filterValue, setFilterValue] = useState(initFilterValue);
     const [filter, setFilter] = useState(initFilter);
@@ -89,7 +91,7 @@ export const ConceptFilterView: FC<Props> = memo(props => {
     return (
         <div className={classNames('concept-filter-view', { collapsed, })}>
             <a className='show-toggle'
-               onClick={clickHandler}>{collapsed ? 'Find Concepts By Tree' : 'Close Browser'}</a>
+               onClick={clickHandler}>{collapsed ? `Find ${columnName} By Tree` : 'Close Browser'}</a>
             {!collapsed &&
             <OntologyBrowserFilterPanel ontologyId={ontologyId} filterValue={filterValue} filterType={filter}
                                         onFilterChange={onFilterChange}/>}
