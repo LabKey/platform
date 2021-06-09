@@ -740,11 +740,11 @@ public class StatementDataIterator extends AbstractDataIterator
             }
 
             @Override
-            public boolean execute()
+            public int execute()
             {
                 if (0 == _errorWhen.getAndDecrement())
                     throw new RuntimeSQLException(new SQLException("boom"));
-                return true;
+                return 1;
             }
 
             @Override

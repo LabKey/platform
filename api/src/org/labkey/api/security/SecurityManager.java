@@ -2847,6 +2847,12 @@ public class SecurityManager
         {
             LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
             message.append(" Click ").append(link).append(" to see the email.");
+
+            if (!context.getContainer().isRoot())
+            {
+                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
+                message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".");
+            }
         }
 
         return message.getHtmlString();

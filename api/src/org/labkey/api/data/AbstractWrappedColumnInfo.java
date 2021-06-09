@@ -758,6 +758,42 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public boolean isConceptColumn()
+    {
+        return delegate.isConceptColumn();
+    }
+
+    @Override
+    public String getSourceOntology()
+    {
+        return delegate.getSourceOntology();
+    }
+
+    @Override
+    public String getConceptSubtree()
+    {
+        return delegate.getConceptSubtree();
+    }
+
+    @Override
+    public String getConceptImportColumn()
+    {
+        return delegate.getConceptImportColumn();
+    }
+
+    @Override
+    public String getConceptLabelColumn()
+    {
+        return delegate.getConceptLabelColumn();
+    }
+
+    @Override
+    public String getDerivationDataScope()
+    {
+        return delegate.getDerivationDataScope();
+    }
+
+    @Override
     public String toString()
     {
         return ColumnInfo.toString(this);
