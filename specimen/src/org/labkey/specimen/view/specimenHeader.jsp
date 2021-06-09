@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.SpecimensAction" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!

@@ -41,7 +41,6 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchemaAction;
-import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -177,7 +176,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getSpecimensURL(Container c)
         {
-            return SpecimenController.getSpecimensURL(c);
+            return SpecimenMigrationService.get().getSpecimensURL(c);
         }
 
         @Override
@@ -246,7 +245,7 @@ public class SpecimenController extends BaseStudyController
         @Override
         public ActionURL getRedirectURL(Object o)
         {
-            return getSpecimensURL();
+            return SpecimenMigrationService.get().getSpecimensURL(getContainer());
         }
     }
 
@@ -290,7 +289,7 @@ public class SpecimenController extends BaseStudyController
         boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
         if (!newFilter && !cachedFilter)
         {
-            throw new RedirectException(getSpecimensURL());
+            throw new RedirectException(SpecimenMigrationService.get().getSpecimensURL(getContainer()));
         }
 
         if (newFilter)
@@ -338,7 +337,7 @@ public class SpecimenController extends BaseStudyController
                 }
             }
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
-            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/specimenHeader.jsp",
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/specimen/view/specimenHeader.jsp",
                     new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
             return new VBox(header, view);
         }
@@ -375,66 +374,6 @@ public class SpecimenController extends BaseStudyController
         {
             _addNavTrail(root);
             root.addChild(_vialView ? "Selected Vials" : "Selected Specimens");
-        }
-    }
-
-
-    private ActionURL getSpecimensURL()
-    {
-        return getSpecimensURL(getContainer());
-    }
-
-
-    public static ActionURL getSpecimensURL(Container c)
-    {
-        return new ActionURL(SpecimensAction.class, c);
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    @ActionNames("specimens,samples")
-    public class SpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
-    {
-        private boolean _vialView;
-
-        public SpecimensAction()
-        {
-            super(SpecimenViewTypeForm.class);
-        }
-
-        @Override
-        protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
-        {
-            Study study = getStudyThrowIfNull();
-
-            _vialView = form.isShowVials();
-            CohortFilter cohortFilter = CohortService.get().getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), _vialView ? "SpecimenDetail" : "SpecimenSummary");
-            SpecimenQueryView view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), _vialView, forExport, null, form.getViewModeEnum(), cohortFilter);
-            if (SpecimenUtils.isCommentsMode(getContainer(), form.getViewModeEnum()))
-                view.setRestrictRecordSelectors(false);
-            return view;
-        }
-
-        @Override
-        protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
-        {
-            Study study = getStudyRedirectIfNull();
-
-            SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
-            SpecimenHeaderBean bean = new SpecimenHeaderBean(getViewContext(), view);
-            // Get last selected request
-            Integer lastSpecimenRequest = StudyInternalService.get().getLastSpecimenRequest(study);
-            if (null != lastSpecimenRequest)
-                bean.setSelectedRequest(lastSpecimenRequest);
-            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/study/view/specimen/specimenHeader.jsp", bean);
-            return new VBox(header, view);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBaseSpecimenNavTrail(root);
-            root.addChild(_vialView ? "Vials" : "Grouped Vials");
         }
     }
 

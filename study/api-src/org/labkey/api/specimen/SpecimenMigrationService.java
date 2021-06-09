@@ -33,6 +33,8 @@ public interface SpecimenMigrationService
     ActionURL getOverviewURL(Container c);
     ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
     ActionURL getShowSearchURL(Container c, boolean showVials);
+    ActionURL getSpecimensURL(Container c);
+    ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
     ActionURL getSpecimenRequestConfigRequiredURL(Container c);
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);

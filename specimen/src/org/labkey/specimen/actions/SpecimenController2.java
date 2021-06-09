@@ -9,8 +9,10 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
@@ -47,6 +49,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -69,6 +72,8 @@ import org.labkey.api.specimen.actions.ManageRequestBean;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
 import org.labkey.api.specimen.actions.SpecimenEventBean;
+import org.labkey.api.specimen.actions.SpecimenHeaderBean;
+import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
@@ -99,6 +104,7 @@ import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.view.NotificationBean;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.specimen.view.SpecimenWebPart;
+import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenUrls;
@@ -106,6 +112,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -307,6 +314,16 @@ public class SpecimenController2 extends SpringActionController
     {
         return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SettingsManager.get().getDisplaySettings(container).isDefaultToCommentsMode());
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class BeginAction extends SimpleRedirectAction
+    {
+        @Override
+        public ActionURL getRedirectURL(Object o)
+        {
+            return getSpecimensURL();
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -3859,6 +3876,64 @@ public class SpecimenController2 extends SpringActionController
         public ActionURL getSuccessURL(IdForm form)
         {
             return new ActionURL(ViewRequestsAction.class, getContainer());
+        }
+    }
+
+    private ActionURL getSpecimensURL()
+    {
+        return getSpecimensURL(getContainer());
+    }
+
+
+    public static ActionURL getSpecimensURL(Container c)
+    {
+        return new ActionURL(SpecimensAction.class, c);
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @ActionNames("specimens,samples")
+    public class SpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
+    {
+        private boolean _vialView;
+
+        public SpecimensAction()
+        {
+            super(SpecimenViewTypeForm.class);
+        }
+
+        @Override
+        protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
+        {
+            Study study = getStudyThrowIfNull();
+
+            _vialView = form.isShowVials();
+            CohortFilter cohortFilter = CohortService.get().getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), _vialView ? "SpecimenDetail" : "SpecimenSummary");
+            SpecimenQueryView view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), _vialView, forExport, null, form.getViewModeEnum(), cohortFilter);
+            if (isCommentsMode(getContainer(), form.getViewModeEnum()))
+                view.setRestrictRecordSelectors(false);
+            return view;
+        }
+
+        @Override
+        protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
+        {
+            Study study = getStudyRedirectIfNull();
+
+            SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
+            SpecimenHeaderBean bean = new SpecimenHeaderBean(getViewContext(), view);
+            // Get last selected request
+            Integer lastSpecimenRequest = StudyInternalService.get().getLastSpecimenRequest(study);
+            if (null != lastSpecimenRequest)
+                bean.setSelectedRequest(lastSpecimenRequest);
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/specimen/view/specimenHeader.jsp", bean);
+            return new VBox(header, view);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addBaseSpecimenNavTrail(root);
+            root.addChild(_vialView ? "Vials" : "Grouped Vials");
         }
     }
 }

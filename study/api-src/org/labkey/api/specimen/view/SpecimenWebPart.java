@@ -35,7 +35,7 @@ public class SpecimenWebPart extends JspView<SpecimenWebPart.SpecimenWebPartBean
 
     public SpecimenWebPart(boolean wide, Study study)
     {
-        super("/org/labkey/study/view/specimen/webPart.jsp", new SpecimenWebPartBean(wide,
+        super("/org/labkey/specimen/view/webPart.jsp", new SpecimenWebPartBean(wide,
                 (null != study) && SettingsManager.get().getRepositorySettings(study.getContainer()).isSpecimenDataEditable()));
         setTitle("Specimens");
     }
