@@ -6,7 +6,7 @@
     "build": "npm run build-dev",
     "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
     "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
-    "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/views/authenticationConfiguration.* && rimraf resources/views/components.*",
+    "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/views/authenticationConfiguration.* && rimraf resources/views/components.* && rimraf resources/web/gen",
     "copy-distributions": "npm run clean && node copy-distributions.js",
     "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
@@ -57,7 +57,7 @@
     "@labkey/themes": "1.2.0"
   },
   "devDependencies": {
-    "@labkey/build": "3.1.0",
+    "@labkey/build": "4.0.0-fb-output-web-gen.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.8",
     "@types/enzyme-adapter-react-16": "1.0.6",
