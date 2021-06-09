@@ -2804,12 +2804,6 @@ public class SecurityManager
             {
                 message.append(email.getEmailAddress()).append(" added as a new user to the system and emailed successfully.");
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Verification email was sent successfully.");
-
-                if (!context.getContainer().isRoot())
-                {
-                    LinkBuilder link = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).target("_blank").clearClasses();
-                    message.append(" Add ").append(email.getEmailAddress()).append(" to a Project Group ").append(link).append(".");
-                }
             }
             else
             {
@@ -2853,6 +2847,12 @@ public class SecurityManager
         {
             LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
             message.append(" Click ").append(link).append(" to see the email.");
+
+            if (!context.getContainer().isRoot())
+            {
+                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).target("_blank").clearClasses();
+                message.append(" Add ").append(email.getEmailAddress()).append(" to a Project Group ").append(projectGroupLink).append(".");
+            }
         }
 
         return message.getHtmlString();
