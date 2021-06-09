@@ -58,7 +58,6 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -3811,7 +3810,7 @@ public class SpecimenController2 extends SpringActionController
         @Override
         public ActionURL getSuccessURL(IdForm idForm)
         {
-            return SpecimenMigrationService.get().getManageRequestURL(getContainer(), idForm.getId(), null).addParameter("submissionResult", true);
+            return getManageRequestURL(idForm.getId(), null).addParameter("submissionResult", true);
         }
     }
 

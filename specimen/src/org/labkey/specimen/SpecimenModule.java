@@ -219,6 +219,18 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
+            public ActionURL getManageStatusesURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);
+            }
+
+            @Override
+            public ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl)
+            {
+                return SpecimenController2.getManageRequestURL(c, requestId, returnUrl);
+            }
+
+            @Override
             public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
             {
                 return SpecimenController2.ShowCreateSpecimenRequestAction.class;
@@ -273,15 +285,9 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getManageStatusesURL(Container c)
+            public Class<? extends Controller> getSubmitRequestActionClass()
             {
-                return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);
-            }
-
-            @Override
-            public ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl)
-            {
-                return SpecimenController2.getManageRequestURL(c, requestId, returnUrl);
+                return SpecimenController2.SubmitRequestAction.class;
             }
         });
      }
