@@ -78,6 +78,7 @@ import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -85,6 +86,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 
 public abstract class UploadSamplesHelper
 {
@@ -762,6 +765,7 @@ public abstract class UploadSamplesHelper
         final Container _container;
         final int _batchSize;
         boolean first = true;
+        Map<String, String> importAliasMap = null;
 
         String generatedName = null;
         String generatedLsid = null;
@@ -772,6 +776,14 @@ public abstract class UploadSamplesHelper
         {
             super(source, context);
             this.sampletype = sampletype;
+            try
+            {
+                this.importAliasMap = sampletype.getImportAliasMap();
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
             nameGen = sampletype.getNameGenerator();
             nameState = nameGen.createState(true);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
@@ -827,7 +839,16 @@ public abstract class UploadSamplesHelper
                     generatedName = aliquotName;
                 }
                 else
-                    generatedName = nameGen.generateName(nameState, map);
+                {
+                    Supplier<Map<String, Object>> extraPropsFn = () -> {
+                        if (importAliasMap != null)
+                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
+                        else
+                            return Collections.emptyMap();
+                    };
+
+                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn);
+                }
                 generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
             }
             catch (NameGenerator.DuplicateNameException dup)
@@ -838,11 +859,11 @@ public abstract class UploadSamplesHelper
             {
                 // Failed to generate a name due to some part of the expression not in the row
                 if (sampletype.hasNameExpression())
-                    addRowError("Failed to generate name for Sample on row " + e.getRowNumber());
+                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (sampletype.hasNameAsIdCol())
-                    addRowError("Name is required for Sample on row " + e.getRowNumber());
+                    addRowError("Name is required for sample on row " + e.getRowNumber());
                 else
-                    addRowError("All id columns are required for Sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
             }
         }
 
