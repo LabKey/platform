@@ -19,6 +19,7 @@ package org.labkey.query.view;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.query.persist.CstmView;
@@ -34,18 +35,20 @@ public class CustomViewSetKey implements Serializable
 {
     static private final String KEY = CustomViewSetKey.class.getName();
 
-    private String _containerId;
-    private String _queryName;
+    private final String _containerId;
+    private final String _queryName;
+    private final SchemaKey _schema;
 
     public CustomViewSetKey(QueryDefinition queryDef)
     {
-        this(queryDef.getContainer(), queryDef.getName());
+        this(queryDef.getContainer(), queryDef.getName(), queryDef.getSchemaPath());
     }
 
-    public CustomViewSetKey(Container c, String queryName)
+    public CustomViewSetKey(@NotNull Container c, @NotNull String queryName, @NotNull SchemaKey schema)
     {
         _containerId = c.getId();
         _queryName = queryName;
+        _schema = schema;
     }
 
     public boolean equals(Object other)
@@ -54,18 +57,20 @@ public class CustomViewSetKey implements Serializable
             return false;
         CustomViewSetKey that = (CustomViewSetKey) other;
         return Objects.equals(_containerId, that._containerId) &&
-                Objects.equals(_queryName, that._queryName);
+                Objects.equals(_queryName, that._queryName) &&
+                Objects.equals(_schema, that._schema);
     }
 
     public int hashCode()
     {
         return Objects.hashCode(_containerId) ^
-                Objects.hashCode(_queryName);
+                Objects.hashCode(_queryName) ^
+                Objects.hashCode(_schema);
     }
 
     static private Map<CustomViewSetKey, Map<String, CstmView>> getMap(@NotNull HttpServletRequest request)
     {
-        return (Map<CustomViewSetKey, Map<String, CstmView>>)SessionHelper.getAttribute(request, KEY, null);
+        return SessionHelper.getAttribute(request, KEY, null);
     }
 
     static private void setMap(HttpServletRequest request, Map<CustomViewSetKey, Map<String, CstmView>> map)
@@ -75,15 +80,15 @@ public class CustomViewSetKey implements Serializable
 
     static public Map<String, CstmView> getCustomViewsFromSession(@NotNull HttpServletRequest request, QueryDefinition queryDef)
     {
-        return getCustomViewsFromSession(request, queryDef.getContainer(), queryDef.getName());
+        return getCustomViewsFromSession(request, queryDef.getContainer(), queryDef.getName(), queryDef.getSchemaPath());
     }
 
-    static public Map<String, CstmView> getCustomViewsFromSession(@NotNull HttpServletRequest request, Container c, String queryName)
+    static public Map<String, CstmView> getCustomViewsFromSession(@NotNull HttpServletRequest request, Container c, String queryName, SchemaKey schema)
     {
         Map<CustomViewSetKey, Map<String, CstmView>> fullMap = getMap(request);
         if (fullMap == null)
             return Collections.emptyMap();
-        Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(c, queryName));
+        Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(c, queryName, schema));
         if (map == null)
         {
             return Collections.emptyMap();
@@ -112,12 +117,7 @@ public class CustomViewSetKey implements Serializable
             fullMap = new HashMap<>();
         }
 
-        Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(queryDef));
-        if (map == null)
-        {
-            map = new HashMap<>();
-            fullMap.put(new CustomViewSetKey(queryDef), map);
-        }
+        Map<String, CstmView> map = fullMap.computeIfAbsent(new CustomViewSetKey(queryDef), k -> new HashMap<>());
         map.put(view.getName(), view);
         setMap(request, fullMap);
         
