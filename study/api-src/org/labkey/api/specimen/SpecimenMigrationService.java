@@ -48,4 +48,6 @@ public interface SpecimenMigrationService
     Class<? extends Controller> getManageRequestActionClass();
     Class<? extends Controller> getClearCommentsActionClass();
     Class<? extends Controller> getUpdateCommentsActionClass();
+    Class<? extends Controller> getDeleteRequestActionClass();
+    Class<? extends Controller> getSubmitRequestActionClass();
 }

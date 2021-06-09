@@ -35,7 +35,6 @@ import org.labkey.api.specimen.query.BaseSpecimenQueryView;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
@@ -43,7 +42,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.actions.SpecimenController2.DeleteRequestAction;
 import org.labkey.specimen.actions.SpecimenController2.ManageRequestAction;
+import org.labkey.specimen.actions.SpecimenController2.SubmitRequestAction;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -125,8 +126,8 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
 
                     if (statusId.intValue() == _shoppingCartStatusRowId.intValue() && canEdit)
                     {
-                        ActionURL submitUrl = PageFlowUtil.urlProvider(SpecimenUrls.class).getSubmitRequestURL(ctx.getContainer(), "${requestId}");
-                        ActionURL cancelUrl = PageFlowUtil.urlProvider(SpecimenUrls.class).getDeleteRequestURL(ctx.getContainer(), "${requestId}");
+                        ActionURL submitUrl = new ActionURL(SubmitRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
+                        ActionURL cancelUrl = new ActionURL(DeleteRequestAction.class, ctx.getContainer()).addParameter("id", "${requestId}");;
 
                         content.append(PageFlowUtil.button("Submit").href(submitUrl).usePost(StudyUtils.SUBMISSION_WARNING));
                         content.append(PageFlowUtil.button("Cancel").href(cancelUrl).usePost(StudyUtils.CANCELLATION_WARNING));

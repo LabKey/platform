@@ -267,6 +267,12 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
+            public Class<? extends Controller> getDeleteRequestActionClass()
+            {
+                return SpecimenController2.DeleteRequestAction.class;
+            }
+
+            @Override
             public ActionURL getManageStatusesURL(Container c)
             {
                 return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);

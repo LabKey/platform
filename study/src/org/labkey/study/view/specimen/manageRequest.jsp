@@ -44,12 +44,10 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CreateChildStudyAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.RequestHistoryAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SubmitRequestAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -329,8 +327,8 @@
 %>
                 Request processing will begin after the request has been submitted.<br><br>
                 <%= button("Submit Request")
-                        .href(urlFor(SubmitRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId()))
-                        .onClick("return LABKEY.Utils.confirmAndPost('" + StudyUtils.SUBMISSION_WARNING + "', '" + h(urlFor(SubmitRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
+                        .href(urlFor(SpecimenMigrationService.get().getSubmitRequestActionClass()).addParameter("id", bean.getSpecimenRequest().getRowId()))
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + StudyUtils.SUBMISSION_WARNING + "', '" + h(urlFor(SpecimenMigrationService.get().getSubmitRequestActionClass()).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
 <%
             }
             else
@@ -349,7 +347,7 @@
             }
 %>
                 <%= button("Cancel Request")
-                        .onClick("return LABKEY.Utils.confirmAndPost('" + StudyUtils.CANCELLATION_WARNING + "', '" + h(urlFor(DeleteRequestAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
+                        .onClick("return LABKEY.Utils.confirmAndPost('" + StudyUtils.CANCELLATION_WARNING + "', '" + h(urlFor(SpecimenMigrationService.get().getDeleteRequestActionClass()).addParameter("id", bean.getSpecimenRequest().getRowId())) + "')") %>
 <%
             if (bean.getReturnUrl() != null)
             {

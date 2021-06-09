@@ -53,11 +53,9 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput;
-import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -72,11 +70,9 @@ import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageNewRequestFormPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.CohortFilter;
-import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -114,7 +110,6 @@ import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -194,12 +189,6 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getSelectedSpecimensURL(Container c, boolean showVials)
-        {
-            return new ActionURL(SelectedSpecimensAction.class, c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, showVials);
-        }
-
-        @Override
         public ActionURL getCommentURL(Container c, String globalUniqueId)
         {
             return getSpecimensURL(c)
@@ -244,18 +233,6 @@ public class SpecimenController extends BaseStudyController
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
             return url;
-        }
-
-        @Override
-        public ActionURL getSubmitRequestURL(Container c, String id)
-        {
-            return new ActionURL(SubmitRequestAction.class, c).addParameter("id", "${requestId}");
-        }
-
-        @Override
-        public ActionURL getDeleteRequestURL(Container c, String id)
-        {
-            return new ActionURL(DeleteRequestAction.class, c).addParameter("id", "${requestId}");
         }
 
         @Override
@@ -1079,106 +1056,6 @@ public class SpecimenController extends BaseStudyController
         public void setEmailInactiveUsers(boolean emailInactiveUsers)
         {
             _emailInactiveUsers = emailInactiveUsers;
-        }
-    }
-
-    @RequiresPermission(RequestSpecimensPermission.class)
-    public class SubmitRequestAction extends FormHandlerAction<IdForm>
-    {
-        @Override
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(IdForm form, BindException errors) throws Exception
-        {
-            if (!SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
-                throw new UnauthorizedException();
-
-            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
-            requiresEditRequestPermissions(request);
-            List<Vial> vials = request.getVials();
-            if (!vials.isEmpty() || SpecimenService.get().getRequestCustomizer().allowEmptyRequests())
-            {
-                SpecimenRequestStatus newStatus = SpecimenRequestManager.get().getInitialRequestStatus(getContainer(), getUser(), true);
-                request = request.createMutable();
-                request.setStatusId(newStatus.getRowId());
-                try
-                {
-                    SpecimenRequestManager.get().updateRequest(getUser(), request);
-                    SpecimenRequestManager.get().createRequestEvent(getUser(), request,
-                            RequestEventType.REQUEST_STATUS_CHANGED, "Request submitted for processing.", null);
-                    if (SettingsManager.get().isSpecimenShoppingCartEnabled(getContainer()))
-                    {
-                        try
-                        {
-                            getUtils().sendNewRequestNotifications(request, errors);
-                        }
-                        catch (ConfigurationException e)
-                        {
-                            errors.reject(ERROR_MSG, e.getMessage());
-                        }
-                    }
-                }
-                catch (RequestabilityManager.InvalidRuleException e)
-                {
-                    errors.reject(ERROR_MSG, "The request could not be submitted because a requestability rule is configured incorrectly. " +
-                                "Please report this problem to an administrator. Error details: "  + e.getMessage());
-                }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-            }
-            else
-            {
-                errors.addError(new ObjectError("Specimen Request", new String[] {"NullError"}, null, "Only requests containing specimens can be submitted."));
-            }
-
-            return !errors.hasErrors();
-        }
-
-        @Override
-        public ActionURL getSuccessURL(IdForm idForm)
-        {
-            return SpecimenMigrationService.get().getManageRequestURL(getContainer(), idForm.getId(), null).addParameter("submissionResult", true);
-        }
-    }
-
-    @RequiresPermission(RequestSpecimensPermission.class)
-    public class DeleteRequestAction extends FormHandlerAction<IdForm>
-    {
-        @Override
-        public void validateCommand(IdForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(IdForm form, BindException errors) throws Exception
-        {
-            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
-            requiresEditRequestPermissions(request);
-            SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(getContainer(), getUser());
-            if (request.getStatusId() != cartStatus.getRowId())
-                throw new UnauthorizedException();
-
-            try
-            {
-                SpecimenRequestManager.get().deleteRequest(getUser(), request);
-            }
-            catch (RequestabilityManager.InvalidRuleException e)
-            {
-                errors.reject(ERROR_MSG, "The request could not be canceled because a requestability rule is configured incorrectly. " +
-                        "Please report this problem to an administrator. Error details: "  + e.getMessage());
-            }
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(IdForm form)
-        {
-            return SpecimenMigrationService.get().getViewRequestsURL(getContainer());
         }
     }
 
