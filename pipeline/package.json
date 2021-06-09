@@ -17,7 +17,7 @@
     "@labkey/components": "2.41.1"
   },
   "devDependencies": {
-    "@labkey/build": "4.0.0-fb-output-web-gen.0",
+    "@labkey/build": "4.0.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@labkey/eslint-config-react": "0.0.8"
   }

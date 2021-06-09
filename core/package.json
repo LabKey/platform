@@ -57,7 +57,7 @@
     "@labkey/themes": "1.2.0"
   },
   "devDependencies": {
-    "@labkey/build": "4.0.0-fb-output-web-gen.0",
+    "@labkey/build": "4.0.0",
     "@labkey/eslint-config-base": "0.0.8",
     "@types/enzyme": "3.10.8",
     "@types/enzyme-adapter-react-16": "1.0.6",
