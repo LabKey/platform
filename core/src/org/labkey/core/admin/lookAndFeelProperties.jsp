@@ -333,7 +333,6 @@
 </labkey:form>
 <script type="text/javascript">
     var _form = new LABKEY.Form({ formElement: 'form-preferences'});
-    var _showAppMenuWarning = false;
 
     function confirmReset()
     {
@@ -345,11 +344,5 @@
         }
         else
             return false;
-    }
-
-    function setShowAppMenuWarning(show)
-    {
-        console.log("setting to ", show);
-        _showAppMenuWarning = show;
     }
 </script>
