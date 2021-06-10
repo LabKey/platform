@@ -1485,7 +1485,13 @@ Ext4.define('File.panel.Browser', {
                 expanded : true,
                 cls : 'fileset-root-node', // for selenium testing
                 icon : LABKEY.contextPath + '/_images/labkey.png'
-            }
+            },
+            sorters: [{
+                sorterFn: function (o1, o2) {
+                    // Issue 43342 - do a case-insensitive sort
+                    return o1.get('name').localeCompare(o2.get('name'), undefined, { sensitivity: 'base' });
+                }
+            }]
         });
     },
 
@@ -1563,7 +1569,6 @@ Ext4.define('File.panel.Browser', {
         var store = Ext4.create('Ext.data.TreeStore', this.getFolderTreeStoreCfg({
             listeners: listeners
         }));
-        store.sort('name', 'ASC');
 
         var options = Ext4.apply({}, this.folderTreeOptions, {
             hidden: false,
@@ -2948,8 +2953,8 @@ Ext4.define('File.panel.Browser', {
         var tp = Ext4.create('Ext.tree.Panel', {
             store: Ext4.create('Ext.data.TreeStore', this.getFolderTreeStoreCfg({listeners: listeners})),
             cls: 'themed-panel treenav-panel',
-            height: 200,
-            width: 225,
+            height: 400,
+            width: 450,
             split: true,
             header: false,
             rootVisible: true,
@@ -3003,7 +3008,6 @@ Ext4.define('File.panel.Browser', {
             modal: true,
             autoShow : true,
             cls: 'data-window',
-            width: 270,
             closeAction: 'hide',
             origName: name,
             fileRecords: selections,
