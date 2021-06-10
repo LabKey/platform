@@ -62,7 +62,6 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -998,7 +997,7 @@ public class SpecimenController2 extends SpringActionController
             addBaseSpecimenNavTrail(root);
             if (_showingSelectedSpecimens)
             {
-                root.addChild("Selected Specimens", urlProvider(SpecimenUrls.class).getSpecimensURL(getContainer(), true));
+                root.addChild("Selected Specimens", SpecimenController2.getSpecimensURL(getContainer(), true));
             }
             root.addChild("Vial History");
         }
@@ -3907,10 +3906,14 @@ public class SpecimenController2 extends SpringActionController
         return getSpecimensURL(getContainer());
     }
 
-
     public static ActionURL getSpecimensURL(Container c)
     {
         return new ActionURL(SpecimensAction.class, c);
+    }
+
+    public static ActionURL getSpecimensURL(Container c, boolean showVials)
+    {
+        return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, showVials);
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -3969,7 +3972,7 @@ public class SpecimenController2 extends SpringActionController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(new Link.LinkBuilder("View Request").href(SpecimenMigrationService.get().getManageRequestURL(getContainer(), form.getId(), null)));
+            HtmlView header = new HtmlView(new Link.LinkBuilder("View Request").href(SpecimenController2.getManageRequestURL(getContainer(), form.getId(), null)));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);

@@ -16,15 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
 <%@ page import="org.labkey.api.specimen.actions.SpecimenHeaderBean"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.SpecimensAction" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -39,7 +40,7 @@
 <%
     JspView<SpecimenHeaderBean> me = (JspView<SpecimenHeaderBean>) HttpView.currentView();
     SpecimenHeaderBean bean = me.getModelBean();
-    ActionURL createRequestURL = new ActionURL(SpecimenMigrationService.get().getShowAPICreateSpecimenRequestActionClass(), getContainer());
+    ActionURL createRequestURL = new ActionURL(ShowSearchAction.class, getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addReturnURL(getActionURL());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
@@ -70,8 +71,8 @@
     }
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=link("Search").href(SpecimenMigrationService.get().getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
-<%=link("Reports", SpecimenMigrationService.get().getAutoReportListURL(getContainer())) %>
+<%=link("Search").href(ShowSearchAction.getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
+<%=link("Reports", urlFor(SpecimenController2.AutoReportListAction.class)) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
     {

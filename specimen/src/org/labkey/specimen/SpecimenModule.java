@@ -155,19 +155,13 @@ public class SpecimenModule extends SpringModule
             @Override
             public ActionURL getShowSearchURL(Container c, boolean showVials)
             {
-                return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
+                return ShowSearchAction.getShowSearchURL(c, showVials);
             }
 
             @Override
             public ActionURL getSpecimensURL(Container c)
             {
                 return SpecimenController2.getSpecimensURL(c);
-            }
-
-            @Override
-            public ActionURL getSpecimensURL(Container c, boolean showVials)
-            {
-                return getSpecimensURL(c).addParameter("showVials", showVials);
             }
 
             @Override
@@ -246,12 +240,6 @@ public class SpecimenModule extends SpringModule
             public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
             {
                 return SpecimenController2.ShowCreateSpecimenRequestAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getShowAPICreateSpecimenRequestActionClass()
-            {
-                return SpecimenController2.ShowAPICreateSpecimenRequestAction.class;
             }
 
             @Override

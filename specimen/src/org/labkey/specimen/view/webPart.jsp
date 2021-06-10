@@ -18,14 +18,18 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
-<%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission" %>
+<%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.specimen.view.SpecimenWebPart" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
+<%@ page import="org.labkey.specimen.actions.ShowUploadSpecimensAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.AutoReportListAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ShowCreateSpecimenRequestAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ViewRequestsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
@@ -178,7 +182,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(SpecimenMigrationService.get().getShowSearchURL(getContainer(), false))%>">For Vial Groups</a></td>
+                                    <a href="<%=h(ShowSearchAction.getShowSearchURL(getContainer(), false))%>">For Vial Groups</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -190,7 +194,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(SpecimenMigrationService.get().getShowSearchURL(getContainer(), true))%>">For Individual Vials</a></td>
+                                    <a href="<%=h(ShowSearchAction.getShowSearchURL(getContainer(), true))%>">For Individual Vials</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -198,8 +202,6 @@
                 </tr>
                 </tbody>
             </table>
-
-
 
             <table class="labkey-nav-tree" style="width: 100%;margin-top:0.5em">
                 <tbody>
@@ -216,7 +218,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(SpecimenMigrationService.get().getAutoReportListURL(getContainer()))%>">View Available Reports</a></td>
+                                    <a href="<%=h(urlFor(AutoReportListAction.class))%>">View Available Reports</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -244,11 +246,11 @@
                             <tbody>
                             <% if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenMigrationService.get().getShowCreateSpecimenRequestActionClass(), c))%>">Create New Request</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(urlFor(ShowCreateSpecimenRequestAction.class))%>">Create New Request</a></td>
                             </tr>
                             <% } %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(SpecimenMigrationService.get().getViewRequestsURL(c))%>">View Current Requests</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(urlFor(ViewRequestsAction.class))%>">View Current Requests</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -331,7 +333,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="<%=h(SpecimenMigrationService.get().getUploadSpecimensURL(getContainer()))%>">Import Specimens</a></td>
+                                    <a href="<%=h(urlFor(ShowUploadSpecimensAction.class))%>">Import Specimens</a></td>
                             </tr>
                             </tbody>
                         </table>

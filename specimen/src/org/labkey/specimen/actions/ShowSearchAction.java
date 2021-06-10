@@ -17,9 +17,9 @@ package org.labkey.specimen.actions;
 
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -37,6 +37,11 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 {
     private Study _study;
     private String _title;
+
+    public static ActionURL getShowSearchURL(Container c, boolean showVials)
+    {
+        return new ActionURL(ShowSearchAction.class, c).addParameter("showVials", showVials);
+    }
 
     @Override
     public void validateCommand(SearchForm target, Errors errors)
@@ -70,7 +75,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     @Override
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(getContainer(), form.isShowVials());
+        ActionURL url = SpecimenController2.getSpecimensURL(getContainer(), form.isShowVials());
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {
             if (param.getCompareType() != null && param.getCompareType().length() > 0)

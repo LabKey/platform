@@ -34,8 +34,7 @@ public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
         String iconBase = portalCtx.getContextPath() + "/study/tools/";
         List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
-        ActionURL vialSearchURL = new ActionURL(ShowSearchAction.class, portalCtx.getContainer());
-        vialSearchURL.addParameter("showVials", true);
+        ActionURL vialSearchURL = ShowSearchAction.getShowSearchURL(portalCtx.getContainer(), true);
         items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
         if (SettingsManager.get().isSpecimenRequestEnabled(portalCtx.getContainer()))
