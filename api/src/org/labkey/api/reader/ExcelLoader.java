@@ -437,16 +437,20 @@ public class ExcelLoader extends DataLoader
             XSSFReader xssfReader = new XSSFReader(xlsxPackage);
             StylesTable styles = xssfReader.getStylesTable();
             XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-            if (iter.hasNext())
+            while (iter.hasNext())
             {
                 InputStream stream = iter.next();
-                InputSource sheetSource = new InputSource(stream);
-                SAXParserFactory saxFactory = SAXParserFactory.newInstance();
-                SAXParser saxParser = saxFactory.newSAXParser();
-                XMLReader sheetParser = saxParser.getXMLReader();
-                SheetHandler handler = new SheetHandler(styles, strings, 1, collect, getIsStartDate1904());
-                sheetParser.setContentHandler(handler);
-                sheetParser.parse(sheetSource);
+                if (getSheet().getSheetName().equals(iter.getSheetName()))
+                {
+                    InputSource sheetSource = new InputSource(stream);
+                    SAXParserFactory saxFactory = SAXParserFactory.newInstance();
+                    SAXParser saxParser = saxFactory.newSAXParser();
+                    XMLReader sheetParser = saxParser.getXMLReader();
+                    SheetHandler handler = new SheetHandler(styles, strings, 1, collect, getIsStartDate1904());
+                    sheetParser.setContentHandler(handler);
+                    sheetParser.parse(sheetSource);
+                    break;
+                }
             }
             List<List<?>> ret = new ArrayList<>(collect.size());
             ret.addAll(collect);

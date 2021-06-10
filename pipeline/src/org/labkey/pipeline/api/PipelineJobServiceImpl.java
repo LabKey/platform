@@ -570,7 +570,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
             taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
 
         String usernameHelpText = "The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions.";
-        String assayProviderHelpText = "Use this provider for running assay import runs.";
+        String assayProviderHelpText = "Use this provider for running assay import runs. This will be the name of the assay type eg : General or " +
+                "the name of a module based assay.";
         String baseHref = "https://www.labkey.org/Documentation/wiki-page.view?name=fileWatchCreate#";
         String usernameHref = baseHref + "runasusername";
         String assayProviderHref = baseHref + "assayprovider";
@@ -581,7 +582,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 new SelectField<>("type", "Type", null, true, typeDefaultValue, typeOptions),
                 new SelectField<>("pipelineId", "Pipeline Task", "Select a Pipeline Task", true, null, taskOptions),
                 new TextField("username", "Run as Username", null, false, null, usernameHelpText, usernameHref),
-                new TextField("assay provider", "Assay Provider", null, false, null, assayProviderHelpText, assayProviderHref),
+                new TextField("assay provider", "Assay Provider", "General", false, null, assayProviderHelpText, assayProviderHref),
                 new CheckboxField("enabled", "Enable this Trigger", false, true)
         );
 
