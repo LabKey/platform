@@ -25,7 +25,15 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("Ext3");
+    }
+%>
 <%
     JspView<FileUploadDataCollector> me = (JspView<FileUploadDataCollector>) HttpView.currentView();
     FileUploadDataCollector<? extends AssayRunUploadContext<? extends AssayProvider>> bean = me.getModelBean();
@@ -38,6 +46,8 @@
 </script>
 
 <script type="text/javascript">
+LABKEY.requiresExt3(function() {
+
     var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;
     var PREFIX = "<%= h(AssayDataCollector.PRIMARY_FILE) %>";
 
@@ -488,4 +498,6 @@
     }
 
     Ext.onReady(initializeFileUploadInput);
+
+}); // LABKEY.requiresExt3
 </script>
