@@ -121,12 +121,12 @@
     %>
     <td class="labkey-form-label">
         Show Application Selection Menu
-        <div id="app-menu-warning" class="labkey-error" style=<%=currentMenuDisplayMode == FolderDisplayMode.ADMIN ? q("display:block;"): q("display:none;")%>>Users will not be able to navigate between applications and LabKey Server when this menu is hidden.</div>
+
     </td>
     <td>
         <label><input onclick="document.getElementById('app-menu-warning').style.display='none'" type="radio" name="applicationMenuDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
         <label><input onclick="document.getElementById('app-menu-warning').style.display='block'" type="radio" name="applicationMenuDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
-            <%=h(FolderDisplayMode.ADMIN.getDisplayString())%>
+            <%=h(FolderDisplayMode.ADMIN.getDisplayString())%> <div id="app-menu-warning" class="labkey-error" style=<%=currentMenuDisplayMode == FolderDisplayMode.ADMIN ? q("display:block;"): q("display:none;")%>>Users will not be able to navigate between applications and LabKey Server when this menu is hidden.</div>
         </label><br>
     </td>
 </tr>
