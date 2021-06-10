@@ -13,7 +13,7 @@ interface Props {
 
 export const ProductNavigation: FC<Props> = memo(props => {
     if (props.context.show) {
-        return <ProductNavigationMenu hideLKSContainerLink />;
+        return <ProductNavigationMenu disableLKSContainerLink />;
     } else {
         return null;
     }
