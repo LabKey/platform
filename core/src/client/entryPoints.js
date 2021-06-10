@@ -68,6 +68,6 @@ module.exports = {
         name: 'conceptFilter',
         title: 'Concept Filter',
         generateLib: true,
-        path: './src/client/ConceptFilter',
+        path: './src/client/ConceptFilter'
     }]
 };

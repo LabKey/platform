@@ -436,6 +436,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
             // Ontology metadata
             if (shouldStoreValue(metadataColumnJSON.getSourceOntology(), rawColumnInfo.getSourceOntology()) ||
+                shouldStoreValue(metadataColumnJSON.getConceptSubtree(), rawColumnInfo.getConceptSubtree()) ||
                 shouldStoreValue(metadataColumnJSON.getConceptImportColumn(), rawColumnInfo.getConceptImportColumn()) ||
                 shouldStoreValue(metadataColumnJSON.getConceptLabelColumn(), rawColumnInfo.getConceptLabelColumn()))
             {
@@ -446,6 +447,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 if (null == concept)
                     concept = ont.addNewConcept();
                 concept.setSource(metadataColumnJSON.getSourceOntology());
+                concept.setSubtree(metadataColumnJSON.getConceptSubtree());
                 concept.setImportColumn(metadataColumnJSON.getConceptImportColumn());
                 concept.setLabelColumn(metadataColumnJSON.getConceptLabelColumn());
             }
@@ -615,6 +617,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setConceptURI(columnInfo.getConceptURI());
             metadataColumnJSON.setPrincipalConceptCode(columnInfo.getPrincipalConceptCode());
             metadataColumnJSON.setSourceOntology(columnInfo.getSourceOntology());
+            metadataColumnJSON.setConceptSubtree(columnInfo.getConceptSubtree());
             metadataColumnJSON.setConceptImportColumn(columnInfo.getConceptImportColumn());
             metadataColumnJSON.setConceptLabelColumn(columnInfo.getConceptLabelColumn());
 
