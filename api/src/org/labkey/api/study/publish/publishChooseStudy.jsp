@@ -77,10 +77,20 @@
 <style>
     .control-label {
         width: 270px !important;
+        padding-top: 0 !important;
+    }
+
+    .col-sm-9 {
+        width: 400px !important;
     }
 
     .col-lg-10 {
-        width: 45px !important;
+        min-width: 400px !important;
+        width: 40vw !important;
+    }
+
+    .form-control {
+        width: inherit !important;
     }
 
     .form-control-static {

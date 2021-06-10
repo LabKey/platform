@@ -661,6 +661,10 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " import aliases", diffs);
                     IdentifiableEntity.diff(oldProp.getDefaultValueTypeEnum(), newProp.getDefaultValueTypeEnum(), key + " default value type", diffs);
                     IdentifiableEntity.diff(oldProp.getPrincipalConceptCode(), newProp.getPrincipalConceptCode(), key + " principal concept code", diffs);
+                    IdentifiableEntity.diff(oldProp.getSourceOntology(), newProp.getSourceOntology(), key + " source ontology", diffs);
+                    IdentifiableEntity.diff(oldProp.getConceptImportColumn(), newProp.getConceptImportColumn(), key + " concept import column", diffs);
+                    IdentifiableEntity.diff(oldProp.getConceptLabelColumn(), newProp.getConceptLabelColumn(), key + " concept label column", diffs);
+                    IdentifiableEntity.diff(oldProp.getConceptSubtree(), newProp.getConceptSubtree(), key + " concept lookup subtree", diffs);
                     IdentifiableEntity.diff(existingDefaultValues.get(oldProp), newDefaultValues.get(newProp), key + " default value", diffs);
                 }
             }

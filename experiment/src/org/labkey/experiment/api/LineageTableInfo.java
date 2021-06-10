@@ -176,9 +176,7 @@ public class LineageTableInfo extends VirtualTable
                         _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + st.getRowId() + "/" + st.getName(), () ->
                         {
                             SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
-                            var ret = samplesSchema.getSampleTable(st, null);
-                            ret.setLocked(true);
-                            return ret;
+                            return samplesSchema.getTable(st, null);
                         });
                     return _table;
                 }
@@ -207,9 +205,7 @@ public class LineageTableInfo extends VirtualTable
                         _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass/" + dc.getRowId() + "/" + dc.getName(), () ->
                         {
                             DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
-                            var ret = dcus.createTable(dc, getLookupContainerFilter());
-                            ret.setLocked(true);
-                            return ret;
+                            return dcus.getTable(dc.getName(), getLookupContainerFilter());
                         });
                     return _table;
                 }

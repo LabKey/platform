@@ -98,6 +98,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
 
     // OntologyService related annotations
     protected String _sourceOntology = null;
+    protected String _conceptSubtree = null;
     protected String _conceptImportColumn = null;
     protected String _conceptLabelColumn = null;
     protected String _principalConceptCode = null;
@@ -166,8 +167,9 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         to._rangeURI = _rangeURI;
         to._propertyType = _propertyType;
         to._defaultValueType = _defaultValueType;
-        to._sourceOntology = _sourceOntology;
         to._principalConceptCode = _principalConceptCode;
+        to._sourceOntology = _sourceOntology;
+        to._conceptSubtree = _conceptSubtree;
         to._conceptImportColumn = _conceptImportColumn;
         to._conceptLabelColumn = _conceptLabelColumn;
         to._derivationDataScope = _derivationDataScope;
@@ -865,41 +867,20 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
-    public String getSourceOntology()
+    public String getDerivationDataScope()
     {
-        return _sourceOntology;
+        return _derivationDataScope;
     }
 
     @Override
-    public void setSourceOntology(String sourceOntology)
+    public void setDerivationDataScope(String scope)
     {
-        _sourceOntology = sourceOntology;
+        assert _checkLocked();
+        _derivationDataScope = scope;
     }
 
-    @Override
-    public String getConceptImportColumn()
-    {
-        return _conceptImportColumn;
-    }
 
-    @Override
-    public void setConceptImportColumn(String conceptImportColumn)
-    {
-        _conceptImportColumn = conceptImportColumn;
-    }
-
-    @Override
-    public String getConceptLabelColumn()
-    {
-        return _conceptLabelColumn;
-    }
-
-    @Override
-    public void setConceptLabelColumn(String conceptLabelColumn)
-    {
-        _conceptLabelColumn = conceptLabelColumn;
-    }
-
+    /* Ontology */
     @Override
     public String getPrincipalConceptCode()
     {
@@ -914,15 +895,55 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
-    public String getDerivationDataScope()
+    public String getSourceOntology()
     {
-        return _derivationDataScope;
+        return _sourceOntology;
     }
 
     @Override
-    public void setDerivationDataScope(String scope)
+    public void setSourceOntology(String sourceOntology)
     {
-        _derivationDataScope = scope;
+        assert _checkLocked();
+        _sourceOntology = sourceOntology;
     }
 
+    @Override
+    public void setConceptSubtree(String path)
+    {
+        assert _checkLocked();
+        _conceptSubtree = path;
+    }
+
+    @Override
+    public String getConceptSubtree()
+    {
+        return _conceptSubtree;
+    }
+
+    @Override
+    public String getConceptImportColumn()
+    {
+        return _conceptImportColumn;
+    }
+
+    @Override
+    public void setConceptImportColumn(String conceptImportColumn)
+    {
+        assert _checkLocked();
+        _conceptImportColumn = conceptImportColumn;
+    }
+
+    @Override
+    public String getConceptLabelColumn()
+    {
+        return _conceptLabelColumn;
+    }
+
+    @Override
+    public void setConceptLabelColumn(String conceptLabelColumn)
+    {
+        assert _checkLocked();
+        _conceptLabelColumn = conceptLabelColumn;
+    }
+    /* /Ontology */
 }
