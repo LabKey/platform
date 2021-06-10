@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -706,10 +707,10 @@ public class ExperimentServiceImpl implements ExperimentService
     public List<ExpMaterialImpl> getIndexableMaterials(Container container, @Nullable Date modifiedSince)
     {
         // Big hack to prevent indexing study specimens. Also in ExpMaterialImpl.index()
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE Container = ? AND LSID NOT LIKE '%:"
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
                 + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%'");
         sql.add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
@@ -717,9 +718,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<ExpDataImpl> getIndexableData(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " WHERE Container = ? AND classId IS NOT NULL");
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL");
         sql.add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
@@ -727,8 +728,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoDataClass() + " WHERE Container = ?").add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoDataClass(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoDataClass() + " _x_ WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoDataClass(), modifiedSince, "_x_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpDataClassImpl.fromDataClasses(new SqlSelector(getSchema(), sql).getArrayList(DataClass.class));
@@ -736,8 +737,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public Collection<ExpSampleTypeImpl> getIndexableSampleTypes(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " WHERE Container = ?").add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " _st_ WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, "_st_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpSampleTypeImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
@@ -757,6 +758,35 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         setLastIndexed(getTinfoMaterial(), rowId, ms);
     }
+
+    public void setMaterialLastIndexed(List<Pair<Integer,Long>> updates)
+    {
+        if (null == updates || updates.isEmpty())
+            return;
+        try (Connection c = getSchema().getScope().getConnection())
+        {
+            Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+            Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
+            ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
+                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null);
+
+            ListUtils.partition(updates, 1000).forEach(sublist ->
+            {
+                for (Pair<Integer, Long> p : sublist)
+                {
+                    rowid.setValue(p.first);
+                    ts.setValue(new Timestamp(p.second));
+                    pm.addBatch();
+                }
+                pm.execute();
+            });
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 
     public void setMaterialSourceLastIndexed(int rowId, long ms)
     {
