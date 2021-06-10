@@ -487,6 +487,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         });
 
         typeColumnInfo.setReadOnly(true);
+        typeColumnInfo.setUserEditable(false);
         typeColumnInfo.setShownInInsertView(false);
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
@@ -850,7 +851,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         try
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampleset");
+                    .setFileLinkDirectory("sampletype");
             SearchService ss = SearchService.get();
             if (null != ss)
             {

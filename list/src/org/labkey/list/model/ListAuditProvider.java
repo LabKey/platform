@@ -69,10 +69,9 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public ListAuditProvider()
     {
-        return new ListAuditDomainKind();
+        super(new ListAuditDomainKind());
     }
 
     @Override

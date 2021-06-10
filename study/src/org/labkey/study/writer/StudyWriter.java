@@ -59,15 +59,28 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
                     writer.write(study, ctx, vf);
             }
 
-            // Hack for now to allow selection of CRF vs. Assay datasets.  TODO: More flexible export UI definition mechanism
-            boolean exportDatasets = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASETS) || dataTypes.contains(StudyArchiveDataTypes.CRF_DATASETS);
+            // Support '<X> Dataset Definition' and '<X> Dataset Data' options
+            DatasetDefinitionWriter definitionWriter = new DatasetDefinitionWriter();
+            InternalStudyWriter datasetDataWriter = new DatasetDataWriter();
+            boolean hasDatasetDefinition = dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DEFINITIONS) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
+            boolean hasDatasetData = dataTypes.contains(StudyArchiveDataTypes.DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA) || dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
+
+            if (hasDatasetData)
+            {
+                definitionWriter.write(study, ctx, vf);
+                datasetDataWriter.write(study, ctx, vf);
+            }
+            else if (hasDatasetDefinition)
+            {
+                definitionWriter.write(study, ctx, vf);
+            }
 
             // Call all the writers defined in the study module.
             for (Writer<StudyImpl, StudyExportContext> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
             {
                 String text = writer.getDataType();
 
-                if (null == text || dataTypes.contains(text) || (exportDatasets && text.endsWith("Datasets")))
+                if (null == text || dataTypes.contains(text))
                     writer.write(study, ctx, vf);
             }
         }

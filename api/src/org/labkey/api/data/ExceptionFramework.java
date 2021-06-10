@@ -31,7 +31,7 @@ public enum ExceptionFramework
     Spring
         {
             @Override
-            DataAccessException translate(DbScope scope, String task, SQLException e)
+            public DataAccessException translate(DbScope scope, String task, SQLException e)
             {
                 SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(scope.getDataSource());
                 return translator.translate(task, null, e);
@@ -40,11 +40,16 @@ public enum ExceptionFramework
     JDBC
         {
             @Override
-            RuntimeSQLException translate(DbScope scope, String task, SQLException e)
+            public RuntimeSQLException translate(DbScope scope, String task, SQLException e)
             {
                 return new RuntimeSQLException(e);
             }
         };
 
-    abstract RuntimeException translate(DbScope scope, String task, SQLException e);
+    public abstract RuntimeException translate(DbScope scope, String task, SQLException e);
+
+    public RuntimeException translate(DbScope scope, String task, RuntimeSQLException e)
+    {
+        return translate(scope, task, e.getSQLException());
+    }
 }

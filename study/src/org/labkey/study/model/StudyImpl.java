@@ -217,6 +217,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
 
     // TODO: Make short name admin editable, persist, and display. For now, just use the first "word" of the label.
+    @Override
     public String getShortName()
     {
         String label = _label == null ? "Study" : _label;

@@ -105,10 +105,9 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         return "Information about group modifications and security changes.";
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public GroupAuditProvider()
     {
-        return new GroupAuditDomainKind();
+        super(new GroupAuditDomainKind());
     }
 
     @Override

@@ -48,7 +48,12 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                 if (associatedDatasetsLength > 0) {
                     text += "<br/><br/> The selected row(s) will also be deleted from the linked dataset(s) in the following studies:";
                     text += "<ul>";
-                    associatedDatasets.forEach(dataset => {
+                    // Alphabetize by dataset name before displaying text rows
+                    associatedDatasets.sort((dataset1, dataset2) => {
+                        if(dataset1.name < dataset2.name) { return -1; }
+                        if(dataset1.name > dataset2.name) { return 1; }
+                        return 0;
+                    }).forEach(dataset => {
                         text += `<li> <a href="${dataset.url}" target="_blank"> ${dataset.name} </a> </li>`
                     });
                     text += "</ul>";

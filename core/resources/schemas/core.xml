@@ -33,6 +33,8 @@
       <column columnName="Type"/>
       <column columnName="Title"/>
       <column columnName="Searchable"/>
+      <column columnName="LockState"/>
+      <column columnName="ExpirationDate"/>
     </columns>
   </table>
   <table tableName="Documents" tableDbType="TABLE">

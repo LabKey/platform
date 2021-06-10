@@ -36,7 +36,7 @@
     {
         dependencies.add("internal/jQuery");
 //        dependencies.add("http://localhost:3001/createPipelineTrigger.js");
-        dependencies.add("pipeline/gen/createPipelineTrigger");
+        dependencies.add("gen/createPipelineTrigger");
     }
 %>
 <%

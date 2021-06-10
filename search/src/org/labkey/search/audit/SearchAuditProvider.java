@@ -53,10 +53,9 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SearchAuditProvider()
     {
-        return new SearchAuditDomainKind();
+        super(new SearchAuditDomainKind());
     }
 
     @Override

@@ -347,7 +347,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyWriterFactory.DATA_TYPE);
         dataTypes.add(StudyArchiveDataTypes.QC_STATE_SETTINGS);
         dataTypes.add(StudyArchiveDataTypes.VISIT_MAP);
-        dataTypes.add(StudyArchiveDataTypes.CRF_DATASETS);
+        dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.VIEW_CATEGORIES);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);

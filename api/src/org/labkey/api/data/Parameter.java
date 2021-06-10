@@ -233,7 +233,8 @@ public class Parameter implements AutoCloseable
         return _precision;
     }
 
-    public void setValue(@Nullable Object in) throws SQLException
+
+    public void setValue(@Nullable Object in)
     {
         if (_constant)
             throw new IllegalStateException("Can't set constant parameter");
@@ -322,9 +323,10 @@ public class Parameter implements AutoCloseable
         catch (SQLException e)
         {
             LOG.error("Exception converting \"" + value + "\" to type " + _type);
-            throw e;
+            throw new RuntimeSQLException(e);
         }
     }
+
 
     @Override
     public void close()
@@ -370,7 +372,7 @@ public class Parameter implements AutoCloseable
     
     // TODO: Switching to BeanUtils 1.8 (which has two-way converters) should let us clean this up significantly by
     // delegating most of the binding to our converters
-    public static Object getValueToBind(@Nullable Object value, @Nullable JdbcType type) throws SQLException
+    public static Object getValueToBind(@Nullable Object value, @Nullable JdbcType type)
     {
         if (value instanceof Callable)
         {
@@ -380,7 +382,7 @@ public class Parameter implements AutoCloseable
             }
             catch (SQLException x)
             {
-                throw x;
+                throw new RuntimeSQLException(x);
             }
             catch (Exception x)
             {
