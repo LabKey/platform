@@ -467,6 +467,7 @@
       <column columnName="ConceptImportColumn"/>
       <column columnName="ConceptLabelColumn"/>
       <column columnName="PrincipalConceptCode"/>
+      <column columnName="ConceptSubtree"/>
       <column columnName="DerivationDataScope"/>
   </columns>
   </table>
