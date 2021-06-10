@@ -268,6 +268,12 @@ public class StudyController extends BaseStudyController
     public static class StudyUrlsImpl implements StudyUrls
     {
         @Override
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        @Override
         public ActionURL getCompletionURL(Container studyContainer, CompletionType type)
         {
             if (studyContainer == null)
@@ -387,6 +393,11 @@ public class StudyController extends BaseStudyController
             return url;
         }
 
+        @Override
+        public void addManageStudyNavTrail(NavTree root, Container container, User user)
+        {
+            _addManageStudy(root, container, user);
+        }
     }
 
     public StudyController()
@@ -2827,15 +2838,19 @@ public class StudyController extends BaseStudyController
             // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
             MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
             List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
+            Integer sourceRowId = null;
             for (Map<String,Object> row : data)
             {
-                String sourceLSID = (String)row.get("sourcelsid");
-                String datasetRowLsid = (String)row.get("lsid");
-                Integer sourceRowId = (Integer)row.get("rowId");
+                String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
+                String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
+                Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
                 if (sourceLSID != null && datasetRowLsid != null)
                 {
-                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, sourceRowId));
+                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
                 }
+
+                if (sourceRowId == null && rowId != null)
+                    sourceRowId = rowId;
             }
 
             Dataset.PublishSource publishSource = def.getPublishSource();
@@ -2845,7 +2860,7 @@ public class StudyController extends BaseStudyController
                 {
                     String sourceLsid = entry.getKey();
                     Collection<Pair<String, Integer>> pairs = entry.getValue();
-                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, sourceRowId);
                     if (sourceContainer != null)
                         StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
                 }
@@ -2855,7 +2870,7 @@ public class StudyController extends BaseStudyController
             // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
             if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid);
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, sourceRowId);
                 if (container != null)
                     throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }

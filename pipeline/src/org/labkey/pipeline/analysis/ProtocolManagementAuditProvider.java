@@ -83,10 +83,9 @@ public class ProtocolManagementAuditProvider extends AbstractAuditTypeProvider
         return (Class<K>)ProtocolManagementEvent.class;
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public ProtocolManagementAuditProvider()
     {
-        return new ProtocolManagementDomainKind();
+        super(new ProtocolManagementDomainKind());
     }
 
     @Override

@@ -10,10 +10,13 @@ import org.labkey.api.data.MutableColumnRenderProperties;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.data.xml.ColumnType;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 /** public interface to ontology services, largely implemented by OntologyManager */
 public interface OntologyService
@@ -29,12 +32,11 @@ public interface OntologyService
 
     Concept resolveCode(String code);
 
-    /** Resolve a concept based on exact match of label or synonym
-     *  CONSIDER: may also want a scoped version of this method (e.g. (Ontology o, String term) or (String path, String term)
-     */
-    //Concept resolveTerm(String term);
-
+    /* handle concept lookup columns in a DataIterator based insert/update*/
     DataIteratorBuilder getConceptLookupDataIteratorBuilder(DataIteratorBuilder in, TableInfo target);
+
+    /* handle concept lookup columns in a non-DataIterator based insert/update */
+    Function<Map<String,Object>, Map<String,Object>> getConceptUpdateHandler(TableInfo t) throws ValidationException;
 
     static OntologyService get()
     {

@@ -1,6 +1,7 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.Level;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -42,43 +43,43 @@ public class ParameterMapStatement implements AutoCloseable
     String _objectURI;
     protected CaseInsensitiveHashMap<Integer> _map;
     protected Parameter[] _parameters;
-    DbScope _scope;
+    final @NotNull DbScope _scope;
     Connection _conn;       // only used for copy()
     SqlDialect _dialect;
     boolean _closed = false;
 
+    private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
+
     protected ParameterMapStatement()
     {
         //for testing subclasses (see NoopParameterMap)
+        _scope = CoreSchema.getInstance().getScope();
     }
 
-    public ParameterMapStatement(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
+    public ParameterMapStatement(@NotNull DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
     {
         this(scope, stmt, parameters, null);
     }
 
-
-    public ParameterMapStatement(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+    public ParameterMapStatement(@NotNull DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
     {
-        init(scope, stmt, parameters, remap);
+        _scope = scope;
+        init(stmt, parameters, remap);
     }
 
-
-    public ParameterMapStatement copy() throws SQLException
+    public ParameterMapStatement copy()
     {
         if (null == _sqlf || null == _conn)
             throw new IllegalStateException("Copy can only be used on ParameterMap constructed with SQL");
         return new ParameterMapStatement(this);
     }
 
-
-    protected ParameterMapStatement(ParameterMapStatement from) throws SQLException
+    protected ParameterMapStatement(ParameterMapStatement from)
     {
+        _scope = from._scope;
         _sqlf = from._sqlf;
         _debugSql = from._debugSql;
-        _scope = from._scope;
         _conn = from._conn;
-        _stmt = createStatement(_conn, _sqlf);
         _selectRowId = from._selectRowId;
         _selectObjectIdIndex = from._selectObjectIdIndex;
         _rowId = from._rowId;
@@ -86,12 +87,38 @@ public class ParameterMapStatement implements AutoCloseable
         _dialect = from._dialect;
         _map = from._map;
         _parameters = new Parameter[from._parameters.length];
-        for (int i=0 ; i<from._parameters.length ; i++)
-            _parameters[i] = from._parameters[i].copy(_stmt);
+        _exceptionFramework = from._exceptionFramework;
+        try
+        {
+            _stmt = createStatement(_conn, _sqlf);
+            for (int i = 0; i < from._parameters.length; i++)
+                _parameters[i] = from._parameters[i].copy(_stmt);
+        }
+        catch (SQLException x)
+        {
+            throw _exceptionFramework.translate(_scope, "Copy statement", x);
+        }
     }
 
 
-    public ParameterMapStatement(DbScope scope, SQLFragment sql, Map<String, String> remap) throws SQLException
+    /** throws RuntimeSQLException if getConnection) fails */
+    public static ParameterMapStatement create(@NotNull DbScope scope, SQLFragment sql, Map<String, String> remap)
+    {
+        Connection conn;
+        try
+        {
+             conn = scope.getConnection();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        return new ParameterMapStatement(scope, conn, sql, remap);
+    }
+
+
+    @Deprecated // use create(scope) or ParameterMap(scope,conn) to avoid SQLException
+    public ParameterMapStatement(@NotNull DbScope scope, SQLFragment sql, Map<String, String> remap) throws SQLException
     {
         this(scope, scope.getConnection(), sql, remap);
     }
@@ -99,13 +126,25 @@ public class ParameterMapStatement implements AutoCloseable
 
     /**
      *  sql bound to constants or Parameters, compute the index array for each named Parameter
+     *
+     *  Will throw RuntimeSQLException if createStatement fails.
      */
-    public ParameterMapStatement(DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
+    public ParameterMapStatement(@NotNull DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap)
     {
         // TODO SQLFragment doesn't seem to actually handle CTE with named parameters, but we can "flatten" it
-        _sqlf = sql; // new SQLFragment(sql.getSQL(), sql.getParams());
+        _scope = scope;
+        _sqlf = sql;
         _conn = conn;
-        PreparedStatement stmt = createStatement(_conn, _sqlf);
+
+        PreparedStatement stmt;
+        try
+        {
+            stmt = createStatement(_conn, _sqlf);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
 
         IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<>();
         List<Object> paramList = _sqlf.getParams();
@@ -129,7 +168,7 @@ public class ParameterMapStatement implements AutoCloseable
             parameters.add(e.getKey());
         }
 
-        init(scope, stmt, parameters, remap);
+        init(stmt, parameters, remap);
     }
 
 
@@ -140,23 +179,28 @@ public class ParameterMapStatement implements AutoCloseable
         if (sqlf.getSQL().startsWith("{call"))
             stmt = conn.prepareCall(sqlf.getSQL());
         else
-            stmt= conn.prepareStatement(sqlf.getSQL());
+            stmt = conn.prepareStatement(sqlf.getSQL());
         var params = sqlf.getParams();
-        for (int i=0 ; i<params.size() ; i++)
+        for (int i = 0; i < params.size(); i++)
         {
             var value = params.get(i);
             // skip names parameters
             if (!(value instanceof Parameter))
-                new Parameter(stmt, i+1).setValue(value);
+                new Parameter(stmt, i + 1).setValue(value);
         }
         return stmt;
     }
 
 
-    private void init(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+    public void setExceptionFramework(ExceptionFramework f)
     {
-        _scope = scope;
-        _dialect = scope.getSqlDialect();
+        _exceptionFramework = f;
+    }
+
+
+    private void init(PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+    {
+        _dialect = _scope.getSqlDialect();
         _map = new CaseInsensitiveHashMap<>(parameters.size() * 2);
         _parameters = parameters.toArray(new Parameter[parameters.size()]);
         _stmt = stmt;
@@ -230,17 +274,24 @@ public class ParameterMapStatement implements AutoCloseable
     }
 
 
-    public void executeBatch() throws SQLException
+    public void executeBatch()
     {
-        prepareParametersBeforeExecute();
+        try
+        {
+            prepareParametersBeforeExecute();
 
-        _objectId = null;
-        _rowId = null;
-        _stmt.executeBatch();
+            _objectId = null;
+            _rowId = null;
+            _stmt.executeBatch();
+        }
+        catch (SQLException x)
+        {
+            throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", x);
+        }
     }
 
 
-    public boolean execute() throws SQLException
+    public int execute()
     {
         prepareParametersBeforeExecute();
 
@@ -254,6 +305,7 @@ public class ParameterMapStatement implements AutoCloseable
                 rs = _dialect.executeWithResults(_stmt);
             else
                 _stmt.execute();
+            int rowcount = _stmt.getUpdateCount();
 
             Integer firstInt = null, secondInt = null;
 
@@ -291,13 +343,17 @@ public class ParameterMapStatement implements AutoCloseable
 
             if (_selectRowId)
                 _rowId = firstInt;
+
+            return rowcount;
+        }
+        catch (SQLException x)
+        {
+            throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", x);
         }
         finally
         {
             ResultSetUtil.close(rs);
         }
-
-        return true;
     }
 
 
@@ -316,24 +372,38 @@ public class ParameterMapStatement implements AutoCloseable
         return _objectURI;
     }
 
-    private void prepareParametersBeforeExecute() throws SQLException
+    private void prepareParametersBeforeExecute()
     {
-        for (Parameter p : _parameters)
+        try
         {
-            if (!p._isSet)
+            for (Parameter p : _parameters)
             {
-                assert !p._constant;
-                if (!p._isNull)
-                    p.setValue(null);
+                if (!p._isSet)
+                {
+                    assert !p._constant;
+                    if (!p._isNull)
+                        p.setValue(null);
+                }
             }
+        }
+        catch (RuntimeSQLException x)
+        {
+            throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", x);
         }
     }
 
 
-    public void addBatch() throws SQLException
+    public void addBatch()
     {
-        prepareParametersBeforeExecute();
-        _stmt.addBatch();
+        try
+        {
+            prepareParametersBeforeExecute();
+            _stmt.addBatch();
+        }
+        catch (SQLException x)
+        {
+            throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", x);
+        }
     }
 
 
@@ -400,15 +470,14 @@ public class ParameterMapStatement implements AutoCloseable
                 throw new IllegalStateException("Can't set constant parameter: " + name);
             p.setValue(value);
         }
-        catch (SQLException sqlx)
+        catch (RuntimeSQLException e)
         {
-            SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(ExperimentService.get().getSchema().getScope().getDataSource());
+            SQLException sqlx = e.getSQLException();
+            SQLExceptionTranslator translator = new SQLErrorCodeSQLExceptionTranslator(_scope.getDataSource());
             DataAccessException translated = translator.translate("Message", null, sqlx);
             if (translated instanceof DataIntegrityViolationException)
-            {
                 throw new ValidationException(sqlx.getMessage() == null ? translated.getMessage() : sqlx.getMessage());
-            }
-            throw new RuntimeSQLException(sqlx);
+            throw _exceptionFramework.translate(_scope, "Binding parameter", sqlx);
         }
     }
 
@@ -424,9 +493,9 @@ public class ParameterMapStatement implements AutoCloseable
                     p.setValue(e.getValue());
             }
         }
-        catch (SQLException sqlx)
+        catch (RuntimeSQLException sqlx)
         {
-            throw new RuntimeSQLException(sqlx);
+            throw _exceptionFramework.translate(_scope, "Attempting to prepare a statement", sqlx);
         }
     }
 

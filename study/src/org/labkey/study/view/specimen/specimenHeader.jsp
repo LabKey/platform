@@ -16,16 +16,14 @@
  */
 %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
-<%@ page import="org.labkey.api.util.Pair"%>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ShowAPICreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenHeaderBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimensAction" %>
 <%@ page import="java.util.Iterator" %>
@@ -41,7 +39,7 @@
 <%
     JspView<SpecimenHeaderBean> me = (JspView<SpecimenHeaderBean>) HttpView.currentView();
     SpecimenHeaderBean bean = me.getModelBean();
-    ActionURL createRequestURL = new ActionURL(ShowAPICreateSpecimenRequestAction.class, getContainer());
+    ActionURL createRequestURL = new ActionURL(SpecimenMigrationService.get().getShowAPICreateSpecimenRequestActionClass(), getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());
     createRequestURL.addReturnURL(getActionURL());
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
@@ -72,8 +70,8 @@
     }
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=link("Search").href(urlFor(ShowSearchAction.class).addParameter("showVials", bean.isShowingVials()))%>&nbsp;
-<%=link("Reports", AutoReportListAction.class) %>
+<%=link("Search").href(SpecimenMigrationService.get().getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
+<%=link("Reports", SpecimenMigrationService.get().getAutoReportListURL(getContainer())) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
     {

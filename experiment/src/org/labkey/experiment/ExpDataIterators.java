@@ -28,6 +28,7 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
@@ -349,9 +350,13 @@ public class ExpDataIterators
             if (_expTable instanceof  ExpMaterialTableImpl)
             {
                 @Nullable Container targetContainer = ((ExpMaterialTableImpl) _expTable).getSampleType().getAutoLinkTargetContainer();
-                if (_study == null && targetContainer != null) {
-                    _study = StudyService.get().getStudy(targetContainer);
+                StudyService studyService = StudyService.get();
+                if (_study == null && targetContainer != null && studyService != null) {
+                    _study = studyService.getStudy(targetContainer);
                 }
+                // Issue43234: Support '(Data import folder)' auto-link option
+                if (_study == null && targetContainer == StudyPublishService.AUTO_LINK_TARGET_IMPORT_FOLDER && studyService != null)
+                    _study = studyService.getStudy(container);
             }
             final String visitName = AbstractAssayProvider.VISITID_PROPERTY_NAME;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);

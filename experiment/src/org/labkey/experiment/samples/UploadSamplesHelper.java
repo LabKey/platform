@@ -27,9 +27,9 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -78,12 +78,16 @@ import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 
 public abstract class UploadSamplesHelper
 {
@@ -356,8 +360,8 @@ public abstract class UploadSamplesHelper
                                                                                        String dataType /*sample type or source type name*/)
             throws ValidationException, ExperimentException
     {
-        Map<ExpMaterial, String> parentMaterials = new HashMap<>();
-        Map<ExpData, String> parentData = new HashMap<>();
+        Map<ExpMaterial, String> parentMaterials = new LinkedHashMap<>();
+        Map<ExpData, String> parentData = new LinkedHashMap<>();
         Set<String> parentDataTypesToRemove = new CaseInsensitiveHashSet();
         Set<String> parentSampleTypesToRemove = new CaseInsensitiveHashSet();
 
@@ -761,6 +765,7 @@ public abstract class UploadSamplesHelper
         final Container _container;
         final int _batchSize;
         boolean first = true;
+        Map<String, String> importAliasMap = null;
 
         String generatedName = null;
         String generatedLsid = null;
@@ -771,6 +776,14 @@ public abstract class UploadSamplesHelper
         {
             super(source, context);
             this.sampletype = sampletype;
+            try
+            {
+                this.importAliasMap = sampletype.getImportAliasMap();
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
             nameGen = sampletype.getNameGenerator();
             nameState = nameGen.createState(true);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
@@ -814,10 +827,28 @@ public abstract class UploadSamplesHelper
                 boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
                 if (isAliquot)
                 {
-                    generatedName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
+                    String aliquotName = null;
+                    // If a name is already provided, just use it as is
+                    Object currNameObj = map.get("Name");
+                    if (currNameObj != null)
+                        aliquotName = currNameObj.toString();
+
+                    if (StringUtils.isEmpty(aliquotName))
+                        aliquotName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
+
+                    generatedName = aliquotName;
                 }
                 else
-                    generatedName = nameGen.generateName(nameState, map);
+                {
+                    Supplier<Map<String, Object>> extraPropsFn = () -> {
+                        if (importAliasMap != null)
+                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
+                        else
+                            return Collections.emptyMap();
+                    };
+
+                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn);
+                }
                 generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
             }
             catch (NameGenerator.DuplicateNameException dup)
@@ -828,11 +859,11 @@ public abstract class UploadSamplesHelper
             {
                 // Failed to generate a name due to some part of the expression not in the row
                 if (sampletype.hasNameExpression())
-                    addRowError("Failed to generate name for Sample on row " + e.getRowNumber());
+                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
                 else if (sampletype.hasNameAsIdCol())
-                    addRowError("Name is required for Sample on row " + e.getRowNumber());
+                    addRowError("Name is required for sample on row " + e.getRowNumber());
                 else
-                    addRowError("All id columns are required for Sample on row " + e.getRowNumber());
+                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
             }
         }
 

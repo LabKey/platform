@@ -18,7 +18,6 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ActionButton;
@@ -28,7 +27,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.MenuButton;
@@ -45,14 +43,12 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
-import org.labkey.api.specimen.RequestedSpecimens;
-import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.VialRequestForm;
+import org.labkey.api.specimen.actions.IdTypes;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
@@ -87,7 +83,6 @@ import org.labkey.api.view.GridView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -105,14 +100,11 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -121,9 +113,9 @@ import java.util.Set;
  */
 public class SpecimenUtils
 {
-    private final BaseStudyController _controller;
+    private final SpringActionController _controller;
 
-    public SpecimenUtils(BaseStudyController controller)
+    public SpecimenUtils(SpringActionController controller)
     {
         // private constructor to prevent external instantiation
         _controller = controller;
@@ -146,7 +138,7 @@ public class SpecimenUtils
 
     private Study getStudy() throws IllegalStateException
     {
-        return _controller.getStudyThrowIfNull();
+        return SpecimenController.getStudyThrowIfNull(getContainer());
     }
 
     public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
@@ -202,13 +194,13 @@ public class SpecimenUtils
         if (settings.isEnableRequests())
         {
             MenuButton requestMenuButton = new MenuButton("Request Options");
-            requestMenuButton.addMenuItem("View Existing Requests", urlFor(SpecimenController.ViewRequestsAction.class));
+            requestMenuButton.addMenuItem("View Existing Requests", SpecimenMigrationService.get().getViewRequestsURL(getContainer()));
             if (!commentsMode)
             {
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(SpecimenController.ShowCreateSpecimenRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
+                    String createRequestURL = urlFor(SpecimenMigrationService.get().getShowCreateSpecimenRequestActionClass()).addReturnURL(getViewContext().getActionURL()).toString();
 
                     requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
@@ -219,8 +211,8 @@ public class SpecimenUtils
                     {
                         requestMenuButton.addMenuItem("Add To Existing Request",
                                 "if (verifySelected(" + jsRegionObject + ".form, '#', " +
-                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? VialRequestForm.IdTypes.RowId
-                                : VialRequestForm.IdTypes.SpecimenHash) + "');}})}");
+                                "'get', 'rows')) { " + jsRegionObject + ".getSelected({success: function (data) { showRequestWindow(data.selected, '" + (showVials ? IdTypes.RowId
+                                : IdTypes.SpecimenHash) + "');}})}");
                     }
                 }
             }
@@ -308,8 +300,8 @@ public class SpecimenUtils
         if (getViewContext().hasPermission(AdminPermission.class))
         {
             Button upload = new Button.ButtonBuilder("Import Specimens")
-                    .href(new ActionURL(ShowUploadSpecimensAction.class, getContainer()))
-                    .build();
+                .href(SpecimenMigrationService.get().getUploadSpecimensURL(getContainer()))
+                .build();
             buttons.add(upload);
         }
 
@@ -529,97 +521,7 @@ public class SpecimenUtils
     public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
     {
         if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
-            throw new RedirectException(new ActionURL(SpecimenController.SpecimenRequestConfigRequired.class, getContainer()));
-    }
-
-
-    public List<Vial> getSpecimensFromRowIds(long[] requestedSampleIds)
-    {
-        List<Vial> requestedVials = null;
-
-        if (requestedSampleIds != null)
-        {
-            List<Vial> vials = new ArrayList<>();
-            for (long requestedSampleId : requestedSampleIds)
-            {
-                Vial current = SpecimenManagerNew.get().getVial(getContainer(), getUser(), requestedSampleId);
-                if (current != null)
-                    vials.add(current);
-            }
-            requestedVials = vials;
-        }
-
-        return requestedVials;
-    }
-
-    public List<Vial> getSpecimensFromGlobalUniqueIds(Set<String> globalUniqueIds)
-    {
-        User user = getUser();
-        Container container = getContainer();
-        List<Vial> requestedVials = null;
-
-        if (globalUniqueIds != null)
-        {
-            List<Vial> vials = new ArrayList<>();
-            for (String globalUniqueId : globalUniqueIds)
-            {
-                Vial match = SpecimenManagerNew.get().getVial(container, user, globalUniqueId);
-                if (match != null)
-                    vials.add(match);
-            }
-            requestedVials = new ArrayList<>(vials);
-        }
-
-        return requestedVials;
-    }
-
-    public List<Vial> getSpecimensFromRowIds(Collection<String> ids)
-    {
-        return getSpecimensFromRowIds(BaseStudyController.toLongArray(ids));
-    }
-
-    public List<Vial> getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)
-    {
-        Set<String> formValues = null;
-        if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-            formValues = DataRegionSelection.getSelected(getViewContext(), true);
-
-        if (formValues == null || formValues.isEmpty())
-            return null;
-
-        List<Vial> selectedVials;
-        if (fromGroupedView)
-        {
-            Map<String, List<Vial>> keyToVialMap =
-                    SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
-            List<Vial> vials = new ArrayList<>();
-            for (List<Vial> vialList : keyToVialMap.values())
-                vials.addAll(vialList);
-            selectedVials = new ArrayList<>(vials);
-        }
-        else
-            selectedVials = getSpecimensFromRowIds(formValues);
-        return selectedVials;
-    }
-
-    public RequestedSpecimens getRequestableByVialRowIds(Set<String> rowIds)
-    {
-        Set<Long> ids = new HashSet<>();
-        Arrays.stream(BaseStudyController.toLongArray(rowIds)).forEach(ids::add);
-        List<Vial> requestedSpecimens = SpecimenManagerNew.get().getRequestableVials(getContainer(), getUser(), ids);
-        return new RequestedSpecimens(requestedSpecimens);
-    }
-
-    public RequestedSpecimens getRequestableByVialGlobalUniqueIds(Set<String> globalUniqueIds)
-    {
-        List<Vial> requestedSpecimens = getSpecimensFromGlobalUniqueIds(globalUniqueIds);
-        return new RequestedSpecimens(requestedSpecimens);
-    }
-
-    @Migrate // TODO: Refactor SpecimenUtils and callers should use SpecimenRequestManager directly
-    public RequestedSpecimens getRequestableBySpecimenHash(Set<String> formValues, Integer preferredLocation) throws AmbiguousLocationException
-    {
-        return SpecimenRequestManager.get().getRequestableBySpecimenHash(getContainer(), getUser(), formValues, preferredLocation);
+            throw new RedirectException(SpecimenMigrationService.get().getSpecimenRequestConfigRequiredURL(getContainer()));
     }
 
     public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
@@ -662,7 +564,7 @@ public class SpecimenUtils
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenController.getDownloadURL(event, attachment.getName())) + "\">");
+                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(event, attachment.getName())) + "\">");
                     out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
                     out.write(PageFlowUtil.filter(attachment.getName()));
                     out.write("</a><br>");

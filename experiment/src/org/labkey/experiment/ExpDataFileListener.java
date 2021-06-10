@@ -18,7 +18,6 @@ package org.labkey.experiment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -28,6 +27,8 @@ import org.labkey.api.util.FileUtil;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 /**
  * User: jeckels
@@ -58,7 +59,7 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             // Do not create a new ExpData for directories
         if (data == null && !Files.isDirectory(dest) && c != null)
         {
-            data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
+            data = ExperimentService.get().createData(c, UPLOADED_FILE);
         }
 
         if (data != null && src.equals(data.getFilePath()) && !src.equals(dest))

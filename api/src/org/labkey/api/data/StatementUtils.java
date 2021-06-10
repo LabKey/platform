@@ -299,18 +299,11 @@ public class StatementUtils
         assert null != type;
         if (_constants.containsKey(name))
         {
-            try
+            Object value = Parameter.getValueToBind(_constants.get(name), type);
+            if (null == value || value instanceof Number || value instanceof String || value instanceof java.util.Date)
             {
-                Object value = Parameter.getValueToBind(_constants.get(name), type);
-                if (null == value || value instanceof Number || value instanceof String || value instanceof java.util.Date)
-                {
-                    ph.isConstant = true;
-                    ph.constantValue = value;
-                }
-            }
-            catch (SQLException x)
-            {
-                //
+                ph.isConstant = true;
+                ph.constantValue = value;
             }
         }
         ph.variableName = makeVariableName(name);

@@ -72,10 +72,9 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public QueryUpdateAuditProvider()
     {
-        return new QueryUpdateAuditDomainKind();
+        super(new QueryUpdateAuditDomainKind());
     }
 
     @Override

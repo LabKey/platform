@@ -137,7 +137,7 @@ public class ParticipantIdImportHelper implements ParticipantIdTranslator
     }
 
     /*
-     * The getCallable method returns a collable object that translates the participantId to its alias on lookup
+     * The getCallable method returns a callable object that translates the participantId to its alias on lookup
      */
     public Callable<Object> getCallable(@NotNull final DataIterator it, @Nullable final Integer participantIndex)
     {

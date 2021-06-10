@@ -57,6 +57,7 @@ public interface StudyPublishService
     String SEQUENCENUM_PROPERTY_NAME = "SequenceNum";
     String DATE_PROPERTY_NAME = "Date";
     String SOURCE_LSID_PROPERTY_NAME = "SourceLSID";
+    String LSID_PROPERTY_NAME = "LSID";
     String ROWID_PROPERTY_NAME = "RowId";
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
@@ -67,7 +68,7 @@ public interface StudyPublishService
 
     // auto link to study target which defaults to the study in the folder the import occurs, using the shared folder
     // which should be safe from collisions since we don't allow assay creation there
-    Container AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER = ContainerManager.getSharedContainer();
+    Container AUTO_LINK_TARGET_IMPORT_FOLDER = ContainerManager.getSharedContainer();
 
     static void setInstance(StudyPublishService serviceImpl)
     {

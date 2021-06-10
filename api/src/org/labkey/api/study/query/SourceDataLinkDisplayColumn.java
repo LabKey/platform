@@ -78,6 +78,9 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
                     if (expObject instanceof ExpSampleType)
                     {
                         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL((ExpSampleType)expObject);
+                        // by default the container is where the sample definition lives, use the current container instead so
+                        // the user is returned to the original folder that the link was attempted from.
+                        url.setContainer(ctx.getContainer());
                         out.write(PageFlowUtil.link("View Sample Type").href(url).toString());
                     }
                 }

@@ -46,10 +46,9 @@ public class ContainerAuditProvider extends AbstractAuditTypeProvider implements
         defaultVisibleColumns.add(FieldKey.fromParts("Comment"));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public ContainerAuditProvider()
     {
-        return new ContainerAuditDomainKind();
+        super(new ContainerAuditDomainKind());
     }
 
     @Override

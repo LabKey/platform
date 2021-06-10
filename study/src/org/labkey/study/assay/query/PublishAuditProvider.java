@@ -127,7 +127,7 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
                 {
                     // lookup to SampleType by ID
                     col.setLabel("Sample Type ID");
-                    col.setFk(QueryForeignKey.from(getUserSchema(), cf).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.SampleSets));
+                    col.setFk(QueryForeignKey.from(getUserSchema(), ContainerFilter.EVERYTHING).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.SampleSets));
 
                     // ExpSampleTypeTableImpl uses a details URL with the current Container as the URL's fixed
                     // container context, but we would like to use the audit event row's container column instead.
@@ -174,10 +174,9 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
 
 
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public PublishAuditProvider()
     {
-        return new PublishAuditDomainKind();
+        super(new PublishAuditDomainKind());
     }
 
     @Override

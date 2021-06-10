@@ -526,6 +526,7 @@ public class SearchController extends SpringActionController
             boolean full = "1".equals(getViewContext().getRequest().getParameter("full"));
             String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
             boolean wait = "1".equals(getViewContext().getRequest().getParameter("wait"));
+            boolean since = "1".equals(getViewContext().getRequest().getParameter("since"));
 
             SearchService ss = SearchService.get();
 
@@ -537,6 +538,10 @@ public class SearchController extends SpringActionController
             if (full)
             {
                 ss.indexFull(true);
+            }
+            else if (since)
+            {
+                task = ss.indexContainer(null, getContainer(), new Date(System.currentTimeMillis()- TimeUnit.DAYS.toMillis(1)));
             }
             else
             {
