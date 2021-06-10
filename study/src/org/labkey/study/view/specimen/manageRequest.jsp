@@ -47,7 +47,6 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.RequestHistoryAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -404,7 +403,7 @@
         </tr>
 <tr>
     <td>
-        <%= link("View History", new ActionURL(RequestHistoryAction.class, c).addParameter("id", bean.getSpecimenRequest().getRowId())) %>&nbsp;
+        <%= link("View History", new ActionURL(SpecimenMigrationService.get().getRequestHistoryActionClass(), c).addParameter("id", bean.getSpecimenRequest().getRowId())) %>&nbsp;
         <%= bean.isRequestManager() ? link("Update Request", SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
         <%
             if (hasExtendedRequestView)

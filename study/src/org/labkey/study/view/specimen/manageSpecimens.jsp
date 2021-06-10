@@ -31,7 +31,6 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -182,7 +181,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Request Form</td>
                         <td class="lk-study-prop-desc">Manage inputs required for a new specimen request </td>
-                        <td><%= link("Manage New Request Form", urlFor(ManageRequestInputsAction.class)) %></td>
+                        <td><%= link("Manage New Request Form", urlFor(SpecimenMigrationService.get().getManageRequestInputsActionClass())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Notifications</td>

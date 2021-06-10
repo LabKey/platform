@@ -16,7 +16,6 @@
 
 package org.labkey.study.controllers.specimen;
 
-import org.apache.commons.io.Charsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
@@ -35,7 +34,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateForm;
@@ -82,7 +80,6 @@ import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -118,10 +115,9 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -147,17 +143,6 @@ public class SpecimenController extends BaseStudyController
     public SpecimenController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    private static long[] toLongArray(Collection<String> intStrings)
-    {
-        if (intStrings == null)
-            return null;
-        long[] converted = new long[intStrings.size()];
-        int index = 0;
-        for (String intString : intStrings)
-            converted[index++] = Long.parseLong(intString);
-        return converted;
     }
 
     protected SpecimenUtils getUtils()
@@ -426,35 +411,6 @@ public class SpecimenController extends BaseStudyController
         }
 
         return requestedVials;
-    }
-
-    public static List<Vial> getSpecimensFromRowIds(Collection<String> ids, Container container, User user)
-    {
-        return getSpecimensFromRowIds(SpecimenController.toLongArray(ids), container, user);
-    }
-
-    public List<Vial> getSpecimensFromPost(boolean fromGroupedView, boolean onlyAvailable)
-    {
-        Set<String> formValues = null;
-        if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-            formValues = DataRegionSelection.getSelected(getViewContext(), true);
-
-        if (formValues == null || formValues.isEmpty())
-            return null;
-
-        List<Vial> selectedVials;
-        if (fromGroupedView)
-        {
-            Map<String, List<Vial>> keyToVialMap =
-                    SpecimenManagerNew.get().getVialsForSpecimenHashes(getContainer(), getUser(),  formValues, onlyAvailable);
-            List<Vial> vials = new ArrayList<>();
-            for (List<Vial> vialList : keyToVialMap.values())
-                vials.addAll(vialList);
-            selectedVials = new ArrayList<>(vials);
-        }
-        else
-            selectedVials = getSpecimensFromRowIds(formValues, getContainer(), getUser());
-        return selectedVials;
     }
 
     public static class RequirementForm extends IdForm
@@ -737,30 +693,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-
-    @RequiresPermission(ReadPermission.class)
-    public class RequestHistoryAction extends SimpleViewAction<IdForm>
-    {
-        private int _requestId;
-
-        @Override
-        public ModelAndView getView(IdForm form, BindException errors)
-        {
-            _requestId = form.getId();
-            HtmlView header = new HtmlView(new LinkBuilder("View Request").href(SpecimenMigrationService.get().getManageRequestURL(getContainer(), form.getId(), null)));
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
-            GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), errors, filter);
-            return new VBox(header, historyGrid);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addSpecimenRequestNavTrail(root, _requestId);
-            root.addChild("Request History");
-        }
-    }
-
     private ActionURL getManageStudyURL()
     {
         return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
@@ -895,7 +827,7 @@ public class SpecimenController extends BaseStudyController
                         {
                             StringBuilder tsvBuilder = new StringBuilder();
                             tsvWriter.write(tsvBuilder);
-                            formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(Charsets.UTF_8), TSVWriter.DELIM.TAB.contentType));
+                            formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(StandardCharsets.UTF_8), TSVWriter.DELIM.TAB.contentType));
                         }
                     }
 
@@ -917,7 +849,7 @@ public class SpecimenController extends BaseStudyController
                     try
                     {
                         SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
-                            RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content.toString(), formFiles);
+                            RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content, formFiles);
 
                         final Container container = getContainer();
                         final User user = getUser();
@@ -1115,7 +1047,8 @@ public class SpecimenController extends BaseStudyController
             PROVIDING("Providing"),
             ORIGINATING("Originating");
 
-            private String _display;
+            private final String _display;
+
             Type(String display)
             {
                 _display = display;
@@ -1127,12 +1060,13 @@ public class SpecimenController extends BaseStudyController
             }
         }
 
-        private SpecimenRequest _specimenRequest;
+        private final SpecimenRequest _specimenRequest;
+        private final SpecimenUtils _utils;
+        private final Type _type;
+
         private Map<Integer, List<Vial>> _specimensBySiteId;
         private List<ActorNotificationRecipientSet> _possibleNotifications;
-        private Type _type;
         private boolean _requirementsComplete;
-        private SpecimenUtils _utils;
 
         public LabSpecimenListsBean(SpecimenUtils utils, SpecimenRequest specimenRequest, LabSpecimenListsBean.Type type)
         {
@@ -1167,12 +1101,7 @@ public class SpecimenController extends BaseStudyController
                         location = LocationManager.get().getCurrentLocation(vial);
                     if (location != null)
                     {
-                        List<Vial> current = _specimensBySiteId.get(location.getRowId());
-                        if (current == null)
-                        {
-                            current = new ArrayList<>();
-                            _specimensBySiteId.put(location.getRowId(), current);
-                        }
+                        List<Vial> current = _specimensBySiteId.computeIfAbsent(location.getRowId(), k -> new ArrayList<>());
                         current.add(vial);
                     }
                 }
@@ -1407,75 +1336,6 @@ public class SpecimenController extends BaseStudyController
         public void setRequired(int[] required)
         {
             _required = required;
-        }
-    }
-
-    @RequiresPermission(ManageNewRequestFormPermission.class)
-    public class ManageRequestInputsAction extends SimpleViewAction<PipelineForm>
-    {
-        @Override
-        public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
-        {
-            getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView<>("/org/labkey/study/view/specimen/manageRequestInputs.jsp",
-                    new ManageRequestInputsBean(getViewContext()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("coordinateSpecimens#form");
-            _addManageStudy(root);
-            root.addChild("Manage New Request Form");
-        }
-    }
-
-    public static class PipelineForm extends PipelinePathForm
-    {
-        private String replaceOrMerge = "replace";
-
-        public String getReplaceOrMerge()
-        {
-            return replaceOrMerge;
-        }
-
-        public void setReplaceOrMerge(String replaceOrMerge)
-        {
-            this.replaceOrMerge = replaceOrMerge;
-        }
-
-        public boolean isMerge()
-        {
-            return "merge".equals(this.replaceOrMerge);
-        }
-    }
-
-    public static class ManageRequestInputsBean
-    {
-        private final SpecimenRequestInput[] _inputs;
-        private final Container _container;
-        private final String _contextPath;
-
-        public ManageRequestInputsBean(ViewContext context) throws SQLException
-        {
-            _container = context.getContainer();
-            _inputs = SpecimenRequestManager.get().getNewSpecimenRequestInputs(_container);
-            _contextPath = context.getContextPath();
-        }
-
-        public SpecimenRequestInput[] getInputs()
-        {
-            return _inputs;
-        }
-
-        public Container getContainer()
-        {
-            return _container;
-        }
-
-        public String getContextPath()
-        {
-            return _contextPath;
         }
     }
 

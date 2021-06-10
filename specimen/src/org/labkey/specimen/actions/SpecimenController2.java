@@ -25,6 +25,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
@@ -61,6 +62,7 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
@@ -69,6 +71,7 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
 import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.actions.ManageRequestBean;
+import org.labkey.api.specimen.actions.ManageRequestInputsBean;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
 import org.labkey.api.specimen.actions.SpecimenEventBean;
@@ -90,6 +93,7 @@ import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
+import org.labkey.api.specimen.security.permissions.ManageNewRequestFormPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestStatusesPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
@@ -119,6 +123,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -314,6 +319,24 @@ public class SpecimenController2 extends SpringActionController
     {
         return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SettingsManager.get().getDisplaySettings(container).isDefaultToCommentsMode());
+    }
+
+    public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
+    {
+        DataRegion rgn = new DataRegion();
+        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
+        rgn.setTable(tableInfoRequestEvent);
+        rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntryType", "Comments", "CreatedBy", "EntityId"));
+        rgn.getDisplayColumn("EntityId").setVisible(false);
+
+        DataColumn commentsColumn = (DataColumn) rgn.getDisplayColumn("Comments");
+        commentsColumn.setWidth("50%");
+        commentsColumn.setPreserveNewlines(true);
+        rgn.addDisplayColumn(new AttachmentDisplayColumn(request));
+        GridView grid = new GridView(rgn, errors);
+        grid.setFilter(filter);
+        grid.setSort(new Sort("Created"));
+        return grid;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -3934,6 +3957,49 @@ public class SpecimenController2 extends SpringActionController
         {
             addBaseSpecimenNavTrail(root);
             root.addChild(_vialView ? "Vials" : "Grouped Vials");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class RequestHistoryAction extends SimpleViewAction<IdForm>
+    {
+        private int _requestId;
+
+        @Override
+        public ModelAndView getView(IdForm form, BindException errors)
+        {
+            _requestId = form.getId();
+            HtmlView header = new HtmlView(new Link.LinkBuilder("View Request").href(SpecimenMigrationService.get().getManageRequestURL(getContainer(), form.getId(), null)));
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
+            GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);
+            return new VBox(header, historyGrid);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestNavTrail(root, _requestId);
+            root.addChild("Request History");
+        }
+    }
+
+    @RequiresPermission(ManageNewRequestFormPermission.class)
+    public class ManageRequestInputsAction extends SimpleViewAction<PipelineForm>
+    {
+        @Override
+        public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
+        {
+            ensureSpecimenRequestsConfigured(false);
+            return new JspView<>("/org/labkey/study/view/specimen/manageRequestInputs.jsp",
+                new ManageRequestInputsBean(getViewContext()));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("coordinateSpecimens#form");
+            addManageStudyNavTrail(root);
+            root.addChild("Manage New Request Form");
         }
     }
 }

@@ -84,10 +84,10 @@ public class SpecimenModule extends SpringModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
+            new SpecimenReportWebPartFactory(),
             new SpecimenSearchWebPartFactory(HttpView.BODY),
             new SpecimenToolsWebPartFactory(),
-            new SpecimenWebPartFactory(),
-            new SpecimenReportWebPartFactory()
+            new SpecimenWebPartFactory()
         );
     }
 
@@ -301,6 +301,18 @@ public class SpecimenModule extends SpringModule
             {
                 return SpecimenController2.SubmitRequestAction.class;
             }
+
+            @Override
+            public Class<? extends Controller> getRequestHistoryActionClass()
+            {
+                return SpecimenController2.RequestHistoryAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getManageRequestInputsActionClass()
+            {
+                return SpecimenController2.ManageRequestInputsAction.class;
+            }
         });
      }
 
@@ -316,13 +328,13 @@ public class SpecimenModule extends SpringModule
         PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
 
         SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
-            new SpecimenSettingsWriter(),
-            new SpecimenArchiveWriter()
+            new SpecimenArchiveWriter(),
+            new SpecimenSettingsWriter()
         ));
 
         SimpleStudyImporterRegistry.registerSimpleStudyImporterProvider(() -> List.of(
-            new SpecimenSettingsImporter(),
-            new SpecimenSchemaImporter()
+            new SpecimenSchemaImporter(),
+            new SpecimenSettingsImporter()
         ));
     }
 
@@ -338,8 +350,8 @@ public class SpecimenModule extends SpringModule
     public Set<Class> getUnitTests()
     {
         return Set.of(
-            SpecimenWriter.TestCase.class,
-            SampleMindedTransformTask.TestCase.class
+            SampleMindedTransformTask.TestCase.class,
+            SpecimenWriter.TestCase.class
         );
     }
 

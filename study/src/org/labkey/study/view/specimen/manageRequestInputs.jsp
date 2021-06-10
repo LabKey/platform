@@ -16,11 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager.SpecimenRequestInput"%>
+<%@ page import="org.labkey.api.specimen.actions.ManageRequestInputsBean"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleUpdateRequestInputsAction"%>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequestInputsBean" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.HandleUpdateRequestInputsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
