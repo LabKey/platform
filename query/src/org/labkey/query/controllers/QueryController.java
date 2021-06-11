@@ -5707,6 +5707,25 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public static class GetSnapshotSelectionAction extends ReadOnlyApiAction<SelectForm>
+    {
+        @Override
+        public void validateForm(SelectForm form, Errors errors)
+        {
+            if (StringUtils.isEmpty(form.getKey()))
+            {
+                errors.reject(ERROR_MSG, "Selection key is required");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            Set<String> selected = DataRegionSelection.getSnapshotSelected(getViewContext(), form.getKey());
+            return new ApiSimpleResponse("selected", selected);
+        }
+    }
 
     public static String getMessage(SqlDialect d, SQLException x)
     {
