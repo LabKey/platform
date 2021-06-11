@@ -132,18 +132,19 @@ public class SamplesSchema extends AbstractExpSchema
         if (st == null)
             return null;
 
+        AbstractTableInfo tableInfo = (AbstractTableInfo) createSampleTable(st, cf);
+
         // Get linked to study columns
         StudyPublishService studyPublishService = StudyPublishService.get();
         if (studyPublishService != null)
         {
-            AbstractTableInfo tableInfo = (AbstractTableInfo) getSampleTable(st, cf);
-            int rowId = getSampleTypes().get(tableInfo.getName()).getRowId();
+            int rowId = st.getRowId();
             String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
             studyPublishService.addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
             return tableInfo;
         }
         
-        return getSampleTable(st, cf);
+        return tableInfo;
     }
 
     @Override
@@ -158,8 +159,14 @@ public class SamplesSchema extends AbstractExpSchema
         return queryView;
     }
 
+    /** Convenience method that takes a sample type instead of a string to provide a more robust mapping */
+    public ExpMaterialTable getTable(@NotNull ExpSampleType st, @Nullable ContainerFilter cf)
+    {
+        return (ExpMaterialTable) getTable(st.getName(), cf);
+    }
+
     /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
+    private ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
@@ -167,7 +174,6 @@ public class SamplesSchema extends AbstractExpSchema
         }
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
         ret.populate(st, true);
-        ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
     }
 

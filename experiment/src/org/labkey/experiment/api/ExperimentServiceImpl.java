@@ -18,7 +18,9 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Iterables;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -705,10 +707,10 @@ public class ExperimentServiceImpl implements ExperimentService
     public List<ExpMaterialImpl> getIndexableMaterials(Container container, @Nullable Date modifiedSince)
     {
         // Big hack to prevent indexing study specimens. Also in ExpMaterialImpl.index()
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE Container = ? AND LSID NOT LIKE '%:"
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
                 + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%'");
         sql.add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
@@ -716,9 +718,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<ExpDataImpl> getIndexableData(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " WHERE Container = ? AND classId IS NOT NULL");
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL");
         sql.add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
@@ -726,8 +728,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoDataClass() + " WHERE Container = ?").add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoDataClass(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoDataClass() + " _x_ WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoDataClass(), modifiedSince, "_x_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpDataClassImpl.fromDataClasses(new SqlSelector(getSchema(), sql).getArrayList(DataClass.class));
@@ -735,8 +737,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public Collection<ExpSampleTypeImpl> getIndexableSampleTypes(Container container, @Nullable Date modifiedSince)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " WHERE Container = ?").add(container.getId());
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, null).toSQLFragment(null, null);
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " _st_ WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, "_st_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         return ExpSampleTypeImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
@@ -756,6 +758,35 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         setLastIndexed(getTinfoMaterial(), rowId, ms);
     }
+
+    public void setMaterialLastIndexed(List<Pair<Integer,Long>> updates)
+    {
+        if (null == updates || updates.isEmpty())
+            return;
+        try (Connection c = getSchema().getScope().getConnection())
+        {
+            Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+            Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
+            ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
+                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null);
+
+            ListUtils.partition(updates, 1000).forEach(sublist ->
+            {
+                for (Pair<Integer, Long> p : sublist)
+                {
+                    rowid.setValue(p.first);
+                    ts.setValue(new Timestamp(p.second));
+                    pm.addBatch();
+                }
+                pm.execute();
+            });
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 
     public void setMaterialSourceLastIndexed(int rowId, long ms)
     {
@@ -2614,6 +2645,109 @@ public class ExperimentServiceImpl implements ExperimentService
         });
     }
 
+    private boolean verifyEdges(int runId, Integer runObjectId, List<List<Object>> params)
+    {
+        // query the exp.edge table for the run and find any differences
+        TableInfo edge = getTinfoEdge();
+        TableSelector ts = new TableSelector(edge, edge.getColumns("fromObjectId", "toObjectId", "runId"), new SimpleFilter("runId", runId), null);
+
+        List<List<Object>> edges = new ArrayList<>(params.size());
+        ts.forEach(r -> {
+            int fromObjectId = r.getInt("fromObjectId");
+            int toObjectId = r.getInt("toObjectId");
+            int edgeRunId = r.getInt("runId");
+            edges.add(List.of(fromObjectId, toObjectId, edgeRunId));
+        });
+
+        // quick check
+        if (params.size() == 0 && edges.size() == 0)
+            return true;
+
+        Set<List<Object>> paramSet = new HashSet<>(params);
+        Set<List<Object>> edgesSet = new HashSet<>(edges);
+
+        // compare the exp.edge table edges versus the run's edges
+        final var paramEdgesNotInDb = SetUtils.difference(paramSet, edgesSet);
+        final var dbEdgesNotInParams = SetUtils.difference(edgesSet, paramSet);
+
+        if (paramEdgesNotInDb.isEmpty() && dbEdgesNotInParams.isEmpty())
+        {
+            LOG.debug("  all " + params.size() + " run edges and exp.edges match");
+            return true;
+        }
+        else
+        {
+            Map<Integer, Identifiable> identifiableMap = new HashMap<>();
+
+            LOG.warn("*** Run " + runId + " failed verification: " + (params.size() - paramEdgesNotInDb.size()) + " run edges and exp.edges match");
+            if (!paramEdgesNotInDb.isEmpty())
+            {
+                LOG.warn("  " + paramEdgesNotInDb.size() + " run edges not in exp.edges table:");
+                if (LOG.isDebugEnabled())
+                {
+                    for (List<Object> e : paramEdgesNotInDb)
+                    {
+                        Integer fromObjectId = (Integer) e.get(0);
+                        Integer toObjectId = (Integer) e.get(1);
+
+                        StringBuilder sb = new StringBuilder("  ");
+                        appendIdent(sb, identifiableMap, runObjectId, fromObjectId);
+                        sb.append(" -> ");
+                        appendIdent(sb, identifiableMap, runObjectId, toObjectId);
+                        LOG.debug(sb.toString());
+                    }
+                }
+            }
+
+            if (!dbEdgesNotInParams.isEmpty())
+            {
+                LOG.warn("  " + dbEdgesNotInParams.size() + " exp.edge table edges not in run:");
+                if (LOG.isDebugEnabled())
+                {
+                    for (List<Object> e : dbEdgesNotInParams)
+                    {
+                        Integer fromObjectId = (Integer) e.get(0);
+                        Integer toObjectId = (Integer) e.get(1);
+
+                        StringBuilder sb = new StringBuilder("  ");
+                        appendIdent(sb, identifiableMap, runObjectId, fromObjectId);
+                        sb.append(" -> ");
+                        appendIdent(sb, identifiableMap, runObjectId, toObjectId);
+                        LOG.debug(sb.toString());
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private void appendIdent(StringBuilder sb, Map<Integer, Identifiable> identifiableMap, Integer runObjectId, int objectId)
+    {
+        if (runObjectId != null && Objects.equals(runObjectId, objectId))
+        {
+            sb.append("{RUN}");
+        }
+        else
+        {
+            Identifiable to = identifiableMap.computeIfAbsent(objectId, this::fetchIdent);
+            sb.append("{name=").append(to.getName()).append(", oid=").append(objectId).append(", lsid=").append(to.getLSID()).append("}");
+        }
+    }
+
+    private Identifiable fetchIdent(Integer id)
+    {
+        OntologyObject oo = OntologyManager.getOntologyObject(id);
+        // we have a database constraint in place
+        assert oo != null;
+        Identifiable ident = LsidManager.get().getObject(oo.getObjectURI());
+        return Objects.requireNonNullElseGet(ident, () -> {
+            var i = new IdentifiableBase(oo);
+            i.setName("<not-found>");
+            return i;
+        });
+    }
+
     private void insertEdges(List<List<Object>> params)
     {
         assert getExpSchema().getScope().isTransactionActive();
@@ -2738,15 +2872,19 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void syncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer)
     {
-        syncRunEdges(runId, runObjectId, runLsid, runContainer, true, null);
+        syncRunEdges(runId, runObjectId, runLsid, runContainer, true, false, null);
     }
 
-    private void syncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer, boolean deleteFirst, @Nullable Map<String, Integer> cpasTypeToObjectId)
+    private void syncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer, boolean deleteFirst, boolean verifyEdgesNoInsert, @Nullable Map<String, Integer> cpasTypeToObjectId)
     {
+        // don't do any updates if we are just verifying
+        if (verifyEdgesNoInsert)
+            deleteFirst = false;
+
         CPUTimer timer = new CPUTimer("sync edges");
         timer.start();
 
-        LOG.debug("Rebuilding edges for runId " + runId);
+        LOG.debug((verifyEdgesNoInsert ? "Verifying" : "Rebuilding") + " edges for runId " + runId);
         try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
         {
             // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
@@ -2822,18 +2960,21 @@ public class ExperimentServiceImpl implements ExperimentService
                         if (runObj == null)
                             LOG.debug("  run exp.object is null, creating: " + runLsid);
                     }
-                    runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Integer) null);
+                    if (!verifyEdgesNoInsert)
+                        runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Integer) null);
                 }
 
                 Map<String, Map<String, Object>> allDatasByLsid = new HashMap<>();
                 fromDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
                 toDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
-                ensureNodeObjects(getTinfoData(), allDatasByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
+                if (!verifyEdgesNoInsert)
+                    ensureNodeObjects(getTinfoData(), allDatasByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
 
                 Map<String, Map<String, Object>> allMaterialsByLsid = new HashMap<>();
                 fromMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
                 toMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
-                ensureNodeObjects(getTinfoMaterial(), allMaterialsByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
+                if (!verifyEdgesNoInsert)
+                    ensureNodeObjects(getTinfoMaterial(), allMaterialsByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
 
                 List<List<Object>> params = new ArrayList<>(edgeCount);
 
@@ -2903,12 +3044,21 @@ public class ExperimentServiceImpl implements ExperimentService
                     }
                 }
 
-                insertEdges(params);
+                if (verifyEdgesNoInsert)
+                    verifyEdges(runId, runObjectId, params);
+                else
+                    insertEdges(params);
             }
+            else
+            {
+                if (verifyEdgesNoInsert)
+                    verifyEdges(runId, runObjectId, Collections.emptyList());
+            }
+
 
             tx.commit();
             timer.stop();
-            LOG.debug("  synced edges in " + timer.getDuration());
+            LOG.debug("  " + (verifyEdgesNoInsert ? "verified" : "synced") + " edges in " + timer.getDuration());
         }
     }
 
@@ -2937,7 +3087,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     String runLsid = (String)run.get("lsid");
                     String containerId = (String)run.get("container");
                     Container runContainer = ContainerManager.getForId(containerId);
-                    syncRunEdges(runId, runObjectId, runLsid, runContainer, false, cpasTypeToObjectId);
+                    syncRunEdges(runId, runObjectId, runLsid, runContainer, false, false, cpasTypeToObjectId);
                 }
             }
 
@@ -2945,6 +3095,69 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 timing.stop();
                 LOG.debug("Rebuilt all edges: " + timing.getDuration() + " ms");
+            }
+        }
+    }
+
+    public void verifyRunEdges(ExpRunImpl run)
+    {
+        syncRunEdges(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer(), false, true, null);
+    }
+
+    public void verifyAllEdges(Container c, @Nullable Integer limit)
+    {
+        if (c.isRoot())
+        {
+            Set<Container> children = ContainerManager.getAllChildren(c);
+            for (Container child : children)
+            {
+                _verifyAllEdges(child, limit);
+            }
+        }
+        else
+        {
+            _verifyAllEdges(c, limit);
+        }
+    }
+
+    private void _verifyAllEdges(Container c, @Nullable Integer limit)
+    {
+        try (CustomTiming timing = MiniProfiler.custom("exp", "verifyAllEdges"))
+        {
+            // Local cache of SampleType LSID to objectId. The SampleType objectId will be used as the node's ownerObjectId.
+            Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
+
+            SimpleFilter filter = new SimpleFilter("container", c.getId());
+            var ts = new TableSelector(getTinfoExperimentRun(),
+                    getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), filter, new Sort("rowId"));
+            if (limit != null)
+                ts.setMaxRows(limit);
+            Collection<Map<String, Object>> runs = ts.getMapCollection();
+            int runCount = 0;
+            try (Timing ignored = MiniProfiler.step("create edges"))
+            {
+                LOG.info("Verifying edges for " + runs.size() + " runs in " + c.getPath());
+                for (Map<String, Object> run : runs)
+                {
+                    Integer runId = (Integer)run.get("rowId");
+                    Integer runObjectId = (Integer)run.get("objectid");
+                    String runLsid = (String)run.get("lsid");
+                    String containerId = (String)run.get("container");
+                    Container runContainer = ContainerManager.getForId(containerId);
+                    syncRunEdges(runId, runObjectId, runLsid, runContainer, false, true, cpasTypeToObjectId);
+                    runCount++;
+
+                    if (runCount % 1000 == 0)
+                    {
+                        LOG.info("  verified " + runCount + " runs...");
+                    }
+                }
+            }
+
+            if (timing != null)
+            {
+                timing.stop();
+                LOG.info("Verified edges for " + (limit == null ? "all " : "only ") + runCount + " runs: " + timing.getDuration() + " ms");
             }
         }
     }
@@ -5923,7 +6136,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
             for (var er : runLsidToRowId.values())
             {
-                syncRunEdges(er.getRowId(), er.getObjectId(), er.getLSID(), _container, false, cpasTypeToObjectId);
+                syncRunEdges(er.getRowId(), er.getObjectId(), er.getLSID(), _container, false, false, cpasTypeToObjectId);
             }
         }
 

@@ -980,7 +980,7 @@ public class IssueManager
         
         SimpleFilter f = SimpleFilter.createContainerFilter(c);
         SearchService.LastIndexedClause incremental = new SearchService.LastIndexedClause(_issuesSchema.getTableInfoIssues(), modifiedSince, null);
-        if (!incremental.toSQLFragment(null,null).isEmpty())
+        if (!incremental.isEmpty())
             f.addClause(incremental);
         if (f.getClauses().isEmpty())
             f = null;

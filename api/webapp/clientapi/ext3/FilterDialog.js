@@ -1433,12 +1433,15 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
         const divId = ctx.divId,
               index = ctx.index,
               scope = ctx.scope;
-        const inputs = scope.inputs;
-        const targetInput = inputs ? inputs[index]: undefined;
 
         LABKEY.App.loadApp('conceptFilter', divId, {
             ontologyId: scope.column.sourceOntology,
+            columnName: scope.column.caption,
             onFilterChange: function(filterValue) {
+                // Inputs may be set after app load, so look it up at execution time
+                const inputs = scope.inputs;
+                const targetInput = inputs ? inputs[index]: undefined;
+
                 // push values selected in tree to the target input control
                 if (targetInput && !targetInput.disabled) {
                     targetInput.setValue(filterValue);
@@ -1499,7 +1502,7 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
                 listeners: {
                     render: function() {
                         // const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                        const conceptFilterScript = 'core/gen/conceptFilter';
+                        const conceptFilterScript = 'gen/conceptFilter';
                         LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId:divId, index:index, scope:this});
                     },
                     scope: this

@@ -9,7 +9,7 @@
         if (!productNavLoaded) {
             $("#" + HEADER_CONTENT_ID).html("<div style=\"padding: 10px;\"><i class=\"fa fa-spinner fa-pulse\"></i> Loading...</div>");
 
-            LABKEY.requiresScript('core/gen/productNavigation', loadProductNav);
+            LABKEY.requiresScript('gen/productNavigation', loadProductNav);
             // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
             productNavLoaded = true;
         } else {
