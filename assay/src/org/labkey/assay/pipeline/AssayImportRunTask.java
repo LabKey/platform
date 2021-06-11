@@ -16,16 +16,23 @@
 package org.labkey.assay.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -44,19 +51,25 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.XMLBeanTaskFactoryFactory;
+import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderService;
+import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.writer.ZipUtil;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,6 +77,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * User: kevink
@@ -99,6 +113,358 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 factory._protocolName = xtask.getProtocolName();
 
             return factory;
+        }
+    }
+
+    /**
+     * A factory for file analysis task implementations
+     */
+    public static class FileAnalysisFactory extends Factory
+    {
+        private static final String PROP_KEY = "name";
+        private static final String PROP_VALUE = "value";
+        private static final String RESULTS_NAME = "results";
+        private static final String RUN_PROPS_NAME = "runProperties";
+        private static final String BATCH_PROPS_NAME = "batchProperties";
+        private static final String PLATE_METADATA_NAME = "plateMetadata";
+
+        private static final String PROTOCOL_NAME_KEY = "name";
+        private static final String PROTOCOL_ID_KEY = "id";
+
+        public FileAnalysisFactory()
+        {
+            super(AssayImportRunTask.class);
+        }
+
+        @Override
+        public String getStatusName()
+        {
+            return "ASSAY RUN IMPORT";
+        }
+
+        @Override
+        public boolean isJobComplete(PipelineJob job)
+        {
+            return false;
+        }
+
+        @Override
+        public PipelineJob.Task createTask(PipelineJob job)
+        {
+            return new AssayImportRunTask(this, job);
+        }
+
+        @Override
+        public List<String> getProtocolActionNames()
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<FileType> getInputTypes()
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        protected @NotNull ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
+        {
+            ExpProtocol protocol = resolveProtocol(job);
+            if (protocol != null)
+                return protocol;
+            return super.getProtocol(job, provider);
+        }
+
+        /**
+         * Resolve the protocol from the name capture group of either : name or id
+         */
+        @Nullable
+        private ExpProtocol resolveProtocol(PipelineJob job)
+        {
+            Map<String, String> params = job.getParameters();
+            if (params.containsKey(PROTOCOL_ID_KEY) && params.containsKey(PROTOCOL_NAME_KEY))
+            {
+                job.getLogger().error("Protocol ID and name cannot be specified at the same time.");
+                return null;
+            }
+
+            if (params.containsKey(PROTOCOL_ID_KEY))
+            {
+                return ExperimentService.get().getExpProtocol(Integer.parseInt(params.get(PROTOCOL_ID_KEY)));
+            }
+            else if (params.containsKey(PROTOCOL_NAME_KEY))
+            {
+                Optional<ExpProtocol> protocol = AssayService.get().getAssayProtocols(job.getContainer()).stream()
+                        .filter(p -> p.getName().equals(params.get(PROTOCOL_NAME_KEY)))
+                        .findFirst();
+
+                if (protocol.isPresent())
+                    return protocol.get();
+            }
+            return null;
+        }
+
+        @Override
+        protected @NotNull AssayProvider getProvider(PipelineJob job) throws PipelineJobException
+        {
+            ExpProtocol protocol = resolveProtocol(job);
+            if (protocol != null)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider != null)
+                    return provider;
+            }
+
+            // try to resolve using the assay provider param
+            String providerName = job.getParameters().get("pipeline, assay provider");
+            if (providerName != null)
+            {
+                AssayProvider provider = AssayService.get().getProvider(providerName);
+                if (provider == null)
+                    throw new PipelineJobException("Assay provider not found: " + providerName);
+
+                return provider;
+            }
+            return super.getProvider(job);
+        }
+
+        /**
+         * Alternatively for file analysis tasks, we can get the output files from the
+         * triggered location
+         */
+        @Override
+        List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
+        {
+            List<RecordedAction.DataFile> outputs = new ArrayList<>();
+            File dataFile = getDataFile(job);
+            job.getLogger().info("Importing output data file : " + dataFile.getName());
+            outputs.add(new RecordedAction.DataFile(dataFile.toURI(), "RESULTS-DATA", false, false));
+
+            return outputs;
+        }
+
+        private File getDataFile(PipelineJob job)
+        {
+            FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
+
+            // guaranteed to have a single file upload
+            assert support.getInputFiles().size() == 1;
+            return support.getInputFiles().get(0);
+        }
+
+        @Override
+        @Nullable
+        List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            try
+            {
+                if (ExcelLoader.isExcel(dataFile))
+                {
+                    job.getLogger().info("Processing excel file: " + dataFile.getName());
+                    // check to see if this is a multi-sheet format
+                    ExcelLoader loader = new ExcelLoader(dataFile, true);
+                    List<String> sheets = loader.getSheetNames();
+                    if (sheets.size() > 1)
+                    {
+                        job.getLogger().info("Processing excel multi-sheet format");
+
+                        // if a sheet name with results exist, use that as the results data, otherwise
+                        // default to the first sheet in the workbook
+                        if (sheets.contains(RESULTS_NAME))
+                        {
+                            job.getLogger().info("Found sheet named : " + RESULTS_NAME + ", loading into results data.");
+                            loader.setSheetName(RESULTS_NAME);
+                        }
+                        else
+                            job.getLogger().info("Couldn't find sheet named : " + RESULTS_NAME + ", loading data from the first sheet.");
+                        return loader.load();
+                    }
+                }
+                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                {
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> RESULTS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+
+                    if (results != null && results.length == 1)
+                    {
+                        File resultFile = results[0];
+                        job.getLogger().info("Found results file named : " + resultFile + ", loading into results data.");
+                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
+
+                        return loader.load();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+            return null;
+        }
+
+        @Override
+        @NotNull Map<String, Object> getBatchProperties(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            try
+            {
+                if (ExcelLoader.isExcel(dataFile))
+                {
+                    return loadProperties(dataFile, BATCH_PROPS_NAME, job.getLogger());
+                }
+                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                {
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> BATCH_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                    if (results != null && results.length == 1)
+                    {
+                        File resultFile = results[0];
+                        job.getLogger().info("Found batch properties file named : " + resultFile + ", loading into results data.");
+                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
+
+                        return loadProperties(loader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+            return Collections.emptyMap();
+        }
+
+        @Override
+        @NotNull Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            try
+            {
+                if (ExcelLoader.isExcel(dataFile))
+                {
+                    return loadProperties(dataFile, RUN_PROPS_NAME, job.getLogger());
+                }
+                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                {
+                    ensureExplodedZip(job, dataFile);
+                    File dir = getExplodedZipDir(job, dataFile);
+                    File[] results = dir.listFiles((dir1, name) -> RUN_PROPS_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                    if (results != null && results.length == 1)
+                    {
+                        File resultFile = results[0];
+                        job.getLogger().info("Found run properties file named : " + resultFile + ", loading into results data.");
+                        DataLoader loader = DataLoaderService.get().createLoader(resultFile, null, true, null, null);
+
+                        return loadProperties(loader);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new PipelineJobException(e);
+            }
+            return Collections.emptyMap();
+        }
+
+        @Override
+        @Nullable Map<String, AssayPlateMetadataService.MetadataLayer> getPlateMetadata(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                try
+                {
+                    // plate metadata is only supported for zip archives because on JSON formats are currently supported
+                    if (FileUtil.getExtension(dataFile).equals("zip"))
+                    {
+                        ensureExplodedZip(job, dataFile);
+                        File dir = getExplodedZipDir(job, dataFile);
+                        File[] results = dir.listFiles((dir1, name) -> PLATE_METADATA_NAME.equalsIgnoreCase(FileUtil.getBaseName(name)));
+                        if (results != null && results.length == 1)
+                        {
+                            File metadataFile = results[0];
+                            job.getLogger().info("Found plate metadata file named : " + metadataFile + ", attempting to parse JSON metadata.");
+                            return svc.parsePlateMetadata(metadataFile);
+                        }
+                    }
+                }
+                catch (ExperimentException e)
+                {
+                    throw new PipelineJobException(e);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        void cleanUp(PipelineJob job) throws PipelineJobException
+        {
+            File dataFile = getDataFile(job);
+            if (FileUtil.getExtension(dataFile).equals("zip"))
+            {
+                File dir = getExplodedZipDir(job, dataFile);
+                FileUtil.deleteDir(dir, job.getLogger());
+            }
+        }
+
+        private Map<String, Object> loadProperties(File dataFile, String sheetName, Logger log) throws PipelineJobException
+        {
+            try
+            {
+                ExcelLoader loader = new ExcelLoader(dataFile, true);
+                if (loader.getSheetNames().contains(sheetName))
+                {
+                    log.info("Found sheet named : " + sheetName + ", loading properties from this sheet.");
+
+                    loader.setSheetName(sheetName);
+                    return loadProperties(loader);
+                }
+                return Collections.emptyMap();
+            }
+            catch (IOException e)
+            {
+                throw new PipelineJobException(e);
+            }
+        }
+
+        private Map<String, Object> loadProperties(DataLoader loader) throws PipelineJobException
+        {
+            Map<String, Object> properties = new CaseInsensitiveHashMap<>();
+            for (Map<String, Object> row : loader.load())
+            {
+                if (row.containsKey(PROP_KEY) && row.containsKey(PROP_VALUE))
+                    properties.put(String.valueOf(row.get(PROP_KEY)), row.get(PROP_VALUE));
+                else
+                    throw new PipelineJobException("Batch or run properties must have column headers of : name and value " +
+                            "to be parsed correctly.");
+            }
+            return properties;
+        }
+
+        private void ensureExplodedZip(PipelineJob job, File dataFile) throws PipelineJobException
+        {
+            File explodedDir = getExplodedZipDir(job, dataFile);
+            if (!explodedDir.exists())
+            {
+                try
+                {
+                    ZipUtil.unzipToDirectory(dataFile, explodedDir, job.getLogger());
+                }
+                catch (IOException e)
+                {
+                    throw new PipelineJobException(e);
+                }
+            }
+        }
+
+        private File getExplodedZipDir(PipelineJob job, File dataFile)
+        {
+            File analysisDir = ((AbstractFileAnalysisJob)job).getAnalysisDirectory();
+            return new File(analysisDir, String.format("%s-expanded", dataFile.getName()));
         }
     }
 
@@ -188,7 +554,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @NotNull
-        private AssayProvider getProvider(PipelineJob job) throws PipelineJobException
+        protected AssayProvider getProvider(PipelineJob job) throws PipelineJobException
         {
             String providerName = _providerName;
             if (providerName == null)
@@ -196,7 +562,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             if (providerName.startsWith("${") && providerName.endsWith("}"))
             {
-                String propertyName = providerName.substring(2, providerName.length()-3);
+                String propertyName = providerName.substring(2, providerName.length() - 1);
                 String value = job.getParameters().get(propertyName);
                 if (value == null)
                     throw new PipelineJobException("Assay provider name for job parameter " + providerName + " required");
@@ -211,7 +577,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         @NotNull
-        private ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
+        protected ExpProtocol getProtocol(PipelineJob job, AssayProvider provider) throws PipelineJobException
         {
             Container c = job.getContainer();
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
@@ -227,7 +593,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             if (protocolName.startsWith("${") && protocolName.endsWith("}"))
             {
-                String propertyName = protocolName.substring(2, protocolName.length()-1);
+                String propertyName = protocolName.substring(2, protocolName.length() - 1);
                 String value = job.getParameters().get(propertyName);
                 if (value == null)
                     throw new PipelineJobException("Assay protocol name for job parameter " + protocolName + " required");
@@ -254,6 +620,38 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             throw new PipelineJobException("Assay protocol not found: " + protocolName);
         }
 
+        List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
+        {
+            return Collections.emptyList();
+        }
+
+        @Nullable
+        List<Map<String, Object>> getRawData(PipelineJob job) throws PipelineJobException
+        {
+            return null;
+        }
+
+        @NotNull
+        Map<String, Object> getBatchProperties(PipelineJob job) throws PipelineJobException
+        {
+            return Collections.emptyMap();
+        }
+
+        @NotNull
+        Map<String, Object> getRunProperties(PipelineJob job) throws PipelineJobException
+        {
+            return Collections.emptyMap();
+        }
+
+        @Nullable
+        Map<String, AssayPlateMetadataService.MetadataLayer> getPlateMetadata(PipelineJob job) throws PipelineJobException
+        {
+            return null;
+        }
+
+        void cleanUp(PipelineJob job) throws PipelineJobException
+        {
+        }
     }
 
     public AssayImportRunTask(Factory factory, PipelineJob job)
@@ -261,31 +659,39 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         super(factory, job);
     }
 
+    public AssayImportRunTask(FileAnalysisFactory factory, PipelineJob job)
+    {
+        super(factory, job);
+    }
+
     // Get the outputs of the last action in the job sequence
     private List<RecordedAction.DataFile> getOutputs(PipelineJob job) throws PipelineJobException
     {
-        RecordedActionSet actionSet = job.getActionSet();
-        List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
-        if (actions.size() < 1)
-            throw new PipelineJobException("No recorded actions");
-
-        List<RecordedAction.DataFile> outputs = new ArrayList<>();
-
-        RecordedAction lastAction = actions.get(actions.size()-1);
-        for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
+        List<RecordedAction.DataFile> outputs = _factory.getOutputs(job);
+        if (outputs.isEmpty())
         {
-            if (dataFile.isTransient())
-                continue;
+            RecordedActionSet actionSet = job.getActionSet();
+            List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
+            if (actions.size() < 1)
+                throw new PipelineJobException("No recorded actions");
 
-            URI uri = dataFile.getURI();
-            if (uri != null && "file".equals(uri.getScheme()))
+            outputs = new ArrayList<>();
+
+            RecordedAction lastAction = actions.get(actions.size()-1);
+            for (RecordedAction.DataFile dataFile : lastAction.getOutputs())
             {
-                File file = new File(uri);
-                if (NetworkDrive.exists(file))
-                    outputs.add(dataFile);
+                if (dataFile.isTransient())
+                    continue;
+
+                URI uri = dataFile.getURI();
+                if (uri != null && "file".equals(uri.getScheme()))
+                {
+                    File file = new File(uri);
+                    if (NetworkDrive.exists(file))
+                        outputs.add(dataFile);
+                }
             }
         }
-
         return outputs;
     }
 
@@ -376,14 +782,22 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         return props;
     }
 
-    private Map<String, Object> getBatchProperties()
+    private Map<String, Object> getBatchProperties() throws PipelineJobException
     {
-        return getPrefixedProperties("assay batch property, ");
+        Map<String, Object> props = new HashMap<>();
+        props.putAll(getPrefixedProperties("assay batch property, "));
+        props.putAll(_factory.getBatchProperties(getJob()));
+
+        return props;
     }
 
-    private Map<String, Object> getRunProperties()
+    private Map<String, Object> getRunProperties() throws PipelineJobException
     {
-        return getPrefixedProperties("assay run property, ");
+        Map<String, Object> props = new HashMap<>();
+        props.putAll(getPrefixedProperties("assay run property, "));
+        props.putAll(_factory.getRunProperties(getJob()));
+
+        return  props;
     }
 
     /**
@@ -444,9 +858,29 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             File uploadedData = new File(matchedFile.getURI());
             factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, uploadedData));
 
+            // Add raw data if specified, either raw data or uploaded file can be used but not both
+            List<Map<String, Object>> rawData = _factory.getRawData(getJob());
+            if (rawData != null)
+                factory.setRawData(rawData);
+
             factory.setBatchProperties(getBatchProperties());
 
             factory.setRunProperties(getRunProperties());
+
+            // add plate metadata if the provider supports it and the protocol has it enabled
+            if (provider.isPlateMetadataEnabled(protocol))
+            {
+                Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = _factory.getPlateMetadata(getJob());
+                if (plateMetadata != null)
+                {
+                    factory.setRawPlateMetadata(plateMetadata);
+
+                    // create an expdata object to track the metadata
+                    ExpData plateData = DefaultAssayRunCreator.createData(container, null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+                    plateData.save(user);
+                    factory.setOutputDatas(Map.of(plateData, ExpDataRunInput.DEFAULT_ROLE));
+                }
+            }
 
             factory.setTargetStudy(getTargetStudy());
 
@@ -486,6 +920,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             // Consider these actions complete.  Saves the exp run's URL into the job status.
             getJob().clearActionSet(run);
+            _factory.cleanUp(getJob());
 
             tx.commit();
         }

@@ -185,13 +185,39 @@ public interface ColumnRenderProperties extends ImportAliasable
      */
     int getPrecision();
 
-    // Properties loaded by OntologyService
+        /* Properties loaded by OntologyService */
+
+    // any column can be annotated with PrincipalConceptCode
+    default String getPrincipalConceptCode()
+    {
+        return null;
+    }
+
+    // For concept lookup columns only we have SourceOntology, ConceptSubTree (must be in SourceOntology),
+    // also to support import features we have ImportColumn and LabelColumn
     default boolean isConceptColumn()
     {
         return getJdbcType().isText() && conceptCodeConceptURI.equals(getConceptURI()) && null != OntologyService.get();
     }
 
     default String getSourceOntology()
+    {
+        return null;
+    }
+
+    /**
+     * This is a specification of a subtree in which we expect to find the concept code in this column.
+     * From an implementation point of view we need a path from the ontology.hierarchy table.  From the user's
+     * point of view we only need a concept (assuming hierarchy table is complete and consistent WRT subclass
+     * relationship between concepts).
+     *
+     * This should be set to an unambiguous path of conceptid (e.g. /NCI:concept1/NCI:concept2).  However, we will
+     * accept a simple conceptid and map to a path and hope the hierarchy tree is consistent e.g. {set of concepts
+     * under (path1)/CONCEPT/} == {set of concepts under (alternate path2)/CONCEPT/}
+     *
+     * Use OntologyManager.resolveSubtreePath(crp.getConceptSubtree()) to get ontology.hierarchy.path.
+     */
+    default String getConceptSubtree()
     {
         return null;
     }
@@ -205,11 +231,8 @@ public interface ColumnRenderProperties extends ImportAliasable
     {
         return null;
     }
+    /* End properties loaded by OntologyService */
 
-    default String getPrincipalConceptCode()
-    {
-        return null;
-    }
 
     default String getDerivationDataScope()
     {
