@@ -1164,6 +1164,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         Set<Module> modules = new HashSet<>();
+
+        // always put the required modules in the set
+        modules.addAll(getRequiredModules());
+
         // add all modules found in user preferences:
         for (String moduleName : props.keySet())
         {
