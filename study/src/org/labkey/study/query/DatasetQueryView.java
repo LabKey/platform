@@ -42,6 +42,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -64,6 +65,8 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -96,6 +99,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.labkey.study.model.QCStateSet.ALL_STATES_LABEL;
+import static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL;
+import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 
 /**
  * User: brittp
@@ -503,6 +512,20 @@ public class DatasetQueryView extends StudyQueryView
         return btn;
     }
 
+    private String getUrlFilterKey(CompareType compareType)
+    {
+        return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam(this.getSettings().getDataRegionName() + ".").getKey();
+    }
+
+    private String getQCStateFilterString(QCStateSet qcStates)
+    {
+        List<String> qcLabels = qcStates.getStates()
+                .stream()
+                .map(QCState::getLabel)
+                .collect(Collectors.toList());
+        return new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
+    }
+
     private MenuButton createQCStateButton(QCStateSet currentSet)
     {
         List<QCStateSet> stateSets = QCStateSet.getSelectableSets(getContainer());
@@ -510,7 +533,27 @@ public class DatasetQueryView extends StudyQueryView
 
         for (QCStateSet set : stateSets)
         {
-            NavTree setItem = new NavTree(set.getLabel(), getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue()));
+            ActionURL urlHelper = getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue());
+            String filterValue = set.getLabel();
+            switch(filterValue)
+            {
+                case PUBLIC_STATES_LABEL:
+                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN), getQCStateFilterString(QCStateSet.getPublicStates(getContainer())));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL));
+                    break;
+                case PRIVATE_STATES_LABEL:
+                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN), getQCStateFilterString(QCStateSet.getPrivateStates(getContainer())));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL));
+                    break;
+                case ALL_STATES_LABEL:
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.IN));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL));
+                    break;
+                default:
+                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.EQUAL), filterValue);
+            }
+
+            NavTree setItem = new NavTree(set.getLabel(), urlHelper);
             setItem.setId("QCState:" + set.getLabel());
             if (set.equals(currentSet))
                 setItem.setSelected(true);

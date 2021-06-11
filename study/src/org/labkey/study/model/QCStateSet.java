@@ -44,9 +44,9 @@ public class QCStateSet
     private Set<QCState> _states;
     private String _label;
 
-    private static final String PUBLIC_STATES_LABEL = "Public/approved data";
-    private static final String PRIVATE_STATES_LABEL = "Private/non-approved data";
-    private static final String ALL_STATES_LABEL = "All data";
+    public static final String PUBLIC_STATES_LABEL = "Public/approved data";
+    public static final String PRIVATE_STATES_LABEL = "Private/non-approved data";
+    public static final String ALL_STATES_LABEL = "All data";
     private boolean _includeUnmarked;
 
     private QCStateSet(Container container, List<QCState> stateSet, boolean includeUnmarked, String label)
@@ -210,7 +210,7 @@ public class QCStateSet
                 selectedStates.add(state);
         }
         if (study == null)
-            return new QCStateSet(container, selectedStates, false, PUBLIC_STATES_LABEL);
+            return new QCStateSet(container, selectedStates, false, PUBLIC_STATES_LABEL); //Rosaline temp note: what case is this?
         return new QCStateSet(container, selectedStates, study.isBlankQCStatePublic(), PUBLIC_STATES_LABEL);
     }
 
