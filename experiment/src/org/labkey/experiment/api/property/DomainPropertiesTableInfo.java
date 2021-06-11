@@ -3,7 +3,6 @@ package org.labkey.experiment.api.property;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -30,9 +29,15 @@ public class DomainPropertiesTableInfo extends FilteredTable<PropertyUserSchema>
     {
         // add exp.PropertyDomain lookup to domain
         TableInfo domainPropTable = OntologyManager.getTinfoPropertyDomain();
-        MutableColumnInfo domainId = wrapColumnFromJoinedTable("DomainId", domainPropTable.getColumn("DomainId"));
+        var domainId = wrapColumnFromJoinedTable("DomainId", domainPropTable.getColumn("DomainId"));
         domainId.setFk(new QueryForeignKey.Builder(getUserSchema(), getContainerFilter()).to("Domains", "DomainId", "Name"));
         addColumn(domainId);
+
+        var requiredCol = wrapColumnFromJoinedTable("Required", domainPropTable.getColumn("Required"));
+        addColumn(requiredCol);
+
+        var sortOrderCol = wrapColumnFromJoinedTable("SortOrder", domainPropTable.getColumn("SortOrder"));
+        addColumn(sortOrderCol);
 
         // wrap all exp.PropertyDescriptor table columns
         wrapAllColumns(true);
@@ -49,7 +54,7 @@ public class DomainPropertiesTableInfo extends FilteredTable<PropertyUserSchema>
         TableInfo domainPropTable = OntologyManager.getTinfoPropertyDomain();
 
         SQLFragment result = new SQLFragment();
-        result.append("(SELECT dp.DomainId, pd.* FROM ");
+        result.append("(SELECT dp.DomainId, dp.Required, dp.SortOrder, pd.* FROM ");
         result.append(super.getFromSQL("pd")).append("\n");
         result.append("JOIN ").append(domainPropTable, "dp").append(" ON dp.PropertyId = pd.PropertyId\n");
 
