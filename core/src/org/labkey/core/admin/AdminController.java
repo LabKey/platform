@@ -4690,7 +4690,7 @@ public class AdminController extends SpringActionController
                     for (org.labkey.api.writer.Writer child : childWriters)
                     {
                         dataType = child.getDataType();
-                        if (dataType != null && !dataType.endsWith("Dataset Data"))
+                        if (dataType != null)
                             registeredFolderWriters.add(dataType);
                     }
                 }
