@@ -832,7 +832,18 @@ public class SecurityController extends SpringActionController
                     }
                 }
 
-                if (addGroups.size() > 0 || addEmails.size() > 0)
+                // issue 43366 : users without the AddUserPermission are still allowed to create new users through the
+                // manage group UI.
+                for (ValidEmail email : addEmails)
+                {
+                    if (!UserManager.userExists(email) && !container.hasPermission(getUser(), AddUserPermission.class))
+                    {
+                        errors.reject(ERROR_MSG, "You do not have permissions to create new users.");
+                        break;
+                    }
+                }
+
+                if (!errors.hasErrors() && (addGroups.size() > 0 || addEmails.size() > 0))
                 {
                     // add new users
                     List<User> addUsers = new ArrayList<>(addEmails.size());
