@@ -92,6 +92,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -1457,7 +1458,10 @@ public class PropertyController extends SpringActionController
             }
             else
             {
-                throw new ApiUsageException("Expected propertyIds or propertyURIs");
+                List<PropertyDescriptor> pds = OntologyManager.getPropertyDescriptors(getContainer(), getUser(),
+                        form.getDomainIds(), form.getDomainKinds(), form.getSearch(),
+                        form.getSort(), form.getMaxRows(), form.getOffset());
+                properties = pds.stream();
             }
 
             List<GWTPropertyDescriptor> gwtProps = properties
@@ -1472,6 +1476,13 @@ public class PropertyController extends SpringActionController
     {
         private List<Integer> propertyIds;
         private List<String> propertyURIs;
+        private Set<Integer> domainIds;
+        // Default to filtering to just Vocabulary domains
+        private Set<String> domainKinds = Set.of(VocabularyDomainKind.KIND_NAME);
+        private @Nullable String search;
+        private String sort;
+        private Integer maxRows;
+        private Long offset;
 
         public List<Integer> getPropertyIds()
         {
@@ -1493,6 +1504,65 @@ public class PropertyController extends SpringActionController
             this.propertyURIs = propertyURIs;
         }
 
+        public Set<Integer> getDomainIds()
+        {
+            return domainIds;
+        }
+
+        public void setDomainIds(Set<Integer> domainIds)
+        {
+            this.domainIds = domainIds;
+        }
+
+        public Set<String> getDomainKinds()
+        {
+            return domainKinds;
+        }
+
+        public void setDomainKinds(Set<String> domainKinds)
+        {
+            this.domainKinds = domainKinds;
+        }
+
+        public String getSearch()
+        {
+            return search;
+        }
+
+        public void setSearch(String search)
+        {
+            this.search = search;
+        }
+
+        public String getSort()
+        {
+            return sort;
+        }
+
+        public void setSort(String sort)
+        {
+            this.sort = sort;
+        }
+
+        public Integer getMaxRows()
+        {
+            return maxRows;
+        }
+
+        public void setMaxRows(Integer maxRows)
+        {
+            this.maxRows = maxRows;
+        }
+
+        public Long getOffset()
+        {
+            return offset;
+        }
+
+        public void setOffset(Long offset)
+        {
+            this.offset = offset;
+        }
     }
 
 

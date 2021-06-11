@@ -44,6 +44,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -58,10 +59,8 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -73,6 +72,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -2076,6 +2076,94 @@ public class OntologyManager
 
         key = getCacheKey(propertyURI, _sharedContainer);
         return propDescCache.get(key);
+    }
+
+
+    public static List<PropertyDescriptor> getPropertyDescriptors(
+            Container c, User user,
+            @Nullable Set<Integer> domainIds,
+            @Nullable Set<String> domainKinds,
+            @Nullable String searchTerm,
+            @Nullable String sortColumn,
+            @Nullable Integer maxRows, @Nullable Long offset)
+    {
+        final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
+
+        // To filter by domain kind, we query the exp.DomainProperty table and filter by domainId.
+        // To construct a PropertyDescriptor, we will need to traverse the lookup to exp.PropertyDescriptor and select all of it's columns.
+        List<FieldKey> fields = new ArrayList<>();
+        fields.add(FieldKey.fromParts("domainId"));
+        for (ColumnInfo col : getTinfoPropertyDescriptor().getColumns())
+        {
+            fields.add(new FieldKey(propertyIdKey, col.getName()));
+        }
+        var colMap = QueryService.get().getColumns(getTinfoPropertyDomain(), fields);
+
+        SimpleFilter filter = new SimpleFilter(new FieldKey(propertyIdKey, "container"), c.getId());
+        if (domainIds != null && domainIds.isEmpty())
+        {
+            filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
+        }
+        else if (domainKinds != null && !domainKinds.isEmpty())
+        {
+            List<? extends Domain> domains = PropertyService.get().getDomains(c, user, domainKinds, true);
+            filter.addInClause(FieldKey.fromParts("domainId"), domains.stream().map(Domain::getTypeId).collect(Collectors.toSet()));
+        }
+
+        if (searchTerm != null)
+        {
+            // Apply Q filter to only some of the text columns
+            List<ColumnInfo> searchCols = List.of(
+                    colMap.get(new FieldKey(propertyIdKey, "Name")),
+                    colMap.get(new FieldKey(propertyIdKey, "Label")),
+                    colMap.get(new FieldKey(propertyIdKey, "Description")),
+                    colMap.get(new FieldKey(propertyIdKey, "ImportAliases"))
+            );
+
+            var clause = CompareType.Q.createFilterClause(new FieldKey(null, "*"), searchTerm);
+            clause.setSelectColumns(searchCols);
+            filter.addCondition(clause);
+        }
+
+        // use propertyId as the default sort
+        if (sortColumn == null)
+            sortColumn = "propertyId";
+        Sort sort = new Sort(sortColumn);
+
+        TableSelector ts = new TableSelector(getTinfoPropertyDomain(), colMap.values(), filter, sort);
+        if (maxRows != null)
+            ts.setMaxRows(maxRows);
+        if (offset != null)
+            ts.setOffset(offset);
+
+        // This is a little annoying.  We have to remove the "propertyId" lookup parent from
+        // the map keys for the ObjectFactory to correctly construct the PropertyDescriptor.
+        List<PropertyDescriptor> props = new ArrayList<>();
+        try (var results = ts.getResults(true))
+        {
+            ObjectFactory<PropertyDescriptor> of = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            while (results.next())
+            {
+                Map<FieldKey, Object> rowMap = results.getFieldKeyRowMap();
+                // remove the "propertyId" part from the FieldKey
+                Map<String, Object> rekey = new CaseInsensitiveHashMap<>();
+                for (Map.Entry<FieldKey, Object> pair : rowMap.entrySet())
+                {
+                    FieldKey key = pair.getKey();
+                    if (propertyIdKey.equals(key.getParent()))
+                    {
+                        String name = key.getName();
+                        rekey.put(name, pair.getValue());
+                    }
+                }
+                props.add(of.fromMap(rekey));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        return props;
     }
 
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
