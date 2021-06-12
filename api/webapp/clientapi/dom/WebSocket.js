@@ -108,7 +108,10 @@ LABKEY.WebSocket = new function ()
     }
 
     function isSessionInvalidBackgroundHideEnabled() {
-        if (LABKEY.moduleContext.api.compliance) {
+        // Issue 43334: JS error if this is called when the moduleContext isn't available, err on the side of compliance
+        if (!LABKEY.moduleContext || !LABKEY.moduleContext.api) {
+            return true;
+        } else if (LABKEY.moduleContext.api.compliance) {
             return LABKEY.moduleContext.api.compliance.sessionInvalidBackgroundHideEnabled
         }
         return false;
