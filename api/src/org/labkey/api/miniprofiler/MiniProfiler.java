@@ -24,7 +24,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
@@ -33,6 +32,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContext;
+import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
 
@@ -85,54 +85,43 @@ public class MiniProfiler
     {
         // CONSIDER: Add CanSeeProfilingPermission ?
         User user = context.getUser();
-        return ModuleLoader.getInstance().isStartupComplete() && user != null && getSettings().isEnabled() &&
+        return ModuleLoader.getInstance().isStartupComplete() && user != null && getSettings(context.getUser()).isEnabled() &&
                 context.getContainer() != null && user.isPlatformDeveloper();
     }
 
-    /** Get site-wide settings. */
-    public static Settings getSettings()
+    /** Get per-user settings */
+    public static @Nullable Settings getSettings(@NotNull Principal user)
     {
-        return getSettings(User.guest);
+        if (user instanceof User)
+            return getSettings((User)user);
+
+        return null;
     }
 
-    /** Get per-user settings if available or site-wide */
-    public static Settings getSettings(@Nullable User user)
+    /** Get per-user settings */
+    public static @Nullable Settings getSettings(@Nullable User user)
     {
         Settings settings = null;
         if (user != null)
+        {
             settings = SETTINGS_CACHE.get(user);
 
-        if (settings == null)
-            settings = SETTINGS_CACHE.get(User.guest);
-
-        // Stacktrace setting isn't really cached, it just piggybacks on the MiniProfiler settings bean/form
-        settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
+            // Stacktrace setting isn't really cached, it just piggybacks on the MiniProfiler settings bean/form
+            settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
+        }
         return settings;
     }
 
-    /** Save site-wide settings. */
-    public static void saveSettings(@NotNull Settings settings)
-    {
-        saveSettings(settings, User.guest);
-    }
-
+    /** Save per-user settings. */
     public static void saveSettings(@NotNull Settings settings, @NotNull User user)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
-        if (user.isGuest())
-        {
-            // Troubleshooting stacktraces are site-wide only
-            setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
-        }
+        // Troubleshooting stacktraces are site-wide only
+        setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
+
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), CATEGORY, true);
         SETTINGS_FACTORY.toStringMap(settings, map);
         map.save();
         SETTINGS_CACHE.remove(user);
-    }
-
-    /** Reset site-wide settings. */
-    public static void resetSettings()
-    {
-        resetSettings(User.guest);
     }
 
     /** Reset per-user settings. */
@@ -142,9 +131,9 @@ public class MiniProfiler
         SETTINGS_CACHE.remove(user);
     }
 
-    public static JavaScriptFragment renderInitScript(long currentId, Set<Long> ids, String version)
+    public static JavaScriptFragment renderInitScript(@NotNull User user, long currentId, Set<Long> ids, String version)
     {
-        Settings settings = getSettings();
+        Settings settings = getSettings(user);
 
         return JavaScriptFragment.unsafe(
             "<script type='text/javascript'>\n" +
@@ -160,7 +149,8 @@ public class MiniProfiler
             "  showControls:" + settings.isShowControls() + ",\n" +
             "  authorized:true,\n" +
             "  toggleShortcut:" + jsString(settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "") + ",\n" +
-            "  startHidden:" + settings.isStartHidden() + "\n" +
+            "  startHidden:" + settings.isStartHidden() + ",\n" +
+            "  startMinimized:" + settings.isStartMinimized() + "\n" +
             "});\n" +
             "</script>\n"
         );
@@ -190,7 +180,7 @@ public class MiniProfiler
         if (requestInfo == null || requestInfo.isIgnored())
             return null;
 
-        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings().isEnabled()))
+        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings(requestInfo.getUser()).isEnabled()))
             return null;
 
         return requestInfo.step(name);
@@ -303,11 +293,12 @@ public class MiniProfiler
 
     public static class Settings
     {
-        private boolean _enabled = AppProps.getInstance().isDevMode();
+        private boolean _enabled = false;
         private boolean _showChildrenTime = false;
         private boolean _showTrivial = false;
         private int _trivialMillis = 3;
 
+        private boolean _startMinimized = true;
         private boolean _startHidden = false;
         private boolean _showControls = true;
         private RenderPosition _renderPosition = RenderPosition.BottomRight;
@@ -352,6 +343,16 @@ public class MiniProfiler
         public void setShowChildrenTime(boolean showChildrenTime)
         {
             _showChildrenTime = showChildrenTime;
+        }
+
+        public boolean isStartMinimized()
+        {
+            return _startMinimized;
+        }
+
+        public void setStartMinimized(boolean startMinimized)
+        {
+            _startMinimized = startMinimized;
         }
 
         public boolean isStartHidden()
