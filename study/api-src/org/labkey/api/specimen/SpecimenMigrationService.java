@@ -21,36 +21,25 @@ public interface SpecimenMigrationService
         ServiceRegistry.get().registerService(SpecimenMigrationService.class, impl);
     }
 
-    ActionURL getAutoReportListURL(Container c);
+    // This group used only by manageSpecimens.jsp
     ActionURL getConfigureRequestabilityRulesURL(Container c);
     ActionURL getManageActorsURL(Container c);
     ActionURL getManageDefaultReqsSettingsURL(Container c);
     ActionURL getManageDisplaySettings(Container c);
     ActionURL getManageNotificationsURL(Container c);
+    ActionURL getManageStatusesURL(Container c);
     ActionURL getManageRepositorySettingsURL(Container c);
+    Class<? extends Controller> getManageRequestInputsActionClass();
+
     ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl);
-    ActionURL getManageStatusesURL(Container c);
-    ActionURL getOverviewURL(Container c);
-    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
-    ActionURL getShowSearchURL(Container c, boolean showVials);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
-    ActionURL getSpecimenRequestConfigRequiredURL(Container c);
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getSpecimensURL(Container c);
     ActionURL getUploadSpecimensURL(Container c);
     ActionURL getViewRequestsURL(Container c);
 
     Class<? extends Controller> getClearCommentsActionClass();
-    Class<? extends Controller> getDeleteRequestActionClass();
-    Class<? extends Controller> getExtendedSpecimenRequestActionClass();
-    Class<? extends Controller> getImportVialIdsActionClass();
-    Class<? extends Controller> getManageRequestActionClass();
-    Class<? extends Controller> getManageRequestInputsActionClass();
-    Class<? extends Controller> getManageRequirementActionClass();
-    Class<? extends Controller> getRemoveRequestSpecimensActionClass();
-    Class<? extends Controller> getRequestHistoryActionClass();
     Class<? extends Controller> getShowCreateSpecimenRequestActionClass();
-    Class<? extends Controller> getSubmitRequestActionClass();
     Class<? extends Controller> getUpdateCommentsActionClass();
 }

@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.notifications;
+package org.labkey.specimen.notifications;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
+import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.ActionURL;
+import org.labkey.specimen.actions.ShowGroupMembersAction;
 
 /**
  * User: brittp
@@ -103,7 +104,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
 
     private HtmlString getConfigureEmailsLinkHTML(ActionURL currentUrl)
     {
-        ActionURL url = SpecimenMigrationService.get().getShowGroupMembersURL(
+        ActionURL url = ShowGroupMembersAction.getShowGroupMembersURL(
             getActor().getContainer(),
             getActor().getRowId(),
             getLocation() != null ? getLocation().getRowId() : null,

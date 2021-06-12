@@ -20,24 +20,9 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelColumn;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.pipeline.PipeRoot;
@@ -46,7 +31,10 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -62,18 +50,13 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.HiddenFormInputGenerator;
-import org.labkey.api.specimen.actions.IdForm;
-import org.labkey.api.specimen.actions.ManageRequestBean;
-import org.labkey.api.specimen.actions.ManageRequestInputsBean;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.actions.SelectSpecimenProviderBean;
-import org.labkey.api.specimen.actions.SpecimenEventBean;
 import org.labkey.api.specimen.actions.SpecimenHeaderBean;
 import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean;
@@ -85,7 +68,7 @@ import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.query.SpecimenQueryView;
@@ -119,6 +102,7 @@ import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
@@ -162,9 +146,13 @@ import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -413,6 +401,91 @@ public class SpecimenController2 extends SpringActionController
             return comp;
         });
         return possibleNotifications;
+    }
+
+    private String getShortSiteLabel(LocationImpl location)
+    {
+        String label;
+        if (location.getLabel() != null && location.getLabel().length() > 0)
+            label = location.getLabel().substring(0, Math.min(location.getLabel().length(), 15));
+        else if (location.getLdmsLabCode() != null)
+            label = "ldmsId" + location.getLdmsLabCode();
+        else if (location.getLabwareLabCode() != null && location.getLabwareLabCode().length() > 0)
+            label = "labwareId" + location.getLabwareLabCode();
+        else
+            label = "rowId" + location.getRowId();
+        return label.replaceAll("\\W+", "_");
+    }
+
+    private String getSpecimenListFileName(LocationImpl srcLocation, LocationImpl destLocation)
+    {
+        StringBuilder filename = new StringBuilder();
+        filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
+        filename.append("_").append(DateUtil.formatDateISO8601());
+        return filename.toString();
+    }
+
+    public SimpleFilter getSpecimenListFilter(SpecimenRequest specimenRequest, LocationImpl srcLocation, LabSpecimenListsBean.Type type)
+    {
+        LabSpecimenListsBean bean = new LabSpecimenListsBean(specimenRequest, type);
+        List<Vial> vials = bean.getSpecimens(srcLocation);
+        Object[] params = new Object[vials.size() + 1];
+        params[params.length - 1] = specimenRequest.getContainer().getId();
+        StringBuilder whereClause = new StringBuilder();
+        whereClause.append("(");
+        int i = 0;
+        for (Vial vial : vials)
+        {
+            if (i > 0)
+                whereClause.append(" OR ");
+            whereClause.append("RowId = ?");
+            params[i++] = vial.getRowId();
+        }
+        whereClause.append(") AND Container = ?");
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addWhereClause(whereClause.toString(), params, FieldKey.fromParts("RowId"), FieldKey.fromParts("Container"));
+        return filter;
+    }
+
+    public TSVGridWriter getSpecimenListTsvWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
+                                                  LocationImpl destLocation, LabSpecimenListsBean.Type type)
+    {
+        DataRegion dr = createDataRegionForWriters(specimenRequest);
+        RenderContext ctx = new RenderContext(getViewContext());
+        ctx.setContainer(specimenRequest.getContainer());
+        ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
+        List<DisplayColumn> cols = dr.getDisplayColumns();
+        TSVGridWriter tsv = new TSVGridWriter(()->dr.getResults(ctx), cols);
+        tsv.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
+        return tsv;
+    }
+
+    public ExcelWriter getSpecimenListXlsWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
+                                                LocationImpl destLocation, LabSpecimenListsBean.Type type)
+    {
+        DataRegion dr = createDataRegionForWriters(specimenRequest);
+        RenderContext ctx = new RenderContext(getViewContext());
+        ctx.setContainer(specimenRequest.getContainer());
+        ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
+        List<DisplayColumn> cols = dr.getDisplayColumns();
+        ExcelWriter xl = new ExcelWriter(() -> dr.getResults(ctx), cols);
+        xl.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
+        return xl;
+    }
+
+    private DataRegion createDataRegionForWriters(SpecimenRequest specimenRequest)
+    {
+        DataRegion dr = new DataRegion();
+        Container container = specimenRequest.getContainer();
+        SpecimenQuerySchema querySchema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), getViewContext().getUser());
+        TableInfo table = querySchema.getTable(SpecimenQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME, true);
+        QueryDefinition queryDef = querySchema.getQueryDefForTable(SpecimenQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME);
+        CustomView defaultView = QueryService.get().getCustomView(getViewContext().getUser(), container, getViewContext().getUser(), querySchema.getName(), queryDef.getName(), null);
+        List<ColumnInfo> columns = queryDef.getColumns(defaultView, table);
+        dr.setTable(table);
+        dr.setColumns(columns);
+        return dr;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -819,6 +892,7 @@ public class SpecimenController2 extends SpringActionController
             return _targetStudy;
         }
 
+        @SuppressWarnings("unused")
         public void setTargetStudy(Container targetStudy)
         {
             _targetStudy = targetStudy;
@@ -2930,7 +3004,7 @@ public class SpecimenController2 extends SpringActionController
                 SpecimenQueryView queryView = bean.getSpecimenQueryView();
                 if (null != queryView)
                     queryView.setTitle("Associated Specimens");
-                HBox hbox = new HBox(new JspView<>("/org/labkey/study/view/specimen/manageRequest.jsp", bean), attachmentsGrid);
+                HBox hbox = new HBox(new JspView<>("/org/labkey/specimen/view/manageRequest.jsp", bean), attachmentsGrid);
                 hbox.setTableWidth("");
                 return new VBox(hbox, queryView);
             }
@@ -3993,6 +4067,13 @@ public class SpecimenController2 extends SpringActionController
         return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, showVials);
     }
 
+    public static ActionURL getCommentURL(Container c, String globalUniqueId)
+    {
+        return getSpecimensURL(c, true)
+            .addParameter(SpecimenViewTypeForm.PARAMS.viewMode, SpecimenQueryView.Mode.COMMENTS.name())
+            .addParameter("SpecimenDetail.GlobalUniqueId~eq", globalUniqueId);
+    }
+
     @RequiresPermission(ReadPermission.class)
     @ActionNames("specimens,samples")
     public class SpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
@@ -4438,6 +4519,473 @@ public class SpecimenController2 extends SpringActionController
         {
             addSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
             root.addChild("Manage Requirement");
+        }
+    }
+
+    @RequiresPermission(ManageRequestsPermission.class)
+    public class DeleteMissingRequestSpecimensAction extends FormHandlerAction<IdForm>
+    {
+        @Override
+        public void validateCommand(IdForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(IdForm form, BindException errors) throws Exception
+        {
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (request == null)
+                throw new NotFoundException("Specimen request " + form.getId() + " does not exist.");
+
+            SpecimenRequestManager.get().deleteMissingSpecimens(request);
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(IdForm requirementForm)
+        {
+            return getManageRequestURL(requirementForm.getId(), null);
+        }
+    }
+
+    public static class LabSpecimenListsBean
+    {
+        public enum Type
+        {
+            PROVIDING("Providing"),
+            ORIGINATING("Originating");
+
+            private final String _display;
+
+            Type(String display)
+            {
+                _display = display;
+            }
+
+            public String getDisplay()
+            {
+                return _display;
+            }
+        }
+
+        private final SpecimenRequest _specimenRequest;
+        private final Type _type;
+
+        private Map<Integer, List<Vial>> _specimensBySiteId;
+        private List<ActorNotificationRecipientSet> _possibleNotifications;
+        private boolean _requirementsComplete;
+
+        public LabSpecimenListsBean(SpecimenRequest specimenRequest, LabSpecimenListsBean.Type type)
+        {
+            _specimenRequest = specimenRequest;
+            _type = type;
+            _requirementsComplete = true;
+            for (int i = 0; i < specimenRequest.getRequirements().length && _requirementsComplete; i++)
+            {
+                SpecimenRequestRequirement requirement = specimenRequest.getRequirements()[i];
+                _requirementsComplete = requirement.isComplete();
+            }
+        }
+
+        public SpecimenRequest getSpecimenRequest()
+        {
+            return _specimenRequest;
+        }
+
+        private synchronized Map<Integer, List<Vial>> getSpecimensBySiteId()
+        {
+            if (_specimensBySiteId == null)
+            {
+                _specimensBySiteId = new HashMap<>();
+                List<Vial> vials = _specimenRequest.getVials();
+                for (Vial vial : vials)
+                {
+                    LocationImpl location;
+                    if (_type == LabSpecimenListsBean.Type.ORIGINATING)
+                        location = LocationManager.get().getOriginatingLocation(vial);
+                    else
+                        location = LocationManager.get().getCurrentLocation(vial);
+                    if (location != null)
+                    {
+                        List<Vial> current = _specimensBySiteId.computeIfAbsent(location.getRowId(), k -> new ArrayList<>());
+                        current.add(vial);
+                    }
+                }
+            }
+            return _specimensBySiteId;
+        }
+
+        public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications()
+        {
+            if (_possibleNotifications == null)
+                _possibleNotifications = SpecimenController2.getPossibleNotifications(_specimenRequest);
+            return _possibleNotifications;
+        }
+
+        public Set<LocationImpl> getLabs()
+        {
+            Map<Integer, List<Vial>> siteIdToSpecimens = getSpecimensBySiteId();
+            Set<LocationImpl> locations = new HashSet<>(siteIdToSpecimens.size());
+            for (Integer locationId : siteIdToSpecimens.keySet())
+                locations.add(LocationManager.get().getLocation(_specimenRequest.getContainer(), locationId));
+            return locations;
+        }
+
+        public List<Vial> getSpecimens(LocationImpl location)
+        {
+            Map<Integer, List<Vial>> siteSpecimenLists = getSpecimensBySiteId();
+            return siteSpecimenLists.get(location.getRowId());
+        }
+
+        public Type getType()
+        {
+            return _type;
+        }
+
+        public boolean isRequirementsComplete()
+        {
+            return _requirementsComplete;
+        }
+    }
+
+    @RequiresPermission(ManageRequestsPermission.class)
+    public class LabSpecimenListsAction extends SimpleViewAction<LabSpecimenListsForm>
+    {
+        private int _requestId;
+        private LabSpecimenListsBean.Type _type;
+
+        @Override
+        public ModelAndView getView(LabSpecimenListsForm form, BindException errors)
+        {
+            SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (request == null  || form.getListType() == null)
+                throw new NotFoundException();
+
+            _requestId = request.getRowId();
+
+            try
+            {
+                _type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            }
+            catch (IllegalArgumentException e)
+            {
+                // catch malformed/old URL case, where the posted value of 'type' isn't a valid Type:
+                throw new NotFoundException("Unrecognized list type.");
+            }
+            return new JspView<>("/org/labkey/specimen/view/labSpecimenLists.jsp", new LabSpecimenListsBean(request, _type));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestNavTrail(root, _requestId);
+            root.addChild(_type.getDisplay() + " Lab Vial Lists");
+        }
+    }
+
+    public static class LabSpecimenListsForm extends IdForm
+    {
+        private String _listType;
+
+        public String getListType()
+        {
+            return _listType;
+        }
+
+        public void setListType(String listType)
+        {
+            _listType = listType;
+        }
+    }
+
+    public static class ExportSiteForm extends IdForm
+    {
+        private String _export;
+        private String _specimenIds;
+        private String _listType;
+        private int _sourceSiteId;
+        private int _destSiteId;
+
+        public String getExport()
+        {
+            return _export;
+        }
+
+        public void setExport(String export)
+        {
+            _export = export;
+        }
+
+        public String getSpecimenIds()
+        {
+            return _specimenIds;
+        }
+
+        public void setSpecimenIds(String specimenIds)
+        {
+            _specimenIds = specimenIds;
+        }
+
+        public int getDestSiteId()
+        {
+            return _destSiteId;
+        }
+
+        public void setDestSiteId(int destSiteId)
+        {
+            _destSiteId = destSiteId;
+        }
+
+        public int getSourceSiteId()
+        {
+            return _sourceSiteId;
+        }
+
+        public void setSourceSiteId(int sourceSiteId)
+        {
+            _sourceSiteId = sourceSiteId;
+        }
+
+        public String getListType()
+        {
+            return _listType;
+        }
+
+        public void setListType(String listType)
+        {
+            _listType = listType;
+        }
+    }
+
+    @RequiresPermission(ManageRequestsPermission.class)
+    public class DownloadSpecimenListAction extends SimpleViewAction<ExportSiteForm>
+    {
+        @Override
+        public ModelAndView getView(ExportSiteForm form, BindException errors) throws Exception
+        {
+            SpecimenRequest specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            LocationImpl sourceLocation = LocationManager.get().getLocation(getContainer(), form.getSourceSiteId());
+            LocationImpl destLocation = LocationManager.get().getLocation(getContainer(), form.getDestSiteId());
+            if (specimenRequest == null || sourceLocation == null || destLocation == null)
+                throw new NotFoundException();
+
+            LabSpecimenListsBean.Type type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            if (null != form.getExport())
+            {
+                if (EXPORT_TSV.equals(form.getExport()))
+                {
+                    try (TSVGridWriter writer = getSpecimenListTsvWriter(specimenRequest, sourceLocation, destLocation, type))
+                    {
+                        writer.write(getViewContext().getResponse());
+                    }
+                }
+                else if (EXPORT_XLS.equals(form.getExport()))
+                {
+                    try (ExcelWriter writer = getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
+                    {
+                        writer.write(getViewContext().getResponse());
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException("Not Yet Implemented");
+        }
+    }
+
+    private static final String EXPORT_TSV = "tsv";
+    private static final String EXPORT_XLS = "xls";
+
+    public static class EmailSpecimenListForm extends IdForm
+    {
+        private boolean _sendXls;
+        private boolean _sendTsv;
+        private String _comments;
+        private String[] _notify;
+        private String _listType;
+        private boolean _emailInactiveUsers;
+
+        public String getComments()
+        {
+            return _comments;
+        }
+
+        public void setComments(String comments)
+        {
+            _comments = comments;
+        }
+
+        public String[] getNotify()
+        {
+            return _notify;
+        }
+
+        public void setNotify(String[] notify)
+        {
+            _notify = notify;
+        }
+
+        public boolean isSendTsv()
+        {
+            return _sendTsv;
+        }
+
+        public void setSendTsv(boolean sendTsv)
+        {
+            _sendTsv = sendTsv;
+        }
+
+        public boolean isSendXls()
+        {
+            return _sendXls;
+        }
+
+        public void setSendXls(boolean sendXls)
+        {
+            _sendXls = sendXls;
+        }
+
+        public String getListType()
+        {
+            return _listType;
+        }
+
+        public void setListType(String listType)
+        {
+            _listType = listType;
+        }
+
+        public boolean isEmailInactiveUsers()
+        {
+            return _emailInactiveUsers;
+        }
+
+        public void setEmailInactiveUsers(boolean emailInactiveUsers)
+        {
+            _emailInactiveUsers = emailInactiveUsers;
+        }
+    }
+
+    @RequiresPermission(ManageRequestsPermission.class)
+    public class EmailLabSpecimenListsAction extends FormHandlerAction<EmailSpecimenListForm>
+    {
+        @Override
+        public void validateCommand(EmailSpecimenListForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(EmailSpecimenListForm form, BindException errors) throws Exception
+        {
+            final SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            if (request == null)
+                throw new NotFoundException();
+
+            LocationImpl receivingLocation = LocationManager.get().getLocation(getContainer(), request.getDestinationSiteId());
+            if (receivingLocation == null)
+                throw new NotFoundException();
+
+            final LabSpecimenListsBean.Type type;
+            try
+            {
+                type = LabSpecimenListsBean.Type.valueOf(form.getListType());
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new NotFoundException();
+            }
+
+            Map<LocationImpl, List<ActorNotificationRecipientSet>> notifications = new HashMap<>();
+            if (form.getNotify() != null)
+            {
+                for (String tuple : form.getNotify())
+                {
+                    String[] idStrs = tuple.split(",");
+                    if (idStrs.length != 3)
+                        throw new IllegalStateException("Expected triple.");
+                    int[] ids = new int[3];
+                    for (int i = 0; i < 3; i++)
+                        ids[i] = Integer.parseInt(idStrs[i]);
+                    LocationImpl originatingOrProvidingLocation = LocationManager.get().getLocation(getContainer(), ids[0]);
+                    SpecimenRequestActor notifyActor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), ids[1]);
+                    LocationImpl notifyLocation = null;
+                    if (notifyActor.isPerSite() && ids[2] >= 0)
+                        notifyLocation = LocationManager.get().getLocation(getContainer(), ids[2]);
+                    List<ActorNotificationRecipientSet> emailRecipients = notifications.computeIfAbsent(originatingOrProvidingLocation, k -> new ArrayList<>());
+                    emailRecipients.add(new ActorNotificationRecipientSet(notifyActor, notifyLocation));
+                }
+
+                for (final LocationImpl originatingOrProvidingLocation : notifications.keySet())
+                {
+                    List<AttachmentFile> formFiles = getAttachmentFileList();
+                    if (form.isSendTsv())
+                    {
+                        try (TSVGridWriter tsvWriter = getSpecimenListTsvWriter(request, originatingOrProvidingLocation, receivingLocation, type))
+                        {
+                            StringBuilder tsvBuilder = new StringBuilder();
+                            tsvWriter.write(tsvBuilder);
+                            formFiles.add(new ByteArrayAttachmentFile(tsvWriter.getFilenamePrefix() + ".tsv", tsvBuilder.toString().getBytes(StandardCharsets.UTF_8), TSVWriter.DELIM.TAB.contentType));
+                        }
+                    }
+
+                    if (form.isSendXls())
+                    {
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
+                        {
+                            xlsWriter.write(ostream);
+                            ostream.flush();
+                            formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
+                        }
+                    }
+
+                    final StringBuilder content = new StringBuilder();
+                    if (form.getComments() != null)
+                        content.append(form.getComments());
+
+                    String header = type.getDisplay() + " location notification of specimen shipment to " + receivingLocation.getDisplayName();
+                    try
+                    {
+                        SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                                RequestEventType.SPECIMEN_LIST_GENERATED, header + "\n" + content, formFiles);
+
+                        final Container container = getContainer();
+                        final User user = getUser();
+                        List<ActorNotificationRecipientSet> emailRecipients = notifications.get(originatingOrProvidingLocation);
+                        DefaultRequestNotification notification = new DefaultRequestNotification(request, emailRecipients,
+                                header, event, content.toString(), null, getViewContext())
+                        {
+                            @Override
+                            protected List<Vial> getSpecimenList()
+                            {
+                                SimpleFilter filter = getSpecimenListFilter(getSpecimenRequest(), originatingOrProvidingLocation, type);
+                                return SpecimenManagerNew.get().getVials(container, user, filter);
+//                                return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenDetail(container), filter, null).getArrayList(Specimen.class);
+                            }
+
+                        };
+                        sendNotification(notification, form.isEmailInactiveUsers(), errors);
+                    }
+                    catch (ConfigurationException | IOException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+
+                    if (errors.hasErrors())
+                        break;
+                }
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public ActionURL getSuccessURL(EmailSpecimenListForm emailSpecimenListForm)
+        {
+            return getManageRequestURL(emailSpecimenListForm.getId(), null);
         }
     }
 }

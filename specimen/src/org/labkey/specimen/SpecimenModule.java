@@ -41,12 +41,9 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.specimen.actions.ShowGroupMembersAction;
-import org.labkey.specimen.actions.ShowSearchAction;
 import org.labkey.specimen.actions.ShowUploadSpecimensAction;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController2;
-import org.labkey.specimen.actions.SpecimenController2.OverviewAction;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
@@ -129,45 +126,15 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getOverviewURL(Container c)
-            {
-                return new ActionURL(OverviewAction.class, c);
-            }
-
-            @Override
-            public ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl)
-            {
-                return ShowGroupMembersAction.getShowGroupMembersURL(c, rowId, locationId, returnUrl);
-            }
-
-            @Override
             public ActionURL getUploadSpecimensURL(Container c)
             {
                 return new ActionURL(ShowUploadSpecimensAction.class, c);
             }
 
             @Override
-            public ActionURL getAutoReportListURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.AutoReportListAction.class, c);
-            }
-
-            @Override
-            public ActionURL getShowSearchURL(Container c, boolean showVials)
-            {
-                return ShowSearchAction.getShowSearchURL(c, showVials);
-            }
-
-            @Override
             public ActionURL getSpecimensURL(Container c)
             {
                 return SpecimenController2.getSpecimensURL(c);
-            }
-
-            @Override
-            public ActionURL getSpecimenRequestConfigRequiredURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.SpecimenRequestConfigRequiredAction.class, c);
             }
 
             @Override
@@ -243,30 +210,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public Class<? extends Controller> getExtendedSpecimenRequestActionClass()
-            {
-                return SpecimenController2.ExtendedSpecimenRequestAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getRemoveRequestSpecimensActionClass()
-            {
-                return SpecimenController2.RemoveRequestSpecimensAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getImportVialIdsActionClass()
-            {
-                return SpecimenController2.ImportVialIdsAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getManageRequestActionClass()
-            {
-                return SpecimenController2.ManageRequestAction.class;
-            }
-
-            @Override
             public Class<? extends Controller> getClearCommentsActionClass()
             {
                 return SpecimenController2.ClearCommentsAction.class;
@@ -279,33 +222,9 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public Class<? extends Controller> getDeleteRequestActionClass()
-            {
-                return SpecimenController2.DeleteRequestAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getSubmitRequestActionClass()
-            {
-                return SpecimenController2.SubmitRequestAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getRequestHistoryActionClass()
-            {
-                return SpecimenController2.RequestHistoryAction.class;
-            }
-
-            @Override
             public Class<? extends Controller> getManageRequestInputsActionClass()
             {
                 return SpecimenController2.ManageRequestInputsAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getManageRequirementActionClass()
-            {
-                return SpecimenController2.ManageRequirementAction.class;
             }
         });
      }

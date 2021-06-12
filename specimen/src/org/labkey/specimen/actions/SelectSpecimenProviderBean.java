@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.actions;
 
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.view.ActionURL;

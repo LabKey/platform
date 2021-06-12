@@ -1,16 +1,16 @@
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.actions;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.SpecimensViewBean;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
-import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
+import org.labkey.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
@@ -20,6 +20,9 @@ import org.labkey.api.util.Button;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.actions.SpecimenController2.ImportVialIdsAction;
+import org.labkey.specimen.actions.SpecimenController2.OverviewAction;
+import org.labkey.specimen.actions.SpecimenController2.RemoveRequestSpecimensAction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -74,12 +77,12 @@ public class ManageRequestBean extends SpecimensViewBean
 
             if (SpecimenRequestManager.get().hasEditRequestPermissions(context.getUser(), specimenRequest) && !_finalState)
             {
-                ActionButton addButton = new ActionButton(SpecimenMigrationService.get().getOverviewURL(_container), "Specimen Search");
-                ActionButton deleteButton = new ActionButton(SpecimenMigrationService.get().getRemoveRequestSpecimensActionClass(), "Remove Selected");
+                ActionButton addButton = new ActionButton(new ActionURL(OverviewAction.class, _container), "Specimen Search");
+                ActionButton deleteButton = new ActionButton(RemoveRequestSpecimensAction.class, "Remove Selected");
                 _specimenQueryView.addHiddenFormField("id", "" + specimenRequest.getRowId());
                 buttons.add(addButton);
 
-                ActionURL importActionURL = new ActionURL(SpecimenMigrationService.get().getImportVialIdsActionClass(), _container);
+                ActionURL importActionURL = new ActionURL(ImportVialIdsAction.class, _container);
                 importActionURL.addParameter("id", specimenRequest.getRowId());
                 Button importButton = new Button.ButtonBuilder("Upload Specimen Ids")
                         .href(importActionURL)

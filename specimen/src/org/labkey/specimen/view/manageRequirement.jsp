@@ -16,16 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
-<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet"%>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirement"%>
 <%@ page import="org.labkey.api.study.Location"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteRequirementAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequirementAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequirementBean" %>
+<%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

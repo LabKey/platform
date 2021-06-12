@@ -29,7 +29,6 @@ import org.springframework.web.servlet.mvc.Controller;
  */
 public interface SpecimenUrls extends UrlProvider
 {
-    ActionURL getCommentURL(Container c, String globalUniqueId);
     ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
     ActionURL getManageRequestURL(Container c, int requestId);
     @Migrate // Eliminate this -- same as getManageRequestURL(Container, int);

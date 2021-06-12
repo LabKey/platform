@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
-<%@ page import="org.labkey.api.specimen.actions.ManageRequestBean"%>
-<%@ page import="org.labkey.api.specimen.notifications.ActorNotificationRecipientSet"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
+<%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

@@ -17,8 +17,7 @@
 %>
 <%@ page import="org.labkey.api.specimen.SpecimenManager"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
-<%@ page import="org.labkey.api.specimen.actions.SpecimenEventBean"%>
-<%@ page import="org.labkey.api.specimen.location.LocationManager" %>
+<%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.specimen.model.SpecimenComment" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission" %>
 <%@ page import="org.labkey.api.study.Location" %>
@@ -27,6 +26,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenEventBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenEventBean> me = (JspView<SpecimenEventBean>) HttpView.currentView();

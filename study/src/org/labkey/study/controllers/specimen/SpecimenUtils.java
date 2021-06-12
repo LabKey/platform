@@ -18,48 +18,26 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBarLineBreak;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
-import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.IdTypes;
 import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.api.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.api.specimen.notifications.DefaultRequestNotification;
 import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
-import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
@@ -73,37 +51,29 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.Button;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
-import org.labkey.api.view.GridView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: brittp
@@ -308,82 +278,6 @@ public class SpecimenUtils
         return gridView;
     }
 
-    public List<ActorNotificationRecipientSet> getPossibleNotifications(SpecimenRequest specimenRequest)
-    {
-        List<ActorNotificationRecipientSet> possibleNotifications = new ArrayList<>();
-        // allow notification of all parties listed in the request requirements:
-        for (SpecimenRequestRequirement requirement : specimenRequest.getRequirements())
-            addIfNotPresent(requirement.getActor(), requirement.getLocation(), possibleNotifications);
-
-        // allow notification of all site-based actors at the destination site, and all study-wide actors:
-        Map<Integer, LocationImpl> relevantSites = new HashMap<>();
-        if (specimenRequest.getDestinationSiteId() == null)
-        {
-            throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +
-                    specimenRequest.getContainer().getPath() + " does not have a valid destination site id.");
-        }
-        LocationImpl destLocation = LocationManager.get().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
-        relevantSites.put(destLocation.getRowId(), destLocation);
-        for (Vial vial : specimenRequest.getVials())
-        {
-            LocationImpl location = LocationManager.get().getCurrentLocation(vial);
-            if (location != null && !relevantSites.containsKey(location.getRowId()))
-                relevantSites.put(location.getRowId(), location);
-        }
-
-        SpecimenRequestActor[] allActors = SpecimenRequestRequirementProvider.get().getActors(specimenRequest.getContainer());
-        // add study-wide actors and actors from all relevant sites:
-        for (SpecimenRequestActor actor : allActors)
-        {
-            if (actor.isPerSite())
-            {
-                for (LocationImpl location : relevantSites.values())
-                {
-                    if (actor.isPerSite())
-                        addIfNotPresent(actor, location, possibleNotifications);
-                }
-            }
-            else
-                addIfNotPresent(actor, null, possibleNotifications);
-        }
-
-        possibleNotifications.sort((first, second) ->
-        {
-            String firstSite = first.getLocation() != null ? first.getLocation().getLabel() : "";
-            String secondSite = second.getLocation() != null ? second.getLocation().getLabel() : "";
-            int comp = firstSite.compareToIgnoreCase(secondSite);
-            if (comp == 0)
-            {
-                String firstActorLabel = first.getActor().getLabel();
-                if (firstActorLabel == null)
-                    firstActorLabel = "";
-                String secondActorLabel = second.getActor().getLabel();
-                if (secondActorLabel == null)
-                    secondActorLabel = "";
-                comp = firstActorLabel.compareToIgnoreCase(secondActorLabel);
-            }
-            return comp;
-        });
-        return possibleNotifications;
-    }
-
-    private boolean addIfNotPresent(SpecimenRequestActor actor, LocationImpl location, List<ActorNotificationRecipientSet> list)
-    {
-        for (ActorNotificationRecipientSet actorSite : list)
-        {
-            if (actorSite.getActor().getRowId() == actor.getRowId())
-            {
-                if (actorSite.getLocation() == null && location == null)
-                    return false;
-                else
-                if (actorSite.getLocation() != null && location != null && actorSite.getLocation().getRowId() == location.getRowId())
-                    return false;
-            }
-        }
-        list.add(new ActorNotificationRecipientSet(actor, location));
-        return true;
-    }
-
     public static final class ExcludeSiteDropDown extends DisplayElement
     {
         @Override
@@ -394,7 +288,7 @@ public class SpecimenUtils
             out.write("Hide Previously Requested By ");
             out.write("<select ");
             out.write("onchange=\"window.location=");
-            out.write(PageFlowUtil.jsString(url.toString()+"&amp;excludeRequestedBySite="));
+            out.write(PageFlowUtil.jsString(url + "&amp;excludeRequestedBySite="));
             out.write(" + this.options[this.selectedIndex].value;\"");
             out.write(">");
             out.write("<option value=''>&lt;Show All&gt;</option>");
@@ -428,16 +322,6 @@ public class SpecimenUtils
                     "New Request Created", event, null, null, getViewContext());
             sendNotification(notification, true, errors);
         }
-    }
-
-    public List<? extends NotificationRecipientSet> getNotifications(SpecimenRequest specimenRequest, String[] notificationIdPairs)
-    {
-        List<ActorNotificationRecipientSet> siteActors = new ArrayList<>();
-        if (notificationIdPairs == null || notificationIdPairs.length == 0)
-            return siteActors;
-        for (String notificationIdPair : notificationIdPairs)
-            siteActors.add(ActorNotificationRecipientSet.getFromFormValue(specimenRequest.getContainer(), notificationIdPair));
-        return siteActors;
     }
 
     public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
@@ -494,147 +378,5 @@ public class SpecimenUtils
                 SpecimenRequestManager.get().createRequestEvent(getUser(), specimenRequest,
                         RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
         }
-    }
-
-    public void ensureSpecimenRequestsConfigured(boolean checkExistingStatuses)
-    {
-        if (!SettingsManager.get().isSpecimenRequestEnabled(getContainer(), checkExistingStatuses))
-            throw new RedirectException(SpecimenMigrationService.get().getSpecimenRequestConfigRequiredURL(getContainer()));
-    }
-
-    public GridView getRequestEventGridView(HttpServletRequest request, BindException errors, SimpleFilter filter)
-    {
-        DataRegion rgn = new DataRegion();
-        TableInfo tableInfoRequestEvent = SpecimenSchema.get().getTableInfoSampleRequestEvent();
-        rgn.setTable(tableInfoRequestEvent);
-        rgn.setColumns(tableInfoRequestEvent.getColumns("Created", "EntryType", "Comments", "CreatedBy", "EntityId"));
-        rgn.getDisplayColumn("EntityId").setVisible(false);
-
-        DataColumn commentsColumn = (DataColumn) rgn.getDisplayColumn("Comments");
-        commentsColumn.setWidth("50%");
-        commentsColumn.setPreserveNewlines(true);
-        rgn.addDisplayColumn(new AttachmentDisplayColumn(request));
-        GridView grid = new GridView(rgn, errors);
-        grid.setFilter(filter);
-        grid.setSort(new Sort("Created"));
-        return grid;
-    }
-
-    private static class AttachmentDisplayColumn extends SimpleDisplayColumn
-    {
-        private final HttpServletRequest _request;
-
-        public AttachmentDisplayColumn(HttpServletRequest request)
-        {
-            super();
-            _request = request;
-            setCaption("Attachments");
-        }
-
-        @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Map<String, Object> cols = ctx.getRow();
-            SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(cols);
-            Collection<Attachment> attachments = AttachmentService.get().getAttachments(event);
-
-            if (!attachments.isEmpty())
-            {
-                for (Attachment attachment : attachments)
-                {
-                    out.write("<a href=\"" + PageFlowUtil.filter(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(event, attachment.getName())) + "\">");
-                    out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
-                    out.write(PageFlowUtil.filter(attachment.getName()));
-                    out.write("</a><br>");
-                }
-            }
-            else
-                out.write("&nbsp;");
-        }
-    }
-
-    public SimpleFilter getSpecimenListFilter(SpecimenRequest specimenRequest, LocationImpl srcLocation, SpecimenController.LabSpecimenListsBean.Type type)
-    {
-        SpecimenController.LabSpecimenListsBean bean = new SpecimenController.LabSpecimenListsBean(this, specimenRequest, type);
-        List<Vial> vials = bean.getSpecimens(srcLocation);
-        Object[] params = new Object[vials.size() + 1];
-        params[params.length - 1] = specimenRequest.getContainer().getId();
-        StringBuilder whereClause = new StringBuilder();
-        whereClause.append("(");
-        int i = 0;
-        for (Vial vial : vials)
-        {
-            if (i > 0)
-                whereClause.append(" OR ");
-            whereClause.append("RowId = ?");
-            params[i++] = vial.getRowId();
-        }
-        whereClause.append(") AND Container = ?");
-
-        SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause(whereClause.toString(), params, FieldKey.fromParts("RowId"), FieldKey.fromParts("Container"));
-        return filter;
-    }
-
-    private String getSpecimenListFileName(LocationImpl srcLocation, LocationImpl destLocation)
-    {
-        StringBuilder filename = new StringBuilder();
-        filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
-        filename.append("_").append(DateUtil.formatDateISO8601());
-        return filename.toString();
-    }
-
-    public TSVGridWriter getSpecimenListTsvWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
-                                                   LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type)
-    {
-        DataRegion dr = createDataRegionForWriters(specimenRequest);
-        RenderContext ctx = new RenderContext(getViewContext());
-        ctx.setContainer(specimenRequest.getContainer());
-        ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        List<DisplayColumn> cols = dr.getDisplayColumns();
-        TSVGridWriter tsv = new TSVGridWriter(()->dr.getResults(ctx), cols);
-        tsv.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
-        return tsv;
-    }
-
-    public ExcelWriter getSpecimenListXlsWriter(SpecimenRequest specimenRequest, LocationImpl srcLocation,
-                                                 LocationImpl destLocation, SpecimenController.LabSpecimenListsBean.Type type)
-    {
-        DataRegion dr = createDataRegionForWriters(specimenRequest);
-        RenderContext ctx = new RenderContext(getViewContext());
-        ctx.setContainer(specimenRequest.getContainer());
-        ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        List<DisplayColumn> cols = dr.getDisplayColumns();
-        ExcelWriter xl = new ExcelWriter(() -> dr.getResults(ctx), cols);
-        xl.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
-        return xl;
-    }
-
-    private DataRegion createDataRegionForWriters(SpecimenRequest specimenRequest)
-    {
-        DataRegion dr = new DataRegion();
-        Container container = specimenRequest.getContainer();
-        StudyQuerySchema querySchema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), getViewContext().getUser(), true);
-        TableInfo table = querySchema.getTable(StudyQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME, true);
-        QueryDefinition queryDef = querySchema.getQueryDefForTable(StudyQuerySchema.LOCATION_SPECIMEN_LIST_TABLE_NAME);
-        CustomView defaultView = QueryService.get().getCustomView(getViewContext().getUser(), container, getViewContext().getUser(), querySchema.getName(), queryDef.getName(), null);
-        List<ColumnInfo> columns = queryDef.getColumns(defaultView, table);
-        dr.setTable(table);
-        dr.setColumns(columns);
-        return dr;
-    }
-
-    private String getShortSiteLabel(LocationImpl location)
-    {
-        String label;
-        if (location.getLabel() != null && location.getLabel().length() > 0)
-            label = location.getLabel().substring(0, Math.min(location.getLabel().length(), 15));
-        else if (location.getLdmsLabCode() != null)
-            label = "ldmsId" + location.getLdmsLabCode();
-        else if (location.getLabwareLabCode() != null && location.getLabwareLabCode().length() > 0)
-            label = "labwareId" + location.getLabwareLabCode();
-        else
-            label = "rowId" + location.getRowId();
-        return label.replaceAll("\\W+", "_");
     }
 }
