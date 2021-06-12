@@ -46,7 +46,6 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.DeleteMissingRequestSpecimensAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.LabSpecimenListsBean" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageRequirementAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -470,7 +469,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <%= link("Details", urlFor(ManageRequirementAction.class)
+                                    <%= link("Details", urlFor(SpecimenMigrationService.get().getManageRequirementActionClass())
                                             .addParameter("id", requirement.getRequestId())
                                             .addParameter("requirementId", requirement.getRowId()))%>
                                 </td>

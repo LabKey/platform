@@ -301,6 +301,12 @@ public class SpecimenModule extends SpringModule
             {
                 return SpecimenController2.ManageRequestInputsAction.class;
             }
+
+            @Override
+            public Class<? extends Controller> getManageRequirementActionClass()
+            {
+                return SpecimenController2.ManageRequirementAction.class;
+            }
         });
      }
 

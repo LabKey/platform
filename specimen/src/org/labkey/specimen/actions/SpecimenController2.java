@@ -79,6 +79,7 @@ import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.api.specimen.model.SpecimenComment;
@@ -336,6 +337,82 @@ public class SpecimenController2 extends SpringActionController
         grid.setFilter(filter);
         grid.setSort(new Sort("Created"));
         return grid;
+    }
+
+    private static boolean addIfNotPresent(SpecimenRequestActor actor, LocationImpl location, List<ActorNotificationRecipientSet> list)
+    {
+        for (ActorNotificationRecipientSet actorSite : list)
+        {
+            if (actorSite.getActor().getRowId() == actor.getRowId())
+            {
+                if (actorSite.getLocation() == null && location == null)
+                    return false;
+                else
+                if (actorSite.getLocation() != null && location != null && actorSite.getLocation().getRowId() == location.getRowId())
+                    return false;
+            }
+        }
+        list.add(new ActorNotificationRecipientSet(actor, location));
+        return true;
+    }
+
+    private static List<ActorNotificationRecipientSet> getPossibleNotifications(SpecimenRequest specimenRequest)
+    {
+        List<ActorNotificationRecipientSet> possibleNotifications = new ArrayList<>();
+        // allow notification of all parties listed in the request requirements:
+        for (SpecimenRequestRequirement requirement : specimenRequest.getRequirements())
+            addIfNotPresent(requirement.getActor(), requirement.getLocation(), possibleNotifications);
+
+        // allow notification of all site-based actors at the destination site, and all study-wide actors:
+        Map<Integer, LocationImpl> relevantSites = new HashMap<>();
+        if (specimenRequest.getDestinationSiteId() == null)
+        {
+            throw new IllegalStateException("Request " + specimenRequest.getRowId() + " in folder " +
+                    specimenRequest.getContainer().getPath() + " does not have a valid destination site id.");
+        }
+        LocationImpl destLocation = LocationManager.get().getLocation(specimenRequest.getContainer(), specimenRequest.getDestinationSiteId().intValue());
+        relevantSites.put(destLocation.getRowId(), destLocation);
+        for (Vial vial : specimenRequest.getVials())
+        {
+            LocationImpl location = LocationManager.get().getCurrentLocation(vial);
+            if (location != null && !relevantSites.containsKey(location.getRowId()))
+                relevantSites.put(location.getRowId(), location);
+        }
+
+        SpecimenRequestActor[] allActors = SpecimenRequestRequirementProvider.get().getActors(specimenRequest.getContainer());
+        // add study-wide actors and actors from all relevant sites:
+        for (SpecimenRequestActor actor : allActors)
+        {
+            if (actor.isPerSite())
+            {
+                for (LocationImpl location : relevantSites.values())
+                {
+                    if (actor.isPerSite())
+                        addIfNotPresent(actor, location, possibleNotifications);
+                }
+            }
+            else
+                addIfNotPresent(actor, null, possibleNotifications);
+        }
+
+        possibleNotifications.sort((first, second) ->
+        {
+            String firstSite = first.getLocation() != null ? first.getLocation().getLabel() : "";
+            String secondSite = second.getLocation() != null ? second.getLocation().getLabel() : "";
+            int comp = firstSite.compareToIgnoreCase(secondSite);
+            if (comp == 0)
+            {
+                String firstActorLabel = first.getActor().getLabel();
+                if (firstActorLabel == null)
+                    firstActorLabel = "";
+                String secondActorLabel = second.getActor().getLabel();
+                if (secondActorLabel == null)
+                    secondActorLabel = "";
+                comp = firstActorLabel.compareToIgnoreCase(secondActorLabel);
+            }
+            return comp;
+        });
+        return possibleNotifications;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -3993,7 +4070,7 @@ public class SpecimenController2 extends SpringActionController
         public ModelAndView getView(PipelineForm pipelineForm, BindException errors) throws Exception
         {
             ensureSpecimenRequestsConfigured(false);
-            return new JspView<>("/org/labkey/study/view/specimen/manageRequestInputs.jsp",
+            return new JspView<>("/org/labkey/specimen/view/manageRequestInputs.jsp",
                 new ManageRequestInputsBean(getViewContext()));
         }
 
@@ -4003,6 +4080,364 @@ public class SpecimenController2 extends SpringActionController
             setHelpTopic("coordinateSpecimens#form");
             addManageStudyNavTrail(root);
             root.addChild("Manage New Request Form");
+        }
+    }
+
+    public static final class ManageRequestInputsForm
+    {
+        private String[] _title;
+        private String[] _helpText;
+        private int[] _multiline;
+        private int[] _required;
+        private int[] _rememberSiteValue;
+
+        public String[] getHelpText()
+        {
+            return _helpText;
+        }
+
+        public void setHelpText(String[] helpText)
+        {
+            _helpText = helpText;
+        }
+
+        public String[] getTitle()
+        {
+            return _title;
+        }
+
+        public void setTitle(String[] title)
+        {
+            _title = title;
+        }
+
+        public int[] getMultiline()
+        {
+            return _multiline;
+        }
+
+        public void setMultiline(int[] multiline)
+        {
+            _multiline = multiline;
+        }
+
+        public int[] getRememberSiteValue()
+        {
+            return _rememberSiteValue;
+        }
+
+        public void setRememberSiteValue(int[] rememberSiteValue)
+        {
+            _rememberSiteValue = rememberSiteValue;
+        }
+
+        public int[] getRequired()
+        {
+            return _required;
+        }
+
+        public void setRequired(int[] required)
+        {
+            _required = required;
+        }
+    }
+
+    @RequiresPermission(ManageNewRequestFormPermission.class)
+    public class HandleUpdateRequestInputsAction extends FormHandlerAction<ManageRequestInputsForm>
+    {
+        @Override
+        public void validateCommand(ManageRequestInputsForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(ManageRequestInputsForm form, BindException errors) throws Exception
+        {
+            SpecimenRequestManager.SpecimenRequestInput[] inputs = new SpecimenRequestManager.SpecimenRequestInput[form.getTitle().length];
+            for (int i = 0; i < form.getTitle().length; i++)
+            {
+                String title = form.getTitle()[i];
+                String helpText = form.getHelpText()[i];
+                inputs[i] = new SpecimenRequestManager.SpecimenRequestInput(title, helpText, i);
+            }
+
+            if (form.getMultiline() != null)
+            {
+                for (int index : form.getMultiline())
+                    inputs[index].setMultiLine(true);
+            }
+            if (form.getRequired() != null)
+            {
+                for (int index : form.getRequired())
+                    inputs[index].setRequired(true);
+            }
+            if (form.getRememberSiteValue() != null)
+            {
+                for (int index : form.getRememberSiteValue())
+                    inputs[index].setRememberSiteValue(true);
+            }
+            SpecimenRequestManager.get().saveNewSpecimenRequestInputs(getContainer(), inputs);
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ManageRequestInputsForm manageRequestInputsForm)
+        {
+            return getManageStudyURL();
+        }
+    }
+
+    public static class RequirementForm extends IdForm
+    {
+        private int _requirementId;
+
+        public int getRequirementId()
+        {
+            return _requirementId;
+        }
+
+        public void setRequirementId(int requirementId)
+        {
+            _requirementId = requirementId;
+        }
+    }
+
+    public static class ManageRequirementForm extends RequirementForm
+    {
+        private boolean _complete;
+        private String _comment;
+        private String[] _notificationIdPairs;
+        private boolean _emailInactiveUsers;
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+
+        public boolean isComplete()
+        {
+            return _complete;
+        }
+
+        public void setComplete(boolean complete)
+        {
+            _complete = complete;
+        }
+
+        public String[] getNotificationIdPairs()
+        {
+            return _notificationIdPairs;
+        }
+
+        public void setNotificationIdPairs(String[] notificationIdPairs)
+        {
+            _notificationIdPairs = notificationIdPairs;
+        }
+
+        public boolean isEmailInactiveUsers()
+        {
+            return _emailInactiveUsers;
+        }
+
+        public void setEmailInactiveUsers(boolean emailInactiveUsers)
+        {
+            _emailInactiveUsers = emailInactiveUsers;
+        }
+    }
+
+    @RequiresPermission(ManageRequestsPermission.class)
+    public class DeleteRequirementAction extends FormHandlerAction<RequirementForm>
+    {
+        @Override
+        public void validateCommand(RequirementForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(RequirementForm form, BindException errors) throws Exception
+        {
+            SpecimenRequestRequirement requirement =
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
+            if (requirement.getRequestId() == form.getId())
+            {
+                SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement);
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(RequirementForm requirementForm)
+        {
+            return getManageRequestURL(requirementForm.getId(), null);
+        }
+    }
+
+    public class ManageRequirementBean
+    {
+        private final GridView _historyView;
+        private final SpecimenRequestRequirement _requirement;
+        private final boolean _requestManager;
+        private final List<ActorNotificationRecipientSet> _possibleNotifications;
+        private final boolean _finalState;
+
+        public ManageRequirementBean(ViewContext context, SpecimenRequest request, SpecimenRequestRequirement requirement)
+        {
+            _requirement = requirement;
+            _possibleNotifications = SpecimenController2.getPossibleNotifications(request);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), requirement.getRequestId());
+            filter.addCondition(FieldKey.fromParts("RequirementId"), requirement.getRowId());
+            _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
+            _historyView = getRequestEventGridView(context.getRequest(), null, filter);
+            _finalState = SpecimenRequestManager.get().isInFinalState(request);
+        }
+
+        public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
+        {
+            RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
+            if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
+                return true;        // All should be checked
+            else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
+                return false;       // None should be checked
+            // Otherwise use Actor Notification
+
+            Integer requirementActorId = _requirement.getActorId();
+            Integer notificationActorId = notification.getActor() != null ? notification.getActor().getRowId() : null;
+            Integer requirementSiteId = _requirement.getSiteId();
+            Integer notificationSiteId = notification.getLocation() != null ? notification.getLocation().getRowId() : null;
+            return nullSafeEqual(requirementActorId, notificationActorId) &&
+                    nullSafeEqual(requirementSiteId, notificationSiteId);
+        }
+
+        public GridView getHistoryView()
+        {
+            return _historyView;
+        }
+
+        public SpecimenRequestRequirement getRequirement()
+        {
+            return _requirement;
+        }
+
+        public List<ActorNotificationRecipientSet> getPossibleNotifications()
+        {
+            return _possibleNotifications;
+        }
+
+        public boolean isRequestManager()
+        {
+            return _requestManager;
+        }
+
+        public boolean isFinalState()
+        {
+            return _finalState;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class ManageRequirementAction extends FormViewAction<ManageRequirementForm>
+    {
+        private SpecimenRequest _specimenRequest;
+
+        @Override
+        public void validateCommand(ManageRequirementForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ManageRequirementForm form, boolean reshow, BindException errors)
+        {
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            final SpecimenRequestRequirement requirement =
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
+            if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
+                throw new NotFoundException();
+
+            return new JspView<>("/org/labkey/specimen/view/manageRequirement.jsp",
+                    new ManageRequirementBean(getViewContext(), _specimenRequest, requirement), errors);
+        }
+
+        @Override
+        public boolean handlePost(final ManageRequirementForm form, BindException errors) throws Exception
+        {
+            if (!getContainer().hasPermission(getUser(), ManageRequestsPermission.class))
+                throw new UnauthorizedException("You do not have permission to update requirements!");
+
+            _specimenRequest = SpecimenRequestManager.get().getRequest(getContainer(), form.getId());
+            final SpecimenRequestRequirement requirement =
+                    SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
+            if (_specimenRequest == null || requirement == null || requirement.getRequestId() != form.getId())
+                throw new NotFoundException();
+
+            List<AttachmentFile> files = getAttachmentFileList();
+            RequestEventType eventType;
+            StringBuilder comment = new StringBuilder();
+            comment.append(requirement.getRequirementSummary());
+            String eventSummary;
+            if (form.isComplete() != requirement.isComplete())
+            {
+                SpecimenRequestRequirement clone = requirement.createMutable();
+                clone.setComplete(form.isComplete());
+                SpecimenRequestManager.get().updateRequestRequirement(getUser(), clone);
+                eventType = RequestEventType.REQUEST_STATUS_CHANGED;
+                comment.append("\nStatus changed to ").append(form.isComplete() ? "complete" : "incomplete");
+                eventSummary = comment.toString();
+            }
+            else
+            {
+                eventType = RequestEventType.COMMENT_ADDED;
+                eventSummary = "Comment added.";
+            }
+
+            if (form.getComment() != null && form.getComment().length() > 0)
+                comment.append("\n").append(form.getComment());
+
+            SpecimenRequestEvent event;
+            try
+            {
+                event = SpecimenRequestManager.get().createRequestEvent(getUser(), requirement, eventType, comment.toString(), files);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, "The request could not be updated because of an unexpected error. " +
+                        "Please report this problem to an administrator. Error details: "  + e.getMessage());
+                return false;
+            }
+            try
+            {
+
+                List<? extends NotificationRecipientSet> recipients = getNotifications(_specimenRequest, form.getNotificationIdPairs());
+                DefaultRequestNotification notification = new DefaultRequestNotification(_specimenRequest, recipients,
+                        eventSummary, event, form.getComment(), requirement, getViewContext());
+                sendNotification(notification, form.isEmailInactiveUsers(), errors);
+            }
+            catch (ConfigurationException | IOException e)
+            {
+                errors.reject(ERROR_MSG, "The request was updated successfully, but the notification failed: " +  e.getMessage());
+                return false;
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ManageRequirementForm manageRequirementForm)
+        {
+            return getManageRequestURL(_specimenRequest.getRowId(), null);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
+            root.addChild("Manage Requirement");
         }
     }
 }
