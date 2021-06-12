@@ -22,9 +22,8 @@
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.specimen.SpecimenManager" %>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestManager"%>
-<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
+<%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager" %>
@@ -43,6 +42,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteMissingRequestSpecimensAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteRequestAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ExtendedSpecimenRequestAction" %>
@@ -282,7 +282,7 @@
             {
     %>
                     This request is in a final state; no changes are allowed.<br>
-                    To make changes, you must <a href="<%=h(SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId()))%>">
+                    To make changes, you must <a href="<%=h(SpecimenController2.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId()))%>">
                     change the request's status</a> to a non-final state.
     <%
             }
@@ -302,7 +302,7 @@
                                 .addParameter("listType", LabSpecimenListsBean.Type.PROVIDING.toString())) %>
                         </li>
                         <li>Update request status to indicate completion: <%= link("Update Request",
-                                SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) %>
+                                SpecimenController2.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) %>
                         </li>
                     </ul>
     <%
@@ -410,7 +410,7 @@
 <tr>
     <td>
         <%= link("View History", urlFor(RequestHistoryAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) %>&nbsp;
-        <%= bean.isRequestManager() ? link("Update Request", SpecimenMigrationService.get().getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
+        <%= bean.isRequestManager() ? link("Update Request", SpecimenController2.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
         <%
             if (hasExtendedRequestView)
             {

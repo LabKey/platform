@@ -188,7 +188,7 @@ public class SpecimenModule extends SpringModule
             @Override
             public ActionURL getManageRequestStatusURL(Container c, int requestId)
             {
-                return new ActionURL(SpecimenController2.ManageRequestStatusAction.class, c).addParameter("id", requestId);
+                return SpecimenController2.getManageRequestStatusURL(c, requestId);
             }
 
             @Override

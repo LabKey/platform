@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.DownloadSpecimenListAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.EmailLabSpecimenListsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.LabSpecimenListsBean" %>
@@ -192,7 +192,7 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
-        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(SpecimenMigrationService.get().getManageRequestURL(getContainer(), bean.getSpecimenRequest().getRowId(), null))%></td>
+        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(SpecimenController2.getManageRequestURL(getContainer(), bean.getSpecimenRequest().getRowId(), null))%></td>
     </tr>
 </table>
 </labkey:form>

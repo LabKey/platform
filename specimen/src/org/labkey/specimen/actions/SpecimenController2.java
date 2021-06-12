@@ -3504,6 +3504,11 @@ public class SpecimenController2 extends SpringActionController
         }
     }
 
+    public static ActionURL getManageRequestStatusURL(Container c, int requestId)
+    {
+        return new ActionURL(ManageRequestStatusAction.class, c).addParameter("id", requestId);
+    }
+
     @RequiresPermission(RequestSpecimensPermission.class)
     public class ManageRequestStatusAction extends FormViewAction<ManageRequestStatusForm>
     {
