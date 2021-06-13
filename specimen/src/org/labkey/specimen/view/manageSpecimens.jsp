@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ConfigureRequestabilityRulesAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDefaultReqsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDisplaySettingsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageLocationTypesAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequestInputsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageStatusesAction" %>
@@ -164,7 +165,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Location Types</td>
                         <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
-                        <td><%= link("Manage Location Types", urlProvider(SpecimenUrls.class).getManageLocationTypesActionClass()) %></td>
+                        <td><%= link("Manage Location Types", ManageLocationTypesAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>

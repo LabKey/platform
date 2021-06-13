@@ -65,7 +65,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -168,12 +167,6 @@ public class SpecimenController extends BaseStudyController
         public Class<? extends Controller> getCopyParticipantCommentActionClass()
         {
             return CopyParticipantCommentAction.class;
-        }
-
-        @Override
-        public Class<? extends Controller> getManageLocationTypesActionClass()
-        {
-            return StudyController.ManageLocationTypesAction.class;
         }
 
         @Override

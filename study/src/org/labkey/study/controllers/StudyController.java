@@ -144,7 +144,6 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -7176,102 +7175,6 @@ public class StudyController extends BaseStudyController
         study.setParticipantAliasProperty(aliasColumn);
         study.setParticipantAliasSourceProperty(sourceColumn);
         StudyManager.getInstance().updateStudy(getUser(), study);
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
-    {
-        @Override
-        public ModelAndView getView(ManageLocationTypesForm form, BindException errors)
-        {
-            Study study = getStudyRedirectIfNull();
-            form.setRepository(study.isAllowReqLocRepository());
-            form.setClinic(study.isAllowReqLocClinic());
-            form.setSal(study.isAllowReqLocSal());
-            form.setEndpoint(study.isAllowReqLocEndpoint());
-            return new JspView<>("/org/labkey/study/view/manageLocationTypes.jsp", form);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("manageLocations");
-            _addManageStudy(root);
-            root.addChild("Manage Location Types");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class SaveLocationsTypeSettingsAction extends MutatingApiAction<ManageLocationTypesForm>
-    {
-        @Override
-        public ApiResponse execute(ManageLocationTypesForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-            if (study != null)
-            {
-                study = study.createMutable();
-                study.setAllowReqLocRepository(form.isRepository());
-                study.setAllowReqLocClinic(form.isClinic());
-                study.setAllowReqLocSal(form.isSal());
-                study.setAllowReqLocEndpoint(form.isEndpoint());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-
-                response.put("success", true);
-                return response;
-            }
-            else
-                throw new IllegalStateException("A study does not exist in this folder");
-        }
-    }
-
-    public static class ManageLocationTypesForm
-    {
-        private boolean _repository;
-        private boolean _clinic;
-        private boolean _sal;
-        private boolean _endpoint;
-
-        public boolean isRepository()
-        {
-            return _repository;
-        }
-
-        public void setRepository(boolean repository)
-        {
-            _repository = repository;
-        }
-
-        public boolean isClinic()
-        {
-            return _clinic;
-        }
-
-        public void setClinic(boolean clinic)
-        {
-            _clinic = clinic;
-        }
-
-        public boolean isSal()
-        {
-            return _sal;
-        }
-
-        public void setSal(boolean sal)
-        {
-            _sal = sal;
-        }
-
-        public boolean isEndpoint()
-        {
-            return _endpoint;
-        }
-
-        public void setEndpoint(boolean endpoint)
-        {
-            _endpoint = endpoint;
-        }
     }
 
     @RequiresPermission(ManageStudyPermission.class)

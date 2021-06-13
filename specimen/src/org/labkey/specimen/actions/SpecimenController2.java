@@ -5052,4 +5052,89 @@ public class SpecimenController2 extends SpringActionController
             return activeTransform.getManageAction(c, getUser());
         }
     }
+
+    public static class ManageLocationTypesForm
+    {
+        private boolean _repository;
+        private boolean _clinic;
+        private boolean _sal;
+        private boolean _endpoint;
+
+        public boolean isRepository()
+        {
+            return _repository;
+        }
+
+        public void setRepository(boolean repository)
+        {
+            _repository = repository;
+        }
+
+        public boolean isClinic()
+        {
+            return _clinic;
+        }
+
+        public void setClinic(boolean clinic)
+        {
+            _clinic = clinic;
+        }
+
+        public boolean isSal()
+        {
+            return _sal;
+        }
+
+        public void setSal(boolean sal)
+        {
+            _sal = sal;
+        }
+
+        public boolean isEndpoint()
+        {
+            return _endpoint;
+        }
+
+        public void setEndpoint(boolean endpoint)
+        {
+            _endpoint = endpoint;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
+    {
+        @Override
+        public ModelAndView getView(ManageLocationTypesForm form, BindException errors)
+        {
+            Study study = getStudyRedirectIfNull();
+            form.setRepository(study.isAllowReqLocRepository());
+            form.setClinic(study.isAllowReqLocClinic());
+            form.setSal(study.isAllowReqLocSal());
+            form.setEndpoint(study.isAllowReqLocEndpoint());
+            return new JspView<>("/org/labkey/specimen/view/manageLocationTypes.jsp", form);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("manageLocations");
+            addManageStudyNavTrail(root);
+            root.addChild("Manage Location Types");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class SaveLocationsTypeSettingsAction extends MutatingApiAction<ManageLocationTypesForm>
+    {
+        @Override
+        public ApiResponse execute(ManageLocationTypesForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = getStudyThrowIfNull();
+            StudyService.get().saveLocationSettings(study, getUser(), form.isRepository(), form.isClinic(), form.isSal(), form.isEndpoint());
+            response.put("success", true);
+            return response;
+        }
+    }
 }
