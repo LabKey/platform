@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;

@@ -75,11 +75,8 @@ import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
-import org.labkey.api.specimen.security.permissions.ManageNewRequestFormPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
-import org.labkey.api.specimen.security.permissions.ManageRequestStatusesPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
-import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
@@ -89,7 +86,6 @@ import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.view.NotificationBean;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
-import org.labkey.api.specimen.view.SpecimenWebPart;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
@@ -133,9 +129,13 @@ import org.labkey.specimen.pipeline.SpecimenBatch;
 import org.labkey.specimen.query.SpecimenEventQueryView;
 import org.labkey.specimen.query.SpecimenRequestQueryView;
 import org.labkey.specimen.security.permissions.ManageDisplaySettingsPermission;
+import org.labkey.specimen.security.permissions.ManageNewRequestFormPermission;
 import org.labkey.specimen.security.permissions.ManageNotificationsPermission;
 import org.labkey.specimen.security.permissions.ManageRequestRequirementsPermission;
+import org.labkey.specimen.security.permissions.ManageRequestStatusesPermission;
+import org.labkey.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.specimen.view.SpecimenSearchWebPart;
+import org.labkey.specimen.view.SpecimenWebPart;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -5004,6 +5004,7 @@ public class SpecimenController2 extends SpringActionController
             return _activeTransform;
         }
 
+        @SuppressWarnings("unused")
         public void setActiveTransform(String activeTransform)
         {
             _activeTransform = activeTransform;

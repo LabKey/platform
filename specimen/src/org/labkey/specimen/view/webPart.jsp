@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.specimen.security.permissions.RequestSpecimensPermission"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
-<%@ page import="org.labkey.api.specimen.view.SpecimenWebPart" %>
+<%@ page import="org.labkey.specimen.view.SpecimenWebPart" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>

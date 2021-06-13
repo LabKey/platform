@@ -32,8 +32,10 @@ import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
+import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
@@ -138,18 +140,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getConfigureRequestabilityRulesURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ConfigureRequestabilityRulesAction.class, c);
-            }
-
-            @Override
-            public ActionURL getManageActorsURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageActorsAction.class, c);
-            }
-
-            @Override
             public ActionURL getViewRequestsURL(Container c)
             {
                 return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
@@ -162,39 +152,9 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getManageNotificationsURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageNotificationsAction.class, c);
-            }
-
-            @Override
-            public ActionURL getManageDisplaySettings(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageDisplaySettingsAction.class, c);
-            }
-
-            @Override
-            public ActionURL getManageRepositorySettingsURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageRepositorySettingsAction.class, c);
-            }
-
-            @Override
-            public ActionURL getManageDefaultReqsSettingsURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageDefaultReqsAction.class, c);
-            }
-
-            @Override
             public ActionURL getManageRequestStatusURL(Container c, int requestId)
             {
                 return SpecimenController2.getManageRequestStatusURL(c, requestId);
-            }
-
-            @Override
-            public ActionURL getManageStatusesURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ManageStatusesAction.class, c);
             }
 
             @Override
@@ -220,12 +180,6 @@ public class SpecimenModule extends SpringModule
             {
                 return SpecimenController2.UpdateCommentsAction.class;
             }
-
-            @Override
-            public Class<? extends Controller> getManageRequestInputsActionClass()
-            {
-                return SpecimenController2.ManageRequestInputsAction.class;
-            }
         });
      }
 
@@ -239,6 +193,7 @@ public class SpecimenModule extends SpringModule
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
         PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
+        StudyInternalService.get().registerManageStudyViewFactory(ctx->ctx.getContainer().hasActiveModuleByName("specimen") ? new ManageSpecimenView() : null);
 
         SimpleStudyWriterRegistry.registerSimpleStudyWriterProvider(() -> List.of(
             new SpecimenArchiveWriter(),

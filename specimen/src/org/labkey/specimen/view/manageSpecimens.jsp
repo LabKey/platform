@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.model.SpecimenTablesProvider" %>
 <%@ page import="org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider" %>
@@ -32,7 +31,14 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ChooseImporterAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ConfigureRequestabilityRulesAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDefaultReqsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDisplaySettingsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRepositorySettingsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequestInputsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageStatusesAction" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -83,7 +89,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
                         <td class="lk-study-prop-desc">This study uses the <%=text(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
-                        <td><%=link("Change Repository Type", SpecimenMigrationService.get().getManageRepositorySettingsURL(getContainer()))%></td>
+                        <td><%=link("Change Repository Type", ManageRepositorySettingsAction.class)%></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Fields</td>
@@ -103,7 +109,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Display and Behavior</td>
                         <td class="lk-study-prop-desc">Manage warnings, comments, and workflow</td>
-                        <td><%= link("Manage Display and Behavior", SpecimenMigrationService.get().getManageDisplaySettings(getContainer())) %></td>
+                        <td><%= link("Manage Display and Behavior", ManageDisplaySettingsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>
@@ -164,33 +170,33 @@
                         <td class="lk-study-prop-label">Statuses</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser()).size() %> specimen request
                             statuses</td>
-                        <td><%= link("Manage Request Statuses", SpecimenMigrationService.get().getManageStatusesURL(getContainer())) %></td>
+                        <td><%= link("Manage Request Statuses", ManageStatusesAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Actors</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestRequirementProvider.get().getActors(getContainer()).length %> specimen request
                             actors</td>
-                        <td><%= link("Manage Actors and Groups", SpecimenMigrationService.get().getManageActorsURL(getContainer())) %></td>
+                        <td><%= link("Manage Actors and Groups", SpecimenController2.ManageActorsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Requirements</td>
                         <td class="lk-study-prop-desc">Manage default requirements for new requests</td>
-                        <td><%= link("Manage Default Requirements", SpecimenMigrationService.get().getManageDefaultReqsSettingsURL(getContainer())) %></td>
+                        <td><%= link("Manage Default Requirements", ManageDefaultReqsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Form</td>
                         <td class="lk-study-prop-desc">Manage inputs required for a new specimen request </td>
-                        <td><%= link("Manage New Request Form", urlFor(SpecimenMigrationService.get().getManageRequestInputsActionClass())) %></td>
+                        <td><%= link("Manage New Request Form", ManageRequestInputsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Notifications</td>
                         <td class="lk-study-prop-desc">Manage specimen request notifications</td>
-                        <td><%= link("Manage Notifications", SpecimenMigrationService.get().getManageNotificationsURL(getContainer())) %></td>
+                        <td><%= link("Manage Notifications", SpecimenController2.ManageNotificationsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Requestability Rules</td>
                         <td class="lk-study-prop-desc">Manage the rules used to determine specimen availability for request</td>
-                        <td><%= link("Manage Requestability Rules", SpecimenMigrationService.get().getConfigureRequestabilityRulesURL(getContainer())) %></td>
+                        <td><%= link("Manage Requestability Rules", ConfigureRequestabilityRulesAction.class) %></td>
                     </tr>
                 </table>
             </labkey:panel>

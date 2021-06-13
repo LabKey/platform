@@ -21,16 +21,6 @@ public interface SpecimenMigrationService
         ServiceRegistry.get().registerService(SpecimenMigrationService.class, impl);
     }
 
-    // This group used only by manageSpecimens.jsp
-    ActionURL getConfigureRequestabilityRulesURL(Container c);
-    ActionURL getManageActorsURL(Container c);
-    ActionURL getManageDefaultReqsSettingsURL(Container c);
-    ActionURL getManageDisplaySettings(Container c);
-    ActionURL getManageNotificationsURL(Container c);
-    ActionURL getManageStatusesURL(Container c);
-    ActionURL getManageRepositorySettingsURL(Container c);
-    Class<? extends Controller> getManageRequestInputsActionClass();
-
     ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);

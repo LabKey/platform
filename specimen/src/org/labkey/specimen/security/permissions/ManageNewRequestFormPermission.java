@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2012 LabKey Corporation
+ * Copyright (c) 2009-2017 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.security.permissions;
+package org.labkey.specimen.security.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.study.StudyService;
 
 /*
 * User: Dave
-* Date: May 13, 2009
-* Time: 3:22:10 PM
+* Date: May 18, 2009
+* Time: 11:27:04 AM
 */
-public class ManageSpecimenActorsPermission extends AbstractPermission
+public class ManageNewRequestFormPermission extends AbstractPermission
 {
-    public ManageSpecimenActorsPermission()
+    public ManageNewRequestFormPermission()
     {
-        super("Manage Specimen Actors", "Allows management of specimen actors",
+        super("Manage New Request Form",
+                "Allows management of the form shown during a new specimen request",
                 StudyService.get().getStudyModuleClass()); // TODO: Switch to SpecimenModule.class
     }
 }

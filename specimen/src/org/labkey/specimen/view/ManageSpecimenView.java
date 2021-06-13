@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.view;
+package org.labkey.specimen.view;
 
 import org.labkey.api.view.JspView;
 

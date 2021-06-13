@@ -1,6 +1,7 @@
 package org.labkey.study;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.requirements.SpecimenRequest;
@@ -15,7 +16,9 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StudyInternalServiceImpl implements StudyInternalService
 {
@@ -59,5 +62,13 @@ public class StudyInternalServiceImpl implements StudyInternalService
     public SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
     {
         return new SpecimenUtils(context).getSpecimenQueryView(showVials, forExport, cachedFilterData, viewMode, cohortFilter);
+    }
+
+    public static final List<ViewFactory> VIEW_FACTORIES = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void registerManageStudyViewFactory(ViewFactory factory)
+    {
+        VIEW_FACTORIES.add(factory);
     }
 }
