@@ -114,7 +114,7 @@ public class SpecimenUtils
         return new ActionURL(action, getContainer());
     }
 
-    public static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
+    private static boolean isCommentsMode(Container container, SpecimenQueryView.Mode selectedMode)
     {
         return (selectedMode == SpecimenQueryView.Mode.COMMENTS) ||
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SettingsManager.get().getDisplaySettings(container).isDefaultToCommentsMode());

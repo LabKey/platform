@@ -65,6 +65,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -103,11 +104,6 @@ public class SpecimenController extends BaseStudyController
     public SpecimenController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    protected SpecimenUtils getUtils()
-    {
-        return new SpecimenUtils(getViewContext());
     }
 
     @Override
@@ -172,6 +168,18 @@ public class SpecimenController extends BaseStudyController
         public Class<? extends Controller> getCopyParticipantCommentActionClass()
         {
             return CopyParticipantCommentAction.class;
+        }
+
+        @Override
+        public Class<? extends Controller> getManageLocationTypesActionClass()
+        {
+            return StudyController.ManageLocationTypesAction.class;
+        }
+
+        @Override
+        public Class<? extends Controller> getManageSpecimenCommentsActionClass()
+        {
+            return ManageSpecimenCommentsAction.class;
         }
     }
 
@@ -455,7 +463,7 @@ public class SpecimenController extends BaseStudyController
             final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
             if (form.getParticipantCommentDatasetId() != null && form.getParticipantCommentDatasetId() != -1)
             {
-                Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantCommentDatasetId());
+                Dataset ds = StudyService.get().getDataset(getContainer(), form.getParticipantCommentDatasetId());
                 if (ds != null && !ds.isDemographicData())
                 {
                     errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
@@ -469,7 +477,7 @@ public class SpecimenController extends BaseStudyController
             {
                 if (form.getParticipantVisitCommentDatasetId() != null && form.getParticipantVisitCommentDatasetId() != -1)
                 {
-                    Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantVisitCommentDatasetId());
+                    Dataset ds = StudyService.get().getDataset(getContainer(), form.getParticipantVisitCommentDatasetId());
                     if (ds != null && ds.isDemographicData())
                     {
                         errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");

@@ -6,6 +6,6 @@ public class ManageSpecimenView extends JspView<Object>
 {
     public ManageSpecimenView()
     {
-        super("/org/labkey/study/view/specimen/manageSpecimens.jsp");
+        super("/org/labkey/specimen/view/manageSpecimens.jsp");
     }
 }

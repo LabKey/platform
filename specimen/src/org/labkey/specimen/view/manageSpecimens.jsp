@@ -28,18 +28,17 @@
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
+<%@ page import="org.labkey.api.study.SpecimenUrls" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ChooseImporterAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ManageSpecimenCommentsAction" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ChooseImporterAction" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Container c = getContainer();
-    StudyImpl study = StudyManager.getInstance().getStudy(c);
+    Study study = StudyService.get().getStudy(c);
     User user = getUser();
     String subjectNounSingle = study.getSubjectNounSingular().toLowerCase();
 
@@ -109,7 +108,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>
                         <td class="lk-study-prop-desc">Manage <%=h(subjectNounSingle)%> and <%=h(subjectNounSingle)%>/visit comments</td>
-                        <td><%= link("Manage Comments", ManageSpecimenCommentsAction.class) %></td>
+                        <td><%= link("Manage Comments", urlProvider(SpecimenUrls.class).getManageSpecimenCommentsActionClass()) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
@@ -159,7 +158,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Location Types</td>
                         <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
-                        <td><%= link("Manage Location Types", ManageLocationTypesAction.class) %></td>
+                        <td><%= link("Manage Location Types", urlProvider(SpecimenUrls.class).getManageLocationTypesActionClass()) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Statuses</td>

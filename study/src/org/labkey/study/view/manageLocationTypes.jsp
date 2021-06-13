@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageLocationTypesForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -28,8 +28,8 @@
     }
 %>
 <%
-    JspView<StudyController.ManageLocationTypesForm> me = (JspView<StudyController.ManageLocationTypesForm>) HttpView.currentView();
-    StudyController.ManageLocationTypesForm bean = me.getModelBean();
+    JspView<ManageLocationTypesForm> me = (JspView<ManageLocationTypesForm>) HttpView.currentView();
+    ManageLocationTypesForm bean = me.getModelBean();
 %>
 <div style="max-width: 1000px">
     <p>Select which location types are allowed to be requesting locations:</p>

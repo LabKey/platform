@@ -12,16 +12,15 @@
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.Button" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="java.util.Collection" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
+<%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
     Container c = getContainer();
     User user = getUser();
@@ -30,7 +29,7 @@
 
     URLHelper cancelLink = getActionURL().getReturnURL();
     if (cancelLink == null)
-        cancelLink = new ActionURL(StudyController.ManageStudyAction.class, c);
+        cancelLink = urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
     int numberOfTransforms = specimenTransforms.size();
     int rowNumber = 0;
 

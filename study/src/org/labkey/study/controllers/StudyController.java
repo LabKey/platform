@@ -6133,63 +6133,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class EnabledSpecimenImportForm
-    {
-        private String _activeTransform;
-
-        public String getActiveTransform()
-        {
-            return _activeTransform;
-        }
-
-        public void setActiveTransform(String activeTransform)
-        {
-            _activeTransform = activeTransform;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
-    {
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Specimen Import Mechanism");
-        }
-
-        @Override
-        public void validateCommand(EnabledSpecimenImportForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
-        {
-            setHelpTopic(new HelpTopic("externalSpecimens"));
-            return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
-        {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
-            props.put("active", form.getActiveTransform());
-            props.save();
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
-        {
-            Container c = getContainer();
-            SpecimenService specimenService = SpecimenService.get();
-
-            String active = specimenService.getActiveSpecimenImporter(c);
-            SpecimenTransform activeTransform = specimenService.getSpecimenTransform(active);
-            return activeTransform.getManageAction(c, getUser());
-        }
-    }
-
     public static class ImportVisitMapForm
     {
         private String _content;
@@ -6204,7 +6147,6 @@ public class StudyController extends BaseStudyController
             _content = content;
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class DemoModeAction extends FormViewAction<DemoModeForm>
