@@ -2,7 +2,6 @@ package org.labkey.api.study;
 
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -52,4 +51,8 @@ public interface StudyInternalService
     SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter);
 
     void registerManageStudyViewFactory(ViewFactory factory);
+
+    Integer getParticipantCommentDatasetId(Study study);
+
+    Integer getParticipantVisitCommentDatasetId(Study study);
 }

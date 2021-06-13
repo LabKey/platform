@@ -389,50 +389,50 @@ public class SpecimenController extends BaseStudyController
 
     public static class ManageCommentsForm
     {
-        private Integer participantCommentDatasetId;
-        private String participantCommentProperty;
-        private Integer participantVisitCommentDatasetId;
-        private String participantVisitCommentProperty;
+        private Integer _participantCommentDatasetId;
+        private String _participantCommentProperty;
+        private Integer _participantVisitCommentDatasetId;
+        private String _participantVisitCommentProperty;
         private boolean _reshow;
 
         public Integer getParticipantCommentDatasetId()
         {
-            return participantCommentDatasetId;
+            return _participantCommentDatasetId;
         }
 
         public void setParticipantCommentDatasetId(Integer participantCommentDatasetId)
         {
-            this.participantCommentDatasetId = participantCommentDatasetId;
+            _participantCommentDatasetId = participantCommentDatasetId;
         }
 
         public String getParticipantCommentProperty()
         {
-            return participantCommentProperty;
+            return _participantCommentProperty;
         }
 
         public void setParticipantCommentProperty(String participantCommentProperty)
         {
-            this.participantCommentProperty = participantCommentProperty;
+            _participantCommentProperty = participantCommentProperty;
         }
 
         public Integer getParticipantVisitCommentDatasetId()
         {
-            return participantVisitCommentDatasetId;
+            return _participantVisitCommentDatasetId;
         }
 
         public void setParticipantVisitCommentDatasetId(Integer participantVisitCommentDatasetId)
         {
-            this.participantVisitCommentDatasetId = participantVisitCommentDatasetId;
+            _participantVisitCommentDatasetId = participantVisitCommentDatasetId;
         }
 
         public String getParticipantVisitCommentProperty()
         {
-            return participantVisitCommentProperty;
+            return _participantVisitCommentProperty;
         }
 
         public void setParticipantVisitCommentProperty(String participantVisitCommentProperty)
         {
-            this.participantVisitCommentProperty = participantVisitCommentProperty;
+            _participantVisitCommentProperty = participantVisitCommentProperty;
         }
 
         public boolean isReshow()

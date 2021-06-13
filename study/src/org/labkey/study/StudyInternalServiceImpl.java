@@ -71,4 +71,16 @@ public class StudyInternalServiceImpl implements StudyInternalService
     {
         VIEW_FACTORIES.add(factory);
     }
+
+    @Override
+    public Integer getParticipantCommentDatasetId(Study study)
+    {
+        return ((StudyImpl)study).getParticipantCommentDatasetId();
+    }
+
+    @Override
+    public Integer getParticipantVisitCommentDatasetId(Study study)
+    {
+        return ((StudyImpl)study).getParticipantVisitCommentDatasetId();
+    }
 }
