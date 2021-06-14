@@ -12,6 +12,7 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,5 +55,15 @@ public interface StudyInternalService
 
     Integer getParticipantCommentDatasetId(Study study);
 
+    String getParticipantCommentProperty(Study study);
+
     Integer getParticipantVisitCommentDatasetId(Study study);
+
+    String getParticipantVisitCommentProperty(Study study);
+
+    List<? extends Dataset> getDatasets(Study study);
+
+    boolean hasEditableDatasets(Study study);
+
+    void saveCommentsSettings(Study study, User user, Integer participantCommentDatasetId, String participantCommentProperty, Integer participantVisitCommentDatasetId, String participantVisitCommentProperty);
 }

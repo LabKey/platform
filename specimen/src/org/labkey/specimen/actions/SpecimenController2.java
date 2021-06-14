@@ -87,6 +87,7 @@ import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.specimen.view.NotificationBean;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
@@ -95,6 +96,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ConfigurationException;
@@ -3852,7 +3854,7 @@ public class SpecimenController2 extends SpringActionController
                     return new HtmlView("No vials selected. " + PageFlowUtil.link("back").href("javascript:back()"));
             }
 
-            return new JspView<>("/org/labkey/study/view/specimen/updateComments.jsp",
+            return new JspView<>("/org/labkey/specimen/view/updateComments.jsp",
                     new UpdateSpecimenCommentsBean(getViewContext(), selectedVials, specimenCommentsForm.getReferrer()), errors);
         }
 
@@ -5137,4 +5139,173 @@ public class SpecimenController2 extends SpringActionController
             return response;
         }
     }
+    public static class ManageCommentsForm
+    {
+        private Integer _participantCommentDatasetId;
+        private String _participantCommentProperty;
+        private Integer _participantVisitCommentDatasetId;
+        private String _participantVisitCommentProperty;
+        private boolean _reshow;
+
+        public Integer getParticipantCommentDatasetId()
+        {
+            return _participantCommentDatasetId;
+        }
+
+        public void setParticipantCommentDatasetId(Integer participantCommentDatasetId)
+        {
+            _participantCommentDatasetId = participantCommentDatasetId;
+        }
+
+        public String getParticipantCommentProperty()
+        {
+            return _participantCommentProperty;
+        }
+
+        public void setParticipantCommentProperty(String participantCommentProperty)
+        {
+            _participantCommentProperty = participantCommentProperty;
+        }
+
+        public Integer getParticipantVisitCommentDatasetId()
+        {
+            return _participantVisitCommentDatasetId;
+        }
+
+        public void setParticipantVisitCommentDatasetId(Integer participantVisitCommentDatasetId)
+        {
+            _participantVisitCommentDatasetId = participantVisitCommentDatasetId;
+        }
+
+        public String getParticipantVisitCommentProperty()
+        {
+            return _participantVisitCommentProperty;
+        }
+
+        public void setParticipantVisitCommentProperty(String participantVisitCommentProperty)
+        {
+            _participantVisitCommentProperty = participantVisitCommentProperty;
+        }
+
+        public boolean isReshow()
+        {
+            return _reshow;
+        }
+
+        public void setReshow(boolean reshow)
+        {
+            _reshow = reshow;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ManageSpecimenCommentsAction extends FormViewAction<ManageCommentsForm>
+    {
+        @Override
+        public void validateCommand(ManageCommentsForm form, Errors errors)
+        {
+            String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
+            final Study study = getStudyRedirectIfNull(getContainer());
+            if (form.getParticipantCommentDatasetId() != null && form.getParticipantCommentDatasetId() != -1)
+            {
+                Dataset ds = StudyService.get().getDataset(getContainer(), form.getParticipantCommentDatasetId());
+                if (ds != null && !ds.isDemographicData())
+                {
+                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
+                }
+
+                if (form.getParticipantCommentProperty() == null)
+                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
+            }
+
+            if (study.getTimepointType() != TimepointType.CONTINUOUS)
+            {
+                if (form.getParticipantVisitCommentDatasetId() != null && form.getParticipantVisitCommentDatasetId() != -1)
+                {
+                    Dataset ds = StudyService.get().getDataset(getContainer(), form.getParticipantVisitCommentDatasetId());
+                    if (ds != null && ds.isDemographicData())
+                    {
+                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
+                    }
+
+                    if (form.getParticipantVisitCommentProperty() == null)
+                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
+                }
+            }
+        }
+
+        @Override
+        public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors)
+        {
+            Study study = getStudyRedirectIfNull();
+            StudyInternalService svc = StudyInternalService.get();
+
+            if (!svc.hasEditableDatasets(study))
+                return new HtmlView("Comments can only be configured for studies with editable datasets.");
+
+            if (!form.isReshow())
+            {
+                form.setParticipantCommentDatasetId(svc.getParticipantCommentDatasetId(study));
+                form.setParticipantCommentProperty(svc.getParticipantCommentProperty(study));
+
+                if (study.getTimepointType() != TimepointType.CONTINUOUS)
+                {
+                    form.setParticipantVisitCommentDatasetId(svc.getParticipantVisitCommentDatasetId(study));
+                    form.setParticipantVisitCommentProperty(svc.getParticipantVisitCommentProperty(study));
+                }
+            }
+            JspView<ManageCommentsForm> view = new JspView<>("/org/labkey/specimen/view/manageComments.jsp", form, errors);
+            view.setTitle("Comment Configuration");
+
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(ManageCommentsForm form, BindException errors)
+        {
+            StudyInternalService.get().saveCommentsSettings(getStudyThrowIfNull(), getUser(), form.getParticipantCommentDatasetId(), form.getParticipantCommentProperty(),
+                    form.getParticipantVisitCommentDatasetId(), form.getParticipantVisitCommentProperty());
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(ManageCommentsForm form)
+        {
+            return getManageStudyURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("manageComments");
+            addManageStudyNavTrail(root);
+            root.addChild("Manage Comments");
+        }
+    }
+
+/*
+    // Used for testing
+    @RequiresSiteAdmin
+    public class DropVialIndices extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
+            return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+
+    // Used for testing
+    @RequiresSiteAdmin
+    public class AddVialIndices extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
+            return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+*/
 }

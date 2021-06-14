@@ -18,7 +18,6 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.Vial" %>
 <%@ page import="org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean" %>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
@@ -33,6 +32,7 @@
 <%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.UpdateCommentsAction" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -51,7 +51,7 @@
 
     NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyService.get().getStudy(container), getUser());
 %>
-<labkey:form action="<%=urlFor(SpecimenMigrationService.get().getUpdateCommentsActionClass())%>" name="updateComments" id="updateCommentForm" method="POST">
+<labkey:form action="<%=urlFor(UpdateCommentsAction.class)%>" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="copyToParticipant" value="false">
     <input type="hidden" name="deleteVialComment" value="false">
     <input type="hidden" name="copyParticipantId" value="0">

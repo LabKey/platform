@@ -27,18 +27,19 @@
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
-<%@ page import="org.labkey.api.study.SpecimenUrls" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ChooseImporterAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ConfigureRequestabilityRulesAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageActorsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDefaultReqsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDisplaySettingsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageLocationTypesAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageNotificationsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRepositorySettingsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequestInputsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageSpecimenCommentsAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageStatusesAction" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -115,7 +116,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Comments</td>
                         <td class="lk-study-prop-desc">Manage <%=h(subjectNounSingle)%> and <%=h(subjectNounSingle)%>/visit comments</td>
-                        <td><%= link("Manage Comments", urlProvider(SpecimenUrls.class).getManageSpecimenCommentsActionClass()) %></td>
+                        <td><%= link("Manage Comments", ManageSpecimenCommentsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Specimen Web Part</td>
@@ -177,7 +178,7 @@
                         <td class="lk-study-prop-label">Actors</td>
                         <td class="lk-study-prop-desc">This study defines <%=SpecimenRequestRequirementProvider.get().getActors(getContainer()).length %> specimen request
                             actors</td>
-                        <td><%= link("Manage Actors and Groups", SpecimenController2.ManageActorsAction.class) %></td>
+                        <td><%= link("Manage Actors and Groups", ManageActorsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Request Requirements</td>
@@ -192,7 +193,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Notifications</td>
                         <td class="lk-study-prop-desc">Manage specimen request notifications</td>
-                        <td><%= link("Manage Notifications", SpecimenController2.ManageNotificationsAction.class) %></td>
+                        <td><%= link("Manage Notifications", ManageNotificationsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Requestability Rules</td>

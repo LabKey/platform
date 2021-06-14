@@ -39,5 +39,4 @@ public interface SpecimenUrls extends UrlProvider
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
 
     Class<? extends Controller> getCopyParticipantCommentActionClass();
-    Class<? extends Controller> getManageSpecimenCommentsActionClass();
 }

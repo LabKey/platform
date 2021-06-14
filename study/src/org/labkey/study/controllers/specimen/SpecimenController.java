@@ -18,7 +18,6 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -34,7 +33,6 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
@@ -43,7 +41,6 @@ import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.CohortFilter;
-import org.labkey.api.study.Dataset;
 import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
@@ -66,7 +63,6 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -75,7 +71,6 @@ import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -167,12 +162,6 @@ public class SpecimenController extends BaseStudyController
         public Class<? extends Controller> getCopyParticipantCommentActionClass()
         {
             return CopyParticipantCommentAction.class;
-        }
-
-        @Override
-        public Class<? extends Controller> getManageSpecimenCommentsActionClass()
-        {
-            return ManageSpecimenCommentsAction.class;
         }
     }
 
@@ -387,164 +376,6 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    public static class ManageCommentsForm
-    {
-        private Integer _participantCommentDatasetId;
-        private String _participantCommentProperty;
-        private Integer _participantVisitCommentDatasetId;
-        private String _participantVisitCommentProperty;
-        private boolean _reshow;
-
-        public Integer getParticipantCommentDatasetId()
-        {
-            return _participantCommentDatasetId;
-        }
-
-        public void setParticipantCommentDatasetId(Integer participantCommentDatasetId)
-        {
-            _participantCommentDatasetId = participantCommentDatasetId;
-        }
-
-        public String getParticipantCommentProperty()
-        {
-            return _participantCommentProperty;
-        }
-
-        public void setParticipantCommentProperty(String participantCommentProperty)
-        {
-            _participantCommentProperty = participantCommentProperty;
-        }
-
-        public Integer getParticipantVisitCommentDatasetId()
-        {
-            return _participantVisitCommentDatasetId;
-        }
-
-        public void setParticipantVisitCommentDatasetId(Integer participantVisitCommentDatasetId)
-        {
-            _participantVisitCommentDatasetId = participantVisitCommentDatasetId;
-        }
-
-        public String getParticipantVisitCommentProperty()
-        {
-            return _participantVisitCommentProperty;
-        }
-
-        public void setParticipantVisitCommentProperty(String participantVisitCommentProperty)
-        {
-            _participantVisitCommentProperty = participantVisitCommentProperty;
-        }
-
-        public boolean isReshow()
-        {
-            return _reshow;
-        }
-
-        public void setReshow(boolean reshow)
-        {
-            _reshow = reshow;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ManageSpecimenCommentsAction extends FormViewAction<ManageCommentsForm>
-    {
-        @Override
-        public void validateCommand(ManageCommentsForm form, Errors errors)
-        {
-            String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
-            final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
-            if (form.getParticipantCommentDatasetId() != null && form.getParticipantCommentDatasetId() != -1)
-            {
-                Dataset ds = StudyService.get().getDataset(getContainer(), form.getParticipantCommentDatasetId());
-                if (ds != null && !ds.isDemographicData())
-                {
-                    errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
-                }
-
-                if (form.getParticipantCommentProperty() == null)
-                    errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + " Comment Assignment.");
-            }
-
-            if (study.getTimepointType() != TimepointType.CONTINUOUS)
-            {
-                if (form.getParticipantVisitCommentDatasetId() != null && form.getParticipantVisitCommentDatasetId() != -1)
-                {
-                    Dataset ds = StudyService.get().getDataset(getContainer(), form.getParticipantVisitCommentDatasetId());
-                    if (ds != null && ds.isDemographicData())
-                    {
-                        errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
-                    }
-
-                    if (form.getParticipantVisitCommentProperty() == null)
-                        errors.reject(ERROR_MSG, "A Comment field name must be specified for the " + subjectNoun + "/Visit Comment Assignment.");
-                }
-            }
-        }
-
-        @Override
-        public ModelAndView getView(ManageCommentsForm form, boolean reshow, BindException errors)
-        {
-            StudyImpl study = getStudyRedirectIfNull();
-            SecurityType securityType = study.getSecurityType();
-
-            if (securityType == SecurityType.ADVANCED_READ || securityType == SecurityType.BASIC_READ)
-                return new HtmlView("Comments can only be configured for studies with editable datasets.");
-
-            if (!form.isReshow())
-            {
-                form.setParticipantCommentDatasetId(study.getParticipantCommentDatasetId());
-                form.setParticipantCommentProperty(study.getParticipantCommentProperty());
-
-                if (study.getTimepointType() != TimepointType.CONTINUOUS)
-                {
-                    form.setParticipantVisitCommentDatasetId(study.getParticipantVisitCommentDatasetId());
-                    form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
-                }
-            }
-            StudyJspView<Object> view = new StudyJspView<>(study, "/org/labkey/study/view/manageComments.jsp", form, errors);
-            view.setTitle("Comment Configuration");
-
-            return view;
-        }
-
-        @Override
-        public boolean handlePost(ManageCommentsForm form, BindException errors)
-        {
-            if (null == getStudy())
-                throw new IllegalStateException("No study found.");
-            StudyImpl study = getStudy().createMutable();
-
-            // participant comment dataset
-            study.setParticipantCommentDatasetId(form.getParticipantCommentDatasetId());
-            study.setParticipantCommentProperty(form.getParticipantCommentProperty());
-
-            // participant/visit comment dataset
-            if (study.getTimepointType() != TimepointType.CONTINUOUS)
-            {
-                study.setParticipantVisitCommentDatasetId(form.getParticipantVisitCommentDatasetId());
-                study.setParticipantVisitCommentProperty(form.getParticipantVisitCommentProperty());
-            }
-
-            StudyManager.getInstance().updateStudy(getUser(), study);
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ManageCommentsForm form)
-        {
-            return getManageStudyURL();
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("manageComments");
-            _addManageStudy(root);
-            root.addChild("Manage Comments");
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class CopyParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
     {
@@ -720,30 +551,4 @@ public class SpecimenController extends BaseStudyController
         if (tableInfo instanceof SpecimenDetailTable)
             ((SpecimenDetailTable)tableInfo).changeRequestableColumn();
     }
-
-/*
-    // Used for testing
-    @RequiresSiteAdmin
-    public class DropVialIndices extends SimpleRedirectAction
-    {
-        @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
-        {
-            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-
-    // Used for testing
-    @RequiresSiteAdmin
-    public class AddVialIndices extends SimpleRedirectAction
-    {
-        @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
-        {
-            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-*/
 }
