@@ -21,6 +21,7 @@ public interface SpecimenMigrationService
         ServiceRegistry.get().registerService(SpecimenMigrationService.class, impl);
     }
 
+    ActionURL getBeginURL(Container c);
     ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl);
     ActionURL getSelectedSpecimensURL(Container c);

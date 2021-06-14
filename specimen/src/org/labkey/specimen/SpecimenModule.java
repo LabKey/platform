@@ -122,33 +122,9 @@ public class SpecimenModule extends SpringModule
         SpecimenMigrationService.setInstance(new SpecimenMigrationService()
         {
             @Override
-            public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
+            public ActionURL getBeginURL(Container c)
             {
-                return SpecimenController2.getDownloadURL(event, name);
-            }
-
-            @Override
-            public ActionURL getUploadSpecimensURL(Container c)
-            {
-                return new ActionURL(ShowUploadSpecimensAction.class, c);
-            }
-
-            @Override
-            public ActionURL getSpecimensURL(Container c)
-            {
-                return SpecimenController2.getSpecimensURL(c);
-            }
-
-            @Override
-            public ActionURL getViewRequestsURL(Container c)
-            {
-                return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
-            }
-
-            @Override
-            public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
-            {
-                return new ActionURL(SpecimenController2.SpecimenEventsAction.class, c).addReturnURL(returnURL);
+                return new ActionURL(SpecimenController2.BeginAction.class, c);
             }
 
             @Override
@@ -170,15 +146,45 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
+            public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
             {
-                return SpecimenController2.ShowCreateSpecimenRequestAction.class;
+                return SpecimenController2.getDownloadURL(event, name);
+            }
+
+            @Override
+            public ActionURL getSpecimensURL(Container c)
+            {
+                return SpecimenController2.getSpecimensURL(c);
+            }
+
+            @Override
+            public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
+            {
+                return new ActionURL(SpecimenController2.SpecimenEventsAction.class, c).addReturnURL(returnURL);
+            }
+
+            @Override
+            public ActionURL getUploadSpecimensURL(Container c)
+            {
+                return new ActionURL(ShowUploadSpecimensAction.class, c);
+            }
+
+            @Override
+            public ActionURL getViewRequestsURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
             }
 
             @Override
             public Class<? extends Controller> getClearCommentsActionClass()
             {
                 return SpecimenController2.ClearCommentsAction.class;
+            }
+
+            @Override
+            public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
+            {
+                return SpecimenController2.ShowCreateSpecimenRequestAction.class;
             }
 
             @Override

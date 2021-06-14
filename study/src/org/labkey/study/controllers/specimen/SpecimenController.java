@@ -18,7 +18,6 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
@@ -143,16 +142,6 @@ public class SpecimenController extends BaseStudyController
         public Class<? extends Controller> getCopyParticipantCommentActionClass()
         {
             return CopyParticipantCommentAction.class;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleRedirectAction
-    {
-        @Override
-        public ActionURL getRedirectURL(Object o)
-        {
-            return SpecimenMigrationService.get().getSpecimensURL(getContainer());
         }
     }
 
