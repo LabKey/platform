@@ -144,7 +144,7 @@
 
         if (document.getElementById('RadioBtn-Lookup').checked)
         {
-            var textRadio = Ext.get('<%=text(textTypeId)%>');
+            var textRadio = Ext4.get('<%=text(textTypeId)%>');
             if ((textRadio && textRadio.dom.checked) || <%=textType%>)
                 toggleDisableResetDefault(true); // Don't allow trying to set the default to the text type, as this is not supported.
         }
@@ -153,14 +153,14 @@
     };
 
     var toggleDisableResetDefault = function(disabled) {
-        var resetDefaultBtn = Ext.get('Btn-ResetDefaultValues');
+        var resetDefaultBtn = Ext4.get('Btn-ResetDefaultValues');
         if (resetDefaultBtn)
         {
             if (disabled) {
-                resetDefaultBtn.addClass('labkey-disabled-button');
+                resetDefaultBtn.addCls('labkey-disabled-button');
             }
             else {
-                resetDefaultBtn.removeClass('labkey-disabled-button');
+                resetDefaultBtn.removeCls('labkey-disabled-button');
             }
         }
     };
