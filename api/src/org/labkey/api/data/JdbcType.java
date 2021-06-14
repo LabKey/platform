@@ -217,6 +217,13 @@ public enum JdbcType
             assert !(d instanceof Time);
             return new Time(d.getTime());
         }
+
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            // For Redshift, see Issue 42311
+            sqlTypes.add(Types.TIME_WITH_TIMEZONE);
+        }
     },
 
     TIMESTAMP(Types.TIMESTAMP, java.sql.Timestamp.class, null, "datefield")
@@ -227,6 +234,13 @@ public enum JdbcType
             // presumably we would not be called if d instanceof Timestamp
             assert !(d instanceof Timestamp);
             return new Timestamp(d.getTime());
+        }
+
+        @Override
+        protected void addSqlTypes(Collection<Integer> sqlTypes)
+        {
+            // For Redshift, see Issue 42311
+            sqlTypes.add(Types.TIMESTAMP_WITH_TIMEZONE);
         }
     },
 
