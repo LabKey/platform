@@ -471,7 +471,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (!showBatchStep(runForm, uploadDomain))
         {
             ActionURL helper = getViewContext().cloneActionURL();
-            helper.replaceParameter("uploadStep", RunStepHandler.NAME);
+            // Add parameter to say that we've competed the batch step
+            helper.replaceParameter("uploadStep", BatchStepHandler.NAME);
             throw new RedirectException(helper);
         }
         InsertView insertView = createBatchInsertView(runForm, errorReshow, errors);
@@ -913,10 +914,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         @Override
         public ModelAndView getNextStep(FormType form, BindException errors) throws ServletException, SQLException, ExperimentException
         {
-            if (form.isResetDefaultValues() || errors.hasErrors())
+            if ((form.isResetDefaultValues() || errors.hasErrors()) && showBatchStep(form, form.getProvider().getBatchDomain(form.getProtocol())))
                 return getBatchPropertiesView(form, !form.isResetDefaultValues(), errors);
-            else
-                return getRunPropertiesView(form, false, false, errors);
+
+            // Move forward to the run step
+            return getRunPropertiesView(form, false, false, errors);
         }
 
         @Override
