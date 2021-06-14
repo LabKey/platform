@@ -12,7 +12,7 @@ jackson-annotations-2.12.3.jar|Jackson Annotations Library|2.12.3|{link:Jackson|
 jackson-databind-2.12.3.jar|Jackson Databind Library|2.12.3|{link:Jackson|https://github.com/FasterXML/jackson}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|JSON de/serialization, reporting API dependency
 jsr223-js-engine-Aug2008.jar|JSR-223 ScriptEngine for Rhino|Aug. 8th, 2008|{link:Scripting Project|https://scripting.dev.java.net/}|{link:BSD|http://www.opensource.org/licenses/bsd-license.php}|kevink|JSR-223 ScriptEngine APIs for Rhino
 junit-4.12.jar|JUnit|4.12|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
-log4j-api-2.13.3.jar|Log4j|2.13.3|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
+log4j-api-2.14.1.jar|Log4j|2.14.1|{link:Apache|https://logging.apache.org/log4j/2.x/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|ankurj|Logging
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rhino-1.7R3.jar|Mozilla Rhino|1.7R3 PRERELEASE 2010/12/16|{link:Mozilla Rhino|http://www.mozilla.org/rhino/}|{link:MPL 1.1|http://www.mozilla.org/MPL}|kevink|Embedded JavaScript engine
 rome-1.7.1.jar|ROME|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation
