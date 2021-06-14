@@ -2084,6 +2084,7 @@ public class OntologyManager
             @Nullable Set<Integer> domainIds,
             @Nullable Set<String> domainKinds,
             @Nullable String searchTerm,
+            @Nullable SimpleFilter propertyFilter,
             @Nullable String sortColumn,
             @Nullable Integer maxRows, @Nullable Long offset)
     {
@@ -2099,7 +2100,13 @@ public class OntologyManager
         }
         var colMap = QueryService.get().getColumns(getTinfoPropertyDomain(), fields);
 
-        SimpleFilter filter = new SimpleFilter(new FieldKey(propertyIdKey, "container"), c.getId());
+        var filter = new SimpleFilter();
+        if (propertyFilter != null)
+        {
+            filter.addAllClauses(propertyFilter);
+        }
+
+        filter.addCondition(new FieldKey(propertyIdKey, "container"), c.getId());
         if (domainIds != null && domainIds.isEmpty())
         {
             filter.addInClause(FieldKey.fromParts("domainId"), domainIds);

@@ -43,6 +43,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -92,7 +93,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
-import org.labkey.experiment.api.VocabularyDomainKind;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -1458,9 +1458,32 @@ public class PropertyController extends SpringActionController
             }
             else
             {
+                SimpleFilter filter = null;
+                if (form.getFilters() != null && !form.getFilters().isEmpty())
+                {
+                    filter = new SimpleFilter();
+
+                    // Reparent the URL filter columns to be relative from the "propertyId" lookup used
+                    // in the query (e.g. from "query.column~op=value" to "query.propertyId/column~op=value"),
+                    // create filter clauses, and them to the filter collection.
+                    form.getFilters()
+                            .stream()
+                            .filter(s -> s.startsWith("query."))
+                            .filter(s -> s.contains("~") && s.contains("="))
+                            .map(s -> {
+                                // extract the column name and prefix it with "propertyId/"
+                                int tilde = s.indexOf("~");
+                                String columnName = s.substring("query.".length(), tilde);
+                                return "query.propertyId/" + columnName + s.substring(tilde);
+                            })
+                            .map(SimpleFilter::createFilterFromParameter)
+                            .filter(Objects::nonNull)
+                            .forEach(filter::addAllClauses);
+                }
+
                 List<PropertyDescriptor> pds = OntologyManager.getPropertyDescriptors(getContainer(), getUser(),
                         form.getDomainIds(), form.getDomainKinds(), form.getSearch(),
-                        form.getSort(), form.getMaxRows(), form.getOffset());
+                        filter, form.getSort(), form.getMaxRows(), form.getOffset());
                 properties = pds.stream();
             }
 
@@ -1477,8 +1500,8 @@ public class PropertyController extends SpringActionController
         private List<Integer> propertyIds;
         private List<String> propertyURIs;
         private Set<Integer> domainIds;
-        // Default to filtering to just Vocabulary domains
-        private Set<String> domainKinds = Set.of(VocabularyDomainKind.KIND_NAME);
+        private Set<String> domainKinds;
+        private List<String> filters;
         private @Nullable String search;
         private String sort;
         private Integer maxRows;
@@ -1532,6 +1555,16 @@ public class PropertyController extends SpringActionController
         public void setSearch(String search)
         {
             this.search = search;
+        }
+
+        public List<String> getFilters()
+        {
+            return filters;
+        }
+
+        public void setFilters(List<String> filters)
+        {
+            this.filters = filters;
         }
 
         public String getSort()
