@@ -20,12 +20,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
@@ -152,5 +154,10 @@ public class QCStateManager
     public void clearCache(Container c)
     {
         QC_STATE_DB_CACHE.remove(c);
+    }
+
+    public static String getUrlFilterKey(CompareType compareType, String dataRegionName) // rosaline temp note: rename. Maybe move?
+    {
+        return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam( dataRegionName + ".").getKey();
     }
 }

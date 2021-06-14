@@ -243,6 +243,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.qc.QCStateManager.getUrlFilterKey;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
@@ -3478,6 +3479,7 @@ public class StudyController extends BaseStudyController
         private String _dataRegionSelectionKey;
         private Integer _newState;
         private DatasetQueryView _queryView;
+        private String _dataRegionName;
 
         public String getComments()
         {
@@ -3537,6 +3539,16 @@ public class StudyController extends BaseStudyController
         public DatasetQueryView getQueryView()
         {
             return _queryView;
+        }
+
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
+
+        public void setDataRegionName(String dataRegionName)
+        {
+            _dataRegionName = dataRegionName;
         }
     }
 
@@ -3605,6 +3617,7 @@ public class StudyController extends BaseStudyController
             queryView.setShowDetailsColumn(false);
             updateQCForm.setQueryView(queryView);
             updateQCForm.setDataRegionSelectionKey(DataRegionSelection.getSelectionKeyFromRequest(getViewContext()));
+            updateQCForm.setDataRegionName(queryView.getSettings().getDataRegionName());
             return new JspView<>("/org/labkey/study/view/updateQCState.jsp", updateQCForm, errors);
         }
 
@@ -3639,7 +3652,10 @@ public class StudyController extends BaseStudyController
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
             url.addParameter(DatasetDefinition.DATASETKEY, updateQCForm.getDatasetId());
             if (updateQCForm.getNewState() != null)
-                url.addParameter(SharedFormParameters.QCState, updateQCForm.getNewState().intValue());
+            {
+                url.addParameter(SharedFormParameters.QCState, updateQCForm.getNewState().intValue()); // legacy -- to remove
+                url.replaceParameter(getUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
+            }
             return url;
         }
 

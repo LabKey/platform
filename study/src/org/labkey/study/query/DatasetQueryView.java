@@ -100,8 +100,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static org.labkey.api.qc.QCStateManager.getUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.ALL_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -512,13 +512,8 @@ public class DatasetQueryView extends StudyQueryView
         return btn;
     }
 
-    private String getUrlFilterKey(CompareType compareType)
-    {
-        return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam(this.getSettings().getDataRegionName() + ".").getKey();
-    }
-
-    private String getQCStateFilterString(QCStateSet qcStates)
-    {
+    private String getQCStateFilterString(QCStateSet qcStates) // Rosaline temp note: See if this is further clean-up-able, since you currently
+    {                                                          // have one method that obtains the kew and a different one that obtains the value
         List<String> qcLabels = qcStates.getStates()
                 .stream()
                 .map(QCState::getLabel)
@@ -533,24 +528,25 @@ public class DatasetQueryView extends StudyQueryView
 
         for (QCStateSet set : stateSets)
         {
-            ActionURL urlHelper = getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue());
+            ActionURL urlHelper = getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue()); // legacy -- to remove
             String filterValue = set.getLabel();
+            String dataRegionName = this.getSettings().getDataRegionName();
             switch(filterValue)
             {
                 case PUBLIC_STATES_LABEL:
-                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN), getQCStateFilterString(QCStateSet.getPublicStates(getContainer())));
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL));
+                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN, dataRegionName), getQCStateFilterString(QCStateSet.getPublicStates(getContainer())));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName));
                     break;
                 case PRIVATE_STATES_LABEL:
-                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN), getQCStateFilterString(QCStateSet.getPrivateStates(getContainer())));
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL));
+                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN, dataRegionName), getQCStateFilterString(QCStateSet.getPrivateStates(getContainer())));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName));
                     break;
                 case ALL_STATES_LABEL:
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.IN));
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.IN, dataRegionName));
+                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName));
                     break;
                 default:
-                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.EQUAL), filterValue);
+                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName), filterValue);
             }
 
             NavTree setItem = new NavTree(set.getLabel(), urlHelper);
