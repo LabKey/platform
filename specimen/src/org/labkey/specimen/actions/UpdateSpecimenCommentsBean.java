@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.NotNull;
