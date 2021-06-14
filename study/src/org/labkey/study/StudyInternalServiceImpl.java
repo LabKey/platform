@@ -5,7 +5,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.query.SpecimenQueryView;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -19,7 +18,6 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.springframework.validation.BindException;
 
 import java.util.Collection;
 import java.util.List;
@@ -44,12 +42,6 @@ public class StudyInternalServiceImpl implements StudyInternalService
     public void generateNeededAlternateParticipantIds(Study study, User user)
     {
         StudyManager.getInstance().generateNeededAlternateParticipantIds(study, user);
-    }
-
-    @Override
-    public void sendNewRequestNotifications(ViewContext context, SpecimenRequest request, BindException errors) throws Exception
-    {
-        new SpecimenUtils(context).sendNewRequestNotifications(request, errors);
     }
 
     @Override

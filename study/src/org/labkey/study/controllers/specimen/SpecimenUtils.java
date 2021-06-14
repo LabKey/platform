@@ -18,7 +18,6 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBarLineBreak;
 import org.labkey.api.data.Container;
@@ -27,34 +26,22 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.actions.IdTypes;
 import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenRequestEvent;
-import org.labkey.api.specimen.notifications.DefaultRequestNotification;
-import org.labkey.api.specimen.notifications.NotificationRecipientSet;
 import org.labkey.api.specimen.query.SpecimenQueryView;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.RequestNotificationSettings;
 import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.specimen.view.NotificationBean;
-import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.CohortFilter;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.Button;
-import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
@@ -64,17 +51,12 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.mail.Address;
-import javax.mail.Message;
-import javax.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -104,11 +86,6 @@ public class SpecimenUtils
     private User getUser()
     {
         return _context.getUser();
-    }
-
-    private Study getStudy() throws IllegalStateException
-    {
-        return SpecimenController.getStudyThrowIfNull(getContainer());
     }
 
     private ActionURL urlFor(Class<? extends Controller> action)
@@ -309,76 +286,6 @@ public class SpecimenUtils
                 out.write("</option>");
             }
             out.write("</select>");
-        }
-    }
-
-    public void sendNewRequestNotifications(SpecimenRequest request, BindException errors) throws Exception
-    {
-        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(request.getContainer());
-        Address[] notify = settings.getNewRequestNotifyAddresses();
-        if (notify != null && notify.length > 0)
-        {
-            SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
-                    RequestEventType.REQUEST_CREATED, null, Collections.emptyList());
-            DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
-                    "New Request Created", event, null, null, getViewContext());
-            sendNotification(notification, true, errors);
-        }
-    }
-
-    private void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
-    {
-        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
-
-        SpecimenRequest specimenRequest = notification.getSpecimenRequest();
-        String specimenList = null;
-        if (RequestNotificationSettings.SpecimensAttachmentEnum.InEmailBody == settings.getSpecimensAttachmentEnum())
-        {
-            specimenList = notification.getSpecimenListHTML(getViewContext());
-        }
-
-        NotificationBean notificationBean = new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel());
-        SpecimenRequestNotificationEmailTemplate template = EmailTemplateService.get().getEmailTemplate(SpecimenRequestNotificationEmailTemplate.class, getContainer());
-        template.init(notificationBean);
-        if (settings.isReplyToCurrentUser())
-            template.setOriginatingUser(getUser());
-
-        MailHelper.MultipartMessage message = MailHelper.createMultipartMessage();
-        template.renderSenderToMessage(message, getContainer());
-        message.setEncodedHtmlContent(template.renderBody(getContainer()));
-        message.setSubject(template.renderSubject(getContainer()));
-
-        boolean first = true;
-        for (NotificationRecipientSet recipient : notification.getRecipients())
-        {
-            for (String email : recipient.getEmailAddresses(includeInactiveUsers))
-            {
-                if (first)
-                {
-                    Address[] ccAddresses = settings.getCCAddresses();
-                    if (ccAddresses != null && ccAddresses.length > 0)
-                        message.setRecipients(Message.RecipientType.CC, ccAddresses);
-                    first = false;
-                }
-                else
-                    message.setRecipients(Message.RecipientType.CC, "");
-
-                try
-                {
-                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
-                    MailHelper.send(message, getUser(), getContainer());
-                }
-                catch (javax.mail.internet.AddressException | NullPointerException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());      // Bad address; also InternetAddress constructor can throw null
-                }
-            }
-            if (notification.getRequirement() != null)
-                SpecimenRequestManager.get().createRequestEvent(getUser(), notification.getRequirement(),
-                        RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
-            else
-                SpecimenRequestManager.get().createRequestEvent(getUser(), specimenRequest,
-                        RequestEventType.NOTIFICATION_SENT, "Notification sent to " + recipient.getLongRecipientDescription(), null);
         }
     }
 }

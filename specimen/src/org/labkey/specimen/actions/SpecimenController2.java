@@ -50,7 +50,6 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -511,7 +510,7 @@ public class SpecimenController2 extends SpringActionController
         boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
         if (!newFilter && !cachedFilter)
         {
-            throw new RedirectException(SpecimenMigrationService.get().getSpecimensURL(getContainer()));
+            throw new RedirectException(getSpecimensURL());
         }
 
         if (newFilter)
@@ -748,7 +747,6 @@ public class SpecimenController2 extends SpringActionController
             return urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
         }
     }
-
 
     public static class ImportSpecimensBean
     {
@@ -2254,7 +2252,7 @@ public class SpecimenController2 extends SpringActionController
             {
                 try
                 {
-                    StudyInternalService.get().sendNewRequestNotifications(getViewContext(), _specimenRequest, errors);
+                    sendNewRequestNotifications(_specimenRequest, errors);
                 }
                 catch (ConfigurationException | IOException e)
                 {
@@ -3471,7 +3469,7 @@ public class SpecimenController2 extends SpringActionController
         }
     }
 
-    public List<? extends NotificationRecipientSet> getNotifications(SpecimenRequest specimenRequest, String[] notificationIdPairs)
+    private List<? extends NotificationRecipientSet> getNotifications(SpecimenRequest specimenRequest, String[] notificationIdPairs)
     {
         List<ActorNotificationRecipientSet> siteActors = new ArrayList<>();
         if (notificationIdPairs == null || notificationIdPairs.length == 0)
@@ -3481,7 +3479,21 @@ public class SpecimenController2 extends SpringActionController
         return siteActors;
     }
 
-    public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
+    private void sendNewRequestNotifications(SpecimenRequest request, BindException errors) throws Exception
+    {
+        RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(request.getContainer());
+        Address[] notify = settings.getNewRequestNotifyAddresses();
+        if (notify != null && notify.length > 0)
+        {
+            SpecimenRequestEvent event = SpecimenRequestManager.get().createRequestEvent(getUser(), request,
+                    RequestEventType.REQUEST_CREATED, null, Collections.emptyList());
+            DefaultRequestNotification notification = new DefaultRequestNotification(request, Collections.singletonList(new NotificationRecipientSet(notify)),
+                    "New Request Created", event, null, null, getViewContext());
+            sendNotification(notification, true, errors);
+        }
+    }
+
+    private void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
     {
         RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
 
@@ -4021,7 +4033,7 @@ public class SpecimenController2 extends SpringActionController
                     {
                         try
                         {
-                            StudyInternalService.get().sendNewRequestNotifications(getViewContext(), request, errors);
+                            sendNewRequestNotifications(request, errors);
                         }
                         catch (ConfigurationException e)
                         {
