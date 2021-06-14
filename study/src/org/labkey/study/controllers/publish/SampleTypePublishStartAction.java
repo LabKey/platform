@@ -104,7 +104,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
     protected List<Integer> getDataIDs(SampleTypePublishStartForm form)
     {
         // TODO in later story within epic: Support SampleType-level links
-        if (_ids.isEmpty() && !form.isSampleTypeIds())
+        if (_ids.isEmpty() && !form.isSampleTypeIds() && null != form.getRowId())
         {
             _ids = getCheckboxIds(getViewContext());
             _sampleType = SampleTypeService.get().getSampleType(form.getContainer(), form.getUser(), form.getRowId());
