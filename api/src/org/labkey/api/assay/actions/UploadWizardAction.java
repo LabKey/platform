@@ -471,7 +471,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (!showBatchStep(runForm, uploadDomain))
         {
             ActionURL helper = getViewContext().cloneActionURL();
-            helper.replaceParameter("uploadStep", BatchStepHandler.NAME);
+            helper.replaceParameter("uploadStep", RunStepHandler.NAME);
             throw new RedirectException(helper);
         }
         InsertView insertView = createBatchInsertView(runForm, errorReshow, errors);
