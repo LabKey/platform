@@ -1,10 +1,9 @@
 package org.labkey.study;
 
-import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -13,7 +12,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.specimen.SpecimenUtils;
+import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -54,12 +53,6 @@ public class StudyInternalServiceImpl implements StudyInternalService
     public Integer getLastSpecimenRequest(Study study)
     {
         return ((StudyImpl)study).getLastSpecimenRequest();
-    }
-
-    @Override
-    public SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, @Nullable Collection<? extends ParticipantDataset> cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
-    {
-        return new SpecimenUtils(context).getSpecimenQueryView(showVials, forExport, cachedFilterData, viewMode, cohortFilter);
     }
 
     public static final List<ViewFactory> VIEW_FACTORIES = new CopyOnWriteArrayList<>();
@@ -136,5 +129,11 @@ public class StudyInternalServiceImpl implements StudyInternalService
     public String formatSequenceNum(double d)
     {
         return VisitImpl.formatSequenceNum(d);
+    }
+
+    @Override
+    public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter, boolean hasCreateGroupFromSelection)
+    {
+        return ParticipantGroupManager.getInstance().createParticipantGroupButton(context, dataRegionName, cohortFilter, hasCreateGroupFromSelection);
     }
 }

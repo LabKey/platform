@@ -2,6 +2,7 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.annotations.Migrate;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
@@ -48,8 +49,6 @@ public interface StudyInternalService
 
     Integer getLastSpecimenRequest(Study study);
 
-    SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, @Nullable Collection<? extends ParticipantDataset> cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter);
-
     void registerManageStudyViewFactory(ViewFactory factory);
 
     Integer getParticipantCommentDatasetId(Study study);
@@ -69,4 +68,6 @@ public interface StudyInternalService
     void saveCommentsSettings(Study study, User user, Integer participantCommentDatasetId, String participantCommentProperty, Integer participantVisitCommentDatasetId, String participantVisitCommentProperty);
 
     String formatSequenceNum(double d);
+
+    ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter, boolean hasCreateGroupFromSelection);
 }
