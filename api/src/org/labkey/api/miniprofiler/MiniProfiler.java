@@ -83,10 +83,31 @@ public class MiniProfiler
 
     public static boolean isEnabled(ViewContext context)
     {
+        return context.getContainer() != null && isEnabled(context.getUser());
+    }
+
+    private static boolean isEnabled(Principal user)
+    {
+        if (!(user instanceof User))
+            return false;
+
+        return isEnabled((User)user);
+    }
+
+    public static boolean isEnabled(User user)
+    {
+        if (ModuleLoader.getInstance().isStartupComplete())
+            return false;
+
         // CONSIDER: Add CanSeeProfilingPermission ?
-        User user = context.getUser();
-        return ModuleLoader.getInstance().isStartupComplete() && user != null && getSettings(context.getUser()).isEnabled() &&
-                context.getContainer() != null && user.isPlatformDeveloper();
+        if (user == null || !user.isPlatformDeveloper())
+            return false;
+
+        Settings settings = getSettings(user);
+        if (settings == null)
+            return false;
+
+        return settings.isEnabled();
     }
 
     /** Get per-user settings */
@@ -180,7 +201,7 @@ public class MiniProfiler
         if (requestInfo == null || requestInfo.isIgnored())
             return null;
 
-        if (!(ModuleLoader.getInstance().isStartupComplete() && getSettings(requestInfo.getUser()).isEnabled()))
+        if (!isEnabled(requestInfo.getUser()))
             return null;
 
         return requestInfo.step(name);
