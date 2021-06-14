@@ -1614,7 +1614,7 @@ public class PageFlowUtil
             ids.add(miniProfilerId);
             ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
 
-            builder.append(MiniProfiler.renderInitScript(miniProfilerId, ids, getServerSessionHash()));
+            builder.append(MiniProfiler.renderInitScript(context.getUser(), miniProfilerId, ids, getServerSessionHash()));
         }
 
         return builder;

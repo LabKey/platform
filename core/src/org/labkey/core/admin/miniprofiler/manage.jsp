@@ -63,14 +63,14 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
         <tr>
             <td colspan="2">
                 The MiniProfiler is a simple profiler utility that shows at a glance how long actions and queries take
-                to execute. It's shown in the corner of each LabKey web page. The profiler is enabled when the server is
-                running in dev mode or if the current user has the <%=helpLink("devRoles#platformDeveloper", "Platform Developer")%> role.
+                to execute. It's shown in the corner of each LabKey web page. Administrators or developers can enable or
+                disable the profiler if the user has the <%=helpLink("devRoles#platformDeveloper", "Platform Developer")%> role.
                 <%=MiniProfiler.getHelpTopic().getLinkHtml("MiniProfiler Help")%>
             </td>
         </tr>
 
         <tr>
-            <td class="labkey-form-label"><label for="enabled">Enabled<%=helpPopup("Enabled", "Enable the MiniProfiler widget, causing it to appear for all Site Administrators and Site Developers")%></label></td>
+            <td class="labkey-form-label"><label for="enabled">Enabled<%=helpPopup("Enabled", "Enable the MiniProfiler widget, causing it to appear in the corner of the page")%></label></td>
             <td>
                 <labkey:checkbox name="enabled" id="enabled" value="true" checked="<%=settings.isEnabled()%>"/>
             </td>
@@ -79,7 +79,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
             <td class="labkey-form-label"><label for="renderPosition">Render position<%=helpPopup("Render Position", "Specifies the corner in which to render the MiniProfiler widget")%></label></td>
             <td>
                 <select name="renderPosition" id="renderPosition">
-                    <labkey:options map="<%=renderOptions%>" value="<%=settings.getRenderPosition()%>"/>
+                    <labkey:options map="<%=renderOptions%>" value="<%=settings.getRenderPosition().toString()%>"/>
                 </select>
             </td>
         </tr>
@@ -93,6 +93,12 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
             <td class="labkey-form-label"><label for="startHidden">Start hidden<%=helpPopup("Start Hidden", "MiniProfiler widget will initially be hidden, requiring keyboard activation via the 'Toggle shortcut'")%></label></td>
             <td>
                 <labkey:checkbox name="startHidden" id="startHidden" value="true" checked="<%=settings.isStartHidden()%>"/>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label"><label for="startMinimized">Start minimized<%=helpPopup("Start minimized", "MiniProfiler widget will initially be minimized, requiring hovering over the minimized corner to reveal the profiler")%></label></td>
+            <td>
+                <labkey:checkbox name="startMinimized" id="startMinimized" value="true" checked="<%=settings.isStartMinimized()%>"/>
             </td>
         </tr>
         <tr>
