@@ -28,6 +28,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -35,9 +36,11 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.SpecimenUrls;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HtmlView;
@@ -46,13 +49,9 @@ import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UpdateView;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
-import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -78,12 +77,6 @@ public class SpecimenControllerOld extends BaseStudyController
     public SpecimenControllerOld()
     {
         setActionResolver(_actionResolver);
-    }
-
-    @Override
-    protected void _addManageStudy(NavTree root)
-    {
-        urlProvider(StudyUrls.class).addManageStudyNavTrail(root, getContainer(), getUser());
     }
 
     public static class SpecimenUrlsImpl implements SpecimenUrls
@@ -151,22 +144,22 @@ public class SpecimenControllerOld extends BaseStudyController
         @Override
         public ModelAndView getView(final ParticipantCommentForm form, BindException errors)
         {
-            StudyImpl study = getStudyRedirectIfNull();
-            DatasetDefinition def;
+            Study study = getStudyRedirectIfNull();
+            Dataset ds;
 
             if (form.getVisitId() != 0)
             {
-                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
+                ds = StudyService.get().getDataset(study.getContainer(), StudyInternalService.get().getParticipantVisitCommentDatasetId(study));
             }
             else
             {
-                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
+                ds = StudyService.get().getDataset(study.getContainer(), StudyInternalService.get().getParticipantCommentDatasetId(study));
             }
 
-            if (def != null)
+            if (ds != null)
             {
-                StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
+                UserSchema querySchema = StudyService.get().getStudyQuerySchema(study, getUser());
+                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, ds.getName());
                 qs.setUseQCSet(false);
 
                 DatasetQueryView queryView = new DatasetQueryView(querySchema, qs, errors)
@@ -199,7 +192,7 @@ public class SpecimenControllerOld extends BaseStudyController
                     url = new ActionURL(ParticipantCommentAction.SpecimenCommentInsertAction.class, getContainer()).
                             addParameter(ParticipantCommentForm.params.participantId, form.getParticipantId());
 
-                url.addParameter(ParticipantCommentForm.params.datasetId, def.getDatasetId()).
+                url.addParameter(ParticipantCommentForm.params.datasetId, ds.getDatasetId()).
                         addParameter(ParticipantCommentForm.params.comment, form.getComment()).
                         addReturnURL(form.getReturnActionURL()).
                         addParameter(ParticipantCommentForm.params.visitId, form.getVisitId());
