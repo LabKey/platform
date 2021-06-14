@@ -50,6 +50,7 @@ import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -57,7 +58,6 @@ import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.actions.SpecimenHeaderBean;
 import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.actions.UpdateSpecimenCommentsBean;
 import org.labkey.api.specimen.importer.RequestabilityManager;
@@ -97,7 +97,9 @@ import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.CohortService;
+import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -149,6 +151,7 @@ import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -489,6 +492,33 @@ public class SpecimenController2 extends SpringActionController
         dr.setTable(table);
         dr.setColumns(columns);
         return dr;
+    }
+
+    private static final String SELECTED_SPECIMENS_SESSION_ATTRIB_KEY = SpecimenController2.class.getName() + "/SelectedSpecimens";
+
+    private Set<String> getSelectionLsids()
+    {
+        // save the selected set of participantdataset lsids in the session; this is the only obvious way
+        // to let the user apply subsequent filters and switch back and forth between vial and specimen view
+        // without losing their original participant/visit selection.
+        Set<String> lsids = null;
+        if (isPost())
+            lsids = DataRegionSelection.getSelected(getViewContext(), true);
+        HttpSession session = getViewContext().getRequest().getSession(true);
+        Pair<Container, Set<String>> selectionCache = (Pair<Container, Set<String>>) session.getAttribute(SELECTED_SPECIMENS_SESSION_ATTRIB_KEY);
+
+        boolean newFilter = (lsids != null && !lsids.isEmpty());
+        boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
+        if (!newFilter && !cachedFilter)
+        {
+            throw new RedirectException(SpecimenMigrationService.get().getSpecimensURL(getContainer()));
+        }
+
+        if (newFilter)
+            selectionCache = new Pair<>(getContainer(), lsids);
+
+        session.setAttribute(SELECTED_SPECIMENS_SESSION_ATTRIB_KEY, selectionCache);
+        return selectionCache.getValue();
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5280,6 +5310,79 @@ public class SpecimenController2 extends SpringActionController
             setHelpTopic("manageComments");
             addManageStudyNavTrail(root);
             root.addChild("Manage Comments");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class SelectedSpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
+    {
+        private boolean _vialView;
+        private Collection<? extends ParticipantDataset> _filterPds = null;
+
+        public SelectedSpecimensAction()
+        {
+            super(SpecimenViewTypeForm.class);
+        }
+
+        @Override
+        protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
+        {
+            Study study = getStudyRedirectIfNull();
+            Set<Pair<String, String>> ptidVisits = new HashSet<>();
+            for (ParticipantDataset pd : getFilterPds())
+            {
+                if (pd.getSequenceNum() == null)
+                {
+                    ptidVisits.add(new Pair<>(pd.getParticipantId(), null));
+                }
+                else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
+                {
+                    ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
+                }
+                else
+                {
+                    Visit visit = pd.getSequenceNum() != null ? UpdateSpecimenCommentsBean.getVisitForSequence(study, pd.getSequenceNum()) : null;
+                    ptidVisits.add(new Pair<>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + StudyInternalService.get().formatSequenceNum(pd.getSequenceNum())));
+                }
+            }
+            SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
+            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/specimen/view/specimenHeader.jsp",
+                    new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
+            return new VBox(header, view);
+        }
+
+        private @NotNull Collection<? extends ParticipantDataset> getFilterPds()
+        {
+            if (_filterPds == null)
+            {
+                Set<String> lsids = getSelectionLsids();
+                _filterPds = StudyInternalService.get().getParticipantDatasets(getContainer(), lsids);
+            }
+            return _filterPds;
+        }
+
+        @Override
+        protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
+        {
+            _vialView = form.isShowVials();
+            Set<String> lsids = getSelectionLsids();
+            SpecimenQueryView view;
+            CohortFilter cohortFilter = CohortService.get().getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), SpecimenQueryView.ViewType.SUMMARY.getQueryName());
+            if (lsids != null)
+            {
+                view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), cohortFilter);
+            }
+            else
+                view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), form.isShowVials(), forExport, null, form.getViewModeEnum(), cohortFilter);
+            view.setAllowExportExternalQuery(false);
+            return view;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addRootNavTrail(root);
+            root.addChild(_vialView ? "Selected Vials" : "Selected Specimens");
         }
     }
 

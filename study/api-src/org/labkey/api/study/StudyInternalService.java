@@ -1,5 +1,6 @@
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityManager.ViewFactory;
@@ -12,6 +13,7 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -49,7 +51,7 @@ public interface StudyInternalService
 
     Integer getLastSpecimenRequest(Study study);
 
-    SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter);
+    SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, @Nullable Collection<? extends ParticipantDataset> cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter);
 
     void registerManageStudyViewFactory(ViewFactory factory);
 
@@ -63,7 +65,11 @@ public interface StudyInternalService
 
     List<? extends Dataset> getDatasets(Study study);
 
+    Collection<? extends ParticipantDataset> getParticipantDatasets(Container c, Collection<String> lsids);
+
     boolean hasEditableDatasets(Study study);
 
     void saveCommentsSettings(Study study, User user, Integer participantCommentDatasetId, String participantCommentProperty, Integer participantVisitCommentDatasetId, String participantVisitCommentProperty);
+
+    String formatSequenceNum(double d);
 }

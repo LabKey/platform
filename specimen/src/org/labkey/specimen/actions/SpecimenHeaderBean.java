@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.actions;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;

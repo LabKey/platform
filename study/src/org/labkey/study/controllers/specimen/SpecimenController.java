@@ -18,13 +18,11 @@ package org.labkey.study.controllers.specimen;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
@@ -36,36 +34,22 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.actions.SpecimenHeaderBean;
 import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
-import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
-import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.SpecimenUrls;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.model.CohortService;
-import org.labkey.api.study.model.ParticipantDataset;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UpdateView;
-import org.labkey.api.view.VBox;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
@@ -74,10 +58,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.http.HttpSession;
 import java.sql.ResultSet;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -172,207 +153,6 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getRedirectURL(Object o)
         {
             return SpecimenMigrationService.get().getSpecimensURL(getContainer());
-        }
-    }
-
-    private Set<String> getSelectionLsids()
-    {
-        // save the selected set of participantdataset lsids in the session; this is the only obvious way
-        // to let the user apply subsequent filters and switch back and forth between vial and specimen view
-        // without losing their original participant/visit selection.
-        Set<String> lsids = null;
-        if (isPost())
-            lsids = DataRegionSelection.getSelected(getViewContext(), true);
-        HttpSession session = getViewContext().getRequest().getSession(true);
-        Pair<Container, Set<String>> selectionCache = (Pair<Container, Set<String>>) session.getAttribute(SELECTED_SPECIMENS_SESSION_ATTRIB_KEY);
-
-        boolean newFilter = (lsids != null && !lsids.isEmpty());
-        boolean cachedFilter = selectionCache != null && getContainer().equals(selectionCache.getKey());
-        if (!newFilter && !cachedFilter)
-        {
-            throw new RedirectException(SpecimenMigrationService.get().getSpecimensURL(getContainer()));
-        }
-
-        if (newFilter)
-            selectionCache = new Pair<>(getContainer(), lsids);
-
-        session.setAttribute(SELECTED_SPECIMENS_SESSION_ATTRIB_KEY, selectionCache);
-        return selectionCache.getValue();
-    }
-
-    private static final String SELECTED_SPECIMENS_SESSION_ATTRIB_KEY = SpecimenController.class.getName() + "/SelectedSpecimens";
-
-    @RequiresPermission(ReadPermission.class)
-    public class SelectedSpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
-    {
-        private boolean _vialView;
-        private ParticipantDataset[] _filterPds = null;
-
-        public SelectedSpecimensAction()
-        {
-            super(SpecimenViewTypeForm.class);
-        }
-
-        @Override
-        protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
-        {
-            Study study = getStudyRedirectIfNull();
-            Set<Pair<String, String>> ptidVisits = new HashSet<>();
-            if (getFilterPds() != null)
-            {
-                for (ParticipantDataset pd : getFilterPds())
-                {
-                    if (pd.getSequenceNum() == null)
-                    {
-                        ptidVisits.add(new Pair<>(pd.getParticipantId(), null));
-                    }
-                    else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
-                    {
-                        ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
-                    }
-                    else
-                    {
-                        VisitImpl visit = pd.getSequenceNum() != null ? StudyManager.getInstance().getVisitForSequence(study, pd.getSequenceNum()) : null;
-                        ptidVisits.add(new Pair<>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + VisitImpl.formatSequenceNum(pd.getSequenceNum())));
-                    }
-                }
-            }
-            SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
-            JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/specimen/view/specimenHeader.jsp",
-                    new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
-            return new VBox(header, view);
-        }
-
-        private ParticipantDataset[] getFilterPds()
-        {
-            if (_filterPds == null)
-            {
-                Set<String> lsids = getSelectionLsids();
-                _filterPds = StudyManager.getInstance().getParticipantDatasets(getContainer(), lsids);
-            }
-            return _filterPds;
-        }
-
-        @Override
-        protected SpecimenQueryView createQueryView(SpecimenViewTypeForm form, BindException errors, boolean forExport, String dataRegion)
-        {
-            _vialView = form.isShowVials();
-            Set<String> lsids = getSelectionLsids();
-            SpecimenQueryView view;
-            CohortFilter cohortFilter = CohortService.get().getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), SpecimenQueryView.ViewType.SUMMARY.getQueryName());
-            if (lsids != null)
-            {
-                view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), form.isShowVials(), forExport, getFilterPds(), form.getViewModeEnum(), cohortFilter);
-            }
-            else
-                view = StudyInternalService.get().getSpecimenQueryView(getViewContext(), form.isShowVials(), forExport, null, form.getViewModeEnum(), cohortFilter);
-            view.setAllowExportExternalQuery(false);
-            return view;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            _addNavTrail(root);
-            root.addChild(_vialView ? "Selected Vials" : "Selected Specimens");
-        }
-    }
-
-    private ActionURL getManageStudyURL()
-    {
-        return urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
-    }
-
-    private enum CommentsConflictResolution
-    {
-        SKIP,
-        APPEND,
-        REPLACE
-    }
-
-    public static class UpdateSpecimenCommentsForm
-    {
-        private String _comments;
-        private int[] _rowId;
-        private boolean _fromGroupedView;
-        private String _referrer;
-        private boolean _saveCommentsPost;
-        private String _conflictResolve;
-        private Boolean _qualityControlFlag;
-
-        public String getComments()
-        {
-            return _comments;
-        }
-
-        public void setComments(String comments)
-        {
-            _comments = comments;
-        }
-
-        public int[] getRowId()
-        {
-            return _rowId;
-        }
-
-        public void setRowId(int[] rowId)
-        {
-            _rowId = rowId;
-        }
-
-        public boolean isFromGroupedView()
-        {
-            return _fromGroupedView;
-        }
-
-        public void setFromGroupedView(boolean fromGroupedView)
-        {
-            _fromGroupedView = fromGroupedView;
-        }
-
-        public String getReferrer()
-        {
-            return _referrer;
-        }
-
-        public void setReferrer(String referrer)
-        {
-            _referrer = referrer;
-        }
-
-        public boolean isSaveCommentsPost()
-        {
-            return _saveCommentsPost;
-        }
-
-        public void setSaveCommentsPost(boolean saveCommentsPost)
-        {
-            _saveCommentsPost = saveCommentsPost;
-        }
-
-        public String getConflictResolve()
-        {
-            return _conflictResolve;
-        }
-
-        public void setConflictResolve(String conflictResolve)
-        {
-            _conflictResolve = conflictResolve;
-        }
-
-        public CommentsConflictResolution getConflictResolveEnum()
-        {
-            return _conflictResolve == null ? CommentsConflictResolution.REPLACE : CommentsConflictResolution.valueOf(_conflictResolve);
-        }
-
-        public Boolean isQualityControlFlag()
-        {
-            return _qualityControlFlag;
-        }
-
-        public void setQualityControlFlag(Boolean qualityControlFlag)
-        {
-            _qualityControlFlag = qualityControlFlag;
         }
     }
 

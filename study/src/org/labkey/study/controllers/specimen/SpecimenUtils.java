@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.specimen;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBarLineBreak;
@@ -72,6 +73,7 @@ import javax.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -120,7 +122,7 @@ public class SpecimenUtils
                 (selectedMode == SpecimenQueryView.Mode.DEFAULT && SettingsManager.get().getDisplaySettings(container).isDefaultToCommentsMode());
     }
 
-    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
+    public SpecimenQueryView getSpecimenQueryView(boolean showVials, boolean forExport, @Nullable Collection<? extends ParticipantDataset> cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
     {
         boolean commentsMode = isCommentsMode(getContainer(), viewMode);
 
@@ -324,7 +326,7 @@ public class SpecimenUtils
         }
     }
 
-    public void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
+    private void sendNotification(DefaultRequestNotification notification, boolean includeInactiveUsers, BindException errors) throws Exception
     {
         RequestNotificationSettings settings = SettingsManager.get().getRequestNotificationSettings(getContainer());
 

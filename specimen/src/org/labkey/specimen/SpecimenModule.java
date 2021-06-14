@@ -164,6 +164,12 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
+            public ActionURL getSelectedSpecimensURL(Container c)
+            {
+                return new ActionURL(SpecimenController2.SelectedSpecimensAction.class, c);
+            }
+
+            @Override
             public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
             {
                 return SpecimenController2.ShowCreateSpecimenRequestAction.class;

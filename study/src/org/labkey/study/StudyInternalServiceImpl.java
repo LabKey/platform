@@ -1,5 +1,6 @@
 package org.labkey.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
@@ -17,8 +18,10 @@ import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 import org.springframework.validation.BindException;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -62,7 +65,7 @@ public class StudyInternalServiceImpl implements StudyInternalService
     }
 
     @Override
-    public SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, ParticipantDataset[] cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
+    public SpecimenQueryView getSpecimenQueryView(ViewContext context, boolean showVials, boolean forExport, @Nullable Collection<? extends ParticipantDataset> cachedFilterData, SpecimenQueryView.Mode viewMode, CohortFilter cohortFilter)
     {
         return new SpecimenUtils(context).getSpecimenQueryView(showVials, forExport, cachedFilterData, viewMode, cohortFilter);
     }
@@ -106,6 +109,12 @@ public class StudyInternalServiceImpl implements StudyInternalService
     }
 
     @Override
+    public Collection<? extends ParticipantDataset> getParticipantDatasets(Container c, Collection<String> lsids)
+    {
+        return StudyManager.getInstance().getParticipantDatasets(c, lsids);
+    }
+
+    @Override
     public boolean hasEditableDatasets(Study study)
     {
         SecurityType securityType = ((StudyImpl)study).getSecurityType();
@@ -129,5 +138,11 @@ public class StudyInternalServiceImpl implements StudyInternalService
         }
 
         StudyManager.getInstance().updateStudy(user, study);
+    }
+
+    @Override
+    public String formatSequenceNum(double d)
+    {
+        return VisitImpl.formatSequenceNum(d);
     }
 }

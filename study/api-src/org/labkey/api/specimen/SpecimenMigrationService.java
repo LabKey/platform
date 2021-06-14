@@ -23,6 +23,7 @@ public interface SpecimenMigrationService
 
     ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl);
+    ActionURL getSelectedSpecimensURL(Container c);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getSpecimensURL(Container c);
