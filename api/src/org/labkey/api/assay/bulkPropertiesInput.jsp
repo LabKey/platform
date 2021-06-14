@@ -78,5 +78,7 @@
 </table>
 <script type="text/javascript">
     // Allow tabs in the TSV text area
-    Ext.EventManager.on(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    LABKEY.requiresExt3ClientAPI(function() {
+        Ext.EventManager.on(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    });
 </script>

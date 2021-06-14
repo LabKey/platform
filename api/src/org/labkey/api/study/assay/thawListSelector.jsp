@@ -168,7 +168,9 @@
     <% if (renderAll)
     { %>
     // Allow tabs in the TSV text area
-    Ext.EventManager.on('<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    LABKEY.requiresExt3ClientAPI(function() {
+        Ext.EventManager.on('<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    });
     <% } %>
 </script>
 

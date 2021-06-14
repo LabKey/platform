@@ -362,7 +362,9 @@
             getUrl();
     }
 
-    Ext.onReady(function() {
-        Ext.EventManager.on('txtPost', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    LABKEY.requiresExt3ClientAPI(function() {
+        Ext.onReady(function () {
+            Ext.EventManager.on('txtPost', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+        });
     });
 </script>
