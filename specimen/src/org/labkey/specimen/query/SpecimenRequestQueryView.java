@@ -42,9 +42,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.specimen.actions.SpecimenController2.DeleteRequestAction;
-import org.labkey.specimen.actions.SpecimenController2.ManageRequestAction;
-import org.labkey.specimen.actions.SpecimenController2.SubmitRequestAction;
+import org.labkey.specimen.actions.SpecimenController.DeleteRequestAction;
+import org.labkey.specimen.actions.SpecimenController.ManageRequestAction;
+import org.labkey.specimen.actions.SpecimenController.SubmitRequestAction;
 
 import java.io.IOException;
 import java.io.Writer;

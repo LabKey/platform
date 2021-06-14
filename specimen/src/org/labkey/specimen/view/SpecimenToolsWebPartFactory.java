@@ -11,8 +11,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.ShowSearchAction;
-import org.labkey.specimen.actions.SpecimenController2.AutoReportListAction;
-import org.labkey.specimen.actions.SpecimenController2.ShowCreateSpecimenRequestAction;
+import org.labkey.specimen.actions.SpecimenController.AutoReportListAction;
+import org.labkey.specimen.actions.SpecimenController.ShowCreateSpecimenRequestAction;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -19,7 +19,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ActionURL;
-import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.report.RequestSummaryByVisitType;
 import org.labkey.specimen.report.SpecimenReportManager;
 import org.labkey.specimen.report.SpecimenTypeLevel;
@@ -95,7 +95,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL url = SpecimenController2.getSpecimensURL(_container, true);
+        ActionURL url = SpecimenController.getSpecimensURL(_container, true);
         url = updateURLFilterParameter(url, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
         url = updateURLFilterParameter(url, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
         SpecimenTypeLevel level = getTypeLevelEnum();

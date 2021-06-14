@@ -19,9 +19,9 @@ import org.labkey.api.util.Button;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ViewContext;
-import org.labkey.specimen.actions.SpecimenController2.ImportVialIdsAction;
-import org.labkey.specimen.actions.SpecimenController2.OverviewAction;
-import org.labkey.specimen.actions.SpecimenController2.RemoveRequestSpecimensAction;
+import org.labkey.specimen.actions.SpecimenController.ImportVialIdsAction;
+import org.labkey.specimen.actions.SpecimenController.OverviewAction;
+import org.labkey.specimen.actions.SpecimenController.RemoveRequestSpecimensAction;
 
 import java.util.ArrayList;
 import java.util.HashMap;

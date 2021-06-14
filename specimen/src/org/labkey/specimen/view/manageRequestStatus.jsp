@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
 <%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -32,7 +32,7 @@
     List<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
 %>
 <labkey:errors />
-<labkey:form action="<%=urlFor(SpecimenController2.ManageRequestStatusAction.class)%>" enctype="multipart/form-data" method="POST">
+<labkey:form action="<%=urlFor(SpecimenController.ManageRequestStatusAction.class)%>" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId()%>">
     <table  class="labkey-manage-display">
         <tr>
@@ -113,7 +113,7 @@
             <th>&nbsp;</th>
             <td>
                 <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
-                <%= button("Cancel").href(SpecimenController2.getManageRequestURL(getContainer(), bean.getSpecimenRequest().getRowId(), null)) %>
+                <%= button("Cancel").href(SpecimenController.getManageRequestURL(getContainer(), bean.getSpecimenRequest().getRowId(), null)) %>
             </td>
         </tr>
     </table>

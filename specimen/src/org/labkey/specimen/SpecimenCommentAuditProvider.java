@@ -35,7 +35,7 @@ import org.labkey.api.specimen.SpecimenCommentAuditDomainKind;
 import org.labkey.api.specimen.SpecimenCommentAuditEvent;
 import org.labkey.api.util.Link;
 import org.labkey.api.view.ActionURL;
-import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -141,7 +141,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                         return;
                                     }
 
-                                    ActionURL url = SpecimenController2.getCommentURL(container, globalUniqueId);
+                                    ActionURL url = SpecimenController.getCommentURL(container, globalUniqueId);
                                     out.write(new Link.LinkBuilder(globalUniqueId).href(url).clearClasses().toString());
                                 }
                             };

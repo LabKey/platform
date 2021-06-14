@@ -171,11 +171,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// TEMPORARY: Move specimen actions from study SpecimenController to here. Once all actions are moved, we'll rename this.
-public class SpecimenController2 extends SpringActionController
+public class SpecimenController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(
-        SpecimenController2.class,
+        SpecimenController.class,
 
         ShowGroupMembersAction.class,
         ShowSearchAction.class,
@@ -197,7 +196,7 @@ public class SpecimenController2 extends SpringActionController
 
     private Study _study = null;
 
-    public SpecimenController2()
+    public SpecimenController()
     {
         setActionResolver(_resolver);
     }
@@ -492,7 +491,7 @@ public class SpecimenController2 extends SpringActionController
         return dr;
     }
 
-    private static final String SELECTED_SPECIMENS_SESSION_ATTRIB_KEY = SpecimenController2.class.getName() + "/SelectedSpecimens";
+    private static final String SELECTED_SPECIMENS_SESSION_ATTRIB_KEY = SpecimenController.class.getName() + "/SelectedSpecimens";
 
     private Set<String> getSelectionLsids()
     {
@@ -1178,7 +1177,7 @@ public class SpecimenController2 extends SpringActionController
             addBaseSpecimenNavTrail(root);
             if (_showingSelectedSpecimens)
             {
-                root.addChild("Selected Specimens", SpecimenController2.getSpecimensURL(getContainer(), true));
+                root.addChild("Selected Specimens", SpecimenController.getSpecimensURL(getContainer(), true));
             }
             root.addChild("Vial History");
         }
@@ -4179,7 +4178,7 @@ public class SpecimenController2 extends SpringActionController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(new Link.LinkBuilder("View Request").href(SpecimenController2.getManageRequestURL(getContainer(), form.getId(), null)));
+            HtmlView header = new HtmlView(new Link.LinkBuilder("View Request").href(SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);
@@ -4420,7 +4419,7 @@ public class SpecimenController2 extends SpringActionController
         public ManageRequirementBean(ViewContext context, SpecimenRequest request, SpecimenRequestRequirement requirement)
         {
             _requirement = requirement;
-            _possibleNotifications = SpecimenController2.getPossibleNotifications(request);
+            _possibleNotifications = SpecimenController.getPossibleNotifications(request);
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), requirement.getRequestId());
             filter.addCondition(FieldKey.fromParts("RequirementId"), requirement.getRowId());
             _requestManager = context.getContainer().hasPermission(context.getUser(), ManageRequestsPermission.class);
@@ -4667,7 +4666,7 @@ public class SpecimenController2 extends SpringActionController
         public synchronized List<ActorNotificationRecipientSet> getPossibleNotifications()
         {
             if (_possibleNotifications == null)
-                _possibleNotifications = SpecimenController2.getPossibleNotifications(_specimenRequest);
+                _possibleNotifications = SpecimenController.getPossibleNotifications(_specimenRequest);
             return _possibleNotifications;
         }
 

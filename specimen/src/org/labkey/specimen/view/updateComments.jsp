@@ -31,7 +31,7 @@
 <%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.UpdateCommentsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.UpdateCommentsAction" %>
 <%@ page import="org.labkey.specimen.actions.UpdateSpecimenCommentsBean" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

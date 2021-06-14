@@ -20,10 +20,10 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.DownloadSpecimenListAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.EmailLabSpecimenListsAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.LabSpecimenListsBean" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.DownloadSpecimenListAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.EmailLabSpecimenListsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.LabSpecimenListsBean" %>
 <%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -192,7 +192,7 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
-        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(SpecimenController2.getManageRequestURL(getContainer(), bean.getSpecimenRequest().getRowId(), null))%></td>
+        <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(SpecimenController.getManageRequestURL(getContainer(), bean.getSpecimenRequest().getRowId(), null))%></td>
     </tr>
 </table>
 </labkey:form>

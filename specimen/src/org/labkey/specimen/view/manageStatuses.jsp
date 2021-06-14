@@ -26,10 +26,10 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteStatusAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageStatusesAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageStatusOrderAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteStatusAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusesAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusOrderAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

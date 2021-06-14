@@ -21,10 +21,10 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteRequirementAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequirementAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequirementBean" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteRequirementAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageRequirementAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageRequirementBean" %>
 <%@ page import="org.labkey.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -51,7 +51,7 @@
 <labkey:errors />
 <table class="labkey-manage-display">
     <tr>
-        <td align="left"><%= link("View Request").href(SpecimenController2.getManageRequestURL(getContainer(), requirement.getRequestId(), null))%></td>
+        <td align="left"><%= link("View Request").href(SpecimenController.getManageRequestURL(getContainer(), requirement.getRequestId(), null))%></td>
     </tr>
 <%
     if (bean.isRequestManager() && bean.isFinalState())
@@ -63,7 +63,7 @@
     <tr>
         <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
-            To make changes, you must <a href="<%=h(SpecimenController2.getManageRequestStatusURL(getContainer(), requirement.getRequestId()))%>">
+            To make changes, you must <a href="<%=h(SpecimenController.getManageRequestStatusURL(getContainer(), requirement.getRequestId()))%>">
             change the request's status</a> to a non-final state.
         </td>
     </tr>
@@ -180,7 +180,7 @@
                         <td>
                             <%= button("Save Changes and Send Notifications").submit(true) %>&nbsp;
                             <%= button("Delete Requirement").submit(true).onClick("this.form.action='" + h(deleteURL) + "'") %>&nbsp;
-                            <%= button("Cancel").href(SpecimenController2.getManageRequestURL(getContainer(), requirement.getRequestId(), null)) %>
+                            <%= button("Cancel").href(SpecimenController.getManageRequestURL(getContainer(), requirement.getRequestId(), null)) %>
                         </td>
                     </tr>
                 </table>

@@ -42,17 +42,17 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteMissingRequestSpecimensAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.DeleteRequestAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ExtendedSpecimenRequestAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ImportVialIdsAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.LabSpecimenListsAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.LabSpecimenListsBean" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequestAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRequirementAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.RequestHistoryAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.SubmitRequestAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteMissingRequestSpecimensAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteRequestAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ExtendedSpecimenRequestAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ImportVialIdsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.LabSpecimenListsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.LabSpecimenListsBean" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageRequestAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageRequirementAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.RequestHistoryAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.SubmitRequestAction" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -282,7 +282,7 @@
             {
     %>
                     This request is in a final state; no changes are allowed.<br>
-                    To make changes, you must <a href="<%=h(SpecimenController2.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId()))%>">
+                    To make changes, you must <a href="<%=h(SpecimenController.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId()))%>">
                     change the request's status</a> to a non-final state.
     <%
             }
@@ -302,7 +302,7 @@
                                 .addParameter("listType", LabSpecimenListsBean.Type.PROVIDING.toString())) %>
                         </li>
                         <li>Update request status to indicate completion: <%= link("Update Request",
-                                SpecimenController2.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) %>
+                                SpecimenController.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) %>
                         </li>
                     </ul>
     <%
@@ -410,7 +410,7 @@
 <tr>
     <td>
         <%= link("View History", urlFor(RequestHistoryAction.class).addParameter("id", bean.getSpecimenRequest().getRowId())) %>&nbsp;
-        <%= bean.isRequestManager() ? link("Update Request", SpecimenController2.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
+        <%= bean.isRequestManager() ? link("Update Request", SpecimenController.getManageRequestStatusURL(getContainer(), bean.getSpecimenRequest().getRowId())) : HtmlString.EMPTY_STRING %>
         <%
             if (hasExtendedRequestView)
             {

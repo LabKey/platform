@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.SpecimenWebPartForm" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.SpecimenWebPartForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -211,7 +211,7 @@
                 var data = {grouping1 : [grouping1.items.items[0].getValue(), grouping1.items.items[1].getValue(), grouping1.items.items[2].getValue()],
                             grouping2 : [grouping2.items.items[0].getValue(), grouping2.items.items[1].getValue(), grouping2.items.items[2].getValue()]};
                 Ext4.Ajax.request({
-                    url : (LABKEY.ActionURL.buildURL('specimen2', 'saveSpecimenWebPartSettings')),
+                    url : (LABKEY.ActionURL.buildURL('specimen', 'saveSpecimenWebPartSettings')),
                     method : 'POST',
                     success: function(){
                         window.location = LABKEY.ActionURL.buildURL("study", 'manageStudy.view', null, null);

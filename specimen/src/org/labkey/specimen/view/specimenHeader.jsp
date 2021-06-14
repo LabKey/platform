@@ -24,8 +24,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.SpecimensAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.SpecimensAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenHeaderBean" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -72,7 +72,7 @@
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
 <%=link("Search").href(ShowSearchAction.getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
-<%=link("Reports", urlFor(SpecimenController2.AutoReportListAction.class)) %>
+<%=link("Reports", urlFor(SpecimenController.AutoReportListAction.class)) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
     {

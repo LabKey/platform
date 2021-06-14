@@ -21,7 +21,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.actions.SpecimenReportActions;
 
 import java.util.Collection;
@@ -113,7 +113,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = SpecimenController2.getSpecimensURL(_container, true);
+        ActionURL link = SpecimenController.getSpecimensURL(_container, true);
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());

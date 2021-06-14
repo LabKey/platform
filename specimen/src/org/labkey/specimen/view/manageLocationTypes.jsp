@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageLocationTypesForm" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageLocationTypesForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -90,7 +90,7 @@
                             sal :        checkBoxItems.items[2].getValue(),
                             endpoint :   checkBoxItems.items[3].getValue()};
                 Ext4.Ajax.request({
-                    url : (LABKEY.ActionURL.buildURL('specimen2', 'saveLocationsTypeSettings')),
+                    url : (LABKEY.ActionURL.buildURL('specimen', 'saveLocationsTypeSettings')),
                     method : 'POST',
                     success: function(){
                         window.location = LABKEY.ActionURL.buildURL("study", 'manageStudy.view', null, null);

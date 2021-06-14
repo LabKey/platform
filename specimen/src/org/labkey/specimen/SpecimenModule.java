@@ -45,7 +45,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.ShowUploadSpecimensAction;
 import org.labkey.specimen.actions.SpecimenApiController;
-import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
@@ -111,7 +111,7 @@ public class SpecimenModule extends SpringModule
 
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
 
-        addController("specimen2", SpecimenController2.class);
+        addController("specimen", SpecimenController.class, "study-samples");
         addController("specimen-api", SpecimenApiController.class, "study-samples-api", "specimens-api");
 
         // Register early -- some modules don't declare a runtime dependency on specimen module, but will use the
@@ -124,43 +124,43 @@ public class SpecimenModule extends SpringModule
             @Override
             public ActionURL getBeginURL(Container c)
             {
-                return new ActionURL(SpecimenController2.BeginAction.class, c);
+                return new ActionURL(SpecimenController.BeginAction.class, c);
             }
 
             @Override
             public ActionURL getManageRequestStatusURL(Container c, int requestId)
             {
-                return SpecimenController2.getManageRequestStatusURL(c, requestId);
+                return SpecimenController.getManageRequestStatusURL(c, requestId);
             }
 
             @Override
             public ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl)
             {
-                return SpecimenController2.getManageRequestURL(c, requestId, returnUrl);
+                return SpecimenController.getManageRequestURL(c, requestId, returnUrl);
             }
 
             @Override
             public ActionURL getSelectedSpecimensURL(Container c)
             {
-                return new ActionURL(SpecimenController2.SelectedSpecimensAction.class, c);
+                return new ActionURL(SpecimenController.SelectedSpecimensAction.class, c);
             }
 
             @Override
             public ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name)
             {
-                return SpecimenController2.getDownloadURL(event, name);
+                return SpecimenController.getDownloadURL(event, name);
             }
 
             @Override
             public ActionURL getSpecimensURL(Container c)
             {
-                return SpecimenController2.getSpecimensURL(c);
+                return SpecimenController.getSpecimensURL(c);
             }
 
             @Override
             public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
             {
-                return new ActionURL(SpecimenController2.SpecimenEventsAction.class, c).addReturnURL(returnURL);
+                return new ActionURL(SpecimenController.SpecimenEventsAction.class, c).addReturnURL(returnURL);
             }
 
             @Override
@@ -172,25 +172,25 @@ public class SpecimenModule extends SpringModule
             @Override
             public ActionURL getViewRequestsURL(Container c)
             {
-                return new ActionURL(SpecimenController2.ViewRequestsAction.class, c);
+                return new ActionURL(SpecimenController.ViewRequestsAction.class, c);
             }
 
             @Override
             public Class<? extends Controller> getClearCommentsActionClass()
             {
-                return SpecimenController2.ClearCommentsAction.class;
+                return SpecimenController.ClearCommentsAction.class;
             }
 
             @Override
             public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
             {
-                return SpecimenController2.ShowCreateSpecimenRequestAction.class;
+                return SpecimenController.ShowCreateSpecimenRequestAction.class;
             }
 
             @Override
             public Class<? extends Controller> getUpdateCommentsActionClass()
             {
-                return SpecimenController2.UpdateCommentsAction.class;
+                return SpecimenController.UpdateCommentsAction.class;
             }
         });
      }

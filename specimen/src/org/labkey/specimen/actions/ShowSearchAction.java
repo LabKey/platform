@@ -75,7 +75,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     @Override
     public ActionURL getSuccessURL(SearchForm form)
     {
-        ActionURL url = SpecimenController2.getSpecimensURL(getContainer(), form.isShowVials());
+        ActionURL url = SpecimenController.getSpecimensURL(getContainer(), form.isShowVials());
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {
             if (param.getCompareType() != null && param.getCompareType().length() > 0)
@@ -93,7 +93,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     {
         setHelpTopic("specimenShopping");
         root.addChild(_study.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-        root.addChild("Specimen Overview", new ActionURL(SpecimenController2.OverviewAction.class, getContainer()));
+        root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
         root.addChild(_title);
     }
 

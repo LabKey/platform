@@ -26,10 +26,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.specimen.actions.ShowUploadSpecimensAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.AutoReportListAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ShowCreateSpecimenRequestAction" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ViewRequestsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.AutoReportListAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ShowCreateSpecimenRequestAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ViewRequestsAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
@@ -91,7 +91,7 @@
         {
             var html = '<i>No specimens found.</i>';
             <% if (isAdmin && !c.isDataspace()) {%>
-                var importUrl = LABKEY.ActionURL.buildURL('specimen2', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+                var importUrl = LABKEY.ActionURL.buildURL('specimen', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
                 html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
             <% } %>
             document.getElementById(names.content).innerHTML = html;
@@ -154,11 +154,11 @@
                         <table class="labkey-nav-tree-child">
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController2.SpecimensAction.class, c).addParameter("showVials", false))%>">By Vial Group</a>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SpecimensAction.class, c).addParameter("showVials", false))%>">By Vial Group</a>
                                 </td>
                             </tr>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController2.SpecimensAction.class, c).addParameter("showVials", true))%>">By Individual Vial</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SpecimensAction.class, c).addParameter("showVials", true))%>">By Individual Vial</a></td>
                             </tr>
                             </tbody>
                         </table>

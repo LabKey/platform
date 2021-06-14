@@ -38,7 +38,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.specimen.actions.SpecimenController2.ManageActorsAction;
+import org.labkey.specimen.actions.SpecimenController.ManageActorsAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
