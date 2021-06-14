@@ -3149,8 +3149,6 @@ study/src/org/labkey/study/controllers/reports/ReportsController.java -text
 study/src/org/labkey/study/controllers/reports/StudyManageReportsBean.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/controllers/specimen/ParticipantCommentAction.java -text
-study/src/org/labkey/study/controllers/specimen/SpecimenController.java -text
-study/src/org/labkey/study/controllers/specimen/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDesignController.java -text
 study/src/org/labkey/study/controllers/VisitForm.java -text
@@ -3391,7 +3389,6 @@ study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/importVisitMap.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
-study/src/org/labkey/study/view/manageComments.jsp -text
 study/src/org/labkey/study/view/manageFilewatchers.jsp -text
 study/src/org/labkey/study/view/manageMasterPatientConfig.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text
@@ -3414,7 +3411,6 @@ study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
 study/src/org/labkey/study/view/sendParticipantGroup.jsp -text
 study/src/org/labkey/study/view/snapshotSettings.jsp -text
-study/src/org/labkey/study/view/specimen/updateComments.jsp -text
 study/src/org/labkey/study/view/studydesign/assayScheduleWebpart.jsp -text
 study/src/org/labkey/study/view/studydesign/AssayScheduleWebpartFactory.java -text
 study/src/org/labkey/study/view/studydesign/immunizationScheduleWebpart.jsp -text

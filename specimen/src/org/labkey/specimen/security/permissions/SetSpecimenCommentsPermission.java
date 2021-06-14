@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.security.permissions;
+package org.labkey.specimen.security.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
-import org.labkey.api.study.StudyService;
+import org.labkey.specimen.SpecimenModule;
 
 /*
 * User: Dave
@@ -29,6 +29,6 @@ public class SetSpecimenCommentsPermission extends AbstractPermission
     {
         super("Set Specimen Comments",
                 "Allows the setting of comments on specimens",
-                StudyService.get().getStudyModuleClass()); // TODO: Switch to SpecimenModule.class
+                SpecimenModule.class);
     }
 }

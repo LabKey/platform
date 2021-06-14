@@ -32,7 +32,6 @@ import org.labkey.api.specimen.SpecimensPage;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.specimen.model.SpecimenRequestEvent;
 import org.labkey.api.specimen.model.SpecimenRequestEventType;
-import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
@@ -54,6 +53,7 @@ import org.labkey.specimen.pipeline.SampleMindedTransformTask;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
 import org.labkey.specimen.view.SpecimenSearchWebPartFactory;
 import org.labkey.specimen.view.SpecimenToolsWebPartFactory;
@@ -155,6 +155,12 @@ public class SpecimenModule extends SpringModule
             public ActionURL getSpecimensURL(Container c)
             {
                 return SpecimenController.getSpecimensURL(c);
+            }
+
+            @Override
+            public ActionURL getSpecimensURL(Container c, boolean showVials)
+            {
+                return SpecimenController.getSpecimensURL(c, showVials);
             }
 
             @Override

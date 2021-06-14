@@ -1,4 +1,4 @@
-package org.labkey.api.specimen.actions;
+package org.labkey.specimen.actions;
 
 public enum IdTypes
 {

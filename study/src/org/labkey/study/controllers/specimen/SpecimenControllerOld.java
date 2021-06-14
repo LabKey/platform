@@ -34,7 +34,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.actions.ParticipantCommentForm;
-import org.labkey.api.specimen.actions.SpecimenViewTypeForm;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.SpecimenUrls;
@@ -90,7 +89,7 @@ public class SpecimenControllerOld extends BaseStudyController
         @Override
         public ActionURL getSpecimensURL(Container c, boolean showVials)
         {
-            return getSpecimensURL(c).addParameter(SpecimenViewTypeForm.PARAMS.showVials, showVials);
+            return SpecimenMigrationService.get().getSpecimensURL(c, showVials);
         }
 
         @Override

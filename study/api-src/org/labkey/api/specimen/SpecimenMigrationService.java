@@ -28,6 +28,7 @@ public interface SpecimenMigrationService
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
     ActionURL getSpecimensURL(Container c);
+    ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getUploadSpecimensURL(Container c);
     ActionURL getViewRequestsURL(Container c);
 
