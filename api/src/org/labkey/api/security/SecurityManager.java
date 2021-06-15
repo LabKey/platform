@@ -2482,8 +2482,7 @@ public class SecurityManager
         @Test
         public void testACLS()
         {
-            Container fakeRoot = ContainerManager.createFakeContainer(null, null);
-            Container fakeFolder = ContainerManager.createFakeContainer("project", fakeRoot);
+            Container testFolder = JunitUtil.getTestContainer();
 
             // Ignore all contextual roles for the test user
             final User testuser = TestContext.get().getUser();
@@ -2515,7 +2514,7 @@ public class SecurityManager
             };
 
             // Test Site User and Guest groups
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeFolder);
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
             assertFalse("no permission check", policy.hasPermission(user, ReadPermission.class));
 
             policy.addRoleAssignment(user, ReaderRole.class);
@@ -2542,7 +2541,7 @@ public class SecurityManager
 
 
             // again with SecurityManager.hasPermissions
-            policy = new MutableSecurityPolicy(fakeFolder);
+            policy = new MutableSecurityPolicy(testFolder);
             // Test Site User and Guest groups
             assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
 
