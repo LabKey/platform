@@ -247,7 +247,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         if (sampleCols.size() == 1)
             additionalCols.put(ExtraColFieldKeys.SampleId, sampleCols.get(0).getFieldKey());
 
-        if ((additionalCols.get(ExtraColFieldKeys.Date) == null))
+        if (!selectColumns.containsKey(additionalCols.get(ExtraColFieldKeys.Date)))
         {
             // issue 41982 : look for an alternate date column if the standard assay date field does not exist
             List<ColumnInfo> dateCols = selectColumns.values().stream()
