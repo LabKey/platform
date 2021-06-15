@@ -177,7 +177,8 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set base server url (<%=bean.helpLink%>)</td>
+    <td colspan=2>URL settings (<%=bean.helpLink%>)</td>
+
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
