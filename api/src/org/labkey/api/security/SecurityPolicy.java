@@ -216,7 +216,7 @@ public class SecurityPolicy
 
 
     /**
-     * Return set of permissions explicity granted by this SecurityPolicy, will not inspect any
+     * Return set of permissions explicitly granted by this SecurityPolicy, will not inspect any
      * contextual roles (does not call UserPrincipal.getContextualRoles().  E.g. this will not
      * reflect any permission granted due to assignment of site-wide roles.
      */
