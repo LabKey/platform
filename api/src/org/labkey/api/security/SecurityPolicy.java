@@ -50,11 +50,13 @@ import java.util.TreeSet;
  * using SecurityMananger.getPolicy(). Note that this class is immutable once constructed, so it may
  * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
-
+ *
+ * Note: intentionally does not implement HasPermission, use that interface for things that have a SecurityPolicy
+ *
  * User: Dave
  * Date: Apr 27, 2009
  */
-public class SecurityPolicy implements HasPermission
+public class SecurityPolicy
 {
     private static final Logger LOG = LogManager.getLogger(SecurityPolicy.class);
 
@@ -197,11 +199,6 @@ public class SecurityPolicy implements HasPermission
         return roles;
     }
 
-    @NotNull
-    public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
-    {
-        return getPermissions(principal, null);
-    }
 
     @NotNull
     public List<String> getPermissionNames(@NotNull UserPrincipal principal)
@@ -217,8 +214,28 @@ public class SecurityPolicy implements HasPermission
         return names;
     }
 
+
+    /**
+     * Return set of permissions explicity granted by this SecurityPolicy, will not inspect any
+     * contextual roles (does not call UserPrincipal.getContextualRoles().  E.g. this will not
+     * reflect any permission granted due to assignment of site-wide roles.
+     */
     @NotNull
-    public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
+    public Set<Class<? extends Permission>> getOwnPermissions(@NotNull UserPrincipal principal)
+    {
+        return getOwnPermissions(principal.getGroups());
+    }
+
+    /* TODO: SecurityManager.hasPermissions() find usages outside this package */
+    @NotNull
+    public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
+    {
+        return getPermissions(principal, null);
+    }
+
+    /** Callers outside this package should use SecurityManager.getPermissions() */
+    @NotNull
+    Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
     {
         // TODO: Should we be mutating the result of getContextualRoles()?  Some implementations would like to return unmodifiable collections...
         Set<Role> allContextualRoles = getContextualRoles(principal);
@@ -241,6 +258,7 @@ public class SecurityPolicy implements HasPermission
     }
 
 
+    /* TODO: SecurityManager.hasPermissions() */
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         try
@@ -255,14 +273,15 @@ public class SecurityPolicy implements HasPermission
     }
 
 
-    @Override
+    /* TODO: SecurityManager.hasPermissions() */
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         return hasPermission(principal, permission, null);
     }
 
 
-    public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
+    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
+    boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
         try
         {
@@ -276,7 +295,8 @@ public class SecurityPolicy implements HasPermission
     }
 
 
-    public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
+    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
+    boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
         testPermissionIsRegistered(permission);
         boolean ret = getPermissions(principal, contextualRoles).contains(permission);
@@ -285,6 +305,7 @@ public class SecurityPolicy implements HasPermission
     }
 
 
+    /* TODO: SecurityManager.hasPermissions() */
     public boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
     {
         Set<Class<? extends Permission>> permsSet = new HashSet<>(Arrays.asList(permissions));
@@ -292,21 +313,25 @@ public class SecurityPolicy implements HasPermission
     }
 
 
+    /* TODO: SecurityManager.hasPermissions() */
     public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions)
     {
         return hasPermissions(principal, permissions, null);
     }
 
 
-    public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
+    boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
-        permissions.forEach(this::testPermissionIsRegistered);
+        permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
         boolean ret = getPermissions(principal, contextualRoles).containsAll(permissions);
         SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, this, ret);
         return ret;
     }
 
     /**
+     *  Callers outside this package should use SecurityManager.hasAnyPermissions()
+     *
      * Returns true if the principal has at least one of the required permissions.
      * @param principal The principal.
      * @param permissions The set of required permissions.
@@ -315,7 +340,7 @@ public class SecurityPolicy implements HasPermission
      */
     public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
-        permissions.forEach(this::testPermissionIsRegistered);
+        permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
         boolean ret = false;
         Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
         for (Class<? extends Permission> requiredPerm : permissions)
@@ -333,7 +358,7 @@ public class SecurityPolicy implements HasPermission
     // Throttle that limits warning logging to once per hour per permission class
     private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn(permission + " is not registered!"));
 
-    private void testPermissionIsRegistered(Class<? extends Permission> permission)
+    static void testPermissionIsRegistered(Class<? extends Permission> permission)
     {
         if (!RoleManager.isPermissionRegistered(permission))
         {
@@ -341,7 +366,10 @@ public class SecurityPolicy implements HasPermission
         }
     }
 
-    protected Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
+
+    /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
+    @NotNull
+    private Set<Class<? extends Permission>> getOwnPermissions(@NotNull int[] principals)
     {
         Set<Class<? extends Permission>> perms = new HashSet<>();
 
@@ -366,6 +394,14 @@ public class SecurityPolicy implements HasPermission
             else
                 ++principalsIdx;
         }
+
+        return perms;
+    }
+
+
+    Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
+    {
+        var perms = getOwnPermissions(principals);
 
         //apply contextual roles if any
         if (null != contextualRoles)

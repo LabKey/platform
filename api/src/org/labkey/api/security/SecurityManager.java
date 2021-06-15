@@ -2485,18 +2485,37 @@ public class SecurityManager
             Container fakeRoot = ContainerManager.createFakeContainer(null, null);
             Container fakeFolder = ContainerManager.createFakeContainer("project", fakeRoot);
 
-            // Ignore all contextual roles
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeFolder) {
-                @NotNull
+            // Ignore all contextual roles for the test user
+            final User testuser = TestContext.get().getUser();
+            UserPrincipal user = new UserPrincipal(testuser.getName(), testuser.getUserId(), testuser.getPrincipalType())
+            {
                 @Override
-                protected Set<Role> getContextualRoles(UserPrincipal principal)
+                public int[] getGroups()
                 {
-                    return Collections.emptySet();
+                    return testuser.getGroups();
+                }
+
+                @Override
+                public Set<Role> getContextualRoles(SecurityPolicy policy)
+                {
+                    return Set.of();
+                }
+
+                @Override
+                public boolean isInGroup(int group)
+                {
+                    return testuser.isInGroup(group);
+                }
+
+                @Override
+                public boolean isActive()
+                {
+                    return testuser.isActive();
                 }
             };
 
             // Test Site User and Guest groups
-            User user = TestContext.get().getUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeFolder);
             assertFalse("no permission check", policy.hasPermission(user, ReadPermission.class));
 
             policy.addRoleAssignment(user, ReaderRole.class);
@@ -2520,6 +2539,32 @@ public class SecurityManager
             assertTrue("read permission", policy.hasPermission(User.guest, ReadPermission.class));
             assertFalse("no insert permission", policy.hasPermission(User.guest, InsertPermission.class));
             assertFalse("no update permission", policy.hasPermission(User.guest, UpdatePermission.class));
+
+
+            // again with SecurityManager.hasPermissions
+            policy = new MutableSecurityPolicy(fakeFolder);
+            // Test Site User and Guest groups
+            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+
+            policy.addRoleAssignment(user, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            policy.addRoleAssignment(guestGroup, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            policy.addRoleAssignment(userGroup, EditorRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertTrue("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertTrue("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            // Guest
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
         }
 
 
@@ -3480,4 +3525,64 @@ public class SecurityManager
 
         return validRecipients;
     }
+
+
+    /**
+     * This is a choke point for checking permissions.
+     * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
+     *
+     * This will let the SecurityPolicy object just handle it's own ACL-like functionality (e.g. computing the
+     * permissions that it explicitly assigns (resolving roles and groups).
+     *
+     * TODO remove the SecurityPolicy methods that take parameter "Set<Role> contextualRole")
+     */
+
+    public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, Option.ALL);
+    }
+
+    public static boolean hasAnyPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, Option.ANY);
+    }
+
+    public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
+    {
+        Container c = ContainerManager.getForId(policy.getContainerId());
+        if (null == c || (principal instanceof User && c.isForbiddenProject((User) principal)))
+            return Set.of();
+
+        var granted = policy.getOwnPermissions(principal);
+        principal.getContextualRoles(policy).forEach(r -> granted.addAll(r.getPermissions()));
+        if (null != contextualRoles)
+            contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
+        return granted;
+    }
+
+    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, Option opt)
+    {
+        try
+        {
+            SecurityLogger.indent(logMsg);
+            permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
+
+            var granted = getPermissions(policy, principal, contextualRoles);
+
+            boolean ret;
+            if (opt == Option.ALL)
+                ret = granted.containsAll(permissions);
+            else
+                ret = permissions.stream().anyMatch(granted::contains);
+
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, policy, ret);
+            return ret;
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
+    }
+
+    enum Option { ANY, ALL };
 }
