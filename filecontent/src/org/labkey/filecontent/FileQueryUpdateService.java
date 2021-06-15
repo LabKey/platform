@@ -550,7 +550,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     offset = offset.substring(1);
 
                 String davUrl = rootDavUrl + "/" + offset;
-                WebdavResource resource = FileContentServiceImpl.getInstance().getResource(davUrl);
+                WebdavResource resource = FileContentServiceImpl.getInstance().getResource(davUrl, false);
                 if (targetResource == null)
                     targetResource = resource;
                 else

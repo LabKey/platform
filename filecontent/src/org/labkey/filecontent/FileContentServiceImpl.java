@@ -1456,9 +1456,9 @@ public class FileContentServiceImpl implements FileContentService
         return selector.getArrayList(String.class);
     }
 
-    public Path getPath(String uri)
+    public Path getPath(String uri, boolean encoded)
     {
-        Path path = Path.decode(uri);
+        Path path = encoded ? Path.decode(uri) : Path.parse(uri);
 
         if (!path.startsWith(WebdavService.getPath()) && path.contains(WebdavService.getPath().getName()))
         {
@@ -1474,10 +1474,21 @@ public class FileContentServiceImpl implements FileContentService
         return path;
     }
 
+    public Path getPath(String uri)
+    {
+        return getPath(uri, true);
+    }
+
     @Nullable
     public WebdavResource getResource(String uri)
     {
-        Path path = getPath(uri);
+        return getResource(uri, true);
+    }
+
+    @Nullable
+    public WebdavResource getResource(String uri, boolean encoded)
+    {
+        Path path = getPath(uri, encoded);
         return WebdavService.get().getResolver().lookup(path);
     }
 
