@@ -228,7 +228,7 @@ public class DataIteratorUtil
                 // Like maybe ETL from one study to another where subject name does not match? or assay publish?
                 to = targetMap.get(from.getPropertyURI());
                 if (null != to)
-                    to = new Pair<>(to.first, MatchType.low);
+                    to = new Pair<>(to.first, org.labkey.api.dataiterator.DataIteratorUtil.MatchType.low);
             }
             if (null == to)
             {
