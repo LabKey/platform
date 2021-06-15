@@ -424,7 +424,7 @@
 
         Ext.Msg.wait("Saving...");
         Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("specimen2", "updateRequestabilityRules"),
+            url : LABKEY.ActionURL.buildURL("specimen", "updateRequestabilityRules"),
             method : 'POST',
             success: saveComplete,
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.displayAjaxErrorResponse, this, true),

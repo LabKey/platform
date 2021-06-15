@@ -58,6 +58,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -76,7 +77,6 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCStateSet;
@@ -114,10 +114,11 @@ import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
  */
 public class DatasetQueryView extends StudyQueryView
 {
-    private DatasetDefinition _dataset;
+    private final DatasetDefinition _dataset;
+    private final boolean _showSourceLinks;
+
     private VisitImpl _visit;
     private CohortFilter _cohortFilter;
-    private boolean _showSourceLinks;
     public static final String DATAREGION = "Dataset";
     private QCStateSet _qcStateSet;
     protected static Logger _systemLog = LogManager.getLogger(DatasetQueryView.class);
@@ -470,7 +471,7 @@ public class DatasetQueryView extends StudyQueryView
 
         if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
         {
-            ActionURL viewSpecimensURL = new ActionURL(SpecimenController.SelectedSpecimensAction.class, getContainer());
+            ActionURL viewSpecimensURL = SpecimenMigrationService.get().getSelectedSpecimensURL(getContainer());
             ActionButton viewSpecimens = new ActionButton(viewSpecimensURL, "View Specimens");
             viewSpecimens.setRequiresSelection(true);
             viewSpecimens.setActionType(ActionButton.Action.POST);

@@ -37,6 +37,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
     protected static final String THEME_NAME_PROP = "themeName";
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
+    public static final String APPLICATION_MENU_DISPLAY_MODE = "applicationMenuDisplayMode";
     protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
     protected static final String DISCUSSION_ENABLED_PROP = "dicussionEnabled";
     protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
@@ -115,6 +116,11 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public FolderDisplayMode getFolderDisplayMode()
     {
         return FolderDisplayMode.fromString(lookupStringValue(FOLDER_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
+    }
+
+    public FolderDisplayMode getApplicationMenuDisplayMode()
+    {
+        return FolderDisplayMode.fromString(lookupStringValue(APPLICATION_MENU_DISPLAY_MODE, FolderDisplayMode.ALWAYS.toString()));
     }
 
     public boolean isHelpMenuEnabled()

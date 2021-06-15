@@ -2933,7 +2933,7 @@ public class StudyManager
         return true;
     }
 
-    public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids)
+    public @NotNull Collection<ParticipantDataset> getParticipantDatasets(Container container, Collection<String> lsids)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("LSID"), lsids));
@@ -2969,8 +2969,7 @@ public class StudyManager
             throw new RuntimeSQLException(e);
         }
 
-
-        return pds.toArray(new ParticipantDataset[0]);
+        return pds;
     }
 
 

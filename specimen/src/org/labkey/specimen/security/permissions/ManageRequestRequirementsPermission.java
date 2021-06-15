@@ -16,7 +16,7 @@
 package org.labkey.specimen.security.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
-import org.labkey.api.study.StudyService;
+import org.labkey.specimen.SpecimenModule;
 
 /*
 * User: Dave
@@ -29,6 +29,6 @@ public class ManageRequestRequirementsPermission extends AbstractPermission
     {
         super("Manage Specimen Request Default Requirements",
                 "Allows management of specimen request default requirements",
-                StudyService.get().getStudyModuleClass()); // TODO: Switch to SpecimenModule.class
+                SpecimenModule.class);
     }
 }
