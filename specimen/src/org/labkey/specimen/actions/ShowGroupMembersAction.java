@@ -16,8 +16,10 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityUrls;
@@ -25,19 +27,18 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.specimen.actions.IdForm;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenRequestActor;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.api.specimen.security.permissions.ManageSpecimenActorsPermission;
-import org.labkey.api.study.SpecimenUrls;
+import org.labkey.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.specimen.actions.SpecimenController.ManageActorsAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -51,6 +52,18 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
 {
     private SpecimenRequestActor _actor;
     private LocationImpl _location;
+
+    public static ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl)
+    {
+        ActionURL url = new ActionURL(ShowGroupMembersAction.class, c);
+        url.addParameter("id", Integer.toString(rowId));
+        if (locationId != null)
+            url.addParameter("locationId", locationId);
+        if (returnUrl != null)
+            url.addReturnURL(returnUrl);
+
+        return url;
+    }
 
     @Override
     public void validateCommand(UpdateGroupForm target, Errors errors)
@@ -148,7 +161,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     @Override
     public ActionURL getSuccessURL(UpdateGroupForm form)
     {
-        return form.getReturnActionURL(PageFlowUtil.urlProvider(SpecimenUrls.class).getManageActorsURL(getContainer()));
+        return form.getReturnActionURL(new ActionURL(ManageActorsAction.class, getContainer()));
     }
 
     @Override
@@ -157,9 +170,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         PageFlowUtil.urlProvider(StudyUrls.class).addManageStudyNavTrail(root, getContainer(), getUser());
 
         if (_location != null)
-            root.addChild("Manage Actors", PageFlowUtil.urlProvider(SpecimenUrls.class).getManageActorsURL(getContainer()).addParameter("showMemberSites", _actor.getRowId()));
+            root.addChild("Manage Actors", new ActionURL(ManageActorsAction.class, getContainer()).addParameter("showMemberSites", _actor.getRowId()));
         else
-            root.addChild("Manage Actors", PageFlowUtil.urlProvider(SpecimenUrls.class).getManageActorsURL(getContainer()));
+            root.addChild("Manage Actors", new ActionURL(ManageActorsAction.class, getContainer()));
 
         String title = _actor.getLabel();
         if (_location != null)

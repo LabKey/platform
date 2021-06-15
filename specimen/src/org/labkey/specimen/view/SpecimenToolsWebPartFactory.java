@@ -11,8 +11,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.ShowSearchAction;
-import org.labkey.specimen.actions.SpecimenController2.AutoReportListAction;
-import org.labkey.specimen.actions.SpecimenController2.ShowCreateSpecimenRequestAction;
+import org.labkey.specimen.actions.SpecimenController.AutoReportListAction;
+import org.labkey.specimen.actions.SpecimenController.ShowCreateSpecimenRequestAction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +34,7 @@ public class SpecimenToolsWebPartFactory extends ToolsWebPartFactory
         String iconBase = portalCtx.getContextPath() + "/study/tools/";
         List<StudyToolsWebPart.Item> items = new ArrayList<>();
 
-        ActionURL vialSearchURL = new ActionURL(ShowSearchAction.class, portalCtx.getContainer());
-        vialSearchURL.addParameter("showVials", true);
+        ActionURL vialSearchURL = ShowSearchAction.getShowSearchURL(portalCtx.getContainer(), true);
         items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
         if (SettingsManager.get().isSpecimenRequestEnabled(portalCtx.getContainer()))

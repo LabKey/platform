@@ -53,7 +53,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.specimen.actions.SpecimenController2;
+import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.pipeline.SpecimenReloadJob;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -467,6 +467,6 @@ public class SpecimenServiceImpl implements SpecimenService
     @Override
     public Class<? extends Controller> getManageSpecimenWebPartActionClass()
     {
-        return SpecimenController2.ManageSpecimenWebPartAction.class;
+        return SpecimenController.ManageSpecimenWebPartAction.class;
     }
 }

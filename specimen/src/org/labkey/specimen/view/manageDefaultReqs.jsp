@@ -23,8 +23,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.specimen.actions.ManageReqsBean" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageDefaultReqsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageDefaultReqsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -35,7 +35,7 @@
     SpecimenRequestRequirement[] receiverRequirements = bean.getReceiverRequirements();
     SpecimenRequestRequirement[] generalRequirements = bean.getGeneralRequirements();
     SpecimenRequestActor[] actors = bean.getActors();
-    ActionURL deleteDefaultRequirement = urlFor(SpecimenController2.DeleteDefaultRequirementAction.class).addParameter("id",0);
+    ActionURL deleteDefaultRequirement = urlFor(SpecimenController.DeleteDefaultRequirementAction.class).addParameter("id",0);
 %>
 <script type="text/javascript">
 function verifyNewRequirement(prefix)
