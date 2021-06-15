@@ -94,6 +94,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -525,34 +526,71 @@ public class DatasetQueryView extends StudyQueryView
     {
         List<QCStateSet> stateSets = QCStateSet.getSelectableSets(getContainer());
         MenuButton button = new MenuButton("QC State");
+        String dataRegionName = this.getSettings().getDataRegionName();
 
+        String eq = getUrlFilterKey(CompareType.EQUAL, dataRegionName);
+        String in = getUrlFilterKey(CompareType.IN, dataRegionName);
+        boolean urlHasEqFilter = getViewContext().cloneActionURL().getParameter(eq) != null;
+        boolean urlHasInFilter = getViewContext().cloneActionURL().getParameter(in) != null;
+        boolean urlHasNotInFilter = getViewContext().cloneActionURL().getParameter(getUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
+        boolean urlHasIsBlankFilter = getViewContext().cloneActionURL().getParameter(getUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
+
+        String publicQCLabels = getQCStateFilterString(QCStateSet.getPublicStates(getContainer()));
+        Set<String> publicQCLabelsSet = publicQCLabels != null ? new HashSet<>(Arrays.asList(publicQCLabels.split(";"))) : new HashSet<>();
+        String privateQCLabels = getQCStateFilterString(QCStateSet.getPrivateStates(getContainer()));
+        Set<String> privateQCLabelsSet = privateQCLabels != null ? new HashSet<>(Arrays.asList(privateQCLabels.split(";"))) : new HashSet<>();
+
+        boolean selected = false;
         for (QCStateSet set : stateSets)
         {
             ActionURL urlHelper = getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue()); // legacy -- to remove
             String filterValue = set.getLabel();
-            String dataRegionName = this.getSettings().getDataRegionName();
-            switch(filterValue)
+
+            switch (filterValue)
             {
-                case PUBLIC_STATES_LABEL:
-                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN, dataRegionName), getQCStateFilterString(QCStateSet.getPublicStates(getContainer())));
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName));
-                    break;
-                case PRIVATE_STATES_LABEL:
-                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.IN, dataRegionName), getQCStateFilterString(QCStateSet.getPrivateStates(getContainer())));
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName));
-                    break;
-                case ALL_STATES_LABEL:
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.IN, dataRegionName));
-                    urlHelper = urlHelper.deleteParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName));
-                    break;
-                default:
-                    urlHelper = urlHelper.replaceParameter(getUrlFilterKey(CompareType.EQUAL, dataRegionName), filterValue);
+                case PUBLIC_STATES_LABEL -> {
+                    urlHelper = urlHelper.replaceParameter(in, publicQCLabels);
+                    urlHelper = urlHelper.deleteParameter(eq);
+                }
+                case PRIVATE_STATES_LABEL -> {
+                    urlHelper = urlHelper.replaceParameter(in, privateQCLabels);
+                    urlHelper = urlHelper.deleteParameter(eq);
+                }
+                case ALL_STATES_LABEL -> {
+                    urlHelper = urlHelper.deleteParameter(in);
+                    urlHelper = urlHelper.deleteParameter(eq);
+                }
+                default -> urlHelper = urlHelper.replaceParameter(eq, filterValue);
             }
 
             NavTree setItem = new NavTree(set.getLabel(), urlHelper);
             setItem.setId("QCState:" + set.getLabel());
-            if (set.equals(currentSet))
-                setItem.setSelected(true);
+
+            // When QC State Column gets filtered, detect the change and update QC State dropdown selection accordingly
+            String urlValue = getViewContext().cloneActionURL().getParameter(urlHasInFilter ? in : eq);
+            Set<String> urlValueSet = urlValue != null ? new HashSet<>(Arrays.asList(urlValue.split(";"))) : new HashSet<>();
+            boolean urlFilterIsPublicQCStates = set.getLabel().equals(PUBLIC_STATES_LABEL) && publicQCLabelsSet.equals(urlValueSet);
+            boolean urlFilterIsPrivateQCStates = set.getLabel().equals(PRIVATE_STATES_LABEL) && privateQCLabelsSet.equals(urlValueSet);
+
+            if (!selected)
+            {
+                if (urlHasInFilter && (urlFilterIsPublicQCStates || urlFilterIsPrivateQCStates))
+                {
+                    setItem.setSelected(true);
+                    selected = true;
+                }
+                else if (set.getLabel().equals(ALL_STATES_LABEL) && (urlHasInFilter || urlHasNotInFilter || urlHasIsBlankFilter || !urlHasEqFilter))
+                {
+                    setItem.setSelected(true);
+                    selected = true;
+                }
+                else if (urlHasEqFilter && urlValueSet.equals(new HashSet<>(Arrays.asList(set.getLabel()))))
+                {
+                    setItem.setSelected(true);
+                    selected = true;
+                }
+            }
+
             button.addMenuItem(setItem);
         }
 
