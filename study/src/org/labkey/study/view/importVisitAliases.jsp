@@ -47,8 +47,8 @@
     </table>
 </labkey:form>
 <script type="text/javascript">
-    LABKEY.requiresExt3ClientAPI(function() {
+    <labkey:loadClientDependencies>
         Ext.EventManager.on('tsv', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
-    });
+    </labkey:loadClientDependencies>
 </script>
 

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -168,9 +169,9 @@
     <% if (renderAll)
     { %>
     // Allow tabs in the TSV text area
-    LABKEY.requiresExt3ClientAPI(function() {
-        Ext.EventManager.on('<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
-    });
+        <labkey:loadClientDependencies>
+            Ext.EventManager.on('<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+        </labkey:loadClientDependencies>
     <% } %>
 </script>
 

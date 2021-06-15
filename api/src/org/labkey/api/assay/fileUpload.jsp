@@ -27,6 +27,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -46,7 +47,7 @@
 </script>
 
 <script type="text/javascript">
-LABKEY.requiresExt3(function() {
+<labkey:loadClientDependencies>
 
     var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;
     var PREFIX = "<%= h(AssayDataCollector.PRIMARY_FILE) %>";
@@ -499,5 +500,5 @@ LABKEY.requiresExt3(function() {
 
     Ext.onReady(initializeFileUploadInput);
 
-}); // LABKEY.requiresExt3
+    </labkey:loadClientDependencies>
 </script>
