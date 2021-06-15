@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -1002,6 +1003,19 @@ public class PublishResultsQueryView extends QueryView
         ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenDate));
         ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.TargetStudy));
         ColumnInfo sampleIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SampleId));
+
+        // if visit or date columns don't exist, see if they can be resolved through the standard concept URIs
+        List<ColumnInfo> timepointCols = selectColumns.stream()
+                .filter(c -> PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
+                .collect(Collectors.toList());
+
+        for (ColumnInfo col : timepointCols)
+        {
+            if (dateCol == null && col.getJdbcType().isDateOrTime())
+                dateCol = col;
+            if (visitIDCol == null && col.getJdbcType().isReal())
+                visitIDCol = col;
+        }
 
         ResolverHelper resolverHelper = new ResolverHelper(
                 _targetStudyContainer, getUser(),
