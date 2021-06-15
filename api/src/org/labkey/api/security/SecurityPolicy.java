@@ -218,7 +218,8 @@ public class SecurityPolicy
     /**
      * Return set of permissions explicitly granted by this SecurityPolicy, will not inspect any
      * contextual roles (does not call UserPrincipal.getContextualRoles().  E.g. this will not
-     * reflect any permission granted due to assignment of site-wide roles.
+     * reflect any permission granted due to assignment of site-wide roles, and it will not reflect
+     * permission filtering by the impersonation context.
      */
     @NotNull
     public Set<Class<? extends Permission>> getOwnPermissions(@NotNull UserPrincipal principal)
@@ -242,7 +243,10 @@ public class SecurityPolicy
         if (contextualRoles != null)
             allContextualRoles.addAll(contextualRoles);
 
-        return getPermissions(principal.getGroups(), allContextualRoles);
+        var granted = getPermissions(principal.getGroups(), allContextualRoles);
+        if (principal instanceof User)
+            return ((User)principal).getImpersonationContext().filterPermissions(granted);
+        return granted;
     }
 
     /**

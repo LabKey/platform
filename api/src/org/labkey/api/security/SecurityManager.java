@@ -59,6 +59,7 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
+import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AddUserPermission;
@@ -2071,7 +2072,7 @@ public class SecurityManager
         SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
-            if (policy.hasPermissions(user, perms))
+            if (SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
                 users.add(user);
 
         return users;
@@ -2084,7 +2085,7 @@ public class SecurityManager
         SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
-            if (policy.hasOneOf(user, perms, null))
+            if (SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
                 users.add(user);
 
         return users;
@@ -2559,6 +2560,44 @@ public class SecurityManager
             assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
             assertTrue("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
             assertTrue("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            // Guest
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+        }
+
+        @Test
+        public void testReadOnlyImpersonate()
+        {
+            Container testFolder = JunitUtil.getTestContainer();
+
+            // Ignore all contextual roles for the test user
+            final User testuser = TestContext.get().getUser();
+            // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
+            User user = new User(testuser.getEmail(), 1000000);
+            user.setImpersonationContext(new ReadOnlyImpersonatingContext());
+
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+            // Test Site User and Guest groups
+            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+
+            policy.addRoleAssignment(user, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
+            policy.addRoleAssignment(guestGroup, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
+            policy.addRoleAssignment(userGroup, EditorRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
 
             // Guest
             assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
@@ -3556,6 +3595,8 @@ public class SecurityManager
         principal.getContextualRoles(policy).forEach(r -> granted.addAll(r.getPermissions()));
         if (null != contextualRoles)
             contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
+        if (principal instanceof User)
+            return ((User)principal).getImpersonationContext().filterPermissions(granted);
         return granted;
     }
 

@@ -21,6 +21,7 @@ package org.labkey.api.security.permissions;
  * User: adam
  * Date: Dec 8, 2009
  */
+@AllowedForReadOnlyUser
 public class TroubleShooterPermission extends AbstractPermission
 {
     public TroubleShooterPermission()

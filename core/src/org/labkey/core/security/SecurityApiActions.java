@@ -597,7 +597,7 @@ public class SecurityApiActions
                 else
                 {
                     SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-                    permissions = policy.getPermissions(user);
+                    permissions = SecurityManager.getPermissions(policy, user, Set.of());
                 }
 
                 for (Class<? extends Permission> permission : permissions)

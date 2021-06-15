@@ -65,7 +65,8 @@ public class BaseWikiPermissions
 
     public boolean allowRead()
     {
-        return _policy.hasPermission("wiki", _user, ReadPermission.class);
+        return SecurityManager.hasAllPermissions("wiki",
+                _policy, _user, Set.of(ReadPermission.class), Set.of());
     }
 
     public boolean allowRead(Wiki wiki)

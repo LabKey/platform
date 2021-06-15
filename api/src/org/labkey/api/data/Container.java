@@ -402,9 +402,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (user instanceof User && isForbiddenProject((User) user))
-            return false;
-        return getPolicy().hasPermission(logMsg, user, perm);
+        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), Set.of());
     }
 
 
