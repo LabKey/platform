@@ -16,10 +16,12 @@
 package org.labkey.api.webdav.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
+import org.labkey.api.security.permissions.AllowedForReadOnlyUser;
 
 /**
  * Created by davebradlee on 10/10/17.
  */
+@AllowedForReadOnlyUser
 public class SeeFilePathsPermission extends AbstractPermission
 {
     public SeeFilePathsPermission()
