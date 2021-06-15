@@ -455,11 +455,11 @@ public class SecurityPolicy
      * @param principal the user/group
      * @return old-style bitmask for basic permissions
      */
-    @Deprecated // Use getPermissions() instead.
+    @Deprecated // Use SecurityManager.getPermissions() instead.
     public int getPermsAsOldBitMask(UserPrincipal principal)
     {
         int perms = 0;
-        Set<Class<? extends Permission>> permClasses = getPermissions(principal);
+        Set<Class<? extends Permission>> permClasses = SecurityManager.getPermissions(this, principal, Set.of());
         if (permClasses.contains(ReadPermission.class))
             perms |= ACL.PERM_READ;
         if (permClasses.contains(InsertPermission.class))
