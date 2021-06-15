@@ -40,7 +40,7 @@ import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewForm;
-import org.labkey.specimen.actions.SpecimenController2.CompleteSpecimenAction;
+import org.labkey.specimen.actions.SpecimenController.CompleteSpecimenAction;
 
 import java.io.IOException;
 import java.io.StringWriter;

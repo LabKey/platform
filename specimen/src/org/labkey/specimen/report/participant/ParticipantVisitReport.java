@@ -17,12 +17,11 @@ package org.labkey.specimen.report.participant;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.CohortFilter;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.report.SpecimenReportManager;
 import org.labkey.specimen.report.SpecimenReportTitle;
 import org.labkey.specimen.report.SpecimenVisitReport;
@@ -109,7 +108,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SummaryByVisitPa
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
-        ActionURL link = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(_container, true);
+        ActionURL link = SpecimenController.getSpecimensURL(_container, true);
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
         link = updateURLFilterParameter(link, "SpecimenDetail." + StudyService.get().getSubjectColumnName(getContainer()), summary.getParticipantId());
         String linkHtml = link.getLocalURIString();

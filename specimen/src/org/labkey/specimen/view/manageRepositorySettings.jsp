@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ManageRepositorySettingsAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ManageRepositorySettingsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
