@@ -7,7 +7,7 @@ apply plugin: 'org.labkey.javaModule'
 dependencies {
     external("commons-io:commons-io:${commonsIoVersion}")
 
-    external("org.hamcrest:hamcrest-core:${hamcrestCoreVersion}")
+    external("org.hamcrest:hamcrest-core:${hamcrestVersion}")
     external("org.springframework:spring-context:${springVersion}")
     external("com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}")
     external("com.rometools:rome:${romeVersion}")
