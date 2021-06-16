@@ -200,21 +200,6 @@ public class SecurityPolicy
     }
 
 
-    @NotNull
-    public List<String> getPermissionNames(@NotNull UserPrincipal principal)
-    {
-        Set<Class<? extends Permission>> perms = getPermissions(principal);
-        List<String> names = new ArrayList<>(perms.size());
-        for (Class<? extends Permission> perm : perms)
-        {
-            Permission permInst = RoleManager.getPermission(perm);
-            if (null != permInst)
-                names.add(permInst.getUniqueName());
-        }
-        return names;
-    }
-
-
     /**
      * Return set of permissions explicitly granted by this SecurityPolicy, will not inspect any
      * contextual roles (does not call UserPrincipal.getContextualRoles().  E.g. this will not
@@ -227,27 +212,6 @@ public class SecurityPolicy
         return getOwnPermissions(principal.getGroups());
     }
 
-    /* TODO: SecurityManager.hasPermissions() find usages outside this package */
-    @NotNull
-    private Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
-    {
-        return getPermissions(principal, null);
-    }
-
-    /** Callers outside this package should use SecurityManager.getPermissions() */
-    @NotNull
-    private Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
-    {
-        // TODO: Should we be mutating the result of getContextualRoles()?  Some implementations would like to return unmodifiable collections...
-        Set<Role> allContextualRoles = getContextualRoles(principal);
-        if (contextualRoles != null)
-            allContextualRoles.addAll(contextualRoles);
-
-        var granted = getPermissions(principal.getGroups(), allContextualRoles);
-        if (principal instanceof User)
-            return ((User)principal).getImpersonationContext().filterPermissions(granted);
-        return granted;
-    }
 
     /**
      * Returns true if this policy is empty (i.e., no role assignments).
@@ -262,36 +226,16 @@ public class SecurityPolicy
     }
 
 
-    /** Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission() */
-    public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
-    {
-        try
-        {
-            SecurityLogger.indent(logMsg);
-            return _hasPermission(principal, permission, null);
-        }
-        finally
-        {
-            SecurityLogger.outdent();
-        }
-    }
-
-
-    /** Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission() */
+    /**
+     * Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission[s]().
+     * If you are modifying a SecurityPolicy you should use getOwnPermissions() or getAssignments()
+     *
+     */
+    @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
-        return _hasPermission(principal, permission, null);
+        return SecurityManager.hasAllPermissions(null, this, principal, Set.of(permission), Set.of());
     }
-
-
-    private boolean _hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
-    {
-        testPermissionIsRegistered(permission);
-        boolean ret = getPermissions(principal, contextualRoles).contains(permission);
-        SecurityLogger.log("SecurityPolicy.hasPermission " + permission.getSimpleName(), principal, this, ret);
-        return ret;
-    }
-
 
     // Throttle that limits warning logging to once per hour per permission class
     private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn(permission + " is not registered!"));

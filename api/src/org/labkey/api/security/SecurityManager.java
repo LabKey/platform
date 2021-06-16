@@ -3625,5 +3625,20 @@ public class SecurityManager
         }
     }
 
+    @NotNull
+    public static List<String> getPermissionNames(SecurityPolicy policy, @NotNull UserPrincipal principal)
+    {
+        Set<Class<? extends Permission>> perms = SecurityManager.getPermissions(policy, principal, null);
+        List<String> names = new ArrayList<>(perms.size());
+        for (Class<? extends Permission> perm : perms)
+        {
+            Permission permInst = RoleManager.getPermission(perm);
+            if (null != permInst)
+                names.add(permInst.getUniqueName());
+        }
+        return names;
+    }
+
+
     enum Option { ANY, ALL };
 }

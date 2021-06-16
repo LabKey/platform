@@ -1296,7 +1296,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (includePermissions)
             {
                 containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
-                containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
+                containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(getPolicy(), user));
             }
             if (null != getDescription())
                 containerProps.put("description", getDescription());
