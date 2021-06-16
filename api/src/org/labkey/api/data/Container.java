@@ -931,7 +931,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        Set<Module> requiredModules = new HashSet<>(getFolderType().getActiveModules());
+        Set<Module> requiredModules = new HashSet<>(getRequiredModulesForFolderType(getFolderType()));
         requiredModules.add(ModuleLoader.getInstance().getModule("API"));
         requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
 
@@ -939,11 +939,28 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             if (child.isWorkbook())
             {
-                requiredModules.addAll(child.getFolderType().getActiveModules());
+                requiredModules.addAll(getRequiredModulesForFolderType(child.getFolderType()));
             }
         }
 
         return requiredModules;
+    }
+
+    public Set<Module> getRequiredModulesForFolderType(FolderType folderType)
+    {
+        Set<Module> modules = new HashSet<>();
+        if (!folderType.equals(FolderType.NONE))
+        {
+            for (Module module : folderType.getActiveModules())
+            {
+                // check for null, since there's no guarantee that a third-party folder type has all its
+                // active modules installed on this system (so nulls may end up in the list- bug 6757):
+                // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
+                if (module != null && module.canBeEnabled(this))
+                    modules.add(module);
+            }
+        }
+        return modules;
     }
 
     @NotNull
@@ -1164,25 +1181,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         Set<Module> modules = new HashSet<>();
+
+        // always put the required modules in the set
+        // note that this will pickup the modules from the folder type's getActiveModules()
+        modules.addAll(getRequiredModules());
+
         // add all modules found in user preferences:
         for (String moduleName : props.keySet())
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
             if (module != null && module.canBeEnabled(this))
                 modules.add(module);
-        }
-
-        // ensure all modules for folder type are added (may have been added after save)
-        if (!getFolderType().equals(FolderType.NONE))
-        {
-            for (Module module : getFolderType().getActiveModules())
-            {
-                // check for null, since there's no guarantee that a third-party folder type has all its
-                // active modules installed on this system (so nulls may end up in the list- bug 6757):
-                // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
-                if (module != null && module.canBeEnabled(this))
-                    modules.add(module);
-            }
         }
 
         // add all 'always display' modules, remove all 'never display' modules:
