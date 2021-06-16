@@ -204,7 +204,7 @@ public class SecurityApiActions
                 }
 
                 //add effective roles array
-                Set<Role> effectiveRoles = policy.getEffectiveRoles(group);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy, group);
                 ArrayList<String> effectiveRoleList = new ArrayList<>();
                 for (Role effectiveRole : effectiveRoles)
                 {
@@ -343,7 +343,7 @@ public class SecurityApiActions
 
             //effective roles
             List<String> effectiveRoles = new ArrayList<>();
-            for(Role effectiveRole : policy.getEffectiveRoles(user))
+            for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy,user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
@@ -372,7 +372,7 @@ public class SecurityApiActions
 
                 //effective roles
                 List<String> groupEffectiveRoles = new ArrayList<>();
-                for(Role effectiveRole : policy.getEffectiveRoles(group))
+                for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy, group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }

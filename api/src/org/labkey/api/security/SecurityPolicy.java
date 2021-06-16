@@ -175,30 +175,6 @@ public class SecurityPolicy
         return roles;
     }
 
-    /**
-     * Returns the roles the principal is playing, either due to
-     * direct assignment, or due to membership in a group that is
-     * assigned the role.
-     * @param principal The principal
-     * @return The roles this principal is playing
-     */
-    @NotNull
-    public Set<Role> getEffectiveRoles(@NotNull UserPrincipal principal)
-    {
-        return getEffectiveRoles(principal, true);
-    }
-
-    @NotNull
-    public Set<Role> getEffectiveRoles(@NotNull UserPrincipal principal, boolean includeContextualRoles)
-    {
-        Set<Role> roles = getRoles(principal.getGroups());
-        roles.addAll(getAssignedRoles(principal));
-        if (includeContextualRoles)
-            roles.addAll(getContextualRoles(principal));
-
-        return roles;
-    }
-
 
     /**
      * Return set of permissions explicitly granted by this SecurityPolicy, will not inspect any
@@ -275,23 +251,6 @@ public class SecurityPolicy
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             else
                 ++principalsIdx;
-        }
-
-        return perms;
-    }
-
-
-    private Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
-    {
-        var perms = getOwnPermissions(principals);
-
-        //apply contextual roles if any
-        if (null != contextualRoles)
-        {
-            for (Role role : contextualRoles)
-            {
-                perms.addAll(role.getPermissions());
-            }
         }
 
         return perms;
@@ -404,6 +363,7 @@ public class SecurityPolicy
         return props;
     }
 
+
     /**
      * Create a map of the roleAssignments with the key as the role name and the value as a map
      * between the principalType and the list of UserPrincipals of that type assigned the particular role
@@ -435,11 +395,6 @@ public class SecurityPolicy
         return assignmentsMap;
     }
 
-    @NotNull
-    protected Set<Role> getContextualRoles(@NotNull UserPrincipal principal)
-    {
-        return principal.getContextualRoles(this);
-    }
 
     public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
     {

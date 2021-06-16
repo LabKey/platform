@@ -3571,19 +3571,15 @@ public class SecurityManager
      *
      * This will let the SecurityPolicy object just handle it's own ACL-like functionality e.g. computing the
      * permissions that it explicitly assigns (resolving roles and groups).
-     *
-     * TODO We've removed the SecurityPolicy methods that take parameter "Set<Role> contextualRole", however it has
-     * TODO methods that call UserPrincipal.getContextualRoles().
      */
-
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, Option.ALL);
+        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
     }
 
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, Option.ANY);
+        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ANY);
     }
 
     public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
@@ -3601,7 +3597,7 @@ public class SecurityManager
         return granted;
     }
 
-    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, Option opt)
+    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
@@ -3611,7 +3607,7 @@ public class SecurityManager
             var granted = getPermissions(policy, principal, contextualRoles);
 
             boolean ret;
-            if (opt == Option.ALL)
+            if (opt == HasPermissionOption.ALL)
                 ret = granted.containsAll(permissions);
             else
                 ret = permissions.stream().anyMatch(granted::contains);
@@ -3639,6 +3635,28 @@ public class SecurityManager
         return names;
     }
 
+    /**
+     * Returns the roles the principal is playing, either due to
+     * direct assignment, or due to membership in a group that is
+     * assigned the role.
+     * @param principal The principal
+     * @return The roles this principal is playing
+     */
+    @NotNull
+    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal)
+    {
+        return getEffectiveRoles(policy, principal, true);
+    }
 
-    enum Option { ANY, ALL };
+    @NotNull
+    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeContextualRoles)
+    {
+        Set<Role> roles = policy.getRoles(principal.getGroups());
+        roles.addAll(policy.getAssignedRoles(principal));
+        if (includeContextualRoles)
+            roles.addAll(principal.getContextualRoles(policy));;
+        return roles;
+    }
+
+    private enum HasPermissionOption { ANY, ALL };
 }
