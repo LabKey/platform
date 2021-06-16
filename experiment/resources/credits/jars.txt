@@ -1,4 +1,0 @@
-{table}
-Filename|Component|Source|License|Purpose
-commons-math3-3.6.1.jar|Commons Math|{link:Apache|http://commons.apache.org/math/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|Lightweight, self-contained mathematics and statistics components
-{table}

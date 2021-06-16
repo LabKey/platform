@@ -1,29 +1,80 @@
 import org.labkey.gradle.util.BuildUtils
+import org.labkey.gradle.util.ExternalDependency
 
 apply plugin: 'java'
 apply plugin: 'java-library'
 apply plugin: 'org.labkey.javaModule'
 
 dependencies {
-    external("commons-io:commons-io:${commonsIoVersion}")
+    // These are external dependencies, but we do not need to duplicate what the api module
+    // already includes in its external declarations.
+    implementation("commons-io:commons-io:${commonsIoVersion}")
+    implementation("org.hamcrest:hamcrest-core:${hamcrestVersion}")
+    implementation("org.springframework:spring-context:${springVersion}")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}")
+    implementation("commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}")
+    implementation("org.apache.commons:commons-collections4:${commonsCollections4Version}")
+    implementation("org.apache.logging.log4j:log4j-api:${log4j2Version}")
+    implementation("org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}")
+    implementation("commons-net:commons-net:${commonsNetVersion}")
+    implementation("com.google.gwt:gwt-servlet:${gwtServletVersion}")
+    implementation("org.apache.commons:commons-lang3:${commonsLang3Version}")
+    implementation("junit:junit:${junitVersion}")
+    implementation("org.springframework:spring-webmvc:${springVersion}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+    implementation("org.quartz-scheduler:quartz:${quartzVersion}")
+    implementation("org.springframework:spring-beans:${springVersion}")
 
-    external("org.hamcrest:hamcrest-core:${hamcrestVersion}")
-    external("org.springframework:spring-context:${springVersion}")
-    external("com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}")
-    external("com.rometools:rome:${romeVersion}")
-    external("commons-beanutils:commons-beanutils:${commonsBeanutilsVersion}")
-    external("org.apache.commons:commons-collections4:${commonsCollections4Version}")
-    external("com.google.guava:guava:${guavaVersion}")
-    external("org.apache.logging.log4j:log4j-api:${log4j2Version}")
-    external("org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}")
-    external("commons-net:commons-net:${commonsNetVersion}")
-    external("com.google.gwt:gwt-servlet:${gwtServletVersion}")
-    external("org.apache.commons:commons-lang3:${commonsLang3Version}")
-    external("junit:junit:${junitVersion}")
-    external("org.springframework:spring-webmvc:${springVersion}")
-    external("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
-    external("org.quartz-scheduler:quartz:${quartzVersion}")
-    external("org.springframework:spring-beans:${springVersion}")
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "commons-net:commons-net:${commonsNetVersion}",
+                    "Commons Net",
+                    "Apache",
+                    "http://jakarta.apache.org/commons/net/",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "FTPClient used to retrieve resources from other servers (e.g., GO annotations)"
+            )
+    )
+
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    'com.sun.script.js:jsr223-js-engine:Aug2008',
+                    "JSR-223 ScriptEngine for Rhino",
+                    "Scripting Project",
+                    "https://scripting.dev.java.net/",
+                    ExternalDependency.BSD_LICENSE_NAME,
+                    ExternalDependency.BSD_LICENSE_URL,
+                    "JSR-223 ScriptEngine APIs for Rhino"
+            )
+    )
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    'org.mozilla:rhino:1.7R3',
+                    "Mozilla Rhino",
+                    "Mozilla Rhino",
+                    "http://www.mozilla.org/rhino/",
+                    "MPL 1.1",
+                    "http://www.mozilla.org/MPL",
+                    "Embedded JavaScript engine"
+            )
+    )
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "com.rometools:rome:${romeVersion}",
+                    "ROME",
+                    "ROME",
+                    "https://github.com/rometools/rome",
+                    ExternalDependency.APACHE_2_LICENSE_NAME,
+                    ExternalDependency.APACHE_2_LICENSE_URL,
+                    "Support for RSS and Atom aggregation"
+            )
+    )
+
     BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getRemoteApiProjectPath(project.gradle), depVersion: BuildUtils.getLabKeyClientApiVersion(project))
     BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "runtimeElements")
     if (project.configurations.findByName("dedupe") != null)
@@ -31,8 +82,6 @@ dependencies {
     api "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
     implementation "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
     api  "org.labkey.api:labkey-client-api:${labkeyClientApiVersion}"
-    external  'com.sun.script.js:jsr223-js-engine:Aug2008'
-    external  'org.mozilla:rhino:1.7R3'
 }
 
 sourceSets {
