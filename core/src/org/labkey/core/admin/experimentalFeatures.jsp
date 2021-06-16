@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -27,6 +26,20 @@
         dependencies.add("internal/jQuery");
     }
 %>
+<style>
+    .toggle-label-text {
+        font-size: 1.1em;
+        font-weight: bold;
+        padding-top: 0.1em;
+        padding-bottom: 0.1em;
+        display: inline-block;
+    }
+
+    .list-group-item-text {
+        margin-left: 1.5em;
+    }
+</style>
+
 <p class="labkey-error">
     <strong>WARNING</strong>:
     These experimental features may change, break, or disappear at any time.
@@ -36,34 +49,35 @@
 <div class="list-group">
 <% for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags()) { %>
 <div class="list-group-item">
-    <h4 class="list-group-item-heading" style="font-weight: bold"><%=h(flag.getTitle())%></h4>
-    <p class="list-group-item-text"><%=h(flag.getDescription())%></p>
+    <label>
+        <input id="<%=h(flag.getFlag())%>" type="checkbox" <%=checked(flag.isEnabled())%>>
+        <span class="toggle-label-text"><%=h(flag.getTitle())%></span>
+    </label>
+    <div class="list-group-item-text"><%=h(flag.getDescription())%></div>
     <% if (flag.isRequiresRestart()) { %>
     <div>Restart required after toggling feature.</div>
     <% } %>
-    <%=link(flag.isEnabled() ? "Disable" : "Enable").href("javascript:void(0);").attributes(Collections.singletonMap("data-exp-flag", flag.getFlag()))%>
 </div>
 <% } %>
 </div>
 <script type="application/javascript">
-    +function($) {
-        $(function() {
-            $('a[data-exp-flag]').click(function(evt) {
-                var el = $(evt.target);
-                var flag = el.attr('data-exp-flag');
-                if (flag) {
-                    LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('admin', 'experimentalFeature.api'),
-                        method: 'POST',
-                        params: { feature: flag, enabled: el.text() == 'Enable' },
-                        success: LABKEY.Utils.getCallbackWrapper(function(json) {
-                            el.text(json.enabled ? 'Disable' : 'Enable');
-                        }),
-                        failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
-                    });
-                }
+    (function () {
+        let inputList = document.querySelectorAll('div.list-group-item input');
+        inputList.forEach(function (input) {
+            input.addEventListener('change', function (e) {
+                let flag = input.id;
+                let enabled = input.checked;
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('admin', 'experimentalFeature.api'),
+                    method: 'POST',
+                    params: { feature: flag, enabled: enabled },
+                    success: LABKEY.Utils.getCallbackWrapper(function(json) {
+                        console.log((json.enabled ? 'Enabled' : 'Disabled') + ' experimental feature');
+                    }),
+                    failure: LABKEY.Utils.getCallbackWrapper(null, null, true)
+                });
             });
         });
-    }(jQuery);
+    })();
 </script>
 

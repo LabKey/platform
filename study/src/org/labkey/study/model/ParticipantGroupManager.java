@@ -94,15 +94,10 @@ public class ParticipantGroupManager
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
     private static final List<ParticipantCategoryListener> _listeners = new CopyOnWriteArrayList<>();
     private static final Cache<String, List<ParticipantGroup>> GROUP_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Group Cache", null);
-    private static final Cache<Container, List<ParticipantCategoryImpl>> CATEGORY_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache", new CacheLoader<Container, List<ParticipantCategoryImpl>>()
-    {
-        @Override
-        public List<ParticipantCategoryImpl> load(Container key, @Nullable Object argument)
-        {
-            TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(key), null);
+    private static final Cache<Container, List<ParticipantCategoryImpl>> CATEGORY_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Participant Category Cache", (key, argument) -> {
+        TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(key), null);
 
-            return Collections.unmodifiableList(selector.getArrayList(ParticipantCategoryImpl.class));
-        }
+        return Collections.unmodifiableList(selector.getArrayList(ParticipantCategoryImpl.class));
     });
 
     private static final String PARTICIPANT_GROUP_SESSION_KEY = "LABKEY.sharedStudyParticipantFilter.";

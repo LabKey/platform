@@ -19,14 +19,13 @@
 <%@ page import="org.labkey.api.compliance.ComplianceService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.data.PHI" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.security.SecurityManager.ViewFactory" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
@@ -37,7 +36,9 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.StudyInternalServiceImpl" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
@@ -60,7 +61,6 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.StudySnapshot" %>
-<%@ page import="org.labkey.api.specimen.view.ManageSpecimenView" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
@@ -309,8 +309,12 @@
 <%
     } // admin permission
 
-    if (SpecimenManager.get().isSpecimenModuleActive(c))
-        include(new ManageSpecimenView(), out);
+    for (ViewFactory vf : StudyInternalServiceImpl.VIEW_FACTORIES)
+    {
+        HttpView<?> view = vf.createView(getViewContext());
+        if (null != view)
+            include(view, out);
+    }
 
     if (study.allowExport(getUser()))
     {

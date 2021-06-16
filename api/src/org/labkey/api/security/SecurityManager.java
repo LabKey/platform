@@ -2237,7 +2237,7 @@ public class SecurityManager
 
     public interface ViewFactory
     {
-        HttpView createView(ViewContext context);
+        @Nullable HttpView<?> createView(ViewContext context);
     }
 
     // Modules register a factory to add module-specific ui to the permissions page

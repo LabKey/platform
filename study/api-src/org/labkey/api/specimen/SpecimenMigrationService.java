@@ -21,22 +21,18 @@ public interface SpecimenMigrationService
         ServiceRegistry.get().registerService(SpecimenMigrationService.class, impl);
     }
 
-    ActionURL getAutoReportListURL(Container c);
-    ActionURL getConfigureRequestabilityRulesURL(Container c);
-    ActionURL getManageDisplaySettings(Container c);
-    ActionURL getManageNotificationsURL(Container c);
-    ActionURL getManageRepositorySettingsURL(Container c);
-    ActionURL getManageDefaultReqsSettingsURL(Container c);
-    ActionURL getOverviewURL(Container c);
-    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, @Nullable ActionURL returnUrl);
-    ActionURL getShowSearchURL(Container c, boolean showVials);
+    ActionURL getBeginURL(Container c);
+    ActionURL getManageRequestStatusURL(Container c, int requestId);
+    ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl);
+    ActionURL getSelectedSpecimensURL(Container c);
     ActionURL getSpecimenEventsURL(Container c, ActionURL returnUrl);
-    ActionURL getSpecimenRequestConfigRequiredURL(Container c);
     ActionURL getSpecimenRequestEventDownloadURL(SpecimenRequestEvent event, String name);
+    ActionURL getSpecimensURL(Container c);
+    ActionURL getSpecimensURL(Container c, boolean showVials);
     ActionURL getUploadSpecimensURL(Container c);
     ActionURL getViewRequestsURL(Container c);
 
+    Class<? extends Controller> getClearCommentsActionClass();
     Class<? extends Controller> getShowCreateSpecimenRequestActionClass();
-    Class<? extends Controller> getShowAPICreateSpecimenRequestActionClass();
-    Class<? extends Controller> getExtendedSpecimenRequestActionClass();
+    Class<? extends Controller> getUpdateCommentsActionClass();
 }

@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
 
+import static org.labkey.api.settings.LookAndFeelProperties.APPLICATION_MENU_DISPLAY_MODE;
 import static org.labkey.api.settings.LookAndFeelProperties.COMPANY_NAME_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.CUSTOM_LOGIN_PROP;
 import static org.labkey.api.settings.LookAndFeelProperties.CUSTOM_WELCOME_PROP;
@@ -76,6 +77,11 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
     public void setFolderDisplayMode(FolderDisplayMode folderDisplayMode)
     {
         storeStringValue(FOLDER_DISPLAY_MODE, folderDisplayMode.toString());
+    }
+
+    public void setApplicationMenuDisplayMode(FolderDisplayMode displayMode)
+    {
+        storeStringValue(APPLICATION_MENU_DISPLAY_MODE, displayMode.toString());
     }
 
     public void setDateParsingMode(DateParsingMode dateParsingMode)
