@@ -19,15 +19,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * A resource to which users and groups may be assigned roles. Examples include {@link org.labkey.api.data.Container} and {@link org.labkey.api.study.Dataset}.
  * User: Dave
  * Date: Apr 9, 2009
  */
-public interface SecurableResource
+public interface SecurableResource extends HasPermission
 {
     /**@return a GUID, unique to this resource */
     @NotNull
@@ -63,5 +65,13 @@ public interface SecurableResource
     default public String getDebugName()
     {
         return getClass().getName() + ":" + getResourceName();
+    }
+
+    @Override
+    default boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(this);
+        return SecurityManager.hasAllPermissions(this.getClass().getName() + ":" + getResourceName(),
+                policy, user, Set.of(perm), Set.of());
     }
 }

@@ -229,14 +229,14 @@ public class SecurityPolicy
 
     /* TODO: SecurityManager.hasPermissions() find usages outside this package */
     @NotNull
-    public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
+    private Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal)
     {
         return getPermissions(principal, null);
     }
 
     /** Callers outside this package should use SecurityManager.getPermissions() */
     @NotNull
-    Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
+    private Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
     {
         // TODO: Should we be mutating the result of getContextualRoles()?  Some implementations would like to return unmodifiable collections...
         Set<Role> allContextualRoles = getContextualRoles(principal);
@@ -337,7 +337,7 @@ public class SecurityPolicy
     }
 
 
-    Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
+    private Set<Class<? extends Permission>> getPermissions(@NotNull int[] principals, @Nullable Set<Role> contextualRoles)
     {
         var perms = getOwnPermissions(principals);
 
