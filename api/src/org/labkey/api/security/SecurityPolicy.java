@@ -249,7 +249,7 @@ public class SecurityPolicy
         return granted;
     }
 
-    /**
+    /**fb_securitymanager_getpermissions
      * Returns true if this policy is empty (i.e., no role assignments).
      * This method is useful for distinguishing between a policy that has
      * been established for a SecurableResource and a cached "miss"
@@ -262,7 +262,7 @@ public class SecurityPolicy
     }
 
 
-    private boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         try
         {
