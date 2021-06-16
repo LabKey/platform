@@ -249,7 +249,7 @@ public class SecurityPolicy
         return granted;
     }
 
-    /**fb_securitymanager_getpermissions
+    /**
      * Returns true if this policy is empty (i.e., no role assignments).
      * This method is useful for distinguishing between a policy that has
      * been established for a SecurableResource and a cached "miss"
@@ -262,12 +262,13 @@ public class SecurityPolicy
     }
 
 
+    /** Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission() */
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         try
         {
             SecurityLogger.indent(logMsg);
-            return hasPermission(principal, permission, null);
+            return _hasPermission(principal, permission, null);
         }
         finally
         {
@@ -276,27 +277,14 @@ public class SecurityPolicy
     }
 
 
-    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
+    /** Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission() */
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
-        return hasPermission(principal, permission, null);
+        return _hasPermission(principal, permission, null);
     }
 
 
-    private boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
-    {
-        try
-        {
-            SecurityLogger.indent(logMsg);
-            return hasPermission(principal, permission, contextualRoles);
-        }
-        finally
-        {
-            SecurityLogger.outdent();
-        }
-    }
-
-    private boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
+    private boolean _hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
         testPermissionIsRegistered(permission);
         boolean ret = getPermissions(principal, contextualRoles).contains(permission);
@@ -304,51 +292,6 @@ public class SecurityPolicy
         return ret;
     }
 
-    private boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
-    {
-        Set<Class<? extends Permission>> permsSet = new HashSet<>(Arrays.asList(permissions));
-        return hasPermissions(principal, permsSet);
-    }
-
-
-    private boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions)
-    {
-        return hasPermissions(principal, permissions, null);
-    }
-
-    private boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
-    {
-        permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
-        boolean ret = getPermissions(principal, contextualRoles).containsAll(permissions);
-        SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, this, ret);
-        return ret;
-    }
-
-    /**
-     *  Callers outside this package should use SecurityManager.hasAnyPermissions()
-     *
-     * Returns true if the principal has at least one of the required permissions.
-     * @param principal The principal.
-     * @param permissions The set of required permissions.
-     * @param contextualRoles An optional set of contextual roles (or null)
-     * @return True if the principal has at least one of the required permissions.
-     */
-    private boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
-    {
-        permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
-        boolean ret = false;
-        Set<Class<? extends Permission>> grantedPerms = getPermissions(principal, contextualRoles);
-        for (Class<? extends Permission> requiredPerm : permissions)
-        {
-            if (grantedPerms.contains(requiredPerm))
-            {
-                ret = true;
-                break;
-            }
-        }
-        SecurityLogger.log("SecurityPolicy.hasOneOf " + permissions.toString(), principal, this, ret);
-        return ret;
-    }
 
     // Throttle that limits warning logging to once per hour per permission class
     private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn(permission + " is not registered!"));

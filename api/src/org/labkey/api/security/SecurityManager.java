@@ -3569,10 +3569,11 @@ public class SecurityManager
      * This is a choke point for checking permissions.
      * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
      *
-     * This will let the SecurityPolicy object just handle it's own ACL-like functionality (e.g. computing the
+     * This will let the SecurityPolicy object just handle it's own ACL-like functionality e.g. computing the
      * permissions that it explicitly assigns (resolving roles and groups).
      *
-     * TODO remove the SecurityPolicy methods that take parameter "Set<Role> contextualRole")
+     * TODO We've removed the SecurityPolicy methods that take parameter "Set<Role> contextualRole", however it has
+     * TODO methods that call UserPrincipal.getContextualRoles().
      */
 
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
