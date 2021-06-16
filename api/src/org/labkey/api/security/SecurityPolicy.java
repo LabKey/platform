@@ -262,8 +262,7 @@ public class SecurityPolicy
     }
 
 
-    /* TODO: SecurityManager.hasPermissions() */
-    public boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
+    private boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         try
         {
@@ -277,15 +276,14 @@ public class SecurityPolicy
     }
 
 
-    /* TODO: SecurityManager.hasPermissions() */
+    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         return hasPermission(principal, permission, null);
     }
 
 
-    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
-    boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
+    private boolean hasPermission(String logMsg, @NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
         try
         {
@@ -298,9 +296,7 @@ public class SecurityPolicy
         }
     }
 
-
-    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
-    boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
+    private boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission, @Nullable Set<Role> contextualRoles)
     {
         testPermissionIsRegistered(permission);
         boolean ret = getPermissions(principal, contextualRoles).contains(permission);
@@ -308,24 +304,19 @@ public class SecurityPolicy
         return ret;
     }
 
-
-    /* TODO: SecurityManager.hasPermissions() */
-    public boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
+    private boolean hasPermissions(@NotNull UserPrincipal principal, Class<? extends Permission>... permissions)
     {
         Set<Class<? extends Permission>> permsSet = new HashSet<>(Arrays.asList(permissions));
         return hasPermissions(principal, permsSet);
     }
 
 
-    /* TODO: SecurityManager.hasPermissions() */
-    public boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions)
+    private boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions)
     {
         return hasPermissions(principal, permissions, null);
     }
 
-
-    /** Callers outside this package should use SecurityManager.hasAllPermissions() */
-    boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    private boolean hasPermissions(@NotNull UserPrincipal principal, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
         permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
         boolean ret = getPermissions(principal, contextualRoles).containsAll(permissions);
@@ -342,7 +333,7 @@ public class SecurityPolicy
      * @param contextualRoles An optional set of contextual roles (or null)
      * @return True if the principal has at least one of the required permissions.
      */
-    public boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    private boolean hasOneOf(@NotNull UserPrincipal principal, @NotNull Collection<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
     {
         permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
         boolean ret = false;
