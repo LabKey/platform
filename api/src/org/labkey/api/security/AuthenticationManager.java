@@ -191,10 +191,16 @@ public class AuthenticationManager
         // Handle each provider's startup properties
         getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
-        // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
-        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
-            .filter(cp->!cp.getName().equals(PROVIDERS_KEY)) // Ignore "Authentication" -- we don't use this property anymore
-            .forEach(cp->saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
+        // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes, default domain)
+        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY)
+            .forEach(cp-> {
+                switch(cp.getName())
+                {
+                    case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
+                    case DEFAULT_DOMAIN -> saveAuthSetting(null, cp.getName(), cp.getValue());
+                    default -> _log.warn("Property '" + cp.getName() + "' does not map to a known authentication property");
+                }
+            });
     }
 
     public enum Priority { High, Low }
@@ -263,13 +269,20 @@ public class AuthenticationManager
         return value == null ? defaultValue : Boolean.valueOf(value);
     }
 
-    public static void saveAuthSetting(User user, String key, boolean value)
+    public static void saveAuthSetting(User user, String key, Object value)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(key, Boolean.toString(value));
+        if (value instanceof Boolean)
+        {
+            props.put(key, Boolean.toString((boolean) value));
+            addAuthSettingAuditEvent(user, key, (boolean) value ? "enabled" : "disabled");
+        }
+        else
+        {
+            props.put(key, (String) value);
+            addAuthSettingAuditEvent(user, key, "set to " + value);
+        }
         props.save();
-
-        addAuthSettingAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
     public static void saveAuthSettings(User user, Map<String, Object> map)

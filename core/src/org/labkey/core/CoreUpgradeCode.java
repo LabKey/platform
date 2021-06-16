@@ -17,9 +17,6 @@ package org.labkey.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
@@ -38,7 +35,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -215,40 +212,30 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            // Removed from AppPropsImpl
+            // Taken from AppPropsImpl
             final String DEFAULT_DOMAIN_PROP = "defaultDomain";
+            final String SITE_CONFIG_NAME = "SiteConfig";
 
-            String defaultDomainFromAppProps = lookupStringValue(DEFAULT_DOMAIN_PROP, "");
-            AuthenticationManager.setDefaultDomain(defaultDomainFromAppProps);
+            String defaultDomain = (new AbstractWriteableSettingsGroup(){
+                @Override
+                protected String getGroupName()
+                {
+                    return "site settings";
+                }
+
+                @Override
+                protected String getType()
+                {
+                    return SITE_CONFIG_NAME;
+                }
+
+                private String getDefaultDomain()
+                {
+                    return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
+                }
+            }).getDefaultDomain();
+
+            AuthenticationManager.setDefaultDomain(defaultDomain);
         }
-    }
-
-    public Map<String, String> getProperties(Container c)
-    {
-        // Copied from AppPropsImpl
-        final String SITE_CONFIG_NAME = "SiteConfig";
-        return PropertyManager.getProperties(SITE_CONFIG_USER, c, SITE_CONFIG_NAME);
-    }
-
-    protected String lookupStringValue(Container c, String name, @Nullable String defaultValue)
-    {
-        Map<String, String> props = getProperties(c);
-        String value = props.get(name);
-        return value != null ? value : defaultValue;
-    }
-
-    protected String lookupStringValue(String name, @Nullable String defaultValue)
-    {
-        Container root = null;
-
-        try
-        {
-            root = ContainerManager.getRoot();
-        }
-        catch (ContainerManager.RootContainerException e)
-        {
-        }
-
-        return null != root ? lookupStringValue(root, name, defaultValue) : defaultValue;
     }
 }
