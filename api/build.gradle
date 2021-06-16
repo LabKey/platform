@@ -88,7 +88,7 @@ List others = [
         "xerces:xercesImpl:${xercesImplVersion}",
         "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
         "org.postgresql:postgresql:${postgresqlDriverVersion}",
-        "org.hamcrest:hamcrest-core:${hamcrestCoreVersion}"
+        "org.hamcrest:hamcrest-core:${hamcrestVersion}"
 ]
 
 List javax = [
