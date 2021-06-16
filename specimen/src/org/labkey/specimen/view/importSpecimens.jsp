@@ -18,8 +18,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.ImportSpecimensBean"%>
-<%@ page import="org.labkey.specimen.actions.SpecimenController2.SubmitSpecimenBatchImportAction" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.ImportSpecimensBean"%>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.SubmitSpecimenBatchImportAction" %>
 <%@ page import="org.labkey.specimen.pipeline.SpecimenArchive" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.zip.ZipException" %>

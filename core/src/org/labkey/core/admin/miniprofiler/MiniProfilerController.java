@@ -89,7 +89,7 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public ModelAndView getView(MiniProfilerSettingsForm form, boolean reshow, BindException errors)
         {
-            MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings();
+            MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings(getUser());
 
             getPageConfig().setHelpTopic(MiniProfiler.getHelpTopic());
 
@@ -100,7 +100,7 @@ public class MiniProfilerController extends SpringActionController
         public boolean handlePost(MiniProfilerSettingsForm form, BindException errors)
         {
             MiniProfiler.Settings settings = form.getBean();
-            MiniProfiler.saveSettings(settings);
+            MiniProfiler.saveSettings(settings, getUser());
 
             return true;
         }
@@ -118,6 +118,37 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
+    @JsonIgnoreProperties("apiVersion")
+    public static class MinimizeForm
+    {
+        private boolean _minimized;
+
+        public boolean isMinimized()
+        {
+            return _minimized;
+        }
+
+        public void setMinimized(boolean minimized)
+        {
+            _minimized = minimized;
+        }
+    }
+
+    @IgnoresAllocationTracking
+    @RequiresPermission(AdminPermission.class)
+    public class MinimizeAction extends MutatingApiAction<MinimizeForm>
+    {
+        @Override
+        public Object execute(MinimizeForm form, BindException errors) throws Exception
+        {
+            MiniProfiler.Settings settings = MiniProfiler.getSettings(getUser());
+            settings.setStartMinimized(form.isMinimized());
+            MiniProfiler.saveSettings(settings, getUser());
+            boolean minimized = settings.isStartMinimized();
+            return success(Collections.singletonMap("minimize", minimized));
+        }
+    }
+
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
     public class ResetAction extends FormHandlerAction
@@ -130,7 +161,7 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            MiniProfiler.resetSettings();
+            MiniProfiler.resetSettings(getUser());
             return true;
         }
 
@@ -160,9 +191,9 @@ public class MiniProfilerController extends SpringActionController
         @Override
         public Object execute(EnableForm form, BindException errors)
         {
-            MiniProfiler.Settings settings = MiniProfiler.getSettings();
+            MiniProfiler.Settings settings = MiniProfiler.getSettings(getUser());
             settings.setEnabled(form.isEnabled());
-            MiniProfiler.saveSettings(settings);
+            MiniProfiler.saveSettings(settings, getUser());
             boolean enabled = settings.isEnabled();
             return success(Collections.singletonMap("enabled", enabled));
         }

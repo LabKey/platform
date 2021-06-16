@@ -7,8 +7,8 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.specimen.actions.ReportConfigurationBean;
-import org.labkey.specimen.actions.SpecimenController2;
-import org.labkey.specimen.actions.SpecimenController2.AutoReportListAction;
+import org.labkey.specimen.actions.SpecimenController;
+import org.labkey.specimen.actions.SpecimenController.AutoReportListAction;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -52,7 +52,7 @@ public abstract class SpecimenVisitReportAction<FormType extends SpecimenVisitRe
     public void addNavTrail(NavTree root)
     {
         Container c = getContainer();
-        ActionURL overviewURL = new ActionURL(SpecimenController2.OverviewAction.class, c);
+        ActionURL overviewURL = new ActionURL(SpecimenController.OverviewAction.class, c);
         root.addChild("Specimen Overview", overviewURL);
         root.addChild("Available Reports", new ActionURL(AutoReportListAction.class, c));
         root.addChild("Specimen Report: " + _form.getLabel());

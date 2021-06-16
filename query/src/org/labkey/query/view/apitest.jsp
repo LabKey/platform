@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -362,7 +363,9 @@
             getUrl();
     }
 
-    Ext.onReady(function() {
-        Ext.EventManager.on('txtPost', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
-    });
+    <labkey:loadClientDependencies>
+        Ext.onReady(function () {
+            Ext.EventManager.on('txtPost', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+        });
+    </labkey:loadClientDependencies>
 </script>

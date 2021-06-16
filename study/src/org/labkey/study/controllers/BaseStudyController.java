@@ -42,8 +42,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
-import java.util.Collection;
-
 /**
  * User: Karl Lum
  * Date: Dec 13, 2007
@@ -258,75 +256,5 @@ public abstract class BaseStudyController extends SpringActionController
         if (first == null)
             return false;
         return first.equals(second);
-    }
-
-    public static class BulkEditForm
-    {
-        private String _newLabel;
-        private String _newId;
-        private String _nextPage;
-        private String _order;
-        private int[] _ids;
-        private String[] _labels;
-
-        public String getNewLabel()
-        {
-            return _newLabel;
-        }
-
-        public void setNewLabel(String newLabel)
-        {
-            _newLabel = newLabel;
-        }
-
-        public String getNextPage()
-        {
-            return _nextPage;
-        }
-
-        public void setNextPage(String nextPage)
-        {
-            _nextPage = nextPage;
-        }
-
-        public String getOrder()
-        {
-            return _order;
-        }
-
-        public void setOrder(String order)
-        {
-            _order = order;
-        }
-
-        public String[] getLabels()
-        {
-            return _labels;
-        }
-
-        public void setLabels(String[] labels)
-        {
-            _labels = labels;
-        }
-
-        public int[] getIds()
-        {
-            return _ids;
-        }
-
-        public void setIds(int[] ids)
-        {
-            _ids = ids;
-        }
-
-        public String getNewId()
-        {
-            return _newId;
-        }
-
-        public void setNewId(String newId)
-        {
-            _newId = newId;
-        }
     }
 }
