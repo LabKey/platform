@@ -159,7 +159,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.006;
+        return 21.007;
     }
 
     @Nullable
@@ -295,9 +295,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        // TODO move to an upgrade script
-        ExperimentUpgradeCode.upgradeMaterialSource(null);
-
         SearchService ss = SearchService.get();
         if (null != ss)
         {
