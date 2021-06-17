@@ -3569,7 +3569,7 @@ public class SecurityManager
      * This is a choke point for checking permissions.
      * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
      *
-     * This will let the SecurityPolicy object just handle it's own ACL-like functionality e.g. computing the
+     * This lets the SecurityPolicy object just handle its own ACL-like functionality e.g. computing the
      * permissions that it explicitly assigns (resolving roles and groups).
      */
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
@@ -3605,14 +3605,9 @@ public class SecurityManager
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
             var granted = getPermissions(policy, principal, contextualRoles);
-
-            boolean ret;
-            if (opt == HasPermissionOption.ALL)
-                ret = granted.containsAll(permissions);
-            else
-                ret = permissions.stream().anyMatch(granted::contains);
-
+            boolean ret = opt.accept(granted, permissions);
             SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, policy, ret);
+
             return ret;
         }
         finally
@@ -3658,5 +3653,25 @@ public class SecurityManager
         return roles;
     }
 
-    private enum HasPermissionOption { ANY, ALL };
+    private enum HasPermissionOption
+    {
+        ANY()
+        {
+            @Override
+            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            {
+                return required.stream().anyMatch(granted::contains);
+            }
+        },
+        ALL
+        {
+            @Override
+            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            {
+                return granted.containsAll(required);
+            }
+        };
+
+        abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
+    };
 }
