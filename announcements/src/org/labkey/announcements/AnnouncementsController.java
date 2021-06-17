@@ -755,7 +755,7 @@ public class AnnouncementsController extends SpringActionController
     {
         Role editorRole = RoleManager.getRole(EditorRole.class);
         Group group = SecurityManager.getGroup(groupId);
-        return null != group && getContainer().getPolicy().hasPermissions(group, editorRole.getPermissions());
+        return null != group && SecurityManager.hasAllPermissions(null, getContainer().getPolicy(), group, editorRole.getPermissions(), Set.of());
     }
 
 

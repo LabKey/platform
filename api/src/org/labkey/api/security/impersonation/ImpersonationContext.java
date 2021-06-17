@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -50,4 +51,10 @@ public interface ImpersonationContext extends Serializable
     ImpersonationContextFactory getFactory();
     /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
+
+    // restrict the permissions this user is allowed
+    default Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
+    {
+        return perms;
+    }
 }
