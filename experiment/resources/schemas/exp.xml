@@ -209,7 +209,7 @@
   <table tableName="List" tableDbType="TABLE">
       <buttonBarOptions position="top" includeStandardButtons="true">
       </buttonBarOptions>
-      <description>Contains one row for every list managered in this container.</description>
+      <description>Contains one row for every list managed in this container.</description>
       <tableUrl>/list/grid.view?listId=${ListId}</tableUrl>
       <titleColumn>Name</titleColumn>
       <pkColumnName>ListId</pkColumnName>
@@ -240,6 +240,7 @@
           <column columnName="KeyType" />
           <column columnName="TitleColumn" />
           <column columnName="Description" />
+          <column columnName="Category"/>
           <column columnName="DiscussionSetting" />
           <column columnName="AllowDelete" />
           <column columnName="AllowUpload" />
@@ -466,6 +467,7 @@
       <column columnName="ConceptImportColumn"/>
       <column columnName="ConceptLabelColumn"/>
       <column columnName="PrincipalConceptCode"/>
+      <column columnName="ConceptSubtree"/>
       <column columnName="DerivationDataScope"/>
   </columns>
   </table>

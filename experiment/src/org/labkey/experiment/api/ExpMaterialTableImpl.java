@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.collections4.ListUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
@@ -58,6 +59,7 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -74,7 +76,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -96,7 +97,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static org.labkey.api.settings.AppProps.EXPERIMENTAL_SAMPLE_ALIQUOT;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -128,7 +128,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public AuditHandler getAuditHandler()
+    public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
     {
         if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
         {
@@ -137,7 +137,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         else
         {
-            return super.getAuditHandler();
+            return super.getAuditHandler(auditBehaviorType);
         }
     }
 
@@ -151,18 +151,29 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case RootMaterialLSID:
-                return wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+                columnInfo.setSqlTypeName("lsidtype");
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
+                return columnInfo;
+            }
             case AliquotedFromLSID:
-                return wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+                columnInfo.setSqlTypeName("lsidtype");
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getContainerFilter(),"LSID"));
+                return columnInfo;
+            }
             case IsAliquot:
             {
+                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN RootMaterialLSID IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
-                columnInfo.setHidden(!AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_SAMPLE_ALIQUOT));
+                columnInfo.setHidden(false);
                 return columnInfo;
             }
             case Name:
@@ -476,6 +487,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         });
 
         typeColumnInfo.setReadOnly(true);
+        typeColumnInfo.setUserEditable(false);
         typeColumnInfo.setShownInInsertView(false);
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
@@ -709,7 +721,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     continue;
 
                 sql.append(comma);
-                if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope()))
+                if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope())
+                || "genid".equalsIgnoreCase(propertyColumn.getColumnName()))
                 {
                     sql.append(propertyColumn.getValueSql("self"));
                 }
@@ -837,20 +850,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder builder = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampleset")
-                    .setIndexFunction(lsids -> () ->
-                    {
-                        SearchService ss = SearchService.get();
-                        if (ss != null)
+            var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
+                    .setFileLinkDirectory("sampletype");
+            SearchService ss = SearchService.get();
+            if (null != ss)
+            {
+                persist.setIndexFunction(lsids -> () ->
+                    ListUtils.partition(lsids, 100).forEach(sublist ->
+                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(lsids))
-                            {
-                                ss.defaultTask().addRunnable(() -> expMaterial.index(null), SearchService.PRIORITY.bulk);
-                            }
-                        }
-                    }));
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
+                                expMaterial.index(ss.defaultTask());
+                        })
+                    )
+                );
+            }
 
+            DataIteratorBuilder builder = LoggingDataIterator.wrap(persist);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)

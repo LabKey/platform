@@ -79,6 +79,10 @@ public class PageConfig
 		Default, True, False
 	}
 
+    private final LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
+    private final MultiValuedMap<String, String> _meta = new ArrayListValuedHashMap<>();
+    private final JSONObject _portalContext = new JSONObject();
+
     private Template _template = Template.Home;
     private String _title;
     private HelpTopic _helpTopic;
@@ -92,15 +96,12 @@ public class PageConfig
     private boolean _includeLoginLink = true;
     private boolean _includeSearch = true;
     private int _minimumWidth = 400;
-    private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
-    private MultiValuedMap<String, String> _meta = new ArrayListValuedHashMap<>();
     private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
-    private JSONObject _portalContext = new JSONObject();
     private boolean _includePostParameters = false;
 
     public PageConfig()
@@ -422,12 +423,12 @@ public class PageConfig
     }
 
     // For now, gives a central place to render messaging
-    public String renderSiteMessages(ViewContext context)
+    public HtmlStringBuilder renderSiteMessages(ViewContext context)
     {
-        StringBuilder messages = new StringBuilder();
+        HtmlStringBuilder messages = HtmlStringBuilder.of();
 
         // Keep an empty div for re-addition of dismissable messages onto the page
-        messages.append("<div class=\"lk-dismissable-alert-ct\">");
+        messages.append(HtmlString.unsafe("<div class=\"lk-dismissable-alert-ct\">"));
         if (context != null && context.getRequest() != null)
         {
             Warnings warnings = WarningService.get().getWarnings(context);
@@ -447,14 +448,14 @@ public class PageConfig
                 messages.append(WarningService.get().getWarningsHtml(warnings, context));
             }
         }
-        messages.append("</div>");
+        messages.append(HtmlString.unsafe("</div>"));
 
         // Display a <noscript> warning message
-        messages.append("<noscript>");
-        messages.append("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>");
-        messages.append("</noscript>");
+        messages.append(HtmlString.unsafe("<noscript>"));
+        messages.append(HtmlString.unsafe("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>"));
+        messages.append(HtmlString.unsafe("</noscript>"));
 
-        return messages.toString();
+        return messages;
     }
 
     public JSONObject getPortalContext()

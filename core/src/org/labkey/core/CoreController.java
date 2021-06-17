@@ -160,6 +160,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -1654,10 +1655,6 @@ public class CoreController extends SpringActionController
                     if (ct == null)
                         throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
 
-                    User saveUser = UserManager.getUser(row.getInt("userId"));
-                    if (saveUser == null)
-                        throw new IllegalArgumentException("Invalid user: " + row.getInt("userId"));
-
                     mp.saveValue(ctx.getUser(), ct, row.getString("value"));
                 }
                 transaction.commit();
@@ -2633,6 +2630,55 @@ public class CoreController extends SpringActionController
             response.put("body", newBody);
 
             return response;
+        }
+    }
+
+    @RequiresLogin
+    public class IncrementClientSideMetricCountAction extends MutatingApiAction<ClientSideMetricForm>
+    {
+        @Override
+        public void validateForm(ClientSideMetricForm form, Errors errors)
+        {
+            if (StringUtils.isEmpty(form.getFeatureArea()) || StringUtils.isEmpty(form.getMetricName()))
+                errors.reject(ERROR_MSG, "Must provide both a featureArea and metricName.");
+        }
+
+        @Override
+        public ApiResponse execute(ClientSideMetricForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String featureArea = form.getFeatureArea();
+            String metricName = form.getMetricName();
+            response.put("featureArea", featureArea);
+            response.put("metricName", metricName);
+            response.put("count", ClientSideMetricManager.get().increment(featureArea, metricName));
+            return response;
+        }
+    }
+
+    public static class ClientSideMetricForm
+    {
+        private String _featureArea;
+        private String _metricName;
+
+        public String getFeatureArea()
+        {
+            return _featureArea;
+        }
+
+        public void setFeatureArea(String featureArea)
+        {
+            _featureArea = featureArea;
+        }
+
+        public String getMetricName()
+        {
+            return _metricName;
+        }
+
+        public void setMetricName(String metricName)
+        {
+            _metricName = metricName;
         }
     }
 

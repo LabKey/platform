@@ -97,6 +97,13 @@ public class WarningServiceImpl implements WarningService
     @Override
     public Warnings getWarnings(ViewContext context)
     {
+        if (null == context)
+            throw new IllegalStateException("ViewContext was null");
+        if (null == context.getUser())
+            throw new IllegalStateException("ViewContext.getUser() was null");
+        if (null == context.getRequest())
+            throw new IllegalStateException("ViewContext.getUser() was null");
+
         // Collect warnings
         List<HtmlString> warningMessages = new LinkedList<>();
         User user = context.getUser();

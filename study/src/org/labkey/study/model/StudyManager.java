@@ -127,7 +127,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -441,6 +440,7 @@ public class StudyManager
             return toSharedInstance(helper.get(c, rowId, "DatasetId"));
         }
 
+        @NotNull
         private List<DatasetDefinition> toSharedInstance(List<DatasetDefinition> in)
         {
             TableInfo t = getTableInfo();
@@ -2104,7 +2104,7 @@ public class StudyManager
         cols.append(")");
 
         return new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT * FROM " +
-                table + " WHERE Container = ? AND " + cols.toString(), params).exists();
+                table + " WHERE Container = ? AND " + cols, params).exists();
     }
 
     public boolean isCohortInUse(CohortImpl cohort)
@@ -2345,7 +2345,7 @@ public class StudyManager
         filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
         List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.size() == 1)
+        if (defs.size() == 1)
             return defs.get(0);
 
         return null;
@@ -2359,7 +2359,7 @@ public class StudyManager
         filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
 
         List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.size() == 1)
+        if (defs.size() == 1)
             return defs.get(0);
 
         return null;
@@ -2370,10 +2370,10 @@ public class StudyManager
     public DatasetDefinition getDatasetDefinitionByName(Study s, String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
-        filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
+        filter.addWhereClause("LOWER(Name) = LOWER(?)", new Object[]{name}, FieldKey.fromParts("Name"));
 
         List<DatasetDefinition> defs = _datasetHelper.get(s.getContainer(), filter);
-        if (defs != null && defs.size() == 1)
+        if (defs.size() == 1)
             return defs.get(0);
 
         Study sharedStudy = getSharedStudy(s);
@@ -2933,7 +2933,7 @@ public class StudyManager
         return true;
     }
 
-    public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids)
+    public @NotNull Collection<ParticipantDataset> getParticipantDatasets(Container container, Collection<String> lsids)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("LSID"), lsids));
@@ -2969,8 +2969,7 @@ public class StudyManager
             throw new RuntimeSQLException(e);
         }
 
-
-        return pds.toArray(new ParticipantDataset[0]);
+        return pds;
     }
 
 
@@ -4318,7 +4317,7 @@ public class StudyManager
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
 
-        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, null).toSQLFragment(null, null);
+        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, "p").toSQLFragment(null, null);
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 

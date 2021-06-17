@@ -92,11 +92,10 @@ public class DataClassUserSchema extends AbstractExpSchema
         return createTable(dataClass, cf);
     }
 
-    public ExpDataClassDataTable createTable(@NotNull ExpDataClass dataClass, ContainerFilter cf)
+    private ExpDataClassDataTable createTable(@NotNull ExpDataClass dataClass, ContainerFilter cf)
     {
         ExpDataClassDataTable ret = ExperimentService.get().createDataClassDataTable(dataClass.getName(), this, cf, dataClass);
         ret.populate();
-        ret.overlayMetadata(ret.getPublicName(), DataClassUserSchema.this, new ArrayList<>());
         return ret;
     }
 

@@ -53,6 +53,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
+import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
@@ -162,7 +163,9 @@ public class SecurityManager
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
+
     public static final String PRIMARY_AUTHENTICATION_CONFIGURATION = PrimaryAuthenticationConfiguration.class.getName();
+    public static final String AUTHENTICATION_ATTRIBUTES_KEY = User.class.getName() + "$AuthenticationAttributes";
 
     static
     {
@@ -718,7 +721,7 @@ public class SecurityManager
             return createTransformSession(context.getUser());
     }
 
-    public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)
+    public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable AuthenticationResponse response, User user, boolean invalidate)
     {
         SessionHelper.clearSession(request, invalidate, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
@@ -728,8 +731,12 @@ public class SecurityManager
         newSession.setAttribute(USER_ID_KEY, user.getUserId());
         newSession.setAttribute("LABKEY.username", user.getName());
 
-        if (null != configuration)
+        if (null != response)
+        {
+            PrimaryAuthenticationConfiguration<?> configuration = response.getConfiguration();
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
+            newSession.setAttribute(AUTHENTICATION_ATTRIBUTES_KEY, response.getAttributeMap());
+        }
 
         return newSession;
     }
@@ -2230,7 +2237,7 @@ public class SecurityManager
 
     public interface ViewFactory
     {
-        HttpView createView(ViewContext context);
+        @Nullable HttpView<?> createView(ViewContext context);
     }
 
     // Modules register a factory to add module-specific ui to the permissions page
@@ -2840,6 +2847,12 @@ public class SecurityManager
         {
             LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
             message.append(" Click ").append(link).append(" to see the email.");
+
+            if (!context.getContainer().isRoot())
+            {
+                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
+                message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".");
+            }
         }
 
         return message.getHtmlString();

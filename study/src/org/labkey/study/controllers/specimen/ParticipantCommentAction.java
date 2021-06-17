@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.Vial;
+import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.DataView;
@@ -45,11 +46,11 @@ import java.util.Map;
  * Date: Oct 7, 2009
  */
 @RequiresPermission(ReadPermission.class)
-public abstract class ParticipantCommentAction extends InsertUpdateAction<SpecimenController.ParticipantCommentForm>
+public abstract class ParticipantCommentAction extends InsertUpdateAction<ParticipantCommentForm>
 {
     public ParticipantCommentAction()
     {
-        super(SpecimenController.ParticipantCommentForm.class);
+        super(ParticipantCommentForm.class);
     }
 
     @Override
@@ -58,7 +59,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
     }
 
     @Override
-    public boolean handlePost(SpecimenController.ParticipantCommentForm form, BindException errors) throws Exception
+    public boolean handlePost(ParticipantCommentForm form, BindException errors) throws Exception
     {
         if (super.handlePost(form, errors))
         {
@@ -89,7 +90,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         private DataView _dataView;
 
         @Override
-        public ModelAndView getView(final SpecimenController.ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(final ParticipantCommentForm form, boolean reshow, BindException errors) throws Exception
         {
             // super.getView() checks permissions
             ModelAndView view = super.getView(form, reshow, errors);
@@ -107,13 +108,13 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
                     ((InsertView)_dataView).setInitialValue(ColumnInfo.legalNameFromName(commentProperty), form.getComment());
                 }
                 for (int rowId : form.getVialCommentsToClear())
-                    _dataView.getDataRegion().addHiddenFormField(SpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
+                    _dataView.getDataRegion().addHiddenFormField(ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
             }
             return view;
         }
 
         @Override
-        protected DataView createNewView(SpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
+        protected DataView createNewView(ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
         {
             _dataView = super.createNewView(form, updateForm, errors);
             return _dataView;
@@ -130,7 +131,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
     public static class SpecimenCommentUpdateAction extends ParticipantCommentAction
     {
         @Override
-        protected DataView createNewView(final SpecimenController.ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
+        protected DataView createNewView(final ParticipantCommentForm form, QueryUpdateForm updateForm, BindException errors)
         {
             try
             {
@@ -158,7 +159,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
                 DataView view = new UpdateView(updateForm, errors);
 
                 for (int rowId : form.getVialCommentsToClear())
-                    view.getDataRegion().addHiddenFormField(SpecimenController.ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
+                    view.getDataRegion().addHiddenFormField(ParticipantCommentForm.params.vialCommentsToClear, String.valueOf(rowId));
 
                 return view;
             }

@@ -455,8 +455,11 @@ public class XarExporter
                 // include a file path in the export, though.  We use "Data" + rowId of the data object as the file name
                 // to ensure that the path won't collide with other output data from exported runs in the xar archive,
                 // but we don't want to include data classes as part of this behavior.
-                if (data.getDataFileUrl() == null && data.isFinalRunOutput() && (data.getDataClass(null) == null))
+                if ((data.getDataFileUrl() == null) && data.isFinalRunOutput() &&
+                        (data.getDataClass(null) == null) && (run.getFilePathRoot() != null))
+                {
                     data.setDataFileURI(run.getFilePathRootPath().resolve("Data" + data.getRowId()).toUri());
+                }
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
             }
@@ -592,6 +595,10 @@ public class XarExporter
         if (sampleType.getDescription() != null)
         {
             xSampleSet.setDescription(sampleType.getDescription());
+        }
+        if (sampleType.getAutoLinkTargetContainer() != null)
+        {
+            xSampleSet.setAutoLinkTargetContainerId(sampleType.getAutoLinkTargetContainer().getId());
         }
 
         if (sampleType.hasNameExpression())
@@ -1272,11 +1279,11 @@ public class XarExporter
                                 queueDomain(domain);
                             }
 
-                            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                            if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
                             {
-                                Container autoCopyContainer = ContainerManager.getForId(value.getStringValue());
-                                if (autoCopyContainer != null)
-                                    simpleValue.setStringValue(autoCopyContainer.getPath());
+                                Container autoLinkContainer = ContainerManager.getForId(value.getStringValue());
+                                if (autoLinkContainer != null)
+                                    simpleValue.setStringValue(autoLinkContainer.getPath());
                             }
                         }
                         break;

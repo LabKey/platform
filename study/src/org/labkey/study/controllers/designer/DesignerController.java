@@ -49,6 +49,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
+import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -65,7 +66,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.designer.JSONSerializer;
-import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.designer.StudyDefinitionServiceImpl;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
@@ -90,6 +90,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.study.publish.StudyPublishService.SOURCE_LSID_PROPERTY_NAME;
 
 /**
  * User: jgarms
@@ -466,6 +468,7 @@ public class DesignerController extends SpringActionController
                     {
                         HashMap<String, Object> newMap = new HashMap<>(getParticipants().get(i));
                         newMap.put("Date", newMap.get("StartDate")); //Date of demographic data *is* StartDate by default
+                        newMap.put(SOURCE_LSID_PROPERTY_NAME, null);
                         participantMaps.add(newMap);
                     }
                     Study study = StudyDesignManager.get().generateStudyFromDesign(getUser(), ContainerManager.getForId(form.getParentFolderId()),

@@ -277,7 +277,7 @@ LABKEY.internal.MiniProfiler = new function () {
             return;
         }
 
-        el.classList.toggle(clazz);
+        return el.classList.toggle(clazz);
     }
 
     function data(el, key, value) {
@@ -458,6 +458,9 @@ LABKEY.internal.MiniProfiler = new function () {
     // profiler
     //
 
+    // matches DateUtil.getJsonDateTimeFormatString() 'yyyy-MM-dd HH:mm:ss.SSS'
+    const DATE_REGEX = /^(\d{4})-(\d{2})-(\d{2})[ T]?(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/;
+
     var _initialized = false;
     var _queue = [];
 
@@ -559,7 +562,10 @@ LABKEY.internal.MiniProfiler = new function () {
                 json.date = new Date(json.date);
                 break;
             case 'string':
-                json.date = new Date(parseInt(json.date));
+                if (DATE_REGEX.exec(json.date))
+                    json.date = new Date(json.date);
+                else
+                    json.date = new Date(parseInt(json.date));
                 break;
         }
 
@@ -1000,7 +1006,14 @@ LABKEY.internal.MiniProfiler = new function () {
                             '</div>');
 
             click(select(_container, '.profiler-controls .profiler-min-max'), function () {
-                toggleClass(_container, 'profiler-min');
+                let minimized = toggleClass(_container, 'profiler-min');
+                LABKEY.Ajax.request({
+                    url: LABKEY.ActionURL.buildURL('mini-profiler', 'minimize.api'),
+                    method: 'POST',
+                    jsonData: {
+                        minimized: minimized
+                    }
+                });
             });
 
             hover(_container, function (e) {
@@ -1044,6 +1057,9 @@ LABKEY.internal.MiniProfiler = new function () {
                 // get master page profiler results
                 fetchResults(_options.ids);
             });
+            if (_options.startMinimized) {
+                addClass(_container, 'profiler-min');
+            }
             if (_options.startHidden) {
                 hide(_container);
             }
@@ -1101,6 +1117,7 @@ LABKEY.internal.MiniProfiler = new function () {
 
         if (script.getAttribute('data-authorized') == 'true') var authorized = true;
         if (script.getAttribute('data-start-hidden') == 'true') var startHidden = true;
+        if (script.getAttribute('data-start-minimized') == 'true') var startMinimized = true;
 
 
         return {
@@ -1115,6 +1132,7 @@ LABKEY.internal.MiniProfiler = new function () {
             showControls: showControls,
             authorized: authorized,
             toggleShortcut: toggleShortcut,
+            startMinimized: startMinimized,
             startHidden: startHidden
         }
     }

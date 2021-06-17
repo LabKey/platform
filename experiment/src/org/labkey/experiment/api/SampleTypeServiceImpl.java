@@ -79,14 +79,18 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -99,11 +103,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
@@ -481,6 +487,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             // TODO do we need both truncateSampleType() and deleteDomainObjects()?
             truncateSampleType(source, user, null);
 
+            StudyService studyService = StudyService.get();
+            if (studyService != null)
+            {
+                for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, Dataset.PublishSource.SampleType))
+                {
+                    dataset.delete(user);
+                }
+            }
+            else
+            {
+                LOG.warn("Could not delete datasets associated with this protocol: Study service not available.");
+            }
+
             Domain d = source.getDomain();
             d.delete(user);
 
@@ -762,7 +781,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             _formatter = DateTimeFormatter.ofPattern(pattern);
         }
 
-        public String getSequenceName(@Nullable Date date)
+        public Pair<String,Integer> getSequenceName(@Nullable Date date)
         {
             LocalDateTime ldt;
             if (date == null)
@@ -770,27 +789,47 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             else
                 ldt = LocalDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
             String suffix = _formatter.format(ldt);
-            return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
+            // NOTE: it would make sense to use the dbsequence "id" feature here.
+            // e.g. instead of name=org.labkey.api.exp.api.ExpMaterial:DAILY:2021-05-25 id=0
+            // we could use name=org.labkey.api.exp.api.ExpMaterial:DAILY id=20210525
+            // however, that would require a fix up on upgrade.
+            return new Pair<>("org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix, 0);
         }
 
         public long next(Date date)
         {
-            String seqName = getSequenceName(date);
-            DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
-            return seq.next();
+            return getDbSequence(date).next();
+        }
+
+        public DbSequence getDbSequence(Date date)
+        {
+            Pair<String,Integer> seqName = getSequenceName(date);
+            final DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName.first, seqName.second, 100);
+            return seq;
         }
     }
 
+
     @Override
-    public Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
+    public Function<Map<String,Long>,Map<String,Long>> getSampleCountsFunction(@Nullable Date counterDate)
     {
-        Map<String, Long> counts = new HashMap<>();
-        counts.put("dailySampleCount",   SampleSequenceType.DAILY.next(counterDate));
-        counts.put("weeklySampleCount",  SampleSequenceType.WEEKLY.next(counterDate));
-        counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
-        counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
-        return counts;
+        final var dailySampleCount = SampleSequenceType.DAILY.getDbSequence(counterDate);
+        final var weeklySampleCount = SampleSequenceType.WEEKLY.getDbSequence(counterDate);
+        final var monthlySampleCount = SampleSequenceType.MONTHLY.getDbSequence(counterDate);
+        final var yearlySampleCount = SampleSequenceType.YEARLY.getDbSequence(counterDate);
+
+        return (counts) ->
+        {
+            if (null==counts)
+                counts = new HashMap<>();
+            counts.put("dailySampleCount",   dailySampleCount.next());
+            counts.put("weeklySampleCount",  weeklySampleCount.next());
+            counts.put("monthlySampleCount", monthlySampleCount.next());
+            counts.put("yearlySampleCount",  yearlySampleCount.next());
+            return counts;
+        };
     }
+
 
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
@@ -977,5 +1016,35 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
+    }
+
+    @Override
+    public long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
+    {
+        long max = 0;
+        String aliquotNamePrefix = sampleName + "-";
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
+        filter.addCondition(FieldKey.fromParts("Name"), aliquotNamePrefix, STARTS_WITH);
+
+        TableSelector selector = new TableSelector(getTinfoMaterial(), Collections.singleton("Name"), filter, null);
+        final List<String> aliquotIds = new ArrayList<>();
+        selector.forEach(String.class, fullname -> aliquotIds.add(fullname.replace(aliquotNamePrefix, "")));
+
+        for (String aliquotId : aliquotIds)
+        {
+            try
+            {
+                long id = Long.parseLong(aliquotId);
+                if (id > max)
+                    max = id;
+            }
+            catch (NumberFormatException ignored) {
+                ;
+            }
+        }
+
+        return max;
     }
 }

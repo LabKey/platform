@@ -742,7 +742,13 @@ public class ProxyServlet extends HttpServlet
                     curUrl.setLength(pos);
                 }
             }
-            curUrl.append(getSourcePath(servletRequest));
+
+            //Issue 42677: 404 Error when initiating a Jupyter Notebook session from RStudio Pro when integrated with LabKey
+            // jupyter notebook redirect url contains context and servlet path, resulting in duplicate path
+            String sourcePath = getSourcePath(servletRequest);
+            if (!theUrl.startsWith(sourcePath))
+                curUrl.append(sourcePath);
+
             if (theUrl.startsWith("/"))
                 appendPath(curUrl, theUrl);
             else

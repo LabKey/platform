@@ -18,7 +18,10 @@ package org.labkey.api.study;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.springframework.web.servlet.mvc.Controller;
 
 /**
@@ -27,6 +30,7 @@ import org.springframework.web.servlet.mvc.Controller;
  */
 public interface StudyUrls extends UrlProvider
 {
+    ActionURL getBeginURL(Container container);
     ActionURL getCompletionURL(Container studyContainer, CompletionType type);
     ActionURL getCreateStudyURL(Container container);
     ActionURL getManageStudyURL(Container container);
@@ -39,6 +43,10 @@ public interface StudyUrls extends UrlProvider
     ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields);
     ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor);
     ActionURL getManageFileWatchersURL(Container container);
-    ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
-    ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
+    ActionURL getLinkToStudyURL(Container container, ExpSampleType sampleType);
+    ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol);
+    ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType);
+    ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol);
+
+    void addManageStudyNavTrail(NavTree root, Container container, User user);
 }

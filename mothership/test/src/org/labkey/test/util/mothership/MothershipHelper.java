@@ -130,9 +130,7 @@ public class MothershipHelper
     public enum ReportLevel
     {
         NONE,
-        LOW,
-        MEDIUM,
-        HIGH
+        ON
     }
 
     public void createUsageReport(ReportLevel level, boolean submit, String forwardedFor)

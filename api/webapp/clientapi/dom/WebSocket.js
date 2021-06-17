@@ -34,14 +34,15 @@ LABKEY.WebSocket = new function ()
     var $ = jQuery;
     var _websocket = null;
     var _callbacks = {};
+    var _modalShowing = false;
 
     function openWebsocket() {
         _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
         _websocket.onmessage = websocketOnMessage;
-        _websocket.onclose = websocketOnclose;
+        _websocket.onclose = websocketOnClose;
     }
 
-    function websocketOnMessage (evt) {
+    function websocketOnMessage(evt) {
         var json = JSON.parse(evt.data);
         var event = json.event;
 
@@ -49,7 +50,7 @@ LABKEY.WebSocket = new function ()
         list.forEach(function(cb){cb(json)});
     }
 
-    function websocketOnclose(evt) {
+    function websocketOnClose(evt) {
         if (evt.wasClean) {
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
@@ -85,13 +86,18 @@ LABKEY.WebSocket = new function ()
                             // just logged in. See issue 39337
                             if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
                                 displayModal("Session Expired", 'Your session has expired. Please reload the page to continue.');
+                            } else {
+                                hideModal();
+                                openWebsocket(); // re-establish the websocket connection for the new session
                             }
                         }),
                         failure: function () {
                             setTimeout(showDisconnectedMessage, 1000);
                         }
                     });
-                }, 1000);
+                    // Note the extra second (5s in this case) for the timeout before we query whoami, this
+                    // is to allow time for the server login from the other tab to take hold.
+                }, 5000);
             }
         }
     }
@@ -99,11 +105,56 @@ LABKEY.WebSocket = new function ()
     function showDisconnectedMessage() {
         displayModal("Server Unavailable", "The server is currently unavailable. Please try reloading the page to continue.");
         // CONSIDER: Periodically attempt to reestablish connection until the server comes back up.
-        // CONSIDER: Once reconnected, reload the page unless page is dirty -- LABKEY.isDirty()
+    }
+
+    function isSessionInvalidBackgroundHideEnabled() {
+        // Issue 43334: JS error if this is called when the moduleContext isn't available, err on the side of compliance
+        if (!LABKEY.moduleContext || !LABKEY.moduleContext.api) {
+            return true;
+        } else if (LABKEY.moduleContext.api.compliance) {
+            return LABKEY.moduleContext.api.compliance.sessionInvalidBackgroundHideEnabled
+        }
+        return false;
+    }
+
+    function toggleBackgroundVisible(shouldBlur) {
+        if (isSessionInvalidBackgroundHideEnabled()) {
+            var divClsSelectors = ['.lk-header-ct', '.lk-body-ct', '.footer-block', '.x4-window', '.x-window', "div[role='dialog'] > .modal"];
+            for (var i = 0; i < divClsSelectors.length; i++) {
+                var divEls = $(divClsSelectors[i]);
+                if (divEls) {
+                    if (shouldBlur) {
+                        divEls.addClass('lk-content-blur');
+                    }
+                    else {
+                        divEls.removeClass('lk-content-blur');
+                    }
+                }
+            }
+        }
+    }
+
+    function hideModal() {
+        toggleBackgroundVisible(false);
+
+        var modal = $('#lk-utils-modal');
+        if (LABKEY.Utils.isFunction(modal.modal)) {
+            modal.modal('hide');
+        } else {
+            $('#lk-utils-modal-backdrop').remove();
+            modal.hide();
+        }
+
+        _modalShowing = false;
     }
 
     function displayModal(title, message) {
-        if (LABKEY.Utils && LABKEY.Utils.modal) {
+        if (_modalShowing) return;
+        _modalShowing = true;
+
+        toggleBackgroundVisible(true);
+
+        if (LABKEY.Utils.modal) {
             LABKEY.Utils.modal(title, null, function() {
                 $("#modal-fn-body").html([
                     '<div style="margin-bottom: 40px;">',
@@ -112,24 +163,32 @@ LABKEY.WebSocket = new function ()
                     '</div>',
                 ].join(''));
 
+                // make sure that this modal is in front of any other dialogs (Ext, Ext4, etc.) on the page
+                $('#lk-utils-modal').css('z-index', 99999);
+                setTimeout(function() {
+                    $('#lk-utils-modal-backdrop').css('z-index', 99998);
+                }, 100);
+
                 // add the on click handler for the reload page button
                 $('#lk-websocket-reload').on('click', function() {
                     window.location.reload();
                 });
-            }, null, true);
+
+                openWebsocket(); // re-establish the websocket connection for the new guest user session
+            }, null, true, true);
         }
         else {
             // fall back to using standard alert message if for some reason the jQuery modal isn't available
-            alert(message);
+            setTimeout(function() {
+                alert(message);
+            }, 500);
         }
     }
 
     /** Add a general purpose listener for server events. */
     var addServerEventListener = function(event, cb) {
-        if (LABKEY.user.isSignedIn && 'WebSocket' in window) {
-            if (null === _websocket) {
-                openWebsocket();
-            }
+        if (LABKEY.user.isSignedIn) {
+            initWebSocket();
 
             var list = _callbacks[event] || [];
             list.push(cb);
@@ -137,11 +196,16 @@ LABKEY.WebSocket = new function ()
         }
     };
 
-    // initial call open the WebSocket to at least handle the logout and session timeout events
-    // other apps or code can register their own event listeners as well
-    openWebsocket();
+    // initial call will open the WebSocket to at least handle the logout and session timeout events
+    // other apps or code can register their own event listeners as well via addServerEventListener
+    var initWebSocket = function() {
+        if ('WebSocket' in window && null === _websocket) {
+            openWebsocket();
+        }
+    };
 
     return {
+        initWebSocket: initWebSocket,
         addServerEventListener: addServerEventListener
     };
 };

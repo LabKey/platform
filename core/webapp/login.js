@@ -52,8 +52,16 @@
                     window.location = response.returnUrl;
                 }
             }, this),
-            failure: LABKEY.Utils.getCallbackWrapper(function(response) {
-                setSubmitting(false, response ? response.exception : '');
+            failure: LABKEY.Utils.getCallbackWrapper(function(response, request) {
+                let message;
+                if (response && response.exception) {
+                    message = response.exception;
+                }
+                else {
+                    message = request && request.readyState === 4 && request.status === 0 ? 'Login failed. The server may be offline.' : 'Login failed.';
+                }
+
+                setSubmitting(false, message);
                 if (response && response.returnUrl) {
                     window.location = response.returnUrl;
                 }

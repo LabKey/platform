@@ -508,6 +508,11 @@ public class XarReader extends AbstractXarImporter
             materialSource.setMetricUnit(sampleSet.getMetricUnit());
         }
 
+        if (sampleSet.isSetAutoLinkTargetContainerId())
+        {
+            materialSource.setAutoLinkTargetContainer(ContainerManager.getForId(sampleSet.getAutoLinkTargetContainerId()));
+        }
+
         SampleSetType.ParentImportAlias parentImportAlias = sampleSet.getParentImportAlias();
         if (parentImportAlias != null)
         {
@@ -656,6 +661,10 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.getImportAliasSet(), newProp.getImportAliasSet(), key + " import aliases", diffs);
                     IdentifiableEntity.diff(oldProp.getDefaultValueTypeEnum(), newProp.getDefaultValueTypeEnum(), key + " default value type", diffs);
                     IdentifiableEntity.diff(oldProp.getPrincipalConceptCode(), newProp.getPrincipalConceptCode(), key + " principal concept code", diffs);
+                    IdentifiableEntity.diff(oldProp.getSourceOntology(), newProp.getSourceOntology(), key + " source ontology", diffs);
+                    IdentifiableEntity.diff(oldProp.getConceptImportColumn(), newProp.getConceptImportColumn(), key + " concept import column", diffs);
+                    IdentifiableEntity.diff(oldProp.getConceptLabelColumn(), newProp.getConceptLabelColumn(), key + " concept label column", diffs);
+                    IdentifiableEntity.diff(oldProp.getConceptSubtree(), newProp.getConceptSubtree(), key + " concept lookup subtree", diffs);
                     IdentifiableEntity.diff(existingDefaultValues.get(oldProp), newDefaultValues.get(newProp), key + " default value", diffs);
                 }
             }
@@ -1473,7 +1482,7 @@ public class XarReader extends AbstractXarImporter
                 if (dataTable != null)
                 {
                     Map<String, Object> row = BeanObjectFactory.Registry.getFactory(Data.class).toMap(data, null);
-                    dataTable.getAuditHandler().addAuditEvent(getUser(), getContainer(), dataTable, _auditBehaviorType, null, QueryService.AuditAction.INSERT, Collections.singletonList(row), null);
+                    dataTable.getAuditHandler(_auditBehaviorType).addAuditEvent(getUser(), getContainer(), dataTable, _auditBehaviorType, null, QueryService.AuditAction.INSERT, Collections.singletonList(row), null);
                 }
             }
 
@@ -1620,11 +1629,11 @@ public class XarReader extends AbstractXarImporter
                 value = LsidUtils.resolveLsidFromTemplate(value, getRootContext());
             }
 
-            if (StudyPublishService.AUTO_COPY_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
+            if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(simpleProp.getOntologyEntryURI()) && value != null)
             {
-                Container autoCopyContainer = ContainerManager.getForPath(value);
-                if (autoCopyContainer != null)
-                    value = autoCopyContainer.getId();
+                Container autoLinkContainer = ContainerManager.getForPath(value);
+                if (autoLinkContainer != null)
+                    value = autoLinkContainer.getId();
             }
 
             String ontologyEntryURI = trimString(simpleProp.getOntologyEntryURI());

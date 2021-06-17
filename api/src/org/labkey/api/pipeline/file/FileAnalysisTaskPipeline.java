@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
@@ -93,4 +94,7 @@ public interface FileAnalysisTaskPipeline extends TaskPipeline<FileAnalysisTaskP
 
     Boolean isInitialFileTypesRequired();
 
+    FormSchema getFormSchema();
+
+    FormSchema getCustomFieldsFormSchema();
 }

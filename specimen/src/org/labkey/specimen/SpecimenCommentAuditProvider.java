@@ -18,7 +18,6 @@ package org.labkey.specimen;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
-import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -34,10 +33,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenCommentAuditDomainKind;
 import org.labkey.api.specimen.SpecimenCommentAuditEvent;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.util.Link;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.specimen.actions.SpecimenController;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -64,10 +62,9 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
         FieldKey.fromParts(COLUMN_NAME_COMMENT)
     );
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SpecimenCommentAuditProvider()
     {
-        return new SpecimenCommentAuditDomainKind();
+        super(new SpecimenCommentAuditDomainKind());
     }
 
     @Override
@@ -144,7 +141,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                         return;
                                     }
 
-                                    ActionURL url = PageFlowUtil.urlProvider(SpecimenUrls.class).getCommentURL(container, globalUniqueId);
+                                    ActionURL url = SpecimenController.getCommentURL(container, globalUniqueId);
                                     out.write(new Link.LinkBuilder(globalUniqueId).href(url).clearClasses().toString());
                                 }
                             };

@@ -20,7 +20,7 @@ package org.labkey.api.util;
  * User: jeckels
  * Date: Apr 20, 2006
  */
-public enum ExceptionReportingLevel
+public enum ExceptionReportingLevel implements SafeToRenderEnum
 {
     NONE, LOW, MEDIUM, HIGH
 }

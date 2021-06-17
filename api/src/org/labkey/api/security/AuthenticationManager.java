@@ -74,7 +74,6 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -1093,6 +1092,26 @@ public class AuthenticationManager
         return ret;
     }
 
+    /**
+     * @return A case-insensitive map of user attribute names and values that was stashed in the associated session at
+     * authentication time. This map will often be empty but will never be null.
+     */
+    public static @NotNull Map<String, String> getAuthenticationAttributes(HttpServletRequest request)
+    {
+        HttpSession session = request.getSession(false);
+
+        return getAuthenticationAttributes(session);
+    }
+
+    public static @NotNull Map<String, String> getAuthenticationAttributes(HttpSession session)
+    {
+        Map<String, String> attributeMap = null;
+
+        if (null != session)
+            attributeMap = (Map<String, String>)session.getAttribute(SecurityManager.AUTHENTICATION_ATTRIBUTES_KEY);
+
+        return null != attributeMap ? attributeMap : Collections.emptyMap();
+    }
 
     private static boolean areNotBlank(String id, String password)
     {
@@ -1310,8 +1329,8 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Prep the new session and set the user attribute
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse().getConfiguration(), primaryAuthUser, true);
+        // Prep the new session and set the user & authentication-related attributes
+        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
 
         if (session.isNew() && !primaryAuthUser.isGuest())
         {
@@ -1369,7 +1388,7 @@ public class AuthenticationManager
 
     public static void registerMetricsProvider()
     {
-        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.MEDIUM, ModuleLoader.getInstance().getCoreModule().getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(ModuleLoader.getInstance().getCoreModule().getName(), () -> {
             Map<String, Long> map = AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
                 .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
 

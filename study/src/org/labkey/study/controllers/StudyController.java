@@ -67,8 +67,7 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
@@ -145,7 +144,6 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -191,6 +189,8 @@ import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
+import org.labkey.study.controllers.publish.SampleTypePublishConfirmAction;
+import org.labkey.study.controllers.publish.SampleTypePublishStartAction;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -266,6 +266,12 @@ public class StudyController extends BaseStudyController
 
     public static class StudyUrlsImpl implements StudyUrls
     {
+        @Override
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
         @Override
         public ActionURL getCompletionURL(Container studyContainer, CompletionType type)
         {
@@ -357,15 +363,39 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
+        public ActionURL getLinkToStudyURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishStartAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
+        }
+
+        @Override
+        public ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishStartAction.class);
         }
 
         @Override
-        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol)
         {
             return urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayPublishConfirmAction.class);
+        }
+
+        @Override
+        public ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType)
+        {
+            ActionURL url = new ActionURL(SampleTypePublishConfirmAction.class, container);
+            if (sampleType != null)
+                url.addParameter("rowId", sampleType.getRowId());
+            return url;
+        }
+
+        @Override
+        public void addManageStudyNavTrail(NavTree root, Container container, User user)
+        {
+            _addManageStudy(root, container, user);
         }
     }
 
@@ -2647,24 +2677,82 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    public static class PublishHistoryDetailsForm
+    {
+        private @Nullable Integer _protocolId;
+        private @Nullable Integer _sampleTypeId;
+        private int _datasetId;
+        private String _sourceLsid;
+        private int _recordCount;
+
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
+
+        public Integer getSampleTypeId()
+        {
+            return _sampleTypeId;
+        }
+
+        public void setSampleTypeId(Integer sampleTypeId)
+        {
+            _sampleTypeId = sampleTypeId;
+        }
+
+        public int getDatasetId()
+        {
+            return _datasetId;
+        }
+
+        public void setDatasetId(int datasetId)
+        {
+            _datasetId = datasetId;
+        }
+
+        public String getSourceLsid()
+        {
+            return _sourceLsid;
+        }
+
+        public void setSourceLsid(String sourceLsid)
+        {
+            _sourceLsid = sourceLsid;
+        }
+
+        public int getRecordCount()
+        {
+            return _recordCount;
+        }
+
+        public void setRecordCount(int recordCount)
+        {
+            _recordCount = recordCount;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public class PublishHistoryDetailsAction extends SimpleViewAction
+    public class PublishHistoryDetailsAction extends SimpleViewAction<PublishHistoryDetailsForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(PublishHistoryDetailsForm form, BindException errors)
         {
             final StudyImpl study = getStudyRedirectIfNull();
-            final ViewContext context = getViewContext();
 
             VBox view = new VBox();
 
-            int datasetId = NumberUtils.toInt((String)context.get(DatasetDefinition.DATASETKEY), -1);
+            int datasetId = form.getDatasetId();
             final DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
             if (def != null)
             {
                 final StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
+                DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, def.getName());
 
                 if (!def.canRead(getUser()))
                 {
@@ -2673,12 +2761,14 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String publishSourceId = (String)getViewContext().get("publishSourceId");
-                    String sourceLsid = (String)getViewContext().get("sourceLsid");
-                    String recordCount = (String)getViewContext().get("recordCount");
+                    Integer protocolId = form.getProtocolId();
+                    Integer sampleTypeId = form.getSampleTypeId();
+                    assert protocolId != null || sampleTypeId != null : "Expected one protocolId or sampleTypeId parameters";
+                    String sourceLsid = form.getSourceLsid(); // the assay protocol or sample type LSID
+                    int recordCount = form.getRecordCount();
 
                     ActionURL deleteURL = new ActionURL(DeletePublishedRowsAction.class, getContainer());
-                    deleteURL.addParameter("publishSourceId", publishSourceId);
+                    deleteURL.addParameter("publishSourceId", protocolId != null ? protocolId : sampleTypeId);
                     deleteURL.addParameter("sourceLsid", sourceLsid);
                     final ActionButton deleteRows = new ActionButton(deleteURL, "Recall Rows");
 
@@ -2687,7 +2777,7 @@ public class StudyController extends BaseStudyController
                     deleteRows.setDisplayPermission(DeletePermission.class);
 
                     PublishedRecordQueryView qv = new PublishedRecordQueryView(querySchema, qs, sourceLsid, def.getPublishSource(),
-                            NumberUtils.toInt(publishSourceId), NumberUtils.toInt(recordCount)) {
+                            protocolId != null ? protocolId : sampleTypeId, recordCount) {
 
                         @Override
                         protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -2707,7 +2797,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            root.addChild("Link-to-Study History Details");
+            root.addChild("Link to Study History Details");
         }
     }
 
@@ -2744,36 +2834,34 @@ public class StudyController extends BaseStudyController
 
             String originalSourceLsid = (String)getViewContext().get("sourceLsid");
 
-            // Need to handle this by groups of source lsids -- each assay container needs logging
-            MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
-
-            if (originalSourceLsid != null)
+            // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
+            MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
+            List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
+            Integer sourceRowId = null;
+            for (Map<String,Object> row : data)
             {
-                sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
-            }
-            else
-            {
-                List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
-                for (Map<String,Object> row : data)
+                String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
+                String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
+                Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
+                if (sourceLSID != null && datasetRowLsid != null)
                 {
-                    Object sourceLSID = row.get("sourcelsid");
-                    Object lsid = row.get("lsid");
-                    if (sourceLSID != null && lsid != null)
-                    {
-                        sourceLsid2datasetLsid.put(sourceLSID.toString(), lsid.toString());
-                    }
+                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
                 }
+
+                if (sourceRowId == null && rowId != null)
+                    sourceRowId = rowId;
             }
 
             Dataset.PublishSource publishSource = def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
             {
-                for (Map.Entry<String, Collection<String>> entry : sourceLsid2datasetLsid.asMap().entrySet())
+                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : sourceLsidToLsidPair.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
-                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
+                    Collection<Pair<String, Integer>> pairs = entry.getValue();
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, sourceRowId);
                     if (sourceContainer != null)
-                        StudyPublishService.get().addRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
+                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
                 }
             }
             def.deleteDatasetRows(getUser(), allLsids);
@@ -2781,7 +2869,7 @@ public class StudyController extends BaseStudyController
             // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
             if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid);
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, sourceRowId);
                 if (container != null)
                     throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }
@@ -6044,63 +6132,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class EnabledSpecimenImportForm
-    {
-        private String _activeTransform;
-
-        public String getActiveTransform()
-        {
-            return _activeTransform;
-        }
-
-        public void setActiveTransform(String activeTransform)
-        {
-            _activeTransform = activeTransform;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
-    {
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Specimen Import Mechanism");
-        }
-
-        @Override
-        public void validateCommand(EnabledSpecimenImportForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
-        {
-            setHelpTopic(new HelpTopic("externalSpecimens"));
-            return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
-        {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
-            props.put("active", form.getActiveTransform());
-            props.save();
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
-        {
-            Container c = getContainer();
-            SpecimenService specimenService = SpecimenService.get();
-
-            String active = specimenService.getActiveSpecimenImporter(c);
-            SpecimenTransform activeTransform = specimenService.getSpecimenTransform(active);
-            return activeTransform.getManageAction(c, getUser());
-        }
-    }
-
     public static class ImportVisitMapForm
     {
         private String _content;
@@ -6115,7 +6146,6 @@ public class StudyController extends BaseStudyController
             _content = content;
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class DemoModeAction extends FormViewAction<DemoModeForm>
@@ -7145,102 +7175,6 @@ public class StudyController extends BaseStudyController
         study.setParticipantAliasProperty(aliasColumn);
         study.setParticipantAliasSourceProperty(sourceColumn);
         StudyManager.getInstance().updateStudy(getUser(), study);
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
-    {
-        @Override
-        public ModelAndView getView(ManageLocationTypesForm form, BindException errors)
-        {
-            Study study = getStudyRedirectIfNull();
-            form.setRepository(study.isAllowReqLocRepository());
-            form.setClinic(study.isAllowReqLocClinic());
-            form.setSal(study.isAllowReqLocSal());
-            form.setEndpoint(study.isAllowReqLocEndpoint());
-            return new JspView<>("/org/labkey/study/view/manageLocationTypes.jsp", form);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("manageLocations");
-            _addManageStudy(root);
-            root.addChild("Manage Location Types");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class SaveLocationsTypeSettingsAction extends MutatingApiAction<ManageLocationTypesForm>
-    {
-        @Override
-        public ApiResponse execute(ManageLocationTypesForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-            if (study != null)
-            {
-                study = study.createMutable();
-                study.setAllowReqLocRepository(form.isRepository());
-                study.setAllowReqLocClinic(form.isClinic());
-                study.setAllowReqLocSal(form.isSal());
-                study.setAllowReqLocEndpoint(form.isEndpoint());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-
-                response.put("success", true);
-                return response;
-            }
-            else
-                throw new IllegalStateException("A study does not exist in this folder");
-        }
-    }
-
-    public static class ManageLocationTypesForm
-    {
-        private boolean _repository;
-        private boolean _clinic;
-        private boolean _sal;
-        private boolean _endpoint;
-
-        public boolean isRepository()
-        {
-            return _repository;
-        }
-
-        public void setRepository(boolean repository)
-        {
-            _repository = repository;
-        }
-
-        public boolean isClinic()
-        {
-            return _clinic;
-        }
-
-        public void setClinic(boolean clinic)
-        {
-            _clinic = clinic;
-        }
-
-        public boolean isSal()
-        {
-            return _sal;
-        }
-
-        public void setSal(boolean sal)
-        {
-            _sal = sal;
-        }
-
-        public boolean isEndpoint()
-        {
-            return _endpoint;
-        }
-
-        public void setEndpoint(boolean endpoint)
-        {
-            _endpoint = endpoint;
-        }
     }
 
     @RequiresPermission(ManageStudyPermission.class)

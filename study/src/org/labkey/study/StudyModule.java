@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -71,7 +70,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -119,22 +117,21 @@ import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.ExperimentListenerImpl;
 import org.labkey.study.assay.StudyPublishManager;
-import org.labkey.study.assay.query.AssayAuditProvider;
+import org.labkey.study.assay.query.PublishAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
-import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
-import org.labkey.study.controllers.PublishController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyDesignController;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.designer.DesignerController;
+import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
-import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenControllerOld;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -162,7 +159,6 @@ import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.pipeline.SpecimenPipeline;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -259,7 +255,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-shared", SharedStudyController.class);
 
         // @Migrate
-        addController("specimen", SpecimenController.class, "study-samples");
+        addController("specimen-old", SpecimenControllerOld.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -268,7 +264,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         VisitService.setInstance(new VisitServiceImpl());
         ImportHelperService.setInstance(new ImportHelperServiceImpl());
         StudyInternalService.setInstance(new StudyInternalServiceImpl());
-        SpecimenMigrationService.setInstance(SpecimenController::getDownloadURL);
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
@@ -362,12 +357,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    @Migrate // See TODOs below
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
-        // TODO: Move to specimen module
-        PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
 
         // This is in the First group because when a container is deleted,
@@ -381,7 +373,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         wikiService.registerMacroProvider("study", new StudyMacroProvider());
         registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
-        AuditLogService.get().registerAuditType(new AssayAuditProvider());
+        AuditLogService.get().registerAuditType(new PublishAuditProvider());
         AuditLogService.get().registerAuditType(new DatasetAuditProvider());
         AuditLogService.get().registerAuditType(new StudyAuditProvider());
         AuditLogService.get().registerAuditType(new StudySecurityEscalationAuditProvider());
@@ -428,7 +420,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
-        AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
+        AdminConsole.addExperimentalFeatureFlag(SpecimenService.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
@@ -445,7 +437,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
-            svc.registerUsageMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME, () -> {
+            svc.registerUsageMetrics(MODULE_NAME, () -> {
                 Map<String, Object> metric = new HashMap<>();
                 metric.put("studyCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.study").getObject(Long.class));
                 metric.put("datasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.dataset").getObject(Long.class));
@@ -459,6 +451,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
                 metric.put("studyReloadCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Study WHERE AllowReload = ? AND ReloadInterval > ?", true, 0).getObject(Long.class));
                 metric.put("securityType", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT SecurityType, COUNT(*) FROM study.Study GROUP BY SecurityType").getValueMap());
+
+                metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
+                metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
 
                 // TODO: Move to specimen module and switch to top-level stats
                 // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
@@ -808,7 +803,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "reportCountsByType"
             );
             assertTrue("Mothership report missing expected metrics",
-                    UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.MEDIUM, MODULE_NAME)
+                    UsageReportingLevel.MothershipReportTestHelper.getModuleMetrics(UsageReportingLevel.ON, MODULE_NAME)
                     .keySet().containsAll(metricNames));
         }
     }

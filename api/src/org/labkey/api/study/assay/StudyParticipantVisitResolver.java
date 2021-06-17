@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import java.util.Date;
 
 /**
- * Uses a specimen ID value in the asasy data to resolve a specimen row in the target study and merge its
+ * Uses a specimen ID value in the assay data to resolve a specimen row in the target study and merge its
  * participant, date, and visit values with whatever might have been supplied as part of the assay data, with the assay
  * data taking precedence if both are present
  * User: jeckels
@@ -40,7 +40,7 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
         super(runContainer, targetStudyContainer, user);
     }
 
-    private ParticipantVisit mergeParticipantVisitInfo(ParticipantVisitImpl originalInfo, ParticipantVisit studyInfo)
+    protected ParticipantVisit mergeParticipantVisitInfo(ParticipantVisitImpl originalInfo, ParticipantVisit studyInfo)
     {
         if (studyInfo == null)
             return originalInfo;

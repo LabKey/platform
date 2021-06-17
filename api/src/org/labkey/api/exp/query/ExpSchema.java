@@ -117,8 +117,9 @@ public class ExpSchema extends AbstractExpSchema
             {
                 SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer());
                 schema.setContainerFilter(expSchema._containerFilter);
-                ExpMaterialTable result = schema.getSampleTable(null, cf);
-                return result;
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), expSchema, cf);
+                ret.populate(null, true);
+                return ret;
             }
         },
         MaterialInputs
@@ -430,6 +431,18 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
+            }
+        };
+    }
+
+    public ForeignKey getMaterialForeignKey(ContainerFilter cf, String targetColumnName)
+    {
+        return new LookupForeignKey(targetColumnName)
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.Materials.toString(), cf);
             }
         };
     }

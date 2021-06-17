@@ -107,6 +107,7 @@ import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.WriteableAppProps;
@@ -188,6 +189,7 @@ import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.metrics.ClientSideMetricManager;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -677,10 +679,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Allow dialect to make adjustments to the just upgraded core database (e.g., install aggregate functions, etc.)
         CoreSchema.getInstance().getSqlDialect().afterCoreUpgrade(moduleContext);
 
-        // The core SQL scripts install aggregate functions and other objects that dialects need to know about. Prepare the
-        // dialects again to make sure they're aware of all the changes. Prepare all the scopes because we could have more
-        // than one scope pointed at the core database (e.g., external schemas). See #17077 (pg example) and #19177 (ss example)
-        for (DbScope scope : DbScope.getDbScopes())
+        // The core SQL scripts install aggregate functions and other objects that dialects need to know about. Prepare
+        // the previously initialized dialects again to make sure they're aware of all the changes. Prepare all the
+        // initialized scopes because we could have more than one scope pointed at the core database (e.g., external
+        // schemas). See #17077 (pg example) and #19177 (ss example).
+        for (DbScope scope : DbScope.getInitializedDbScopes())
             scope.getSqlDialect().prepare(scope);
 
         // Now that we know the standard containers have been created, add a listener that warms the just-cleared caches with
@@ -964,14 +967,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AuthenticationManager.populateSettingsWithStartupProps();
         AnalyticsServiceImpl.populateSettingsWithStartupProps();
 
-        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.LOW, getName(), () -> {
+        UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
             Map<String, Object> javaInfo = new HashMap<>();
             javaInfo.put("java.vendor", System.getProperty("java.vendor"));
             javaInfo.put("java.vm.name", System.getProperty("java.vm.name"));
             results.put("javaRuntime", javaInfo);
+            results.put("applicationMenuDisplayMode", LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getApplicationMenuDisplayMode());
             return results;
         });
+
+        ClientSideMetricManager.get().registerUsageMetrics(getName());
 
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

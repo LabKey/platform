@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.logging.log4j.Level;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.RuntimeSQLException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
@@ -341,6 +342,12 @@ public class ValidationException extends Exception implements Iterable<Validatio
     }
 
     public ValidationException addGlobalError(SQLException x)
+    {
+        _globalErrors.add(new SimpleValidationError(x));
+        return this;
+    }
+
+    public ValidationException addGlobalError(DataAccessException x)
     {
         _globalErrors.add(new SimpleValidationError(x));
         return this;

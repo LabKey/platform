@@ -97,7 +97,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
     private class PublishedRecordDataRegion extends DataRegion
     {
         private static final String MISSING_ROWS_MSG = "%s rows that were previously linked in this event have been recalled (or deleted)." +
-                " The audit record(s) of the deleted rows can be found in the <a href=\"%s\">link-to-study history view</a>, or the" +
+                " The audit record(s) of the deleted rows can be found in the <a href=\"%s\">link to study history view</a>, or the" +
                 " study dataset history view.";
 
         private int _count;
@@ -115,7 +115,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             super.renderFormEnd(ctx, out);
             if (_count < _recordCount)
             {
-                Container c = _publishSource.resolveSourceLsidContainer(_sourceLsid);
+                Container c = _publishSource.resolveSourceLsidContainer(_sourceLsid, null);
                 if (c != null)
                 {
                     if (_count == 0)

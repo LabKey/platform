@@ -251,11 +251,19 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
             fieldValues,
             authConfig,
         } = this.props;
-        let stopPoint = fields.findIndex(field => 'dictateFieldVisibility' in field) + 1;
-        if (stopPoint === 0) {
-            stopPoint = fields.length;
-        }
-        const fieldsToCreate = fieldValues.search ? fields : fields.slice(0, stopPoint);
+
+        // If dictateFieldVisibility is set on a checkbox field, its value determines the visibility of all subsequent
+        // fields until the next checkbox with a dictateFieldVisibility value, or the end of the form
+        let on = true;
+        const fieldsToCreate = fields.filter(field => {
+            const returnVal = on;
+
+            if ('dictateFieldVisibility' in field) {
+                on = fieldValues[field['name']];
+                return true;
+            }
+            return returnVal;
+        });
 
         const allFields = fieldsToCreate.map((field, index) => {
             const requiredFieldEmpty = emptyRequiredFields.indexOf(field.name) !== -1;

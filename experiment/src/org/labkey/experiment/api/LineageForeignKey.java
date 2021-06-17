@@ -160,7 +160,10 @@ class LineageForeignKey extends AbstractForeignKey
         // that's why we extend AbstractForeignKey instead of LookupForeignKey.
         // CONSIDER: we could consider adding a "really don't add any joins" flag to LookupForeignKey for this pattern
         SQLFragment sql = parent.getValueSql(ExprColumn.STR_TABLE_ALIAS);
-        var col = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(), displayField), sql, JdbcType.INTEGER);
+
+        // Issue 42873 - need to include parent as a dependency so that it can be resolved when we're not coming from
+        // the base table of the query, but are instead being resolved through a lookup
+        var col = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(), displayField), sql, JdbcType.INTEGER, parent);
         col.setFk(lookup.getFk());
         col.setUserEditable(false);
         col.setReadOnly(true);
@@ -268,7 +271,7 @@ class LineageForeignKey extends AbstractForeignKey
 
         protected TableInfo init()
         {
-            addLineageColumn("All", null, null, null, null);
+            addLineageColumn("All", null, null, null, null, "Name");
             addLevelColumn(LevelColumnType.Data);
             addLevelColumn(LevelColumnType.Material);
             addLevelColumn(LevelColumnType.ExperimentRun);
@@ -287,13 +290,13 @@ class LineageForeignKey extends AbstractForeignKey
             addColumn(col);
         }
 
-        void addLineageColumn(String name, Integer depth, String expType, String cpasType, String runProtocolLsid)
+        void addLineageColumn(String name, Integer depth, String expType, String cpasType, String runProtocolLsid, String lookupColumnName)
         {
 //            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
             col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType, runProtocolLsid));
-            applyDisplayColumn(col, depth, expType, cpasType, null);
+            applyDisplayColumn(col, depth, expType, cpasType, lookupColumnName);
             addColumn(col);
         }
     }
@@ -462,21 +465,19 @@ class LineageForeignKey extends AbstractForeignKey
         @Override
         protected TableInfo init()
         {
-            addLineageColumn("All", null, _expType, null, null);
-            // TODO: Nearest
+            addLineageColumn("All", null, _expType, null, null, null);
 
             // First level children or parents
-            // NOTE: We currently only add the LineageForeignKey to exp.Data and exp.Material tables
-            // NOTE: so the first generation in the lineage will always be an experiment run.  To get
+            // NOTE: When adding the LineageForeignKey to exp.Data and exp.Material tables
+            // NOTE: the first generation in the lineage will always be an experiment run.  To get
             // NOTE: the first data or material generation, we must skip the run generation -- hence depth of 2.
-            // NOTE: If we ever add the magic Inputs and Outputs columns to the Runs table, we'll need to change the depths.
             int depth = _expType.equals("ExperimentRuns") ? 1 : 2;
-            addLineageColumn("First", depth, _expType, null, null);
+            addLineageColumn("First", depth, _expType, null, null, null);
 
             for (ExpObject item : _items.get())
             {
                 String cpasType = item.getLSID();
-                addLineageColumn(item.getName(), null, _expType, cpasType, null);
+                addLineageColumn(item.getName(), null, _expType, cpasType, null, null);
             }
 
             return this;

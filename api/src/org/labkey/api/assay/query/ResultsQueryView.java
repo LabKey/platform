@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
@@ -26,6 +27,8 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.RenderContext;
@@ -134,6 +137,38 @@ public class ResultsQueryView extends AssayBaseQueryView
         return view;
     }
 
+    // Returns null if Study module is not available or can't but published
+    // See method in assay SampleTypeContentsView.getLinktToStudyButton
+    @Nullable
+    private ActionButton getLinkToStudyButton(DataView view, Container container)
+    {
+        if (null == StudyPublishService.get() || StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
+            return null;
+
+        StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
+        if (urls == null)
+            return null;
+
+        ActionURL publishURL = urls.getLinkToStudyURL(getContainer(), _protocol);
+        for (Pair<String, String> param : publishURL.getParameters())
+        {
+            if (!"rowId".equalsIgnoreCase(param.getKey()))
+                view.getDataRegion().addHiddenFormField(param.getKey(), param.getValue());
+        }
+        publishURL.deleteParameters();
+
+        ContainerFilter containerFilter = view.getDataRegion().getTable().getContainerFilter();
+        if (containerFilter != null && containerFilter.getType() != null)
+            publishURL.addParameter("containerFilterName", containerFilter.getType().name());
+
+        ActionButton publishButton = new ActionButton(publishURL, "Link to Study", ActionButton.Action.POST);
+        publishButton.setDisplayPermission(InsertPermission.class);
+        publishButton.setRequiresSelection(true);
+
+        return publishButton;
+    }
+
+
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
@@ -141,25 +176,9 @@ public class ResultsQueryView extends AssayBaseQueryView
         {
             super.populateButtonBar(view, bar);
 
-            if (null != StudyPublishService.get() && !StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
-            {
-                ActionURL publishURL = PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(getContainer(), _protocol);
-                for (Pair<String, String> param : publishURL.getParameters())
-                {
-                    if (!"rowId".equalsIgnoreCase(param.getKey()))
-                        view.getDataRegion().addHiddenFormField(param.getKey(), param.getValue());
-                }
-                publishURL.deleteParameters();
-
-                if (getTable().getContainerFilter() != null && getTable().getContainerFilter().getType() != null)
-                    publishURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
-
-                ActionButton publishButton = new ActionButton(publishURL, "Copy to Study", ActionButton.Action.POST);
-                publishButton.setDisplayPermission(InsertPermission.class);
-                publishButton.setRequiresSelection(true);
-
+            ActionButton publishButton = getLinkToStudyButton(view, getContainer());
+            if (publishButton != null)
                 bar.add(publishButton);
-            }
 
             bar.addAll(AssayService.get().getImportButtons(_protocol, getUser(), getContainer(), false));
             FieldKey runFK = _provider.getTableMetadata(_protocol).getRunRowIdFieldKeyFromResults();

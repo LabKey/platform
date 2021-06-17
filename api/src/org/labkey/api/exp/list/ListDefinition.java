@@ -168,6 +168,12 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
+    enum Category
+    {
+        PrivatePicklist,
+        PublicPicklist
+    }
+
     enum IndexSetting
     {
         MetaData(0, true, false),
@@ -336,6 +342,22 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ActionURL urlFor(Class<? extends Controller> actionClass, Container c);
 
     Collection<String> getDependents(User user);
+
+    Category getCategory();
+    void setCategory(Category category);
+
+    int getCreatedBy();
+
+    default boolean isVisible(@NotNull User user)
+    {
+        // any user can see public picklists and lists that aren't picklists
+        return getCategory() != Category.PrivatePicklist || getCreatedBy() == user.getUserId();
+    }
+
+    default boolean isPicklist()
+    {
+        return getCategory() == Category.PrivatePicklist || getCategory() == Category.PublicPicklist;
+    }
 
     DiscussionSetting getDiscussionSetting();
     void setDiscussionSetting(DiscussionSetting discussionSetting);

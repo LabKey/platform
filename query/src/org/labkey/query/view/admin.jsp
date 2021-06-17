@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.query.persist.QueryManager" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <h3>External Schemas</h3>
@@ -83,6 +85,10 @@ else
             <td class='labkey-column-header' style='min-width:80px;'>Name</td>
             <td class='labkey-column-header' style='min-width:80px;'>Data Source</td>
             <td class='labkey-column-header' style='min-width:80px;'>Source Database Schema</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Created</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Created By</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Modified</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Modified By</td>
             <td class='labkey-column-header' colspan="<%=isAdmin ? 5 : 3%>">&nbsp;</td>
         </tr>
     <%
@@ -99,7 +105,12 @@ else
         <tr class='<%=getShadeRowClass(i)%>'>
             <td><%=h(def.getUserSchemaName())%></td>
             <td><%=h(def.getDataSource())%></td>
-            <td><%=h(def.getSourceSchemaName())%></td><%
+            <td><%=h(def.getSourceSchemaName())%></td>
+            <td><%=h(DateUtil.formatDate(c, def.getCreated()))%></td>
+            <td><%=h(UserManager.getUser(def.getCreatedBy()) == null ? "" : UserManager.getUser(def.getCreatedBy()).getDisplayName(getUser()))%></td>
+            <td><%=h(DateUtil.formatDate(c, def.getModified()))%></td>
+            <td><%=h(UserManager.getUser(def.getModifiedBy()) == null ? "" : UserManager.getUser(def.getModifiedBy()).getDisplayName(getUser()))%></td>
+            <%
                 if (null != DbScope.getDbScope(def.getDataSource()))
                 {
             %>
@@ -160,6 +171,10 @@ else
             <td class='labkey-column-header' style='min-width:80px;'>Schema Template</td>
             <td class='labkey-column-header' style='min-width:80px;'>Source Container</td>
             <td class='labkey-column-header' style='min-width:80px;'>Source LabKey Schema</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Created</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Created By</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Modified</td>
+            <td class='labkey-column-header' style='min-width:80px;'>Modified By</td>
             <td class='labkey-column-header' colspan="<%=isAdmin ? 5 : 3%>">&nbsp;</td>
         </tr>
     <%
@@ -191,6 +206,11 @@ else
                 <%=h(linkedSchema.getSourceSchemaName())%>
                 <% } %>
             </td>
+            <td><%=h(DateUtil.formatDate(c, linkedSchema.getCreated()))%></td>
+            <td><%=h(UserManager.getUser(linkedSchema.getCreatedBy()) == null ? "" : UserManager.getUser(linkedSchema.getCreatedBy()).getDisplayName(getUser()))%></td>
+            <td><%=h(DateUtil.formatDate(c, linkedSchema.getModified()))%></td>
+            <td><%=h(UserManager.getUser(linkedSchema.getModifiedBy()) == null ? "" : UserManager.getUser(linkedSchema.getModifiedBy()).getDisplayName(getUser()))%></td>
+
             <td class="labkey-noborder"><%=link("view schema", urlView)%></td>
             <% if (isAdmin) {%><td class="labkey-noborder"><%=link("edit", urlEdit)%></td><%}%>
             <% if (isAdmin) {%><td class="labkey-noborder"><%=link("delete", urlDelete)%></td><%}%>

@@ -61,17 +61,26 @@
         <input type="text" id="notificationEmail" name="notificationEmail" style="width: 100%; max-width: 40em;" value="<%=h(bean.getNotificationEmail())%>">
     </div>
 
-    <h3 style="margin-bottom: 2px;"><label for="allowReporting">Error and Usage Reporting</label></h3>
+    <h3 style="margin-bottom: 2px;"><label>Error and Usage Reporting</label></h3>
     <div style="margin-bottom: 10px;">
-        Help improve LabKey Server by reporting errors and basic usage statistics to the LabKey team. This
-        data is used by LabKey to help identify bugs and prioritize enhancements to the platform.
-        No confidential data is submitted.
+    <%
+        if (!AppProps.getInstance().isDevMode())
+        {
+    %>
+        This server is configured to report exception and basic usage information to the LabKey team to identify bugs and prioritize product enhancements. No confidential data is submitted.<br>
+        We strongly recommend this basic level of reporting. You can review the data submitted and
+    <%
+        }
+        else
+        {
+    %>
+        Since this server is running in dev mode, <%=h(AppProps.getInstance().isSelfReportExceptions() ?
+            "exceptions will be reported to the local server and usage reporting has been disabled" :
+            "exception and usage reporting have both been disabled")%>. You can
+    <%
+        }
+    %>adjust these settings via the Site Settings page in the Admin Console.
         <br/>
-        <div style="margin-top: 5px;">
-            <input type="checkbox" id="allowReporting" name="allowReporting" <%=checked(bean.isAllowReporting() && !AppProps.getInstance().isDevMode())%>> Allow Automatic Reporting
-            <% String recommendText = AppProps.getInstance().isDevMode() ? "(we recommend leaving this unchecked when running in dev mode)" : "(we strongly recommend this basic level of reporting)"; %>
-            <span style="font-size: smaller; font-style: italic;"><%=h(recommendText)%></span>
-        </div>
     </div>
     <%= button("Next").submit(true) %>
 </labkey:form>

@@ -15,18 +15,27 @@
  */
 package org.labkey.api.view.template;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.ViewContext;
 
 public interface WarningProvider
 {
-    // Add warnings for conditions that will never change while the server is running (e.g., size of JVM heap or Tomcat version).
-    // These are displayed to site administrators only.
-    default void addStaticWarnings(Warnings warnings)
+    /**
+     * Add warnings for conditions that will never change while the server is running (e.g., size of JVM heap or Tomcat
+     * version). These warnings are displayed to site administrators only.
+     * @param warnings A @NotNull Warnings collector
+     */
+    default void addStaticWarnings(@NotNull Warnings warnings)
     {
     }
 
-    // Add warnings based on the current context (folder, user, page, etc.).
-    default void addDynamicWarnings(Warnings warnings, ViewContext context)
+    /**
+     * Add warnings based on the current context (folder, user, page, etc.). Implementations must check permissions on
+     * the context to limit who sees the warning(s); otherwise, ALL users (including guests) will see the warning(s).
+     * @param warnings A @NotNull Warnings collector
+     * @param context A @NotNull ViewContext that also guarantees a @NotNull getUser() and @NotNull getRequest()
+     */
+    default void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context)
     {
     }
 }

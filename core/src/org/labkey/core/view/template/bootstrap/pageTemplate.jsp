@@ -110,7 +110,15 @@
 <%
     }
 %>
-<script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
+<script type="text/javascript">
+    LABKEY.loadScripts();
+    LABKEY.showNavTrail();
+
+    // for any non-app LKS page, we want to opt-in to the standard session invalid handling
+    <% if (!me.isAppTemplate()) { %>
+        if (LABKEY.WebSocket) LABKEY.WebSocket.initWebSocket();
+    <% } %>
+</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
 <%
     // container is null for notfound pages

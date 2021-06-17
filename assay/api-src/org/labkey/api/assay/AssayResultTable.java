@@ -21,7 +21,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -66,8 +65,10 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.study.publish.StudyPublishService;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -88,7 +89,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     private static final String RUN_ID_ALIAS = "Run";
 
-    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeCopiedToStudyColumns)
+    public AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeLinkedToStudyColumns)
     {
         super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema, cf);
         _protocol = _userSchema.getProtocol();
@@ -240,9 +241,12 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         SQLFragment qcFragment = qcService.getDataTableCondition(_protocol, getContainer(), getUserSchema().getUser());
         addCondition(qcFragment);
 
-        if (includeCopiedToStudyColumns)
+        StudyPublishService studyPublishService = StudyPublishService.get();
+        if (includeLinkedToStudyColumns && studyPublishService != null)
         {
-            Set<String> studyColumnNames = schema.addCopiedToStudyColumns(this, false);
+            String rowIdName = _provider.getTableMetadata(_protocol).getResultRowIdFieldKey().getName();
+            Set<String> studyColumnNames = studyPublishService.addLinkedToStudyColumns(this, Dataset.PublishSource.Assay, false, _protocol.getRowId(), rowIdName, _userSchema.getUser());
+
             for (String columnName : studyColumnNames)
             {
                 visibleColumns.add(new FieldKey(null, columnName));

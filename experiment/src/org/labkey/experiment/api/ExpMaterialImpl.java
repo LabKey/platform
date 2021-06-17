@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -53,7 +54,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -110,7 +113,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public void setLSID(Lsid lsid)
     {
         if (null != getName() && !getName().equals(lsid.getObjectId()))
-            throw new IllegalStateException("name="+getName() + " lsid="+lsid.toString());
+            throw new IllegalStateException("name=" + getName() + " lsid=" + lsid);
         super.setLSID(lsid);
     }
 
@@ -371,10 +374,31 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                ExperimentServiceImpl.get().setMaterialLastIndexed(getRowId(), ms);
+                // setLastIndexed() can get called very rapidly after a bulk insert/update
+                // so we'll collect these instead of updating one at a time
+                synchronized (updateLastIndexedList)
+                {
+                    boolean wasEmpty = updateLastIndexedList.isEmpty();
+                    updateLastIndexedList.add(new Pair<>(getRowId(), ms));
+                    if (wasEmpty)
+                    {
+                        JobRunner.getDefault().execute(1000, () ->
+                        {
+                            List<Pair<Integer, Long>> copy = null;
+                            synchronized (updateLastIndexedList)
+                            {
+                                copy = List.copyOf(updateLastIndexedList);
+                                updateLastIndexedList.clear();
+                            }
+                            ExperimentServiceImpl.get().setMaterialLastIndexed(copy);
+                        });
+                    }
+                }
             }
         };
     }
+
+    static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
 
     private static void append(StringBuilder sb, @Nullable Identifiable identifiable)
     {
@@ -534,7 +558,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (ConversionException x)
                 {
-                    throw new ValidationException("Could not convert '" + value + "' for field " + dp.getName() + ", should be of type " + dp.getPropertyDescriptor().getPropertyType().getJavaType().getSimpleName());
+                    throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
                 }
                 converted.put(dp.getName(), value);
                 values.remove(key);

@@ -58,7 +58,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -74,8 +73,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 
 /**
  *
@@ -313,7 +312,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         keys = new Object[]{lsid};
         TableInfo t = _sampleType.getTinfo();
         // Sample type uses FILE_LINK not FILE_ATTACHMENT, use convertTypes() to handle posted files
-        convertTypes(c, validRowCopy, t, "sampleset");
+        convertTypes(c, validRowCopy, t, "sampletype");
         if (t.getColumnNameSet().stream().anyMatch(validRowCopy::containsKey))
         {
             ret.putAll(Table.update(user, t, validRowCopy, t.getColumn("lsid"), keys, null, Level.DEBUG));

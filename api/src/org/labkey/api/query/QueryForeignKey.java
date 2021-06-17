@@ -171,6 +171,12 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
+        public Builder key(Enum name)
+        {
+            this.lookupKey = name.name();
+            return this;
+        }
+
 //        public Builder setLookupKey(String name)
 //        {
 //            this.lookupKey = name;

@@ -10,8 +10,9 @@ import {
     PermissionAssignments,
     PermissionsPageContextProvider,
     PermissionsProviderProps,
-    SecurityPolicy
-} from "@labkey/components";
+    SecurityPolicy,
+    User
+} from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 
 interface State {
@@ -63,6 +64,7 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<PermissionsProvi
 
     render() {
         const { loading, error, message } = this.state;
+        const user = new User(getServerContext().user);
 
         if (loading) {
             return <LoadingSpinner/>
@@ -78,6 +80,7 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<PermissionsProvi
                 <PermissionAssignments
                     {...this.props}
                     {...this.state}
+                    showDetailsPanel={user.isRootAdmin}
                     containerId={getServerContext().container.id}
                     onChange={this.onChange}
                     onSuccess={this.onSuccess}

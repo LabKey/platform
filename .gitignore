@@ -22,9 +22,15 @@ core/resources/views/gen
 
 experiment/resources/web/experiment/gen
 experiment/resources/views/gen
+experiment/resources/credits/jars.txt
 
 assay/resources/web/assay/gen
 assay/resources/views/gen
+
+pipeline/resources/web/pipeline/gen
+pipeline/resources/views/gen
+
+internal/resources/credits/jars.txt
 
 # Gradle
 core/.gradle
@@ -34,3 +40,4 @@ query/.gradle
 study/.gradle
 list/.gradle
 issues/.gradle
+pipeline/.gradle

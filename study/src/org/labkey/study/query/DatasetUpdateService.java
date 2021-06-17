@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -30,8 +31,10 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
@@ -43,7 +46,9 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.security.StudySecurityEscalator;
+import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
@@ -52,6 +57,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -283,6 +289,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             boolean hasRowId = _dataset.getKeyManagementType() == Dataset.KeyManagementType.RowId;
 
+            if (null != rows)
+            {
+                // TODO: consider creating DataIterator metadata to mark "internal" cols (not to be returned via API)
+                DataIterator it = etl.getDataIterator(context);
+                DataIteratorBuilder cleanMap = new MapDataIterator.MapDataIteratorImpl(it, true, CaseInsensitiveHashSet.of(
+                        it.getColumnInfo(0).getName()
+                ));
+                etl = cleanMap;
+            }
+
             if (!hasRowId)
             {
                 return super._pump(etl, rows, context);
@@ -493,6 +509,16 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     protected int truncateRows(User user, Container container)
     {
        return _dataset.deleteRows((Date) null);
+    }
+
+    @Override
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<Enum, Object> updatedParams = configParameters;
+        if (updatedParams == null)
+            updatedParams = new HashMap<>();
+        updatedParams.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.SUMMARY);
+        return super.truncateRows(user, container, updatedParams, extraScriptContext);
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

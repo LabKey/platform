@@ -125,7 +125,7 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), true))
         {
             // ignore the magic sample type that is used for the specimen repository, it is managed by the specimen importer
-            if (StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
+            if (StudyService.get() != null && StudyService.get().getStudy(ctx.getContainer()) != null && SpecimenService.SAMPLE_TYPE_NAME.equals(sampleType.getName()))
                 continue;
 
             // ignore sample types that are filtered out
@@ -161,12 +161,6 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
                     .collect(Collectors.toList()));
             exportTypes = true;
         }
-
-        // add any sample derivation or aliquot runs
-        List<ExpRun> runs = ExperimentService.get().getExpRuns(ctx.getContainer(), null, null).stream()
-                .filter(run -> run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
-                || run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID))
-                .collect(Collectors.toList());
 
         // get the list of runs with the materials or data we expect to export, these will be the sample derivation
         // protocol runs to track the lineage

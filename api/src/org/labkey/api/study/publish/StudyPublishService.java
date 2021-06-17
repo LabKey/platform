@@ -19,6 +19,7 @@ package org.labkey.api.study.publish;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -26,12 +27,17 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.query.PublishResultsQueryView;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -51,16 +57,18 @@ public interface StudyPublishService
     String SEQUENCENUM_PROPERTY_NAME = "SequenceNum";
     String DATE_PROPERTY_NAME = "Date";
     String SOURCE_LSID_PROPERTY_NAME = "SourceLSID";
+    String LSID_PROPERTY_NAME = "LSID";
+    String ROWID_PROPERTY_NAME = "RowId";
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
-    String AUTO_COPY_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
+    String AUTO_LINK_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
 
     String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
     String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
 
-    // auto copy to study target which defaults to the study in the folder the import occurs, using the shared folder
+    // auto link to study target which defaults to the study in the folder the import occurs, using the shared folder
     // which should be safe from collisions since we don't allow assay creation there
-    Container AUTO_COPY_TARGET_ASSAY_IMPORT_FOLDER = ContainerManager.getSharedContainer();
+    Container AUTO_LINK_TARGET_IMPORT_FOLDER = ContainerManager.getSharedContainer();
 
     static void setInstance(StudyPublishService serviceImpl)
     {
@@ -72,7 +80,7 @@ public interface StudyPublishService
         return ServiceRegistry.get().getService(StudyPublishService.class);
     }
 
-    void checkForAlreadyCopiedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
+    void checkForAlreadyLinkedRows(User user, Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer);
 
     ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
@@ -95,11 +103,16 @@ public interface StudyPublishService
     TimepointType getTimepointType(Container container);
 
     /**
-     * Automatically copy assay data to a study if the design is set up to do so
-     * @return any errors that prevented the copy
+     * Automatically link assay data to a study if the design is set up to do so
+     * @return any errors that prevented the link
      */
     @Nullable
-    ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
+    ActionURL autoLinkAssayResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors);
+
+    /**
+     * Automatically link sample type data to a study if the design is set up to do so
+     */
+    void autoLinkSampleType(ExpSampleType sampleType, List<Map<String, Object>> results, Container container, User user);
 
     /** Checks if the assay and specimen participant/visit/dates don't match based on the specimen id and target study */
     boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema);
@@ -107,7 +120,7 @@ public interface StudyPublishService
     ExpProtocol ensureStudyPublishProtocol(User user, Container container, @Nullable String name, @Nullable String lsid) throws ExperimentException;
 
     /**
-     * Returns the set of datasets which have ever had data copied from the provided protocol
+     * Returns the set of datasets which have ever had data linked from the provided protocol
      */
     Set<? extends Dataset> getDatasetsForPublishSource(Integer sourceId, Dataset.PublishSource publishSource);
 
@@ -117,5 +130,20 @@ public interface StudyPublishService
      */
     Set<? extends Dataset> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
 
-    void addRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user);
+    void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Integer>> datasetRowLsidAndSourceRowIds);
+
+    /**
+     * Adds columns to an assay data table, providing a link to any datasets that have
+     * had data linked into them.
+     * @return The names of the added columns that should be visible
+     */
+    Set<String> addLinkedToStudyColumns(AbstractTableInfo table, Dataset.PublishSource publishSource, boolean setVisibleColumns, int rowId, String rowIdName, User user);
+
+    /**
+     * For a given sample, helps identify the special columns : subject/visit/date that are needed to publish sample rows to a
+     * study target.
+     *
+     * @param qs an optional query settings if custom view fields should be additionally inspected for publish relevant columns.
+     */
+    Map<PublishResultsQueryView.ExtraColFieldKeys, FieldKey> getSamplePublishFieldKeys(User user, Container container, ExpSampleType sampleType, @Nullable QuerySettings qs);
 }

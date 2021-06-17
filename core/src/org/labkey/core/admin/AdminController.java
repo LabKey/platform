@@ -1578,6 +1578,7 @@ public class AdminController extends SpringActionController
         private String _themeName;
         private String _themeFont;
         private String _folderDisplayMode;
+        private String _applicationMenuDisplayMode;
         private boolean _enableHelpMenu;
         private boolean _enableDiscussion;
         private String _logoHref;
@@ -1658,6 +1659,19 @@ public class AdminController extends SpringActionController
         {
             _folderDisplayMode = folderDisplayMode;
         }
+
+
+        public String getApplicationMenuDisplayMode()
+        {
+            return _applicationMenuDisplayMode;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setApplicationMenuDisplayMode(String displayMode)
+        {
+            _applicationMenuDisplayMode = displayMode;
+        }
+
 
         public String getDateParsingMode()
         {
@@ -3642,7 +3656,6 @@ public class AdminController extends SpringActionController
     {
         private String _notificationEmail;
         private String _siteName;
-        private boolean _allowReporting;
 
         public String getNotificationEmail()
         {
@@ -3662,16 +3675,6 @@ public class AdminController extends SpringActionController
         public void setSiteName(String siteName)
         {
             _siteName = siteName;
-        }
-
-        public boolean isAllowReporting()
-        {
-            return _allowReporting;
-        }
-
-        public void setAllowReporting(boolean allowReporting)
-        {
-            _allowReporting = allowReporting;
         }
     }
 
@@ -3708,18 +3711,6 @@ public class AdminController extends SpringActionController
             boolean success = super.handlePost(form, errors);
             if (success)
             {
-                WriteableAppProps appProps = AppProps.getWriteableInstance();
-                if (form.isAllowReporting() && appProps.getExceptionReportingLevel() == ExceptionReportingLevel.NONE)
-                {
-                    appProps.setExceptionReportingLevel(ExceptionReportingLevel.MEDIUM);
-                    appProps.setUsageReportingLevel(UsageReportingLevel.MEDIUM);
-                }
-                else if (!form.isAllowReporting())
-                {
-                    appProps.setExceptionReportingLevel(ExceptionReportingLevel.NONE);
-                    appProps.setUsageReportingLevel(UsageReportingLevel.NONE);
-                }
-
                 WriteableLookAndFeelProperties lafProps = LookAndFeelProperties.getWriteableInstance(ContainerManager.getRoot());
                 try
                 {
@@ -3731,12 +3722,9 @@ public class AdminController extends SpringActionController
                     return false;
                 }
                 lafProps.setSystemShortName(form.getSiteName());
-
-                appProps.save(getUser());
                 lafProps.save();
 
-                // If the admin has not opted out of usage reporting, send an immediate report
-                // now that they've set up their account and defaults, and then every 24 hours after.
+                // Send an immediate report now that they've set up their account and defaults, and then every 24 hours after.
                 ModuleLoader.getInstance().setDeferUsageReport(false);
                 AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
 
@@ -3755,7 +3743,6 @@ public class AdminController extends SpringActionController
                 if (root.exists())
                     form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
 
-                form.setAllowReporting(!AppProps.getInstance().isDevMode());
                 LookAndFeelProperties props = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
                 form.setSiteName(props.getShortName());
                 form.setNotificationEmail(props.getSystemEmailAddress());
@@ -9515,7 +9502,7 @@ public class AdminController extends SpringActionController
     static class MothershipReportSelectionForm
     {
         private String _type = MothershipReport.Type.CheckForUpdates.toString();
-        private String _level = UsageReportingLevel.MEDIUM.toString();
+        private String _level = UsageReportingLevel.ON.toString();
         private boolean _submit = false;
         private String _forwardedFor = null;
         // indicates action is being invoked for dev/test
@@ -9988,8 +9975,8 @@ public class AdminController extends SpringActionController
                 props.setSupportEmail(null);
             }
 
-            FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
-            props.setFolderDisplayMode(folderDisplayMode);
+            props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
+            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
             props.setHelpMenuEnabled(form.isEnableHelpMenu());
             props.setDiscussionEnabled(form.isEnableDiscussion());
 

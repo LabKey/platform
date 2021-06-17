@@ -80,7 +80,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     {
         // TODO: Test others
 
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         String distributionName = isTestRunningOnTeamCity() ? "teamcity" : "localBuild";
         assertEquals("Incorrect distribution name", distributionName, installDetail.getDistributionName());
@@ -91,7 +91,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     @Test
     public void testJsonMetrics()
     {
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         assertTextPresent("jsonMetrics",
                 "modules",
                 "CoreController", // in the module page hit counts
@@ -122,7 +122,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     {
         log("Simulate receiving a report behind a load balancer");
         String forwardedFor = "172.217.5.68"; // The IP address for www.google.com, so unlikely to ever be the real test server IP address
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, forwardedFor);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, forwardedFor);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         assertEquals("Incorrect forwarded IP address", forwardedFor, installDetail.getServerIP());
     }
@@ -132,7 +132,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
     {
         log("Send test server host name from base server url");
         String hostName = "TEST_" + new URI(CustomizeSitePage.beginAt(this).getBaseServerUrl()).getHost();
-        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.MEDIUM, true, null);
+        _mothershipHelper.createUsageReport(MothershipHelper.ReportLevel.ON, true, null);
         ShowInstallationDetailPage installDetail = ShowInstallationDetailPage.beginAt(this);
         assertEquals("Incorrect server host name", hostName, installDetail.getServerHostName());
     }

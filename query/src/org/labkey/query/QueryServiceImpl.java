@@ -2388,7 +2388,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (ConversionException e)
             {
-                throw new RuntimeSQLException(new SQLGenerationException("Could not convert '" + value + "' to a " + p.getJdbcType() + " for column '" + p.getName() + "'"));
+                throw new RuntimeSQLException(new SQLGenerationException(ConvertHelper.getStandardConversionErrorMessage(value, p.getName(), p.getJdbcType().getJavaClass())));
             }
         }
     }

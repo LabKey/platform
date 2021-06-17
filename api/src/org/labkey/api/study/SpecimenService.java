@@ -31,6 +31,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -48,6 +49,7 @@ import java.util.Set;
 public interface SpecimenService
 {
     String SAMPLE_TYPE_NAME = "Study Specimens";
+    String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     static void setInstance(SpecimenService serviceImpl)
     {
@@ -140,4 +142,7 @@ public interface SpecimenService
 
     @Migrate // Remove after specimen module refactor (SpecimenImporter should call the impl)
     void fireSpecimensChanged(Container c, User user, Logger logger);
+
+    @Migrate // Remove after specimen module refactor
+    Class<? extends Controller> getManageSpecimenWebPartActionClass();
 }

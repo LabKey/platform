@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
@@ -90,7 +91,7 @@ public class IssueValidation
                     }
                     catch (ConversionException e)
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, String.format("Could not convert '%s' to an %s", entry.getValue(), col.getJavaClass().getSimpleName()));
+                        errors.reject(SpringActionController.ERROR_MSG, ConvertHelper.getStandardConversionErrorMessage(entry.getValue(), col.getName(), col.getJavaClass()));
                     }
                 }
             }
