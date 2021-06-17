@@ -23,6 +23,7 @@ import org.labkey.announcements.model.Permissions;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -34,7 +35,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: Nick
@@ -43,6 +46,13 @@ import java.util.List;
  */
 public class AnnouncementServiceImpl implements AnnouncementService
 {
+    private Map<String, DiscussionSrcTypeProvider> _discussionSrcTypeProviders;
+
+    public AnnouncementServiceImpl()
+    {
+        _discussionSrcTypeProviders = new HashMap<>();
+    }
+
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification)
     {
@@ -173,5 +183,17 @@ public class AnnouncementServiceImpl implements AnnouncementService
         }
 
         AnnouncementManager.deleteAnnouncement(container, announcement.getRowId());
+    }
+
+    @Override
+    public @Nullable DiscussionSrcTypeProvider getDiscussionSrcTypeProvider(String type)
+    {
+        return _discussionSrcTypeProviders.get(type);
+    }
+
+    @Override
+    public void registerDiscussionSrcTypeProvider(String type, DiscussionSrcTypeProvider typeProvider)
+    {
+        _discussionSrcTypeProviders.put(type, typeProvider);
     }
 }

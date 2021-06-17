@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
+import javax.validation.constraints.Null;
 import java.util.List;
 
 /**
@@ -56,4 +57,9 @@ public interface AnnouncementService
 
     // Delete
     void deleteAnnouncement(Announcement announcement);
+
+    @Nullable
+    DiscussionSrcTypeProvider getDiscussionSrcTypeProvider(@Null String type);
+
+    void registerDiscussionSrcTypeProvider(String type, DiscussionSrcTypeProvider typeProvider);
 }
