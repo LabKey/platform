@@ -95,6 +95,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -737,6 +738,18 @@ public class ContainerManager
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET LockState = ? WHERE RowID = ?");
         new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
+
+        _removeFromCache(container);
+    }
+
+    public static void updateExpirationDate(Container container, LocalDate expirationDate, User user)
+    {
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET ExpirationDate = ? WHERE RowID = ?");
+        new SqlExecutor(CORE.getSchema()).execute(sql, expirationDate, container.getRowId());
 
         _removeFromCache(container);
     }
@@ -2705,7 +2718,7 @@ public class ContainerManager
             boolean searchable = rs.getBoolean("Searchable");
             String lockStateString = rs.getString("LockState");
             LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).orNull() : null;
-            Date expirationDate = rs.getDate("ExpirationDate");
+            LocalDate expirationDate = rs.getObject("ExpirationDate", LocalDate.class);
 
             Container dirParent = null;
             if (null != parentId)
