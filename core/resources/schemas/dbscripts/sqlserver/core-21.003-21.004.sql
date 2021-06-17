@@ -1,1 +1,1 @@
-SELECT core.executeJavaUpgradeCode('migrateDefaultDomainSetting');
+EXEC core.executeJavaUpgradeCode 'migrateDefaultDomainSetting';
