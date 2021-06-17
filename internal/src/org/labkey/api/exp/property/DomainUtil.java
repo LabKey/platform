@@ -561,7 +561,7 @@ public class DomainUtil
 
         //error if mandatory field name is not the same as orig or has been removed in updated domain
         String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getFields());
-        if(StringUtils.isNotEmpty(missingMandatoryField))
+        if (StringUtils.isNotEmpty(missingMandatoryField))
         {
             validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
             return validationException;
@@ -617,7 +617,7 @@ public class DomainUtil
             }
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields
             DomainProperty p = d.getProperty(pd.getPropertyId());
-            if(p == null)
+            if (p == null)
             {
                 String errorMsg = "Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.";
                 validationException.addError(new PropertyValidationError(errorMsg, pd.getName(), pd.getPropertyId()));

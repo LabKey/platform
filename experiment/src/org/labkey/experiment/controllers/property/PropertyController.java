@@ -500,6 +500,166 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class UpdateDomainApiForm
+    {
+        private int domainId;
+        private boolean includeWarnings;
+        private List<Integer> deleteFields;
+        private List<GWTPropertyDescriptor> updateFields;
+        private List<GWTPropertyDescriptor> createFields;
+
+        public int getDomainId()
+        {
+            return domainId;
+        }
+
+        public void setDomainId(int domainId)
+        {
+            this.domainId = domainId;
+        }
+
+        public boolean isIncludeWarnings()
+        {
+            return includeWarnings;
+        }
+
+        public void setIncludeWarnings(boolean includeWarnings)
+        {
+            this.includeWarnings = includeWarnings;
+        }
+
+        public List<Integer> getDeleteFields()
+        {
+            return deleteFields;
+        }
+
+        public void setDeleteFields(List<Integer> deleteFields)
+        {
+            this.deleteFields = deleteFields;
+        }
+
+        public List<GWTPropertyDescriptor> getUpdateFields()
+        {
+            return updateFields;
+        }
+
+        public void setUpdateFields(List<GWTPropertyDescriptor> updateFields)
+        {
+            this.updateFields = updateFields;
+        }
+
+        public List<GWTPropertyDescriptor> getCreateFields()
+        {
+            return createFields;
+        }
+
+        public void setCreateFields(List<GWTPropertyDescriptor> createFields)
+        {
+            this.createFields = createFields;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
+    public class UpdateDomainAction extends MutatingApiAction<UpdateDomainApiForm>
+    {
+        Domain _domain;
+
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            _propertyService.configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
+        public void validateForm(UpdateDomainApiForm form, Errors errors)
+        {
+            if (form.getDomainId() == 0)
+            {
+                errors.rejectValue("domainId", ERROR_MSG, "domainId required");
+                return;
+            }
+
+            _domain = PropertyService.get().getDomain(form.getDomainId());
+            if (_domain == null)
+                throw new NotFoundException("Could not find domain for " + form.getDomainId() + ".");
+        }
+
+        @Override
+        public Object execute(UpdateDomainApiForm form, BindException errors) throws Exception
+        {
+            GWTDomain<GWTPropertyDescriptor> originalDomain = DomainUtil.getDomainDescriptor(getUser(), _domain);
+            GWTDomain<GWTPropertyDescriptor> newDomain = DomainUtil.getDomainDescriptor(getUser(), _domain);
+
+            // apply changes from the form to the domain.
+            // DomainUtil.updateDomainDescriptor() will calculate the inverse when diffing the domains.
+
+            if (form.deleteFields != null && !form.deleteFields.isEmpty())
+            {
+                newDomain.getFields().removeIf(field -> form.getDeleteFields().contains(field.getPropertyId()));
+            }
+
+            if (form.updateFields != null && !form.updateFields.isEmpty())
+            {
+                OUTER: for (var updateField : form.updateFields)
+                {
+                    if (updateField.getPropertyId() <= 0)
+                    {
+                        errors.reject(ERROR_MSG, "propertyId required for updated field '" + updateField.getName() + "'");
+                        continue;
+                    }
+
+                    // find and replace the field
+                    // CONSIDER: only update field values that are present in the request
+                    for (var i = 0; i < newDomain.getFields().size(); i++)
+                    {
+                        var existingField = newDomain.getFields().get(i);
+                        if (updateField.getPropertyId() > 0 && updateField.getPropertyId() == existingField.getPropertyId())
+                        {
+                            newDomain.getFields().set(i, updateField);
+                            break OUTER;
+                        }
+                    }
+                }
+            }
+
+            if (form.createFields != null && !form.createFields.isEmpty())
+            {
+                newDomain.getFields().addAll(form.createFields);
+            }
+
+            boolean includeWarnings = form.isIncludeWarnings();
+            boolean hasErrors = false;
+
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, null, getContainer(), getUser(), includeWarnings);
+            for (ValidationError ve : updateErrors.getErrors())
+            {
+                if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
+                    hasErrors = true;
+            }
+
+            if (hasErrors || includeWarnings)
+                updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
+
+            // CONSIDER: Echo back domain, or at least the inserted/updated fields
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            return resp;
+        }
+
+    }
+
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class DeleteDomainAction extends MutatingApiAction<DomainApiForm>
@@ -516,7 +676,8 @@ public class PropertyController extends SpringActionController
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class DomainApiForm {
+    public static class DomainApiForm
+    {
         private String kind;
         private String domainKind;
         private String domainName;
