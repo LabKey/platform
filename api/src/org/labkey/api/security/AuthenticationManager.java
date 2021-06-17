@@ -269,47 +269,36 @@ public class AuthenticationManager
         return value == null ? defaultValue : Boolean.valueOf(value);
     }
 
-    public static void saveAuthSetting(User user, String key, Object value)
+    public static void saveAuthSetting(User user, String key, boolean value)
+    {
+        saveAuthSetting(user, key, Boolean.toString(value), value ? "enabled" : "disabled");
+    }
+
+    private static void saveAuthSetting(User user, String key, String value)
+    {
+        saveAuthSetting(user, key, value, "set to " + value);
+    }
+
+    private static void saveAuthSetting(User user, String key, String value, String action)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        if (value instanceof Boolean)
-        {
-            props.put(key, Boolean.toString((boolean) value));
-            addAuthSettingAuditEvent(user, key, (boolean) value ? "enabled" : "disabled");
-        }
-        else
-        {
-            props.put(key, (String) value);
-            addAuthSettingAuditEvent(user, key, "set to " + value);
-        }
+        props.put(key, value);
+        addAuthSettingAuditEvent(user, key, action);
         props.save();
     }
 
     public static void saveAuthSettings(User user, Map<String, Object> map)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        PropertyMap props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
 
-        Map<String, Object> changed = map.entrySet().stream()
-                .filter(e->!e.getValue().equals(props.get(e.getKey())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        if (!changed.isEmpty())
-        {
-            changed.forEach((k, v)->{
-                boolean vIsBoolean = v instanceof Boolean;
-                props.put(k, vIsBoolean ? Boolean.toString((Boolean) v) : (String) v);
-                if (vIsBoolean)
-                {
-                    addAuthSettingAuditEvent(user, k, (Boolean) v ? "enabled" : "disabled");
-                }
+        map.entrySet().stream()
+            .filter(e->!e.getValue().equals(props.get(e.getKey())))
+            .forEach(e->{
+                if (e.getValue() instanceof Boolean)
+                    saveAuthSetting(user, e.getKey(), (boolean)e.getValue());
                 else
-                {
-                    addAuthSettingAuditEvent(user, k, (String) v);
-                }
+                    saveAuthSetting(user, e.getKey(), (String)e.getValue());
             });
-
-            props.save();
-        }
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
