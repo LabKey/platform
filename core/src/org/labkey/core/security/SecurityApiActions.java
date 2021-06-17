@@ -204,14 +204,14 @@ public class SecurityApiActions
                 }
 
                 //add effective roles array
-                Set<Role> effectiveRoles = policy.getEffectiveRoles(group);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy, group);
                 ArrayList<String> effectiveRoleList = new ArrayList<>();
                 for (Role effectiveRole : effectiveRoles)
                 {
                     effectiveRoleList.add(effectiveRole.getUniqueName());
                 }
                 groupPerms.put("roles", effectiveRoleList);
-                groupPerms.put("effectivePermissions", container.getPolicy().getPermissionNames(group));
+                groupPerms.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), group));
 
                 if (container.hasPermission(getUser(), AdminPermission.class))
                 {
@@ -343,12 +343,12 @@ public class SecurityApiActions
 
             //effective roles
             List<String> effectiveRoles = new ArrayList<>();
-            for(Role effectiveRole : policy.getEffectiveRoles(user))
+            for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy,user))
             {
                 effectiveRoles.add(effectiveRole.getUniqueName());
             }
             permsInfo.put("roles", effectiveRoles);
-            permsInfo.put("effectivePermissions", container.getPolicy().getPermissionNames(user));
+            permsInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), user));
 
             //add all groups the user belongs to in this container
             List<Group> groups = SecurityManager.getGroups(container, user);
@@ -372,13 +372,12 @@ public class SecurityApiActions
 
                 //effective roles
                 List<String> groupEffectiveRoles = new ArrayList<>();
-                for(Role effectiveRole : policy.getEffectiveRoles(group))
+                for(Role effectiveRole : SecurityManager.getEffectiveRoles(policy, group))
                 {
                     groupEffectiveRoles.add(effectiveRole.getUniqueName());
                 }
                 groupInfo.put("roles", groupEffectiveRoles);
-                groupInfo.put("effectivePermissions", container.getPolicy().getPermissionNames(group));
-
+                groupInfo.put("effectivePermissions", SecurityManager.getPermissionNames(container.getPolicy(), group));
 
                 groupsInfo.add(groupInfo);
             }
@@ -597,7 +596,7 @@ public class SecurityApiActions
                 else
                 {
                     SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
-                    permissions = policy.getPermissions(user);
+                    permissions = SecurityManager.getPermissions(policy, user, Set.of());
                 }
 
                 for (Class<? extends Permission> permission : permissions)

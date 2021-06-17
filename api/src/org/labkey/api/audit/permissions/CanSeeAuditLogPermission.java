@@ -16,10 +16,12 @@
 package org.labkey.api.audit.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
+import org.labkey.api.security.permissions.AllowedForReadOnlyUser;
 
 /**
  * A Permission that allows users to view the audit log.
  */
+@AllowedForReadOnlyUser
 public class CanSeeAuditLogPermission extends AbstractPermission
 {
     public CanSeeAuditLogPermission()

@@ -16,7 +16,10 @@
 
 package org.labkey.api.util;
 
+import org.labkey.api.data.RuntimeSQLException;
+
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 
 public class UnexpectedException extends RuntimeException
 {
@@ -43,6 +46,8 @@ public class UnexpectedException extends RuntimeException
     {
         if (cause instanceof RuntimeException)
             return (RuntimeException) cause;
+        if (cause instanceof SQLException)
+            return new RuntimeSQLException((SQLException)cause);
         return new UnexpectedException(cause);
     }
 

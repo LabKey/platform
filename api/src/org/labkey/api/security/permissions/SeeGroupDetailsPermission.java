@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.permissions;
 
+@AllowedForReadOnlyUser
 public class SeeGroupDetailsPermission extends AbstractPermission
 {
     public SeeGroupDetailsPermission()
