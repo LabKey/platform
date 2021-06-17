@@ -1,9 +1,10 @@
 <%@ page import="org.junit.AfterClass" %>
+<%@ page import="org.junit.Assume" %>
 <%@ page import="org.junit.BeforeClass" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
@@ -28,7 +29,6 @@
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
     final static String tableName = "testGetSelectSqlSort";
@@ -129,7 +129,9 @@
     @BeforeClass
     public static void createList() throws Exception
     {
-        deleteList();
+        Assume.assumeTrue("This test requires the list module.", ListService.get() != null);
+
+        JunitUtil.deleteTestContainer();
 
         User user = TestContext.get().getUser();
         Container c = JunitUtil.getTestContainer();
@@ -145,14 +147,9 @@
 
 
     @AfterClass
-    public static void deleteList() throws Exception
+    public static void cleanup() throws Exception
     {
-        User user = TestContext.get().getUser();
-        Container c = JunitUtil.getTestContainer();
-        ListService s = ListService.get();
-        Map<String, ListDefinition> m = s.getLists(c);
-        if (m.containsKey(tableName))
-            m.get(tableName).delete(user);
+        JunitUtil.deleteTestContainer();
     }
 
 

@@ -89,7 +89,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
         ExperimentServiceImpl.get().rebuildAllEdges();
     }
 
-    /** NOT yet called from upgrade script, needs to be added to a script in develop (e.g. 20.7) */
     public static void upgradeMaterialSource(ModuleContext context)
     {
         if (context != null && context.isNewInstall())
