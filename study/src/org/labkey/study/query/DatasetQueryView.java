@@ -66,8 +66,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
@@ -102,7 +100,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.qc.QCStateManager.getUrlFilterKey;
+import static org.labkey.api.qc.QCStateManager.getQCUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.ALL_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
@@ -529,12 +527,12 @@ public class DatasetQueryView extends StudyQueryView
         MenuButton button = new MenuButton("QC State");
         String dataRegionName = this.getSettings().getDataRegionName();
 
-        String eq = getUrlFilterKey(CompareType.EQUAL, dataRegionName);
-        String in = getUrlFilterKey(CompareType.IN, dataRegionName);
+        String eq = getQCUrlFilterKey(CompareType.EQUAL, dataRegionName);
+        String in = getQCUrlFilterKey(CompareType.IN, dataRegionName);
         boolean urlHasEqFilter = getViewContext().cloneActionURL().getParameter(eq) != null;
         boolean urlHasInFilter = getViewContext().cloneActionURL().getParameter(in) != null;
-        boolean urlHasNotInFilter = getViewContext().cloneActionURL().getParameter(getUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
-        boolean urlHasIsBlankFilter = getViewContext().cloneActionURL().getParameter(getUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
+        boolean urlHasNotInFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
+        boolean urlHasIsBlankFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
 
         String publicQCLabels = getQCStateFilterString(QCStateSet.getPublicStates(getContainer()));
         Set<String> publicQCLabelsSet = publicQCLabels != null ? new HashSet<>(Arrays.asList(publicQCLabels.split(";"))) : new HashSet<>();
@@ -544,7 +542,7 @@ public class DatasetQueryView extends StudyQueryView
         boolean selected = false;
         for (QCStateSet set : stateSets)
         {
-            ActionURL urlHelper = getViewContext().cloneActionURL().replaceParameter(BaseStudyController.SharedFormParameters.QCState, set.getFormValue()); // legacy -- to remove
+            ActionURL urlHelper = getViewContext().cloneActionURL();
             String filterValue = set.getLabel();
 
             switch (filterValue)

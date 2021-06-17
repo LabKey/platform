@@ -242,7 +242,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.qc.QCStateManager.getUrlFilterKey;
+import static org.labkey.api.qc.QCStateManager.getQCUrlFilterKey;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
@@ -3651,10 +3651,7 @@ public class StudyController extends BaseStudyController
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
             url.addParameter(DatasetDefinition.DATASETKEY, updateQCForm.getDatasetId());
             if (updateQCForm.getNewState() != null)
-            {
-                url.addParameter(SharedFormParameters.QCState, updateQCForm.getNewState().intValue()); // legacy -- to remove
-                url.replaceParameter(getUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
-            }
+                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
             return url;
         }
 

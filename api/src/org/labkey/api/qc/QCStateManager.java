@@ -156,7 +156,7 @@ public class QCStateManager
         QC_STATE_DB_CACHE.remove(c);
     }
 
-    public static String getUrlFilterKey(CompareType compareType, String dataRegionName) // rosaline temp note: rename. Maybe move?
+    public static String getQCUrlFilterKey(CompareType compareType, String dataRegionName)
     {
         return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam( dataRegionName + ".").getKey();
     }
