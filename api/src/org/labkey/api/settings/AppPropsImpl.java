@@ -623,7 +623,8 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 {
                     case DEFAULT_DOMAIN_PROP -> {
                         AuthenticationManager.setDefaultDomain(prop.getValue());
-                        LOG.warn("DEFAULT_DOMAIN_PROP here will be deprecated in 21.11 in favor of using DEFAULT_DOMAIN in AuthenticationManager.populateSettingsWithStartupProps()");
+                        LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
+
                     }
                     case BASE_SERVER_URL_PROP -> writeable.setBaseServerUrl(prop.getValue());
                     case PIPELINE_TOOLS_DIR_PROP -> writeable.setPipelineToolsDir(prop.getValue());
