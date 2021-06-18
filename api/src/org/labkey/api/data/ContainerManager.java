@@ -749,7 +749,9 @@ public class ContainerManager
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         sql.append(" SET ExpirationDate = ? WHERE RowID = ?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, expirationDate, container.getRowId());
+
+        // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
+        new SqlExecutor(CORE.getSchema()).execute(sql, java.sql.Date.valueOf(expirationDate), container.getRowId());
 
         _removeFromCache(container);
     }
@@ -2718,7 +2720,10 @@ public class ContainerManager
             boolean searchable = rs.getBoolean("Searchable");
             String lockStateString = rs.getString("LockState");
             LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).orNull() : null;
-            LocalDate expirationDate = rs.getObject("ExpirationDate", LocalDate.class);
+
+            // Note: Would prefer rs.getObject("ExpirationDate", LocalDate.class), but jTDS throws on LocalDate
+            java.sql.Date sqlDate = rs.getDate("ExpirationDate");
+            LocalDate expirationDate = null == sqlDate ? null : sqlDate.toLocalDate();
 
             Container dirParent = null;
             if (null != parentId)
