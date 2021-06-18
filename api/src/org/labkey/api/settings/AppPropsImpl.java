@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -219,12 +220,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public String getBaseServerUrl()
     {
         return lookupStringValue(BASE_SERVER_URL_PROP, null);
-    }
-
-    @Override
-    public String getDefaultDomain()
-    {
-        return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
     }
 
     // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level
@@ -626,7 +621,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 LOG.debug("Setting site settings config property '" + prop.getName() + "' to '" + prop.getValue() + "'");
                 switch (prop.getName())
                 {
-                    case DEFAULT_DOMAIN_PROP -> writeable.setDefaultDomain(prop.getValue());
+                    case DEFAULT_DOMAIN_PROP -> {
+                        AuthenticationManager.setDefaultDomain(prop.getValue());
+                        LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
+
+                    }
                     case BASE_SERVER_URL_PROP -> writeable.setBaseServerUrl(prop.getValue());
                     case PIPELINE_TOOLS_DIR_PROP -> writeable.setPipelineToolsDir(prop.getValue());
                     case SSL_REQUIRED -> writeable.setSSLRequired(Boolean.parseBoolean(prop.getValue()));

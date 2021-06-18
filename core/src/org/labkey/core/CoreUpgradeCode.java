@@ -35,6 +35,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -47,6 +48,7 @@ import java.util.Set;
 
 import static org.labkey.api.security.AuthenticationManager.AUTHENTICATION_CATEGORY;
 import static org.labkey.api.security.AuthenticationManager.PROVIDERS_KEY;
+import static org.labkey.api.settings.AbstractSettingsGroup.SITE_CONFIG_USER;
 
 /**
  * User: adam
@@ -200,5 +202,40 @@ public class CoreUpgradeCode implements UpgradeCode
         Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
 
         return set;
+    }
+
+    /**
+     * Invoked at 21.004 to move the Default Domain (for user log in) from being stored in AppProps to PropertyManager
+     */
+    @DeferredUpgrade
+    public void migrateDefaultDomainSetting(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            // Taken from AppPropsImpl
+            final String DEFAULT_DOMAIN_PROP = "defaultDomain";
+            final String SITE_CONFIG_NAME = "SiteConfig";
+
+            String defaultDomain = (new AbstractWriteableSettingsGroup(){
+                @Override
+                protected String getGroupName()
+                {
+                    return "site settings";
+                }
+
+                @Override
+                protected String getType()
+                {
+                    return SITE_CONFIG_NAME;
+                }
+
+                private String getDefaultDomain()
+                {
+                    return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
+                }
+            }).getDefaultDomain();
+
+            AuthenticationManager.setDefaultDomain(defaultDomain);
+        }
     }
 }

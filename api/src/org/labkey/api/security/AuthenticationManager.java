@@ -191,10 +191,16 @@ public class AuthenticationManager
         // Handle each provider's startup properties
         getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
-        // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
-        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
-            .filter(cp->!cp.getName().equals(PROVIDERS_KEY)) // Ignore "Authentication" -- we don't use this property anymore
-            .forEach(cp->saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
+        // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes, default domain)
+        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY)
+            .forEach(cp-> {
+                switch(cp.getName())
+                {
+                    case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
+                    case DEFAULT_DOMAIN -> saveAuthSetting(null, cp.getName(), cp.getValue());
+                    default -> _log.warn("Property '" + cp.getName() + "' does not map to a known authentication property");
+                }
+            });
     }
 
     public enum Priority { High, Low }
@@ -240,6 +246,21 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
+    public static String getDefaultDomain()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(DEFAULT_DOMAIN);
+
+        return value == null ? "" : value;
+    }
+
+    public static void setDefaultDomain(String value)
+    {
+        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        props.put(DEFAULT_DOMAIN, value);
+        props.save();
+    }
+
     public static boolean getAuthSetting(String key, boolean defaultValue)
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
@@ -250,30 +271,34 @@ public class AuthenticationManager
 
     public static void saveAuthSetting(User user, String key, boolean value)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(key, Boolean.toString(value));
-        props.save();
-
-        addAuthSettingAuditEvent(user, key, value ? "enabled" : "disabled");
+        saveAuthSetting(user, key, Boolean.toString(value), value ? "enabled" : "disabled");
     }
 
-    public static void saveAuthSettings(User user, Map<String, Boolean> map)
+    private static void saveAuthSetting(User user, String key, String value)
+    {
+        saveAuthSetting(user, key, value, "set to " + value);
+    }
+
+    private static void saveAuthSetting(User user, String key, String value, String action)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+        props.put(key, value);
+        addAuthSettingAuditEvent(user, key, action);
+        props.save();
+    }
 
-        Map<String, Boolean> changed = map.entrySet().stream()
-            .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    public static void saveAuthSettings(User user, Map<String, Object> map)
+    {
+        PropertyMap props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
 
-        if (!changed.isEmpty())
-        {
-            changed.forEach((k, v)->{
-                props.put(k, Boolean.toString(v));
-                addAuthSettingAuditEvent(user, k, v ? "enabled" : "disabled");
+        map.entrySet().stream()
+            .filter(e->!e.getValue().equals(props.get(e.getKey())))
+            .forEach(e->{
+                if (e.getValue() instanceof Boolean)
+                    saveAuthSetting(user, e.getKey(), (boolean)e.getValue());
+                else
+                    saveAuthSetting(user, e.getKey(), (String)e.getValue());
             });
-
-            props.save();
-        }
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
@@ -535,6 +560,7 @@ public class AuthenticationManager
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
+    public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
 
