@@ -48,7 +48,6 @@ import java.util.Set;
 
 import static org.labkey.api.security.AuthenticationManager.AUTHENTICATION_CATEGORY;
 import static org.labkey.api.security.AuthenticationManager.PROVIDERS_KEY;
-import static org.labkey.api.settings.AbstractSettingsGroup.SITE_CONFIG_USER;
 
 /**
  * User: adam
@@ -207,6 +206,7 @@ public class CoreUpgradeCode implements UpgradeCode
     /**
      * Invoked at 21.004 to move the Default Domain (for user log in) from being stored in AppProps to PropertyManager
      */
+    @SuppressWarnings("unused")
     @DeferredUpgrade
     public void migrateDefaultDomainSetting(ModuleContext context)
     {
@@ -220,13 +220,13 @@ public class CoreUpgradeCode implements UpgradeCode
                 @Override
                 protected String getGroupName()
                 {
-                    return "site settings";
+                    return SITE_CONFIG_NAME;
                 }
 
                 @Override
                 protected String getType()
                 {
-                    return SITE_CONFIG_NAME;
+                    return "site settings";
                 }
 
                 private String getDefaultDomain()
