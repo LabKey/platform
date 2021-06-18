@@ -17,6 +17,7 @@
 package org.labkey.wiki;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -64,32 +65,38 @@ public class BaseWikiPermissions
 
     public boolean allowRead()
     {
-        return _policy.hasPermission("wiki", _user, ReadPermission.class);
+        return SecurityManager.hasAllPermissions("wiki",
+                _policy, _user, Set.of(ReadPermission.class), Set.of());
     }
 
     public boolean allowRead(Wiki wiki)
     {
-        return _policy.hasPermission("wiki: " + wiki.getName(), _user, ReadPermission.class, getContextualRoles(wiki));
+        return SecurityManager.hasAllPermissions("wiki: " + wiki.getName(),
+                _policy, _user, Set.of(ReadPermission.class), getContextualRoles(wiki));
     }
 
     public boolean allowInsert()
     {
-        return _policy.hasPermission("wiki", _user, InsertPermission.class);
+        return SecurityManager.hasAllPermissions("wiki",
+                _policy, _user, Set.of(InsertPermission.class), Set.of());
     }
 
     public boolean allowUpdate(Wiki wiki)
     {
-        return _policy.hasPermission("wiki: " + wiki.getName(), _user, UpdatePermission.class, getContextualRoles(wiki));
+        return SecurityManager.hasAllPermissions("wiki: " + wiki.getName(),
+                _policy, _user, Set.of(UpdatePermission.class), getContextualRoles(wiki));
     }
 
     public boolean allowDelete(Wiki wiki)
     {
-        return _policy.hasPermission("wiki: " + wiki.getName(), _user, DeletePermission.class, getContextualRoles(wiki));
+        return SecurityManager.hasAllPermissions("wiki: " + wiki.getName(),
+                _policy, _user, Set.of(DeletePermission.class), getContextualRoles(wiki));
     }
 
     public boolean allowAdmin()
     {
-        return _policy.hasPermission("wiki", _user, AdminPermission.class);
+        return SecurityManager.hasAllPermissions("wiki",
+                _policy, _user, Set.of(AdminPermission.class), Set.of());
     }
 
     public boolean userIsCreator(Wiki wiki)

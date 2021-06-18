@@ -58,6 +58,7 @@ import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -668,7 +669,7 @@ public class Portal implements ModuleChangeListener
                 if (permissionContainer != null && permission != null)
                 {
                     SecurityPolicy policy = permissionContainer.getPolicy();
-                    hasPermission = policy.hasPermission(part.getName(), context.getUser(), permission.getClass());
+                    hasPermission = SecurityManager.hasAllPermissions(part.getName(), policy, context.getUser(), Set.of(permission.getClass()), Set.of());
                 }
 
                 // If the permissionContainer is null, or the permission is missing, then we only show the webpart if
