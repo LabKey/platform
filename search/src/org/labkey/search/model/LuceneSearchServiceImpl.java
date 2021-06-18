@@ -174,6 +174,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         identifiersHi,    // Weighted twice the medium identifiers (e.g., unique ids like PTIDs, sample IDs, etc.)... be careful, these will dominate the search results
 
         searchCategories, // Used for special filtering, but analyzed like an identifier
+        ontology,         // module specific. this field acts a lot like searchCategories
 
         created,
         modified,
@@ -611,6 +612,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert StringUtils.isNotEmpty((String)props.get(PROPERTY.categories.toString()));
 
             addTerms(doc, FIELD_NAME.searchCategories, Field.Store.YES, terms(PROPERTY.categories, props, null));
+            addTerms(doc, FIELD_NAME.ontology, Field.Store.YES, terms(PROPERTY.ontology, props, null));
             addTerms(doc, FIELD_NAME.identifiersLo, PROPERTY.identifiersLo, props, identifiersLo);
             addTerms(doc, FIELD_NAME.identifiersMed, PROPERTY.identifiersMed, props, null);
             addTerms(doc, FIELD_NAME.identifiersHi, Field.Store.YES, terms(PROPERTY.identifiersHi, props, null));
@@ -1937,7 +1939,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             analyze(LuceneAnalyzer.EnglishAnalyzer, originalText, englishResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
             analyze(LuceneAnalyzer.IdentifierAnalyzer, originalText, identifierResult, FIELD_NAME.body.name(), FIELD_NAME.identifiersLo.name());
             analyze(LuceneAnalyzer.LabKeyAnalyzer, originalText, englishResult, FIELD_NAME.body.name(), FIELD_NAME.keywordsLo.name(), FIELD_NAME.keywordsMed.name(), FIELD_NAME.keywordsHi.name(), "foo");
-            analyze(LuceneAnalyzer.LabKeyAnalyzer, originalText, identifierResult, FIELD_NAME.searchCategories.name(), FIELD_NAME.identifiersLo.name(), FIELD_NAME.identifiersMed.name(), FIELD_NAME.identifiersHi.name());
+            analyze(LuceneAnalyzer.LabKeyAnalyzer, originalText, identifierResult, FIELD_NAME.searchCategories.name(), FIELD_NAME.ontology.name(), FIELD_NAME.identifiersLo.name(), FIELD_NAME.identifiersMed.name(), FIELD_NAME.identifiersHi.name());
         }
 
         /**
