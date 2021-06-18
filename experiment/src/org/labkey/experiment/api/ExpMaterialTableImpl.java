@@ -892,6 +892,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public @NotNull Set<String> getExcludedDetailedUpdateAuditFields()
     {
-        return excludeFromDetailedAuditField;
+        // uniqueId fields don't change in reality, so exclude them from the audit updates
+        Set<String> excluded = new CaseInsensitiveHashSet();
+        excluded.addAll(getColumns().stream().filter(ColumnInfo::isUniqueIdField).map(ColumnInfo::getName).collect(Collectors.toSet()));
+        excluded.addAll(excludeFromDetailedAuditField);
+        return excluded;
     }
 }
