@@ -479,7 +479,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             {
                 LockState lockState = currentProject.getLockState();
 
-                if (null != lockState)
+                if (lockState.isLocked())
                     return ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, lockState);
             }
         }
