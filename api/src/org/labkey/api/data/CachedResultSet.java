@@ -446,6 +446,18 @@ public class CachedResultSet implements ResultSet, TableResultSet
         return null;
     }
 
+    public BigDecimal _decimal(Object o) throws SQLException
+    {
+        if (null == o)
+            return null;
+        if (o instanceof BigDecimal)
+        {
+            return (BigDecimal) o;
+        }
+        throwConversionError("Can't convert '" + o.getClass() + "' to BigDecimal");
+        return null;
+    }
+
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException
     {
@@ -667,15 +679,15 @@ public class CachedResultSet implements ResultSet, TableResultSet
     }
 
     @Override
-    public BigDecimal getBigDecimal(int columnIndex)
+    public BigDecimal getBigDecimal(int columnIndex) throws SQLException
     {
-        return null;
+        return _decimal(getObject(columnIndex));
     }
 
     @Override
-    public BigDecimal getBigDecimal(String columnName)
+    public BigDecimal getBigDecimal(String columnName) throws SQLException
     {
-        return null;
+        return _decimal(getObject(columnName));
     }
 
     @Override

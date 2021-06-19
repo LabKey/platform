@@ -5549,7 +5549,7 @@ public class SpecimenController extends SpringActionController
                 }
                 else
                 {
-                    Visit visit = pd.getSequenceNum() != null ? UpdateSpecimenCommentsBean.getVisitForSequence(study, pd.getSequenceNum()) : null;
+                    Visit visit = pd.getSequenceNum() != null ? StudyInternalService.get().getVisitForSequence(study, pd.getSequenceNum()) : null;
                     ptidVisits.add(new Pair<>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + StudyInternalService.get().formatSequenceNum(pd.getSequenceNum())));
                 }
             }
