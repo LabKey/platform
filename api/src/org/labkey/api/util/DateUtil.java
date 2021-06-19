@@ -39,6 +39,8 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -1023,6 +1025,15 @@ validNum:       {
         return formatDateTime(date, getDateFormatString(c));
     }
 
+    /**
+     * Format specific LocalDate using folder-specified default pattern
+     *
+     * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
+     */
+    public static String formatDate(Container c, LocalDate date)
+    {
+        return null == date ? null : date.format(DateTimeFormatter.ofPattern(getDateFormatString(c)));
+    }
 
     /**
      * Format current date & time using folder-specified default date/time pattern

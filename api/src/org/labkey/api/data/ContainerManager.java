@@ -20,6 +20,7 @@ import com.google.common.base.Enums;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
@@ -45,6 +46,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
+import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.exp.ExperimentException;
@@ -740,6 +742,19 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
 
         _removeFromCache(container);
+    }
+
+    public static void setExcludedProjects(Collection<String> ids, User user)
+    {
+        // First clear all existing "Excluded" states
+        Filter excludedFilter = new SimpleFilter(FieldKey.fromString("LockState"), LockState.Excluded);
+        Table.update(user, CORE.getTableInfoContainers(), PageFlowUtil.map("LockedState", null), new Object[]{}, excludedFilter, Level.WARN);
+
+        // Now set the passed in projects to Excluded
+        Filter inClauseFilter = new SimpleFilter(new InClause(FieldKey.fromString("EntityId"), ids));
+        Table.update(user, CORE.getTableInfoContainers(), Map.of("LockedState", LockState.Excluded), new Object[]{}, inClauseFilter, Level.WARN);
+
+        clearCache();
     }
 
     public static void updateExpirationDate(Container container, LocalDate expirationDate, User user)
@@ -2719,7 +2734,7 @@ public class ContainerManager
             String title = rs.getString("Title");
             boolean searchable = rs.getBoolean("Searchable");
             String lockStateString = rs.getString("LockState");
-            LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).orNull() : null;
+            LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).or(LockState.Unlocked) : LockState.Unlocked;
 
             // Note: Would prefer rs.getObject("ExpirationDate", LocalDate.class), but jTDS throws on LocalDate
             java.sql.Date sqlDate = rs.getDate("ExpirationDate");

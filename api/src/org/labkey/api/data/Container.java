@@ -126,19 +126,38 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private LockState _lockState = null;
     private LocalDate _expirationDate = null;
 
-    // Only one state for now, but we expect to add more in the future (e.g., ReadOnly)
+    // Might add others in the future (e.g., ReadOnly)
     public enum LockState
     {
-        Inaccessible()
-        {
-            @Override
-            public String getDescription()
-            {
-                return "inaccessible to everyone except administrators";
-            }
-        };
+        Unlocked("unlocked", false, false),
+        Inaccessible("locked, making it inaccessible to everyone except administrators", true, false),
+        Excluded("excluded from project locking and review", false, true);
 
-        public abstract String getDescription();
+        private final String _description;
+        private final boolean _locked;
+        private final boolean _excluded;
+
+        LockState(String description, boolean locked, boolean excluded)
+        {
+            _description = description;
+            _locked = locked;
+            _excluded = excluded;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public boolean isLocked()
+        {
+            return _locked;
+        }
+
+        public boolean isExcluded()
+        {
+            return _excluded;
+        }
     }
 
     // UNDONE: BeanFactory for Container
@@ -1633,7 +1652,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return JdbcType.VARCHAR;
     }
 
-    public @Nullable LockState getLockState()
+    public @NotNull LockState getLockState()
     {
         return _lockState;
     }
