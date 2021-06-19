@@ -612,7 +612,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assert StringUtils.isNotEmpty((String)props.get(PROPERTY.categories.toString()));
 
             addTerms(doc, FIELD_NAME.searchCategories, Field.Store.YES, terms(PROPERTY.categories, props, null));
-            addTerms(doc, FIELD_NAME.ontology, Field.Store.YES, terms(PROPERTY.ontology, props, null));
+            addTerms(doc, FIELD_NAME.ontology, Field.Store.NO, terms(PROPERTY.ontology, props, null));
             addTerms(doc, FIELD_NAME.identifiersLo, PROPERTY.identifiersLo, props, identifiersLo);
             addTerms(doc, FIELD_NAME.identifiersMed, PROPERTY.identifiersMed, props, null);
             addTerms(doc, FIELD_NAME.identifiersHi, Field.Store.YES, terms(PROPERTY.identifiersHi, props, null));
