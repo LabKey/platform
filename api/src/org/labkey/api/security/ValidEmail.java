@@ -165,7 +165,7 @@ public class ValidEmail
 
     public static String getDefaultDomain()
     {
-        return AppProps.getInstance().getDefaultDomain();
+        return AuthenticationManager.getDefaultDomain();
     }
 
 
