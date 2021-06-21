@@ -2142,7 +2142,6 @@ public class StudyManager
         }
     }
 
-
     public VisitImpl getVisitForSequence(Study study, double seqNum)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
@@ -2169,7 +2168,6 @@ public class StudyManager
     {
         return getDatasetDefinitions(study, null);
     }
-
 
     public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable Cohort cohort, String... types)
     {
@@ -2957,7 +2955,7 @@ public class StudyManager
                 pd.setLsid(rs.getString("LSID"));
                 if (!dataset.isDemographicData())
                 {
-                    pd.setSequenceNum(rs.getDouble("SequenceNum"));
+                    pd.setSequenceNum(rs.getBigDecimal("SequenceNum"));
                     pd.setVisitDate(rs.getTimestamp("_VisitDate"));
                 }
                 pd.setParticipantId(rs.getString("ParticipantId"));
