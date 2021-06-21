@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -48,6 +49,15 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public SimpleQueryUpdateService(final SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
     {
         super(queryTable, dbTable, helper);
+    }
+
+    @Override
+    protected Set<InsertOption> supportedInsertOptions()
+    {
+        if (hasAutoIncrementPK())
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.IMPORT_IDENTITY);
+        else
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.MERGE);
     }
 
     @Override

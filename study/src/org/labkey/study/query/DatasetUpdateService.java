@@ -136,6 +136,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return _dataset.getDatasetRow(user, lsid);
     }
 
+    @Override
+    protected Set<InsertOption> supportedInsertOptions()
+    {
+        if (hasAutoIncrementPK())
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.IMPORT_IDENTITY);
+        else
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.MERGE);
+    }
 
     @Override
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)

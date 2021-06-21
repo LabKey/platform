@@ -21,10 +21,16 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 /**
  * This interface should be implemented by modules that expose queries
  * that can be updated by the HTTP-based APIs, or any other code that
@@ -47,21 +53,21 @@ public interface QueryUpdateService extends HasPermission
     enum InsertOption
     {
         // interactive/api
-        INSERT(false, false, false, false, false),
-        UPSERT(false, true, false, false, false),  // like merge, but with reselectids
+        INSERT(false, false, false, false, false, Set.of(InsertPermission.class)),
+        UPSERT(false, true, false, false, false, Set.of(InsertPermission.class, UpdatePermission.class)),  // like merge, but with reselectids
 
         // bulk
-        IMPORT(true, false, true, false, false),
+        IMPORT(true, false, true, false, false, Set.of(InsertPermission.class)),
         /**
          * Insert or updates a subset of columns.
          * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
          */
-        MERGE(true, true, false, false, false),
+        MERGE(true, true, false, false, false, Set.of(InsertPermission.class, UpdatePermission.class)),   // insert or update
         /**
          * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
          */
-        REPLACE(true, true, false, true, false),
-        IMPORT_IDENTITY(true, false, true, false, true);
+        REPLACE(true, true, false, true, false, Set.of(InsertPermission.class, UpdatePermission.class)),  // insert or replace, like merge but NULL out columns not in the import
+        IMPORT_IDENTITY(true, false, true, false, true, Set.of(InsertPermission.class));
 
         final public boolean batch;
         final public boolean mergeRows;
@@ -69,8 +75,9 @@ public interface QueryUpdateService extends HasPermission
         final public boolean reselectIds;
         final public boolean replace;
         final public boolean identity_insert;
+        final public Set<Class<? extends Permission>> defaultRequiredPermissions;
 
-        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert)
+        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert, Set<Class<? extends Permission>> defaultRequiredPermissions)
         {
             this.batch = batch;
             mergeRows = merge;
@@ -80,6 +87,7 @@ public interface QueryUpdateService extends HasPermission
             this.replace = replace;
             assert !identity_insert || (batch && !merge);   // identity_insert is only supported for bulk_insert
             this.identity_insert = identity_insert;
+            this.defaultRequiredPermissions = defaultRequiredPermissions;
         }
     }
 
@@ -263,4 +271,19 @@ public interface QueryUpdateService extends HasPermission
 
     /** Setup the data iterator for any special behavior needed for the target table */
     default void configureDataIteratorContext(DataIteratorContext context) {}
+
+    /**
+     * interface HasPermission
+     * NOTE: QueryUpdateService usually delegates this to its bound TableInfo
+     * @param user
+     * @param acl
+     * @return
+     */
+    @Override
+    boolean hasPermission(UserPrincipal user, Class<? extends Permission> acl);
+
+    /** same as hasPermission(UserPrincipal,Permission), but since this class is already bound to a user, we don't need the first parameter */
+    boolean hasPermission(Class<? extends Permission> acl);
+
+    Set<InsertOption> allowedInsertOptions();
 }

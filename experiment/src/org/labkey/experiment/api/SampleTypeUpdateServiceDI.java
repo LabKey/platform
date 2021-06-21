@@ -164,6 +164,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    protected Set<InsertOption> supportedInsertOptions()
+    {
+        if (hasAutoIncrementPK())
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT);
+        else
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.MERGE);
+    }
+
+    @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);

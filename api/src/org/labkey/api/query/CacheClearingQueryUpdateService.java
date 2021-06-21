@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.Permission;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A simple wrapper around another QueryUpdateService. All of the real work is delegated through, but
@@ -127,5 +128,17 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> acl)
     {
         return _service.hasPermission(user, acl);
+    }
+
+    @Override
+    public boolean hasPermission(Class<? extends Permission> acl)
+    {
+        return _service.hasPermission(acl);
+    }
+
+    @Override
+    public Set<InsertOption> allowedInsertOptions()
+    {
+        return _service.allowedInsertOptions();
     }
 }

@@ -77,6 +77,7 @@ import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -100,15 +101,18 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment;
+import static org.labkey.api.query.QueryUpdateService.InsertOption.REPLACE;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -142,8 +146,42 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
+        assert user.equals(getQueryTable().getUserSchema().getUser());
         return getQueryTable().hasPermission(user, acl);
     }
+
+    @Override
+    public boolean hasPermission(Class<? extends Permission> acl)
+    {
+        return getQueryTable().hasPermission(getQueryTable().getUserSchema().getUser(), acl);
+    }
+
+    protected boolean hasAutoIncrementPK()
+    {
+        return getQueryTable().getPkColumns().stream().anyMatch(c -> c.isAutoIncrement());
+    }
+
+    /* Return the InsertOption values that are supported for this table assuming the user has all allowed permission */
+    protected Set<InsertOption> supportedInsertOptions()
+    {
+        // NOTE: QueryUpdateService does not use DataIterator by default, so InsertOption.IMPORT_IDENTITY is not supported by default
+        // NOTE: QueryUpdateService does not support InsertOption.MERGE by default
+        return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.IMPORT_IDENTITY);
+    }
+
+    /** Return the InsertOption values that are supported given this user's permissions */
+    @Override
+    public Set<InsertOption> allowedInsertOptions()
+    {
+        Set<Class<? extends Permission>> granted = new HashSet<>();
+        // NOTE: we don't have a getPermission() method we can call
+        if (hasPermission(InsertPermission.class))
+            granted.add(InsertPermission.class);
+        if (hasPermission(UpdatePermission.class))
+            granted.add(UpdatePermission.class);
+        return supportedInsertOptions().stream().filter(option -> granted.containsAll(option.defaultRequiredPermissions)).collect(Collectors.toSet());
+    }
+
 
     protected abstract Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
@@ -275,6 +313,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
+        if (context.getInsertOption().defaultRequiredPermissions.contains(UpdatePermission.class))
+            if (!hasPermission(user, UpdatePermission.class))
+                throw new UnauthorizedException("You do not have permission to update data in this table.");
+
+        if (!allowedInsertOptions().contains(context.getInsertOption()))
+            throw new UnsupportedOperationException(context.getInsertOption() + " is not supported for table " + _queryTable.getUserSchema() + "." + _queryTable.getName());
 
         context.getErrors().setExtraContext(extraScriptContext);
         if (extraScriptContext != null)
@@ -379,6 +423,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return count;
     }
 
+
+    /* If you override this you need to also override supportedInsertOptions() to add InsertOption.MERGE */
     @Override
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
@@ -398,6 +444,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
+    /* If you override this you should probably also override supportedInsertOptions() to add support for IDENTITY_INSERT and maybe also for MERGE and REPLACE */
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
                                                       DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
@@ -449,6 +496,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
+
+        if (allowedInsertOptions().contains(InsertOption.INSERT))
+            throw new UnsupportedOperationException(InsertOption.INSERT + " is not supported for table " + _queryTable.getUserSchema() + "." + _queryTable.getName());
 
         boolean hasTableScript = hasTableScript(container);
 

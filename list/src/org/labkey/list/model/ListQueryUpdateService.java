@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
 * User: Nick Arnold
@@ -134,6 +135,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         }
 
         return ret;
+    }
+
+
+    @Override
+    protected Set<InsertOption> supportedInsertOptions()
+    {
+        if (hasAutoIncrementPK())
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.IMPORT_IDENTITY);
+        else
+            return Set.of(InsertOption.INSERT, InsertOption.IMPORT, InsertOption.MERGE);
     }
 
 
