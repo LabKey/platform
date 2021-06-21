@@ -86,7 +86,7 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
         }
 
         ExpSampleType sampleType = null;
-        String sampleName = dataFile.getName();
+        String sampleName = FileUtil.getBaseName(dataFile.getName());
 
         if (params.containsKey(SAMPLE_NAME_KEY))
         {

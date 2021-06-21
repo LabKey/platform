@@ -16,7 +16,7 @@ describe('<GlobalSettings/>', () => {
                 globalSettings={GLOBAL_SETTINGS}
                 canEdit={true}
                 authCount={3}
-                checkGlobalAuthBox={checkGlobalAuthBox}
+                globalAuthOnChange={checkGlobalAuthBox}
             />;
         const wrapper = mount(component);
 
@@ -38,7 +38,7 @@ describe('<GlobalSettings/>', () => {
                 globalSettings={GLOBAL_SETTINGS}
                 canEdit={true}
                 authCount={3}
-                checkGlobalAuthBox={checkGlobalAuthBox}
+                globalAuthOnChange={checkGlobalAuthBox}
             />;
         const wrapper = mount(component);
 
@@ -55,7 +55,7 @@ describe('<GlobalSettings/>', () => {
                 globalSettings={GLOBAL_SETTINGS}
                 canEdit={true}
                 authCount={3}
-                checkGlobalAuthBox={checkGlobalAuthBox}
+                globalAuthOnChange={checkGlobalAuthBox}
             />;
 
         const tree = renderer.create(component).toJSON();

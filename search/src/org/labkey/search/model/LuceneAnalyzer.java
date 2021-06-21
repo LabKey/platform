@@ -27,6 +27,9 @@ import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -93,13 +96,16 @@ public enum LuceneAnalyzer
         {
             Analyzer identifierAnalyzer = IdentifierAnalyzer.getAnalyzer();
 
-            return new PerFieldAnalyzerWrapper(LuceneAnalyzer.EnglishAnalyzer.getAnalyzer(), ImmutableMap.of(
-                LuceneSearchServiceImpl.FIELD_NAME.searchCategories.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersLo.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersMed.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersHi.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.uniqueId.name(), identifierAnalyzer
-            ));
+            Map<String, Analyzer> m = Stream.of(
+                        LuceneSearchServiceImpl.FIELD_NAME.searchCategories.name(),
+                        LuceneSearchServiceImpl.FIELD_NAME.identifiersLo.name(),
+                        LuceneSearchServiceImpl.FIELD_NAME.identifiersMed.name(),
+                        LuceneSearchServiceImpl.FIELD_NAME.identifiersHi.name(),
+                        LuceneSearchServiceImpl.FIELD_NAME.uniqueId.name(),
+                        LuceneSearchServiceImpl.FIELD_NAME.ontology.name())
+                    .collect(Collectors.toMap(n->n, n->identifierAnalyzer));
+
+            return new PerFieldAnalyzerWrapper(LuceneAnalyzer.EnglishAnalyzer.getAnalyzer(), m);
         }};
 
     abstract Analyzer getAnalyzer();

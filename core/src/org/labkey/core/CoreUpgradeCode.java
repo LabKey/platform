@@ -35,6 +35,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
@@ -200,5 +201,41 @@ public class CoreUpgradeCode implements UpgradeCode
         Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
 
         return set;
+    }
+
+    /**
+     * Invoked at 21.004 to move the Default Domain (for user log in) from being stored in AppProps to PropertyManager
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public void migrateDefaultDomainSetting(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            // Taken from AppPropsImpl
+            final String DEFAULT_DOMAIN_PROP = "defaultDomain";
+            final String SITE_CONFIG_NAME = "SiteConfig";
+
+            String defaultDomain = (new AbstractWriteableSettingsGroup(){
+                @Override
+                protected String getGroupName()
+                {
+                    return SITE_CONFIG_NAME;
+                }
+
+                @Override
+                protected String getType()
+                {
+                    return "site settings";
+                }
+
+                private String getDefaultDomain()
+                {
+                    return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
+                }
+            }).getDefaultDomain();
+
+            AuthenticationManager.setDefaultDomain(defaultDomain);
+        }
     }
 }
