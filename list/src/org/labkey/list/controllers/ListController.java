@@ -92,6 +92,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -926,6 +927,15 @@ public class ListController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<ListAttachmentForm>
     {
+        @Override
+        public void validate(ListAttachmentForm form, BindException errors)
+        {
+            if (!GUID.isGUID(form.getEntityId()))
+            {
+                errors.rejectValue("entityId", ERROR_MSG, "entityId is not a GUID: " + form.getEntityId());
+            }
+        }
+
         @Nullable
         @Override
         public Pair<AttachmentParent, String> getAttachment(ListAttachmentForm form)
