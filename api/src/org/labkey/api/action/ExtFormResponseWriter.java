@@ -145,10 +145,13 @@ public class ExtFormResponseWriter extends ApiJsonWriter
     @Override
     public void writeAndClose(Errors errors) throws IOException
     {
+        String message = null;
         JSONObject jsonErrors = new JSONObject();
-        for(ObjectError error : errors.getAllErrors())
+        for (ObjectError error : errors.getAllErrors())
         {
             String msg = error.getDefaultMessage();
+            if (message == null)
+                message = msg;
             String key = "_form";
             if (error instanceof FieldError)
                 key = ((FieldError)error).getField();
@@ -159,6 +162,8 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
         JSONObject root = new JSONObject();
         root.put("success", false); //used by Ext forms
+        // used by client api for FormApiActions (e.g. query-import.api and ImportDataCommand in java clientapi)
+        root.put("exception", message == null ? "(No error message)" : message);
         root.put("errors", jsonErrors);
         try
         {
