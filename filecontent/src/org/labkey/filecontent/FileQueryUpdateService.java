@@ -17,9 +17,9 @@ package org.labkey.filecontent;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -60,7 +60,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
-import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -558,7 +557,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                     offsetParts[i] = URLEncoder.encode(offsetParts[i], StringUtilsLabKey.DEFAULT_CHARSET);
                 }
 
-                String davUrl = rootDavUrl + "/" + StringUtil.join(offsetParts, "/");
+                String davUrl = rootDavUrl + "/" + StringUtils.join(offsetParts, "/");
                 WebdavResource resource = FileContentServiceImpl.getInstance().getResource(davUrl);
                 if (targetResource == null)
                     targetResource = resource;
