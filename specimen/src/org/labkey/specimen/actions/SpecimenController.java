@@ -26,6 +26,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.*;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -77,7 +78,6 @@ import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.api.specimen.settings.DisplaySettings;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.RequestNotificationSettings;
@@ -139,6 +139,7 @@ import org.labkey.specimen.security.permissions.ManageNotificationsPermission;
 import org.labkey.specimen.security.permissions.ManageRequestRequirementsPermission;
 import org.labkey.specimen.security.permissions.ManageRequestStatusesPermission;
 import org.labkey.specimen.security.permissions.ManageSpecimenActorsPermission;
+import org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission;
 import org.labkey.specimen.view.SpecimenSearchWebPart;
 import org.labkey.specimen.view.SpecimenWebPart;
 import org.springframework.validation.BindException;
@@ -249,7 +250,8 @@ public class SpecimenController extends SpringActionController
         Container c = getContainer();
         ActionURL rootURL;
         FolderType folderType = c.getFolderType();
-        if ("study".equals(folderType.getDefaultModule().getName()))
+        Module module = folderType.getDefaultModule();
+        if (null != module && "study".equals(folderType.getDefaultModule().getName()))
         {
             rootURL = folderType.getStartURL(c, getUser());
         }
