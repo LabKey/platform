@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -551,7 +552,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 if (offset.startsWith("/"))
                     offset = offset.substring(1);
 
-                String davUrl = rootDavUrl + "/" + URLEncoder.encode(offset, StringUtilsLabKey.DEFAULT_CHARSET);
+                String[] offsetParts = offset.split("/");
+                for (int i = 0; i < offsetParts.length; i++)
+                {
+                    offsetParts[i] = URLEncoder.encode(offsetParts[i], StringUtilsLabKey.DEFAULT_CHARSET);
+                }
+
+                String davUrl = rootDavUrl + "/" + StringUtil.join(offsetParts, "/");
                 WebdavResource resource = FileContentServiceImpl.getInstance().getResource(davUrl);
                 if (targetResource == null)
                     targetResource = resource;
