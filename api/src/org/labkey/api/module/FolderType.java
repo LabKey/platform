@@ -128,7 +128,7 @@ public interface FolderType
      * extra links will be added to automatically generated nav path
      * @return Owning module. May be null
      */
-    Module getDefaultModule();
+    @Nullable Module getDefaultModule();
 
     /**
      * Return all modules required by this foldertype, INCLUDING the default module if any.  Note: in order to find the

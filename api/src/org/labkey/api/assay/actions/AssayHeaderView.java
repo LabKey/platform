@@ -36,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -126,6 +127,6 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         ViewContext ctx = getViewContext();
         Container container = protocol.getContainer();
         //deleting will delete data as well as design, so user must have both design assay and delete perms
-        return container.getPolicy().hasPermissions(ctx.getUser(), DesignAssayPermission.class, DeletePermission.class);
+        return container.hasPermissions(ctx.getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class));
     }
 }

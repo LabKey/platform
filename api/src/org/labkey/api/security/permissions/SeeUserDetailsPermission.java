@@ -20,6 +20,7 @@ package org.labkey.api.security.permissions;
  * Date: 2012-09-14
  * Time: 1:35 PM
  */
+@AllowedForReadOnlyUser
 public class SeeUserDetailsPermission extends AbstractPermission
 {
     public SeeUserDetailsPermission()

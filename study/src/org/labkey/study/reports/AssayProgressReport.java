@@ -150,10 +150,12 @@ public class AssayProgressReport extends AbstractReport
 
             for (SpecimenStatus status : SpecimenStatus.values())
             {
-                data.add(PageFlowUtil.map("name", status.getName(),
-                        "label", status.getLabel(),
-                        "description", status.getDescription(),
-                        "icon-class", status.getIconClass()));
+                data.add(PageFlowUtil.map(
+                    "name", status.getName(),
+                    "label", status.getLabel(),
+                    "description", status.getDescription(),
+                    "icon-class", status.getIconClass())
+                );
             }
             return data;
         }
@@ -192,8 +194,8 @@ public class AssayProgressReport extends AbstractReport
 
         // get all current visits in the study
         Map<Integer, Visit> visitMap = study.getVisits(Visit.Order.CHRONOLOGICAL)
-                .stream()
-                .collect(Collectors.toMap(Visit::getId, e -> e));
+            .stream()
+            .collect(Collectors.toMap(Visit::getId, e -> e));
 
         ListValuedMap<Integer, Integer> scheduledVisits = new ArrayListValuedHashMap<>();
         new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), TableSelector.ALL_COLUMNS, SimpleFilter.createContainerFilter(context.getContainer()), null)
@@ -211,18 +213,15 @@ public class AssayProgressReport extends AbstractReport
         if (jsonData != null)
         {
             JSONArray assays = new JSONArray(jsonData);
-            if (assays != null)
+            for (JSONObject assay : assays.toJSONObjectArray())
             {
-                for (JSONObject assay : assays.toJSONObjectArray())
-                {
-                    String rowId = assay.getString("RowId");
-                    String assayName = assay.getString("AssayName");
-                    String schemaName = assay.getString("schemaName");
-                    String queryName = assay.getString("queryName");
+                String rowId = assay.getString("RowId");
+                String assayName = assay.getString("AssayName");
+                String schemaName = assay.getString("schemaName");
+                String queryName = assay.getString("queryName");
 
-                    if (rowId != null && assayName != null && schemaName != null && queryName != null)
-                        assayConfigMap.put(NumberUtils.toInt(rowId), assay);
-                }
+                if (rowId != null && assayName != null && schemaName != null && queryName != null)
+                    assayConfigMap.put(NumberUtils.toInt(rowId), assay);
             }
         }
 
@@ -264,11 +263,11 @@ public class AssayProgressReport extends AbstractReport
                 getDatasetData(assay, study, context);
 
                 List<Integer> visits = assaySource.getVisits(context).stream()
-                        .map(Visit::getId)
-                        .collect(Collectors.toList());
+                    .map(Visit::getId)
+                    .collect(Collectors.toList());
                 List<String> visitLabels = assaySource.getVisits(context).stream()
-                        .map(Visit::getDisplayString)
-                        .collect(Collectors.toList());
+                    .map(Visit::getDisplayString)
+                    .collect(Collectors.toList());
 
                 data.put(NAME, assay.getAssayName());
                 data.put(VISITS, visits);
@@ -307,8 +306,8 @@ public class AssayProgressReport extends AbstractReport
             if (specimenStatus != null)
             {
                 heatmap.put(status.getKey().getKey(), PageFlowUtil.map("iconcls", specimenStatus.getIconClass(),
-                        "tooltip", specimenStatus.getDescription(),
-                        "status", specimenStatus.getName()));
+                    "tooltip", specimenStatus.getDescription(),
+                    "status", specimenStatus.getName()));
             }
             else
                 throw new IllegalStateException("Specimen status : " + status.getValue() + " is not a valid status code");
@@ -319,8 +318,8 @@ public class AssayProgressReport extends AbstractReport
         for (ParticipantVisit visit : _linkedToStudyData.get(assay.getAssayName()))
         {
             heatmap.put(visit.getKey(), PageFlowUtil.map("iconcls", available.getIconClass(),
-                    "tooltip", available.getDescription(),
-                    "status", available.getName()));
+                "tooltip", available.getDescription(),
+                "status", available.getName()));
         }
         return heatmap;
     }
@@ -343,7 +342,7 @@ public class AssayProgressReport extends AbstractReport
 
                         String ptid = rs.getString(FieldKey.fromParts("participantId"));
                         //String specimenId = rs.getString(FieldKey.fromParts("specimenId"));
-                        Integer visitId = rs.getInt(FieldKey.fromParts("visitRowId"));
+                        int visitId = rs.getInt(FieldKey.fromParts("visitRowId"));
 
                         if (ptid != null && visitId != 0)
                         {
@@ -371,8 +370,8 @@ public class AssayProgressReport extends AbstractReport
 
     public static class AssayReportBean
     {
-        private ReportIdentifier _id;
-        private Map<Integer, Map<String, Object>> _assayData;
+        private final ReportIdentifier _id;
+        private final Map<Integer, Map<String, Object>> _assayData;
 
         public AssayReportBean(ReportIdentifier id, Map<Integer, Map<String, Object>> assayData)
         {
@@ -452,8 +451,8 @@ public class AssayProgressReport extends AbstractReport
 
     public static class ParticipantVisit
     {
-        private String _ptid;
-        private int _visitId;
+        private final String _ptid;
+        private final int _visitId;
 
         public ParticipantVisit(String ptid, int visitId)
         {

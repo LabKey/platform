@@ -1600,7 +1600,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Container container = protocol.getContainer();
         //deleting will delete data as well as design, so user must have both design assay and delete perms
-        return container.getPolicy().hasPermissions(viewContext.getUser(), DesignAssayPermission.class, DeletePermission.class);
+        return container.hasPermissions(viewContext.getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class));
     }
 
     @Override

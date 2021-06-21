@@ -144,8 +144,6 @@ public interface AppProps
 
     void setContextPath(String contextPath);
 
-    String getDefaultDomain();
-
     boolean isSetBaseServerUrl();
 
     String getBaseServerUrl();

@@ -17,7 +17,8 @@
 %>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
-<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.SecurityManager"%>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.Permission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
@@ -66,7 +67,7 @@
     String schemaName = dataset.getTableInfo(user).getSchema().getQuerySchemaName();
 
     StudyImpl study = StudyManager.getInstance().getStudy(c);
-    Set<Class<? extends Permission>> permissions = c.getPolicy().getPermissions(user);
+    Set<Class<? extends Permission>> permissions = SecurityManager.getPermissions(c.getPolicy(), user, Set.of());
 
     // is definition inherited
     boolean isDatasetInherited = dataset.isInherited();

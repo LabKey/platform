@@ -36,6 +36,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -356,8 +357,8 @@ public class ChangeSummary
             try
             {
                 Issue.Comment lastComment = _issue.getLastComment();
-                String messageId = "<" + _issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                String references = messageId + " <" + _issue.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String messageId = "<" + _issue.getEntityId() + "." + lastComment.getCommentId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
+                String references = messageId + " <" + _issue.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(to));
                 Address[] addresses = m.getAllRecipients();
