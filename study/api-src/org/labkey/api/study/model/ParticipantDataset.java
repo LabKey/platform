@@ -18,6 +18,7 @@ package org.labkey.api.study.model;
 
 import org.labkey.api.data.Container;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -29,7 +30,7 @@ public class ParticipantDataset
 {
     private String _lsid;
     private Container _container;
-    private Double _sequenceNum;
+    private BigDecimal _sequenceNum;
     private Date _visitDate;
     private Integer _studyDatasetId;
     private String _studyParticipantId;
@@ -74,12 +75,12 @@ public class ParticipantDataset
         _lsid = lsid;
     }
 
-    public Double getSequenceNum()
+    public BigDecimal getSequenceNum()
     {
         return _sequenceNum;
     }
 
-    public void setSequenceNum(Double sequenceNum)
+    public void setSequenceNum(BigDecimal sequenceNum)
     {
         _sequenceNum = sequenceNum;
     }

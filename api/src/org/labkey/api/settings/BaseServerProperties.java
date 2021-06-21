@@ -16,8 +16,9 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.CustomTLDEnabler;
+import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.util.URLHelper;
 
 import java.net.URISyntaxException;
@@ -33,7 +34,18 @@ public class BaseServerProperties
 
     static
     {
-        CustomTLDEnabler.initialize();
+        try
+        {
+            // Adds non-standard TLDs to allowable values for Apache Commons Validator. See Issue 25041.
+
+            // We've received an exception report that indicates (but does not definitively prove) this call may fail
+            // on some servers. Shouldn't be fatal if it doesn't work.
+            DomainValidator.updateTLDOverride(DomainValidator.ArrayType.GENERIC_PLUS, new String[]{"local"});
+        }
+        catch (Throwable e)
+        {
+            LogManager.getLogger(BaseServerProperties.class).error("Failed to enable .local domains in URL validation", e);
+        }
     }
 
     // Validate and parse, returning properties

@@ -17,8 +17,9 @@ package org.labkey.api.data;
 
 import com.google.common.io.Files;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.admin.ImportContext;
@@ -199,7 +200,7 @@ public class WorkbookContainerType implements ContainerType
     public static class AbstractTestCase extends Assert
     {
         protected Container _project;
-        protected TestContext _context;
+        protected TestContext _context = TestContext.get();
         protected List<Container> _workbooks = new ArrayList<>();
 
         protected String LIST1 = "List1";
@@ -207,33 +208,36 @@ public class WorkbookContainerType implements ContainerType
 
         protected void doInitialSetUp(String projectName) throws Exception
         {
+            createProjectAndWorkbooks(projectName);
+            createLists();
+        }
+
+        protected void createProjectAndWorkbooks(String projectName) throws Exception
+        {
             doCleanup(projectName);
 
-            Container project = ContainerManager.getForPath(projectName);
-            if (project == null)
-            {
-                project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
-
-                //create lists:
-                ListDefinition ld1 = ListService.get().createList(project, LIST1, ListDefinition.KeyType.Varchar);
-                ld1.getDomain().addProperty(new PropertyStorageSpec("PKField", JdbcType.VARCHAR));
-                ld1.setKeyName("PKField");
-                ld1.save(TestContext.get().getUser());
-
-                ListDefinition ld2 = ListService.get().createList(project, LIST2, ListDefinition.KeyType.Varchar);
-                ld2.getDomain().addProperty(new PropertyStorageSpec("PKField", JdbcType.VARCHAR));
-                ld2.setKeyName("PKField");
-
-                DomainProperty dp2 = ld2.getDomain().addProperty(new PropertyStorageSpec("LookupField", JdbcType.VARCHAR));
-                dp2.setLookup(new Lookup(project, "Lists", LIST1));
-                ld2.save(_context.getUser());
-            }
-
-            _project = project;
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
 
             //create two workbooks, auto-named by system
-            _workbooks.add(ContainerManager.createContainer(project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
-            _workbooks.add(ContainerManager.createContainer(project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
+            _workbooks.add(ContainerManager.createContainer(_project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
+            _workbooks.add(ContainerManager.createContainer(_project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
+        }
+
+        protected void createLists() throws Exception
+        {
+            //create lists:
+            ListDefinition ld1 = ListService.get().createList(_project, LIST1, ListDefinition.KeyType.Varchar);
+            ld1.getDomain().addProperty(new PropertyStorageSpec("PKField", JdbcType.VARCHAR));
+            ld1.setKeyName("PKField");
+            ld1.save(TestContext.get().getUser());
+
+            ListDefinition ld2 = ListService.get().createList(_project, LIST2, ListDefinition.KeyType.Varchar);
+            ld2.getDomain().addProperty(new PropertyStorageSpec("PKField", JdbcType.VARCHAR));
+            ld2.setKeyName("PKField");
+
+            DomainProperty dp2 = ld2.getDomain().addProperty(new PropertyStorageSpec("LookupField", JdbcType.VARCHAR));
+            dp2.setLookup(new Lookup(_project, "Lists", LIST1));
+            ld2.save(_context.getUser());
         }
 
         protected void testCrossContainerBehaviors(Container project, List<Container> workbooks, String schemaName, String parentTable, String childTable, String primaryChildField, String lookupField, List<String> parentPKs, Map<String, Object> extraRowValues) throws Exception
@@ -381,7 +385,7 @@ public class WorkbookContainerType implements ContainerType
             return row;
         }
 
-        protected void doCleanup(String projectName)
+        protected static void doCleanup(String projectName)
         {
             Container project = ContainerManager.getForPath(projectName);
             if (project != null)
@@ -398,13 +402,14 @@ public class WorkbookContainerType implements ContainerType
         @Before
         public void setUp() throws Exception
         {
-            _context = TestContext.get();
-            doInitialSetUp(PROJECT_NAME);
+            createProjectAndWorkbooks(PROJECT_NAME);
         }
 
         @Test
         public void testCrossContainerBehaviorsForList() throws Exception
         {
+            Assume.assumeTrue("This test requires the list module.", ListService.get() != null);
+            createLists();
             testCrossContainerBehaviors(_project, _workbooks, "Lists", LIST1, LIST2, "PKField", "LookupField", Arrays.asList("Value1", "Value2", "Value3", "Value4"), null);
         }
 
@@ -454,8 +459,8 @@ public class WorkbookContainerType implements ContainerType
             test.delete();
         }
 
-        @After
-        public void onComplete()
+        @AfterClass
+        public static void onComplete()
         {
             doCleanup(PROJECT_NAME);
         }

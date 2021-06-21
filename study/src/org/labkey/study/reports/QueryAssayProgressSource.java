@@ -38,11 +38,11 @@ import java.util.Set;
  */
 public class QueryAssayProgressSource implements AssayProgressReport.AssayData
 {
-    private AssayProgressReport.AssayExpectation _expectation;
-    private Study _study;
-    private List<String> _participants = new ArrayList<>();
-    private List<Visit> _visits = new ArrayList<>();
-    private List<Pair<AssayProgressReport.ParticipantVisit, String>> _specimenStatus = new ArrayList<>();
+    private final AssayProgressReport.AssayExpectation _expectation;
+    private final Study _study;
+    private final List<String> _participants = new ArrayList<>();
+    private final List<Visit> _visits = new ArrayList<>();
+    private final List<Pair<AssayProgressReport.ParticipantVisit, String>> _specimenStatus = new ArrayList<>();
 
     public QueryAssayProgressSource(AssayProgressReport.AssayExpectation expectation, Study study)
     {
@@ -149,8 +149,8 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
 
     private static class PtidSequenceNum
     {
-        private String _ptid;
-        private Double _sequenceNum;
+        private final String _ptid;
+        private final Double _sequenceNum;
 
         public PtidSequenceNum(String ptid, Double sequenceNum)
         {

@@ -166,9 +166,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 {
                     StringBuilder sb = new StringBuilder("<p>");
                     sb.append("<b>Specimen&nbsp;List</b> (<a href=\"");
-                    sb.append(PageFlowUtil.filter(_notification.getRequestURI()));
-                    sb.append("id=");
-                    sb.append(_notification.getRequestId());
+                    sb.append(PageFlowUtil.filter(_notification.getRequestURL()));
                     sb.append("\">Request Link</a>)<br><br>\n");
                     if (_notification.getIncludeSpecimensInBody())
                     {

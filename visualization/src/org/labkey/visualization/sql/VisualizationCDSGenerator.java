@@ -20,6 +20,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
@@ -521,6 +523,12 @@ public class VisualizationCDSGenerator
             ctx.setContainer(JunitUtil.getTestContainer());
             ctx.setUser( TestContext.get().getUser());
             this.context = ctx;
+        }
+
+        @BeforeClass
+        public static void preTest()
+        {
+            Assume.assumeTrue("This test requires the study module.", StudyService.get() != null);
         }
 
         Results getResults(VisDataRequest q) throws SQLGenerationException, SQLException

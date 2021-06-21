@@ -68,7 +68,6 @@ import java.util.List;
 public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
     private static final Logger LOG = LogManager.getLogger(CreateChildStudyAction.class);
-    public static final String CREATE_SPECIMEN_STUDY = "CreateSpecimenStudy";
 
     private Container _dstContainer;
     private StudyImpl _sourceStudy;

@@ -120,7 +120,6 @@ import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.assay.query.PublishAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
-import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
@@ -132,7 +131,7 @@ import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
-import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenControllerOld;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -256,7 +255,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-shared", SharedStudyController.class);
 
         // @Migrate
-        addController("specimen", SpecimenController.class, "study-samples");
+        addController("specimen-old", SpecimenControllerOld.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -421,7 +420,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         DatasetDefinition.cleanupOrphanedDatasetDomains();
 
-        AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
+        AdminConsole.addExperimentalFeatureFlag(SpecimenService.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);

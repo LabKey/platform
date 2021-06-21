@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -95,6 +96,7 @@ import java.util.Set;
 public class PublishResultsQueryView extends QueryView
 {
     private static final Logger LOG = Logger.getLogger(PublishResultsQueryView.class);
+
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final boolean _mismatched;
@@ -105,12 +107,13 @@ public class PublishResultsQueryView extends QueryView
     private final Map<Object, String> _reshowPtids;
     private final Map<Object, String> _reshowTargetStudies;
     private final boolean _includeTimestamp;
+    private final Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
+    private final Map<String, Object> _hiddenFormFields;
+    private final Set<String> _hiddenColumnCaptions;
+    private final FieldKey _objectIdFieldKey;
+    private final Dataset.PublishSource _publishSource;
+
     private List<ActionButton> _buttons = null;
-    private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
-    private Map<String, Object> _hiddenFormFields;
-    private Set<String> _hiddenColumnCaptions;
-    private FieldKey _objectIdFieldKey;
-    private Dataset.PublishSource _publishSource;
 
     public enum ExtraColFieldKeys
     {
@@ -1002,6 +1005,19 @@ public class PublishResultsQueryView extends QueryView
         ColumnInfo specimenDateCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SpecimenDate));
         ColumnInfo targetStudyCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.TargetStudy));
         ColumnInfo sampleIdCol = colInfos.get(_additionalColumns.get(ExtraColFieldKeys.SampleId));
+
+        // if visit or date columns don't exist, see if they can be resolved through the standard concept URIs
+        List<ColumnInfo> timepointCols = selectColumns.stream()
+                .filter(c -> PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
+                .collect(Collectors.toList());
+
+        for (ColumnInfo col : timepointCols)
+        {
+            if (dateCol == null && col.getJdbcType().isDateOrTime())
+                dateCol = col;
+            if (visitIDCol == null && col.getJdbcType().isReal())
+                visitIDCol = col;
+        }
 
         ResolverHelper resolverHelper = new ResolverHelper(
                 _targetStudyContainer, getUser(),

@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -78,5 +79,7 @@
 </table>
 <script type="text/javascript">
     // Allow tabs in the TSV text area
-    Ext.EventManager.on(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    <labkey:loadClientDependencies>
+        Ext.EventManager.on(<%=q(BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME)%>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+    </labkey:loadClientDependencies>
 </script>

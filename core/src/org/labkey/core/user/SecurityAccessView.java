@@ -109,7 +109,7 @@ public class SecurityAccessView extends VBox
                 continue;
 
             SecurityPolicy policy = child.getPolicy();
-            Collection<Role> allRoles = policy.getEffectiveRoles(_principal);
+            Collection<Role> allRoles = SecurityManager.getEffectiveRoles(policy,_principal);
             allRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
 
             List<Role> roles = new ArrayList<>();

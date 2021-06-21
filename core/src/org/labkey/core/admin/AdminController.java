@@ -1296,7 +1296,7 @@ public class AdminController extends SpringActionController
 
             WriteableAppProps props = AppProps.getWriteableInstance();
 
-            props.setDefaultDomain(form.getDefaultDomain());
+            AuthenticationManager.setDefaultDomain(form.getDefaultDomain());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setNavAccessOpen(form.isNavAccessOpen());
             props.setSSLRequired(form.isSslRequired());
@@ -1578,6 +1578,7 @@ public class AdminController extends SpringActionController
         private String _themeName;
         private String _themeFont;
         private String _folderDisplayMode;
+        private String _applicationMenuDisplayMode;
         private boolean _enableHelpMenu;
         private boolean _enableDiscussion;
         private String _logoHref;
@@ -1658,6 +1659,19 @@ public class AdminController extends SpringActionController
         {
             _folderDisplayMode = folderDisplayMode;
         }
+
+
+        public String getApplicationMenuDisplayMode()
+        {
+            return _applicationMenuDisplayMode;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setApplicationMenuDisplayMode(String displayMode)
+        {
+            _applicationMenuDisplayMode = displayMode;
+        }
+
 
         public String getDateParsingMode()
         {
@@ -9961,8 +9975,8 @@ public class AdminController extends SpringActionController
                 props.setSupportEmail(null);
             }
 
-            FolderDisplayMode folderDisplayMode = FolderDisplayMode.fromString(form.getFolderDisplayMode());
-            props.setFolderDisplayMode(folderDisplayMode);
+            props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
+            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
             props.setHelpMenuEnabled(form.isEnableHelpMenu());
             props.setDiscussionEnabled(form.isEnableDiscussion());
 

@@ -44,6 +44,7 @@ import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFPicture;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
@@ -843,6 +844,8 @@ public class ExcelColumn extends RenderColumn
         @BeforeClass
         public static void initialSetUp() throws Exception
         {
+            Assume.assumeTrue("This test requires the list module.", ListService.get() != null);
+
             doInitialSetUp(PROJECT_NAME);
         }
 

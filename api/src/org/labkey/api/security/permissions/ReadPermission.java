@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
  * User: Dave
  * Date: Apr 23, 2009
  */
+@AllowedForReadOnlyUser
 public class ReadPermission extends AbstractPermission
 {
     public ReadPermission()
