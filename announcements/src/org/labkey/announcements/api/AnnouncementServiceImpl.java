@@ -35,9 +35,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: Nick
@@ -46,12 +46,7 @@ import java.util.Map;
  */
 public class AnnouncementServiceImpl implements AnnouncementService
 {
-    private Map<String, DiscussionSrcTypeProvider> _discussionSrcTypeProviders;
-
-    public AnnouncementServiceImpl()
-    {
-        _discussionSrcTypeProviders = new HashMap<>();
-    }
+    private final Map<String, DiscussionSrcTypeProvider> _discussionSrcTypeProviders = new ConcurrentHashMap<>();
 
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification)
