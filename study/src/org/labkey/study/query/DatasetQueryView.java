@@ -513,8 +513,8 @@ public class DatasetQueryView extends StudyQueryView
         return btn;
     }
 
-    private String getQCUrlFilterValue(QCStateSet qcStates) // Rosaline temp note: See if this is further clean-up-able, since you currently
-    {                                                          // have one method that obtains the kew and a different one that obtains the value
+    private String getQCUrlFilterValue(QCStateSet qcStates)
+    {
         List<String> qcLabels = qcStates.getStates()
                 .stream()
                 .map(QCState::getLabel)

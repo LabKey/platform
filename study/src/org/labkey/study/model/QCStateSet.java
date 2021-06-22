@@ -210,7 +210,7 @@ public class QCStateSet
                 selectedStates.add(state);
         }
         if (study == null)
-            return new QCStateSet(container, selectedStates, false, PUBLIC_STATES_LABEL); //Rosaline temp note: what case is this?
+            return new QCStateSet(container, selectedStates, false, PUBLIC_STATES_LABEL);
         return new QCStateSet(container, selectedStates, study.isBlankQCStatePublic(), PUBLIC_STATES_LABEL);
     }
 
