@@ -530,7 +530,8 @@ public class DomainUtil
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
-        ValidationException validationException = validateProperties(d, update, d.getDomainKind(), orig);
+        DomainKind kind = d.getDomainKind();
+        ValidationException validationException = validateProperties(d, update, kind, orig);
 
         if (validationException.hasErrors())
         {
@@ -543,7 +544,7 @@ public class DomainUtil
             return validationException;
         }
 
-        if (!d.getDomainKind().canEditDefinition(user, d))
+        if (!kind.canEditDefinition(user, d))
         {
             validationException.addError(new SimpleValidationError("Unauthorized"));
             return validationException;
@@ -596,7 +597,7 @@ public class DomainUtil
         // If we're deleting all fields, set flag to potentially delete all data first.
         // "All fields" is defined to be the original property-driven field count, minus any that are known to be non-deleteable through the domain editor
         // Namely, that's the List key field.
-        if (deletedCount > 0 && deletedCount == (orig.getFields().size() - d.getDomainKind().getAdditionalProtectedProperties(d).size()))
+        if (deletedCount > 0 && deletedCount == (orig.getFields().size() - kind.getAdditionalProtectedProperties(d).size()))
             d.setShouldDeleteAllData(true);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();

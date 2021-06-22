@@ -1765,7 +1765,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
     @Marshal(Marshaller.Jackson)
-    public class UsagesAction extends ReadOnlyApiAction<UsagesForm>
+    public class PropertyUsagesAction extends ReadOnlyApiAction<PropertyUsagesForm>
     {
         @Override
         protected ObjectMapper createResponseObjectMapper()
@@ -1782,7 +1782,7 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        public Object execute(UsagesForm form, BindException errors) throws Exception
+        public Object execute(PropertyUsagesForm form, BindException errors) throws Exception
         {
             List<OntologyManager.PropertyUsages> usages = null;
             if (form.getPropertyIds() != null)
@@ -1798,7 +1798,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    public static class UsagesForm
+    public static class PropertyUsagesForm
     {
         private int maxUsageCount = 5;
         private List<Integer> propertyIds;

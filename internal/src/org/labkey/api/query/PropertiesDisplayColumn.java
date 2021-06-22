@@ -107,7 +107,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             // get the properties used by the object
             TableSelector ts = new TableSelector(OntologyManager.getTinfoObjectPropertiesView(),
                     Set.of("PropertyURI"), new SimpleFilter(FieldKey.fromParts("ObjectURI"), currentLsid), null);
-            // TODO: support properties with null values
             List<String> propertyURIs = ts.getArrayList(String.class);
 
             // create property descriptors and columns

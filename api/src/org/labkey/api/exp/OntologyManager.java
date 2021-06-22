@@ -2565,27 +2565,53 @@ public class OntologyManager
     public static PropertyUsages findPropertyUsages(@NotNull User user, @NotNull PropertyDescriptor pd, int maxUsageCount)
     {
         // query exp.ObjectProperty for usages of the property
-        List<FieldKey> fields = List.of(FieldKey.fromParts("objectId", "objectURI"));
+        FieldKey objectId = FieldKey.fromParts("objectId");
+        FieldKey objectId_objectURI = FieldKey.fromParts("objectId", "objectURI");
+        FieldKey objectId_container = FieldKey.fromParts("objectId", "container");
+        List<FieldKey> fields = List.of(objectId, objectId_objectURI, objectId_container);
         var colMap = QueryService.get().getColumns(getTinfoObjectProperty(), fields);
 
+        int usageCount = 0;
         List<Identifiable> objects = new ArrayList<>(maxUsageCount);
         TableSelector ts = new TableSelector(getTinfoObjectProperty(), colMap.values(), new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL), new Sort("objectId"));
-        List<String> objectURIs = ts.getArrayList(String.class);
-        for (int i = 0; i < objectURIs.size() && i < maxUsageCount; i++)
+        try (var r = ts.getResults(true))
         {
-            String objectURI = objectURIs.get(i);
-            Identifiable object = LsidManager.get().getObject(objectURI);
-            if (object != null)
+            usageCount = r.getSize();
+
+            for (int i = 0; i < maxUsageCount && r.next(); i++)
             {
-                Container c = object.getContainer();
-                if (c != null && c.hasPermission(user, ReadPermission.class))
-                    objects.add(object);
+                var row = r.getFieldKeyRowMap();
+                int oid = (Integer) row.get(objectId);
+                String objectURI = (String) row.get(objectId_objectURI);
+                String container = (String) row.get(objectId_container);
+
+                Identifiable object = LsidManager.get().getObject(objectURI);
+                if (object != null)
+                {
+                    Container c = object.getContainer();
+                    if (c != null && c.hasPermission(user, ReadPermission.class))
+                        objects.add(object);
+                }
+                else
+                {
+                    Container c = ContainerManager.getForId(container);
+                    if (c != null && c.hasPermission(user, ReadPermission.class))
+                    {
+                        OntologyObject oo = new OntologyObject();
+                        oo.setContainer(c);
+                        oo.setObjectId(oid);
+                        oo.setObjectURI(objectURI);
+                        objects.add(new IdentifiableBase(oo));
+                    }
+                }
             }
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
-        // CONSIDER: find all domains that reference the property, query the tables used by those domains
-
-        return new PropertyUsages(pd.getPropertyId(), pd.getPropertyURI(), objectURIs.size(), objects);
+        return new PropertyUsages(pd.getPropertyId(), pd.getPropertyURI(), usageCount, objects);
     }
 
     public static class PropertyUsages
