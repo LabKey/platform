@@ -100,6 +100,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.qc.QCStateManager.getQCLabelSet;
 import static org.labkey.api.qc.QCStateManager.getQCUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.ALL_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL;
@@ -512,13 +513,14 @@ public class DatasetQueryView extends StudyQueryView
         return btn;
     }
 
-    private String getQCStateFilterString(QCStateSet qcStates) // Rosaline temp note: See if this is further clean-up-able, since you currently
+    private String getQCUrlFilterValue(QCStateSet qcStates) // Rosaline temp note: See if this is further clean-up-able, since you currently
     {                                                          // have one method that obtains the kew and a different one that obtains the value
         List<String> qcLabels = qcStates.getStates()
                 .stream()
                 .map(QCState::getLabel)
                 .collect(Collectors.toList());
-        return new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
+        String filterValue = new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
+        return filterValue != null ? filterValue : "";
     }
 
     private MenuButton createQCStateButton(QCStateSet currentSet)
@@ -529,47 +531,62 @@ public class DatasetQueryView extends StudyQueryView
 
         String eq = getQCUrlFilterKey(CompareType.EQUAL, dataRegionName);
         String in = getQCUrlFilterKey(CompareType.IN, dataRegionName);
-        boolean urlHasEqFilter = getViewContext().cloneActionURL().getParameter(eq) != null;
-        boolean urlHasInFilter = getViewContext().cloneActionURL().getParameter(in) != null;
-        boolean urlHasNotInFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
-        boolean urlHasIsBlankFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
+        String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
+        String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
 
-        String publicQCLabels = getQCStateFilterString(QCStateSet.getPublicStates(getContainer()));
-        Set<String> publicQCLabelsSet = publicQCLabels != null ? new HashSet<>(Arrays.asList(publicQCLabels.split(";"))) : new HashSet<>();
-        String privateQCLabels = getQCStateFilterString(QCStateSet.getPrivateStates(getContainer()));
-        Set<String> privateQCLabelsSet = privateQCLabels != null ? new HashSet<>(Arrays.asList(privateQCLabels.split(";"))) : new HashSet<>();
+        // Account for the [none] QC State
+        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+        if (study != null && study.isBlankQCStatePublic() && !publicQCUrlFilterValue.equals(""))
+        {
+            publicQCUrlFilterValue += ";";
+        }
+        else if (study != null && !study.isBlankQCStatePublic() && !privateQCUrlFilterValue.equals(""))
+        {
+            privateQCUrlFilterValue += ";";
+        }
 
+        // Apply appropriate grid filter-url to each QC dropdown option href
         boolean selected = false;
         for (QCStateSet set : stateSets)
         {
             ActionURL urlHelper = getViewContext().cloneActionURL();
-            String filterValue = set.getLabel();
+            urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName));
+            urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.NEQ_OR_NULL, dataRegionName));
+            urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName));
+            String QCUrlFilterValue = set.getLabel();
 
-            switch (filterValue)
+            switch (QCUrlFilterValue)
             {
                 case PUBLIC_STATES_LABEL -> {
-                    urlHelper = urlHelper.replaceParameter(in, publicQCLabels);
+                    urlHelper = urlHelper.replaceParameter(in, publicQCUrlFilterValue);
                     urlHelper = urlHelper.deleteParameter(eq);
                 }
                 case PRIVATE_STATES_LABEL -> {
-                    urlHelper = urlHelper.replaceParameter(in, privateQCLabels);
+                    urlHelper = urlHelper.replaceParameter(in, privateQCUrlFilterValue);
                     urlHelper = urlHelper.deleteParameter(eq);
                 }
                 case ALL_STATES_LABEL -> {
                     urlHelper = urlHelper.deleteParameter(in);
                     urlHelper = urlHelper.deleteParameter(eq);
                 }
-                default -> urlHelper = urlHelper.replaceParameter(eq, filterValue);
+                default -> {
+                    urlHelper = urlHelper.replaceParameter(eq, QCUrlFilterValue);
+                }
             }
 
             NavTree setItem = new NavTree(set.getLabel(), urlHelper);
             setItem.setId("QCState:" + set.getLabel());
 
             // When QC State Column gets filtered, detect the change and update QC State dropdown selection accordingly
+            boolean urlHasEqFilter = getViewContext().cloneActionURL().getParameter(eq) != null;
+            boolean urlHasInFilter = getViewContext().cloneActionURL().getParameter(in) != null;
+            boolean urlHasNotInFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
+            boolean urlHasIsBlankFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
+
             String urlValue = getViewContext().cloneActionURL().getParameter(urlHasInFilter ? in : eq);
             Set<String> urlValueSet = urlValue != null ? new HashSet<>(Arrays.asList(urlValue.split(";"))) : new HashSet<>();
-            boolean urlFilterIsPublicQCStates = set.getLabel().equals(PUBLIC_STATES_LABEL) && publicQCLabelsSet.equals(urlValueSet);
-            boolean urlFilterIsPrivateQCStates = set.getLabel().equals(PRIVATE_STATES_LABEL) && privateQCLabelsSet.equals(urlValueSet);
+            boolean urlFilterIsPublicQCStates = set.getLabel().equals(PUBLIC_STATES_LABEL) && getQCLabelSet(publicQCUrlFilterValue).equals(urlValueSet);
+            boolean urlFilterIsPrivateQCStates = set.getLabel().equals(PRIVATE_STATES_LABEL) && getQCLabelSet(privateQCUrlFilterValue).equals(urlValueSet);
 
             if (!selected)
             {

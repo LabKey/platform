@@ -312,15 +312,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getDatasetURL(Container container, int datasetId)
         {
-            ActionURL url = new ActionURL(StudyController.DatasetAction.class, container);
-            url.addParameter(DatasetDefinition.DATASETKEY, datasetId);
-            if (QCStateManager.getInstance().showQCStates(container))
-            {
-                QCStateSet allStates = QCStateSet.getAllStates(container);
-                if (allStates != null)
-                    url.addParameter(BaseStudyController.SharedFormParameters.QCState, allStates.getFormValue());
-            }
-            return url;
+            return new ActionURL(StudyController.DatasetAction.class, container).addParameter(DatasetDefinition.DATASETKEY, datasetId);
         }
 
         @Override

@@ -31,10 +31,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class QCStateManager
 {
@@ -159,5 +162,10 @@ public class QCStateManager
     public static String getQCUrlFilterKey(CompareType compareType, String dataRegionName)
     {
         return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam( dataRegionName + ".").getKey();
+    }
+
+    public static Set<String> getQCLabelSet(String QCLabels)
+    {
+        return QCLabels != null ? new HashSet<>(Arrays.asList(QCLabels.split(";"))) : new HashSet<>();
     }
 }
