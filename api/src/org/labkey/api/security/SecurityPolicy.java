@@ -32,7 +32,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -203,7 +202,7 @@ public class SecurityPolicy
 
 
     /**
-     * Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission[s]().
+     * Callers outside this package should use SecurityManager.hasAllPermissions() or Container.hasPermission[s]() or SecurableResource.hasPermission().
      * If you are modifying a SecurityPolicy you should use getOwnPermissions() or getAssignments()
      *
      */
