@@ -81,7 +81,7 @@ List others = [
         "org.apache.xmlgraphics:fop:${fopVersion}",
         "flyingsaucer:core-renderer:${flyingsaucerVersion}",
         "com.google.guava:guava:${guavaVersion}",
-        "net.sf.jtidy:jtidy:${jtidyVersion}",
+        "org.jsoup:jsoup:${jsoupVersion}",
         "org.quartz-scheduler:quartz:${quartzVersion}",
         "net.coobird:thumbnailator:${thumbnailatorVersion}",
         "org.apache.xmlbeans:xmlbeans:${xmlbeansVersion}",
