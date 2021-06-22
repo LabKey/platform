@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
 <%@ page import="org.labkey.api.study.Params" %>
@@ -36,7 +37,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.OverviewAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.OverviewBean" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController.BeginAction" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.CohortManager" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
@@ -96,7 +96,7 @@
 
 %><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
 &nbsp;<%= link("Views", new ActionURL(BeginAction.class, container))%>&nbsp;
- <%= bean.showSpecimens ? link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container)) : HtmlString.EMPTY_STRING%>
+ <%= bean.showSpecimens ? link("Specimens", SpecimenMigrationService.get().getBeginURL(container)) : HtmlString.EMPTY_STRING%>
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.size() && !hasHiddenData; i++)

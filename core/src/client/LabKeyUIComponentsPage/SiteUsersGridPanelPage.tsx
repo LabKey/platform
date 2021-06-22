@@ -3,7 +3,8 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react'
-import { getServerContext, Utils } from '@labkey/api'
+import { List } from 'immutable';
+import { getServerContext, PermissionTypes, Utils } from '@labkey/api';
 import {
     Alert,
     LoadingSpinner,
@@ -13,8 +14,9 @@ import {
     SiteUsersGridPanel,
     fetchContainerSecurityPolicy,
     queryGridInvalidate,
-    SCHEMAS
-} from "@labkey/components";
+    SCHEMAS,
+    User,
+} from '@labkey/components';
 
 interface State {
     policy: SecurityPolicy
@@ -77,7 +79,12 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
     };
 
     render() {
+        const { rolesByUniqueName } = this.props;
         const { loading, error, message, policy } = this.state;
+        const user = new User({
+            ...getServerContext().user,
+            permissionsList: getServerContext().user.isRootAdmin ? List.of(PermissionTypes.UserManagement) : List<string>(),
+        });
 
         if (loading) {
             return <LoadingSpinner/>
@@ -91,10 +98,12 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<PermissionsProvider
                 <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually update site users for this server.</Alert>
                 {message && <Alert bsStyle={'success'}>{message}</Alert>}
                 <SiteUsersGridPanel
+                    user={user}
+                    showDetailsPanel={user.isRootAdmin}
                     onCreateComplete={this.onSuccess}
                     onUsersStateChangeComplete={this.onSuccess}
                     policy={policy}
-                    rolesByUniqueName={this.props.rolesByUniqueName}
+                    rolesByUniqueName={rolesByUniqueName}
                 />
             </>
         )

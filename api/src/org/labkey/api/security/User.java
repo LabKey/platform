@@ -284,13 +284,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public boolean hasApplicationAdminPermissionForPolicy(SecurityPolicy policy)
     {
-        return doesAnyRoleHaveAppAdminPermission(policy.getEffectiveRoles(this, false));
+        return doesAnyRoleHaveAppAdminPermission(SecurityManager.getEffectiveRoles(policy, this, false));
     }
 
     // NOTE: most callers should use hasApplicationAdminPermissionForPolicy() instead; only use this if you care specifically about the role itself
     public boolean hasApplicationAdminForPolicy(SecurityPolicy policy)
     {
-        Set<Role> assignedRoles = policy.getEffectiveRoles(this, false);
+        Set<Role> assignedRoles = SecurityManager.getEffectiveRoles(policy,this, false);
         return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 

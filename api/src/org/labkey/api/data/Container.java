@@ -41,6 +41,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -401,52 +402,45 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (user instanceof User && isForbiddenProject((User) user))
-            return false;
-        return getPolicy().hasPermission(logMsg, user, perm);
+        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), Set.of());
     }
 
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (user instanceof User && isForbiddenProject((User) user))
-            return false;
-        return getPolicy().hasPermission(user, perm);
+        return SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(perm), Set.of());
     }
 
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        if (user instanceof User && isForbiddenProject((User) user))
-            return false;
-        return getPolicy().hasPermission(logMsg, user, perm, contextualRoles);
+        return SecurityManager.hasAllPermissions(logMsg, getPolicy(), user, Set.of(perm), contextualRoles);
     }
 
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
     {
-        if (user instanceof User && isForbiddenProject((User) user))
-            return false;
-        return getPolicy().hasPermission(user, perm, contextualRoles);
+        return SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(perm), contextualRoles);
     }
+
 
     public boolean hasPermissions(@NotNull User user, @NotNull Set<Class<? extends Permission>> permissions)
     {
-        if (isForbiddenProject(user))
-            return false;
-        return getPolicy().hasPermissions(user, permissions);
+        return SecurityManager.hasAllPermissions(null, getPolicy(), user, permissions, Set.of());
     }
 
-    public boolean hasOneOf(@NotNull User user, @NotNull Collection<Class<? extends Permission>> perms)
+
+    public boolean hasOneOf(@NotNull User user, @NotNull Set<Class<? extends Permission>> perms)
     {
-        return !isForbiddenProject(user) && getPolicy().hasOneOf(user, perms, null);
+        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, perms, Set.of());
     }
+
 
     @SafeVarargs
     public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
-        return hasOneOf(user, Arrays.asList(perms));
+        return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet(Arrays.asList(perms)), Set.of());
     }
 
 
@@ -931,7 +925,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        Set<Module> requiredModules = new HashSet<>(getFolderType().getActiveModules());
+        Set<Module> requiredModules = new HashSet<>(getRequiredModulesForFolderType(getFolderType()));
         requiredModules.add(ModuleLoader.getInstance().getModule("API"));
         requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
 
@@ -939,11 +933,28 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             if (child.isWorkbook())
             {
-                requiredModules.addAll(child.getFolderType().getActiveModules());
+                requiredModules.addAll(getRequiredModulesForFolderType(child.getFolderType()));
             }
         }
 
         return requiredModules;
+    }
+
+    public Set<Module> getRequiredModulesForFolderType(FolderType folderType)
+    {
+        Set<Module> modules = new HashSet<>();
+        if (!folderType.equals(FolderType.NONE))
+        {
+            for (Module module : folderType.getActiveModules())
+            {
+                // check for null, since there's no guarantee that a third-party folder type has all its
+                // active modules installed on this system (so nulls may end up in the list- bug 6757):
+                // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
+                if (module != null && module.canBeEnabled(this))
+                    modules.add(module);
+            }
+        }
+        return modules;
     }
 
     @NotNull
@@ -1164,25 +1175,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         Set<Module> modules = new HashSet<>();
+
+        // always put the required modules in the set
+        // note that this will pickup the modules from the folder type's getActiveModules()
+        modules.addAll(getRequiredModules());
+
         // add all modules found in user preferences:
         for (String moduleName : props.keySet())
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
             if (module != null && module.canBeEnabled(this))
                 modules.add(module);
-        }
-
-        // ensure all modules for folder type are added (may have been added after save)
-        if (!getFolderType().equals(FolderType.NONE))
-        {
-            for (Module module : getFolderType().getActiveModules())
-            {
-                // check for null, since there's no guarantee that a third-party folder type has all its
-                // active modules installed on this system (so nulls may end up in the list- bug 6757):
-                // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
-                if (module != null && module.canBeEnabled(this))
-                    modules.add(module);
-            }
         }
 
         // add all 'always display' modules, remove all 'never display' modules:
@@ -1302,7 +1305,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (includePermissions)
             {
                 containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
-                containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
+                containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(getPolicy(), user));
             }
             if (null != getDescription())
                 containerProps.put("description", getDescription());

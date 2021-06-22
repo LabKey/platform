@@ -114,11 +114,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(USAGE_REPORTING_LEVEL, level.toString());
     }
 
-    public void setDefaultDomain(String defaultDomain)
-    {
-        storeStringValue(DEFAULT_DOMAIN_PROP, defaultDomain);
-    }
-
     public void setBaseServerUrl(String baseServerUrl) throws URISyntaxException
     {
         // Strip trailing slashes to avoid double slashes in generated links

@@ -34,7 +34,6 @@ import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.settings.RepositorySettings;
 import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.study.SpecimenUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -297,7 +296,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         Study s = StudyService.get().getStudy(getContainer());
 
         root.addChild(s.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-        root.addChild("Specimen Overview", new ActionURL(SpecimenController2.OverviewAction.class, getContainer()));
+        root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
         root.addChild("Upload Specimens");
     }
 
@@ -308,7 +307,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
-            ActionURL samplesLink = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(getContainer(), true);
+            ActionURL samplesLink = SpecimenController.getSpecimensURL(getContainer(), true);
             return new HtmlView("Specimens uploaded successfully.<br><br>" +
                     PageFlowUtil.textLink("study home", homeLink) + " " +
                     PageFlowUtil.textLink("specimens", samplesLink));
@@ -320,7 +319,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             Study study = StudyService.get().getStudy(getContainer());
 
             root.addChild(study.getLabel(), PageFlowUtil.urlProvider(StudyUrls.class).getStudyOverviewURL(getContainer()));
-            root.addChild("Specimen Overview", new ActionURL(SpecimenController2.OverviewAction.class, getContainer()));
+            root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
             root.addChild("Sample Import Complete");
         }
     }

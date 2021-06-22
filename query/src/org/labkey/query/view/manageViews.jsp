@@ -32,6 +32,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -68,10 +69,10 @@
         views.addAll(mgr.getCstmViews(c, schemaName, queryName, null, user, false, false));
     }
 
-    // UNDONE: Requires queryName for now.  We need a method to get all session views in a container.
-    if (queryName != null)
+    // UNDONE: Requires queryName and schemaName for now.  We need a method to get all session views in a container.
+    if (queryName != null && schemaName != null && schemaName.length() > 0)
     {
-        views.addAll(CustomViewSetKey.getCustomViewsFromSession(getViewContext().getRequest(), c, queryName).values());
+        views.addAll(CustomViewSetKey.getCustomViewsFromSession(getViewContext().getRequest(), c, queryName, SchemaKey.fromString(schemaName)).values());
     }
 
     views.sort((o1, o2) ->

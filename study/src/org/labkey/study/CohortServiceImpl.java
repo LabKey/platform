@@ -22,6 +22,12 @@ public class CohortServiceImpl implements CohortService
     }
 
     @Override
+    public @Nullable CohortFilter getFromURL(Container c, User user, ActionURL url, @Nullable String dataRegionName)
+    {
+        return CohortFilterFactory.getFromURL(c, user, url, dataRegionName);
+    }
+
+    @Override
     public CohortFilter getUnassignedCohortFilter()
     {
         return CohortFilterFactory.UNASSIGNED;

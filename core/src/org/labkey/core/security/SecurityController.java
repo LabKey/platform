@@ -832,7 +832,21 @@ public class SecurityController extends SpringActionController
                     }
                 }
 
-                if (addGroups.size() > 0 || addEmails.size() > 0)
+                // issue 43366 : users without the AddUserPermission are still allowed to create new users through the
+                // manage group UI.
+                if (!container.hasPermission(getUser(), AddUserPermission.class))
+                {
+                    for (ValidEmail email : addEmails)
+                    {
+                        if (!UserManager.userExists(email))
+                        {
+                            errors.reject(ERROR_MSG, "You do not have permissions to create new users.");
+                            break;
+                        }
+                    }
+                }
+
+                if (!errors.hasErrors() && (addGroups.size() > 0 || addEmails.size() > 0))
                 {
                     // add new users
                     List<User> addUsers = new ArrayList<>(addEmails.size());
@@ -1976,7 +1990,7 @@ public class SecurityController extends SpringActionController
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getUsers might not have the updated groups list
                 Map<String, List<Group>> userAccessGroups = new TreeMap<>();
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-                Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy,user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
                 {

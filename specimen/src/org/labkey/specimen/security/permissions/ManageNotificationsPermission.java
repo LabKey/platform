@@ -16,7 +16,7 @@
 package org.labkey.specimen.security.permissions;
 
 import org.labkey.api.security.permissions.AbstractPermission;
-import org.labkey.api.study.StudyService;
+import org.labkey.specimen.SpecimenModule;
 
 /*
 * User: Dave
@@ -29,6 +29,6 @@ public class ManageNotificationsPermission extends AbstractPermission
     {
         super("Manage Notifications",
                 "Allows management of specimen request notifications",
-                StudyService.get().getStudyModuleClass()); // TODO: Switch to SpecimenModule.class
+                SpecimenModule.class);
     }
 }

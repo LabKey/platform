@@ -82,13 +82,15 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties
 
     void setPrecision(int scale);
 
+    void setPrincipalConceptCode(String code);
+
     void setSourceOntology(String abbr);
+
+    void setConceptSubtree(String path);
 
     void setConceptImportColumn(String name);
 
     void setConceptLabelColumn(String name);
-
-    void setPrincipalConceptCode(String code);
 
     void setDerivationDataScope(String scope);
 }
