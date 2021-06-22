@@ -117,9 +117,10 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
@@ -190,6 +191,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.reports.model.ViewCategoryManager.UNCATEGORIZED_ROWID;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.cl;
 
@@ -3687,10 +3689,72 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ManageNotificationsAction extends SimpleViewAction<NotificationsForm>
     {
+        private SortedSet<Integer> _subscriptionSet;
+        private ReportContentEmailManager.NotifyOption _notifyOption;
+
         @Override
         public ModelAndView getView(NotificationsForm form, BindException errors)
         {
+            _subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
+            String notifyOptionStr = ReportContentEmailManager.removeNotifyOption(_subscriptionSet).name().toLowerCase();
+            _notifyOption = ReportContentEmailManager.NotifyOption.getNotifyOption(notifyOptionStr);
+            List<Map<String, Object>> categories = new ArrayList<>();
+            List<Map<String, Object>> datasets = new ArrayList<>();
+
+            // build the list of categories assuming a max of 2 category levels
+            ViewCategoryManager mgr = ViewCategoryManager.getInstance();
+            List<ViewCategory> viewCategories = new ArrayList<>(mgr.getTopLevelCategories(getContainer()));
+            ViewCategoryManager.sortViewCategories(viewCategories);
+
+            ViewCategory uncategorizedCategory = ReportUtil.getDefaultCategory(getContainer(), null, null);
+            categories.add(Map.of("label", uncategorizedCategory.getLabel(),
+                    "rowid", UNCATEGORIZED_ROWID,
+                    "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.CATEGORY, UNCATEGORIZED_ROWID)));
+
+            for (ViewCategory vc : viewCategories)
+            {
+                categories.add(Map.of("label", vc.getLabel(),
+                        "rowid", vc.getRowId(),
+                        "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.CATEGORY, vc.getRowId())));
+
+                List<ViewCategory> children = new ArrayList<>(vc.getSubcategories());
+                ViewCategoryManager.sortViewCategories(children);
+                for (ViewCategory child : children)
+                {
+                    categories.add(Map.of("label", "&nbsp;&nbsp;&nbsp;&nbsp;" + child.getLabel(),
+                            "rowid", child.getRowId(),
+                            "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.CATEGORY, child.getRowId())));
+                }
+            }
+
+            // build the list of datasets
+            Study study = StudyService.get().getStudy(getContainer());
+            if (study != null)
+            {
+                List<? extends Dataset> datasetList = new ArrayList<>(study.getDatasets());
+                datasetList.sort((d1, d2) -> d1.getLabel().compareToIgnoreCase(d2.getLabel()));
+
+                for (Dataset ds : datasetList)
+                {
+                    datasets.add(Map.of("label", ds.getLabel(),
+                            "rowid", ds.getDatasetId(),
+                            "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.DATASET, ds.getDatasetId())));
+                }
+            }
+
+            form.setNotifyOption(notifyOptionStr);
+            form.setCategories(categories);
+            form.setDatasets(datasets);
             return new JspView<>("/org/labkey/query/reports/view/manageNotifications.jsp", form, errors);
+        }
+
+        private boolean getSubscribed(ReportContentEmailManager.NotifyOption notifyOption, int id)
+        {
+            if (notifyOption == _notifyOption)
+            {
+                return _subscriptionSet.contains(id);
+            }
+            return false;
         }
 
         @Override
@@ -3703,80 +3767,67 @@ public class ReportsController extends SpringActionController
 
     public static class NotificationsForm extends ViewForm
     {
-        private SortedSet<Integer> _subscriptionSet;
-        private String _notifyOption;
-
-        public NotificationsForm()
-        {
-        }
-
-        public List<ViewCategoryManager.ViewCategoryTreeNode> getCategorySubcriptionTree()
-        {
-            ensureInited();
-            return ViewCategoryManager.getInstance().getCategorySubcriptionTree(getContainer(), _subscriptionSet);
-        }
+        private String _notifyOption;                   // the type of notification all, none, categories etc.
+        private SortedSet<Integer> _selections;         // the specific categories or datasets selected.
+        private List<Map<String, Object>> _categories = new ArrayList<>();
+        private List<Map<String, Object>> _datasets = new ArrayList<>();
 
         public String getNotifyOption()
         {
-            ensureInited();
             return _notifyOption;
         }
 
-        private void ensureInited()
+        public void setNotifyOption(String notifyOption)
         {
-            if (null == _subscriptionSet || null == _notifyOption)
-            {
-                SortedSet<Integer> subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
-                _notifyOption = ReportContentEmailManager.removeNotifyOption(subscriptionSet).name().toLowerCase();
-                _subscriptionSet = subscriptionSet;
-            }
+            _notifyOption = notifyOption;
+        }
+
+        public SortedSet<Integer> getSelections()
+        {
+            return _selections;
+        }
+
+        public void setSelections(SortedSet<Integer> selections)
+        {
+            _selections = selections;
+        }
+
+        public List<Map<String, Object>> getCategories()
+        {
+            return _categories;
+        }
+
+        public void setCategories(List<Map<String, Object>> categories)
+        {
+            _categories = categories;
+        }
+
+        public List<Map<String, Object>> getDatasets()
+        {
+            return _datasets;
+        }
+
+        public void setDatasets(List<Map<String, Object>> datasets)
+        {
+            _datasets = datasets;
         }
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SaveCategoryNotificationsAction extends MutatingApiAction<SaveCategoryNotificationsForm>
+    public class SaveNotificationSettingsAction extends MutatingApiAction<NotificationsForm>
     {
         @Override
-        public ApiResponse execute(SaveCategoryNotificationsForm form, BindException errors)
+        public ApiResponse execute(NotificationsForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            ReportContentEmailManager.setSubscriptionSet(getContainer(), getUser(), form.getSubscriptionSet());
+
+            Set<Integer> selections = form.getSelections();
+            ReportContentEmailManager.NotifyOption notifyOption = ReportContentEmailManager.NotifyOption.getNotifyOption(form.getNotifyOption());
+            selections.add(notifyOption.getSpecialCategoryId());
+
+            ReportContentEmailManager.setSubscriptionSet(getContainer(), getUser(), selections);
             response.put("success", true);
             return response;
-        }
-    }
-
-    public static class SaveCategoryNotificationsForm implements CustomApiForm
-    {
-        private SortedSet<Integer> _subscriptionSet = new TreeSet<>();
-
-        @Override
-        public void bindProperties(Map<String, Object> props)
-        {
-            JSONArray categories = (JSONArray)props.get("categories");
-            if (null != categories)
-            {
-                for (int i = 0; i < categories.length(); i++)
-                {
-                    Integer rowId = ((JSONObject) categories.get(i)).getInt("rowid");
-                    boolean subscribed = ((JSONObject) categories.get(i)).getBoolean("subscribed");
-                    assert(null != rowId);
-                    if (subscribed)
-                        _subscriptionSet.add(rowId);
-                }
-            }
-            Object notifyOptionObj = props.get("notifyOption");
-            int notifyOptionInt;
-            if (notifyOptionObj instanceof String)
-                notifyOptionInt = ReportContentEmailManager.NotifyOption.getNotifyOption((String)notifyOptionObj).getSpecialCategoryId();
-            else
-                notifyOptionInt = ReportContentEmailManager.NotifyOption.NONE.getSpecialCategoryId();     // just in case
-            _subscriptionSet.add(notifyOptionInt);
-        }
-
-        public SortedSet<Integer> getSubscriptionSet()
-        {
-            return _subscriptionSet;
         }
     }
 
