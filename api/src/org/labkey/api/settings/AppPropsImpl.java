@@ -622,7 +622,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 switch (prop.getName())
                 {
                     case DEFAULT_DOMAIN_PROP -> {
-                        AuthenticationManager.setDefaultDomain(prop.getValue());
+                        AuthenticationManager.setDefaultDomain(UserManager.getGuestUser(), prop.getValue());
                         LOG.warn("Support for the \"SiteSettings.defaultDomain\" startup property will be removed shortly; use \"Authentication.DefaultDomain\" instead.");
                     }
                     case BASE_SERVER_URL_PROP -> writeable.setBaseServerUrl(prop.getValue());

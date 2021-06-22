@@ -254,14 +254,6 @@ public class AuthenticationManager
         return value == null ? "" : value;
     }
 
-    // To remove along with single usage upon release of 21.11
-    public static void setDefaultDomain(String value)
-    {
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(DEFAULT_DOMAIN, value);
-        props.save();
-    }
-
     public static void setDefaultDomain(User user, String value)
     {
         saveAuthSetting(user, DEFAULT_DOMAIN, value);
