@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -91,7 +92,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
+                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
                     {
                         if (publishSourceId != null)
                         {
@@ -159,16 +160,13 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     }
 
                     @Override
-                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf)
+                    public @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container)
                     {
                         if (publishSourceId != null)
                         {
                             ExpSampleType sampleType = resolvePublishSource(publishSourceId);
                             if (sampleType != null)
-                            {
-                                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL(sampleType);
-                                return new ActionButton("View Source Sample Type", url);
-                            }
+                                return new ActionButton("View Source Sample Type", getSourceActionURL(sampleType, container));
                         }
                         return null;
                     }
@@ -204,15 +202,35 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     {
                         return "sample type";
                     }
+
+                    @Override
+                    public ActionURL getSourceActionURL(ExpObject sourceObject, Container container)
+                    {
+                        ActionURL url;
+                        if (container.getActiveModules().contains(ModuleLoader.getInstance().getModule("sampleManagement")))
+                        {
+                            url = new ActionURL("sampleManager", "app", container);
+                            url.setFragment("/samples/" + sourceObject.getName());
+                        }
+                        else
+                        {
+                            url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL((ExpSampleType) sourceObject);
+                        }
+                        return url;
+                    }
                 };
 
         public abstract @Nullable ExpObject resolvePublishSource(Integer publishSourceId);
         public abstract String getLabel(Integer publishSourceId);
-        public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf);
+        public abstract @Nullable ActionButton getSourceButton(Integer publishSourceId, ContainerFilter cf, Container container);
         public abstract boolean hasUsefulDetailsPage(Integer publishSourceId);
         public abstract @Nullable Container resolveSourceLsidContainer(String sourceLsid, @Nullable Integer sourceRowId);
 
         protected abstract String getAuditMessageSourceType();
+        public ActionURL getSourceActionURL(ExpObject source, Container container)
+        {
+            return null;
+        }
 
         public String getLinkToStudyAuditMessage(ExpObject source, int recordCount)
         {
