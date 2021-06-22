@@ -28,7 +28,6 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
@@ -1012,6 +1011,7 @@ public class ExpDataIterators
             ExpDataTable.Column.LSID.toString(),
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),
+            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
             "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
@@ -1091,6 +1091,7 @@ public class ExpDataIterators
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
                 if (isSample)
                 {
+                    dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                     dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
                     dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
                 }

@@ -33,6 +33,7 @@ export interface GlobalSettingsOptions {
     SelfRegistration?: boolean;
     SelfServiceEmailChanges?: boolean;
     AutoCreateAccounts?: boolean;
+    DefaultDomain?: string;
 }
 
 export interface InputFieldProps extends AuthConfigField{

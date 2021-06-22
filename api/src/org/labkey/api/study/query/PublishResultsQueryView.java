@@ -96,6 +96,7 @@ import java.util.stream.Collectors;
 public class PublishResultsQueryView extends QueryView
 {
     private static final Logger LOG = Logger.getLogger(PublishResultsQueryView.class);
+
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
     private final boolean _mismatched;
@@ -106,12 +107,13 @@ public class PublishResultsQueryView extends QueryView
     private final Map<Object, String> _reshowPtids;
     private final Map<Object, String> _reshowTargetStudies;
     private final boolean _includeTimestamp;
+    private final Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
+    private final Map<String, Object> _hiddenFormFields;
+    private final Set<String> _hiddenColumnCaptions;
+    private final FieldKey _objectIdFieldKey;
+    private final Dataset.PublishSource _publishSource;
+
     private List<ActionButton> _buttons = null;
-    private Map<ExtraColFieldKeys, FieldKey> _additionalColumns;
-    private Map<String, Object> _hiddenFormFields;
-    private Set<String> _hiddenColumnCaptions;
-    private FieldKey _objectIdFieldKey;
-    private Dataset.PublishSource _publishSource;
 
     public enum ExtraColFieldKeys
     {

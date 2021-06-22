@@ -52,6 +52,7 @@ import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -530,8 +531,8 @@ public class AnnouncementManager
             {
                 BulkEmailer emailer = new BulkEmailer(user);
 
-                String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String messageId = "<" + a.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
+                String references = messageId + " <" + parent.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
 
                 List<Integer> memberList = a.getMemberListIds();
 

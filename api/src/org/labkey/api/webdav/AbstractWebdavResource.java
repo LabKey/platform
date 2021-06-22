@@ -32,6 +32,7 @@ import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -40,6 +41,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileStream;
@@ -365,15 +367,17 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean canWrite(User user, boolean forWrite)
     {
+        Set<Role> roles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                getPolicy().hasPermission(user, UpdatePermission.class, user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : null);
+                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(UpdatePermission.class), roles);
     }
 
 
     @Override
     public boolean canCreate(User user, boolean forCreate)
     {
-        return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(InsertPermission.class);
+        return hasAccess(user) && !user.isGuest() &&
+                SecurityManager.hasAllPermissions(null, getPolicy(), user, Set.of(InsertPermission.class), Set.of());
     }
 
     @Override
@@ -407,7 +411,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public Set<Class<? extends Permission>> getPermissions(User user)
     {
-        return getPolicy().getPermissions(user);
+        return SecurityManager.getPermissions(getPolicy(), user, Set.of());
     }
 
 

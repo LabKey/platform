@@ -8,6 +8,7 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
@@ -102,7 +103,7 @@ public class UpdateSpecimenCommentsBean extends SpecimensViewBean
             if (visit != null)
             {
                 String ptid = vial.getPtid();
-                Visit v = getVisitForSequence(study, visit);
+                Visit v = StudyInternalService.get().getVisitForSequence(study, visit);
                 if (ptid != null && v != null)
                 {
                     if (!pvMap.containsKey(ptid))
@@ -142,16 +143,5 @@ public class UpdateSpecimenCommentsBean extends SpecimensViewBean
     public Map<String, Map<String, Long>> getParticipantVisitMap()
     {
         return _participantVisitMap;
-    }
-
-    public static Visit getVisitForSequence(Study study, double seqNum)
-    {
-        List<? extends Visit> visits = VisitService.get().getVisits(study, Visit.Order.SEQUENCE_NUM);
-        for (Visit v : visits)
-        {
-            if (seqNum >= v.getSequenceNumMinDouble() && seqNum <= v.getSequenceNumMaxDouble())
-                return v;
-        }
-        return null;
     }
 }

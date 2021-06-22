@@ -20,6 +20,7 @@ package org.labkey.api.security.permissions;
  * User: Dave
  * Date: Apr 30, 2009
  */
+@AllowedForReadOnlyUser
 public class ReadSomePermission extends AbstractPermission
 {
     public ReadSomePermission()

@@ -87,7 +87,7 @@ public class TypeDisplayColumn extends DataColumn
                     out.write(PageFlowUtil.filter("<Unknown>"));
                     // We won't be showing our normal UI that lets an admin delete the design, so let the user do it directly
                     // from here
-                    if (protocol.getContainer().getPolicy().hasPermissions(ctx.getViewContext().getUser(), DesignAssayPermission.class, DeletePermission.class))
+                    if (protocol.getContainer().hasPermissions(ctx.getViewContext().getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class)))
                     {
                         out.write(" ");
                         out.write(PageFlowUtil.textLink("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))));

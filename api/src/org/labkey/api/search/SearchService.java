@@ -131,6 +131,7 @@ public interface SearchService
         identifiersMed("identifiersMed"),
         identifiersHi("identifiersHi"),
         categories("searchCategories"),
+        ontology("ontology"),
         summary("summary"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()

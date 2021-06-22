@@ -32,6 +32,8 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Set;
+
 /**
  * User: brittp
 * Date: Jul 26, 2007
@@ -67,6 +69,6 @@ public class DeleteAction extends BaseAssayAction<ProtocolIdForm>
         User user = ctx.getUser();
 
         //user must have both design assay AND delete permission, as this will delete both the design and uploaded data
-        return protocol.getContainer().getPolicy().hasPermissions(user, DesignAssayPermission.class, DeletePermission.class);
+        return protocol.getContainer().hasPermissions(user, Set.of(DesignAssayPermission.class, DeletePermission.class));
     }
 }

@@ -1,19 +1,15 @@
 package org.labkey.api.study;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.specimen.query.SpecimenQueryView;
-import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
-import org.springframework.validation.BindException;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +63,11 @@ public interface StudyInternalService
 
     void saveCommentsSettings(Study study, User user, Integer participantCommentDatasetId, String participantCommentProperty, Integer participantVisitCommentDatasetId, String participantVisitCommentProperty);
 
-    String formatSequenceNum(double d);
+    String formatSequenceNum(BigDecimal d);
+
+    Visit getVisitForSequence(Study study, BigDecimal seqNum);
+
+    Visit getVisitForSequence(Study study, double seqNum);
 
     ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter, boolean hasCreateGroupFromSelection);
 }
