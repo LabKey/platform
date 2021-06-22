@@ -20,7 +20,6 @@ import com.google.common.base.Enums;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
@@ -744,15 +743,26 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
-    public static void setExcludedProjects(Collection<String> ids, User user)
+    public static void setExcludedProjects(Collection<GUID> ids, User user)
     {
         // First clear all existing "Excluded" states
-        Filter excludedFilter = new SimpleFilter(FieldKey.fromString("LockState"), LockState.Excluded);
-        Table.update(user, CORE.getTableInfoContainers(), PageFlowUtil.map("LockedState", null), new Object[]{}, excludedFilter, Level.WARN);
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET LockState = NULL WHERE LockState = ?");
+        new SqlExecutor(CORE.getSchema()).execute(sql, LockState.Excluded);
 
-        // Now set the passed in projects to Excluded
-        Filter inClauseFilter = new SimpleFilter(new InClause(FieldKey.fromString("EntityId"), ids));
-        Table.update(user, CORE.getTableInfoContainers(), Map.of("LockedState", LockState.Excluded), new Object[]{}, inClauseFilter, Level.WARN);
+        // Now set the passed in projects to "Excluded"
+        if (!ids.isEmpty())
+        {
+            ColumnInfo entityIdCol = CORE.getTableInfoContainers().getColumn("EntityId");
+            Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
+            SQLFragment frag = new SQLFragment("UPDATE ");
+            frag.append(CORE.getTableInfoContainers(), "c");
+            frag.append(" SET LockState = ? ");
+            frag.add(LockState.Excluded);
+            frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
+            new SqlExecutor(CORE.getSchema()).execute(frag);
+        }
 
         clearCache();
     }
