@@ -9,6 +9,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
@@ -18,6 +19,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -126,9 +128,21 @@ public class StudyInternalServiceImpl implements StudyInternalService
     }
 
     @Override
-    public String formatSequenceNum(double d)
+    public String formatSequenceNum(BigDecimal d)
     {
         return VisitImpl.formatSequenceNum(d);
+    }
+
+    @Override
+    public Visit getVisitForSequence(Study study, BigDecimal seqNum)
+    {
+        return StudyManager.getInstance().getVisitForSequence(study, seqNum);
+    }
+
+    @Override
+    public Visit getVisitForSequence(Study study, double seqNum)
+    {
+        return StudyManager.getInstance().getVisitForSequence(study, seqNum);
     }
 
     @Override
