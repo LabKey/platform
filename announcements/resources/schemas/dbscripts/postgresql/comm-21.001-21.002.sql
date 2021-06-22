@@ -1,1 +1,1 @@
-ALTER TABLE comm.Announcements ADD COLUMN DiscussionSrcEntityType VARCHAR(100) NULL;
+ALTER TABLE comm.Announcements ADD DiscussionSrcEntityType VARCHAR(100) NULL;
