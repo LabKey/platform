@@ -2532,6 +2532,78 @@ public class OntologyManager
         return oprop;
     }
 
+    public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
+    {
+        List<PropertyUsages> ret = new ArrayList<>(propertyIds.size());
+        for (int propertyId : propertyIds)
+        {
+            var pd = getPropertyDescriptor(propertyId);
+            if (pd == null)
+                throw new IllegalArgumentException("property not found: " + propertyId);
+
+            ret.add(findPropertyUsages(user, pd, maxUsageCount));
+        }
+
+        return ret;
+    }
+
+    public static List<PropertyUsages> findPropertyUsages(User user, Container c, List<String> propertyURIs, int maxUsageCount)
+    {
+        List<PropertyUsages> ret = new ArrayList<>(propertyURIs.size());
+        for (String propertyURI : propertyURIs)
+        {
+            var pd = getPropertyDescriptor(propertyURI, c);
+            if (pd == null)
+                throw new IllegalArgumentException("property not found: " + propertyURI);
+
+            ret.add(findPropertyUsages(user, pd, maxUsageCount));
+        }
+
+        return ret;
+    }
+
+    public static PropertyUsages findPropertyUsages(@NotNull User user, @NotNull PropertyDescriptor pd, int maxUsageCount)
+    {
+        // query exp.ObjectProperty for usages of the property
+        List<FieldKey> fields = List.of(FieldKey.fromParts("objectId", "objectURI"));
+        var colMap = QueryService.get().getColumns(getTinfoObjectProperty(), fields);
+
+        List<Identifiable> objects = new ArrayList<>(maxUsageCount);
+        TableSelector ts = new TableSelector(getTinfoObjectProperty(), colMap.values(), new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL), new Sort("objectId"));
+        List<String> objectURIs = ts.getArrayList(String.class);
+        for (int i = 0; i < objectURIs.size() && i < maxUsageCount; i++)
+        {
+            String objectURI = objectURIs.get(i);
+            Identifiable object = LsidManager.get().getObject(objectURI);
+            if (object != null)
+            {
+                Container c = object.getContainer();
+                if (c != null && c.hasPermission(user, ReadPermission.class))
+                    objects.add(object);
+            }
+        }
+
+        // CONSIDER: find all domains that reference the property, query the tables used by those domains
+
+        return new PropertyUsages(pd.getPropertyId(), pd.getPropertyURI(), objectURIs.size(), objects);
+    }
+
+    public static class PropertyUsages
+    {
+        public final int propertyId;
+        public final String propertyURI;
+        public final int usageCount;
+        public final List<Identifiable> objects;
+
+        public PropertyUsages(int propertyId, String propertyURI, int usageCount, List<Identifiable> objects)
+        {
+            this.propertyId = propertyId;
+            this.propertyURI = propertyURI;
+            this.usageCount = usageCount;
+            this.objects = objects;
+        }
+    }
+
     public static void clearCaches()
     {
         ExperimentService.get().clearCaches();

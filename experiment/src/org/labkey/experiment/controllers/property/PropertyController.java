@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -45,11 +46,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DomainKindDesign;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -1759,6 +1762,79 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class UsagesAction extends ReadOnlyApiAction<UsagesForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
+
+            ExperimentJSONConverter.Settings settings = ExperimentJSONConverter.DEFAULT_SETTINGS.withIncludeInputsAndOutputs(false);
+
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(Identifiable.class, new ExperimentJSONConverter.IdentifiableSerializer(Identifiable.class, getUser(), settings));
+            om.registerModule(module);
+
+            return om;
+        }
+
+        @Override
+        public Object execute(UsagesForm form, BindException errors) throws Exception
+        {
+            List<OntologyManager.PropertyUsages> usages = null;
+            if (form.getPropertyIds() != null)
+            {
+                usages = OntologyManager.findPropertyUsages(getUser(), form.getPropertyIds(), form.maxUsageCount);
+            }
+            else if (form.getPropertyURIs() != null)
+            {
+                usages = OntologyManager.findPropertyUsages(getUser(), getContainer(), form.getPropertyURIs(), form.maxUsageCount);
+            }
+
+            return success(usages);
+        }
+    }
+
+    public static class UsagesForm
+    {
+        private int maxUsageCount = 5;
+        private List<Integer> propertyIds;
+        private List<String> propertyURIs;
+
+        public int getMaxUsageCount()
+        {
+            return maxUsageCount;
+        }
+
+        public void setMaxUsageCount(int maxUsageCount)
+        {
+            this.maxUsageCount = maxUsageCount;
+        }
+
+        public List<Integer> getPropertyIds()
+        {
+            return propertyIds;
+        }
+
+        public void setPropertyIds(List<Integer> propertyIds)
+        {
+            this.propertyIds = propertyIds;
+        }
+
+        public List<String> getPropertyURIs()
+        {
+            return propertyURIs;
+        }
+
+        public void setPropertyURIs(List<String> propertyURIs)
+        {
+            this.propertyURIs = propertyURIs;
+        }
+
+    }
 
     public static class TestCase extends Assert
     {
