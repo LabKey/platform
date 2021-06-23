@@ -36,6 +36,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -394,7 +395,9 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         for (Map.Entry<String,?> entry :  properties.entrySet())
         {
             // see AuditHandler.getRecordForInsert(), rather than create a new map just skip values here
-            if (entry.getKey().equals(DataIterator.ROWNUMBER_COLUMNNAME) || entry.getKey().equals(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME))
+            if (entry.getKey().equals(DataIterator.ROWNUMBER_COLUMNNAME) ||
+                entry.getKey().equals(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME) ||
+                entry.getKey().equals(ExperimentService.ALIASCOLUMNALIAS))
                 continue;
             Object value = entry.getValue();
             if (value instanceof Date)
