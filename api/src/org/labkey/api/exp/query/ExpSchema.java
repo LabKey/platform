@@ -220,7 +220,7 @@ public class ExpSchema extends AbstractExpSchema
              @Override
              public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
              {
-                 EnumTableInfo<WorkflowTaskStatusEnumTableInfo.WorkflowJobPriority> table = new EnumTableInfo<>(WorkflowTaskStatusEnumTableInfo.WorkflowJobPriority.class, expSchema, "todo", true);
+                 EnumTableInfo<WorkflowTaskStatusEnumTableInfo.WorkflowJobPriority> table = new EnumTableInfo<>(WorkflowTaskStatusEnumTableInfo.WorkflowJobPriority.class, expSchema, "List of workflow job priorities", true);
                  table.setPublicSchemaName(expSchema.getName());
                  table.setName(WORKFLOW_JOB_PRIORITY_TABLE_NAME);
                  return table;
@@ -231,7 +231,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                WorkflowTaskStatusEnumTableInfo enumTableInfo = new WorkflowTaskStatusEnumTableInfo(expSchema, "TODO");
+                WorkflowTaskStatusEnumTableInfo enumTableInfo = new WorkflowTaskStatusEnumTableInfo(expSchema, "Workflow task status");
                 enumTableInfo.setPublicSchemaName(expSchema.getName());
                 enumTableInfo.setPublicName(WORKFLOW_TASK_STATUS_TABLE_NAME);
                 return enumTableInfo;
