@@ -2107,7 +2107,7 @@ public class OntologyManager
         }
 
         filter.addCondition(new FieldKey(propertyIdKey, "container"), c.getId());
-        if (domainIds != null && domainIds.isEmpty())
+        if (domainIds != null && !domainIds.isEmpty())
         {
             filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
         }

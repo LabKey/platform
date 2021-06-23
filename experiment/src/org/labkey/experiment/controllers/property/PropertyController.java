@@ -596,7 +596,10 @@ public class PropertyController extends SpringActionController
 
             _domain = PropertyService.get().getDomain(form.getDomainId());
             if (_domain == null)
-                throw new NotFoundException("Could not find domain for " + form.getDomainId() + ".");
+                throw new NotFoundException("Could not find domain " + form.getDomainId() + ".");
+
+            if (!getContainer().equals(_domain.getContainer()))
+                throw new NotFoundException("Could not find domain " + form.getDomainId() + " in container '" + getContainer().getPath() + "'");
         }
 
         @Override
