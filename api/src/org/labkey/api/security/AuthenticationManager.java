@@ -254,11 +254,9 @@ public class AuthenticationManager
         return value == null ? "" : value;
     }
 
-    public static void setDefaultDomain(String value)
+    public static void setDefaultDomain(User user, String value)
     {
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(DEFAULT_DOMAIN, value);
-        props.save();
+        saveAuthSetting(user, DEFAULT_DOMAIN, value);
     }
 
     public static boolean getAuthSetting(String key, boolean defaultValue)
