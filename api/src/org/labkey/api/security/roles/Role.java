@@ -125,4 +125,6 @@ public interface Role extends Parameter.JdbcParameterValue
      * certain type of resource, such as a folder (or particular type of folder) or dataset
      */
     boolean isApplicable(SecurityPolicy policy, SecurableResource resource);
+
+    interface TestRole extends Role {}
 }
