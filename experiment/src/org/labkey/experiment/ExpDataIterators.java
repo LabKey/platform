@@ -136,7 +136,7 @@ public class ExpDataIterators
 
             SimpleTranslator counterTranslator = new SimpleTranslator(pre, context);
             counterTranslator.setDebugName("Counter Def");
-            Set<String> skipColumns = new HashSet<>();
+            Set<String> skipColumns = new CaseInsensitiveHashSet();
             Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(pre);
 
 

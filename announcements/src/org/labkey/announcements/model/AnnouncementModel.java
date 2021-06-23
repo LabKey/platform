@@ -73,6 +73,7 @@ public class AnnouncementModel extends Entity implements Serializable
 
     // for discussions
     private String _discussionSrcIdentifier = null;
+    private String _discussionSrcEntityType = null;
     private String _discussionSrcURL = null;
 
     private int _responseCount = 0;
@@ -324,6 +325,16 @@ public class AnnouncementModel extends Entity implements Serializable
     public void setDiscussionSrcIdentifier(String discussionSrcIdentifier)
     {
         _discussionSrcIdentifier = discussionSrcIdentifier;
+    }
+
+    public String getDiscussionSrcEntityType()
+    {
+        return _discussionSrcEntityType;
+    }
+
+    public void setDiscussionSrcEntityType(String discussionSrcEntityType)
+    {
+        _discussionSrcEntityType = discussionSrcEntityType;
     }
 
     public String getDiscussionSrcURL()

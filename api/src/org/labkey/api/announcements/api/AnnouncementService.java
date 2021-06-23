@@ -56,4 +56,9 @@ public interface AnnouncementService
 
     // Delete
     void deleteAnnouncement(Announcement announcement);
+
+    @Nullable
+    DiscussionSrcTypeProvider getDiscussionSrcTypeProvider(@Nullable String type);
+
+    void registerDiscussionSrcTypeProvider(String type, DiscussionSrcTypeProvider typeProvider);
 }

@@ -29,6 +29,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
@@ -39,9 +40,11 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -233,5 +236,20 @@ public class SamplesSchema extends AbstractExpSchema
             throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
         return st.getDomain().getTypeURI();
+    }
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        NavTree root = super.getSchemaBrowserLinks(user);
+        if (getContainer().hasPermission(user, ReadPermission.class))
+            root.addChild("Manage SampleTypes", ExperimentUrls.get().getShowSampleTypeListURL(getContainer()));
+        return root;
+    }
+
+    @Override
+    public boolean hasRegisteredSchemaLinks()
+    {
+        return true;
     }
 }
