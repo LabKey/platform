@@ -51,6 +51,8 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.DiscussionService.StatusOption;
 import org.labkey.api.announcements.EmailOption;
+import org.labkey.api.announcements.api.AnnouncementService;
+import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
@@ -221,6 +223,7 @@ public class AnnouncementsController extends SpringActionController
         if (isInsert)
         {
             if (source.getDiscussionSrcIdentifier() != null) target.setDiscussionSrcIdentifier(source.getDiscussionSrcIdentifier());
+            if (source.getDiscussionSrcEntityType() != null) target.setDiscussionSrcEntityType(source.getDiscussionSrcEntityType());
             if (source.getParent() != null) target.setParent(source.getParent());
         }
 
@@ -1329,6 +1332,16 @@ public class AnnouncementsController extends SpringActionController
         ActionURL url = new ActionURL(ThreadAction.class, c);
         url.addParameter("rowId", rowId);
         return url;
+    }
+
+    public static ActionURL getThreadURL(Container c, User user, AnnouncementModel ann)
+    {
+        DiscussionSrcTypeProvider typeProvider = AnnouncementService.get().getDiscussionSrcTypeProvider(ann.getDiscussionSrcEntityType());
+
+        if (typeProvider != null)
+            return typeProvider.getThreadURL(c, user, ann.getRowId(), ann.getDiscussionSrcIdentifier());
+
+        return getThreadURL(c, ann.getRowId());
     }
 
     @RequiresPermission(ReadPermission.class)

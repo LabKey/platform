@@ -50,4 +50,6 @@ public interface Permission extends Role
     @Override
     @NotNull
     public Module getSourceModule();
+
+    interface TestPermission extends Permission {}
 }
