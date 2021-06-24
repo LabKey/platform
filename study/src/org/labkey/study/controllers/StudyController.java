@@ -2472,8 +2472,6 @@ public class StudyController extends BaseStudyController
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-            if (QCStateManager.getInstance().showQCStates(getContainer()))
-                url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(getContainer()).getFormValue());
             return url;
         }
 

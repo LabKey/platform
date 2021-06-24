@@ -73,7 +73,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -91,7 +90,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +117,6 @@ public class DatasetQueryView extends StudyQueryView
     private VisitImpl _visit;
     private CohortFilter _cohortFilter;
     public static final String DATAREGION = "Dataset";
-    private QCStateSet _qcStateSet;
     protected static Logger _systemLog = LogManager.getLogger(DatasetQueryView.class);
 
     public DatasetQueryView(UserSchema schema, DatasetQuerySettings settings, BindException errors)
@@ -138,9 +135,6 @@ public class DatasetQueryView extends StudyQueryView
             // settings has label instead of name; warn that label is being used to lookup
             _systemLog.warn("Dataset in schema'" + schema.getName() + "' was referenced by label (" + settings.getQueryName() + "), not name (" + _dataset.getName() + ").");
         }
-
-        if (settings.isUseQCSet() && QCStateManager.getInstance().showQCStates(getContainer()))
-            _qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
         _showSourceLinks = settings.isShowSourceLinks();
 
@@ -228,23 +222,6 @@ public class DatasetQueryView extends StudyQueryView
             _cohortFilter.addFilterCondition(table, getContainer(), filter);
         }
 
-        if (null != _qcStateSet)
-        {
-            SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
-            if (null == filter)
-            {
-                filter = new SimpleFilter();
-                view.getRenderContext().setBaseFilter(filter);
-            }
-            FieldKey qcStateKey = FieldKey.fromParts(DatasetTableImpl.QCSTATE_ID_COLNAME, "rowid");
-            Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(table, Collections.singleton(qcStateKey));
-            ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
-            if (qcStateColumn != null)
-            {
-                filter.addClause(new SimpleFilter.SQLClause(_qcStateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
-            }
-        }
-
         ColumnInfo sourceLsidCol = table.getColumn("SourceLsid");
         DisplayColumn sourceLsidDisplayCol = view.getDataRegion().getDisplayColumn("SourceLsid");
 
@@ -323,9 +300,6 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (_cohortFilter != null)
                 _cohortFilter.addURLParameters(_study, url, DATAREGION);
-
-            if (_qcStateSet != null)
-                url.replaceParameter(BaseStudyController.SharedFormParameters.QCState, _qcStateSet.getFormValue());
         }
         return url;
     }
@@ -466,7 +440,7 @@ public class DatasetQueryView extends StudyQueryView
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
         if (QCStateManager.getInstance().showQCStates(getContainer()))
-            bar.add(createQCStateButton(_qcStateSet));
+            bar.add(createQCStateButton());
 
         if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))
         {
@@ -523,7 +497,7 @@ public class DatasetQueryView extends StudyQueryView
         return filterValue != null ? filterValue : "";
     }
 
-    private MenuButton createQCStateButton(QCStateSet currentSet)
+    private MenuButton createQCStateButton()
     {
         List<QCStateSet> stateSets = QCStateSet.getSelectableSets(getContainer());
         MenuButton button = new MenuButton("QC State");
@@ -641,16 +615,6 @@ public class DatasetQueryView extends StudyQueryView
         sourceLsidFilter.addCondition(FieldKey.fromParts("SourceLsid"), null, CompareType.NONBLANK);
 
         return new TableSelector(datasetTable, sourceLsidFilter, null).exists();
-    }
-
-    protected QCStateSet getQcStateSet()
-    {
-        return _qcStateSet;
-    }
-
-    protected void setQcStateSet(QCStateSet qcStateSet)
-    {
-        _qcStateSet = qcStateSet;
     }
 
     public static class DatasetFilterForm extends QueryViewAction.QueryExportForm

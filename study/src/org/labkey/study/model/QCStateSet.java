@@ -106,14 +106,6 @@ public class QCStateSet
         return _states;
     }
 
-    public List<Integer> getStateIds()
-    {
-        List<Integer> ids = new ArrayList<>();
-        for (QCState state : _states)
-            ids.add(state.getRowId());
-        return ids;
-    }
-
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -171,7 +163,7 @@ public class QCStateSet
         return sql.toString();
     }
 
-    public boolean isIncludeUnmarked()
+    private boolean isIncludeUnmarked()
     {
         return _includeUnmarked;
     }
