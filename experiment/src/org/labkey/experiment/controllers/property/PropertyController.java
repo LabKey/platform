@@ -48,6 +48,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
@@ -56,6 +58,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
@@ -67,6 +70,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -96,6 +100,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -1861,40 +1866,124 @@ public class PropertyController extends SpringActionController
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void testGetDomains() throws ValidationException
+        Domain createVocabDomain() throws ValidationException
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
-            GWTDomain mockDomain = new GWTDomain();
+            var gwtDomain = new GWTDomain<>();
             String domainName = "TestVocabularyDomain" + GUID.makeGUID();
-            mockDomain.setName(domainName);
-            mockDomain.setDescription("This is a mock vocabulary");
+            gwtDomain.setName(domainName);
 
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
 
             GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
             prop1.setRangeURI("int");
             prop1.setName("testIntField");
+            prop1.setDimension(true);
 
             GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
             prop2.setRangeURI("string");
             prop2.setName("testStringField");
+            prop2.setDescription("howdy");
+            prop2.setDimension(false);
 
             gwtProps.add(prop1);
             gwtProps.add(prop2);
 
-            mockDomain.setFields(gwtProps);
+            gwtDomain.setFields(gwtProps);
 
-            Domain createdDomain = DomainUtil.createDomain("Vocabulary", mockDomain, null, c, user, domainName, null);
+            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null);
+        }
+
+        @Test
+        public void testGetDomains() throws ValidationException
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            Domain createdDomain = createVocabDomain();
 
             Set<String> domainKinds = new HashSet<>();
-            domainKinds.add("Vocabulary");
+            domainKinds.add(VocabularyDomainKind.KIND_NAME);
 
-            List<? extends Domain> addedDomains = PropertyService.get().getDomains(c, user, domainKinds, false).
-                    stream().filter(d ->  d.getDomainKind().getKindName().equals("Vocabulary")).collect(Collectors.toList());
+            List<? extends Domain> vocabDomains = PropertyService.get().getDomains(c, user, domainKinds, false);
 
-            assertEquals("Vocabulary Domain Not found.", createdDomain.getName(), mockDomain.getName());
+            boolean found = vocabDomains.stream().anyMatch(d -> d.getTypeId() == createdDomain.getTypeId());
+            assertTrue("Vocabulary Domain Not found.", found);
+        }
+
+        @Test
+        public void testGetProperties() throws ValidationException
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            Domain domain = createVocabDomain();
+            var props = domain.getProperties().stream().map(DomainProperty::getPropertyDescriptor).collect(Collectors.toSet());
+
+            // find by domainIds
+            var pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, null, null);
+            assertEquals(domain.getProperties().size(), pds.size());
+
+            // find by domainKinds
+            pds = OntologyManager.getPropertyDescriptors(c, user, null, Set.of(VocabularyDomainKind.KIND_NAME), null, null, null, null, null);
+            assertFalse(pds.isEmpty());
+            assertTrue(pds.containsAll(props)); // there may be other VocabularyDomains in the test container
+
+            // find by domainId and search term
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, "howdy", null, null, null, null);
+            assertEquals(1, pds.size());
+            assertEquals("testStringField", pds.get(0).getName());
+
+            // find by domainId and property descriptor feature
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, new SimpleFilter(FieldKey.fromParts("propertyId", "dimension"), true), null, null, null);
+            assertEquals(1, pds.size());
+            assertEquals("testIntField", pds.get(0).getName());
+
+            // pagination
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, 1, 1L);
+            assertEquals(1, pds.size());
+            // sorted by propertyId, testStringField is after testIntField
+            assertEquals("testStringField", pds.get(0).getName());
+        }
+
+        @Test
+        public void testPropertyUsages() throws Exception
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            Domain domain = createVocabDomain();
+            var intProp = domain.getPropertyByName("testIntField");
+            var stringProp = domain.getPropertyByName("testStringField");
+
+            // create object and attach a property
+            Lsid.LsidBuilder lsidBuilder = new Lsid.LsidBuilder("JUnitTest", null);
+
+            // register a silly LsidHandler for our test namespace
+            LsidManager.get().registerHandler("JUnitTest", new LsidManager.OntologyObjectLsidHandler());
+
+            // create some exp.object and attach properties
+            Lsid a1Lsid = lsidBuilder.setObjectId("A1").build();
+            int a1ObjectId = OntologyManager.ensureObject(c, a1Lsid.toString());
+            Identifiable a1 = LsidManager.get().getObject(a1Lsid);
+            assertNotNull(a1);
+            OntologyManager.insertProperties(c, user, a1Lsid.toString(), true, true,
+                    new ObjectProperty(a1Lsid.toString(), c, intProp.getPropertyURI(), 300),
+                    new ObjectProperty(a1Lsid.toString(), c, stringProp.getPropertyURI(), "hello"));
+
+            // find usages
+            var allUsages = OntologyManager.findPropertyUsages(user, c, List.of(intProp.getPropertyURI(), stringProp.getPropertyURI()), 0);
+            assertEquals(2, allUsages.size());
+            assertEquals(intProp.getPropertyId(), allUsages.get(0).propertyId);
+            assertEquals(stringProp.getPropertyId(), allUsages.get(1).propertyId);
+            assertEquals(1, allUsages.get(0).usageCount);
+            assertEquals(0, allUsages.get(0).objects.size());
+
+            var intPropUsages = OntologyManager.findPropertyUsages(user, intProp.getPropertyDescriptor(), 1);
+            assertEquals(1, intPropUsages.usageCount);
+            assertEquals(1, intPropUsages.objects.size());
+            assertEquals(a1Lsid.toString(), intPropUsages.objects.get(0).getLSID());
         }
     }
 }
