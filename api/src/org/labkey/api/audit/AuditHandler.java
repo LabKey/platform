@@ -9,6 +9,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -41,6 +42,7 @@ public interface AuditHandler
         // remove DataIterator artifacts
         modifiedRow.remove(DataIterator.ROWNUMBER_COLUMNNAME);
         modifiedRow.remove(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME);
+        modifiedRow.remove(ExperimentService.ALIASCOLUMNALIAS);
         return modifiedRow;
     }
 

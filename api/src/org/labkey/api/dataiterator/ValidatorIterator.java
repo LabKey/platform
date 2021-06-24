@@ -252,6 +252,12 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
             _data.debugLogInfo(sb);
     }
 
+    @Override
+    public boolean supportsGetExistingRecord()
+    {
+        return _data.supportsGetExistingRecord();
+    }
+
     /*
     * Tests
     */

@@ -181,8 +181,11 @@ public class AnnouncementServiceImpl implements AnnouncementService
     }
 
     @Override
-    public @Nullable DiscussionSrcTypeProvider getDiscussionSrcTypeProvider(String type)
+    public @Nullable DiscussionSrcTypeProvider getDiscussionSrcTypeProvider(@Nullable String type)
     {
+        if (type == null)
+            return null;
+
         return _discussionSrcTypeProviders.get(type);
     }
 
