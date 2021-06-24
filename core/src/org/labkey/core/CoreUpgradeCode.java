@@ -235,7 +235,7 @@ public class CoreUpgradeCode implements UpgradeCode
                 }
             }).getDefaultDomain();
 
-            AuthenticationManager.setDefaultDomain(defaultDomain);
+            AuthenticationManager.setDefaultDomain(context.getUpgradeUser(), defaultDomain);
         }
     }
 }
