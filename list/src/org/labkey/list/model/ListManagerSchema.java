@@ -169,7 +169,6 @@ public class ListManagerSchema extends UserSchema
                     urlDelete.addReturnURL(getReturnURL());
                     ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
                     btnDelete.setIconCls("trash");
-                    btnDelete.setTooltip("Delete");
                     btnDelete.setActionType(ActionButton.Action.POST);
                     btnDelete.isLocked();
                     btnDelete.setDisplayPermission(DesignListPermission.class);

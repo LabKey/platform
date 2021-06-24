@@ -109,7 +109,6 @@ public class ProtocolWebPart extends QueryView
             exportURL.setAction(ExperimentController.ExportProtocolsAction.class);
             ActionButton exportProtocols = new ActionButton(exportURL, "Export");
             exportProtocols.setIconCls("download");
-            exportProtocols.setTooltip("Export");
             exportProtocols.setActionType(ActionButton.Action.POST);
             exportProtocols.setDisplayPermission(DeletePermission.class);
             exportProtocols.setRequiresSelection(true);

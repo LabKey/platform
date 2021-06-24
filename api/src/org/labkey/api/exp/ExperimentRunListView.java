@@ -172,7 +172,6 @@ public class ExperimentRunListView extends QueryView
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteSelectedExpRunsURL(context.getContainer(), getReturnURL());
             ActionButton deleteButton = new ActionButton(url, "Delete");
             deleteButton.setIconCls("trash");
-            deleteButton.setTooltip("Delete");
             deleteButton.setActionType(ActionButton.Action.POST);
             deleteButton.setRequiresSelection(true);
             deleteButton.setDisplayPermission(DeletePermission.class);

@@ -124,7 +124,6 @@ public class DataClassWebPart extends QueryView
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteDataClassAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignDataClassPermission.class);
         deleteButton.setIconCls("trash");
-        deleteButton.setTooltip("Delete");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
         deleteButton.setRequiresSelection(true);

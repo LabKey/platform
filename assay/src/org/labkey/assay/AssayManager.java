@@ -884,7 +884,6 @@ public class AssayManager implements AssayService
         {
             ActionButton button = new ActionButton("Import Data (Experimental)", getAssayDataImportURL(context));
             button.setIconCls("plus");
-            button.setTooltip("Import Data (Experimental)");
             button.setActionType(ActionButton.Action.LINK);
             bar.add(button);
         }

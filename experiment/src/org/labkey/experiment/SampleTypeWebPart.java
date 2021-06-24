@@ -98,7 +98,6 @@ public class SampleTypeWebPart extends QueryView
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteSampleTypesAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
         deleteButton.setIconCls("trash");
-        deleteButton.setTooltip("Delete");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);
         deleteButton.setRequiresSelection(true);

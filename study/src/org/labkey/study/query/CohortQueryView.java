@@ -70,7 +70,6 @@ public class CohortQueryView extends ExtensibleObjectQueryView
             ActionButton insertButton = new ActionButton(insertURL, getInsertButtonText(INSERT_ROW_TEXT));
             insertButton.setActionType(ActionButton.Action.GET); // the target is a form handler, so we need to start with a GET
             insertButton.setIconCls("plus");
-            insertButton.setTooltip(INSERT_ROW_TEXT);
             bar.add(insertButton);
 
             ActionURL deleteUnusedURL = new ActionURL(CohortController.DeleteUnusedCohortsAction.class, getSchema().getContainer());
