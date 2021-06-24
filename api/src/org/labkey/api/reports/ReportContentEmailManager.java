@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class ReportContentEmailManager
 {
@@ -84,9 +85,19 @@ public class ReportContentEmailManager
             public int getSpecialCategoryId() {return -4;}
             @Override
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
-                                                                                    SortedSet<Integer> categories, SortedSet<Integer> allCategories)
+                                                                                    SortedSet<Integer> datasets, SortedSet<Integer> allCategories)
             {
-                return Collections.emptyMap();
+                Map<Integer, List<NotificationInfo>> reports = new HashMap<>();
+                for (Map.Entry<Integer, List<NotificationInfo>> entry : reportInfosByCategory.entrySet())
+                {
+                    List<NotificationInfo> matchedReports = entry.getValue().stream()
+                            .filter(ni -> datasets.contains(ni.getRowId()))
+                            .collect(Collectors.toList());
+
+                    if (!matchedReports.isEmpty())
+                        reports.put(entry.getKey(), matchedReports);
+                }
+                return reports;
             }
         };
 

@@ -3761,7 +3761,7 @@ public class ReportsController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageViews#notifications");
-            root.addChild("Manage Report/Dataset Notifications");
+            root.addChild("Manage Study Notifications");
         }
     }
 
