@@ -5999,7 +5999,7 @@ public class DavController extends SpringActionController
 
         if (src.isCollection())
         {
-            if (!dest.getFile().mkdir())
+            if (dest.getFile() == null || !dest.getFile().mkdir())
             {
                 errorList.put(dest.getPath(), WebdavStatus.SC_CONFLICT);
                 return WebdavStatus.SC_CONFLICT;
