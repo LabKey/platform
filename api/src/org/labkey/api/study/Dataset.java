@@ -207,6 +207,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
                     public ActionURL getSourceActionURL(ExpObject sourceObject, Container container)
                     {
                         ActionURL url;
+                        // When the sample management module is enabled in the sample type's container, we want to link into the application
                         if (container.getActiveModules().contains(ModuleLoader.getInstance().getModule("sampleManagement")))
                         {
                             url = new ActionURL("sampleManager", "app", container);
