@@ -2091,7 +2091,7 @@ public class OntologyManager
         final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
 
         // To filter by domain kind, we query the exp.DomainProperty table and filter by domainId.
-        // To construct a PropertyDescriptor, we will need to traverse the lookup to exp.PropertyDescriptor and select all of it's columns.
+        // To construct a PropertyDescriptor, we will need to traverse the lookup to exp.PropertyDescriptor and select all of its columns.
         List<FieldKey> fields = new ArrayList<>();
         fields.add(FieldKey.fromParts("domainId"));
         for (ColumnInfo col : getTinfoPropertyDescriptor().getColumns())
@@ -2111,7 +2111,8 @@ public class OntologyManager
         {
             filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
         }
-        else if (domainKinds != null && !domainKinds.isEmpty())
+
+        if (domainKinds != null && !domainKinds.isEmpty())
         {
             List<? extends Domain> domains = PropertyService.get().getDomains(c, user, domainKinds, true);
             filter.addInClause(FieldKey.fromParts("domainId"), domains.stream().map(Domain::getTypeId).collect(Collectors.toSet()));

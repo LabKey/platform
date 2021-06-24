@@ -1605,6 +1605,26 @@ public class PropertyController extends SpringActionController
     public class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
     {
         @Override
+        public void validateForm(GetPropertiesForm form, Errors errors)
+        {
+            if (form.getPropertyIds() != null && form.getPropertyURIs() != null)
+            {
+                errors.reject(ERROR_MSG, "Either propertyIds or propertyURIs may be specified but not both");
+                return;
+            }
+
+            if (form.getPropertyIds() != null || form.getPropertyURIs() != null)
+            {
+                String propType = form.getPropertyIds() != null ? "propertyIds" : "propertyURIs";
+                if (form.getDomainIds() != null || form.getDomainKinds() != null || form.getFilters() != null || form.getSearch() != null)
+                {
+                    errors.reject(ERROR_MSG, propType + " can't be specified with domainIds, domainKinds, search, filters");
+                    return;
+                }
+            }
+        }
+
+        @Override
         public Object execute(GetPropertiesForm form, BindException errors) throws Exception
         {
             Stream<PropertyDescriptor> properties;
