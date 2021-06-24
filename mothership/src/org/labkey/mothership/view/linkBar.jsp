@@ -42,7 +42,7 @@
         <div class="input-group">
             <labkey:input name="errorCode" formGroup="false" placeholder="Find Error Code"/>
             <div class="input-group-btn">
-                <%= button("Search").addClass("btn btn-default").iconCls("search").tooltip("Search").submit(true) %>
+                <%= button("Search").addClass("btn btn-default").iconCls("search").submit(true) %>
             </div>
         </div>
     </labkey:form>
