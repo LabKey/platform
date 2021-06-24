@@ -49,9 +49,11 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -59,6 +61,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
@@ -313,6 +316,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (insertOptionParam != null)
                 insertOption = QueryUpdateService.InsertOption.valueOf(insertOptionParam);
 
+            // TODO: Check insertOption is supported on the target table
+            // TODO: See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42788
+
             switch (insertOption)
             {
                 case MERGE, REPLACE, UPSERT -> {
@@ -376,17 +382,42 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
             else if (null != StringUtils.trimToNull(path))
             {
+                // Resolve path under webdav root
                 WebdavResource resource = WebdavService.get().getResolver().lookup(Path.parse(path));
-                if (null == resource || !resource.isFile())
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "File not found: " + path);
-                }
-                else
+                if (resource != null && resource.isFile())
                 {
                     hasPostData = true;
                     loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null, null);
                     file = resource.getFileStream(user);
                     originalName = resource.getName();
+                }
+                else
+                {
+                    // Resolve file under pipeline root
+                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                    if (root == null)
+                        throw new NotFoundException("Pipeline root not configured");
+
+                    if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                        throw new UnauthorizedException();
+
+                    // Attempt absolute path first, then relative path from pipeline root
+                    File f = new File(path);
+                    if (!root.isUnderRoot(f))
+                        f = root.resolvePath(path);
+
+                    if (NetworkDrive.exists(f) && root.isUnderRoot(f))
+                    {
+                        hasPostData = true;
+                        loader = DataLoader.get().createLoader(f, null, _hasColumnHeaders, null, null);
+                        file = new FileAttachmentFile(dataFile, f.getName());
+                        originalName = f.getName();
+                    }
+                }
+
+                if (!hasPostData)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "File not found: " + path);
                 }
             }
             else if (null != StringUtils.trimToNull(moduleResource))
@@ -507,7 +538,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 }
             }
 
-            if (!hasPostData)
+            if (!hasPostData && !errors.hasErrors())
                 errors.reject(SpringActionController.ERROR_MSG, "Form contains no data");
             if (errors.hasErrors())
                 throw errors;

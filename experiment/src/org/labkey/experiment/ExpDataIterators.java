@@ -28,7 +28,6 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
@@ -99,6 +98,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 
 
 public class ExpDataIterators
@@ -137,7 +137,7 @@ public class ExpDataIterators
 
             SimpleTranslator counterTranslator = new SimpleTranslator(pre, context);
             counterTranslator.setDebugName("Counter Def");
-            Set<String> skipColumns = new HashSet<>();
+            Set<String> skipColumns = new CaseInsensitiveHashSet();
             Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(pre);
 
 
@@ -219,7 +219,6 @@ public class ExpDataIterators
     private static class AliasDataIterator extends WrapperDataIterator
     {
         // For some reason I don't quite understand we don't want to pass through a column called "alias" so we rename it to ALIASCOLUMNALIAS
-        final static String ALIASCOLUMNALIAS = AliasDataIterator.class.getName() + "#ALIAS";
         final DataIteratorContext _context;
         final Supplier<Object> _lsidCol;
         final Supplier<Object> _aliasCol;
@@ -1012,6 +1011,7 @@ public class ExpDataIterators
             ExpDataTable.Column.LSID.toString(),
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),
+            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
             "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
@@ -1081,7 +1081,7 @@ public class ExpDataIterators
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
-                step0.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
+                step0.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
@@ -1091,6 +1091,7 @@ public class ExpDataIterators
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
                 if (isSample)
                 {
+                    dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                     dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
                     dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
                 }
