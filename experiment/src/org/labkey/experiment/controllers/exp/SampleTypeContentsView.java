@@ -211,6 +211,7 @@ public class SampleTypeContentsView extends QueryView
         MenuButton button = new MenuButton("Insert");
         button.setTooltip(getInsertButtonText(INSERT_DATA_TEXT));
         button.setIconCls("plus");
+        button.setTooltip("Insert");
         boolean hasInsertNewOption = false;
         boolean hasImportDataOption = false;
 

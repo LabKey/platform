@@ -1002,6 +1002,7 @@ public class QueryView extends WebPartView<Object>
         {
             ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
             btnDelete.setIconCls("trash");
+            btnDelete.setTooltip("Delete");
             btnDelete.setActionType(ActionButton.Action.POST);
             btnDelete.setDisplayPermission(DeletePermission.class);
             if (showConfirmation)
@@ -1139,6 +1140,7 @@ public class QueryView extends WebPartView<Object>
         if (null == btnPrint)
             return null;
         btnPrint.setIconCls("print");
+        btnPrint.setTooltip("Print");
         btnPrint.setTarget("_blank");
         return btnPrint;
     }
@@ -1148,6 +1150,7 @@ public class QueryView extends WebPartView<Object>
         ActionButton shareBtn = new ActionButton(url, "Share");
         shareBtn.setActionType(ActionButton.Action.LINK);
         shareBtn.setIconCls("share");
+        shareBtn.setTooltip("Share");
         if (tooltip != null)
             shareBtn.setTooltip(tooltip);
         
@@ -1333,6 +1336,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
 
         button.setIconCls("download");
+        button.setTooltip(buttonText);
         button.setTabAlignTop(true);
         boolean hasRecordSelectors = (recordSelectorColumns != null && !recordSelectorColumns.isEmpty()) ||
                                      (getTable() != null && !getTable().getPkColumns().isEmpty());
@@ -1516,6 +1520,7 @@ public class QueryView extends WebPartView<Object>
     {
         MenuButton button = new MenuButton("Charts");
         button.setIconCls("area-chart");
+        button.setTooltip("Charts");
 
         if (!getQueryDef().isTemporary() && _report == null)
         {
