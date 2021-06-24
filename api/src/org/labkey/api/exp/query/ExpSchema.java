@@ -57,9 +57,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.labkey.api.exp.query.WorkflowTaskStatusEnumTableInfo.WORKFLOW_JOB_PRIORITY_TABLE_NAME;
-import static org.labkey.api.exp.query.WorkflowTaskStatusEnumTableInfo.WORKFLOW_TASK_STATUS_TABLE_NAME;
-
 public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
@@ -213,28 +210,6 @@ public class ExpSchema extends AbstractExpSchema
             {
                 ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
-            }
-        },
-        WorkflowJobPriority
-        {
-             @Override
-             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
-             {
-                 EnumTableInfo<WorkflowTaskStatusEnumTableInfo.WorkflowJobPriority> table = new EnumTableInfo<>(WorkflowTaskStatusEnumTableInfo.WorkflowJobPriority.class, expSchema, "List of workflow job priorities", true);
-                 table.setPublicSchemaName(expSchema.getName());
-                 table.setName(WORKFLOW_JOB_PRIORITY_TABLE_NAME);
-                 return table;
-             }
-        },
-        WorkflowTaskStatus
-        {
-            @Override
-            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
-            {
-                WorkflowTaskStatusEnumTableInfo enumTableInfo = new WorkflowTaskStatusEnumTableInfo(expSchema, "Workflow task status");
-                enumTableInfo.setPublicSchemaName(expSchema.getName());
-                enumTableInfo.setPublicName(WORKFLOW_TASK_STATUS_TABLE_NAME);
-                return enumTableInfo;
             }
         };
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf);
