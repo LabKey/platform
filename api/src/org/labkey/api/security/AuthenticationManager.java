@@ -256,7 +256,7 @@ public class AuthenticationManager
 
     public static void setDefaultDomain(User user, String value)
     {
-        saveAuthSetting(user, DEFAULT_DOMAIN, value);
+        saveAuthSetting(user, DEFAULT_DOMAIN, StringUtils.trimToEmpty(value));
     }
 
     public static boolean getAuthSetting(String key, boolean defaultValue)
@@ -285,18 +285,13 @@ public class AuthenticationManager
         props.save();
     }
 
-    public static void saveAuthSettings(User user, Map<String, Object> map)
+    public static void saveAuthSettings(User user, Map<String, Boolean> map)
     {
         PropertyMap props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
 
         map.entrySet().stream()
-            .filter(e->!e.getValue().equals(props.get(e.getKey())))
-            .forEach(e->{
-                if (e.getValue() instanceof Boolean)
-                    saveAuthSetting(user, e.getKey(), (boolean)e.getValue());
-                else
-                    saveAuthSetting(user, e.getKey(), (String)e.getValue());
-            });
+            .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
+            .forEach(e->saveAuthSetting(user, e.getKey(), e.getValue()));
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)

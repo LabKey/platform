@@ -55,8 +55,8 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -65,7 +65,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -113,6 +112,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -2393,9 +2393,11 @@ public class LoginController extends SpringActionController
             AuthenticationManager.saveAuthSettings(getUser(), Map.of(
                 SELF_REGISTRATION_KEY, form.isSelfRegistration(),
                 SELF_SERVICE_EMAIL_CHANGES_KEY, form.isSelfServiceEmailChanges(),
-                AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts(),
-                DEFAULT_DOMAIN, form.getDefaultDomain() == null ? "" : form.getDefaultDomain()
+                AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
+
+            if (!Objects.equals(AuthenticationManager.getDefaultDomain(), form.getDefaultDomain()))
+                AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
 
             // rowId arrays will be posted only if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());
