@@ -52,8 +52,15 @@ public interface QueryUpdateService extends HasPermission
 
         // bulk
         IMPORT(true, false, true, false, false),
-        MERGE(true, true, false, false, false),   // insert or update
-        REPLACE(true, true, false, true, false),  // insert or replace, like merge but NULL out columns not in the import
+        /**
+         * Insert or updates a subset of columns.
+         * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
+         */
+        MERGE(true, true, false, false, false),
+        /**
+         * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
+         */
+        REPLACE(true, true, false, true, false),
         IMPORT_IDENTITY(true, false, true, false, true);
 
         final public boolean batch;

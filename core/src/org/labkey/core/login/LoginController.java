@@ -1931,7 +1931,7 @@ public class LoginController extends SpringActionController
                         if (atSign > 0 && atSign < userEmailAddress.length() - 1)
                         {
                             String defaultDomain = userEmailAddress.substring(atSign + 1);
-                            AuthenticationManager.setDefaultDomain(defaultDomain);
+                            AuthenticationManager.setDefaultDomain(getUser(), defaultDomain);
                         }
 
                         transaction.commit();

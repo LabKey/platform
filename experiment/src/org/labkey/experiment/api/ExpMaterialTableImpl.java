@@ -101,6 +101,7 @@ import static java.util.Objects.requireNonNull;
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
     ExpSampleTypeImpl _ss;
+    Set<String> _uniqueIdFields;
 
     public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
@@ -110,6 +111,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+    }
+
+    public Set<String> getUniqueIdFields()
+    {
+        if (_uniqueIdFields == null)
+        {
+            _uniqueIdFields = new CaseInsensitiveHashSet();
+            _uniqueIdFields.addAll(getColumns().stream().filter(ColumnInfo::isUniqueIdField).map(ColumnInfo::getName).collect(Collectors.toSet()));
+        }
+        return _uniqueIdFields;
     }
 
     @Override
@@ -722,7 +733,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
                 sql.append(comma);
                 if (ExpSchema.DerivationDataScopeType.ChildOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope())
-                || "genid".equalsIgnoreCase(propertyColumn.getColumnName()))
+                || "genid".equalsIgnoreCase(propertyColumn.getColumnName())
+                || propertyColumn.isUniqueIdField())
                 {
                     sql.append(propertyColumn.getValueSql("self"));
                 }
@@ -891,6 +903,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public @NotNull Set<String> getExcludedDetailedUpdateAuditFields()
     {
-        return excludeFromDetailedAuditField;
+        // uniqueId fields don't change in reality, so exclude them from the audit updates
+        Set<String> excluded = new CaseInsensitiveHashSet();
+        excluded.addAll(this.getUniqueIdFields());
+        excluded.addAll(excludeFromDetailedAuditField);
+        return excluded;
     }
 }

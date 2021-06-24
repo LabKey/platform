@@ -17,6 +17,8 @@ package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExportException;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 
@@ -35,6 +37,9 @@ public abstract class BaseDownloadAction<FORM> extends ExportAction<FORM>
     @Override
     public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception
     {
+        if (errors.hasErrors())
+            throw new ExportException(new SimpleErrorView(errors, true));
+
         Pair<AttachmentParent, String> attachment = getAttachment(form);
 
         if (null != attachment)
