@@ -336,6 +336,7 @@ public class DomainUtil
         gwtProp.setRedactedText(prop.getRedactedText());
         gwtProp.setPrincipalConceptCode(prop.getPrincipalConceptCode());
         gwtProp.setSourceOntology(prop.getSourceOntology());
+        gwtProp.setConceptSubtree(prop.getConceptSubtree());
         gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
         gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
         gwtProp.setDerivationDataScope(prop.getDerivationDataScope());
