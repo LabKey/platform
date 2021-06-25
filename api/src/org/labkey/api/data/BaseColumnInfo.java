@@ -67,6 +67,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents a column (be it a real column in a table or a calculated expression) that's part of
@@ -1272,12 +1273,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public void setSortFieldKeysFromXml(String xml)
     {
-        List<FieldKey> keys = new ArrayList<>();
-        for (String key : xml.split(","))
-        {
-            keys.add(FieldKey.fromString(key));
-        }
-
+        List<FieldKey> keys = Arrays.stream(StringUtils.split(xml, ','))
+                .filter(StringUtils::isNotBlank)
+                .map(FieldKey::fromString)
+                .collect(Collectors.toList());
         setSortFieldKeys(keys);
     }
 
