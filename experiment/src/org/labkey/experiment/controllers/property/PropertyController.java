@@ -1614,7 +1614,7 @@ public class PropertyController extends SpringActionController
         {
             if (form.getPropertyIds() != null && form.getPropertyURIs() != null)
             {
-                errors.reject(ERROR_MSG, "Either propertyIds or propertyURIs may be specified but not both");
+                errors.reject(ERROR_REQUIRED, "Either propertyIds or propertyURIs may be specified but not both");
                 return;
             }
 
@@ -1810,6 +1810,19 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
+        public void validateForm(PropertyUsagesForm form, Errors errors)
+        {
+            if (form.getPropertyIds() != null & form.getPropertyURIs() != null)
+            {
+                errors.reject(ERROR_REQUIRED, "Either propertyIds or propertyURIs may be specified but not both");
+            }
+            if (form.getPropertyIds() == null && form.getPropertyURIs() == null)
+            {
+                errors.reject(ERROR_REQUIRED, "Either propertyIds or propertyURIs is required");
+            }
+        }
+
+        @Override
         public Object execute(PropertyUsagesForm form, BindException errors) throws Exception
         {
             List<OntologyManager.PropertyUsages> usages = null;
@@ -1828,16 +1841,16 @@ public class PropertyController extends SpringActionController
 
     public static class PropertyUsagesForm
     {
-        private int maxUsageCount = 5;
+        private Integer maxUsageCount = 5;
         private List<Integer> propertyIds;
         private List<String> propertyURIs;
 
-        public int getMaxUsageCount()
+        public Integer getMaxUsageCount()
         {
             return maxUsageCount;
         }
 
-        public void setMaxUsageCount(int maxUsageCount)
+        public void setMaxUsageCount(Integer maxUsageCount)
         {
             this.maxUsageCount = maxUsageCount;
         }
