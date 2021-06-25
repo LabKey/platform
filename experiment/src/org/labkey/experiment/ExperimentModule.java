@@ -184,6 +184,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
+
         PropertyService.get().registerDomainKind(new SampleTypeDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
         PropertyService.get().registerDomainKind(new VocabularyDomainKind());
