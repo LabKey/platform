@@ -2019,6 +2019,35 @@ public class ExperimentServiceImpl implements ExperimentService
         return lineage.findNearestParentMaterials(start);
     }
 
+    public Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> getParentMaterialAndDataMap(Container c, User user, Set<Identifiable> seeds)
+    {
+        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> results = new HashMap<>();
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setChildren(false);
+        options.setDepth(2); // 2 because of the ExpRun that will always be in between.
+
+        ExpLineage lineage = getLineage(c, user, seeds, options);
+
+        for (Identifiable seed : seeds)
+        {
+            Set<ExpMaterial> materials = new HashSet<>();
+            Set<ExpData> datas = new HashSet<>();
+
+            for (ExpRunItem item : lineage.findNearestParentMaterialsAndDatas(seed))
+            {
+                if (item instanceof ExpMaterial)
+                    materials.add((ExpMaterial) item);
+                else if (item instanceof ExpData)
+                    datas.add((ExpData) item);
+            }
+
+            if (!materials.isEmpty() || !datas.isEmpty())
+                results.put(seed.getLSID(), new Pair<>(materials, datas));
+        }
+
+        return results;
+    }
+
     @Override
     @NotNull
     public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)

@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -214,7 +214,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     sqlf.add(pkSuppliers.get(p).get());
                 }
                 sqlf.append(")");
-                rows--;
             }
             while (--rows > 0 && _delegate.next());
 
@@ -280,18 +279,33 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         @Override
         protected void prefetchExisting() throws BatchValidationException
         {
-            /* NOTE: this implementation doesn't fetch ahead because getRows() is row at a time anyway.
-             * If we speed up getRows() then it would make sense to copy the ExistingDataIteratorsTableInfo pattern
-             */
             try
             {
+                Integer rowNumber = (Integer)_delegate.get(0);
+                if (rowNumber <= lastPrefetchRowNumber)
+                    return;
+
+                int rowsToFetch = 50;
+                Map<Integer, Map<String,Object>> keysMap = new LinkedHashMap<>();
+                do
+                {
+                    lastPrefetchRowNumber = (Integer) _delegate.get(0);
+                    Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
+                    for (int p=0 ; p<pkColumns.size() ; p++)
+                        keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
+                    keysMap.put(lastPrefetchRowNumber, keyMap);
+                }
+                while (--rowsToFetch > 0 && _delegate.next());
+
                 existingRecords.clear();
-                Map<String,Object> keys = CaseInsensitiveHashMap.of();
-                for (int p=0 ; p<pkColumns.size() ; p++)
-                    keys.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
-                List<Map<String, Object>> list = qus.getExistingRows(user, c, List.of(keys));
-                Map<String,Object> existing = list.isEmpty() ? Map.of() : list.get(0);
-                existingRecords.put((Integer)_delegate.get(0), existing);
+
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap);
+                for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
+                {
+                    Map<String, Object> map = rowMap.getValue();
+                    Map<String,Object> existing = map == null || map.isEmpty() ? Map.of() : map;
+                    existingRecords.put(rowMap.getKey(), existing);
+                }
             }
             catch (SQLException sqlx)
             {

@@ -38,6 +38,8 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -58,6 +60,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -66,6 +69,8 @@ import org.springframework.util.StringUtils;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -516,10 +521,68 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        return getMaterialMapsWithInput(keys, user, container);
+    }
+
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container)
             throws QueryUpdateServiceException
     {
-        return getRows(user, container, keys, true /* this is for detailed audit logging */);
+        Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
+        Set<Identifiable> lsids = new LinkedHashSet<>(keys.size());
+        Map<Integer, String> rowLsid = new HashMap<>();
+
+        for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
+        {
+            Integer rowNum = keyMap.getKey();
+
+            Integer rowId = getMaterialRowId(keyMap.getValue());
+            String lsid = getMaterialLsid(keyMap.getValue());
+
+            Filter filter;
+            if (rowId != null)
+                filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowId);
+            else if (lsid != null)
+                filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsid);
+            else
+                throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
+
+            Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
+            if (null != sampleRow)
+            {
+                String sampleLsid = lsid != null ? lsid : (String) sampleRow.get("lsid");
+
+                Identifiable id = LsidManager.get().getObject(sampleLsid);
+                if (id != null)
+                    lsids.add(id);
+
+                rowLsid.put(rowNum, sampleLsid);
+                sampleRows.put(rowNum, sampleRow);
+            }
+        }
+
+        Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, lsids);
+
+        for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
+        {
+            Integer rowNum = rowNumSampleRow.getKey();
+            String lsidKey = rowLsid.get(rowNum);
+            Map<String, Object> sampleRow = rowNumSampleRow.getValue();
+
+            if (!parents.containsKey(lsidKey))
+                continue;
+
+            Pair<Set<ExpMaterial>, Set<ExpData>> sampleParents = parents.get(lsidKey);
+
+            if (!sampleParents.first.isEmpty())
+                addParentFields(sampleRow, sampleParents.first, ExpMaterial.MATERIAL_INPUT_PARENT + "/", user);
+            if (!sampleParents.second.isEmpty())
+                addParentFields(sampleRow, sampleParents.second, ExpData.DATA_INPUT_PARENT + "/", user);
+        }
+
+        return sampleRows;
     }
 
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys, boolean addInputs)
