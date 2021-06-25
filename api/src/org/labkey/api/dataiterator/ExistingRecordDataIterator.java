@@ -285,6 +285,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 if (rowNumber <= lastPrefetchRowNumber)
                     return;
 
+                existingRecords.clear();
+
                 int rowsToFetch = 50;
                 Map<Integer, Map<String,Object>> keysMap = new LinkedHashMap<>();
                 do
@@ -294,10 +296,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     for (int p=0 ; p<pkColumns.size() ; p++)
                         keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
                     keysMap.put(lastPrefetchRowNumber, keyMap);
+                    existingRecords.put(lastPrefetchRowNumber, Map.of());
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
-
-                existingRecords.clear();
 
                 Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())

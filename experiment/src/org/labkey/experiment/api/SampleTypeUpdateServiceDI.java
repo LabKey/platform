@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
@@ -531,9 +532,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throws QueryUpdateServiceException
     {
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
-        Set<Identifiable> lsids = new LinkedHashSet<>(keys.size());
-        Map<Integer, String> rowLsid = new HashMap<>();
+        Map<Integer, String> rowNumLsid = new HashMap<>();
 
+        Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
+        Map<String, Integer> lsidRowNumMap = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             Integer rowNum = keyMap.getKey();
@@ -541,26 +543,52 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Integer rowId = getMaterialRowId(keyMap.getValue());
             String lsid = getMaterialLsid(keyMap.getValue());
 
-            Filter filter;
             if (rowId != null)
-                filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowId);
+                rowIdRowNumMap.put(rowId, rowNum);
             else if (lsid != null)
-                filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsid);
+            {
+                lsidRowNumMap.put(lsid, rowNum);
+                rowNumLsid.put(rowNum, lsid);
+            }
             else
                 throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
+        }
 
-            Map<String, Object> sampleRow = new TableSelector(getQueryTable(), filter, null).getMap();
-            if (null != sampleRow)
+        if (!rowIdRowNumMap.isEmpty())
+        {
+            Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
+            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            for (Map<String, Object> row : rows)
             {
-                String sampleLsid = lsid != null ? lsid : (String) sampleRow.get("lsid");
+                Integer rowId = (Integer) row.get("rowid");
+                Integer rowNum = rowIdRowNumMap.get(rowId);
+                String sampleLsid = (String) row.get("lsid");
 
-                Identifiable id = LsidManager.get().getObject(sampleLsid);
-                if (id != null)
-                    lsids.add(id);
-
-                rowLsid.put(rowNum, sampleLsid);
-                sampleRows.put(rowNum, sampleRow);
+                rowNumLsid.put(rowNum, sampleLsid);
+                sampleRows.put(rowNum, row);
             }
+        }
+
+
+        if (!lsidRowNumMap.isEmpty())
+        {
+            Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
+            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            for (Map<String, Object> row : rows)
+            {
+                String sampleLsid = (String) row.get("lsid");
+                Integer rowNum = lsidRowNumMap.get(sampleLsid);
+
+                sampleRows.put(rowNum, row);
+            }
+        }
+
+        Set<Identifiable> lsids = new LinkedHashSet<>(keys.size());
+        for (String sampleLsid : rowNumLsid.values())
+        {
+            Identifiable id = LsidManager.get().getObject(sampleLsid);
+            if (id != null)
+                lsids.add(id);
         }
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, lsids);
@@ -568,7 +596,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
         {
             Integer rowNum = rowNumSampleRow.getKey();
-            String lsidKey = rowLsid.get(rowNum);
+            String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
 
             if (!parents.containsKey(lsidKey))
