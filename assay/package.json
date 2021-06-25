@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.41.1"
+    "@labkey/components": "2.49.0-fb-issue42637AssayXARExtension.1"
   },
   "devDependencies": {
     "@labkey/build": "4.0.0"
