@@ -3225,7 +3225,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeRunDelete(run.getProtocol(), run);
+            listener.beforeRunDelete(run.getProtocol(), run, user);
         }
 
         // Note: At the moment, FlowRun is the only example of an ExpRun attachment parent, but we're keeping this general
