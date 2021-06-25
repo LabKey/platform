@@ -242,8 +242,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.qc.QCStateManager.getQCUrlFilterKey;
 import static org.labkey.api.util.PageFlowUtil.filter;
+import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
+import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
+import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 
 /**
  * User: Karl Lum
@@ -910,8 +912,22 @@ public class StudyController extends BaseStudyController
                 sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
+
             if (qcStateSet != null)
-                sb.append("<br/><span><b>QC States:</b> ").append(filter(qcStateSet.getLabel())).append("</span>");
+            {
+                String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
+                String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
+
+                for (QCStateSet set : QCStateSet.getSelectableSets(getContainer()))
+                {
+                    String selectedQCLabel = selectedQCStateLabelFromUrl(getViewContext().getActionURL(), settings.getDataRegionName(), set.getLabel(), publicQCUrlFilterValue, privateQCUrlFilterValue);
+                    if (selectedQCLabel != null && selectedQCLabel.equals(set.getLabel()))
+                    {
+                        sb.append("<br/><span><b>QC States:</b> ").append(filter(set.getLabel())).append("</span>");
+                        break;
+                    }
+                }
+            }
             if (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate") != null)
             {
                 sb.append("<br/><span><b>Data Cut Date:</b> ");

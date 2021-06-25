@@ -20,24 +20,19 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class QCStateManager
 {
@@ -157,15 +152,5 @@ public class QCStateManager
     public void clearCache(Container c)
     {
         QC_STATE_DB_CACHE.remove(c);
-    }
-
-    public static String getQCUrlFilterKey(CompareType compareType, String dataRegionName)
-    {
-        return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam( dataRegionName + ".").getKey();
-    }
-
-    public static Set<String> getQCLabelSet(String QCLabels)
-    {
-        return QCLabels != null ? new HashSet<>(Arrays.asList(QCLabels.split(";"))) : new HashSet<>();
     }
 }

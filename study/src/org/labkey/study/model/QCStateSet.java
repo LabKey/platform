@@ -15,15 +15,21 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 /*
  * User: brittp
  * Date: Jul 16, 2008
@@ -291,5 +297,102 @@ public class QCStateSet
     public String toString()
     {
         return getLabel();
+    }
+
+    public static String getQCUrlFilterKey(CompareType compareType, String dataRegionName)
+    {
+        return new CompareType.CompareClause(FieldKey.fromParts("QCState", "Label"), compareType, false).toURLParam( dataRegionName + ".").getKey();
+    }
+
+    private static Set<String> getQCLabelSet(String QCLabels)
+    {
+        return QCLabels != null ? new HashSet<>(Arrays.asList(QCLabels.split(";"))) : new HashSet<>();
+    }
+
+    public static String getQCUrlFilterValue(QCStateSet qcStates)
+    {
+        List<String> qcLabels = qcStates.getStates()
+                .stream()
+                .map(QCState::getLabel)
+                .collect(Collectors.toList());
+        String filterValue = new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
+        return filterValue != null ? filterValue : "";
+    }
+
+    public static String selectedQCStateLabelFromUrl(ActionURL actionURL, String dataRegionName, String QCStateLabel, String publicQCUrlFilterValue, String privateQCUrlFilterValue)
+    {
+        String eq = getQCUrlFilterKey(CompareType.EQUAL, dataRegionName);
+        String in = getQCUrlFilterKey(CompareType.IN, dataRegionName);
+
+        boolean urlHasEqFilter = actionURL.getParameter(eq) != null;
+        boolean urlHasInFilter = actionURL.getParameter(in) != null;
+        boolean urlHasNotInFilter = actionURL.getParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
+        boolean urlHasIsBlankFilter = actionURL.getParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
+
+        String urlValue = actionURL.getParameter(urlHasInFilter ? in : eq);
+        Set<String> urlValueSet = urlValue != null ? new HashSet<>(Arrays.asList(urlValue.split(";"))) : new HashSet<>();
+        boolean urlFilterIsPublicQCStates = QCStateLabel.equals(PUBLIC_STATES_LABEL) && getQCLabelSet(publicQCUrlFilterValue).equals(urlValueSet);
+        boolean urlFilterIsPrivateQCStates = QCStateLabel.equals(PRIVATE_STATES_LABEL) && getQCLabelSet(privateQCUrlFilterValue).equals(urlValueSet);
+
+        if (urlHasInFilter && urlFilterIsPublicQCStates)
+        {
+            return PUBLIC_STATES_LABEL;
+        }
+        else if (urlHasInFilter && urlFilterIsPrivateQCStates)
+        {
+            return PRIVATE_STATES_LABEL;
+        }
+        else if (QCStateLabel.equals(ALL_STATES_LABEL) && (urlHasInFilter || urlHasNotInFilter || urlHasIsBlankFilter || !urlHasEqFilter))
+        {
+            return ALL_STATES_LABEL;
+        }
+        else if (urlHasEqFilter && urlValueSet.equals(new HashSet<>(Arrays.asList(QCStateLabel))))
+        {
+            return QCStateLabel;
+        }
+        return null;
+    }
+
+    public static ActionURL getQCStateFilteredURL(ActionURL urlHelper, String QCUrlFilterValue, String dataRegionName, Container container, String publicQCUrlFilterValue, String privateQCUrlFilterValue)
+    {
+        String eq = getQCUrlFilterKey(CompareType.EQUAL, dataRegionName);
+        String in = getQCUrlFilterKey(CompareType.IN, dataRegionName);
+
+        // Account for the [none] QC State
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        if (study != null && study.isBlankQCStatePublic() && !publicQCUrlFilterValue.equals(""))
+        {
+            publicQCUrlFilterValue += ";";
+        }
+        else if (study != null && !study.isBlankQCStatePublic() && !privateQCUrlFilterValue.equals(""))
+        {
+            privateQCUrlFilterValue += ";";
+        }
+
+        urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName));
+        urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.NEQ_OR_NULL, dataRegionName));
+        urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName));
+
+        switch (QCUrlFilterValue)
+        {
+            case PUBLIC_STATES_LABEL -> {
+                urlHelper = urlHelper.replaceParameter(in, publicQCUrlFilterValue);
+                urlHelper = urlHelper.deleteParameter(eq);
+            }
+            case PRIVATE_STATES_LABEL -> {
+                urlHelper = urlHelper.replaceParameter(in, privateQCUrlFilterValue);
+                urlHelper = urlHelper.deleteParameter(eq);
+            }
+            case ALL_STATES_LABEL -> {
+                urlHelper = urlHelper.deleteParameter(in);
+                urlHelper = urlHelper.deleteParameter(eq);
+            }
+            default -> {
+                urlHelper = urlHelper.replaceParameter(eq, QCUrlFilterValue);
+                urlHelper = urlHelper.deleteParameter(in);
+            }
+        }
+
+        return urlHelper;
     }
 }

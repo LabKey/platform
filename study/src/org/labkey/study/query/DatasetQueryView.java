@@ -42,7 +42,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -90,19 +89,15 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import static org.labkey.api.qc.QCStateManager.getQCLabelSet;
-import static org.labkey.api.qc.QCStateManager.getQCUrlFilterKey;
-import static org.labkey.study.model.QCStateSet.ALL_STATES_LABEL;
-import static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL;
-import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
+import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
+import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
+import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 
 /**
  * User: brittp
@@ -487,98 +482,28 @@ public class DatasetQueryView extends StudyQueryView
         return btn;
     }
 
-    private String getQCUrlFilterValue(QCStateSet qcStates)
-    {
-        List<String> qcLabels = qcStates.getStates()
-                .stream()
-                .map(QCState::getLabel)
-                .collect(Collectors.toList());
-        String filterValue = new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
-        return filterValue != null ? filterValue : "";
-    }
-
     private MenuButton createQCStateButton()
     {
         List<QCStateSet> stateSets = QCStateSet.getSelectableSets(getContainer());
         MenuButton button = new MenuButton("QC State");
         String dataRegionName = this.getSettings().getDataRegionName();
-
-        String eq = getQCUrlFilterKey(CompareType.EQUAL, dataRegionName);
-        String in = getQCUrlFilterKey(CompareType.IN, dataRegionName);
         String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
         String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
 
-        // Account for the [none] QC State
-        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-        if (study != null && study.isBlankQCStatePublic() && !publicQCUrlFilterValue.equals(""))
-        {
-            publicQCUrlFilterValue += ";";
-        }
-        else if (study != null && !study.isBlankQCStatePublic() && !privateQCUrlFilterValue.equals(""))
-        {
-            privateQCUrlFilterValue += ";";
-        }
-
-        // Apply appropriate grid filter-url to each QC dropdown option href
         boolean selected = false;
         for (QCStateSet set : stateSets)
         {
-            ActionURL urlHelper = getViewContext().cloneActionURL();
-            urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName));
-            urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.NEQ_OR_NULL, dataRegionName));
-            urlHelper = urlHelper.deleteParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName));
-            String QCUrlFilterValue = set.getLabel();
-
-            switch (QCUrlFilterValue)
-            {
-                case PUBLIC_STATES_LABEL -> {
-                    urlHelper = urlHelper.replaceParameter(in, publicQCUrlFilterValue);
-                    urlHelper = urlHelper.deleteParameter(eq);
-                }
-                case PRIVATE_STATES_LABEL -> {
-                    urlHelper = urlHelper.replaceParameter(in, privateQCUrlFilterValue);
-                    urlHelper = urlHelper.deleteParameter(eq);
-                }
-                case ALL_STATES_LABEL -> {
-                    urlHelper = urlHelper.deleteParameter(in);
-                    urlHelper = urlHelper.deleteParameter(eq);
-                }
-                default -> {
-                    urlHelper = urlHelper.replaceParameter(eq, QCUrlFilterValue);
-                }
-            }
-
+            // Apply appropriate grid filter-url to each QC dropdown option href
+            ActionURL urlHelper = getQCStateFilteredURL(getViewContext().cloneActionURL(), set.getLabel(), dataRegionName, getContainer(), publicQCUrlFilterValue, privateQCUrlFilterValue);
             NavTree setItem = new NavTree(set.getLabel(), urlHelper);
             setItem.setId("QCState:" + set.getLabel());
 
             // When QC State Column gets filtered, detect the change and update QC State dropdown selection accordingly
-            boolean urlHasEqFilter = getViewContext().cloneActionURL().getParameter(eq) != null;
-            boolean urlHasInFilter = getViewContext().cloneActionURL().getParameter(in) != null;
-            boolean urlHasNotInFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.NOT_IN, dataRegionName)) != null;
-            boolean urlHasIsBlankFilter = getViewContext().cloneActionURL().getParameter(getQCUrlFilterKey(CompareType.ISBLANK, dataRegionName)) != null;
-
-            String urlValue = getViewContext().cloneActionURL().getParameter(urlHasInFilter ? in : eq);
-            Set<String> urlValueSet = urlValue != null ? new HashSet<>(Arrays.asList(urlValue.split(";"))) : new HashSet<>();
-            boolean urlFilterIsPublicQCStates = set.getLabel().equals(PUBLIC_STATES_LABEL) && getQCLabelSet(publicQCUrlFilterValue).equals(urlValueSet);
-            boolean urlFilterIsPrivateQCStates = set.getLabel().equals(PRIVATE_STATES_LABEL) && getQCLabelSet(privateQCUrlFilterValue).equals(urlValueSet);
-
-            if (!selected)
+            String selectedQCLabel = selectedQCStateLabelFromUrl(getViewContext().getActionURL(), getDataRegionName(), set.getLabel(), publicQCUrlFilterValue, privateQCUrlFilterValue);
+            if (!selected && selectedQCLabel != null && selectedQCLabel.equals(set.getLabel()))
             {
-                if (urlHasInFilter && (urlFilterIsPublicQCStates || urlFilterIsPrivateQCStates))
-                {
-                    setItem.setSelected(true);
-                    selected = true;
-                }
-                else if (set.getLabel().equals(ALL_STATES_LABEL) && (urlHasInFilter || urlHasNotInFilter || urlHasIsBlankFilter || !urlHasEqFilter))
-                {
-                    setItem.setSelected(true);
-                    selected = true;
-                }
-                else if (urlHasEqFilter && urlValueSet.equals(new HashSet<>(Arrays.asList(set.getLabel()))))
-                {
-                    setItem.setSelected(true);
-                    selected = true;
-                }
+                setItem.setSelected(true);
+                selected = true;
             }
 
             button.addMenuItem(setItem);
