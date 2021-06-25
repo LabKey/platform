@@ -112,7 +112,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -2396,8 +2395,7 @@ public class LoginController extends SpringActionController
                 AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
 
-            if (!Objects.equals(AuthenticationManager.getDefaultDomain(), form.getDefaultDomain()))
-                AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
+            AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
 
             // rowId arrays will be posted only if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());
