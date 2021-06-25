@@ -181,7 +181,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 if (auditType == DETAILED)
                 {
                     if (useGetRows)
-                        return new ExistingDataIteratorsGetRows(di, target, keys);
+                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys);
                     else
                         return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys);
                 }
@@ -268,9 +268,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         final User user;
         final Container c;
 
-        ExistingDataIteratorsGetRows(DataIterator in, TableInfo target, @Nullable Set<String> keys)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
         {
-            super(in, target, keys, false);
+            super(in, target, keys, true);
             qus = target.getUpdateService();
             user = target.getUserSchema().getUser();
             c = target.getUserSchema().getContainer();
@@ -306,6 +306,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     Map<String,Object> existing = map == null || map.isEmpty() ? Map.of() : map;
                     existingRecords.put(rowMap.getKey(), existing);
                 }
+
+                // backup to where we started so caller can iterate through them one at a time
+                _unwrapped.reset(); // unwrapped _delegate
+                _delegate.next();
             }
             catch (SQLException sqlx)
             {
