@@ -1,9 +1,9 @@
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
-import { OntologyBrowserFilterPanel, } from '@labkey/components';
 import classNames from 'classnames';
+import { Filter, } from '@labkey/api';
+import { OntologyBrowserFilterPanel, } from '@labkey/components';
 
 import './ConceptFilterView.scss';
-import { Filter, } from '@labkey/api';
 
 type ChangeListener = (newValue: string) => void;
 type FilterChangeListener = (filter: Filter.IFilterType) => void;
@@ -85,16 +85,19 @@ export const ConceptFilterView: FC<Props> = memo(props => {
     },[]);
 
     //No need to show the filter tree if a value can't be set.
-    if (!filter?.isDataValueRequired())
-        return null;
+    if (!filter?.isDataValueRequired()) return null;
 
     return (
         <div className={classNames('concept-filter-view', { collapsed, })}>
             <a className='show-toggle'
                onClick={clickHandler}>{collapsed ? `Find ${columnName} By Tree` : 'Close Browser'}</a>
             {!collapsed &&
-            <OntologyBrowserFilterPanel ontologyId={ontologyId} filterValue={filterValue} filterType={filter}
-                                        onFilterChange={onFilterChange}/>}
+                <OntologyBrowserFilterPanel
+                    ontologyId={ontologyId}
+                    filterValue={filterValue}
+                    filterType={filter}
+                    onFilterChange={onFilterChange}
+                />}
         </div>
     );
 });
