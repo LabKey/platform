@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -535,7 +536,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<Integer, String> rowNumLsid = new HashMap<>();
 
         Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
-        Map<String, Integer> lsidRowNumMap = new LinkedHashMap<>();
+        Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
             Integer rowNum = keyMap.getKey();
