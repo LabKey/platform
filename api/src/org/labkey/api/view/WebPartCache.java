@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -147,6 +148,9 @@ public class WebPartCache
 
     static void remove(Container c)
     {
-        CACHE.remove(c.getId());
+        CoreSchema.getInstance().getSchema().getScope().addCommitTask(
+                () -> CACHE.remove(c.getId()),
+                DbScope.CommitTaskOption.IMMEDIATE,
+                DbScope.CommitTaskOption.POSTCOMMIT);
     }
 }
