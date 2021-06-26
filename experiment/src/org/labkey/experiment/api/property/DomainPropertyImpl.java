@@ -733,7 +733,9 @@ public class DomainPropertyImpl implements DomainProperty
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
     {
         if (isNew())
+        {
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
+        }
         else if (_pdOld != null)
         {
             PropertyType oldType = _pdOld.getPropertyType();
@@ -771,7 +773,9 @@ public class DomainPropertyImpl implements DomainProperty
             }
         }
         else
+        {
             OntologyManager.ensurePropertyDomain(_pd, _domain._dd, sortOrder);
+        }
 
         _pdOld = null;
         _schemaChanged = false;

@@ -15,6 +15,9 @@
  */
 package org.labkey.api.exp.api;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,12 +40,12 @@ import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -831,5 +834,31 @@ public class ExperimentJSONConverter
         }
 
         return convertedValue;
+    }
+
+    // teach Jackson serialization to use ExperimentJSONConverter for Identifiable object instances
+    public static class IdentifiableSerializer extends StdSerializer<Identifiable>
+    {
+        private User _user;
+        private Settings _settings;
+
+        protected IdentifiableSerializer(Class<Identifiable> t)
+        {
+            this(t, User.guest, DEFAULT_SETTINGS);
+        }
+
+        public IdentifiableSerializer(Class<Identifiable> t, User user, Settings settings)
+        {
+            super(t);
+            _user = user;
+            _settings = settings;
+        }
+
+        @Override
+        public void serialize(Identifiable value, JsonGenerator gen, SerializerProvider provider) throws IOException
+        {
+            JSONObject obj = ExperimentJSONConverter.serialize(value, _user, _settings);
+            gen.writeObject(obj);
+        }
     }
 }
