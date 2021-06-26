@@ -1175,10 +1175,7 @@ public class ReportsController extends BaseStudyController
             Dataset def = getDatasetDefinition();
 
             if (def != null)
-            {
-                String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
-                _addNavTrail(root, def.getDatasetId(), 0, null, qcState);
-            }
+                _addNavTrail(root, def.getDatasetId(), 0, null);
         }
     }
 

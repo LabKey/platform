@@ -82,9 +82,8 @@ public class StudyRReport extends RReport
         if (def != null)
             datasetId = def.getRowId();
 
-        String qcState = context.getActionURL().getParameter(BaseStudyController.SharedFormParameters.QCState);
         List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
-                getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcState);
+                getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, null);
 
         VBox vBox = new VBox();
         vBox.addView(ReportsController.getParticipantNavTrail(context, participants));

@@ -543,18 +543,7 @@ public class StudyController extends BaseStudyController
 
     public static class DatasetFilterForm extends QueryViewAction.QueryExportForm implements HasViewContext
     {
-        private String _qcState;
         private ViewContext _viewContext;
-
-        public String getQCState()
-        {
-            return _qcState;
-        }
-
-        public void setQCState(String qcState)
-        {
-            _qcState = qcState;
-        }
 
         @Override
         public void setViewContext(ViewContext context)
@@ -572,7 +561,18 @@ public class StudyController extends BaseStudyController
 
     public static class OverviewForm extends DatasetFilterForm
     {
+        private String _qcState;
         private String[] _visitStatistic = new String[0];
+
+        public String getQCState()
+        {
+            return _qcState;
+        }
+
+        public void setQCState(String qcState)
+        {
+            _qcState = qcState;
+        }
 
         public String[] getVisitStatistic()
         {
@@ -765,7 +765,6 @@ public class StudyController extends BaseStudyController
     {
         private CohortFilter _cohortFilter;
         private int _visitId;
-        private String _encodedQcState;
         private DatasetDefinition _def;
 
         public DatasetAction()
@@ -841,12 +840,7 @@ public class StudyController extends BaseStudyController
         {
             // the full resultset is a join of all datasets for each participant
             // each dataset is determined by a visitid/datasetid
-
             Study study = getStudyRedirectIfNull();
-            _encodedQcState = form.getQCState();
-            QCStateSet qcStateSet = null;
-            if (QCStateManager.getInstance().showQCStates(getContainer()))
-                qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
             ViewContext context = getViewContext();
 
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
@@ -894,7 +888,7 @@ public class StudyController extends BaseStudyController
                 setColumnURL(url, queryView, schema, def);
 
                 // Clear any cached participant lists, since the filter/sort may have changed
-                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, form.getQCState());
+                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, null);
                 getExpandedState(context, def.getDatasetId()).clear();
             }
 
@@ -913,7 +907,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
 
-            if (qcStateSet != null)
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
             {
                 String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
                 String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
@@ -1003,7 +997,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
+            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter);
         }
     }
 
@@ -1095,7 +1089,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
-            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, form.getQCState());
+            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, null);
 
             if (participants != null)
             {
@@ -1123,7 +1117,7 @@ public class StudyController extends BaseStudyController
             }
 
             VBox vbox = new VBox();
-            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticipantURL, form.getParticipantId(), form.getQCState());
+            ParticipantNavView navView = new ParticipantNavView(previousParticipantURL, nextParticipantURL, form.getParticipantId(), null);
             vbox.addView(navView);
 
             CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
@@ -1149,7 +1143,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            _addNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState());
+            _addNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter);
             root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
@@ -5267,7 +5261,6 @@ public class StudyController extends BaseStudyController
         private double sequenceNum;
         private String action;
         private int reportId;
-        private String _qcState;
         private String _redirectUrl;
         private Map<String, String> aliases;
 
@@ -5302,19 +5295,7 @@ public class StudyController extends BaseStudyController
         @Override
         public String getRedirectUrl() { return _redirectUrl; }
 
-        @Override
-        public QCStateSet getQCStateSet()
-        {
-            if (_qcState != null && QCStateManager.getInstance().showQCStates(getContainer()))
-                return QCStateSet.getSelectedStates(getContainer(), getQCState());
-            return null;
-        }
-
         public void setRedirectUrl(String redirectUrl) { _redirectUrl = redirectUrl; }
-
-        public String getQCState() { return _qcState; }
-
-        public void setQCState(String qcState) { _qcState = qcState; }
     }
 
 

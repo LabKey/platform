@@ -15,12 +15,14 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -297,6 +299,21 @@ public class QCStateSet
     public String toString()
     {
         return getLabel();
+    }
+
+    /**
+     * Finds the first QC state parameter from the passed URL
+     */
+    @Nullable
+    public static String getQCParameter(String dataRegionName, ActionURL url)
+    {
+        String key = dataRegionName + "." + FieldKey.fromParts("QCState", "Label") + SimpleFilter.SEPARATOR_CHAR;
+        // finds the first QC state parameter
+        Pair<String, String> param = url.getParameters().stream()
+                .filter(p -> p.getKey().startsWith(key))
+                .findFirst().orElse(null);
+
+        return param != null ? param.getKey() : null;
     }
 
     public static String getQCUrlFilterKey(CompareType compareType, String dataRegionName)
