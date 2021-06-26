@@ -771,7 +771,7 @@ public class ContainerManager
             ColumnInfo entityIdCol = CORE.getTableInfoContainers().getColumn("EntityId");
             Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
             SQLFragment frag = new SQLFragment("UPDATE ");
-            frag.append(CORE.getTableInfoContainers(), "c");
+            frag.append(CORE.getTableInfoContainers().getSelectName());
             frag.append(" SET LockState = ? ");
             frag.add(LockState.Excluded);
             frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
