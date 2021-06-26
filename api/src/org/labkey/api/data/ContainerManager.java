@@ -101,6 +101,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -743,7 +744,21 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
-    public static void setExcludedProjects(Collection<GUID> ids, User user)
+    public static List<Container> getExcludedProjects()
+    {
+        return getProjects().stream()
+            .filter(p->p.getLockState() == Container.LockState.Excluded)
+            .collect(Collectors.toList());
+    }
+
+    public static List<Container> getNonExcludedProjects()
+    {
+        return getProjects().stream()
+            .filter(p->p.getLockState() != Container.LockState.Excluded)
+            .collect(Collectors.toList());
+    }
+
+    public static void setExcludedProjects(Collection<GUID> ids, Runnable auditRunnable)
     {
         // First clear all existing "Excluded" states
         StringBuilder sql = new StringBuilder("UPDATE ");
@@ -763,6 +778,8 @@ public class ContainerManager
             frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
             new SqlExecutor(CORE.getSchema()).execute(frag);
         }
+
+        auditRunnable.run();
 
         clearCache();
     }
