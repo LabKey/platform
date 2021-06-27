@@ -731,7 +731,7 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
-    public static void updateLockState(Container container, LockState lockState, User user)
+    public static void updateLockState(Container container, LockState lockState, @NotNull Runnable auditRunnable)
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
@@ -741,6 +741,8 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
 
         _removeFromCache(container);
+
+        auditRunnable.run();
     }
 
     public static List<Container> getExcludedProjects()
@@ -757,7 +759,7 @@ public class ContainerManager
             .collect(Collectors.toList());
     }
 
-    public static void setExcludedProjects(Collection<GUID> ids, Runnable auditRunnable)
+    public static void setExcludedProjects(Collection<GUID> ids, @NotNull Runnable auditRunnable)
     {
         // First clear all existing "Excluded" states
         StringBuilder sql = new StringBuilder("UPDATE ");
@@ -778,12 +780,12 @@ public class ContainerManager
             new SqlExecutor(CORE.getSchema()).execute(frag);
         }
 
-        auditRunnable.run();
-
         clearCache();
+
+        auditRunnable.run();
     }
 
-    public static void updateExpirationDate(Container container, LocalDate expirationDate, User user)
+    public static void updateExpirationDate(Container container, LocalDate expirationDate, @NotNull Runnable auditRunnable)
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
@@ -795,6 +797,8 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql, java.sql.Date.valueOf(expirationDate), container.getRowId());
 
         _removeFromCache(container);
+
+        auditRunnable.run();
     }
 
     public static void updateType(Container container, String newType, User user)
