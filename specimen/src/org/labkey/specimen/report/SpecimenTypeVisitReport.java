@@ -114,7 +114,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
         ActionURL link = SpecimenController.getSpecimensURL(_container, true);
-        link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
+        link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
         SpecimenTypeLevel level = getTypeLevelEnum();
