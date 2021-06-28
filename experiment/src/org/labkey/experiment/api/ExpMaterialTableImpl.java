@@ -73,8 +73,10 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -799,11 +801,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (_ss != null)
+        if (_ss == null)
+        {
+            // Allow read and delete for exp.Materials.
+            // Don't allow insert/update on exp.Materials without a sample type.
+            if (perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
+                return getContainer().hasPermission(user, perm);
+            else
+                return false;
+        }
+        else
+        {
             return super.hasPermission(user, perm);
-
-        // don't allow insert/update on exp.Materials without a sample type
-        return false;
+        }
     }
 
     @NotNull

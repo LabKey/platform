@@ -40,8 +40,6 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -80,6 +78,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 
@@ -102,19 +101,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
 
-    final ExpSampleTypeImpl _sampleType;
+    // SampleType may be null for read or delete. We don't allow insert or update without a sample type.
+    final @Nullable ExpSampleTypeImpl _sampleType;
     final UserSchema _schema;
-    final TableInfo _samplesTable;
+    final @Nullable TableInfo _samplesTable;
     // super.getRootTable() is UserSchema table
     // getDbTable() is exp.materials
     // getSamplesTable() is the materialized table with row properties
 
-    public SampleTypeUpdateServiceDI(ExpMaterialTableImpl table, ExpSampleTypeImpl sampleType)
+    public SampleTypeUpdateServiceDI(ExpMaterialTableImpl table, @Nullable ExpSampleTypeImpl sampleType)
     {
-        super(table, table.getRealTable(), createMVMapping(sampleType.getDomain()));
+        super(table, table.getRealTable(), sampleType == null ? emptyMap() : createMVMapping(sampleType.getDomain()));
         _sampleType = sampleType;
         _schema = table.getUserSchema();
-        _samplesTable = sampleType.getTinfo();
+        _samplesTable = sampleType == null ? null : sampleType.getTinfo();
         // we do this in ExpMaterialTableImpl.persistRows() via ExpDataIterators.PersistDataIteratorBuilder
         _enableExistingRecordsDataIterator = false;
     }
@@ -139,12 +139,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
         // MOVE PrepareDataIteratorBuilder into this file
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in);
     }
 
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
@@ -157,6 +159,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         DataIteratorBuilder dib = super.createImportDIB(user, container, data, context);
         if (InventoryService.get() != null)
         {
@@ -173,6 +176,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors())
         {
@@ -185,6 +189,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
@@ -197,6 +202,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
 
         DbScope scope = getSchema().getDbSchema().getScope();
@@ -214,6 +220,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
 
         /* setup mini dataiterator pipeline to process lineage */
@@ -233,12 +240,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
     {
         TableInfo d = getDbTable();
-        TableInfo t = _sampleType.getTinfo();
+        TableInfo t = _sampleType == null ? null : _sampleType.getTinfo();
 
-        SQLFragment sql = new SQLFragment()
-                .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+        SQLFragment sql = new SQLFragment("SELECT ")
+                .appendIf(t != null, "t.*,")
+                .append(" d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                 .append(" FROM ").append(d, "d")
-                .append(" LEFT OUTER JOIN ").append(t, "t")
+                .appendIf(t != null, s ->
+                    s.append("LEFT OUTER JOIN ").append(t, "t")
+                )
                 .append(" ON d.lsid = t.lsid")
                 .append(" WHERE d.Container=?").add(container.getEntityId())
                 .append(" AND d.rowid=?").add(keys[0]);
@@ -271,6 +281,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
+        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         // LSID was stripped by super.updateRows() and is needed to insert into the dataclass provisioned table
         String lsid = (String) oldRow.get("lsid");
         if (lsid == null)
@@ -356,6 +367,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected int truncateRows(User user, Container container)
     {
+        if (_sampleType == null)
+            return 0;
+
         int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container);
         if (ret > 0)
         {
@@ -368,7 +382,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Domain getDomain()
     {
-        return _sampleType.getDomain();
+        return _sampleType == null ? null : _sampleType.getDomain();
     }
 
     @Override
@@ -386,7 +400,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
     {
-
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
 
         // Check for trigger scripts
@@ -664,18 +677,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void fireSamplesChanged()
     {
-        _sampleType.onSamplesChanged(getUser(), null);
+        if (_sampleType != null)
+            _sampleType.onSamplesChanged(getUser(), null);
     }
 
     void audit(QueryService.AuditAction auditAction)
     {
+        assert _sampleType != null || auditAction == QueryService.AuditAction.DELETE : "SampleType required for insert/update, but not required for read/delete";
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(
-                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleType.getName());
+                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + (_sampleType == null ? "<Materials>" : _sampleType.getName()));
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         if (tx != null)
             event.setTransactionId(tx.getAuditId());
-        event.setSourceLsid(_sampleType.getLSID());
-        event.setSampleSetName(_sampleType.getName());
+        if (_sampleType != null)
+        {
+            event.setSourceLsid(_sampleType.getLSID());
+            event.setSampleSetName(_sampleType.getName());
+        }
         event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
     }

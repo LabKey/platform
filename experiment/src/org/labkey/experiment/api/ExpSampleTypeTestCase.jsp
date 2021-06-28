@@ -20,16 +20,25 @@
 
 
 <%@ page import="org.junit.Test" %>
+<%@ page import="org.labkey.api.audit.AuditLogService" %>
+<%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.ListofMapsDataIterator" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
+<%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineage" %>
@@ -40,21 +49,34 @@
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.exp.api.SampleTypeService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
+<%@ page import="org.labkey.api.exp.query.ExpSchema" %>
+<%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
+
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
 <%@ page import="org.labkey.api.reader.DataLoader" %>
+
+<%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.reader.TabLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
 <%@ page import="org.labkey.experiment.api.ExpProvisionedTableTestHelper" %>
 <%@ page import="org.labkey.experiment.api.ExpSampleTypeImpl" %>
 <%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
 <%@ page import="org.labkey.experiment.api.SampleTypeServiceImpl" %>
-
 <%@ page import="java.io.StringBufferInputStream" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
@@ -62,23 +84,9 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-
-<%@ page import="static org.hamcrest.CoreMatchers.hasItems" %>
-<%@ page import="static org.junit.Assert.*" %>
-<%@ page import="org.labkey.api.audit.AuditLogService" %>
-<%@ page import="org.labkey.experiment.SampleTypeAuditProvider" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.query.DefaultSchema" %>
-<%@ page import="org.labkey.api.query.QuerySchema" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
-<%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.data.CompareType" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="org.labkey.api.audit.SampleTimelineAuditEvent" %>
-<%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="java.sql.SQLException" %>
+<%@ page import="org.labkey.api.query.QueryUpdateServiceException" %>
+<%@ page import="org.labkey.api.query.InvalidKeyException" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -992,5 +1000,38 @@ public void testDetailedAuditLog() throws Exception
     assertEquals(2, newRecordMap.size());
 
     st.delete(user);
+}
+
+// Issue 43442: samples: not able to delete a Material not in a sample type
+// - verify we can't insert or update via QueryUpdateService
+// - verify we can read and delete via QueryUpdateService
+@Test
+public void testExpMaterialPermissions() throws Exception
+{
+    User user = TestContext.get().getUser();
+    var schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
+
+    // verify insert, update aren't allowed, but read and delete are allowed
+    var materialsTable = schema.getTable(ExpSchema.TableType.Materials.name());
+    var qus = materialsTable.getUpdateService();
+    assertNotNull(qus);
+    assertTrue(qus.hasPermission(user, ReadPermission.class));
+    assertTrue(qus.hasPermission(user, DeletePermission.class));
+    assertFalse(qus.hasPermission(user, InsertPermission.class));
+    assertFalse(qus.hasPermission(user, UpdatePermission.class));
+
+    // create a sample
+    var lsid = ExperimentService.get().generateGuidLSID(c, ExpMaterial.class);
+    ExpMaterial m = ExperimentService.get().createExpMaterial(c, Lsid.parse(lsid));
+    m.save(user);
+
+    // verify read via QUS
+    var rows = qus.getRows(user, c, List.of(CaseInsensitiveHashMap.of("rowId", m.getRowId())));
+    assertEquals("Failed to fetch material via QUS", 1, rows.size());
+    assertEquals(m.getLSID(), rows.get(0).get("lsid"));
+
+    // verify delete via QUS
+    rows = qus.deleteRows(user, c, List.of(CaseInsensitiveHashMap.of("rowId", m.getRowId())), null, null);
+    assertEquals("Failed to delete material via QUS", 1, rows.size());
 }
 %>

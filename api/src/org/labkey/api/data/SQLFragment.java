@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -566,6 +567,19 @@ public class SQLFragment implements Appendable, CharSequence
         return getSqlCharSequence().subSequence(start, end);
     }
 
+    public SQLFragment appendIf(boolean test, CharSequence s)
+    {
+        if (test)
+            this.append(s);
+        return this;
+    }
+
+    public SQLFragment appendIf(boolean test, Consumer<SQLFragment> block)
+    {
+        if (test)
+            block.accept(this);
+        return this;
+    }
 
     /**
      * KEY is used as a faster way to look for equivalent CTE expressions.
