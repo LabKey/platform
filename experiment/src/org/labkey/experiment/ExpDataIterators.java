@@ -389,7 +389,9 @@ public class ExpDataIterators
                 return false;
             }
 
-            if (_participantIDCol != null && _rowIdCol != null && _lsidCol != null && (_dateCol != null || _visitIdCol != null))
+            boolean isVisitBased = _study.getTimepointType().isVisitBased();
+            boolean haveVisitCol = isVisitBased ? _visitIdCol != null : _dateCol != null;
+            if (_participantIDCol != null && _rowIdCol != null && _lsidCol != null && haveVisitCol)
             {
                 String participantId = _participantIDCol.get() != null ? _participantIDCol.get().toString() : null;
                 Object date = _dateCol != null ? _dateCol.get() : null;
@@ -398,14 +400,14 @@ public class ExpDataIterators
                 int rowId = ((Number) _rowIdCol.get()).intValue();
 
                 // Only link rows that have a participant and a visit/date. Return if this is not the case
-                if (participantId == null || (date == null && visit == null))
+                if (participantId == null || (isVisitBased && visit == null) || (!isVisitBased && date == null))
                     return true;
 
                 Float visitId = null;
                 Date dateId = null;
 
                 // 13647: Conversion exception in auto link to study
-                if (_study.getTimepointType().isVisitBased())
+                if (isVisitBased)
                 {
                     visitId = Float.parseFloat(visit.toString());
                 }
