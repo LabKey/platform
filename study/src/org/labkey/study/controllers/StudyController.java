@@ -3753,7 +3753,7 @@ public class StudyController extends BaseStudyController
                         url.addParameter(DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
                 }
 
-                if (StudyManager.getInstance() != null)
+                if (StudyManager.getInstance() != null && url.getParameter("cancelRedirect") != null && !url.getParameter("cancelRedirect").equals("1"))
                 {
                     StudyImpl studyImpl = StudyManager.getInstance().getStudy(getContainer());
                     if (studyImpl != null && !studyImpl.isShowPrivateDataByDefault())

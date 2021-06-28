@@ -304,6 +304,7 @@
                 // Private States case
                 if (bean.qcStates != null && QCStateSet.getPrivateStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, "Dataset", container);
+                defaultReportURL.addParameter("cancelRedirect", 1);
 
         %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=text(innerHtml)%>
         </a><%
