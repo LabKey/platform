@@ -395,7 +395,7 @@ public class ExpDataIterators
             {
                 String participantId = _participantIDCol.get() != null ? _participantIDCol.get().toString() : null;
                 Object date = _dateCol != null ? _dateCol.get() : null;
-                Object visit = _visitIdCol.get();
+                Object visit = _visitIdCol != null ? _visitIdCol.get(): null;
                 Object lsid = _lsidCol.get();
                 int rowId = ((Number) _rowIdCol.get()).intValue();
 
@@ -413,7 +413,7 @@ public class ExpDataIterators
                 }
                 else
                 {
-                    dateId = (Date) ConvertUtils.convert(visit.toString(), Date.class);
+                    dateId = (Date) ConvertUtils.convert(date.toString(), Date.class);
                 }
 
                 Map<String,Object> row = new HashMap<>();
