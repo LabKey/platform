@@ -113,7 +113,7 @@ public class SampleDatasetTable extends DatasetTableImpl
             // Hide 'linked' column for Sample Type Datasets
             if (userSchema instanceof SamplesSchema)
             {
-                _sampleTable = ((SamplesSchema) userSchema).getTable(sampleType, ContainerFilter.EVERYTHING);
+                _sampleTable = ((SamplesSchema) userSchema).createSampleTable(sampleType, ContainerFilter.EVERYTHING);
             }
             else
             {
