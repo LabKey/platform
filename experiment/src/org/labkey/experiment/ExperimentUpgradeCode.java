@@ -89,6 +89,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         ExperimentServiceImpl.get().rebuildAllEdges();
     }
 
+    @SuppressWarnings("unused")  // Called from exp-21.006-21.007.sql
     public static void upgradeMaterialSource(ModuleContext context)
     {
         if (context != null && context.isNewInstall())
@@ -120,6 +121,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     /**
      * Called from exp-20.001-20.002.sql
      */
+    @SuppressWarnings("unused")
     public static void addProvisionedDataClassNameClassId(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -208,23 +210,23 @@ public class ExperimentUpgradeCode implements UpgradeCode
         LOG.info("DataClass '" + ds.getName() + "' (" + ds.getRowId() + ") updated 'name' and 'classId' column, count=" + count);
     }
 
-    // called from exp-20.003-20.004
     // Changes from an autoIncrement column as the RowId to a DBSequence so the rowId can be more readily available
     // during creation of materials (particularly during file import).
     //
     // This needs to be run after startup because we are altering the primary key column for exp.Materials, and for SQL Server
     // this means we need to remove some foreign key constraints in other schemas.
-     @DeferredUpgrade
+    @DeferredUpgrade
+    @SuppressWarnings("unused") // called from exp-20.003-20.004
     public static void addDbSequenceForMaterialsRowId(ModuleContext context)
     {
         _addDbSequenceForMaterialRowId();
     }
 
-    // called from exp-20.004-20.005
     // The previous method originally mistakenly did not update RowId column for new installs,
     // leaving databases bootstrapped after the previous upgrade script was implemented in a strange state.
     // This method will fix up the databases where that removal of autoIncrement was missed.
     @DeferredUpgrade
+    @SuppressWarnings("unused") // called from exp-20.004-20.005
     public static void addDbSequenceForMaterialsRowIdIfMissed(ModuleContext context)
     {
         if (ExperimentService.get().getTinfoMaterial().getColumn("RowId").isAutoIncrement())
@@ -309,20 +311,20 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    // called from exp-20.005-20.006
     // Issue 40443: For SQL Server, if modifying a table that is used in a view, the views need to get recreated after that
     // modification happens. So we need to do that after the previous deferred upgrade scripts happen since
     // the createViews scripts run at the end of the regular upgrade scripts and thus before the deferred ones.
     @DeferredUpgrade
+    @SuppressWarnings("unused") // called from exp-20.005-20.006
     public static void recreateViewsAfterMaterialRowIdDbSequence(ModuleContext context)
     {
         ModuleLoader.getInstance().recreateViews(ModuleLoader.getInstance().getModule(context.getName()));
     }
 
-    // called from exp-21.004-21.005.sql
     // Issue 43246: Lineage query NPE while processing an UploadedFile
     // Some exp.object for UploadedFile exp.data were orphaned when imported into an assay prior to Issue 41675 being fixed.
     // This upgrade cleans the orphaned exp.object and rebuilds the exp.edges for the runs.
+    @SuppressWarnings("unused") // called from exp-21.004-21.005.sql
     public static void deleteOrphanedUploadedFileObjects(ModuleContext context)
     {
         if (context.isNewInstall() || rebuildEdgesHasRun)

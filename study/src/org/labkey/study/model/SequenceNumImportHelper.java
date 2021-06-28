@@ -46,12 +46,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class SequenceNumImportHelper implements SequenceNumTranslator
 {
-    final TimepointType _timetype;
-    final Date _startDate;
-    final int _startDaysSinceEpoch;
-    final Double _defaultSequenceNum;
-    final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<>();
-    final SequenceVisitMap _sequenceNumMap;
+    private final TimepointType _timetype;
+    private final Date _startDate;
+    private final int _startDaysSinceEpoch;
+    private final Double _defaultSequenceNum;
+    private final CaseInsensitiveHashMap<String> _translateMap = new CaseInsensitiveHashMap<>();
+    private final SequenceVisitMap _sequenceNumMap;
 
     public SequenceNumImportHelper(@NotNull Study study, @Nullable DatasetDefinition def)
     {
@@ -70,7 +70,6 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
             _sequenceNumMap = null;
     }
 
-
     // for testing
     public SequenceNumImportHelper(
             TimepointType timetype,
@@ -87,7 +86,6 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
             _translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
         _sequenceNumMap = sequenceVisitMap;
     }
-
 
     public Callable<Object> getCallable(@NotNull final DataIterator it, @Nullable final Integer sequenceIndex, @Nullable final Integer dateIndex)
     {
@@ -111,7 +109,6 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
         };
     }
 
-
     private static Double parseDouble(String s)
     {
         try
@@ -126,7 +123,6 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
         }
     }
 
-
     private static Date parseDate(String s)
     {
         try
@@ -140,8 +136,6 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
             return null;
         }
     }
-
-
 
     // we want to be timezone safe here
     static final long epochLocal = DateUtil.parseISODateTime("1970-01-01");
@@ -214,8 +208,6 @@ translateToDouble:
         return sequencenum;
     }
 
-
-
     interface SequenceVisitMap
     {
         Visit get(Double d);
@@ -227,7 +219,7 @@ translateToDouble:
 
         StudySequenceVisitMap(Study study)
         {
-            _svm = (SequenceVisitManager)StudyManager.getInstance().getVisitManager((StudyImpl)study);
+            _svm = (SequenceVisitManager)StudyManager.getInstance().getVisitManager(study);
         }
 
         @Override
@@ -237,14 +229,9 @@ translateToDouble:
         }
     }
 
-
-
-
     /**
      *  TESTS
      **/
-
-
 
     static class TestSequenceVisitMap implements SequenceVisitMap
     {
@@ -268,12 +255,10 @@ translateToDouble:
         }
     }
 
-
     static Date parseDateTime(String s)
     {
         return new Date(DateUtil.parseDateTime(s));
     }
-
 
     public static class SequenceNumTest extends Assert
     {
@@ -295,12 +280,12 @@ translateToDouble:
             map.put("Enrollment",1.0000);
             map.put("SR",9999.0000);
             SequenceNumImportHelper h = new SequenceNumImportHelper(
-                    TimepointType.VISIT,
-                    parseDateTime("1 Jan 2000 1:00pm"),
-                    null,
-                    map,
-                    new TestSequenceVisitMap()
-                    );
+                TimepointType.VISIT,
+                parseDateTime("1 Jan 2000 1:00pm"),
+                null,
+                map,
+                new TestSequenceVisitMap()
+            );
             assertNull(h.translateSequenceNum(null, null));
             assertNull(h.translateSequenceNum(null, parseDateTime("1 Jan 2010")));
             assertEquals(1.0, h.translateSequenceNum(1.0,null), DELTA);
@@ -326,12 +311,12 @@ translateToDouble:
             map.put("Enrollment",1.0000);
             map.put("SR",9999.0000);
             SequenceNumImportHelper h = new SequenceNumImportHelper(
-                    TimepointType.VISIT,
-                    parseDateTime("1 Jan 2000 1:00pm"),
-                    42.0000,
-                    map,
-                    new TestSequenceVisitMap()
-                    );
+                TimepointType.VISIT,
+                parseDateTime("1 Jan 2000 1:00pm"),
+                42.0000,
+                map,
+                new TestSequenceVisitMap()
+            );
             assertEquals(42.0000, h.translateSequenceNum(null,null), DELTA);
             assertEquals(42.0000, h.translateSequenceNum(null, parseDateTime("1 Jan 2010")), DELTA);
             assertEquals(1.0, h.translateSequenceNum(1.0,null), DELTA);
@@ -339,19 +324,18 @@ translateToDouble:
             assertEquals(9999.0000, h.translateSequenceNum("SR",null), DELTA);
         }
 
-
         // this test does not run stand-alone because of StudyManager.sequenceNumFromDate(date)
         @Test
         public void testDateBasedNotDemographic()
         {
             CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             SequenceNumImportHelper h = new SequenceNumImportHelper(
-                    TimepointType.DATE,
-                    parseDateTime("1 Jan 2000 1:00pm"),
-                    null,
-                    map,
-                    new TestSequenceVisitMap()
-                    );
+                TimepointType.DATE,
+                parseDateTime("1 Jan 2000 1:00pm"),
+                null,
+                map,
+                new TestSequenceVisitMap()
+                );
             assertEquals(-1.0, h.translateSequenceNum(null,null), DELTA);
             assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010")), DELTA);
             assertEquals(20100203.0, h.translateSequenceNum(null, parseDateTime("3 Feb 2010 1:00")), DELTA);

@@ -30,22 +30,24 @@ import java.util.stream.Collectors;
 @JavaRuntimeVersion
 public enum JavaVersion
 {
-    JAVA_UNSUPPORTED(-1, true, false),
-    JAVA_14(14, false, true),
-    JAVA_15(15, false, true),
-    JAVA_16(16, false, true),
-    JAVA_17(17, false, false),
-    JAVA_FUTURE(Integer.MAX_VALUE, false, false);
+    JAVA_UNSUPPORTED(-1, true, false, null),
+    JAVA_14(14, false, true, "https://docs.oracle.com/en/java/javase/14/docs/api/java.base/"),
+    JAVA_15(15, false, true, "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/"),
+    JAVA_16(16, false, true, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"),
+    JAVA_17(17, false, false, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/"), // TODO: No JDK 17 docs yet
+    JAVA_FUTURE(Integer.MAX_VALUE, false, false, "https://docs.oracle.com/en/java/javase/16/docs/api/java.base/");
 
     private final int _version;
     private final boolean _deprecated;
     private final boolean _tested;
+    private final String _javaDocBaseURL;
 
-    JavaVersion(int version, boolean deprecated, boolean tested)
+    JavaVersion(int version, boolean deprecated, boolean tested, String javaDocBaseURL)
     {
         _version = version;
         _deprecated = deprecated;
         _tested = tested;
+        _javaDocBaseURL = javaDocBaseURL;
     }
 
     public boolean isDeprecated()
@@ -56,6 +58,11 @@ public enum JavaVersion
     public boolean isTested()
     {
         return _tested;
+    }
+
+    public String getJavaDocBaseURL()
+    {
+        return _javaDocBaseURL;
     }
 
     private final static Map<Integer, JavaVersion> VERSION_MAP = Arrays.stream(values())

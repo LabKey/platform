@@ -117,11 +117,12 @@
 <table class="labkey-data-region-legacy labkey-show-borders">
     <thead>
     <tr>
-        <td class="labkey-column-header">Name</td>
-        <td class="labkey-column-header">Type</td>
-        <td class="labkey-column-header">Required</td>
-        <td class="labkey-column-header">Mandatory</td>
-        <td class="labkey-column-header">PropertyURI</td>
+        <td class="labkey-column-header"><b>ID</b></td>
+        <td class="labkey-column-header"><b>Name</b></td>
+        <td class="labkey-column-header"><b>Type</b></td>
+        <td class="labkey-column-header"><b>Required</b></td>
+        <td class="labkey-column-header"><b>Mandatory</b></td>
+        <td class="labkey-column-header"><b>PropertyURI</b></td>
     </tr>
     </thead>
     <tbody>
@@ -136,6 +137,7 @@
             PropertyType t = pd.getPropertyType();
     %>
     <tr class="<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>">
+        <td><%=h(pd.getPropertyId())%></td>
         <td><%=h(pd.getName())%></td>
         <td><%=h(pd.getPropertyType().getXmlName())%></td>
         <td><%=pd.isRequired()%></td>
