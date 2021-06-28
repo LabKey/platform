@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -209,6 +208,7 @@ abstract public class ExpTableImpl<C extends Enum>
         var col = new AliasedColumn(this, name, getLSIDColumn());
         col.setDescription("Includes all properties set for this row");
         col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setConceptURI(PropertiesDisplayColumn.CONCEPT_URI);
         col.setHidden(true);
         col.setUserEditable(false);
         col.setReadOnly(true);

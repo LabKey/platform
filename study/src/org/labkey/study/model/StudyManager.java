@@ -4690,6 +4690,19 @@ public class StudyManager
                 StudyManager.getInstance().enableSpecimenModuleInStudyFolders(context.getUpgradeUser());
             }
         }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        @DeferredUpgrade
+        public void ensureDesignDomains(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                _log.info("Ensuring study design domains in all studies");
+                StudyDesignManager mgr = StudyDesignManager.get();
+                StudyManager.getInstance().getAllStudies()
+                    .forEach(study->mgr.ensureStudyDesignDomains(study.getContainer(), context.getUpgradeUser()));
+            }
+        }
     }
 
     // Enable the specimen module (if it exists) in all studies that have specimen rows

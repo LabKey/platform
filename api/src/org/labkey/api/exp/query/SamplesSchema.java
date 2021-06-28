@@ -168,8 +168,11 @@ public class SamplesSchema extends AbstractExpSchema
         return (ExpMaterialTable) getTable(st.getName(), cf);
     }
 
-    /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    private ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
+    /**
+     * Creates a table of materials, scoped to the given sample type and including its custom columns, if provided.
+     * Does not include any linked-to-study columns or apply XML metadata overrides
+     */
+    public ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
