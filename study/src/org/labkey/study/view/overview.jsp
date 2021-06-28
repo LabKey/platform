@@ -293,8 +293,6 @@
             {
                 ActionURL defaultReportURL = new ActionURL(DefaultDatasetReportAction.class, container);
                 defaultReportURL.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
-                String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
-                String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
 
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
@@ -302,10 +300,10 @@
                     defaultReportURL.replaceParameter(eq, QCStateManager.getInstance().getQCStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
                 // Public States case
                 if (bean.qcStates != null && QCStateSet.getPublicStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
-                    defaultReportURL = getQCStateFilteredURL(defaultReportURL, PUBLIC_STATES_LABEL, "Dataset", container, publicQCUrlFilterValue, privateQCUrlFilterValue);
+                    defaultReportURL = getQCStateFilteredURL(defaultReportURL, PUBLIC_STATES_LABEL, "Dataset", container);
                 // Private States case
                 if (bean.qcStates != null && QCStateSet.getPrivateStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
-                    defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, "Dataset", container, publicQCUrlFilterValue, privateQCUrlFilterValue);
+                    defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, "Dataset", container);
 
         %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=text(innerHtml)%>
         </a><%

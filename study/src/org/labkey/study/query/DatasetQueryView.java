@@ -494,7 +494,7 @@ public class DatasetQueryView extends StudyQueryView
         for (QCStateSet set : stateSets)
         {
             // Apply appropriate grid filter-url to each QC dropdown option href
-            ActionURL urlHelper = getQCStateFilteredURL(getViewContext().cloneActionURL(), set.getLabel(), dataRegionName, getContainer(), publicQCUrlFilterValue, privateQCUrlFilterValue);
+            ActionURL urlHelper = getQCStateFilteredURL(getViewContext().cloneActionURL(), set.getLabel(), dataRegionName, getContainer());
             NavTree setItem = new NavTree(set.getLabel(), urlHelper);
             setItem.setId("QCState:" + set.getLabel());
 

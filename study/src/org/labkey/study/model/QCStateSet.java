@@ -370,8 +370,10 @@ public class QCStateSet
         return null;
     }
 
-    public static ActionURL getQCStateFilteredURL(ActionURL urlHelper, String QCUrlFilterValue, String dataRegionName, Container container, String publicQCUrlFilterValue, String privateQCUrlFilterValue)
+    public static ActionURL getQCStateFilteredURL(ActionURL urlHelper, String QCUrlFilterValue, String dataRegionName, Container container)
     {
+        String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(container));
+        String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(container));
         String eq = getQCUrlFilterKey(CompareType.EQUAL, dataRegionName);
         String in = getQCUrlFilterKey(CompareType.IN, dataRegionName);
 

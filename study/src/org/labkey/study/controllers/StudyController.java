@@ -243,6 +243,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
+import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
+import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
@@ -3392,7 +3394,11 @@ public class StudyController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(ManageQCStatesForm manageQCStatesForm)
         {
-            return getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, ManageStudyAction.class);
+            ActionURL successUrl = getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, ManageStudyAction.class);
+            if (!manageQCStatesForm.isReshowPage() && !manageQCStatesForm.isShowPrivateDataByDefault())
+                return getQCStateFilteredURL(successUrl, PUBLIC_STATES_LABEL, DATASET_DATAREGION_NAME, getContainer());
+
+            return successUrl;
         }
 
         @Override
@@ -3727,7 +3733,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getRedirectURL(Object o)
         {
-            ViewContext context = getViewContext();
+            ViewContext context = getViewContext(); //_study.isShowPrivateDataByDefault()
             Object unparsedDatasetId = context.get(DatasetDefinition.DATASETKEY);
 
             try
@@ -3745,6 +3751,13 @@ public class StudyController extends BaseStudyController
                         url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
                     else
                         url.addParameter(DATASET_VIEW_NAME_PARAMETER_NAME, defaultView);
+                }
+
+                if (StudyManager.getInstance() != null)
+                {
+                    StudyImpl studyImpl = StudyManager.getInstance().getStudy(getContainer());
+                    if (studyImpl != null && !studyImpl.isShowPrivateDataByDefault())
+                        url = getQCStateFilteredURL(url, PUBLIC_STATES_LABEL, DATASET_DATAREGION_NAME, getContainer());
                 }
                 return url;
             }
