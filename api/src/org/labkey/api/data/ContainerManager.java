@@ -737,7 +737,7 @@ public class ContainerManager
         //so we can't use Table.update here
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = ? WHERE RowID = ?");
+        sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?");
         new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
 
         _removeFromCache(container);
@@ -764,17 +764,17 @@ public class ContainerManager
         // First clear all existing "Excluded" states
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = NULL WHERE LockState = ?");
+        sql.append(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?");
         new SqlExecutor(CORE.getSchema()).execute(sql, LockState.Excluded);
 
-        // Now set the passed in projects to "Excluded"
+        // Now set the passed-in projects to "Excluded"
         if (!ids.isEmpty())
         {
             ColumnInfo entityIdCol = CORE.getTableInfoContainers().getColumn("EntityId");
             Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
             SQLFragment frag = new SQLFragment("UPDATE ");
             frag.append(CORE.getTableInfoContainers().getSelectName());
-            frag.append(" SET LockState = ? ");
+            frag.append(" SET LockState = ?, ExpirationDate = NULL ");
             frag.add(LockState.Excluded);
             frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
             new SqlExecutor(CORE.getSchema()).execute(frag);
