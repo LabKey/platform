@@ -46,6 +46,8 @@ import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn
 
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
 {
+    public static final String ALIAS_CONCEPT_URI = "http://www.labkey.org/exp/xml#alias";
+
     protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
     {
         super(name, rootTable, schema, cf);
@@ -80,8 +82,8 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         aliasCol.setNullable(true);
         aliasCol.setRequired(false);
         aliasCol.setDisplayColumnFactory(new AliasDisplayColumnFactory());
-        aliasCol.setConceptURI("http://www.labkey.org/exp/xml#alias");
-        aliasCol.setPropertyURI("http://www.labkey.org/exp/xml#alias");
+        aliasCol.setConceptURI(ALIAS_CONCEPT_URI);
+        aliasCol.setPropertyURI(ALIAS_CONCEPT_URI);
         return aliasCol;
     }
 

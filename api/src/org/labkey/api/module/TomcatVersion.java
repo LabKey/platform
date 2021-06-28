@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public enum TomcatVersion
 {
     TOMCAT_UNSUPPORTED(-1, true),
-    TOMCAT_8_5(85, false),
+    TOMCAT_8_5(85, true),
     TOMCAT_9_0(90, false),
     TOMCAT_FUTURE(Integer.MAX_VALUE, true);
 

@@ -94,6 +94,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -197,7 +198,7 @@ public class AuthenticationManager
                 switch(cp.getName())
                 {
                     case SELF_REGISTRATION_KEY, AUTO_CREATE_ACCOUNTS_KEY, SELF_SERVICE_EMAIL_CHANGES_KEY -> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
-                    case DEFAULT_DOMAIN -> saveAuthSetting(null, cp.getName(), cp.getValue());
+                    case DEFAULT_DOMAIN -> setDefaultDomain(null, cp.getValue());
                     default -> _log.warn("Property '" + cp.getName() + "' does not map to a known authentication property");
                 }
             });
@@ -256,7 +257,9 @@ public class AuthenticationManager
 
     public static void setDefaultDomain(User user, String value)
     {
-        saveAuthSetting(user, DEFAULT_DOMAIN, value);
+        value = StringUtils.trimToEmpty(value);
+        if (!Objects.equals(AuthenticationManager.getDefaultDomain(), value))
+            saveAuthSetting(user, DEFAULT_DOMAIN, value, "set to " + value);
     }
 
     public static boolean getAuthSetting(String key, boolean defaultValue)
@@ -272,11 +275,6 @@ public class AuthenticationManager
         saveAuthSetting(user, key, Boolean.toString(value), value ? "enabled" : "disabled");
     }
 
-    private static void saveAuthSetting(User user, String key, String value)
-    {
-        saveAuthSetting(user, key, value, "set to " + value);
-    }
-
     private static void saveAuthSetting(User user, String key, String value, String action)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
@@ -285,18 +283,13 @@ public class AuthenticationManager
         props.save();
     }
 
-    public static void saveAuthSettings(User user, Map<String, Object> map)
+    public static void saveAuthSettings(User user, Map<String, Boolean> map)
     {
         PropertyMap props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
 
         map.entrySet().stream()
-            .filter(e->!e.getValue().equals(props.get(e.getKey())))
-            .forEach(e->{
-                if (e.getValue() instanceof Boolean)
-                    saveAuthSetting(user, e.getKey(), (boolean)e.getValue());
-                else
-                    saveAuthSetting(user, e.getKey(), (String)e.getValue());
-            });
+            .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
+            .forEach(e->saveAuthSetting(user, e.getKey(), e.getValue()));
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)

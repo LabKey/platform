@@ -100,6 +100,7 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -161,6 +162,23 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             Map<String, Object> row = getRow(user, container, rowKeys);
             if (row != null)
                 result.add(row);
+        }
+        return result;
+    }
+
+    @Override
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
+        Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
+        {
+            Map<String, Object> row = getRow(user, container, key.getValue());
+            if (row != null)
+                result.put(key.getKey(), row);
         }
         return result;
     }

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.NavTree;
 
@@ -33,10 +34,8 @@ import java.util.Map;
  */
 public class HelpTopic
 {
-    // @JavaRuntimeVersion
-    // Update the below constant whenever we add support for a new major Java version so we always point at the current docs.
-    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/";
-
+    // Point at the Java documentation that matches the currently running JVM
+    private static final String JDK_JAVADOC_BASE_URL = ModuleLoader.getInstance().getJavaVersion().getJavaDocBaseURL();
     private static final String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
     private static final String DOCUMENTATION_FOLDER_NAME = Constants.getDocumentationVersion();
     private static final String HELP_LINK_PREFIX = "https://www.labkey.org/Documentation/" + DOCUMENTATION_FOLDER_NAME + "/wiki-page.view?name=";

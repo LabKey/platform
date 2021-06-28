@@ -44,7 +44,7 @@
             <div class="input-group">
                 <labkey:input name="issueId" formGroup="false" placeholder="ID # or Search Term"/>
                 <div class="input-group-btn">
-                    <%= button("Search").addClass("btn btn-default").iconCls("search").tooltip("Search").submit(true) %>
+                    <%= button("Search").addClass("btn btn-default").iconCls("search").submit(true) %>
                 </div>
             </div>
         </labkey:form>

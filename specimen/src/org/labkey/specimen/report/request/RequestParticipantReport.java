@@ -96,7 +96,7 @@ public class RequestParticipantReport extends SpecimenVisitReport<RequestSummary
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
         ActionURL url = SpecimenController.getSpecimensURL(_container, true);
-        url = updateURLFilterParameter(url, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMinDouble());
+        url = updateURLFilterParameter(url, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
         url = updateURLFilterParameter(url, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
         SpecimenTypeLevel level = getTypeLevelEnum();
         if (level == SpecimenTypeLevel.Derivative || level == SpecimenTypeLevel.Additive)

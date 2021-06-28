@@ -51,6 +51,15 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     }
 
     @Override
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        var ret = _service.getExistingRows(user, container, keys);
+        clearCache();
+        return ret;
+    }
+
+    @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
         int ret = _service.loadRows(user, container, rows, context, extraScriptContext);

@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,11 +45,16 @@ import static java.util.stream.Collectors.toList;
 
 public class PropertiesDisplayColumn extends DataColumn implements NestedPropertyDisplayColumn
 {
+    public static final String CONCEPT_URI = "http://www.labkey.org/types#properties";
+    public static final String EXTRA_PROPERTIES = PropertiesDisplayColumn.class.getName();
+
     private final UserSchema schema;
 
     private final PropsTable propTable;
-    private final Map<String, Pair<PropertyColumn, DisplayColumn>> propCols;
     private final ReexecutableDataregion innerDataRegion;
+
+    // shared across all of the PropertiesDisplayColumn in this RenderContext
+    private Map<String, Pair<PropertyColumn, DisplayColumn>> propCols;
 
     // nested render state that changes for each row
     private ReexecutableRenderContext innerCtx;
@@ -61,7 +67,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
         this.schema = schema;
 
         propTable = new PropsTable(schema);
-        propCols = new HashMap<>();
 
         innerDataRegion = new ReexecutableDataregion();
         innerDataRegion.setTable(propTable);
@@ -84,6 +89,9 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
         {
             innerCtx = new ReexecutableRenderContext(outerCtx);
             innerCtx.setCurrentRegion(innerDataRegion);
+
+            // NOTE: We are sharing this same instance across all PropertiesDisplayColumn in the RenderContext
+            propCols = (Map<String, Pair<PropertyColumn, DisplayColumn>>)outerCtx.computeIfAbsent(EXTRA_PROPERTIES, k -> new LinkedHashMap<>());
         }
 
         String currentLsid = requireNonNullElse((String)getValue(outerCtx), null);

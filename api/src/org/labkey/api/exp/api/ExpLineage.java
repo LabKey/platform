@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.exp.Identifiable;
@@ -256,17 +257,27 @@ public class ExpLineage
     /**
      * Find all parent ExpData that are parents of the seed, stopping at the first parent generation (no grandparents.)
      */
-    public Set<ExpData> findNearestParentDatas(ExpRunItem seed)
+    public Set<ExpData> findNearestParentDatas(Identifiable seed)
     {
         return findNearestParents(ExpData.class, seed);
     }
 
-    public Set<ExpMaterial> findNearestParentMaterials(ExpRunItem seed)
+    public Set<ExpMaterial> findNearestParentMaterials(Identifiable seed)
     {
         return findNearestParents(ExpMaterial.class, seed);
     }
 
-    public <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, ExpRunItem seed)
+    public <T extends ExpRunItem> Set<T> findNearestParentMaterialsAndDatas(Identifiable seed)
+    {
+        if (!_seeds.contains(seed))
+            throw new UnsupportedOperationException();
+
+        Map<String, Identifiable> nodes = processNodes();
+        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
+        return findNearestParents(null, seed, nodes, edges, true);
+    }
+
+    public <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed)
     {
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
@@ -276,12 +287,17 @@ public class ExpLineage
         return findNearestParents(parentClazz, seed, nodes, edges);
     }
 
-    private <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    {
+        return findNearestParents(parentClazz, seed, nodes, edges, false);
+    }
+
+    private <T extends ExpRunItem> Set<T> findNearestParents(@Nullable Class<T> parentClazz, Identifiable seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges, boolean findBothMaterialAndData)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
 
-        assert parentClazz == ExpMaterial.class || parentClazz == ExpData.class;
+        assert parentClazz == ExpMaterial.class || parentClazz == ExpData.class || findBothMaterialAndData;
 
         // walk from start through edges looking for all sample children, stopping at first ones found
         Set<T> parents = new HashSet<>();
@@ -309,7 +325,8 @@ public class ExpLineage
                     }
                 }
                 else if ((parentClazz == ExpMaterial.class && parent instanceof ExpMaterial) ||
-                         (parentClazz == ExpData.class && parent instanceof ExpData))
+                         (parentClazz == ExpData.class && parent instanceof ExpData) ||
+                        (findBothMaterialAndData && (parent instanceof ExpMaterial || parent instanceof ExpData)))
                 {
                     parents.add((T) parent);
                 }
