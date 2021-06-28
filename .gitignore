@@ -17,12 +17,8 @@ core/resources/web/clientapi
 core/resources/web/core/css
 */resources/web/gen
 */resources/views/gen
-issues/resources/web/issues/gen
-list/resources/web/list/gen
-query/resources/web/query/gen
-study/resources/web/study/gen
 
-*/resources/credits/jars.txt
+internal/resources/credits/jars.txt
 
 # Gradle
 */.gradle
