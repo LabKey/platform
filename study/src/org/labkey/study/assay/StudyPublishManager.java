@@ -1270,7 +1270,7 @@ public class StudyPublishManager implements StudyPublishService
 
         if (protocol == null)
         {
-            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, protocolName);
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, protocolName);
             baseProtocol.setLSID(protocolLsid);
             baseProtocol.setMaxInputMaterialPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for publishing study using link to study.");
