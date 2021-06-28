@@ -1372,6 +1372,12 @@ public class FileContentServiceImpl implements FileContentService
                 filesRoot = rootPathVal;
 
             String rootDavUrl = (String) child.get("webdavURL");
+
+            // Hack for issue 43374 - encode special characters in container paths. Need to push this encoding
+            // into FilesWebPart._getRootPath(), but other codepaths are doing their own compensation so it's a more
+            // involved change
+            rootDavUrl = rootDavUrl.replace("%", "%25").replace("+", "%2B");
+
             WebdavResource resource = getResource(rootDavUrl);
             if (resource == null)
                 continue;
