@@ -32,7 +32,9 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DatasetQueryView;
 
 import java.util.List;
 
@@ -82,8 +84,10 @@ public class StudyRReport extends RReport
         if (def != null)
             datasetId = def.getRowId();
 
+        final ActionURL url = context.getActionURL();
+        String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
         List<String> participants = StudyController.getParticipantListFromCache(context, datasetId,
-                getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, null);
+                getDescriptor().getProperty(ReportDescriptor.Prop.viewName), null, qcParam != null ? url.getParameter(qcParam) : null);
 
         VBox vBox = new VBox();
         vBox.addView(ReportsController.getParticipantNavTrail(context, participants));

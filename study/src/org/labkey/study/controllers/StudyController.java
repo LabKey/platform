@@ -888,7 +888,8 @@ public class StudyController extends BaseStudyController
                 setColumnURL(url, queryView, schema, def);
 
                 // Clear any cached participant lists, since the filter/sort may have changed
-                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, null);
+                String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
+                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, qcParam != null ? url.getParameter(qcParam) : null);
                 getExpandedState(context, def.getDatasetId()).clear();
             }
 
@@ -1089,7 +1090,10 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
 
-            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName, _cohortFilter, null);
+            final ActionURL url = getViewContext().getActionURL();
+            String qcParam = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
+            List<String> participants = getParticipantListFromCache(getViewContext(), form.getDatasetId(), viewName,
+                    _cohortFilter, qcParam != null ? url.getParameter(qcParam) : null);
 
             if (participants != null)
             {
@@ -3016,7 +3020,6 @@ public class StudyController extends BaseStudyController
             if ((param.getKey().contains(".sort")) ||
                 (param.getKey().contains("~")) ||
 //                (CohortFilterFactory.isCohortFilterParameterName(param.getKey(), queryView.getDataRegionName())) ||
-                (SharedFormParameters.QCState.name().equals(param.getKey())) ||
                 (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
             {
                 base.addParameter(param.getKey(), param.getValue());
@@ -3202,13 +3205,13 @@ public class StudyController extends BaseStudyController
         if (plist == null)
         {
             // not in cache, or session expired, try to regenerate the list
-            plist = generateParticipantListFromURL(context, dataset, viewName, cohortFilter, encodedQCState);
+            plist = generateParticipantListFromURL(context, dataset, viewName, cohortFilter);
             map.put(key, plist);
         }
         return plist;
     }
 
-    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
+    private static List<String> generateParticipantListFromURL(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter)
     {
         try
         {
@@ -5615,21 +5618,19 @@ public class StudyController extends BaseStudyController
         private final ActionURL _nextURL;
         private final String _display;
         private final String _currentParticipantId;
-        private final String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState, String display)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String display)
         {
             _prevURL = prevURL;
             _nextURL = nextURL;
             _display = display;
             _currentParticipantId = currentParticipantId;
-            _encodedQcState = encodedQCState;
         }
 
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId)
         {
-            this(prevURL, nextURL, currentParticipantId,  encodedQCState, null);
+            this(prevURL, nextURL, currentParticipantId,  null);
         }
 
         @Override
@@ -5670,7 +5671,6 @@ public class StudyController extends BaseStudyController
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
                 customizeURL.addReturnURL(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
-                customizeURL.addParameter(SharedFormParameters.QCState, _encodedQcState);
                 out.print("</td><td>");
                 out.print(PageFlowUtil.textLink("Customize View", customizeURL));
             }
