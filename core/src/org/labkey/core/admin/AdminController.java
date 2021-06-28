@@ -1296,7 +1296,6 @@ public class AdminController extends SpringActionController
 
             WriteableAppProps props = AppProps.getWriteableInstance();
 
-            AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setNavAccessOpen(form.isNavAccessOpen());
             props.setSSLRequired(form.isSslRequired());
@@ -1960,7 +1959,6 @@ public class AdminController extends SpringActionController
         private boolean _upgradeInProgress = false;
         private boolean _testInPage = false;
 
-        private String _defaultDomain;
         private String _pipelineToolsDirectory;
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
@@ -1990,16 +1988,6 @@ public class AdminController extends SpringActionController
         private boolean _navAccessOpen;
 
         private String _XFrameOptions;
-
-        public void setDefaultDomain(String defaultDomain)
-        {
-            _defaultDomain = defaultDomain;
-        }
-
-        public String getDefaultDomain()
-        {
-            return _defaultDomain;
-        }
 
         public String getPipelineToolsDirectory()
         {
