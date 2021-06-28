@@ -463,10 +463,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet(Arrays.asList(perms)), Set.of());
     }
 
-
     public boolean isForbiddenProject(User user)
     {
-        if (null != user)
+        if (null != user && !user.isSearchUser())
         {
             @Nullable Container impersonationProject = user.getImpersonationProject();
             @Nullable Container currentProject = getProject();
@@ -487,7 +486,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         return false;
     }
-
 
     public boolean isProject()
     {
