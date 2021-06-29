@@ -4899,7 +4899,6 @@ public class ExperimentController extends SpringActionController
                 int i = 0;
                 for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    Map<DomainProperty, String> props = entry.getValue();
                     Lsid lsid = entry.getKey();
                     String name = lsid.getObjectId();
                     assert name != null;
