@@ -22,10 +22,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.BadRequestException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public class BlockListFilter
     }
 
 
-    static void handleBadRequest(HttpServletRequest req)
+    static void registerBadRequest(HttpServletRequest req)
     {
         String key = getBrowserKey(req);
         final String host = req.getRemoteHost();
@@ -67,12 +69,22 @@ public class BlockListFilter
         }
     }
 
+    static void handleBadRequest(HttpServletRequest req)
+    {
+        Object ex = req.getAttribute(ExceptionUtil.REQUEST_EXCEPTION_ATTRIBUTE);
+        if (ex instanceof BadRequestException)
+        {
+            if (!((BadRequestException)ex).isSuspiciousRequest(req, isSuspicious(req.getRequestURI(),req.getQueryString(),req.getHeader("User-Agent"))))
+                return;
+        }
+        registerBadRequest(req);
+    }
 
     static void handleNotFound(HttpServletRequest req)
     {
         if (isSuspicious(req.getRequestURI(),req.getQueryString(),req.getHeader("User-Agent")))
         {
-            handleBadRequest(req);
+            registerBadRequest(req);
         }
     }
 

@@ -16,8 +16,10 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -26,18 +28,71 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class BadRequestException extends HttpStatusException
 {
+    public enum HowBad
+    {
+        Malicious     // treat this like a malicious request
+        {
+            @Override
+            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicous)
+            {
+                return true;
+            }
+        },
+        MaybeBad   // treat like NOT FOUND (.e.g look for sql injection etc or signs of malicious request)
+        {
+            @Override
+            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicous)
+            {
+                return isSuspicous;
+            }
+        },
+        LetItGo     // Just a bad API call or some such (consider not using BadRequestException?)
+        {
+            @Override
+            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
+            {
+                return true;
+            }
+        };
+
+        abstract public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious);
+    };
+
+    private final HowBad severity;
+
+    public BadRequestException()
+    {
+        this(null);
+    }
+
     public BadRequestException(String message)
     {
-        this(message, null);
+        this(message, null, HttpServletResponse.SC_BAD_REQUEST, HowBad.MaybeBad);
     }
 
     public BadRequestException(String message, @Nullable Exception x)
     {
-        this(message, x, HttpServletResponse.SC_BAD_REQUEST);
+        this(message, x, HttpServletResponse.SC_BAD_REQUEST, HowBad.MaybeBad);
     }
 
     public BadRequestException(String message, @Nullable Exception x, int httpStatusCode)
     {
+        this(message, x, httpStatusCode, HttpServletResponse.SC_METHOD_NOT_ALLOWED == httpStatusCode ? HowBad.Malicious : HowBad.MaybeBad);
+    }
+
+    public BadRequestException(String message, @NotNull HowBad severity)
+    {
+        this(message, null, HttpServletResponse.SC_BAD_REQUEST, severity);
+    }
+
+    BadRequestException(String message, @Nullable Exception x, int httpStatusCode, HowBad severity)
+    {
         super(StringUtils.defaultIfEmpty(message, "BAD REQUEST"), x, httpStatusCode);
+        this.severity = severity;
+    }
+
+    public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
+    {
+        return severity.isSuspiciousRequest(req, isSuspicious);
     }
 }
