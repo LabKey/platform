@@ -28,6 +28,12 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class BadRequestException extends HttpStatusException
 {
+    /*
+     * HowBad controls how BlockListFilter deals with this exception.
+     *   Malicious means this request is prejudged as a potentially malicious request
+     *   MaybeBad defers to BlockListFilter.isSuspicious() to decide
+     *   LetItGo means this request has been rejected for a benign reason (e.g. missing API parameter)
+     */
     public enum HowBad
     {
         Malicious     // treat this like a malicious request
