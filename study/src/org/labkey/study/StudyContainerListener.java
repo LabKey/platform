@@ -17,6 +17,7 @@ package org.labkey.study;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.security.User;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -40,6 +41,7 @@ public class StudyContainerListener extends ContainerManager.AbstractContainerLi
             ancillaryStudy.setSourceStudyContainerId(null);
             StudyManager.getInstance().updateStudy(user, ancillaryStudy);
         }
+        SampleTypeService.get().removeAutoLinkedStudy(c, user);
     }
 
     @Override
