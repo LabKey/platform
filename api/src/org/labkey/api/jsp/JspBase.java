@@ -54,6 +54,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.Writer;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -522,6 +523,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     // Format date using the container-configured date format and HTML filter the result
     public HtmlString formatDate(Date date)
+    {
+        return HtmlString.of(null == date ? "" : DateUtil.formatDate(getContainer(), date));
+    }
+
+    // Format LocalDate using the container-configured date format and HTML filter the result
+    public HtmlString formatDate(LocalDate date)
     {
         return HtmlString.of(null == date ? "" : DateUtil.formatDate(getContainer(), date));
     }

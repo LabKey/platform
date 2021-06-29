@@ -61,7 +61,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
@@ -73,6 +72,7 @@ import org.springframework.validation.BindException;
 import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -124,21 +124,41 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private String _title;
 
     private LockState _lockState = null;
-    private Date _expirationDate = null;
+    @JsonIgnore // Current Jackson version (2.11.3) can't handle LocalDate, so skip expiration date during serialization
+    private LocalDate _expirationDate = null;
 
-    // Only one state for now, but we expect to add more in the future (e.g., ReadOnly)
+    // Might add others in the future (e.g., ReadOnly)
     public enum LockState
     {
-        Inaccessible()
-        {
-            @Override
-            public String getDescription()
-            {
-                return "inaccessible to everyone except administrators";
-            }
-        };
+        Unlocked("unlocked", false, false),
+        Inaccessible("locked, making it inaccessible to everyone except administrators", true, false),
+        Excluded("excluded from project locking and review", false, true);
 
-        public abstract String getDescription();
+        private final String _description;
+        private final boolean _locked;
+        private final boolean _excluded;
+
+        LockState(String description, boolean locked, boolean excluded)
+        {
+            _description = description;
+            _locked = locked;
+            _excluded = excluded;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public boolean isLocked()
+        {
+            return _locked;
+        }
+
+        public boolean isExcluded()
+        {
+            return _excluded;
+        }
     }
 
     // UNDONE: BeanFactory for Container
@@ -443,10 +463,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAnyPermissions(null, getPolicy(), user, new HashSet(Arrays.asList(perms)), Set.of());
     }
 
-
     public boolean isForbiddenProject(User user)
     {
-        if (null != user)
+        if (null != user && !user.isSearchUser())
         {
             @Nullable Container impersonationProject = user.getImpersonationProject();
             @Nullable Container currentProject = getProject();
@@ -460,14 +479,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
             {
                 LockState lockState = currentProject.getLockState();
 
-                if (null != lockState)
+                if (lockState.isLocked())
                     return ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, lockState);
             }
         }
 
         return false;
     }
-
 
     public boolean isProject()
     {
@@ -1633,7 +1651,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return JdbcType.VARCHAR;
     }
 
-    public @Nullable LockState getLockState()
+    public @NotNull LockState getLockState()
     {
         return _lockState;
     }
@@ -1643,12 +1661,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _lockState = lockState;
     }
 
-    public @Nullable Date getExpirationDate()
+    public @Nullable LocalDate getExpirationDate()
     {
         return _expirationDate;
     }
 
-    public void setExpirationDate(Date expirationDate)
+    public void setExpirationDate(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
     }
