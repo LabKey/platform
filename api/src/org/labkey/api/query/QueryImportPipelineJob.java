@@ -255,7 +255,7 @@ public class QueryImportPipelineJob extends PipelineJob
         try
         {
             setStatus(TaskStatus.running);
-            getLogger().info("Starting importing " + getDescription());
+            getLogger().info("Starting import " + getDescription());
 
             if (notificationProvider != null)
                 notificationProvider.onJobStart(this);
@@ -264,7 +264,7 @@ public class QueryImportPipelineJob extends PipelineJob
             TableInfo target = schema.getTable(_importContextBuilder.getQueryName(), true);
 
             if (null == target)
-                throw new PipelineValidationException("TableInfo not found.");
+                throw new PipelineValidationException("Table not found: " + _importContextBuilder.getQueryName());
 
             QueryUpdateService updateService = target.getUpdateService();
 

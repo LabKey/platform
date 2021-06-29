@@ -106,10 +106,7 @@ public class EmailTemplateService
             if (o1 == null) return 1;
             if (o2 == null) return -1;
 
-            int ret = o1.getPriority() - o2.getPriority();
-            if (0 == ret)
-                ret = o1.getName().compareToIgnoreCase(o2.getName());
-            return ret;
+            return o1.getName().compareToIgnoreCase(o2.getName());
         });
 
         return templates;

@@ -110,20 +110,17 @@ public interface QueryUpdateService extends HasPermission
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     /**
-     * Same as getRows(), but used by ExistingRecordsDataIterator, this exisits because SampleTypeUpdateService is special.
+     * Similar to getRows(), but used by ExistingRecordsDataIterator, this exists because SampleTypeUpdateService is special.
      * @param user      The current user.
      * @param container The container in which the data should exist.
-     * @param keys      A map of primary key values.
-     * @return The row data as maps.
+     * @param keys      A map of primary key values for each rowNumber.
+     * @return The rows data as maps for each rowNumber.
      * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
      * @throws SQLException                Thrown if there was an error communicating with the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      */
-    default List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
-    {
-        return getRows(user, container, keys);
-    }
+    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     /**
      * Inserts or merges the given values into the source table of this query.
