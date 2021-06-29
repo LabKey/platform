@@ -139,25 +139,30 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
                 newValue = _properties.get(key);
 
                 //obscure password properties
-                if(isPasswordProperty(key))
+                if (isPasswordProperty(key))
                 {
                     oldValue = obscureValue(oldValue);
                     newValue = obscureValue(newValue);
                 }
 
-                html.append("<tr><td class='labkey-form-label'>");
-                html.append(PageFlowUtil.filter(ColumnInfo.labelFromName(key)));
-                html.append("</td><td>");
-                html.append(PageFlowUtil.filter(oldValue));
-                html.append("&nbsp;&raquo;&nbsp;");
-                html.append(PageFlowUtil.filter(newValue));
-                html.append("</td></tr>");
+                appendDiffRow(html, key, oldValue, newValue);
             }
         }
 
         html.append("</table>");
 
         return propsChanged ? html.toString() : null;
+    }
+
+    public static void appendDiffRow(StringBuilder html, String key, String oldValue, String newValue)
+    {
+        html.append("<tr><td class='labkey-form-label'>");
+        html.append(PageFlowUtil.filter(ColumnInfo.labelFromName(key)));
+        html.append("</td><td>");
+        html.append(PageFlowUtil.filter(oldValue));
+        html.append("&nbsp;&raquo;&nbsp;");
+        html.append(PageFlowUtil.filter(newValue));
+        html.append("</td></tr>");
     }
 
     private static String obscureValue(String value)
