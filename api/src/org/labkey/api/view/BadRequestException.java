@@ -33,7 +33,7 @@ public class BadRequestException extends HttpStatusException
         Malicious     // treat this like a malicious request
         {
             @Override
-            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicous)
+            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
             {
                 return true;
             }
