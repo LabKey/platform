@@ -4783,11 +4783,12 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
+            if (form.getTargetSampleTypeId() == 0)
+                throw new NotFoundException("Target sample type required for the derived samples");
+
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
-            if (form.getTargetSampleTypeId() != 0 && sampleType == null)
-            {
+            if (sampleType == null)
                 throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleTypeId());
-            }
 
             InsertView insertView = new InsertView(new DataRegion(), errors);
 

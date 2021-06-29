@@ -31,7 +31,6 @@
     DeriveSamplesChooseTargetBean bean = me.getModelBean();
 
     Map<Integer, String> sampleTypeOptions = new LinkedHashMap<>();
-    sampleTypeOptions.put(0, "Not a member of a sample type");
     for (ExpSampleType st : bean.getSampleTypes())
     {
         sampleTypeOptions.put(st.getRowId(), st.getName() + " in " + st.getContainer().getPath());
