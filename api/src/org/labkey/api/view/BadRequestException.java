@@ -41,7 +41,7 @@ public class BadRequestException extends HttpStatusException
         MaybeBad   // treat like NOT FOUND (.e.g look for sql injection etc or signs of malicious request)
         {
             @Override
-            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicous)
+            public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
             {
                 return isSuspicous;
             }
