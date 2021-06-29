@@ -16,6 +16,7 @@
 package org.labkey.api.search;
 
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurableResource;
@@ -129,6 +131,7 @@ public interface SearchService
         identifiersMed("identifiersMed"),
         identifiersHi("identifiersHi"),
         categories("searchCategories"),
+        ontology("ontology"),
         summary("summary"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
@@ -181,6 +184,11 @@ public interface SearchService
          * the task be considered done after calling setReady() and there is no more work to do.
          */
         void setReady();
+
+        default void addRunnable(@NotNull SearchService.PRIORITY pri, @NotNull Runnable r)
+        {
+            addRunnable(r, pri);
+        }
 
         void addRunnable(@NotNull Runnable r, @NotNull SearchService.PRIORITY pri);
 
@@ -464,8 +472,17 @@ public interface SearchService
         private final SQLFragment _sqlf = new SQLFragment();
         private final Set<FieldKey> _fieldKeys = new HashSet<>();
 
+        // for assert
+        private final boolean tableAliasProvidedInConstructor;
+
+        /* NOTE: Some callers construct their own SQL and know the tableAlias and can provide it here
+         * Other usages use TableSelector (et al), and don't know the alias until toSQLFragment() is called.
+         * If the tableAlias is not provided in either the constructor or toSQLFragment() expect a syntax error!
+         */
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
+            tableAliasProvidedInConstructor = null != tableAlias && !ExprColumn.STR_TABLE_ALIAS.equals(tableAlias);
+
             // Incremental if modifiedSince is set and is more recent than 1967-10-04
             boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
             
@@ -475,12 +492,13 @@ public interface SearchService
 
             ColumnInfo modified = info.getColumn("modified");
             ColumnInfo lastIndexed = info.getColumn("lastIndexed");
-            String prefix = null == tableAlias ? " " : tableAlias + ".";
+            if (null == tableAlias)
+                tableAlias = ExprColumn.STR_TABLE_ALIAS;
 
             String or = "";
             if (null != lastIndexed)
             {
-                _sqlf.append(prefix).append(lastIndexed.getSelectName()).append(" IS NULL");
+                _sqlf.append(lastIndexed.getValueSql(tableAlias)).append(" IS NULL");
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
@@ -488,7 +506,7 @@ public interface SearchService
             if (null != modified && null != lastIndexed)
             {
                 _sqlf.append(or);
-                _sqlf.append(prefix).append(modified.getSelectName()).append(">").append(prefix).append(lastIndexed.getSelectName());
+                _sqlf.append(modified.getValueSql(tableAlias)).append(">").append(lastIndexed.getValueSql(tableAlias));
                 _fieldKeys.add(modified.getFieldKey());
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
@@ -497,7 +515,7 @@ public interface SearchService
             if (null != modifiedSince && null != modified)
             {
                 _sqlf.append(or);
-                _sqlf.append(prefix).append(modified.getSelectName()).append("> ?");
+                _sqlf.append(modified.getValueSql(tableAlias)).append("> ?");
                 _sqlf.add(modifiedSince);
                 _fieldKeys.add(modified.getFieldKey());
             }
@@ -513,6 +531,11 @@ public interface SearchService
             }
         }
 
+        public boolean isEmpty()
+        {
+            return _sqlf.isEmpty();
+        }
+
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
@@ -522,7 +545,20 @@ public interface SearchService
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            return _sqlf;
+            assert tableAliasProvidedInConstructor;
+            return toSQLFragment(null, columnMap, dialect);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            assert tableAliasProvidedInConstructor || tableAlias != null;
+            if (this._sqlf.isEmpty() || null == tableAlias)
+                return _sqlf;
+            String sql = StringUtils.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
+            SQLFragment ret = new SQLFragment(sql);
+            ret.addAll(_sqlf.getParams());
+            return ret;
         }
 
         @Override

@@ -38,6 +38,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.Pair;
@@ -47,7 +48,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.StudyImpl;
@@ -235,13 +235,13 @@ public class ReportManager implements DatasetManager.DatasetListener
             // any specimen views
             if ("SpecimenDetail".equals(view.getQueryName()))
             {
-                return SpecimenController.getSpecimensURL(c).
+                return SpecimenMigrationService.get().getSpecimensURL(c).
                         addParameter("showVials", "true").
                         addParameter("SpecimenDetail." + QueryParam.viewName, view.getName());
             }
             else if ("SpecimenSummary".equals(view.getQueryName()))
             {
-                return SpecimenController.getSpecimensURL(c).
+                return SpecimenMigrationService.get().getSpecimensURL(c).
                         addParameter("SpecimenSummary." + QueryParam.viewName, view.getName());
             }
 

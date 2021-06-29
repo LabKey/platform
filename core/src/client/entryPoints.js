@@ -67,7 +67,7 @@ module.exports = {
     }, {
         name: 'conceptFilter',
         title: 'Concept Filter',
-        generateLib: true,
-        path: './src/client/ConceptFilter',
+        generateLib: true, // used in FilterDialog.js
+        path: './src/client/ConceptFilter'
     }]
 };

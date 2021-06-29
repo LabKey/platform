@@ -878,6 +878,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     gridID: Ext.id(),
 
+    loadError: undefined,
+
+    overflow: false,
+
     initComponent : function() {
 
         Ext.apply(this, {
@@ -897,6 +901,12 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     border: false
                 },
                 items: [{
+                    xtype: 'box',
+                    cls: 'alert alert-danger',
+                    hidden: true,
+                    id: this.gridID + '-error',
+                    style: 'position: relative;',
+                },{
                     xtype: 'label',
                     id: this.gridID + 'OverflowLabel',
                     hidden: true,
@@ -1258,10 +1268,16 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     div.on('click', grid.onHeaderCellClick, grid);
                 }
 
+                if (this.loadError) {
+                    var errorCmp = Ext.getCmp(this.gridID + '-error');
+                    errorCmp.update(this.loadError);
+                    errorCmp.setVisible(true);
+                }
+
                 // Issue 39727 - show a message if we've capped the number of options shown
                 Ext.getCmp(this.gridID + 'OverflowLabel').setVisible(this.overflow);
 
-                if (this.overflow) {
+                if (this.loadError || this.overflow) {
                     this.fireEvent('invalidfilter');
                 }
             }
@@ -1326,6 +1342,16 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     this.storeReady = true;
                     this.onViewReady();
                 }
+            },
+            failure: function(err) {
+                if (err && err.exception) {
+                    this.loadError = err.exception;
+                } else {
+                    this.loadError = 'Failed to load faceted data.';
+                }
+                store.isLoading = false;
+                this.storeReady = true;
+                this.onViewReady();
             },
             scope: this
         };
@@ -1407,12 +1433,15 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
         const divId = ctx.divId,
               index = ctx.index,
               scope = ctx.scope;
-        const inputs = scope.inputs;
-        const targetInput = inputs ? inputs[index]: undefined;
 
         LABKEY.App.loadApp('conceptFilter', divId, {
             ontologyId: scope.column.sourceOntology,
+            columnName: scope.column.caption,
             onFilterChange: function(filterValue) {
+                // Inputs may be set after app load, so look it up at execution time
+                const inputs = scope.inputs;
+                const targetInput = inputs ? inputs[index]: undefined;
+
                 // push values selected in tree to the target input control
                 if (targetInput && !targetInput.disabled) {
                     targetInput.setValue(filterValue);
@@ -1473,7 +1502,7 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
                 listeners: {
                     render: function() {
                         // const conceptFilterScript = 'http://localhost:3001/conceptFilter.js';
-                        const conceptFilterScript = 'core/gen/conceptFilter';
+                        const conceptFilterScript = 'gen/conceptFilter';
                         LABKEY.requiresScript(conceptFilterScript, this.loadConceptPickers, {divId:divId, index:index, scope:this});
                     },
                     scope: this

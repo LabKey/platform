@@ -6,9 +6,7 @@ dependencies.txt
 
 # Node modules
 node_modules
-core/node_modules
-experiment/node_modules
-assay/node_modules
+*/node_modules
 
 # These files are copied to this location
 core/resources/scripts/Ext.js
@@ -17,20 +15,10 @@ core/resources/web/clientapi
 
 # Auto-generated files
 core/resources/web/core/css
-core/resources/web/core/gen
-core/resources/views/gen
+*/resources/web/gen
+*/resources/views/gen
 
-experiment/resources/web/experiment/gen
-experiment/resources/views/gen
-
-assay/resources/web/assay/gen
-assay/resources/views/gen
+internal/resources/credits/jars.txt
 
 # Gradle
-core/.gradle
-experiment/.gradle
-assay/.gradle
-query/.gradle
-study/.gradle
-list/.gradle
-issues/.gradle
+*/.gradle

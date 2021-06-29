@@ -95,11 +95,11 @@ public class UniqueValueCounterTestCase
         // setup
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("name", "string"));
-        props.add(new GWTPropertyDescriptor("vessel", "string"));
-        props.add(new GWTPropertyDescriptor("one", "string"));
-        props.add(new GWTPropertyDescriptor("two", "int"));
-        props.add(new GWTPropertyDescriptor("three", "int"));
-        props.add(new GWTPropertyDescriptor("suffix", "string"));
+        props.add(new GWTPropertyDescriptor("Vessel", "string"));
+        props.add(new GWTPropertyDescriptor("One", "string"));
+        props.add(new GWTPropertyDescriptor("Two", "int"));
+        props.add(new GWTPropertyDescriptor("Three", "int"));
+        props.add(new GWTPropertyDescriptor("Suffix", "string"));
 
         final String nameExpression = "${vessel}.${one}.${three}.${suffix}";
 
@@ -122,18 +122,19 @@ public class UniqueValueCounterTestCase
 
         // GOOD INSERT - combinations of the paired columns
         List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 1, "suffix", "SUF1"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 1, "suffix", "SUF1"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 1, "suffix", "SUF2"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 1, "suffix", "SUF2"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 12, "two", 1, "suffix", "SUF4"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 12, "two", 1, "suffix", "SUF4"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 12, "two", 2, "suffix", "SUF4A"));
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 12, "two", 2, "suffix", "SUF4A"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 10, "Two", 1, "Suffix", "SUF1"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 10, "Two", 1, "Suffix", "SUF1"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 10, "Two", 1, "Suffix", "SUF2"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 10, "Two", 1, "Suffix", "SUF2"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 12, "Two", 1, "Suffix", "SUF4"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 12, "Two", 1, "Suffix", "SUF4"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 12, "Two", 2, "Suffix", "SUF4A"));
+        rows.add(CaseInsensitiveHashMap.of("Vessel", "STP", "One", 12, "Two", 2, "Suffix", "SUF4A"));
 
         BatchValidationException errors = new BatchValidationException();
         List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
-        assertFalse(errors.hasErrors());
+        if (errors.hasErrors())
+            throw errors;
         assertEquals(8, inserted.size());
         assertEquals("STP.10.1.SUF1", inserted.get(0).get("name"));
         assertEquals("STP.10.2.SUF1", inserted.get(1).get("name"));
@@ -147,10 +148,11 @@ public class UniqueValueCounterTestCase
 
         // GOOD INSERT - providing a counter value is ok if it is less than or equal to the current value
         rows = new ArrayList<>();
-        rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 12, "two", 2, "suffix", "SUF4B", "three", 1));  // Specify attached field value < current value is ok
+        rows.add(CaseInsensitiveHashMap.of("VESSEL", "STP", "ONE", 12, "TWO", 2, "SUFFIX", "SUF4B", "THREE", 1));  // Specify attached field value < current value is ok
         errors = new BatchValidationException();
         inserted = svc.insertRows(user, c, rows, errors, null, null);
-        assertFalse(errors.hasErrors());
+        if (errors.hasErrors())
+            throw errors;
         assertEquals(1, inserted.size());
         assertEquals("STP.12.1.SUF4B", inserted.get(0).get("name"));
 
@@ -160,7 +162,8 @@ public class UniqueValueCounterTestCase
         rows.add(CaseInsensitiveHashMap.of("vessel", "STP", "one", 10, "two", 1, "suffix", "SUF1"));
         errors = new BatchValidationException();
         inserted = svc.insertRows(user, c, rows, errors, null, null);
-        assertFalse(errors.hasErrors());
+        if (errors.hasErrors())
+            throw errors;
         assertEquals(1, inserted.size());
         assertEquals("STP.10.5.SUF1", inserted.get(0).get("name"));
 
@@ -193,7 +196,7 @@ public class UniqueValueCounterTestCase
         inserted = svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
         assertThat(errors.getMessage(),
-                containsString("Paired column 'two' must not be null for counter '" + counterName + "'"));
+                containsString("Paired column 'Two' must not be null for counter '" + counterName + "'"));
 
 
         // BAD INSERT - Specifying attached field with value beyond current counter
@@ -203,7 +206,7 @@ public class UniqueValueCounterTestCase
         inserted = svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
         assertThat(errors.getMessage(),
-                containsString("Value (20) of paired column 'three' is greater than the current counter value (5) for counter '" + counterName + "'"));
+                containsString("Value (20) of paired column 'Three' is greater than the current counter value (5) for counter '" + counterName + "'"));
     }
 
 

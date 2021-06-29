@@ -36,14 +36,11 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.StudyModule;
-import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
-
-import java.util.Collection;
 
 /**
  * User: Karl Lum
@@ -61,11 +58,6 @@ public abstract class BaseStudyController extends SpringActionController
     public static ActionURL getStudyOverviewURL(Container c)
     {
         return new ActionURL(StudyController.OverviewAction.class, c);
-    }
-
-    protected SpecimenUtils getUtils()
-    {
-        return new SpecimenUtils(this);
     }
 
     @Override
@@ -264,126 +256,5 @@ public abstract class BaseStudyController extends SpringActionController
         if (first == null)
             return false;
         return first.equals(second);
-    }
-
-    public static long[] toLongArray(Collection<String> intStrings)
-    {
-        if (intStrings == null)
-            return null;
-        long[] converted = new long[intStrings.size()];
-        int index = 0;
-        for (String intString : intStrings)
-            converted[index++] = Long.parseLong(intString);
-        return converted;
-    }
-
-    public static long[] toLongArray(String[] intStrings)
-    {
-        if (intStrings == null)
-            return null;
-        long[] converted = new long[intStrings.length];
-        int index = 0;
-        for (String intString : intStrings)
-            converted[index++] = Long.parseLong(intString);
-        return converted;
-    }
-
-    public static class IdForm
-    {
-        public enum PARAMS
-        {
-            id
-        }
-        
-        private int _id;
-
-        public IdForm()
-        {
-        }
-
-        public IdForm(int id)
-        {
-            _id = id;
-        }
-
-        public int getId()
-        {
-            return _id;
-        }
-
-        public void setId(int id)
-        {
-            _id = id;
-        }
-    }
-
-    public static class BulkEditForm
-    {
-        private String _newLabel;
-        private String _newId;
-        private String _nextPage;
-        private String _order;
-        private int[] _ids;
-        private String[] _labels;
-
-        public String getNewLabel()
-        {
-            return _newLabel;
-        }
-
-        public void setNewLabel(String newLabel)
-        {
-            _newLabel = newLabel;
-        }
-
-        public String getNextPage()
-        {
-            return _nextPage;
-        }
-
-        public void setNextPage(String nextPage)
-        {
-            _nextPage = nextPage;
-        }
-
-        public String getOrder()
-        {
-            return _order;
-        }
-
-        public void setOrder(String order)
-        {
-            _order = order;
-        }
-
-        public String[] getLabels()
-        {
-            return _labels;
-        }
-
-        public void setLabels(String[] labels)
-        {
-            _labels = labels;
-        }
-
-        public int[] getIds()
-        {
-            return _ids;
-        }
-
-        public void setIds(int[] ids)
-        {
-            _ids = ids;
-        }
-
-        public String getNewId()
-        {
-            return _newId;
-        }
-
-        public void setNewId(String newId)
-        {
-            _newId = newId;
-        }
     }
 }

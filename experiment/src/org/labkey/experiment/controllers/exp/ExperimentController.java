@@ -3462,7 +3462,7 @@ public class ExperimentController extends SpringActionController
 
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
-            if (StudyService.get() != null)
+            if (StudyService.get() != null && StudyPublishService.get() != null)
             {
                 for (ExpSampleType sampleType: sampleTypes)
                 {
@@ -6461,6 +6461,44 @@ public class ExperimentController extends SpringActionController
             {
                 // should this require site admin permissions?
                 ExperimentServiceImpl.get().rebuildAllEdges();
+            }
+            return success();
+        }
+    }
+
+    private static class VerifyEdgesForm extends ExperimentRunForm
+    {
+        private Integer _limit;
+
+        public Integer getLimit()
+        {
+            return _limit;
+        }
+
+        public void setLimit(Integer limit)
+        {
+            _limit = limit;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class VerifyEdgesAction extends ReadOnlyApiAction<VerifyEdgesForm>
+    {
+        @Override
+        public Object execute(VerifyEdgesForm form, BindException errors)
+        {
+            if (form.getRowId() != 0 || form.getLsid() != null)
+            {
+                ExpRunImpl run = form.lookupRun();
+                if (!run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                    throw new UnauthorizedException("Not permitted");
+
+                ExperimentServiceImpl.get().verifyRunEdges(run);
+            }
+            else
+            {
+                ExperimentServiceImpl.get().verifyAllEdges(getContainer(), form.getLimit());
             }
             return success();
         }

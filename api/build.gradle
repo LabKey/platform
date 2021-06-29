@@ -42,6 +42,8 @@ List jackson = [
         "com.fasterxml.jackson.core:jackson-annotations:${jacksonAnnotationsVersion}",
         "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}",
         "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+        // added because otherwise we get this error: Java 8 date/time type `java.time.LocalDate` not supported by default
+        "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
 //        "com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}" // included separately below so we can exclude the json jar it brings in
 ]
 
@@ -88,7 +90,7 @@ List others = [
         "xerces:xercesImpl:${xercesImplVersion}",
         "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
         "org.postgresql:postgresql:${postgresqlDriverVersion}",
-        "org.hamcrest:hamcrest-core:${hamcrestCoreVersion}"
+        "org.hamcrest:hamcrest-core:${hamcrestVersion}"
 ]
 
 List javax = [

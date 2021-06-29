@@ -29,6 +29,8 @@ public interface CohortService
 
     @Nullable CohortFilter getFromURL(Container c, User user, ActionURL url);
 
+    @Nullable CohortFilter getFromURL(Container c, User user, ActionURL url, @Nullable String dataRegionName);
+
     CohortFilter getUnassignedCohortFilter();
 
     Cohort getCurrentCohortForParticipant(Container c, User user, String participantId);

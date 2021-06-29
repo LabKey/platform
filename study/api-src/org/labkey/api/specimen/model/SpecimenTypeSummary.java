@@ -96,9 +96,8 @@ public class SpecimenTypeSummary
 
         public ActionURL getURL()
         {
-            ActionURL url = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(_container);
+            ActionURL url = PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimensURL(_container, true);
             addFilterParameters("SpecimenDetail", url);
-            url.addParameter("showVials", "true");
             return url;
         }
 

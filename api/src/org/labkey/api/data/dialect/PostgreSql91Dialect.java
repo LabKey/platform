@@ -1453,7 +1453,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                 public void exec(ResultSet rs) throws SQLException
                 {
                     if (null == _types)
-                        _types = new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR), typname FROM pg_type").getValueMap();
+                    {
+                        _types = new HashMap<>();
+                        new SqlSelector(coreSchema, "SELECT CAST(oid AS VARCHAR) as oid, typname, (select nspname from pg_namespace where oid = typnamespace) as nspname FROM pg_type").forEach(type ->
+                                _types.put(type.getString(1), quoteIdentifier(type.getString(3)) + "." + quoteIdentifier(type.getString(2))));
+                    }
 
                     String name = rs.getString(1);
                     String[] oids = StringUtils.split(rs.getString(2), ' ');
@@ -1477,6 +1481,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                     }
                 }
             });
+
+        // TODO delete types in temp schema as well! search for "CREATE TYPE" in StatementUtils.java
     }
 
     @Override

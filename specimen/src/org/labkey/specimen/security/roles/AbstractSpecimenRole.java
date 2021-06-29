@@ -39,7 +39,7 @@ public class AbstractSpecimenRole extends AbstractRole
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return super.isApplicable(policy,resource) && branchContainsStudy((Container)resource);
+        return super.isApplicable(policy, resource) && ((Container)resource).hasActiveModuleByName(SpecimenModule.NAME) && branchContainsStudy((Container)resource);
     }
 
     private boolean branchContainsStudy(Container container)

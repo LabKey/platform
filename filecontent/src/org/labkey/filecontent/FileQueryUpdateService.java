@@ -17,6 +17,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +33,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -55,16 +55,17 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
-import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Date;
@@ -74,6 +75,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.api.files.FileContentService.PIPELINE_LINK;
+import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 
 /**
  * User: klum
@@ -384,7 +386,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             {
                 _log.debug("Auto-creating ExpData object, as one was not already available. DataFileURL : " + dataFileUrl);
 
-                data = ExperimentService.get().createData(container, new DataType("UploadedFile"));
+                data = ExperimentService.get().createData(container, UPLOADED_FILE);
                 data.setName(resource.getName());
                 URI uri = null;
                 try
@@ -543,13 +545,24 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 if (rootDavUrl == null)
                     continue;
 
+                // Hack for issue 43374 - encode special characters in container paths. Need to push this encoding
+                // into FilesWebPart._getRootPath(), but other codepaths are doing their own compensation so it's a more
+                // involved change
+                rootDavUrl = rootDavUrl.replace("%", "%25").replace("+", "%2B");
+
                 if (rootDavUrl.endsWith("/"))
                     rootDavUrl = rootDavUrl.substring(0, rootDavUrl.length() - 1);
 
                 if (offset.startsWith("/"))
                     offset = offset.substring(1);
 
-                String davUrl = rootDavUrl + "/" + offset;
+                String[] offsetParts = offset.split("/");
+                for (int i = 0; i < offsetParts.length; i++)
+                {
+                    offsetParts[i] = URLEncoder.encode(offsetParts[i], StringUtilsLabKey.DEFAULT_CHARSET);
+                }
+
+                String davUrl = rootDavUrl + "/" + StringUtils.join(offsetParts, "/");
                 WebdavResource resource = FileContentServiceImpl.getInstance().getResource(davUrl);
                 if (targetResource == null)
                     targetResource = resource;

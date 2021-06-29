@@ -72,7 +72,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -84,7 +83,25 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassImpl;
+import org.labkey.experiment.api.ExpDataClassType;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpDataTableImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.ExperimentStressTest;
+import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.LineagePerfTest;
+import org.labkey.experiment.api.LineageTest;
+import org.labkey.experiment.api.LogDataType;
+import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
+import org.labkey.experiment.api.UniqueValueCounterTestCase;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ChildOfMethod;
 import org.labkey.experiment.api.data.LineageCompareType;
@@ -142,7 +159,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.004;
+        return 21.008;
     }
 
     @Nullable
@@ -167,6 +184,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
+
         PropertyService.get().registerDomainKind(new SampleTypeDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
         PropertyService.get().registerDomainKind(new VocabularyDomainKind());
@@ -187,9 +205,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
-
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_SAMPLE_PICKLIST, "Sample picklists",
-                "Support creation of sample picklists", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -281,9 +296,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
-        // TODO move to an upgrade script
-        ExperimentUpgradeCode.upgradeMaterialSource(null);
-
         SearchService ss = SearchService.get();
         if (null != ss)
         {
@@ -468,6 +480,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
                 results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
+                results.put("ontologyConceptSubtreeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptsubtree IS NOT NULL").getObject(Long.class));
                 results.put("ontologyConceptImportColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptimportcolumn IS NOT NULL").getObject(Long.class));
                 results.put("ontologyConceptLabelColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE conceptlabelcolumn IS NOT NULL").getObject(Long.class));
 

@@ -127,14 +127,16 @@ public interface DomainProperty extends ImportAliasable
      */
     void setSchemaImport(boolean isSchemaImport);
 
+    void setPrincipalConceptCode(String code);
+    String getPrincipalConceptCode();
     String getSourceOntology();
     void setSourceOntology(String sourceOntology);
+    String getConceptSubtree();
+    void setConceptSubtree(String path);
     String getConceptImportColumn();
     void setConceptImportColumn(String conceptImportColumn);
     String getConceptLabelColumn();
     void setConceptLabelColumn(String conceptLabelColumn);
-    void setPrincipalConceptCode(String code);
-    String getPrincipalConceptCode();
 
     void setDerivationDataScope(String type);
     String getDerivationDataScope();

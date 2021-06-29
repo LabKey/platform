@@ -23,15 +23,17 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -92,11 +94,10 @@ public class DataClassUserSchema extends AbstractExpSchema
         return createTable(dataClass, cf);
     }
 
-    public ExpDataClassDataTable createTable(@NotNull ExpDataClass dataClass, ContainerFilter cf)
+    private ExpDataClassDataTable createTable(@NotNull ExpDataClass dataClass, ContainerFilter cf)
     {
         ExpDataClassDataTable ret = ExperimentService.get().createDataClassDataTable(dataClass.getName(), this, cf, dataClass);
         ret.populate();
-        ret.overlayMetadata(ret.getPublicName(), DataClassUserSchema.this, new ArrayList<>());
         return ret;
     }
 
@@ -123,4 +124,19 @@ public class DataClassUserSchema extends AbstractExpSchema
         return mts.getDomain().getTypeURI();
     }
 
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        NavTree root = super.getSchemaBrowserLinks(user);
+        if (getContainer().hasPermission(user, ReadPermission.class))
+            root.addChild("Manage DataClasses", ExperimentUrls.get().getDataClassListURL(getContainer()));
+        return root;
+    }
+
+    @Override
+    public boolean hasRegisteredSchemaLinks()
+    {
+        return true;
+    }
 }

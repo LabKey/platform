@@ -336,6 +336,7 @@ public class DomainUtil
         gwtProp.setRedactedText(prop.getRedactedText());
         gwtProp.setPrincipalConceptCode(prop.getPrincipalConceptCode());
         gwtProp.setSourceOntology(prop.getSourceOntology());
+        gwtProp.setConceptSubtree(prop.getConceptSubtree());
         gwtProp.setConceptImportColumn(prop.getConceptImportColumn());
         gwtProp.setConceptLabelColumn(prop.getConceptLabelColumn());
         gwtProp.setDerivationDataScope(prop.getDerivationDataScope());
@@ -530,7 +531,8 @@ public class DomainUtil
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
-        ValidationException validationException = validateProperties(d, update, d.getDomainKind(), orig);
+        DomainKind kind = d.getDomainKind();
+        ValidationException validationException = validateProperties(d, update, kind, orig);
 
         if (validationException.hasErrors())
         {
@@ -543,7 +545,7 @@ public class DomainUtil
             return validationException;
         }
 
-        if (!d.getDomainKind().canEditDefinition(user, d))
+        if (!kind.canEditDefinition(user, d))
         {
             validationException.addError(new SimpleValidationError("Unauthorized"));
             return validationException;
@@ -561,7 +563,7 @@ public class DomainUtil
 
         //error if mandatory field name is not the same as orig or has been removed in updated domain
         String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getFields());
-        if(StringUtils.isNotEmpty(missingMandatoryField))
+        if (StringUtils.isNotEmpty(missingMandatoryField))
         {
             validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
             return validationException;
@@ -596,7 +598,7 @@ public class DomainUtil
         // If we're deleting all fields, set flag to potentially delete all data first.
         // "All fields" is defined to be the original property-driven field count, minus any that are known to be non-deleteable through the domain editor
         // Namely, that's the List key field.
-        if (deletedCount > 0 && deletedCount == (orig.getFields().size() - d.getDomainKind().getAdditionalProtectedProperties(d).size()))
+        if (deletedCount > 0 && deletedCount == (orig.getFields().size() - kind.getAdditionalProtectedProperties(d).size()))
             d.setShouldDeleteAllData(true);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
@@ -617,7 +619,7 @@ public class DomainUtil
             }
             // UNDONE: DomainProperty does not support all PropertyDescriptor fields
             DomainProperty p = d.getProperty(pd.getPropertyId());
-            if(p == null)
+            if (p == null)
             {
                 String errorMsg = "Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.";
                 validationException.addError(new PropertyValidationError(errorMsg, pd.getName(), pd.getPropertyId()));

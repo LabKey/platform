@@ -16,12 +16,12 @@
 
 package org.labkey.api.study;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
+import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * User: adam
@@ -29,25 +29,14 @@ import org.labkey.api.view.NavTree;
  */
 public interface SpecimenUrls extends UrlProvider
 {
-    ActionURL getAutoReportListURL(Container c);
-    ActionURL getCommentURL(Container c, String globalUniqueId);
-    ActionURL getCompleteSpecimenURL(Container c, String type);
-    ActionURL getDeleteRequestURL(Container c, String id);
     ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-    ActionURL getManageRequestURL(Container c);
-    ActionURL getManageRequestStatusURL(Container c, int requestId);
-    ActionURL getRequestDetailsURL(Container c, String requestId);
+    ActionURL getManageRequestURL(Container c, int requestId);
+    @Migrate // Eliminate this -- same as getManageRequestURL(Container, int);
     ActionURL getRequestDetailsURL(Container c, int requestId);
-    ActionURL getShowCreateSpecimenRequestURL(Container c);
-    ActionURL getShowGroupMembersURL(Container c, int rowId, @Nullable Integer locationId, ActionURL returnUrl);
-    ActionURL getShowSearchURL(Container c);
-    ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL);
+    ActionURL getManageRequestStatusURL(Container c, int requestId);
     ActionURL getSpecimensURL(Container c);
     ActionURL getSpecimensURL(Container c, boolean showVials);
-    ActionURL getSubmitRequestURL(Container c, String id);
-    ActionURL getTypeParticipantReportURL(Container c);
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-    ActionURL getUploadSpecimensURL(Container c);
 
-    void addSpecimenNavTrail(NavTree root, String childTitle, Container c);
+    Class<? extends Controller> getCopyParticipantCommentActionClass();
 }

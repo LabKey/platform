@@ -61,10 +61,9 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
-    @Override
-    protected AbstractAuditDomainKind getDomainKind()
+    public SampleTypeAuditProvider()
     {
-        return new SampleTypeAuditDomainKind();
+        super(new SampleTypeAuditDomainKind());
     }
 
     @Override

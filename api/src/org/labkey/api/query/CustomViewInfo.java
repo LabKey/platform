@@ -167,7 +167,7 @@ public interface CustomViewInfo
     /**
      * Get the alternate label of the default custom view.
      * Issue 17710. Support an alternate label on the default custom view.
-     * The default custom view returns "default" or a customized label set in a file-based module.
+     * The default custom view returns "Default" or a customized label set in a file-based module.
      * All other implementations should simply return name for now.
      */
     @NotNull String getLabel();

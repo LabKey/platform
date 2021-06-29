@@ -297,14 +297,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return new BigDecimal(s);
     }
 
-
-    @Deprecated // use BigDecimal version instead
-    public static String formatSequenceNum(double d)
-    {
-        d = Math.round(d * SCALE_FACTOR) / SCALE_FACTOR;
-        return SEQUENCE_FORMAT.format(d);
-    }
-
     public static String formatSequenceNum(BigDecimal bd)
     {
         return SEQUENCE_FORMAT.format(bd);

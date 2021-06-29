@@ -77,6 +77,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
@@ -91,6 +92,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -729,11 +731,13 @@ public class ListController extends SpringActionController
     public class UploadListItemsAction extends AbstractQueryImportAction<ListDefinitionForm>
     {
         private ListDefinition _list;
+        private QueryUpdateService.InsertOption _insertOption;
 
         @Override
         protected void initRequest(ListDefinitionForm form) throws ServletException
         {
             _list = form.getList();
+            _insertOption = form.getInsertOption();
             setTarget(_list.getTable(getUser(), getContainer()));
         }
 
@@ -741,14 +745,15 @@ public class ListController extends SpringActionController
         public ModelAndView getView(ListDefinitionForm form, BindException errors) throws Exception
         {
             initRequest(form);
+            setShowImportOptions(_list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger);
+            setSuccessMessageSuffix("imported");
             return getDefaultImportView(form, errors);
         }
 
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
-            int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
-            return count;
+            return _list.insertListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption == QueryUpdateService.InsertOption.MERGE);
         }
 
         @Override
@@ -922,6 +927,15 @@ public class ListController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends BaseDownloadAction<ListAttachmentForm>
     {
+        @Override
+        public void validate(ListAttachmentForm form, BindException errors)
+        {
+            if (!GUID.isGUID(form.getEntityId()))
+            {
+                errors.rejectValue("entityId", ERROR_MSG, "entityId is not a GUID: " + form.getEntityId());
+            }
+        }
+
         @Nullable
         @Override
         public Pair<AttachmentParent, String> getAttachment(ListAttachmentForm form)

@@ -52,6 +52,7 @@ import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -530,8 +531,8 @@ public class AnnouncementManager
             {
                 BulkEmailer emailer = new BulkEmailer(user);
 
-                String messageId = "<" + a.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
-                String references = messageId + " <" + parent.getEntityId() + "@" + AppProps.getInstance().getDefaultDomain() + ">";
+                String messageId = "<" + a.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
+                String references = messageId + " <" + parent.getEntityId() + "@" + AuthenticationManager.getDefaultDomain() + ">";
 
                 List<Integer> memberList = a.getMemberListIds();
 
@@ -810,7 +811,7 @@ public class AnnouncementManager
         if (null == c || isSecure(c))
             return;
 
-        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads());
+        SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads() + " _t_ ");
         sql.append(" WHERE Container = ?");
         sql.add(containerId);
         String and = " AND ";
@@ -822,7 +823,7 @@ public class AnnouncementManager
         }
         else
         {
-            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, null).toSQLFragment(null, null);
+            SQLFragment modified = new SearchService.LastIndexedClause(_comm.getTableInfoThreads(), modifiedSince, "_t_").toSQLFragment(null, null);
             if (!modified.isEmpty())
                 sql.append(and).append(modified);
         }
@@ -1341,8 +1342,8 @@ public class AnnouncementManager
                                      AnnouncementModel a, boolean isResponse, ActionURL removeURL, WikiRendererType currentRendererType, EmailNotificationBean.Reason reason)
         {
             this.recipient = recipient;
-            this.threadURL = AnnouncementsController.getThreadURL(c, a.getRowId());
-            this.threadParentURL = AnnouncementsController.getThreadURL(c, parent.getRowId());
+            this.threadURL = AnnouncementsController.getThreadURL(c, recipient, a);
+            this.threadParentURL = AnnouncementsController.getThreadURL(c, recipient, parent);
             this.boardPath = c.getPath();
             this.boardURL = AnnouncementsController.getBeginURL(c);
             this.siteURL = ActionURL.getBaseServerURL();

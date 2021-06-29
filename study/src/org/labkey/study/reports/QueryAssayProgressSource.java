@@ -27,10 +27,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,11 +36,10 @@ import java.util.Set;
  */
 public class QueryAssayProgressSource implements AssayProgressReport.AssayData
 {
-    private AssayProgressReport.AssayExpectation _expectation;
-    private Study _study;
-    private List<String> _participants = new ArrayList<>();
-    private List<Visit> _visits = new ArrayList<>();
-    private List<Pair<AssayProgressReport.ParticipantVisit, String>> _specimenStatus = new ArrayList<>();
+    private final AssayProgressReport.AssayExpectation _expectation;
+    private final Study _study;
+    private final List<String> _participants = new ArrayList<>();
+    private final List<Pair<AssayProgressReport.ParticipantVisit, String>> _specimenStatus = new ArrayList<>();
 
     public QueryAssayProgressSource(AssayProgressReport.AssayExpectation expectation, Study study)
     {
@@ -79,7 +76,6 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
             if (schema != null)
             {
                 Set<String> participants = new HashSet<>();
-                Set<Integer> visits = new HashSet<>();
 
                 TableInfo tableInfo = schema.getTable(_expectation.getQueryName());
                 if (tableInfo != null)
@@ -114,7 +110,6 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                                     else
                                         throw new RuntimeException("Duplicate rows found for ParticipantID/SequenceNum: (" + ptid + ", " + sequenceNum + ")");
 
-                                    visits.add(visit.getId());
                                     _specimenStatus.add(new Pair<>(new AssayProgressReport.ParticipantVisit(ptid, visit.getId()), status));
                                 }
                             }
@@ -122,18 +117,6 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                     });
                     _participants.addAll(participants);
                     _participants.sort(String::compareTo);
-
-                    Map<Integer, Visit> visitMap = new HashMap<>();
-                    for (Visit visit : _study.getVisits(Visit.Order.DISPLAY))
-                    {
-                        visitMap.put(visit.getId(), visit);
-                    }
-
-                    for (Integer visitId : visits)
-                    {
-                        if (visitMap.containsKey(visitId))
-                            _visits.add(visitMap.get(visitId));
-                    }
                 }
                 else
                 {
@@ -149,8 +132,8 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
 
     private static class PtidSequenceNum
     {
-        private String _ptid;
-        private Double _sequenceNum;
+        private final String _ptid;
+        private final Double _sequenceNum;
 
         public PtidSequenceNum(String ptid, Double sequenceNum)
         {

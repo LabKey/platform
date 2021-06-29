@@ -938,6 +938,12 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setConceptSubtree(String path)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
         public void setConceptImportColumn(String name)
         {
             throw new java.lang.UnsupportedOperationException();

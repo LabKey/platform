@@ -44,6 +44,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -58,10 +59,8 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -73,6 +72,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -811,7 +811,7 @@ public class OntologyManager
     }
 
 
-    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, Container c, boolean deleteOwnedObjects)
+    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, @Nullable Container c, boolean deleteOwnedObjects)
     {
         // we have different levels of optimization possible here deleteOwned=true/false, scope=/<>exp
 
@@ -828,15 +828,29 @@ public class OntologyManager
         else
         {
             SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty().getSelectName()).append(" WHERE ObjectId IN\n").append("(SELECT ObjectId FROM ").append(String.valueOf(getTinfoObject())).append("\n").append(" WHERE Container = ? AND ObjectURI IN (");
-            sqlDeleteProperties.add(c.getId());
+            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty().getSelectName())
+                    .append(" WHERE ObjectId IN\n")
+                    .append("(SELECT ObjectId FROM ")
+                    .append(String.valueOf(getTinfoObject())).append("\n")
+                    .append(" WHERE ");
+            if (c != null)
+            {
+                sqlDeleteProperties.append(" Container = ?").add(c.getId());
+                sqlDeleteProperties.append(" AND ");
+            }
+            sqlDeleteProperties.append("ObjectUri IN (");
             sqlDeleteProperties.append(sub);
             sqlDeleteProperties.append("))");
             new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
             SQLFragment sqlDeleteObjects = new SQLFragment();
-            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE Container = ? AND ObjectURI IN (");
-            sqlDeleteObjects.add(c.getId());
+            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE ");
+            if (c != null)
+            {
+                sqlDeleteProperties.append(" Container = ?").add(c.getId());
+                sqlDeleteProperties.append(" AND ");
+            }
+            sqlDeleteObjects.append("ObjectURI IN (");
             sqlDeleteObjects.append(sub);
             sqlDeleteObjects.append(")");
             return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
@@ -1565,107 +1579,21 @@ public class OntologyManager
     private static int insertPropertyIfNotExists(User user, PropertyDescriptor pd, PropertyDescriptor[] out)
     {
         TableInfo t = getTinfoPropertyDescriptor();
-        SQLFragment sql = new SQLFragment();
-        sql.append("INSERT INTO exp.propertydescriptor (" +
-                "propertyuri, name, storagecolumnname, description, rangeuri, concepturi, label, " +
-                "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
-                "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
-                "measure, scale, recommendedvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
-                "phi, redactedText, excludefromshifting, mvindicatorstoragecolumnname, derivationdatascope, " +
-                "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode)\n");
-        sql.append("SELECT " +
-                "? as propertyuri, " +
-                "? as name, " +
-                "? as storagecolumnname, " +
-                "? as description, " +
-                "? as rangeuri, " +
-                "? as concepturi, " +
-                "? as label, " +
-                "? as format, " +
-                "? as container, " +
-                "? as project, " +
-                "? as lookupcontainer, " +
-                "? as lookupschema, " +
-                "? as lookupquery, " +
-                "? as defaultvaluetype, " +
-                "? as hidden, " +
-                "? as mvenabled, " +
-                "? as importaliases, " +
-                "? as url, " +
-                "? as shownininsertview, " +
-                "? as showninupdateview, " +
-                "? as shownindetailsview, " +
-                "? as dimension, " +
-                "? as measure, " +
-                "? as scale, " +
-                "? as recommendedvariable, " +
-                "? as defaultscale, " +
-                "cast(? as int)  as createdby, " +
-                "{fn now()} as created, " +
-                "cast(? as int) as modifiedby, " +
-                "{fn now()} as modified, " +
-                "? as facetingbehaviortype, " +
-                "? as phi, " +
-                "? as redactedText, " +
-                "? as excludefromshifting, " +
-                "? as mvindicatorstoragecolumnname, " +
-                "? as derivationdatascope," +
-                "? as sourceontology," +
-                "? as conceptimportcolumn," +
-                "? as conceptlabelcolumn," +
-                "? as principalconceptcode\n");
-        sql.append("WHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
-
-        sql.add(pd.getPropertyURI());
-        sql.add(pd.getName());
-        sql.add(pd.getStorageColumnName());
-        sql.add(pd.getDescription());
-        sql.add(pd.getRangeURI());
-        sql.add(pd.getConceptURI());
-        sql.add(pd.getLabel());
-        sql.add(pd.getFormat());
-        sql.add(pd.getContainer());
-        sql.add(pd.getProject());
-        sql.add(pd.getLookupContainer());
-        sql.add(pd.getLookupSchema());
-        sql.add(pd.getLookupQuery());
-        sql.add(pd.getDefaultValueType());
-        sql.add(pd.isHidden());
-        sql.add(pd.isMvEnabled());
-        sql.add(pd.getImportAliases());
-        sql.add(pd.getURL());
-        sql.add(pd.isShownInInsertView());
-        sql.add(pd.isShownInUpdateView());
-        sql.add(pd.isShownInDetailsView());
-        sql.add(pd.isDimension());
-        sql.add(pd.isMeasure());
-        sql.add(pd.getScale());
-        sql.add(pd.isRecommendedVariable());
-        sql.add(pd.getDefaultScale());
-        sql.add(user); // createdby
-        // created
-        sql.add(user); // modifiedby
-        // modified
-        sql.add(pd.getFacetingBehaviorType());
-        sql.add(pd.getPHI());
-        sql.add(pd.getRedactedText());
-        sql.add(pd.isExcludeFromShifting());
-        sql.add(pd.getMvIndicatorStorageColumnName());
-        sql.add(pd.getDerivationDataScope());
-        // ontology metadata
-        sql.add(pd.getSourceOntology());
-        sql.add(pd.getConceptImportColumn());
-        sql.add(pd.getConceptLabelColumn());
-        sql.add(pd.getPrincipalConceptCode());
-        // WHERE
-        sql.add(pd.getPropertyURI());
-        sql.add(pd.getContainer());
-
-        int rowcount = (new SqlExecutor(t.getSchema())).execute(sql);
-
-        SQLFragment reselect = new SQLFragment("SELECT * FROM exp.propertydescriptor WHERE propertyuri=? AND container=?", pd.getPropertyURI(), pd.getContainer());
-        out[0] = (new SqlSelector(t.getSchema(), reselect).getObject(PropertyDescriptor.class));
-        return rowcount;
+        try (Connection conn = t.getSchema().getScope().getConnection();
+            ParameterMapStatement stmt = getInsertStmt(conn, user, t, true);)
+        {
+            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            Map<String, Object> m = f.toMap(pd, null);
+            stmt.putAll(m);
+            int rowcount = stmt.execute();
+            SQLFragment reselect = new SQLFragment("SELECT * FROM exp.propertydescriptor WHERE propertyuri=? AND container=?", pd.getPropertyURI(), pd.getContainer());
+            out[0] = (new SqlSelector(getExpSchema(), reselect).getObject(PropertyDescriptor.class));
+            return rowcount;
+        }
+        catch(SQLException sqlx)
+        {
+            throw ExceptionFramework.Spring.translate(getExpSchema().getScope(), "insertPropertyIfNotExists", sqlx);
+        }
     }
 
 
@@ -1730,6 +1658,9 @@ public class OntologyManager
 
         if (!Objects.equals(pdIn.getPrincipalConceptCode(), pd.getPrincipalConceptCode()))
             colDiffs.add("PrincipalConceptCode");
+
+        if (!Objects.equals(pdIn.getConceptSubtree(), pd.getConceptSubtree()))
+            colDiffs.add("ConceptSubtree");
 
         return colDiffs;
     }
@@ -2147,6 +2078,102 @@ public class OntologyManager
         return propDescCache.get(key);
     }
 
+
+    public static List<PropertyDescriptor> getPropertyDescriptors(
+            Container c, User user,
+            @Nullable Set<Integer> domainIds,
+            @Nullable Set<String> domainKinds,
+            @Nullable String searchTerm,
+            @Nullable SimpleFilter propertyFilter,
+            @Nullable String sortColumn,
+            @Nullable Integer maxRows, @Nullable Long offset)
+    {
+        final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
+
+        // To filter by domain kind, we query the exp.DomainProperty table and filter by domainId.
+        // To construct a PropertyDescriptor, we will need to traverse the lookup to exp.PropertyDescriptor and select all of its columns.
+        List<FieldKey> fields = new ArrayList<>();
+        fields.add(FieldKey.fromParts("domainId"));
+        for (ColumnInfo col : getTinfoPropertyDescriptor().getColumns())
+        {
+            fields.add(new FieldKey(propertyIdKey, col.getName()));
+        }
+        var colMap = QueryService.get().getColumns(getTinfoPropertyDomain(), fields);
+
+        var filter = new SimpleFilter();
+        if (propertyFilter != null)
+        {
+            filter.addAllClauses(propertyFilter);
+        }
+
+        filter.addCondition(new FieldKey(propertyIdKey, "container"), c.getId());
+        if (domainIds != null && !domainIds.isEmpty())
+        {
+            filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
+        }
+
+        if (domainKinds != null && !domainKinds.isEmpty())
+        {
+            List<? extends Domain> domains = PropertyService.get().getDomains(c, user, domainKinds, true);
+            filter.addInClause(FieldKey.fromParts("domainId"), domains.stream().map(Domain::getTypeId).collect(Collectors.toSet()));
+        }
+
+        if (searchTerm != null)
+        {
+            // Apply Q filter to only some of the text columns
+            List<ColumnInfo> searchCols = List.of(
+                    colMap.get(new FieldKey(propertyIdKey, "Name")),
+                    colMap.get(new FieldKey(propertyIdKey, "Label")),
+                    colMap.get(new FieldKey(propertyIdKey, "Description")),
+                    colMap.get(new FieldKey(propertyIdKey, "ImportAliases"))
+            );
+
+            var clause = CompareType.Q.createFilterClause(new FieldKey(null, "*"), searchTerm);
+            clause.setSelectColumns(searchCols);
+            filter.addCondition(clause);
+        }
+
+        // use propertyId as the default sort
+        if (sortColumn == null)
+            sortColumn = "propertyId";
+        Sort sort = new Sort(sortColumn);
+
+        TableSelector ts = new TableSelector(getTinfoPropertyDomain(), colMap.values(), filter, sort);
+        if (maxRows != null)
+            ts.setMaxRows(maxRows);
+        if (offset != null)
+            ts.setOffset(offset);
+
+        // This is a little annoying.  We have to remove the "propertyId" lookup parent from
+        // the map keys for the ObjectFactory to correctly construct the PropertyDescriptor.
+        List<PropertyDescriptor> props = new ArrayList<>();
+        try (var results = ts.getResults(true))
+        {
+            ObjectFactory<PropertyDescriptor> of = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            while (results.next())
+            {
+                Map<FieldKey, Object> rowMap = results.getFieldKeyRowMap();
+                // remove the "propertyId" part from the FieldKey
+                Map<String, Object> rekey = new CaseInsensitiveHashMap<>();
+                for (Map.Entry<FieldKey, Object> pair : rowMap.entrySet())
+                {
+                    FieldKey key = pair.getKey();
+                    if (propertyIdKey.equals(key.getParent()))
+                    {
+                        String name = key.getName();
+                        rekey.put(name, pair.getValue());
+                    }
+                }
+                props.add(of.fromMap(rekey));
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        return props;
+    }
+
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
     {
         return PropertyService.get().getDomains(container)
@@ -2355,91 +2382,107 @@ public class OntologyManager
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
             "mvenabled,importaliases,url,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
-            "sourceontology, conceptimportcolumn, conceptlabelcolumn, principalconceptcode," +
-            "recommendedvariable, derivationdatascope";
+            "sourceontology,conceptimportcolumn,conceptlabelcolumn,principalconceptcode,conceptsubtree," +
+            "recommendedvariable,derivationdatascope,storagecolumnname,facetingbehaviortype,phi,redactedText," +
+            "excludefromshifting,mvindicatorstoragecolumnname,defaultscale";
     static final String[] parametersArray = parameters.split(",");
-    static final String insertSql;
-    static final String updateSql;
 
-    static
+    static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists) throws SQLException
     {
-        insertSql = "INSERT INTO exp.propertydescriptor (" + parameters + ")\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        StringBuilder sb = new StringBuilder("UPDATE exp.propertydescriptor SET");
-        String comma = " ";
-        for (String p : parametersArray)
+        user = null==user ? User.guest : user;
+        SQLFragment sql = new SQLFragment("INSERT INTO exp.propertydescriptor\n\t\t(");
+        SQLFragment values = new SQLFragment("\nSELECT\t");
+        ColumnInfo c;
+        String comma = "";
+        Parameter container = null;
+        Parameter propertyuri = null;
+        for (var p : parametersArray)
         {
-            sb.append(comma).append(p).append("=?");
+            if (null == (c = t.getColumn(p)))
+                continue;
+            sql.append(comma).append(p);
+            values.append(comma).append("?");
             comma = ",";
+            Parameter parameter = new Parameter(p, c.getJdbcType());
+            values.add(parameter);
+            if ("container".equals(p))
+                container = parameter;
+            else if ("propertyuri".equals(p))
+                propertyuri = parameter;
         }
-        sb.append("\nWHERE propertyid=?");
-        updateSql = sb.toString();
+        sql.append(", createdby, created, modifiedby, modified)\n");
+        values.append(", " + user.getUserId() + ", {fn now()}, " + user.getUserId() + ", {fn now()}");
+        sql.append(values);
+        if (ifNotExists)
+        {
+            sql.append("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?);\n");
+            sql.add(propertyuri).add(container);
+        }
+        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
+    }
+
+    static ParameterMapStatement getUpdateStmt(Connection conn, User user, TableInfo t) throws SQLException
+    {
+        user = null==user ? User.guest : user;
+        SQLFragment sql = new SQLFragment("UPDATE exp.propertydescriptor SET ");
+        ColumnInfo c;
+        String comma = "";
+        for (var p : parametersArray)
+        {
+            if (null == (c = t.getColumn(p)))
+                continue;
+            sql.append(comma).append(p).append("=?");
+            comma = ", ";
+            sql.add(new Parameter(p, c.getJdbcType()));
+        }
+        sql.append(", modifiedby=" + user.getUserId() + ", modified={fn now()}");
+        sql.append("\nWHERE propertyid=?");
+        sql.add(new Parameter("propertyid", JdbcType.INTEGER));
+        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
     }
 
 
-    public static void insertPropertyDescriptors(List<PropertyDescriptor> pds) throws SQLException
+    public static void insertPropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
     {
         if (null == pds || 0 == pds.size())
             return;
-        PreparedStatement stmt = getExpSchema().getScope().getConnection().prepareStatement(insertSql);
-        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map<String, Object> m = null;
-        for (PropertyDescriptor pd : pds)
+        TableInfo t = getTinfoPropertyDescriptor();
+        try (Connection conn = t.getSchema().getScope().getConnection();
+             ParameterMapStatement stmt = getInsertStmt(conn, user, t, false))
         {
-            m = f.toMap(pd, m);
-            for (int i = 0; i < parametersArray.length; i++)
+            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            Map<String, Object> m = null;
+            for (PropertyDescriptor pd : pds)
             {
-                String p = parametersArray[i];
-                Object o = m.get(p);
-                if (o == null)
-                    stmt.setNull(i + 1, Types.VARCHAR);
-                else if (o instanceof String)
-                    stmt.setString(i + 1, (String) o);
-                else if (o instanceof Integer)
-                    stmt.setInt(i + 1, ((Integer) o).intValue());
-                else if (o instanceof Container)
-                    stmt.setString(i + 1, ((Container) o).getId());
-                else if (o instanceof Boolean)
-                    stmt.setBoolean(i + 1, ((Boolean) o).booleanValue());
-                else
-                    assert false : o.getClass().getName();
+                m = f.toMap(pd, m);
+                stmt.clearParameters();
+                stmt.putAll(m);
+                stmt.addBatch();
             }
-            stmt.addBatch();
+            stmt.executeBatch();
         }
-        stmt.executeBatch();
     }
 
 
-    public static void updatePropertyDescriptors(List<PropertyDescriptor> pds) throws SQLException
+    public static void updatePropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
     {
         if (null == pds || 0 == pds.size())
             return;
-        PreparedStatement stmt = getExpSchema().getScope().getConnection().prepareStatement(updateSql);
-        ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-        Map<String, Object> m = null;
-        for (PropertyDescriptor pd : pds)
+        TableInfo t = getTinfoPropertyDescriptor();
+        try (Connection conn = t.getSchema().getScope().getConnection();
+             ParameterMapStatement stmt = getUpdateStmt(conn, user, t))
         {
-            m = f.toMap(pd, m);
-            for (int i = 0; i < parametersArray.length; i++)
+            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
+            Map<String, Object> m = null;
+            for (PropertyDescriptor pd : pds)
             {
-                String p = parametersArray[i];
-                Object o = m.get(p);
-                if (o == null)
-                    stmt.setNull(i + 1, Types.VARCHAR);
-                else if (o instanceof String)
-                    stmt.setString(i + 1, (String) o);
-                else if (o instanceof Integer)
-                    stmt.setInt(i + 1, ((Integer) o).intValue());
-                else if (o instanceof Container)
-                    stmt.setString(i + 1, ((Container) o).getId());
-                else if (o instanceof Boolean)
-                    stmt.setBoolean(i + 1, ((Boolean) o).booleanValue());
-                else
-                    assert false : o.getClass().getName();
+                m = f.toMap(pd, m);
+                stmt.clearParameters();
+                stmt.putAll(m);
+                stmt.addBatch();
             }
-            stmt.setInt(parametersArray.length + 1, pd.getPropertyId());
-            stmt.addBatch();
+            stmt.executeBatch();
         }
-        stmt.executeBatch();
     }
 
 
@@ -2488,6 +2531,104 @@ public class OntologyManager
             transaction.commit();
         }
         return oprop;
+    }
+
+    public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
+    {
+        List<PropertyUsages> ret = new ArrayList<>(propertyIds.size());
+        for (int propertyId : propertyIds)
+        {
+            var pd = getPropertyDescriptor(propertyId);
+            if (pd == null)
+                throw new IllegalArgumentException("property not found: " + propertyId);
+
+            ret.add(findPropertyUsages(user, pd, maxUsageCount));
+        }
+
+        return ret;
+    }
+
+    public static List<PropertyUsages> findPropertyUsages(User user, Container c, List<String> propertyURIs, int maxUsageCount)
+    {
+        List<PropertyUsages> ret = new ArrayList<>(propertyURIs.size());
+        for (String propertyURI : propertyURIs)
+        {
+            var pd = getPropertyDescriptor(propertyURI, c);
+            if (pd == null)
+                throw new IllegalArgumentException("property not found: " + propertyURI);
+
+            ret.add(findPropertyUsages(user, pd, maxUsageCount));
+        }
+
+        return ret;
+    }
+
+    public static PropertyUsages findPropertyUsages(@NotNull User user, @NotNull PropertyDescriptor pd, int maxUsageCount)
+    {
+        // query exp.ObjectProperty for usages of the property
+        FieldKey objectId = FieldKey.fromParts("objectId");
+        FieldKey objectId_objectURI = FieldKey.fromParts("objectId", "objectURI");
+        FieldKey objectId_container = FieldKey.fromParts("objectId", "container");
+        List<FieldKey> fields = List.of(objectId, objectId_objectURI, objectId_container);
+        var colMap = QueryService.get().getColumns(getTinfoObjectProperty(), fields);
+
+        int usageCount = 0;
+        List<Identifiable> objects = new ArrayList<>(maxUsageCount);
+        TableSelector ts = new TableSelector(getTinfoObjectProperty(), colMap.values(), new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL), new Sort("objectId"));
+        try (var r = ts.getResults(true))
+        {
+            usageCount = r.getSize();
+
+            for (int i = 0; i < maxUsageCount && r.next(); i++)
+            {
+                var row = r.getFieldKeyRowMap();
+                int oid = (Integer) row.get(objectId);
+                String objectURI = (String) row.get(objectId_objectURI);
+                String container = (String) row.get(objectId_container);
+
+                Identifiable object = LsidManager.get().getObject(objectURI);
+                if (object != null)
+                {
+                    Container c = object.getContainer();
+                    if (c != null && c.hasPermission(user, ReadPermission.class))
+                        objects.add(object);
+                }
+                else
+                {
+                    Container c = ContainerManager.getForId(container);
+                    if (c != null && c.hasPermission(user, ReadPermission.class))
+                    {
+                        OntologyObject oo = new OntologyObject();
+                        oo.setContainer(c);
+                        oo.setObjectId(oid);
+                        oo.setObjectURI(objectURI);
+                        objects.add(new IdentifiableBase(oo));
+                    }
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return new PropertyUsages(pd.getPropertyId(), pd.getPropertyURI(), usageCount, objects);
+    }
+
+    public static class PropertyUsages
+    {
+        public final int propertyId;
+        public final String propertyURI;
+        public final int usageCount;
+        public final List<Identifiable> objects;
+
+        public PropertyUsages(int propertyId, String propertyURI, int usageCount, List<Identifiable> objects)
+        {
+            this.propertyId = propertyId;
+            this.propertyURI = propertyURI;
+            this.usageCount = usageCount;
+            this.objects = objects;
+        }
     }
 
     public static void clearCaches()

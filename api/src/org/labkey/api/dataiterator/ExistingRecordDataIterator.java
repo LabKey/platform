@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -39,6 +39,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 {
     public static final String EXISTING_RECORD_COLUMN_NAME = "_" + ExistingRecordDataIterator.class.getName() + "#EXISTING_RECORD_COLUMN_NAME";
 
+    final CachingDataIterator _unwrapped;
     final TableInfo target;
     final ArrayList<ColumnInfo> pkColumns = new ArrayList<>();
     final ArrayList<Supplier<Object>> pkSuppliers = new ArrayList<>();
@@ -52,6 +53,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark)
     {
         super(in);
+
+        // NOTE it might get wrapped with a LoggingDataIterator, so remember the original DataIterator
+        this._unwrapped = useMark ? (CachingDataIterator)in : null;
+
         this.target = target;
         this.existingColIndex = in.getColumnCount()+1;
         this.useMark = useMark;
@@ -130,7 +135,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         // NOTE: we have to call mark() before we call next() if we want the 'next' row to be cached
         if (useMark)
-            ((CachingDataIterator)_delegate).mark();
+            _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
         if (ret && !pkColumns.isEmpty())
             prefetchExisting();
@@ -176,7 +181,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 if (auditType == DETAILED)
                 {
                     if (useGetRows)
-                        return new ExistingDataIteratorsGetRows(di, target, keys);
+                        return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys);
                     else
                         return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys);
                 }
@@ -209,7 +214,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     sqlf.add(pkSuppliers.get(p).get());
                 }
                 sqlf.append(")");
-                rows--;
             }
             while (--rows > 0 && _delegate.next());
 
@@ -251,7 +255,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 existingRecords.put(r,(Map<String,Object>)map);
             });
             // backup to where we started so caller can iterate through them one at a time
-            ((CachingDataIterator)_delegate).reset();
+            _unwrapped.reset(); // unwrapped _delegate
             _delegate.next();
         }
     }
@@ -264,9 +268,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         final User user;
         final Container c;
 
-        ExistingDataIteratorsGetRows(DataIterator in, TableInfo target, @Nullable Set<String> keys)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys)
         {
-            super(in, target, keys, false);
+            super(in, target, keys, true);
             qus = target.getUpdateService();
             user = target.getUserSchema().getUser();
             c = target.getUserSchema().getContainer();
@@ -275,18 +279,38 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         @Override
         protected void prefetchExisting() throws BatchValidationException
         {
-            /* NOTE: this implementation doesn't fetch ahead because getRows() is row at a time anyway.
-             * If we speed up getRows() then it would make sense to copy the ExistingDataIteratorsTableInfo pattern
-             */
             try
             {
+                Integer rowNumber = (Integer)_delegate.get(0);
+                if (rowNumber <= lastPrefetchRowNumber)
+                    return;
+
                 existingRecords.clear();
-                Map<String,Object> keys = CaseInsensitiveHashMap.of();
-                for (int p=0 ; p<pkColumns.size() ; p++)
-                    keys.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
-                List<Map<String, Object>> list = qus.getExistingRows(user, c, List.of(keys));
-                Map<String,Object> existing = list.isEmpty() ? Map.of() : list.get(0);
-                existingRecords.put((Integer)_delegate.get(0), existing);
+
+                int rowsToFetch = 50;
+                Map<Integer, Map<String,Object>> keysMap = new LinkedHashMap<>();
+                do
+                {
+                    lastPrefetchRowNumber = (Integer) _delegate.get(0);
+                    Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
+                    for (int p=0 ; p<pkColumns.size() ; p++)
+                        keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
+                    keysMap.put(lastPrefetchRowNumber, keyMap);
+                    existingRecords.put(lastPrefetchRowNumber, Map.of());
+                }
+                while (--rowsToFetch > 0 && _delegate.next());
+
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap);
+                for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
+                {
+                    Map<String, Object> map = rowMap.getValue();
+                    Map<String,Object> existing = map == null || map.isEmpty() ? Map.of() : map;
+                    existingRecords.put(rowMap.getKey(), existing);
+                }
+
+                // backup to where we started so caller can iterate through them one at a time
+                _unwrapped.reset(); // unwrapped _delegate
+                _delegate.next();
             }
             catch (SQLException sqlx)
             {

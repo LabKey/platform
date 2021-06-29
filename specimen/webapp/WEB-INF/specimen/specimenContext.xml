@@ -16,7 +16,7 @@
             <list>
                 <!-- Standalone specimen import pipeline -->
                 <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
-                    <constructor-arg type="java.lang.Class" value="org.labkey.api.specimen.pipeline.SpecimenBatch"/>
+                    <constructor-arg type="java.lang.Class" value="org.labkey.specimen.pipeline.SpecimenBatch"/>
                     <property name="taskProgressionSpec">
                         <list>
                             <bean id="standaloneSpecimenTask" class="org.labkey.api.pipeline.TaskId">

@@ -49,7 +49,6 @@ public interface AppProps
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
     String EXPERIMENTAL_ERROR_PAGE = "errorPage";
-    String EXPERIMENTAL_SAMPLE_PICKLIST = "samplePicklist";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
@@ -144,8 +143,6 @@ public interface AppProps
     void ensureBaseServerUrl(HttpServletRequest request);
 
     void setContextPath(String contextPath);
-
-    String getDefaultDomain();
 
     boolean isSetBaseServerUrl();
 

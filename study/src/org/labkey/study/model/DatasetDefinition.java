@@ -84,8 +84,8 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -944,7 +944,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             if (securityType == SecurityType.BASIC_WRITE)
             {
                 // Basic write grants dataset edit perms (insert/update/delete) based on user's folder perms
-                copyEditPerms(getStudy().getContainer(), user, result);
+                copyEditPerms(getStudy().getContainer().getPolicy(), user, result);
             }
             else if (securityType == SecurityType.ADVANCED_WRITE)
             {
@@ -956,7 +956,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    result.addAll(SecurityManager.getPermissions(SecurityPolicyManager.getPolicy(this), user, Set.of()));
                 }
             }
         }
@@ -966,9 +966,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
     private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
 
-    private void copyEditPerms(HasPermission resource, UserPrincipal user, Set<Class<? extends Permission>> result)
+    private void copyEditPerms(SecurityPolicy policy, UserPrincipal user, Set<Class<? extends Permission>> result)
     {
-        EDIT_PERMS.stream().filter(perm->resource.hasPermission(user, perm)).forEach(result::add);
+        Set<Class<? extends Permission>> granted = SecurityManager.getPermissions(policy, user, Set.of());
+        EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
     @Override
@@ -1633,7 +1634,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
 
         @Override
-        public AuditHandler getAuditHandler()
+        public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
         {
             return new DatasetAuditHandler();
         }
@@ -1642,9 +1643,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     private class DatasetAuditHandler extends AbstractAuditHandler
     {
         @Override
-        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount)
+        public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType)
         {
-            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount);
+            QueryService.get().getDefaultAuditHandler().addSummaryAuditEvent(user, c, table, action, dataRowCount, auditBehaviorType);
         }
 
         @Override

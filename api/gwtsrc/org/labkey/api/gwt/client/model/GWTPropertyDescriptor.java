@@ -72,10 +72,11 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isPreventReordering = new BooleanProperty();
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
+    private StringProperty principalConceptCode = new StringProperty();
     private StringProperty sourceOntology = new StringProperty();
+    private StringProperty conceptSubtree = new StringProperty();
     private StringProperty conceptImportColumn = new StringProperty();
     private StringProperty conceptLabelColumn = new StringProperty();
-    private StringProperty principalConceptCode = new StringProperty();
     private StringProperty redactedText = new StringProperty();
     private StringProperty derivationDataScope = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
@@ -140,6 +141,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setTypeEditable(s.isTypeEditable());
         setPrincipalConceptCode(s.getPrincipalConceptCode());
         setSourceOntology(s.getSourceOntology());
+        setConceptSubtree(s.getConceptSubtree());
         setConceptImportColumn(s.getConceptImportColumn());
         setConceptLabelColumn(s.getConceptLabelColumn());
         setDerivationDataScope(s.getDerivationDataScope());
@@ -510,6 +512,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.sourceOntology.set(sourceOntology);
     }
 
+    public String getConceptSubtree()
+    {
+        return this.conceptSubtree.getString();
+    }
+
+    public void setConceptSubtree(String path)
+    {
+        this.conceptSubtree.set(path);
+    }
+
     public String getConceptImportColumn()
     {
         return conceptImportColumn.getString();
@@ -635,10 +647,13 @@ public class GWTPropertyDescriptor implements IsSerializable
             return false;
         }
         if (!getScale().equals(that.getScale())) return false;
+
+        if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
         if (!equals(getSourceOntology(),that.getSourceOntology())) return false;
+        if (!equals(getConceptSubtree(), that.getConceptSubtree())) return false;
         if (!equals(getConceptImportColumn(),that.getConceptImportColumn())) return false;
         if (!equals(getConceptLabelColumn(),that.getConceptLabelColumn())) return false;
-        if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
+
         if (!equals(getDerivationDataScope(),that.getDerivationDataScope())) return false;
 
         if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
@@ -681,6 +696,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
         result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
         result = 31 * result + sourceOntology.hashCode();
+        result = 31 * result + conceptSubtree.hashCode();
         result = 31 * result + conceptImportColumn.hashCode();
         result = 31 * result + conceptLabelColumn.hashCode();
         result = 31 * result + principalConceptCode.hashCode();

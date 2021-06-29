@@ -17,6 +17,7 @@
 package org.labkey.api.specimen.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Aggregate;
@@ -44,6 +45,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -69,6 +71,7 @@ import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -209,7 +212,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     protected static ActionURL getHistoryLinkURL(ViewContext ctx, String containerId)
     {
         Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
-        return PageFlowUtil.urlProvider(SpecimenUrls.class).getSpecimenEventsURL(container, ctx.getActionURL());
+        return SpecimenMigrationService.get().getSpecimenEventsURL(container, ctx.getActionURL());
     }
 
     private class SpecimenRestrictedDataRegion extends SpecimenDataRegion
@@ -422,7 +425,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         return createView(context, filter, createDefaultSort(viewType), viewType, false, null, false);
     }
 
-    public static SpecimenQueryView createView(ViewContext context, ParticipantDataset[] participantDatasets, ViewType viewType)
+    public static SpecimenQueryView createView(ViewContext context, @NotNull Collection<? extends ParticipantDataset> participantDatasets, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         Study study = StudyService.get().getStudy(context.getContainer());
@@ -593,10 +596,10 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         return filter;
     }
 
-    protected static SimpleFilter addFilterClause(Study study, SimpleFilter filter, ParticipantDataset[] participantDatasets)
+    protected static SimpleFilter addFilterClause(Study study, SimpleFilter filter, @NotNull Collection<? extends ParticipantDataset> participantDatasets)
     {
         boolean visitBased = study.getTimepointType().isVisitBased();
-        if (participantDatasets != null && participantDatasets.length > 0)
+        if (!participantDatasets.isEmpty())
         {
             StringBuilder whereClause = new StringBuilder();
             List<Object> params = new ArrayList<>();
@@ -665,17 +668,18 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, User user, int locationId, boolean completedRequestsOnly)
     {
         SQLFragment sql = getBaseRequestedEnrollmentSql(container, user, completedRequestsOnly);
-        assert 0 == sql.getParams().size();
+
         if (locationId == -1)
         {
             sql.append("IS NULL)");
         }
         else
         {
-            sql.append("= " + locationId + ")");
+            sql.append("= ?)");
+            sql.add(locationId);
         }
 
-        filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("GlobalUniqueId"));
+        filter.addWhereClause(sql, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }

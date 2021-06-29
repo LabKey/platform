@@ -52,8 +52,15 @@ public interface QueryUpdateService extends HasPermission
 
         // bulk
         IMPORT(true, false, true, false, false),
-        MERGE(true, true, false, false, false),   // insert or update
-        REPLACE(true, true, false, true, false),  // insert or replace, like merge but NULL out columns not in the import
+        /**
+         * Insert or updates a subset of columns.
+         * NOTE: Not supported for all tables -- tables with auto-increment primary keys in particular.
+         */
+        MERGE(true, true, false, false, false),
+        /**
+         * Like MERGE, but will insert or "re-insert" (NULLs values that are not in the import column set.)
+         */
+        REPLACE(true, true, false, true, false),
         IMPORT_IDENTITY(true, false, true, false, true);
 
         final public boolean batch;
@@ -103,20 +110,17 @@ public interface QueryUpdateService extends HasPermission
             throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     /**
-     * Same as getRows(), but used by ExistingRecordsDataIterator, this exisits because SampleTypeUpdateService is special.
+     * Similar to getRows(), but used by ExistingRecordsDataIterator, this exists because SampleTypeUpdateService is special.
      * @param user      The current user.
      * @param container The container in which the data should exist.
-     * @param keys      A map of primary key values.
-     * @return The row data as maps.
+     * @param keys      A map of primary key values for each rowNumber.
+     * @return The rows data as maps for each rowNumber.
      * @throws InvalidKeyException         Thrown if the key value(s) is(are) not valid.
      * @throws SQLException                Thrown if there was an error communicating with the database.
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      */
-    default List<Map<String, Object>> getExistingRows(User user, Container container, List<Map<String, Object>> keys)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
-    {
-        return getRows(user, container, keys);
-    }
+    Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException;
 
     /**
      * Inserts or merges the given values into the source table of this query.

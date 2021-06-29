@@ -40,6 +40,7 @@ import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.ExprColumn;
@@ -69,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -88,14 +90,24 @@ public class DatasetDataWriter implements InternalStudyWriter
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         List<DatasetDefinition> datasets = ctx.getDatasets();
+        Set<String> dataTypes = ctx.getDataTypes();
 
-        VirtualFile vf = root.getDir(DatasetWriter.DEFAULT_DIRECTORY);
+        VirtualFile vf = root.getDir(DatasetDefinitionWriter.DEFAULT_DIRECTORY);
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 
         // Write out all the dataset .tsv files
         for (DatasetDefinition def : datasets)
         {
+            boolean publishAllDatasets = dataTypes.contains(StudyArchiveDataTypes.DATASET_DATA);
+            boolean passStudyDatasets = !def.isPublishedData() && !dataTypes.contains(StudyArchiveDataTypes.STUDY_DATASETS_DATA);
+            boolean passAssayDatasets = Objects.equals(def.getPublishSource(), Dataset.PublishSource.Assay) && !dataTypes.contains(StudyArchiveDataTypes.ASSAY_DATASET_DATA);
+            boolean passSampleTypeDatasets = Objects.equals(def.getPublishSource(), Dataset.PublishSource.SampleType) && !dataTypes.contains(StudyArchiveDataTypes.SAMPLE_TYPE_DATASET_DATA);
+
+            // exclude datasets for which 'Dataset Data' is not a selection option
+            if (!publishAllDatasets && (passStudyDatasets || passAssayDatasets || passSampleTypeDatasets))
+                continue;
+
             // no data to export for placeholder datasets
             if (def.getType().equals(Dataset.TYPE_PLACEHOLDER))
                 continue;
@@ -298,6 +310,10 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
                     continue;
 
+                // don't include the sample type alias column for export
+                if (ExpMaterialTable.Column.Alias.name().equalsIgnoreCase(in.getName()) && def.isPublishedData())
+                    continue;
+
                 if (in.equals(qcStateColumn))
                 {
                     // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label), but
@@ -318,23 +334,26 @@ public class DatasetDataWriter implements InternalStudyWriter
                     // For assay datasets only, include both the display value and raw value for FKs if they differ
                     // Don't do this for the Participant and SequenceNum columns, since we know that their lookup targets
                     // will be available. See issue 15141
-                    if (def.isPublishedData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
+                    if (def.isPublishedData() && def.getPublishSource() == Dataset.PublishSource.Assay)
                     {
-                        boolean foundMatch = false;
-                        for (ColumnInfo existingColumns : inColumns)
+                        if (displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
                         {
-                            if (existingColumns.getFieldKey().equals(displayField.getFieldKey()))
+                            boolean foundMatch = false;
+                            for (ColumnInfo existingColumns : inColumns)
                             {
-                                foundMatch = true;
-                                break;
+                                if (existingColumns.getFieldKey().equals(displayField.getFieldKey()))
+                                {
+                                    foundMatch = true;
+                                    break;
+                                }
                             }
-                        }
-                        if (!foundMatch)
-                        {
-                            // issue 31169
-                            if (in.isMvEnabled())
-                                ((BaseColumnInfo)displayField).setNullable(true);
-                            outColumns.add(displayField);
+                            if (!foundMatch)
+                            {
+                                // issue 31169
+                                if (in.isMvEnabled())
+                                    ((BaseColumnInfo)displayField).setNullable(true);
+                                outColumns.add(displayField);
+                            }
                         }
                     }
 

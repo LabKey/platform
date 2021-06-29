@@ -78,10 +78,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         String name = column.getOriginalName().toLowerCase();
 
-        if (subjectColName.equals(name) || name.startsWith(subjectVisitName) || "container".equals(name))
-            return true;
-
-        return false;
+        return subjectColName.equals(name) || name.startsWith(subjectVisitName) || "container".equals(name);
     }
 
     @Override
@@ -110,7 +107,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         }
     }
 
-
     @Override
     public void addExtraColumnProperties(ColumnInfo column, TableInfo table, Map<String, Object> props)
     {
@@ -127,7 +123,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             props.put("uniqueKeys", alternateKeys);
         }
     }
-
 
     @Override
     public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery, boolean forSelect)
@@ -161,7 +156,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             }
         }
     }
-
 
     @Override
     public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery first, IVisualizationSourceQuery second, boolean isGroupByQuery)
@@ -313,20 +307,20 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         if (study != null)
         {
             study.getDatasets()
-                    .stream()
-                    .filter(Dataset::isDemographicData)
-                    .filter(Dataset::isShowByDefault)
-                    .forEach(ds ->
+                .stream()
+                .filter(Dataset::isDemographicData)
+                .filter(Dataset::isShowByDefault)
+                .forEach(ds ->
+                {
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.DATETIME_COLS, false);
+                    if (entry != null)
                     {
-                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(ds.getName(), ColumnMatchType.DATETIME_COLS, false);
-                        if (entry != null)
-                        {
-                            QueryDefinition query = entry.getKey();
-                            query.getColumns(null, entry.getValue()).stream()
-                                    .filter(col -> col != null && ColumnMatchType.DATETIME_COLS.match(col))
-                                    .forEach(col -> measures.put(Pair.of(col.getFieldKey(), col), query));
-                        }
-                    });
+                        QueryDefinition query = entry.getKey();
+                        query.getColumns(null, entry.getValue()).stream()
+                            .filter(col -> col != null && ColumnMatchType.DATETIME_COLS.match(col))
+                            .forEach(col -> measures.put(Pair.of(col.getFieldKey(), col), query));
+                    }
+                });
         }
         return measures;
     }

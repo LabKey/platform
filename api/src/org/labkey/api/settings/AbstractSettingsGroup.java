@@ -45,6 +45,11 @@ public abstract class AbstractSettingsGroup
         return "TRUE".equalsIgnoreCase(lookupStringValue(name, defaultValue ? "TRUE" : "FALSE" ) );
     }
 
+    protected boolean lookupBooleanValue(Container c, String name, boolean defaultValue)
+    {
+        return "TRUE".equalsIgnoreCase(lookupStringValue(c, name, defaultValue ? "TRUE" : "FALSE"));
+    }
+
     protected int lookupIntValue(String name, int defaultValue)
     {
         try

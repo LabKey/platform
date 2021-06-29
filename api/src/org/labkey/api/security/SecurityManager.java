@@ -59,8 +59,10 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
+import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
+import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -69,6 +71,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AbstractRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -79,6 +82,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -2071,7 +2075,7 @@ public class SecurityManager
         SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
-            if (policy.hasPermissions(user, perms))
+            if (SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
                 users.add(user);
 
         return users;
@@ -2084,7 +2088,7 @@ public class SecurityManager
         SecurityPolicy policy = c.getPolicy();
 
         for (User user : allUsers)
-            if (policy.hasOneOf(user, perms, null))
+            if (SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
                 users.add(user);
 
         return users;
@@ -2237,7 +2241,7 @@ public class SecurityManager
 
     public interface ViewFactory
     {
-        HttpView createView(ViewContext context);
+        @Nullable HttpView<?> createView(ViewContext context);
     }
 
     // Modules register a factory to add module-specific ui to the permissions page
@@ -2272,419 +2276,6 @@ public class SecurityManager
     public static List<TermsOfUseProvider> getTermsOfUseProviders()
     {
         return TERMS_OF_USE_PROVIDERS;
-    }
-
-    public static class TestCase extends Assert
-    {
-        Group groupA = null;
-        Group groupB = null;
-        Container project = null;
-        static String TEST_USER_1_EMAIL = "testuser1@test.com";
-        static String TEST_USER_1_ROLE_NAME = "org.labkey.api.security.roles.ApplicationAdminRole";
-        static String TEST_USER_2_EMAIL = "testuser2@test.com";
-        static String TEST_USER_2_GROUP_NAME = "Administrators";
-        static String TEST_GROUP_1_NAME = "testGroup1";
-        // this has to be a role that is applicable to root container
-        static String TEST_GROUP_1_ROLE_NAME = "org.labkey.api.security.roles.CanSeeAuditLogRole";
-
-        @Before
-        public void setUp()
-        {
-            project = JunitUtil.getTestContainer().getProject();
-            groupA = SecurityManager.createGroup(project, "a");
-            groupB = SecurityManager.createGroup(project, "b");
-        }
-//            try{tearDown();} catch(Exception e){};
-        @After
-        public void tearDown()
-        {
-            SecurityManager.deleteGroup(groupA);
-            try{SecurityManager.deleteGroup(groupB);}catch(Exception ignored){}
-        }
-
-        @Test
-        public void testRenameGroup()
-        {
-//            Group g1 = SecurityManager.createGroup(project, "group 1");
-            String newName  = groupB.getName() + "new";
-            int oldGroupId = getGroupId(project, groupB.getName());
-            SecurityManager.renameGroup(groupB, newName, null);
-            assertEquals(oldGroupId, getGroupId(project, newName).intValue());
-            groupB.setName(newName);
-        }
-
-        @Test
-        public void testRenameGroupExpectError()
-        {
-            Object[][] nameErrors = getRenameGroupExpectError();
-            for(Object[] nameError : nameErrors)
-            {
-                attemptRenameGroupExpectErrors((String) nameError[0],(String) nameError[1]);
-            }
-        }
-
-        private void attemptRenameGroupExpectErrors(String newName, String expectedErrorMessage)
-        {
-
-            try
-            {
-                renameGroup(groupA, newName, null);
-            }
-            catch(IllegalArgumentException e)
-            {
-                assertEquals(expectedErrorMessage, e.getMessage());
-            }
-        }
-
-        private Object[][] getRenameGroupExpectError()
-        {
-            return new Object[][]{{"", "Name is required (may not be blank)"},
-                    {null, "Name is required (may not be blank)"},
-                    {groupA.getName(), "Cannot rename group '" + groupA.getName() +
-                            "' to '" + groupA.getName() + "' because that name is already used by another group!"},
-                    {groupB.getName(), "Cannot rename group '" + groupA.getName() +
-                            "' to '" + groupB.getName() + "' because that name is already used by another group!"}
-
-            };
-        }
-
-        @Test
-        public void testCircularGroupMembership() throws InvalidGroupMembershipException
-        {
-            LinkedList<Group> groups = new LinkedList<>();
-
-            try
-            {
-                int maxLoop = 20;
-                int count = 0;
-
-//                for(int i=0; i<=maxLoop; i++)
-//                {
-//                    try
-//                    {
-//                        deleteGroup(getGroupId(project, "testGroup" + i, groupA.getOwnerId(), false, true));
-//                    }
-//                    catch(Exception e){}
-//                }
-
-                groups.add(groupB);
-                addMember(groupA, groupB);
-
-                while(count++ < maxLoop)
-                {
-                    Group newGroup = createGroup(project, "testGroup" + count);
-                    addMember(groups.getLast(), newGroup);
-                    groups.add(newGroup);
-                    try
-                    {
-                        addMember(newGroup, groupA);
-                        fail("Should have thrown error when attempting to create circular group. Chain is length: " + count);
-                    }
-                    catch (InvalidGroupMembershipException e)
-                    {
-                        //eat the exception, it's expected
-                    }
-                }
-            }
-            finally
-            {
-                deleteMember(groupA, groupB);
-                while(groups.size()>1)//groupB will be deleted by the tearDown
-                {
-                    deleteGroup(groups.removeLast());
-                }
-            }
-        }
-
-        @Test
-        public void testAddMemberToGroup() throws InvalidGroupMembershipException
-        {
-            Object[][] groupMemberResponses = getAddMemberErrorArgs();
-            for(Object[] groupMemberResponse : groupMemberResponses)
-            {
-                addMemberToGroupVerifyResponse((Group) groupMemberResponse[0],
-                                                (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
-            }
-
-            addMember(groupA, groupB);
-            addMemberToGroupVerifyResponse(groupA, groupB, ALREADY_A_MEMBER_ERROR_MESSAGE);
-        }
-
-        private Object[][] getAddMemberErrorArgs()
-        {
-            return new Object[][]{  {null, null, NULL_GROUP_ERROR_MESSAGE},
-                                {groupA, null, NULL_PRINCIPAL_ERROR_MESSAGE},
-                                {groupA, groupA, ADD_GROUP_TO_ITSELF_ERROR_MESSAGE}};
-        }
-
-        private void addMemberToGroupVerifyResponse(Group group, UserPrincipal principal, String expectedResponse)
-        {
-            assertEquals(expectedResponse, getAddMemberError(group, principal));
-        }
-
-        @Test
-        public void testCreateUser() throws Exception
-        {
-            ValidEmail email;
-            String rawEmail;
-
-            // Just in case, loop until we find one that doesn't exist already
-            do
-            {
-                rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
-                email = new ValidEmail(rawEmail);
-            }
-            while (SecurityManager.loginExists(email));
-
-            User user = null;
-
-            // Test create user, verify, login, and delete
-            try
-            {
-                NewUserStatus status = addUser(email, null);
-                user = status.getUser();
-                assertTrue("addUser", user.getUserId() != 0);
-
-                boolean success = SecurityManager.verify(email, status.getVerification());
-                assertTrue("verify", success);
-
-                SecurityManager.setVerification(email, null);
-
-                String password = generateStrongPassword(user);
-                SecurityManager.setPassword(email, password);
-
-                User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
-                assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
-                assertEquals(user, user2);
-            }
-            finally
-            {
-                UserManager.deleteUser(user.getUserId());
-            }
-        }
-
-        private String generateStrongPassword(User user)
-        {
-            String password;
-
-            // Check and loop until password is valid for this user. These randomly generated passwords will often
-            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
-            // rules disallow.
-            do
-            {
-                password = createTempPassword() + "Az9!";
-            }
-            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
-
-            return password;
-        }
-
-        @Test
-        public void testACLS()
-        {
-            Container fakeRoot = ContainerManager.createFakeContainer(null, null);
-            Container fakeFolder = ContainerManager.createFakeContainer("project", fakeRoot);
-
-            // Ignore all contextual roles
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeFolder) {
-                @NotNull
-                @Override
-                protected Set<Role> getContextualRoles(UserPrincipal principal)
-                {
-                    return Collections.emptySet();
-                }
-            };
-
-            // Test Site User and Guest groups
-            User user = TestContext.get().getUser();
-            assertFalse("no permission check", policy.hasPermission(user, ReadPermission.class));
-
-            policy.addRoleAssignment(user, ReaderRole.class);
-            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
-            assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
-            assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
-
-            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
-            policy.addRoleAssignment(guestGroup, ReaderRole.class);
-            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
-            assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
-            assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
-
-            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
-            policy.addRoleAssignment(userGroup, EditorRole.class);
-            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
-            assertTrue("insert permission", policy.hasPermission(user, InsertPermission.class));
-            assertTrue("update permission", policy.hasPermission(user, UpdatePermission.class));
-
-            // Guest
-            assertTrue("read permission", policy.hasPermission(User.guest, ReadPermission.class));
-            assertFalse("no insert permission", policy.hasPermission(User.guest, InsertPermission.class));
-            assertFalse("no update permission", policy.hasPermission(User.guest, UpdatePermission.class));
-        }
-
-
-        @Test
-        public void testEmailValidation()
-        {
-            testEmail("this@that.com", true);
-            testEmail("foo@fhcrc.org", true);
-            testEmail("dots.dots@dots.co.uk", true);
-            testEmail("funny_chars#that%are^allowed&in*email!addresses@that.com", true);
-
-            String displayName = "Personal Name";
-            ValidEmail email = testEmail(displayName + " <personal@name.com>", true);
-            assertEquals("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName, email.getPersonal());
-
-            String defaultDomain = ValidEmail.getDefaultDomain();
-            // If default domain is defined this should succeed; if it's not defined, this should fail.
-            testEmail("foo", defaultDomain != null && defaultDomain.length() > 0);
-
-            testEmail("~()@bar.com", false);
-            testEmail("this@that.com@con", false);
-            testEmail(null, false);
-            testEmail("", false);
-            testEmail("<@bar.com", false);
-            testEmail(displayName + " <personal>", false);  // Can't combine personal name with default domain
-        }
-
-
-        private ValidEmail testEmail(String rawEmail, boolean valid)
-        {
-            ValidEmail email = null;
-
-            try
-            {
-                email = new ValidEmail(rawEmail);
-                assertTrue(rawEmail, valid);
-            }
-            catch(InvalidEmailException e)
-            {
-                assertFalse(rawEmail, valid);
-            }
-
-            return email;
-        }
-
-        @Test
-        public void testDisplayName() throws Exception
-        {
-            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"),1));
-            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"),1));
-            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"),1));
-        }
-
-        /**
-         * Test that a new user can be created with role specified by startup properties
-         */
-        @Test
-        public void testStartupPropertiesForUserRoles() throws Exception
-        {
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
-            // examine the original list of users to ensure the test user is not already created
-            ValidEmail userEmail = new ValidEmail(TEST_USER_1_EMAIL);
-            Map<ValidEmail, User> originalUserEmailMap = UserManager.getUserEmailMap();
-            assertFalse("The user defined in the startup properties was already on the user list for this server: " + userEmail, originalUserEmailMap.containsKey(userEmail));
-
-            // call the method that makes use of the test startup properties to add a new user with specified role
-            populateUserRolesWithStartupProps();
-
-            // check that the expected user has been added to the list of users
-            Map<ValidEmail, User> revisedUserEmailMap = UserManager.getUserEmailMap();
-            assertTrue("The user defined in the startup properties was not added to the list of users: " + userEmail, revisedUserEmailMap.containsKey(userEmail));
-
-            // check that the user has the expected role
-            Container rootContainer = ContainerManager.getRoot();
-            User user = UserManager.getUser(userEmail);
-            Collection<Role> roles = rootContainer.getPolicy().getAssignedRoles(user);
-            Role role = RoleManager.getRole(TEST_USER_1_ROLE_NAME);
-            assertTrue("The user defined in the startup properties: "  + userEmail + " did not have the specified role: " + TEST_USER_1_ROLE_NAME, roles.contains(role));
-
-            // delete the test user that was added
-            UserManager.deleteUser(user.getUserId());
-        }
-
-        /**
-         * Test that a new group can be created with role specified by startup properties
-         */
-        @Test
-        public void testStartupPropertiesForGroupRoles()
-        {
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
-            // examine the original list of groups to ensure the test group is not already created
-            Container rootContainer = ContainerManager.getRoot();
-            assertNull("The group defined in the startup properties was already on the server: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
-
-            // call the method that makes use of the test startup properties to add a new group with specified role
-            populateGroupRolesWithStartupProps();
-
-            // check that the expected group has been added
-            assertNotNull("The group defined in the startup properties was not added to the list of groups: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
-
-            // check that the group has the expected role
-            Group group = GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE);
-            Collection<Role> roles = rootContainer.getPolicy().getAssignedRoles(group);
-            Role role = RoleManager.getRole(TEST_GROUP_1_ROLE_NAME);
-            assertTrue("The group defined in the startup properties: "  + TEST_GROUP_1_NAME + " did not have the specified role: " + TEST_GROUP_1_ROLE_NAME, roles.contains(role));
-
-            // delete the test group that was added
-            deleteGroup(group);
-        }
-
-        /**
-         * Test that a new user can be created with group specified by startup properties
-         */
-        @Test
-        public void testStartupPropertiesForUserGroups() throws Exception
-        {
-            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
-            prepareTestStartupProperties();
-
-            // examine the original list of users to ensure the test user is not already created
-            ValidEmail userEmail = new ValidEmail(TEST_USER_2_EMAIL);
-            Map<ValidEmail, User> originalUserEmailMap = UserManager.getUserEmailMap();
-            assertFalse("The user defined in the startup properties was already on the user list for this server: " + userEmail, originalUserEmailMap.containsKey(userEmail));
-
-            // call the method that makes use of the test startup properties to add a new user with specified group assignment
-            populateUserGroupsWithStartupProps();
-
-            // check that the expected user has been added to the list of users
-            Map<ValidEmail, User> revisedUserEmailMap = UserManager.getUserEmailMap();
-            assertTrue("The user defined in the startup properties was not added to the list of users: " + userEmail, revisedUserEmailMap.containsKey(userEmail));
-
-            // check that the user has been added to the specified group
-            Container rootContainer = ContainerManager.getRoot();
-            User user = UserManager.getUser(userEmail);
-            Group group = GroupManager.getGroup(rootContainer, TEST_USER_2_GROUP_NAME, GroupEnumType.SITE);
-            assertEquals("The user defined in the startup properties: " + TEST_USER_2_EMAIL + " did not have the specified group: " + TEST_USER_2_GROUP_NAME, "Principal is already a member of this group", SecurityManager.getAddMemberError(group, user));
-
-            // delete the test user that was added
-            UserManager.deleteUser(user.getUserId());
-        }
-
-        private void prepareTestStartupProperties()
-        {
-            // prepare a multimap of config properties to test with that has properties assigned for several scopes
-            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
-
-            // prepare test UserRole properties
-            ConfigProperty testUserRoleProp = new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
-
-            // prepare test GroupRole properties
-            ConfigProperty testGroupRoleProp = new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
-
-            // prepare test UserRole properties
-            ConfigProperty testUserGroupProp = new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
-            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
-
-            // set these test startup properties to be used by the entire server
-            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
-        }
     }
 
     public static List<ValidEmail> normalizeEmails(String[] rawEmails, List<String> invalidEmails)
@@ -2847,6 +2438,12 @@ public class SecurityManager
         {
             LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
             message.append(" Click ").append(link).append(" to see the email.");
+
+            if (!context.getContainer().isRoot())
+            {
+                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
+                message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".");
+            }
         }
 
         return message.getHtmlString();
@@ -3473,5 +3070,724 @@ public class SecurityManager
             errors.reject(ERROR_MSG, "No recipients provided.");
 
         return validRecipients;
+    }
+
+
+    /**
+     * This is a choke point for checking permissions.
+     * It handles SecurityPolicy permissions, impersonation (via User object), locked projects, and contextual roles.
+     *
+     * This lets the SecurityPolicy object just handle its own ACL-like functionality e.g. computing the
+     * permissions that it explicitly assigns (resolving roles and groups).
+     */
+    public static boolean hasAllPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ALL);
+    }
+
+    public static boolean hasAnyPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
+    {
+        return hasPermissions(logMsg, policy, principal, perms, contextualRoles, HasPermissionOption.ANY);
+    }
+
+    public static Set<Class<? extends Permission>> getPermissions(SecurityPolicy policy, UserPrincipal principal, Set<Role> contextualRoles)
+    {
+        Container c = ContainerManager.getForId(policy.getContainerId());
+        if (null != c && (principal instanceof User && c.isForbiddenProject((User) principal)))
+            return Set.of();
+
+        var granted = policy.getOwnPermissions(principal);
+        principal.getContextualRoles(policy).forEach(r -> granted.addAll(r.getPermissions()));
+        if (null != contextualRoles)
+            contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
+        if (principal instanceof User)
+            return ((User)principal).getImpersonationContext().filterPermissions(granted);
+        return granted;
+    }
+
+    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    {
+        try
+        {
+            SecurityLogger.indent(logMsg);
+            permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
+
+            var granted = getPermissions(policy, principal, contextualRoles);
+            boolean ret = opt.accept(granted, permissions);
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, policy, ret);
+
+            return ret;
+        }
+        finally
+        {
+            SecurityLogger.outdent();
+        }
+    }
+
+    @NotNull
+    public static List<String> getPermissionNames(SecurityPolicy policy, @NotNull UserPrincipal principal)
+    {
+        Set<Class<? extends Permission>> perms = SecurityManager.getPermissions(policy, principal, null);
+        List<String> names = new ArrayList<>(perms.size());
+        for (Class<? extends Permission> perm : perms)
+        {
+            Permission permInst = RoleManager.getPermission(perm);
+            if (null != permInst)
+                names.add(permInst.getUniqueName());
+        }
+        return names;
+    }
+
+    /**
+     * Returns the roles the principal is playing, either due to
+     * direct assignment, or due to membership in a group that is
+     * assigned the role.
+     * @param principal The principal
+     * @return The roles this principal is playing
+     */
+    @NotNull
+    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal)
+    {
+        return getEffectiveRoles(policy, principal, true);
+    }
+
+    @NotNull
+    public static Set<Role> getEffectiveRoles(@NotNull SecurityPolicy policy, @NotNull UserPrincipal principal, boolean includeContextualRoles)
+    {
+        Set<Role> roles = policy.getRoles(principal.getGroups());
+        roles.addAll(policy.getAssignedRoles(principal));
+        if (includeContextualRoles)
+            roles.addAll(principal.getContextualRoles(policy));;
+        return roles;
+    }
+
+    private enum HasPermissionOption
+    {
+        ANY()
+        {
+            @Override
+            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            {
+                return required.stream().anyMatch(granted::contains);
+            }
+        },
+        ALL
+        {
+            @Override
+            boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            {
+                return granted.containsAll(required);
+            }
+        };
+
+        abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
+    };
+
+
+
+
+    public static class TestCase extends Assert
+    {
+        Group groupA = null;
+        Group groupB = null;
+        Container project = null;
+        static String TEST_USER_1_EMAIL = "testuser1@test.com";
+        static String TEST_USER_1_ROLE_NAME = "org.labkey.api.security.roles.ApplicationAdminRole";
+        static String TEST_USER_2_EMAIL = "testuser2@test.com";
+        static String TEST_USER_2_GROUP_NAME = "Administrators";
+        static String TEST_GROUP_1_NAME = "testGroup1";
+        // this has to be a role that is applicable to root container
+        static String TEST_GROUP_1_ROLE_NAME = "org.labkey.api.security.roles.CanSeeAuditLogRole";
+
+        @Before
+        public void setUp()
+        {
+            project = JunitUtil.getTestContainer().getProject();
+            groupA = SecurityManager.createGroup(project, "a");
+            groupB = SecurityManager.createGroup(project, "b");
+        }
+        //            try{tearDown();} catch(Exception e){};
+        @After
+        public void tearDown()
+        {
+            SecurityManager.deleteGroup(groupA);
+            try{SecurityManager.deleteGroup(groupB);}catch(Exception ignored){}
+        }
+
+        @Test
+        public void testRenameGroup()
+        {
+//            Group g1 = SecurityManager.createGroup(project, "group 1");
+            String newName  = groupB.getName() + "new";
+            int oldGroupId = getGroupId(project, groupB.getName());
+            SecurityManager.renameGroup(groupB, newName, null);
+            assertEquals(oldGroupId, getGroupId(project, newName).intValue());
+            groupB.setName(newName);
+        }
+
+        @Test
+        public void testRenameGroupExpectError()
+        {
+            Object[][] nameErrors = getRenameGroupExpectError();
+            for(Object[] nameError : nameErrors)
+            {
+                attemptRenameGroupExpectErrors((String) nameError[0],(String) nameError[1]);
+            }
+        }
+
+        private void attemptRenameGroupExpectErrors(String newName, String expectedErrorMessage)
+        {
+
+            try
+            {
+                renameGroup(groupA, newName, null);
+            }
+            catch(IllegalArgumentException e)
+            {
+                assertEquals(expectedErrorMessage, e.getMessage());
+            }
+        }
+
+        private Object[][] getRenameGroupExpectError()
+        {
+            return new Object[][]{{"", "Name is required (may not be blank)"},
+                    {null, "Name is required (may not be blank)"},
+                    {groupA.getName(), "Cannot rename group '" + groupA.getName() +
+                            "' to '" + groupA.getName() + "' because that name is already used by another group!"},
+                    {groupB.getName(), "Cannot rename group '" + groupA.getName() +
+                            "' to '" + groupB.getName() + "' because that name is already used by another group!"}
+
+            };
+        }
+
+        @Test
+        public void testCircularGroupMembership() throws InvalidGroupMembershipException
+        {
+            LinkedList<Group> groups = new LinkedList<>();
+
+            try
+            {
+                int maxLoop = 20;
+                int count = 0;
+
+//                for(int i=0; i<=maxLoop; i++)
+//                {
+//                    try
+//                    {
+//                        deleteGroup(getGroupId(project, "testGroup" + i, groupA.getOwnerId(), false, true));
+//                    }
+//                    catch(Exception e){}
+//                }
+
+                groups.add(groupB);
+                addMember(groupA, groupB);
+
+                while(count++ < maxLoop)
+                {
+                    Group newGroup = createGroup(project, "testGroup" + count);
+                    addMember(groups.getLast(), newGroup);
+                    groups.add(newGroup);
+                    try
+                    {
+                        addMember(newGroup, groupA);
+                        fail("Should have thrown error when attempting to create circular group. Chain is length: " + count);
+                    }
+                    catch (InvalidGroupMembershipException e)
+                    {
+                        //eat the exception, it's expected
+                    }
+                }
+            }
+            finally
+            {
+                deleteMember(groupA, groupB);
+                while(groups.size()>1)//groupB will be deleted by the tearDown
+                {
+                    deleteGroup(groups.removeLast());
+                }
+            }
+        }
+
+        @Test
+        public void testAddMemberToGroup() throws InvalidGroupMembershipException
+        {
+            Object[][] groupMemberResponses = getAddMemberErrorArgs();
+            for(Object[] groupMemberResponse : groupMemberResponses)
+            {
+                addMemberToGroupVerifyResponse((Group) groupMemberResponse[0],
+                        (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
+            }
+
+            addMember(groupA, groupB);
+            addMemberToGroupVerifyResponse(groupA, groupB, ALREADY_A_MEMBER_ERROR_MESSAGE);
+        }
+
+        private Object[][] getAddMemberErrorArgs()
+        {
+            return new Object[][]{  {null, null, NULL_GROUP_ERROR_MESSAGE},
+                    {groupA, null, NULL_PRINCIPAL_ERROR_MESSAGE},
+                    {groupA, groupA, ADD_GROUP_TO_ITSELF_ERROR_MESSAGE}};
+        }
+
+        private void addMemberToGroupVerifyResponse(Group group, UserPrincipal principal, String expectedResponse)
+        {
+            assertEquals(expectedResponse, getAddMemberError(group, principal));
+        }
+
+        @Test
+        public void testCreateUser() throws Exception
+        {
+            ValidEmail email;
+            String rawEmail;
+
+            // Just in case, loop until we find one that doesn't exist already
+            do
+            {
+                rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
+                email = new ValidEmail(rawEmail);
+            }
+            while (SecurityManager.loginExists(email));
+
+            User user = null;
+
+            // Test create user, verify, login, and delete
+            try
+            {
+                NewUserStatus status = addUser(email, null);
+                user = status.getUser();
+                assertTrue("addUser", user.getUserId() != 0);
+
+                boolean success = SecurityManager.verify(email, status.getVerification());
+                assertTrue("verify", success);
+
+                SecurityManager.setVerification(email, null);
+
+                String password = generateStrongPassword(user);
+                SecurityManager.setPassword(email, password);
+
+                User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
+                assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
+                assertEquals(user, user2);
+            }
+            finally
+            {
+                UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        private String generateStrongPassword(User user)
+        {
+            String password;
+
+            // Check and loop until password is valid for this user. These randomly generated passwords will often
+            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
+            // rules disallow.
+            do
+            {
+                password = createTempPassword() + "Az9!";
+            }
+            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
+
+            return password;
+        }
+
+        @Test
+        public void testACLS()
+        {
+            Container testFolder = JunitUtil.getTestContainer();
+
+            // Ignore all contextual roles for the test user
+            final User testuser = TestContext.get().getUser();
+            UserPrincipal user = new UserPrincipal(testuser.getName(), testuser.getUserId(), testuser.getPrincipalType())
+            {
+                @Override
+                public int[] getGroups()
+                {
+                    return testuser.getGroups();
+                }
+
+                @Override
+                public Set<Role> getContextualRoles(SecurityPolicy policy)
+                {
+                    return Set.of();
+                }
+
+                @Override
+                public boolean isInGroup(int group)
+                {
+                    return testuser.isInGroup(group);
+                }
+
+                @Override
+                public boolean isActive()
+                {
+                    return testuser.isActive();
+                }
+            };
+
+            // Test Site User and Guest groups
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+            assertFalse("no permission check", policy.hasPermission(user, ReadPermission.class));
+
+            policy.addRoleAssignment(user, ReaderRole.class);
+            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
+            assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
+            assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
+
+            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
+            policy.addRoleAssignment(guestGroup, ReaderRole.class);
+            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
+            assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
+            assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
+
+            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
+            policy.addRoleAssignment(userGroup, EditorRole.class);
+            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
+            assertTrue("insert permission", policy.hasPermission(user, InsertPermission.class));
+            assertTrue("update permission", policy.hasPermission(user, UpdatePermission.class));
+
+            // Guest
+            assertTrue("read permission", policy.hasPermission(User.guest, ReadPermission.class));
+            assertFalse("no insert permission", policy.hasPermission(User.guest, InsertPermission.class));
+            assertFalse("no update permission", policy.hasPermission(User.guest, UpdatePermission.class));
+
+
+            // again with SecurityManager.hasPermissions
+            policy = new MutableSecurityPolicy(testFolder);
+            // Test Site User and Guest groups
+            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+
+            policy.addRoleAssignment(user, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            policy.addRoleAssignment(guestGroup, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            policy.addRoleAssignment(userGroup, EditorRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertTrue("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertTrue("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            // Guest
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+        }
+
+        @Test
+        public void testReadOnlyImpersonate()
+        {
+            Container testFolder = JunitUtil.getTestContainer();
+
+            // Ignore all contextual roles for the test user
+            final User testuser = TestContext.get().getUser();
+            // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
+            User user = new User(testuser.getEmail(), 1000000);
+            user.setImpersonationContext(new ReadOnlyImpersonatingContext());
+
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+            // Test Site User and Guest groups
+            assertFalse("no permission check", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+
+            policy.addRoleAssignment(user, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
+            policy.addRoleAssignment(guestGroup, ReaderRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
+            policy.addRoleAssignment(userGroup, EditorRole.class);
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("insert permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("update permission", SecurityManager.hasAllPermissions(null, policy, user, Set.of(UpdatePermission.class), Set.of()));
+
+            // Guest
+            assertTrue("read permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(ReadPermission.class), Set.of()));
+            assertFalse("no insert permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(InsertPermission.class), Set.of()));
+            assertFalse("no update permission", SecurityManager.hasAllPermissions(null, policy, User.guest, Set.of(UpdatePermission.class), Set.of()));
+        }
+
+
+        @Test
+        public void testEmailValidation()
+        {
+            testEmail("this@that.com", true);
+            testEmail("foo@fhcrc.org", true);
+            testEmail("dots.dots@dots.co.uk", true);
+            testEmail("funny_chars#that%are^allowed&in*email!addresses@that.com", true);
+
+            String displayName = "Personal Name";
+            ValidEmail email = testEmail(displayName + " <personal@name.com>", true);
+            assertEquals("Display name: expected '" + displayName + "' but was '" + email.getPersonal() + "'", displayName, email.getPersonal());
+
+            String defaultDomain = ValidEmail.getDefaultDomain();
+            // If default domain is defined this should succeed; if it's not defined, this should fail.
+            testEmail("foo", defaultDomain != null && defaultDomain.length() > 0);
+
+            testEmail("~()@bar.com", false);
+            testEmail("this@that.com@con", false);
+            testEmail(null, false);
+            testEmail("", false);
+            testEmail("<@bar.com", false);
+            testEmail(displayName + " <personal>", false);  // Can't combine personal name with default domain
+        }
+
+
+        private ValidEmail testEmail(String rawEmail, boolean valid)
+        {
+            ValidEmail email = null;
+
+            try
+            {
+                email = new ValidEmail(rawEmail);
+                assertTrue(rawEmail, valid);
+            }
+            catch(InvalidEmailException e)
+            {
+                assertFalse(rawEmail, valid);
+            }
+
+            return email;
+        }
+
+        @Test
+        public void testDisplayName() throws Exception
+        {
+            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"),1));
+            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"),1));
+            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"),1));
+        }
+
+        /**
+         * Test that a new user can be created with role specified by startup properties
+         */
+        @Test
+        public void testStartupPropertiesForUserRoles() throws Exception
+        {
+            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
+            prepareTestStartupProperties();
+
+            // examine the original list of users to ensure the test user is not already created
+            ValidEmail userEmail = new ValidEmail(TEST_USER_1_EMAIL);
+            Map<ValidEmail, User> originalUserEmailMap = UserManager.getUserEmailMap();
+            assertFalse("The user defined in the startup properties was already on the user list for this server: " + userEmail, originalUserEmailMap.containsKey(userEmail));
+
+            // call the method that makes use of the test startup properties to add a new user with specified role
+            populateUserRolesWithStartupProps();
+
+            // check that the expected user has been added to the list of users
+            Map<ValidEmail, User> revisedUserEmailMap = UserManager.getUserEmailMap();
+            assertTrue("The user defined in the startup properties was not added to the list of users: " + userEmail, revisedUserEmailMap.containsKey(userEmail));
+
+            // check that the user has the expected role
+            Container rootContainer = ContainerManager.getRoot();
+            User user = UserManager.getUser(userEmail);
+            Collection<Role> roles = rootContainer.getPolicy().getAssignedRoles(user);
+            Role role = RoleManager.getRole(TEST_USER_1_ROLE_NAME);
+            assertTrue("The user defined in the startup properties: "  + userEmail + " did not have the specified role: " + TEST_USER_1_ROLE_NAME, roles.contains(role));
+
+            // delete the test user that was added
+            UserManager.deleteUser(user.getUserId());
+        }
+
+        /**
+         * Test that a new group can be created with role specified by startup properties
+         */
+        @Test
+        public void testStartupPropertiesForGroupRoles()
+        {
+            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
+            prepareTestStartupProperties();
+
+            // examine the original list of groups to ensure the test group is not already created
+            Container rootContainer = ContainerManager.getRoot();
+            assertNull("The group defined in the startup properties was already on the server: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
+
+            // call the method that makes use of the test startup properties to add a new group with specified role
+            populateGroupRolesWithStartupProps();
+
+            // check that the expected group has been added
+            assertNotNull("The group defined in the startup properties was not added to the list of groups: " + TEST_GROUP_1_NAME, GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE));
+
+            // check that the group has the expected role
+            Group group = GroupManager.getGroup(rootContainer, TEST_GROUP_1_NAME, GroupEnumType.SITE);
+            Collection<Role> roles = rootContainer.getPolicy().getAssignedRoles(group);
+            Role role = RoleManager.getRole(TEST_GROUP_1_ROLE_NAME);
+            assertTrue("The group defined in the startup properties: "  + TEST_GROUP_1_NAME + " did not have the specified role: " + TEST_GROUP_1_ROLE_NAME, roles.contains(role));
+
+            // delete the test group that was added
+            deleteGroup(group);
+        }
+
+        /**
+         * Test that a new user can be created with group specified by startup properties
+         */
+        @Test
+        public void testStartupPropertiesForUserGroups() throws Exception
+        {
+            // ensure that the site wide ModuleLoader has test startup property values in the _configPropertyMap
+            prepareTestStartupProperties();
+
+            // examine the original list of users to ensure the test user is not already created
+            ValidEmail userEmail = new ValidEmail(TEST_USER_2_EMAIL);
+            Map<ValidEmail, User> originalUserEmailMap = UserManager.getUserEmailMap();
+            assertFalse("The user defined in the startup properties was already on the user list for this server: " + userEmail, originalUserEmailMap.containsKey(userEmail));
+
+            // call the method that makes use of the test startup properties to add a new user with specified group assignment
+            populateUserGroupsWithStartupProps();
+
+            // check that the expected user has been added to the list of users
+            Map<ValidEmail, User> revisedUserEmailMap = UserManager.getUserEmailMap();
+            assertTrue("The user defined in the startup properties was not added to the list of users: " + userEmail, revisedUserEmailMap.containsKey(userEmail));
+
+            // check that the user has been added to the specified group
+            Container rootContainer = ContainerManager.getRoot();
+            User user = UserManager.getUser(userEmail);
+            Group group = GroupManager.getGroup(rootContainer, TEST_USER_2_GROUP_NAME, GroupEnumType.SITE);
+            assertEquals("The user defined in the startup properties: " + TEST_USER_2_EMAIL + " did not have the specified group: " + TEST_USER_2_GROUP_NAME, "Principal is already a member of this group", SecurityManager.getAddMemberError(group, user));
+
+            // delete the test user that was added
+            UserManager.deleteUser(user.getUserId());
+        }
+
+        private void prepareTestStartupProperties()
+        {
+            // prepare a multimap of config properties to test with that has properties assigned for several scopes
+            MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
+
+            // prepare test UserRole properties
+            ConfigProperty testUserRoleProp = new ConfigProperty(TEST_USER_1_EMAIL, ",," + TEST_USER_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_ROLES);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_ROLES, testUserRoleProp);
+
+            // prepare test GroupRole properties
+            ConfigProperty testGroupRoleProp = new ConfigProperty(TEST_GROUP_1_NAME, ",," + TEST_GROUP_1_ROLE_NAME + ",,", "startup", ConfigProperty.SCOPE_GROUP_ROLES);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_GROUP_ROLES, testGroupRoleProp);
+
+            // prepare test UserRole properties
+            ConfigProperty testUserGroupProp = new ConfigProperty(TEST_USER_2_EMAIL, ",," + TEST_USER_2_GROUP_NAME + ",,", "startup", ConfigProperty.SCOPE_USER_GROUPS);
+            testConfigPropertyMap.put(ConfigProperty.SCOPE_USER_GROUPS, testUserGroupProp);
+
+            // set these test startup properties to be used by the entire server
+            ModuleLoader.getInstance().setConfigProperties(testConfigPropertyMap);
+        }
+
+        @Test
+        public void testGetUsersWithPermissions() throws Exception
+        {
+            Container parent = JunitUtil.getTestContainer();
+            Container test = null;
+            Pair<ValidEmail,User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
+            Pair<ValidEmail,User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
+            Pair<ValidEmail,User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
+
+            try
+            {
+                // Create real users
+                for (var p : Arrays.asList(userAB, userAC, userABC))
+                {
+                    if (null == UserManager.getUser(p.getKey()))
+                        addUser(p.getKey(), null, false);
+                    p.setValue(UserManager.getUser(p.getKey()));
+                }
+                // Create a mock container
+                String id = GUID.makeGUID();
+                test = new Container(parent, "test" + id, id, -1, 0, new Date(), 0, false)
+                {
+                    MutableSecurityPolicy p = null;
+                    @Override
+                    public @NotNull SecurityPolicy getPolicy()
+                    {
+                        if (null == p)
+                            p = new MutableSecurityPolicy(this);
+                        return p;
+                    }
+                    @Override
+                    public boolean isForbiddenProject(User user)
+                    {
+                        return false;
+                    }
+                };
+                MutableSecurityPolicy policy = (MutableSecurityPolicy)test.getPolicy();
+                policy.addAssignment(new RoleAssignment(id,userAB.getValue(),new RoleAB()));
+                policy.addAssignment(new RoleAssignment(id,userAC.getValue(),new RoleAC()));
+                policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAB()));
+                policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAC()));
+
+                var usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
+                assertEquals(3, usersWithAll.size());
+                assertTrue(usersWithAll.contains(userAB.getValue()));
+                assertTrue(usersWithAll.contains(userAC.getValue()));
+                assertTrue(usersWithAll.contains(userABC.getValue()));
+                var usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
+                assertEquals(usersWithAll, usersWithAny);
+
+                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
+                assertEquals(2, usersWithAll.size());
+                assertTrue(usersWithAll.contains(userAB.getValue()));
+                assertTrue(usersWithAll.contains(userABC.getValue()));
+                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
+                assertEquals(usersWithAll, usersWithAny);
+
+                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
+                assertEquals(1, usersWithAll.size());
+                assertTrue(usersWithAll.contains(userABC.getValue()));
+                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
+                assertEquals(3, usersWithAny.size());
+                assertTrue(usersWithAny.contains(userAB.getValue()));
+                assertTrue(usersWithAny.contains(userAC.getValue()));
+                assertTrue(usersWithAny.contains(userABC.getValue()));
+            }
+            finally
+            {
+                for (var p : Arrays.asList(userAB, userAC, userABC))
+                    if (null != p.getValue())
+                        UserManager.deleteUser(p.getValue().getUserId());
+            }
+        }
+    }
+
+    static class RoleAB extends AbstractRole implements Role.TestRole
+    {
+        RoleAB()
+        {
+            super("RoleAB", "RoleAB", PermissionA.class, PermissionB.class);
+        }
+    }
+    static class RoleAC extends AbstractRole implements Role.TestRole
+    {
+        RoleAC()
+        {
+            super("RoleAC", "RoleAC", PermissionA.class, PermissionC.class);
+        }
+    }
+    static class PermissionA extends AbstractPermission implements Permission.TestPermission
+    {
+        PermissionA()
+        {
+            super("PermissionA","PermissionA");
+        }
+    }
+    static class PermissionB extends AbstractPermission implements Permission.TestPermission
+    {
+        PermissionB()
+        {
+            super("PermissionB","PermissionB");
+        }
+    }
+    static class PermissionC extends AbstractPermission implements Permission.TestPermission
+    {
+        PermissionC()
+        {
+            super("PermissionC","PermissionC");
+        }
     }
 }

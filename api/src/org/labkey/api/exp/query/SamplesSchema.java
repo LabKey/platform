@@ -29,6 +29,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.Module;
@@ -39,9 +40,11 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -132,12 +135,18 @@ public class SamplesSchema extends AbstractExpSchema
         if (st == null)
             return null;
 
-        // Get linked to study columns
-        AbstractTableInfo tableInfo = (AbstractTableInfo) getSampleTable(st, cf);
-        int rowId = getSampleTypes().get(tableInfo.getName()).getRowId();
-        String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
-        StudyPublishService.get().addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
+        AbstractTableInfo tableInfo = (AbstractTableInfo) createSampleTable(st, cf);
 
+        // Get linked to study columns
+        StudyPublishService studyPublishService = StudyPublishService.get();
+        if (studyPublishService != null)
+        {
+            int rowId = st.getRowId();
+            String rowIdNameString = ExpMaterialTable.Column.RowId.toString();
+            studyPublishService.addLinkedToStudyColumns(tableInfo, Dataset.PublishSource.SampleType, true, rowId, rowIdNameString, getUser());
+            return tableInfo;
+        }
+        
         return tableInfo;
     }
 
@@ -153,8 +162,17 @@ public class SamplesSchema extends AbstractExpSchema
         return queryView;
     }
 
-    /** Creates a table of materials, scoped to the given sample type and including its custom columns, if provided */
-    public ExpMaterialTable getSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
+    /** Convenience method that takes a sample type instead of a string to provide a more robust mapping */
+    public ExpMaterialTable getTable(@NotNull ExpSampleType st, @Nullable ContainerFilter cf)
+    {
+        return (ExpMaterialTable) getTable(st.getName(), cf);
+    }
+
+    /**
+     * Creates a table of materials, scoped to the given sample type and including its custom columns, if provided.
+     * Does not include any linked-to-study columns or apply XML metadata overrides
+     */
+    public ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
         {
@@ -162,7 +180,6 @@ public class SamplesSchema extends AbstractExpSchema
         }
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
         ret.populate(st, true);
-        ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
         return ret;
     }
 
@@ -222,5 +239,20 @@ public class SamplesSchema extends AbstractExpSchema
             throw new NotFoundException("Sample type '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
         return st.getDomain().getTypeURI();
+    }
+
+    @Override
+    public NavTree getSchemaBrowserLinks(User user)
+    {
+        NavTree root = super.getSchemaBrowserLinks(user);
+        if (getContainer().hasPermission(user, ReadPermission.class))
+            root.addChild("Manage SampleTypes", ExperimentUrls.get().getShowSampleTypeListURL(getContainer()));
+        return root;
+    }
+
+    @Override
+    public boolean hasRegisteredSchemaLinks()
+    {
+        return true;
     }
 }

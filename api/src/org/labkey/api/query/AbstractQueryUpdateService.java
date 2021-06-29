@@ -73,6 +73,7 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
@@ -99,9 +100,11 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.audit.TransactionAuditProvider.DB_SEQUENCE_NAME;
@@ -159,6 +162,23 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             Map<String, Object> row = getRow(user, container, rowKeys);
             if (row != null)
                 result.add(row);
+        }
+        return result;
+    }
+
+    @Override
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
+        Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
+        {
+            Map<String, Object> row = getRow(user, container, key.getValue());
+            if (row != null)
+                result.put(key.getKey(), row);
         }
         return result;
     }
@@ -304,7 +324,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             return 0;
         else
         {
-            getQueryTable().getAuditHandler().addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count);
+            AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, count, auditType);
             return count;
         }
     }
@@ -516,7 +537,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
             String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
-            getQueryTable().getAuditHandler().addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
+            getQueryTable().getAuditHandler(auditBehavior)
+                    .addAuditEvent(user, container, getQueryTable(), auditBehavior, userComment, auditAction, rows, existingRows);
         }
     }
 
@@ -602,8 +624,32 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+
     protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
+
+
+    protected boolean firstUpdateRow = true;
+    Function<Map<String,Object>,Map<String,Object>> updateTransform = Function.identity();
+
+    /* Do standard AQUS stuff here, then call the subclass specific implementation of updateRow() */
+    final protected Map<String, Object> updateOneRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        if (firstUpdateRow)
+        {
+            firstUpdateRow = false;
+            if (null != OntologyService.get())
+            {
+                var t = OntologyService.get().getConceptUpdateHandler(_queryTable);
+                if (null != t)
+                    updateTransform = t;
+            }
+        }
+        row = updateTransform.apply(row);
+        return updateRow(user, container, row, oldRow);
+    }
+
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
@@ -640,7 +686,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
 
                 getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.UPDATE, true, i, row, oldRow, extraScriptContext);
-                Map<String, Object> updatedRow = updateRow(user, container, row, oldRow);
+                Map<String, Object> updatedRow = updateOneRow(user, container, row, oldRow);
                 if (!streaming && updatedRow == null)
                     continue;
 

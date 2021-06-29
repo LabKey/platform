@@ -1096,6 +1096,10 @@ public class StudyPublishManager implements StudyPublishService
         List<String> publishErrors = new ArrayList<>();
         if (targetContainer != null)
         {
+            // the below configuration translates to the current folder
+            if (targetContainer.equals(StudyPublishService.AUTO_LINK_TARGET_IMPORT_FOLDER))
+                targetContainer = container;
+
             Study study = StudyService.get().getStudy(targetContainer);
             String targetContainerPath = targetContainer.getPath();
             if (study != null)
@@ -1156,7 +1160,7 @@ public class StudyPublishManager implements StudyPublishService
     {
         if (targetStudyContainer != null)
         {
-            if (targetStudyContainer.equals(StudyPublishService.AUTO_LINK_TARGET_ASSAY_IMPORT_FOLDER))
+            if (targetStudyContainer.equals(StudyPublishService.AUTO_LINK_TARGET_IMPORT_FOLDER))
             {
                 // this configuration translates to the current folder
                 targetStudyContainer = container;
@@ -1266,7 +1270,7 @@ public class StudyPublishManager implements StudyPublishService
 
         if (protocol == null)
         {
-            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, protocolName);
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, protocolName);
             baseProtocol.setLSID(protocolLsid);
             baseProtocol.setMaxInputMaterialPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for publishing study using link to study.");

@@ -55,8 +55,8 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -65,7 +65,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -118,6 +117,7 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
+import static org.labkey.api.security.AuthenticationManager.DEFAULT_DOMAIN;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
@@ -1930,9 +1930,7 @@ public class LoginController extends SpringActionController
                         if (atSign > 0 && atSign < userEmailAddress.length() - 1)
                         {
                             String defaultDomain = userEmailAddress.substring(atSign + 1);
-                            WriteableAppProps appProps = AppProps.getWriteableInstance();
-                            appProps.setDefaultDomain(defaultDomain);
-                            appProps.save(null);
+                            AuthenticationManager.setDefaultDomain(getUser(), defaultDomain);
                         }
 
                         transaction.commit();
@@ -2397,7 +2395,9 @@ public class LoginController extends SpringActionController
                 AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
 
-            // Note from Rosaline: rowId arrays will be posted only if they are dirty
+            AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
+
+            // rowId arrays will be posted only if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());
             AuthenticationManager.reorderConfigurations(getUser(), "SSO", form.getSsoConfigurations());
             AuthenticationManager.reorderConfigurations(getUser(), "Secondary", form.getSecondaryConfigurations());
@@ -2411,6 +2411,7 @@ public class LoginController extends SpringActionController
         private boolean _selfRegistration;
         private boolean _selfServiceEmailChanges;
         private boolean _autoCreateAccounts;
+        private String _defaultDomain;
         private int[] _formConfigurations;
         private int[] _ssoConfigurations;
         private int[] _secondaryConfigurations;
@@ -2446,6 +2447,16 @@ public class LoginController extends SpringActionController
         public void setAutoCreateAccounts(boolean autoCreateAccounts)
         {
             _autoCreateAccounts = autoCreateAccounts;
+        }
+
+        public String getDefaultDomain()
+        {
+            return _defaultDomain;
+        }
+
+        public void setDefaultDomain(String defaultDomain)
+        {
+            _defaultDomain = defaultDomain;
         }
 
         public int[] getFormConfigurations()
@@ -2643,7 +2654,8 @@ public class LoginController extends SpringActionController
             Map<String, Object> globalSettings = Map.of(
                 SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled(),
                 SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled(),
-                AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled()
+                AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled(),
+                DEFAULT_DOMAIN, AuthenticationManager.getDefaultDomain()
             );
 
             // Primary providers

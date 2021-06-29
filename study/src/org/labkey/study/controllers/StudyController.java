@@ -144,7 +144,6 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
@@ -268,6 +267,12 @@ public class StudyController extends BaseStudyController
     public static class StudyUrlsImpl implements StudyUrls
     {
         @Override
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        @Override
         public ActionURL getCompletionURL(Container studyContainer, CompletionType type)
         {
             if (studyContainer == null)
@@ -387,6 +392,11 @@ public class StudyController extends BaseStudyController
             return url;
         }
 
+        @Override
+        public void addManageStudyNavTrail(NavTree root, Container container, User user)
+        {
+            _addManageStudy(root, container, user);
+        }
     }
 
     public StudyController()
@@ -2827,15 +2837,19 @@ public class StudyController extends BaseStudyController
             // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
             MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
             List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
+            Integer sourceRowId = null;
             for (Map<String,Object> row : data)
             {
-                String sourceLSID = (String)row.get("sourcelsid");
-                String datasetRowLsid = (String)row.get("lsid");
-                Integer sourceRowId = (Integer)row.get("rowId");
+                String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
+                String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
+                Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
                 if (sourceLSID != null && datasetRowLsid != null)
                 {
-                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, sourceRowId));
+                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
                 }
+
+                if (sourceRowId == null && rowId != null)
+                    sourceRowId = rowId;
             }
 
             Dataset.PublishSource publishSource = def.getPublishSource();
@@ -2845,7 +2859,7 @@ public class StudyController extends BaseStudyController
                 {
                     String sourceLsid = entry.getKey();
                     Collection<Pair<String, Integer>> pairs = entry.getValue();
-                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid);
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, sourceRowId);
                     if (sourceContainer != null)
                         StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
                 }
@@ -2855,7 +2869,7 @@ public class StudyController extends BaseStudyController
             // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
             if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid);
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, sourceRowId);
                 if (container != null)
                     throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }
@@ -6118,63 +6132,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class EnabledSpecimenImportForm
-    {
-        private String _activeTransform;
-
-        public String getActiveTransform()
-        {
-            return _activeTransform;
-        }
-
-        public void setActiveTransform(String activeTransform)
-        {
-            _activeTransform = activeTransform;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ChooseImporterAction extends FormViewAction<EnabledSpecimenImportForm>
-    {
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Specimen Import Mechanism");
-        }
-
-        @Override
-        public void validateCommand(EnabledSpecimenImportForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(EnabledSpecimenImportForm form, boolean reshow, BindException errors) throws Exception
-        {
-            setHelpTopic(new HelpTopic("externalSpecimens"));
-            return new JspView<>("/org/labkey/study/view/chooseImporter.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(EnabledSpecimenImportForm form, BindException errors) throws Exception
-        {
-            PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getContainer(), "enabledSpecimenImporter", true);
-            props.put("active", form.getActiveTransform());
-            props.save();
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(EnabledSpecimenImportForm configForm)
-        {
-            Container c = getContainer();
-            SpecimenService specimenService = SpecimenService.get();
-
-            String active = specimenService.getActiveSpecimenImporter(c);
-            SpecimenTransform activeTransform = specimenService.getSpecimenTransform(active);
-            return activeTransform.getManageAction(c, getUser());
-        }
-    }
-
     public static class ImportVisitMapForm
     {
         private String _content;
@@ -6189,7 +6146,6 @@ public class StudyController extends BaseStudyController
             _content = content;
         }
     }
-
 
     @RequiresPermission(AdminPermission.class)
     public class DemoModeAction extends FormViewAction<DemoModeForm>
@@ -7219,102 +7175,6 @@ public class StudyController extends BaseStudyController
         study.setParticipantAliasProperty(aliasColumn);
         study.setParticipantAliasSourceProperty(sourceColumn);
         StudyManager.getInstance().updateStudy(getUser(), study);
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
-    {
-        @Override
-        public ModelAndView getView(ManageLocationTypesForm form, BindException errors)
-        {
-            Study study = getStudyRedirectIfNull();
-            form.setRepository(study.isAllowReqLocRepository());
-            form.setClinic(study.isAllowReqLocClinic());
-            form.setSal(study.isAllowReqLocSal());
-            form.setEndpoint(study.isAllowReqLocEndpoint());
-            return new JspView<>("/org/labkey/study/view/manageLocationTypes.jsp", form);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("manageLocations");
-            _addManageStudy(root);
-            root.addChild("Manage Location Types");
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class SaveLocationsTypeSettingsAction extends MutatingApiAction<ManageLocationTypesForm>
-    {
-        @Override
-        public ApiResponse execute(ManageLocationTypesForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-            if (study != null)
-            {
-                study = study.createMutable();
-                study.setAllowReqLocRepository(form.isRepository());
-                study.setAllowReqLocClinic(form.isClinic());
-                study.setAllowReqLocSal(form.isSal());
-                study.setAllowReqLocEndpoint(form.isEndpoint());
-                StudyManager.getInstance().updateStudy(getUser(), study);
-
-                response.put("success", true);
-                return response;
-            }
-            else
-                throw new IllegalStateException("A study does not exist in this folder");
-        }
-    }
-
-    public static class ManageLocationTypesForm
-    {
-        private boolean _repository;
-        private boolean _clinic;
-        private boolean _sal;
-        private boolean _endpoint;
-
-        public boolean isRepository()
-        {
-            return _repository;
-        }
-
-        public void setRepository(boolean repository)
-        {
-            _repository = repository;
-        }
-
-        public boolean isClinic()
-        {
-            return _clinic;
-        }
-
-        public void setClinic(boolean clinic)
-        {
-            _clinic = clinic;
-        }
-
-        public boolean isSal()
-        {
-            return _sal;
-        }
-
-        public void setSal(boolean sal)
-        {
-            _sal = sal;
-        }
-
-        public boolean isEndpoint()
-        {
-            return _endpoint;
-        }
-
-        public void setEndpoint(boolean endpoint)
-        {
-            _endpoint = endpoint;
-        }
     }
 
     @RequiresPermission(ManageStudyPermission.class)

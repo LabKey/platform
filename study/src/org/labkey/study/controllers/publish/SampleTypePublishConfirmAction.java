@@ -13,7 +13,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.AbstractPublishConfirmAction;
@@ -28,7 +27,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -59,15 +57,12 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             if (_sampleType == null)
             {
                 if (getRowId() != null)
-                    _sampleType = SampleTypeService.get().getSampleType(getContainer(), getRowId());
+                    _sampleType = SampleTypeService.get().getSampleType(getContainer(), getUser(), getRowId());
                 else
                     throw new NotFoundException("Sample Type ID not specified.");
 
                 if (_sampleType == null)
                     throw new NotFoundException("Sample Type " + getRowId() + " does not exist in " + getContainer().getPath());
-
-                if (!_sampleType.getContainer().hasPermission(getViewContext().getUser(), ReadPermission.class))
-                    throw new UnauthorizedException();
             }
             return _sampleType;
         }

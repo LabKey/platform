@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
 
@@ -192,16 +193,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
 
     private String formatParameter(Object o)
     {
-        Object value;
-
-        try
-        {
-            value = Parameter.getValueToBind(o, null);
-        }
-        catch (SQLException x)
-        {
-            value = null;
-        }
+        Object value = Parameter.getValueToBind(o, null);
 
         if (value == null)
         {

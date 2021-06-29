@@ -2142,7 +2142,6 @@ public class StudyManager
         }
     }
 
-
     public VisitImpl getVisitForSequence(Study study, double seqNum)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
@@ -2169,7 +2168,6 @@ public class StudyManager
     {
         return getDatasetDefinitions(study, null);
     }
-
 
     public List<DatasetDefinition> getDatasetDefinitions(Study study, @Nullable Cohort cohort, String... types)
     {
@@ -2933,7 +2931,7 @@ public class StudyManager
         return true;
     }
 
-    public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids)
+    public @NotNull Collection<ParticipantDataset> getParticipantDatasets(Container container, Collection<String> lsids)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("LSID"), lsids));
@@ -2957,7 +2955,7 @@ public class StudyManager
                 pd.setLsid(rs.getString("LSID"));
                 if (!dataset.isDemographicData())
                 {
-                    pd.setSequenceNum(rs.getDouble("SequenceNum"));
+                    pd.setSequenceNum(rs.getBigDecimal("SequenceNum"));
                     pd.setVisitDate(rs.getTimestamp("_VisitDate"));
                 }
                 pd.setParticipantId(rs.getString("ParticipantId"));
@@ -2969,8 +2967,7 @@ public class StudyManager
             throw new RuntimeSQLException(e);
         }
 
-
-        return pds.toArray(new ParticipantDataset[0]);
+        return pds;
     }
 
 
@@ -4318,7 +4315,7 @@ public class StudyManager
             StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
 
-        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, null).toSQLFragment(null, null);
+        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), null, "p").toSQLFragment(null, null);
         if (!lastIndexedFragment.isEmpty())
             f.append(" AND ").append(lastIndexedFragment);
 
@@ -4691,6 +4688,19 @@ public class StudyManager
                 // SpecimenRequestNotificationEmailTemplate was moved to the specimen module in 21.3; move its template properties to the new location
                 EmailTemplateService.get().relocateEmailTemplateProperties("org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate", SpecimenRequestNotificationEmailTemplate.class);
                 StudyManager.getInstance().enableSpecimenModuleInStudyFolders(context.getUpgradeUser());
+            }
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        @DeferredUpgrade
+        public void ensureDesignDomains(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                _log.info("Ensuring study design domains in all studies");
+                StudyDesignManager mgr = StudyDesignManager.get();
+                StudyManager.getInstance().getAllStudies()
+                    .forEach(study->mgr.ensureStudyDesignDomains(study.getContainer(), context.getUpgradeUser()));
             }
         }
     }

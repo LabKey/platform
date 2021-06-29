@@ -161,7 +161,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
             good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
-            good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
+            good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
+            good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
         }
     }
 
@@ -171,22 +172,22 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         public void testJavaUpgradeCode()
         {
             String goodSql =
-                    "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
-                    "SELECT core.executeJavaInitializationCode('upgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
-                    "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
-                    "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
-                    "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
+                "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
+                "SELECT core.executeJavaInitializationCode('upgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
+                "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
+                "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
+                "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
 
             String badSql =
-                    "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
-                    "   more comment\n" +
-                    "*/" +
-                    "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
-                    "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
-                    "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
-                    "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
-                    "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
-                    "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
+                "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +   // Inside single-line comment
+                "SELECTcore.executeJavaUpgradeCode('upgradeCode');\n" +           // Bad syntax
+                "SELECT core. executeJavaUpgradeCode('upgradeCode');\n" +         // Bad syntax
+                "SEECT core.executeJavaUpgradeCode('upgradeCode');\n" +           // Misspell SELECT
+                "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
+                "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
             SqlDialect dialect = new PostgreSql96Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
@@ -216,7 +217,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected Set<String> getGoodUrls()
                 {
-                    return new CsvSet("jdbc:postgresql:database," +
+                    return new CsvSet
+                    (
+                        "jdbc:postgresql:database," +
                         "jdbc:postgresql://localhost/database," +
                         "jdbc:postgresql://localhost:8300/database," +
                         "jdbc:postgresql://www.host.com/database," +
@@ -225,16 +228,20 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                         "jdbc:postgresql://localhost/database?user=fred&password=secret&ssl=true," +
                         "jdbc:postgresql://localhost:8672/database?user=fred&password=secret&ssl=true," +
                         "jdbc:postgresql://www.host.com/database?user=fred&password=secret&ssl=true," +
-                        "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true");
+                        "jdbc:postgresql://www.host.com:8992/database?user=fred&password=secret&ssl=true"
+                    );
                 }
 
                 @NotNull
                 @Override
                 protected Set<String> getBadUrls()
                 {
-                    return new CsvSet("jddc:postgresql:database," +
+                    return new CsvSet
+                    (
+                        "jddc:postgresql:database," +
                         "jdbc:postgres://localhost/database," +
-                        "jdbc:postgresql://www.host.comdatabase");
+                        "jdbc:postgresql://www.host.comdatabase"
+                    );
                 }
             };
 

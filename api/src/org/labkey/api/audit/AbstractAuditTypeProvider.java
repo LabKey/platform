@@ -32,8 +32,11 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -48,6 +51,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -87,14 +91,28 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
     public static final String NEW_RECORD_PROP_CAPTION = "New Record Values";
 
+    final AbstractAuditDomainKind domainKind;
+
+
     public AbstractAuditTypeProvider()
     {
+        this(null);
+    }
+
+    public AbstractAuditTypeProvider(AbstractAuditDomainKind domainKind)
+    {
+        this.domainKind = domainKind;
+
         // Issue 20310: initialize AuditTypeProvider when registered during startup
         User auditUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
         initializeProvider(auditUser);
     }
 
-    protected abstract AbstractAuditDomainKind getDomainKind();
+    protected AbstractAuditDomainKind getDomainKind()
+    {
+        assert null != domainKind;
+        return domainKind;
+    }
 
     @Override
     public void initializeProvider(User user)
@@ -376,13 +394,18 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         Map<String,String> stringMap = new LinkedHashMap<>();
         for (Map.Entry<String,?> entry :  properties.entrySet())
         {
+            // see AuditHandler.getRecordForInsert(), rather than create a new map just skip values here
+            if (entry.getKey().equals(DataIterator.ROWNUMBER_COLUMNNAME) ||
+                entry.getKey().equals(ExistingRecordDataIterator.EXISTING_RECORD_COLUMN_NAME) ||
+                entry.getKey().equals(ExperimentService.ALIASCOLUMNALIAS))
+                continue;
             Object value = entry.getValue();
             if (value instanceof Date)
             {
                 // issue: 35002 - normalize Date values to avoid Timestamp/Date toString differences
                 // issue: 36472 - use iso format to show date-time values
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-                stringMap.put(entry.getKey(), formatter.format((Date) value));
+                String formatted = DateUtil.toISO((Date)value);
+                stringMap.put(entry.getKey(), formatted);
             }
             else
                 stringMap.put(entry.getKey(), value == null ? null : value.toString());

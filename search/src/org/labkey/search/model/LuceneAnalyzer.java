@@ -15,7 +15,6 @@
  */
 package org.labkey.search.model;
 
-import com.google.common.collect.ImmutableMap;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
@@ -25,8 +24,12 @@ import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.ClassicAnalyzer;
+import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -93,13 +96,16 @@ public enum LuceneAnalyzer
         {
             Analyzer identifierAnalyzer = IdentifierAnalyzer.getAnalyzer();
 
-            return new PerFieldAnalyzerWrapper(LuceneAnalyzer.EnglishAnalyzer.getAnalyzer(), ImmutableMap.of(
-                LuceneSearchServiceImpl.FIELD_NAME.searchCategories.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersLo.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersMed.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.identifiersHi.name(), identifierAnalyzer,
-                LuceneSearchServiceImpl.FIELD_NAME.uniqueId.name(), identifierAnalyzer
-            ));
+            Map<String, Analyzer> m = Stream.of(
+                FIELD_NAME.searchCategories,
+                FIELD_NAME.identifiersLo,
+                FIELD_NAME.identifiersMed,
+                FIELD_NAME.identifiersHi,
+                FIELD_NAME.uniqueId,
+                FIELD_NAME.ontology
+            ).collect(Collectors.toMap(Enum::name, n->identifierAnalyzer));
+
+            return new PerFieldAnalyzerWrapper(LuceneAnalyzer.EnglishAnalyzer.getAnalyzer(), m);
         }};
 
     abstract Analyzer getAnalyzer();

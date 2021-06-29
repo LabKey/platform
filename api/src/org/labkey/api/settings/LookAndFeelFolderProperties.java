@@ -88,11 +88,6 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         throw new IllegalStateException("Must provide a container");
     }*/
 
-    protected boolean lookupBooleanValue(Container c, String name, boolean defaultValue)
-    {
-        return "TRUE".equalsIgnoreCase(lookupStringValue(c, name, defaultValue ? "TRUE" : "FALSE"));
-    }
-
     public String getDefaultDateFormat()
     {
         // Look up this value starting from the current container (unlike all the other look & feel settings)

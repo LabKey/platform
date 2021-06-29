@@ -17,15 +17,19 @@
 %>
 <%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.settings.HeaderProperties" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -35,13 +39,11 @@
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.PopupUserView" %>
+<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
-<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -65,9 +67,19 @@
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 
+    ModuleLoader moduleLoader = ModuleLoader.getInstance();
     final NavTree optionsMenu = PopupAdminView.createNavTree(context);
-    boolean hasPremiumModule = ModuleLoader.getInstance().hasModule("Premium");
-    boolean isSMHostedOnly = !hasPremiumModule && ModuleLoader.getInstance().hasModule("SampleManagement");
+    boolean hasPremiumModule = moduleLoader.hasModule("Premium");
+    boolean isSMHostedOnly = !hasPremiumModule && moduleLoader.hasModule("SampleManagement");
+    boolean showProductMenu =
+            // don't show product menu when starting up
+            isRealUser && moduleLoader.isStartupComplete() &&
+            // .. or if user does not have read permission
+            c.hasPermission(user, ReadPermission.class)
+            // show only for premium distributions or SM distributions
+                    && (hasPremiumModule || isSMHostedOnly)
+            // show only if configured to always be shown or shown to admins and this is an admin user
+                    && (laf.getApplicationMenuDisplayMode() == FolderDisplayMode.ALWAYS || c.hasPermission(user, AdminPermission.class));
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
@@ -176,8 +188,7 @@
 <%
     }
 
-    // only show the product navigation menu item if we are on a premium LK server or LKSM hosted only
-    if (isRealUser && c.hasPermission(user, ReadPermission.class) && (hasPremiumModule || isSMHostedOnly))
+    if (showProductMenu)
     {
 %>
             <li class="dropdown dropdown-rollup" id="headerProductDropdown">

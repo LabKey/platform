@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -43,15 +44,21 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DomainKindDesign;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
@@ -63,6 +70,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -92,6 +100,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -281,6 +290,12 @@ public class PropertyController extends SpringActionController
                 if (templateGroup == null)
                     throw new NotFoundException("Domain template group '" + domainGroup + "' not found");
 
+                if (templateGroup.hasErrors())
+                {
+                    errors.reject(ERROR_MSG, "Domain template group '" + domainGroup + "' has errors: " + StringUtils.join(templateGroup.getErrors(), "\n"));
+                    return null;
+                }
+
                 if (domainTemplate != null)
                 {
                     DomainTemplate template = templateGroup.getTemplate(domainTemplate, kindName, true);
@@ -298,12 +313,6 @@ public class PropertyController extends SpringActionController
                 }
                 else
                 {
-                    if (templateGroup.hasErrors())
-                    {
-                        errors.reject(ERROR_MSG, "Domain template group '" + domainGroup + "' has errors: " + StringUtils.join(templateGroup.getErrors(), "\n"));
-                        return null;
-                    }
-
                     domains = templateGroup.createAndImport(getContainer(), getUser(), /*TODO: allow specifying a domain name for each template?, */ createDomain, importData);
                 }
             }
@@ -499,6 +508,169 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class UpdateDomainApiForm
+    {
+        private int domainId;
+        private boolean includeWarnings;
+        private List<Integer> deleteFields;
+        private List<GWTPropertyDescriptor> updateFields;
+        private List<GWTPropertyDescriptor> createFields;
+
+        public int getDomainId()
+        {
+            return domainId;
+        }
+
+        public void setDomainId(int domainId)
+        {
+            this.domainId = domainId;
+        }
+
+        public boolean isIncludeWarnings()
+        {
+            return includeWarnings;
+        }
+
+        public void setIncludeWarnings(boolean includeWarnings)
+        {
+            this.includeWarnings = includeWarnings;
+        }
+
+        public List<Integer> getDeleteFields()
+        {
+            return deleteFields;
+        }
+
+        public void setDeleteFields(List<Integer> deleteFields)
+        {
+            this.deleteFields = deleteFields;
+        }
+
+        public List<GWTPropertyDescriptor> getUpdateFields()
+        {
+            return updateFields;
+        }
+
+        public void setUpdateFields(List<GWTPropertyDescriptor> updateFields)
+        {
+            this.updateFields = updateFields;
+        }
+
+        public List<GWTPropertyDescriptor> getCreateFields()
+        {
+            return createFields;
+        }
+
+        public void setCreateFields(List<GWTPropertyDescriptor> createFields)
+        {
+            this.createFields = createFields;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
+    public class UpdateDomainAction extends MutatingApiAction<UpdateDomainApiForm>
+    {
+        Domain _domain;
+
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            _propertyService.configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
+        public void validateForm(UpdateDomainApiForm form, Errors errors)
+        {
+            if (form.getDomainId() == 0)
+            {
+                errors.rejectValue("domainId", ERROR_MSG, "domainId required");
+                return;
+            }
+
+            _domain = PropertyService.get().getDomain(form.getDomainId());
+            if (_domain == null)
+                throw new NotFoundException("Could not find domain " + form.getDomainId() + ".");
+
+            if (!getContainer().equals(_domain.getContainer()))
+                throw new NotFoundException("Could not find domain " + form.getDomainId() + " in container '" + getContainer().getPath() + "'");
+        }
+
+        @Override
+        public Object execute(UpdateDomainApiForm form, BindException errors) throws Exception
+        {
+            GWTDomain<GWTPropertyDescriptor> originalDomain = DomainUtil.getDomainDescriptor(getUser(), _domain);
+            GWTDomain<GWTPropertyDescriptor> newDomain = DomainUtil.getDomainDescriptor(getUser(), _domain);
+
+            // apply changes from the form to the domain.
+            // DomainUtil.updateDomainDescriptor() will calculate the inverse when diffing the domains.
+
+            if (form.deleteFields != null && !form.deleteFields.isEmpty())
+            {
+                newDomain.getFields().removeIf(field -> form.getDeleteFields().contains(field.getPropertyId()));
+            }
+
+            if (form.updateFields != null && !form.updateFields.isEmpty())
+            {
+                OUTER: for (var updateField : form.updateFields)
+                {
+                    if (updateField.getPropertyId() <= 0)
+                    {
+                        errors.reject(ERROR_MSG, "propertyId required for updated field '" + updateField.getName() + "'");
+                        continue;
+                    }
+
+                    // find and replace the field
+                    // CONSIDER: only update field values that are present in the request
+                    for (var i = 0; i < newDomain.getFields().size(); i++)
+                    {
+                        var existingField = newDomain.getFields().get(i);
+                        if (updateField.getPropertyId() > 0 && updateField.getPropertyId() == existingField.getPropertyId())
+                        {
+                            newDomain.getFields().set(i, updateField);
+                            break OUTER;
+                        }
+                    }
+                }
+            }
+
+            if (form.createFields != null && !form.createFields.isEmpty())
+            {
+                newDomain.getFields().addAll(form.createFields);
+            }
+
+            boolean includeWarnings = form.isIncludeWarnings();
+            boolean hasErrors = false;
+
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, null, getContainer(), getUser(), includeWarnings);
+            for (ValidationError ve : updateErrors.getErrors())
+            {
+                if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
+                    hasErrors = true;
+            }
+
+            if (hasErrors || includeWarnings)
+                updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
+
+            // CONSIDER: Echo back domain, or at least the inserted/updated fields
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            return resp;
+        }
+
+    }
+
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class DeleteDomainAction extends MutatingApiAction<DomainApiForm>
@@ -515,7 +687,8 @@ public class PropertyController extends SpringActionController
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class DomainApiForm {
+    public static class DomainApiForm
+    {
         private String kind;
         private String domainKind;
         private String domainName;
@@ -1437,6 +1610,26 @@ public class PropertyController extends SpringActionController
     public class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
     {
         @Override
+        public void validateForm(GetPropertiesForm form, Errors errors)
+        {
+            if (form.getPropertyIds() != null && form.getPropertyURIs() != null)
+            {
+                errors.reject(ERROR_REQUIRED, "Either propertyIds or propertyURIs may be specified but not both");
+                return;
+            }
+
+            if (form.getPropertyIds() != null || form.getPropertyURIs() != null)
+            {
+                String propType = form.getPropertyIds() != null ? "propertyIds" : "propertyURIs";
+                if (form.getDomainIds() != null || form.getDomainKinds() != null || form.getFilters() != null || form.getSearch() != null)
+                {
+                    errors.reject(ERROR_MSG, propType + " can't be specified with domainIds, domainKinds, search, filters");
+                    return;
+                }
+            }
+        }
+
+        @Override
         public Object execute(GetPropertiesForm form, BindException errors) throws Exception
         {
             Stream<PropertyDescriptor> properties;
@@ -1457,7 +1650,33 @@ public class PropertyController extends SpringActionController
             }
             else
             {
-                throw new ApiUsageException("Expected propertyIds or propertyURIs");
+                SimpleFilter filter = null;
+                if (form.getFilters() != null && !form.getFilters().isEmpty())
+                {
+                    filter = new SimpleFilter();
+
+                    // Reparent the URL filter columns to be relative from the "propertyId" lookup used
+                    // in the query (e.g. from "query.column~op=value" to "query.propertyId/column~op=value"),
+                    // create filter clauses, and them to the filter collection.
+                    form.getFilters()
+                            .stream()
+                            .filter(s -> s.startsWith("query."))
+                            .filter(s -> s.contains("~") && s.contains("="))
+                            .map(s -> {
+                                // extract the column name and prefix it with "propertyId/"
+                                int tilde = s.indexOf("~");
+                                String columnName = s.substring("query.".length(), tilde);
+                                return "query.propertyId/" + columnName + s.substring(tilde);
+                            })
+                            .map(SimpleFilter::createFilterFromParameter)
+                            .filter(Objects::nonNull)
+                            .forEach(filter::addAllClauses);
+                }
+
+                List<PropertyDescriptor> pds = OntologyManager.getPropertyDescriptors(getContainer(), getUser(),
+                        form.getDomainIds(), form.getDomainKinds(), form.getSearch(),
+                        filter, form.getSort(), form.getMaxRows(), form.getOffset());
+                properties = pds.stream();
             }
 
             List<GWTPropertyDescriptor> gwtProps = properties
@@ -1472,6 +1691,169 @@ public class PropertyController extends SpringActionController
     {
         private List<Integer> propertyIds;
         private List<String> propertyURIs;
+        private Set<Integer> domainIds;
+        private Set<String> domainKinds;
+        private List<String> filters;
+        private @Nullable String search;
+        private String sort;
+        private Integer maxRows;
+        private Long offset;
+
+        public List<Integer> getPropertyIds()
+        {
+            return propertyIds;
+        }
+
+        public void setPropertyIds(List<Integer> propertyIds)
+        {
+            this.propertyIds = propertyIds;
+        }
+
+        public List<String> getPropertyURIs()
+        {
+            return propertyURIs;
+        }
+
+        public void setPropertyURIs(List<String> propertyURIs)
+        {
+            this.propertyURIs = propertyURIs;
+        }
+
+        public Set<Integer> getDomainIds()
+        {
+            return domainIds;
+        }
+
+        public void setDomainIds(Set<Integer> domainIds)
+        {
+            this.domainIds = domainIds;
+        }
+
+        public Set<String> getDomainKinds()
+        {
+            return domainKinds;
+        }
+
+        public void setDomainKinds(Set<String> domainKinds)
+        {
+            this.domainKinds = domainKinds;
+        }
+
+        public String getSearch()
+        {
+            return search;
+        }
+
+        public void setSearch(String search)
+        {
+            this.search = search;
+        }
+
+        public List<String> getFilters()
+        {
+            return filters;
+        }
+
+        public void setFilters(List<String> filters)
+        {
+            this.filters = filters;
+        }
+
+        public String getSort()
+        {
+            return sort;
+        }
+
+        public void setSort(String sort)
+        {
+            this.sort = sort;
+        }
+
+        public Integer getMaxRows()
+        {
+            return maxRows;
+        }
+
+        public void setMaxRows(Integer maxRows)
+        {
+            this.maxRows = maxRows;
+        }
+
+        public Long getOffset()
+        {
+            return offset;
+        }
+
+        public void setOffset(Long offset)
+        {
+            this.offset = offset;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class PropertyUsagesAction extends ReadOnlyApiAction<PropertyUsagesForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
+
+            ExperimentJSONConverter.Settings settings = ExperimentJSONConverter.DEFAULT_SETTINGS.withIncludeInputsAndOutputs(false);
+
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(Identifiable.class, new ExperimentJSONConverter.IdentifiableSerializer(Identifiable.class, getUser(), settings));
+            om.registerModule(module);
+
+            return om;
+        }
+
+        @Override
+        public void validateForm(PropertyUsagesForm form, Errors errors)
+        {
+            if (form.getPropertyIds() != null & form.getPropertyURIs() != null)
+            {
+                errors.reject(ERROR_REQUIRED, "Either propertyIds or propertyURIs may be specified but not both");
+            }
+            if (form.getPropertyIds() == null && form.getPropertyURIs() == null)
+            {
+                errors.reject(ERROR_REQUIRED, "Either propertyIds or propertyURIs is required");
+            }
+        }
+
+        @Override
+        public Object execute(PropertyUsagesForm form, BindException errors) throws Exception
+        {
+            List<OntologyManager.PropertyUsages> usages = null;
+            if (form.getPropertyIds() != null)
+            {
+                usages = OntologyManager.findPropertyUsages(getUser(), form.getPropertyIds(), form.maxUsageCount);
+            }
+            else if (form.getPropertyURIs() != null)
+            {
+                usages = OntologyManager.findPropertyUsages(getUser(), getContainer(), form.getPropertyURIs(), form.maxUsageCount);
+            }
+
+            return success(usages);
+        }
+    }
+
+    public static class PropertyUsagesForm
+    {
+        private Integer maxUsageCount = 5;
+        private List<Integer> propertyIds;
+        private List<String> propertyURIs;
+
+        public Integer getMaxUsageCount()
+        {
+            return maxUsageCount;
+        }
+
+        public void setMaxUsageCount(Integer maxUsageCount)
+        {
+            this.maxUsageCount = maxUsageCount;
+        }
 
         public List<Integer> getPropertyIds()
         {
@@ -1495,43 +1877,126 @@ public class PropertyController extends SpringActionController
 
     }
 
-
     public static class TestCase extends Assert
     {
-        @Test
-        public void testGetDomains() throws ValidationException
+        Domain createVocabDomain() throws ValidationException
         {
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
-            GWTDomain mockDomain = new GWTDomain();
+            var gwtDomain = new GWTDomain<>();
             String domainName = "TestVocabularyDomain" + GUID.makeGUID();
-            mockDomain.setName(domainName);
-            mockDomain.setDescription("This is a mock vocabulary");
+            gwtDomain.setName(domainName);
 
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
 
             GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
             prop1.setRangeURI("int");
             prop1.setName("testIntField");
+            prop1.setDimension(true);
 
             GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
             prop2.setRangeURI("string");
             prop2.setName("testStringField");
+            prop2.setDescription("howdy");
+            prop2.setDimension(false);
 
             gwtProps.add(prop1);
             gwtProps.add(prop2);
 
-            mockDomain.setFields(gwtProps);
+            gwtDomain.setFields(gwtProps);
 
-            Domain createdDomain = DomainUtil.createDomain("Vocabulary", mockDomain, null, c, user, domainName, null);
+            return DomainUtil.createDomain(VocabularyDomainKind.KIND_NAME, gwtDomain, null, c, user, domainName, null);
+        }
+
+        @Test
+        public void testGetDomains() throws ValidationException
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            Domain createdDomain = createVocabDomain();
 
             Set<String> domainKinds = new HashSet<>();
-            domainKinds.add("Vocabulary");
+            domainKinds.add(VocabularyDomainKind.KIND_NAME);
 
-            List<? extends Domain> addedDomains = PropertyService.get().getDomains(c, user, domainKinds, false).
-                    stream().filter(d ->  d.getDomainKind().getKindName().equals("Vocabulary")).collect(Collectors.toList());
+            List<? extends Domain> vocabDomains = PropertyService.get().getDomains(c, user, domainKinds, false);
 
-            assertEquals("Vocabulary Domain Not found.", createdDomain.getName(), mockDomain.getName());
+            boolean found = vocabDomains.stream().anyMatch(d -> d.getTypeId() == createdDomain.getTypeId());
+            assertTrue("Vocabulary Domain Not found.", found);
+        }
+
+        @Test
+        public void testGetProperties() throws ValidationException
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            Domain domain = createVocabDomain();
+            var props = domain.getProperties().stream().map(DomainProperty::getPropertyDescriptor).collect(Collectors.toSet());
+
+            // find by domainIds
+            var pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, null, null);
+            assertEquals(domain.getProperties().size(), pds.size());
+
+            // find by domainKinds
+            pds = OntologyManager.getPropertyDescriptors(c, user, null, Set.of(VocabularyDomainKind.KIND_NAME), null, null, null, null, null);
+            assertFalse(pds.isEmpty());
+            assertTrue(pds.containsAll(props)); // there may be other VocabularyDomains in the test container
+
+            // find by domainId and search term
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, "howdy", null, null, null, null);
+            assertEquals(1, pds.size());
+            assertEquals("testStringField", pds.get(0).getName());
+
+            // find by domainId and property descriptor feature
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, new SimpleFilter(FieldKey.fromParts("propertyId", "dimension"), true), null, null, null);
+            assertEquals(1, pds.size());
+            assertEquals("testIntField", pds.get(0).getName());
+
+            // pagination
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, 1, 1L);
+            assertEquals(1, pds.size());
+            // sorted by propertyId, testStringField is after testIntField
+            assertEquals("testStringField", pds.get(0).getName());
+        }
+
+        @Test
+        public void testPropertyUsages() throws Exception
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            Domain domain = createVocabDomain();
+            var intProp = domain.getPropertyByName("testIntField");
+            var stringProp = domain.getPropertyByName("testStringField");
+
+            // create object and attach a property
+            Lsid.LsidBuilder lsidBuilder = new Lsid.LsidBuilder("JUnitTest", null);
+
+            // register a silly LsidHandler for our test namespace
+            LsidManager.get().registerHandler("JUnitTest", new LsidManager.OntologyObjectLsidHandler());
+
+            // create some exp.object and attach properties
+            Lsid a1Lsid = lsidBuilder.setObjectId("A1").build();
+            int a1ObjectId = OntologyManager.ensureObject(c, a1Lsid.toString());
+            Identifiable a1 = LsidManager.get().getObject(a1Lsid);
+            assertNotNull(a1);
+            OntologyManager.insertProperties(c, user, a1Lsid.toString(), true, true,
+                    new ObjectProperty(a1Lsid.toString(), c, intProp.getPropertyURI(), 300),
+                    new ObjectProperty(a1Lsid.toString(), c, stringProp.getPropertyURI(), "hello"));
+
+            // find usages
+            var allUsages = OntologyManager.findPropertyUsages(user, c, List.of(intProp.getPropertyURI(), stringProp.getPropertyURI()), 0);
+            assertEquals(2, allUsages.size());
+            assertEquals(intProp.getPropertyId(), allUsages.get(0).propertyId);
+            assertEquals(stringProp.getPropertyId(), allUsages.get(1).propertyId);
+            assertEquals(1, allUsages.get(0).usageCount);
+            assertEquals(0, allUsages.get(0).objects.size());
+
+            var intPropUsages = OntologyManager.findPropertyUsages(user, intProp.getPropertyDescriptor(), 1);
+            assertEquals(1, intPropUsages.usageCount);
+            assertEquals(1, intPropUsages.objects.size());
+            assertEquals(a1Lsid.toString(), intPropUsages.objects.get(0).getLSID());
         }
     }
 }
