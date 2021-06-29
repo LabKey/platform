@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector> implements ResultsFactory
 {
-    public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.emptySet());
+    public static final Set<String> ALL_COLUMNS = Collections.emptySet();
 
     private static final Logger LOG = LogManager.getLogger(TableSelector.class);
 

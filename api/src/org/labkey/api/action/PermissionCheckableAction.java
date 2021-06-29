@@ -17,7 +17,7 @@ package org.labkey.api.action;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.AllowedOutsideImpersonationProject;
+import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.ContextualRoles;
@@ -155,7 +155,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         User user = context.getUser();
         Class<? extends Controller> actionClass = getClass();
 
-        if (!actionClass.isAnnotationPresent(AllowedOutsideImpersonationProject.class) && c.isForbiddenProject(user))
+        if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class) && c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
         Method method = context.getMethod();
