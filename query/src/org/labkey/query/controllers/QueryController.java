@@ -5179,7 +5179,7 @@ public class QueryController extends SpringActionController
     }
 
     // Moves a session view into the database.
-    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
     public static class SaveSessionViewAction extends MutatingApiAction<SaveSessionViewForm>
     {
         @Override

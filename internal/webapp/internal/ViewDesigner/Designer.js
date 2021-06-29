@@ -708,7 +708,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
             });
         }
 
-        if (!this.query.isTemporary && !LABKEY.user.isGuest) {
+        if (!this.query.isTemporary) {
             items.push({
                 text: "Save",
                 tooltip: "Save changes",
