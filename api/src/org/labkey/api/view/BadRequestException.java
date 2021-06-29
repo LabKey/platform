@@ -43,7 +43,7 @@ public class BadRequestException extends HttpStatusException
             @Override
             public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
             {
-                return isSuspicous;
+                return isSuspicious;
             }
         },
         LetItGo     // Just a bad API call or some such (consider not using BadRequestException?)
@@ -55,7 +55,7 @@ public class BadRequestException extends HttpStatusException
             }
         };
 
-        abstract public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious);
+        abstract boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious);
     };
 
     private final HowBad severity;
@@ -91,6 +91,7 @@ public class BadRequestException extends HttpStatusException
         this.severity = severity;
     }
 
+    /** isSuspicious is the result of BlockListFilter.isSuspicious() */
     public boolean isSuspiciousRequest(HttpServletRequest req, boolean isSuspicious)
     {
         return severity.isSuspiciousRequest(req, isSuspicious);
