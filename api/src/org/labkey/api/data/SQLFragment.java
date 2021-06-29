@@ -574,7 +574,7 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    public SQLFragment appendIf(boolean test, Consumer<SQLFragment> block)
+    public SQLFragment applyIf(boolean test, Consumer<SQLFragment> block)
     {
         if (test)
             block.accept(this);

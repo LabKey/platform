@@ -805,7 +805,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             // Allow read and delete for exp.Materials.
             // Don't allow insert/update on exp.Materials without a sample type.
-            if (perm.isAssignableFrom(DeletePermission.class) || perm.isAssignableFrom(ReadPermission.class))
+            if (perm == DeletePermission.class || perm == ReadPermission.class)
                 return getContainer().hasPermission(user, perm);
             else
                 return false;
