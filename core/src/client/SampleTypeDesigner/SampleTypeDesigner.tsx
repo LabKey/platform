@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import React from 'react'
-import { ActionURL, getServerContext } from "@labkey/api";
+import React from 'react';
+import { ActionURL, getServerContext } from '@labkey/api';
 import {
     Alert,
     BeforeUnload,
@@ -26,9 +26,9 @@ import {
     LoadingSpinner,
     SampleTypeDesigner,
     SampleTypeModel
-} from "@labkey/components"
+} from '@labkey/components';
 
-import "../DomainDesigner.scss"
+import '../DomainDesigner.scss';
 
 interface State {
     sampleType?: DomainDetails
@@ -157,6 +157,7 @@ export class App extends React.PureComponent<any, State> {
                     includeDataClasses={true}
                     useTheme={true}
                     appPropertiesOnly={false}
+                    showLinkToStudy={true}
                     successBsStyle={'primary'}
                 />
             </BeforeUnload>

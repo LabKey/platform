@@ -476,7 +476,7 @@ public class DatasetQueryView extends StudyQueryView
             if (c.hasPermission(getUser(), ReadPermission.class))
             {
                 ActionButton btn = _dataset.getPublishSource().getSourceButton(_dataset.getPublishSourceId(),
-                        ContainerFilter.Type.CurrentAndSubfolders.create(getSchema()));
+                        ContainerFilter.Type.CurrentAndSubfolders.create(getSchema()), c);
                 if (btn != null)
                     bar.add(btn);
             }
