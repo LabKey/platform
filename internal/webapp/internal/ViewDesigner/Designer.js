@@ -16,7 +16,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     bodyStyle: 'background-color: transparent;',
 
     statics: {
-        RESERVED_VIEW_NAMES : ['default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
+        RESERVED_VIEW_NAMES : ['Default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
         saveCustomizeViewPrompt: function(config) {
             var success = config.success,
                     scope = config.scope,
