@@ -16,6 +16,7 @@
 package org.labkey.api.resource;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
 
 import java.io.IOException;
@@ -84,6 +85,14 @@ public interface Resource
 
     @Nullable
     InputStream getInputStream() throws IOException;
+
+    // return false to force contentDisposition=="attachment"
+    @Nullable
+    default boolean canInline()
+    {
+        MimeMap.MimeType t = new MimeMap().getMimeTypeFor(getName());
+        return t.canInline();
+    }
 
     /**
      * The String returned can be used as a cache key and,
