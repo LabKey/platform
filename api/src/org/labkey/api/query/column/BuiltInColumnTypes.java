@@ -91,6 +91,10 @@ public enum BuiltInColumnTypes
     static public final String DEATHDATE_CONCEPT_URI = "http://cpas.labkey.com/laboratory#deathDate";
     // ontology
     String conceptCodeConceptURI = "http://www.labkey.org/types#conceptCode";
+    // ExpRunItemTableImpl
+    public static final String ALIAS_CONCEPT_URI = "http://www.labkey.org/exp/xml#alias";
+    // PropertiesDisplayColumn
+    public static final String CONCEPT_URI = "http://www.labkey.org/types#properties";
     // ProeprtyType, sometimes used as conceptURI (e.g. expFlag)
     expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", true, "Multi-Line Text", "String", "string"),
     xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "String", "string"),

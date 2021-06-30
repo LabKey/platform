@@ -5994,7 +5994,7 @@ public class DavController extends SpringActionController
      * during the copy operation
      * @param destPath Destination path
      */
-    private WebdavStatus copyResource(WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath)
+    private WebdavStatus copyResource(WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
     {
         _log.debug("Copy: " + src.getPath() + " To: " + destPath);
 
@@ -6002,7 +6002,7 @@ public class DavController extends SpringActionController
 
         if (src.isCollection())
         {
-            if (!dest.getFile().mkdir())
+            if (!dest.createCollection(getUser()))
             {
                 errorList.put(dest.getPath(), WebdavStatus.SC_CONFLICT);
                 return WebdavStatus.SC_CONFLICT;

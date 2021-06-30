@@ -426,8 +426,12 @@
   </table>
   <table tableName="PropertyDescriptor" tableDbType="TABLE">
     <columns>
-      <column columnName="PropertyId"/>
-      <column columnName="PropertyURI"/>
+      <column columnName="PropertyId">
+          <isHidden>true</isHidden>
+      </column>
+      <column columnName="PropertyURI">
+          <isHidden>true</isHidden>
+      </column>
       <column columnName="RangeURI"/>
       <column columnName="Name"/>
       <column columnName="StorageColumnName"/>
@@ -436,7 +440,9 @@
       <column columnName="Label"/>
       <column columnName="Format"/>
       <column columnName="Container"/>
-      <column columnName="Project"/>
+      <column columnName="Project">
+          <isHidden>true</isHidden>
+      </column>
       <column columnName="LookupContainer"/>
       <column columnName="LookupSchema"/>
       <column columnName="LookupQuery"/>
@@ -472,8 +478,11 @@
   </columns>
   </table>
   <table tableName="DomainDescriptor" tableDbType="TABLE">
+    <description>Contains a row for every domain definition</description>
     <columns>
-      <column columnName="DomainId"/>
+      <column columnName="DomainId">
+          <isHidden>true</isHidden>
+      </column>
       <column columnName="DomainURI"/>
       <column columnName="Name"/>
       <column columnName="Description"/>

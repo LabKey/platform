@@ -21,6 +21,6 @@ public class AntiVirusException extends BadRequestException
 {
     public AntiVirusException(String message)
     {
-        super(message, null);
+        super(message, HowBad.Malicious);
     }
 }

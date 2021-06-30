@@ -43,7 +43,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Project;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.module.AllowedOutsideImpersonationProject;
+import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -55,8 +55,8 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -65,7 +65,6 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -573,6 +572,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
+    @IgnoresForbiddenProjectCheck
     @AllowedDuringUpgrade
     public class LoginAction extends SimpleViewAction<LoginForm>
     {
@@ -601,6 +601,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    @IgnoresForbiddenProjectCheck
     @AllowedDuringUpgrade
     @CSRF(CSRF.Method.NONE) // don't need CSRF for actions that require a password
     public class LoginApiAction extends MutatingApiAction<LoginForm>
@@ -1378,7 +1379,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @AllowedOutsideImpersonationProject
+    @IgnoresForbiddenProjectCheck
     public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
         private URLHelper _redirectURL = null;
@@ -1418,7 +1419,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @AllowedOutsideImpersonationProject
+    @IgnoresForbiddenProjectCheck
     public class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
     {
         @Override
@@ -1448,7 +1449,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    @AllowedOutsideImpersonationProject
+    @IgnoresForbiddenProjectCheck
     public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
@@ -2393,9 +2394,10 @@ public class LoginController extends SpringActionController
             AuthenticationManager.saveAuthSettings(getUser(), Map.of(
                 SELF_REGISTRATION_KEY, form.isSelfRegistration(),
                 SELF_SERVICE_EMAIL_CHANGES_KEY, form.isSelfServiceEmailChanges(),
-                AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts(),
-                DEFAULT_DOMAIN, form.getDefaultDomain() == null ? "" : form.getDefaultDomain()
+                AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
+
+            AuthenticationManager.setDefaultDomain(getUser(), form.getDefaultDomain());
 
             // rowId arrays will be posted only if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());
@@ -2627,7 +2629,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
-    @AllowedOutsideImpersonationProject
+    @IgnoresForbiddenProjectCheck
     public class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override

@@ -259,6 +259,7 @@ public abstract class EmailTemplate
     }
 
     public void setBody(String body){_body = body;}
+    @Deprecated // Priority is COMPLETELY ignored and will be removed
     public void setPriority(int priority){_priority = priority;}
     public int getPriority(){return _priority;}
     public String getDescription(){return _description;}

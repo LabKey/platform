@@ -668,17 +668,18 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     protected static SimpleFilter addPreviouslyRequestedEnrollmentClause(SimpleFilter filter, Container container, User user, int locationId, boolean completedRequestsOnly)
     {
         SQLFragment sql = getBaseRequestedEnrollmentSql(container, user, completedRequestsOnly);
-        assert 0 == sql.getParams().size();
+
         if (locationId == -1)
         {
             sql.append("IS NULL)");
         }
         else
         {
-            sql.append("= " + locationId + ")");
+            sql.append("= ?)");
+            sql.add(locationId);
         }
 
-        filter.addWhereClause(sql.getSQL(), null, FieldKey.fromParts("GlobalUniqueId"));
+        filter.addWhereClause(sql, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }

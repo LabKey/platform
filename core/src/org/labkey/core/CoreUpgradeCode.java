@@ -17,6 +17,8 @@ package org.labkey.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
@@ -37,14 +39,18 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.security.AuthenticationManager.AUTHENTICATION_CATEGORY;
 import static org.labkey.api.security.AuthenticationManager.PROVIDERS_KEY;
@@ -237,5 +243,17 @@ public class CoreUpgradeCode implements UpgradeCode
 
             AuthenticationManager.setDefaultDomain(context.getUpgradeUser(), defaultDomain);
         }
+    }
+
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public void setDefaultExcludedProjects(ModuleContext context)
+    {
+        List<GUID> guids = Set.of("home", "Shared").stream()
+            .map(ContainerManager::getForPath)
+            .filter(Objects::nonNull)
+            .map(Container::getEntityId)
+            .collect(Collectors.toList());
+        ContainerManager.setExcludedProjects(guids, () -> {});
     }
 }

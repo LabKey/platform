@@ -70,7 +70,7 @@
     <div class="col-sm-4" style="margin-bottom: 5px">
         <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">
             <labkey:input name="issueId" placeholder="ID # or Search Term"/>
-            <%= button("Search").iconCls("search").tooltip("Search").submit(true) %>
+            <%= button("Search").iconCls("search").submit(true) %>
         </labkey:form>
     </div>
     <div class="col-sm-5" style="margin-bottom: 5px">

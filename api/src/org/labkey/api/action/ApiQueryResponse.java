@@ -188,6 +188,21 @@ public class ApiQueryResponse implements ApiResponse
                     }
                     writer.writeProperty("messages", messages);
                 }
+
+                // include metadata on properties encountered while rendering PropertiesDisplayColumn
+                Map<String, Pair<PropertyColumn, DisplayColumn>> extraProperties = (Map<String, Pair<PropertyColumn, DisplayColumn>>)_ctx.get("org.labkey.api.query.PropertiesDisplayColumn");
+                if (extraProperties != null)
+                {
+                    List<Map<String, Object>> props = new ArrayList<>(extraProperties.size());
+                    for (Pair<PropertyColumn, DisplayColumn> pair : extraProperties.values())
+                    {
+                        var dc = pair.second;
+                        Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, _includeLookupInfo, false);
+                        props.add(fmdata);
+                    }
+                    writer.writeProperty("additionalFieldMetadata", props);
+                }
+
             }
         }
         writer.endResponse();

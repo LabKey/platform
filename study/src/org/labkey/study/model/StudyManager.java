@@ -4044,8 +4044,6 @@ public class StudyManager
 
         String getRedirectUrl();
 
-        QCStateSet getQCStateSet();
-
         Map<String, String> getAliases();
     }
 
@@ -4688,6 +4686,19 @@ public class StudyManager
                 // SpecimenRequestNotificationEmailTemplate was moved to the specimen module in 21.3; move its template properties to the new location
                 EmailTemplateService.get().relocateEmailTemplateProperties("org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate", SpecimenRequestNotificationEmailTemplate.class);
                 StudyManager.getInstance().enableSpecimenModuleInStudyFolders(context.getUpgradeUser());
+            }
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        @DeferredUpgrade
+        public void ensureDesignDomains(final ModuleContext context)
+        {
+            if (!context.isNewInstall())
+            {
+                _log.info("Ensuring study design domains in all studies");
+                StudyDesignManager mgr = StudyDesignManager.get();
+                StudyManager.getInstance().getAllStudies()
+                    .forEach(study->mgr.ensureStudyDesignDomains(study.getContainer(), context.getUpgradeUser()));
             }
         }
     }

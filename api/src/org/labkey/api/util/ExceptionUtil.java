@@ -24,11 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ApiXmlWriter;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -711,7 +710,7 @@ public class ExceptionUtil
             UnauthorizedException uae = (UnauthorizedException) ex;
 
             // This header allows for requests to explicitly ask to not get basic auth headers back
-            // useful for when the page wants to handle 401's itself
+            // useful for when the page wants to handle 401s itself
             String headerHint = request.getHeader("X-ONUNAUTHORIZED");
 
             boolean isGuest = user.isGuest();
@@ -725,7 +724,13 @@ public class ExceptionUtil
                 // If user has not logged in or agreed to terms, not really unauthorized yet...
                 if (!isCSRFViolation && isGuest && type == UnauthorizedException.Type.redirectToLogin && !overrideBasicAuth)
                 {
-                    return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
+                    // Issue 43307: If this is a locked project then just show the login page in the root. Register,
+                    // forgot my password, profile update, password reset, etc. aren't going to work right in a locked
+                    // project.
+                    Container c = HttpView.getContextContainer();
+                    if (c.getLockState().isLocked())
+                        c = ContainerManager.getRoot();
+                    return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, HttpView.getContextURLHelper());
                 }
             }
 
