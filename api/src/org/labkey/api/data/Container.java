@@ -1661,13 +1661,26 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _lockState = lockState;
     }
 
-    public @Nullable LocalDate getExpirationDate()
+    @Deprecated
+    public @Nullable LocalDate getExpirationDateLD()
     {
         return _expirationDate;
     }
 
-    public void setExpirationDate(LocalDate expirationDate)
+    @Deprecated
+    public void setExpirationDateLD(LocalDate expirationDate)
     {
         _expirationDate = expirationDate;
+    }
+
+    // TODO: Convert to LocalDate once we fix Jackson serialization of LocalDate
+    public java.sql.Date getExpirationDate()
+    {
+        return java.sql.Date.valueOf(_expirationDate);
+    }
+
+    public void setExpirationDate(java.sql.Date expirationDate)
+    {
+        _expirationDate = expirationDate.toLocalDate();
     }
 }
