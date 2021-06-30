@@ -221,14 +221,6 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
             {
                 return currentUrl;
             }
-
-            @Override
-            public QCStateSet getQCStateSet()
-            {
-                if (QCStateManager.getInstance().showQCStates(container))
-                    return QCStateSet.getSelectedStates(container, encodedQCState);
-                return null;
-            }
         };
 
         return type.createView(container, config);

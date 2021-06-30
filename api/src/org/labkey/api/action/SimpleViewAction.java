@@ -85,7 +85,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
             String key = pv.getName();
             Object value = pv.getValue();
             if (!ViewServlet.validChars(key))
-                throw new BadRequestException("Unrecognized unicode character in request");
+                throw new BadRequestException("Unrecognized unicode character in request", BadRequestException.HowBad.Malicious);
             if (null == value)
             {
                 continue;
@@ -93,7 +93,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
             else if (value instanceof CharSequence)
             {
                 if (!ViewServlet.validChars((CharSequence) value))
-                    throw new BadRequestException("Unrecognized unicode character in request");
+                    throw new BadRequestException("Unrecognized unicode character in request", BadRequestException.HowBad.Malicious);
             }
             else if (value.getClass().isArray())
             {
@@ -102,7 +102,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
                 {
                     if (item instanceof CharSequence)
                         if (!ViewServlet.validChars((CharSequence)item))
-                            throw new BadRequestException("Unrecognized unicode character in request");
+                            throw new BadRequestException("Unrecognized unicode character in request", BadRequestException.HowBad.Malicious);
                 }
             }
         }

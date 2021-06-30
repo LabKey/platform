@@ -2779,7 +2779,7 @@ public class ContainerManager
             d.setType(type);
             d.setTitle(title);
             d.setLockState(lockState);
-            d.setExpirationDate(expirationDate);
+            d.setExpirationDateLD(expirationDate);
             return d;
         }
 
