@@ -24,12 +24,10 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.study.model.QCStateSet;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -56,7 +54,6 @@ public class PublishedRecordQueryView extends DatasetQueryView
         _publishSourceId = publishSourceId;
         _recordCount = recordCount;
 
-        setQcStateSet(getStateSet(schema.getContainer()));
         if (_sourceLsid != null)
         {
             SimpleFilter filter = new SimpleFilter();
@@ -64,14 +61,6 @@ public class PublishedRecordQueryView extends DatasetQueryView
             filter.addCondition(FieldKey.fromParts("SourceLSID"), _sourceLsid, CompareType.EQUAL);
             getSettings().getBaseFilter().addAllClauses(filter);
         }
-    }
-
-    private static QCStateSet getStateSet(Container container)
-    {
-        if (QCStateManager.getInstance().showQCStates(container))
-            return QCStateSet.getAllStates(container);
-        else
-            return null;
     }
 
     @Override

@@ -50,6 +50,12 @@
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
+<%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterValue" %>
+<%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterKey" %>
+<%@ page import="static org.labkey.study.model.QCStateSet.getQCStateFilteredURL" %>
+<%@ page import="static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL" %>
+<%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -61,6 +67,7 @@
     StudyManager manager = StudyManager.getInstance();
     String visitsLabel = manager.getVisitManager(study).getPluralLabel();
     String subjectNoun = StudyService.get().getSubjectNounSingular(container);
+    String eq = getQCUrlFilterKey(CompareType.EQUAL, "Dataset");
 
     boolean showCohorts = CohortManager.getInstance().hasCohortMenu(container, user);
     Cohort selectedCohort = null;
@@ -286,10 +293,18 @@
             {
                 ActionURL defaultReportURL = new ActionURL(DefaultDatasetReportAction.class, container);
                 defaultReportURL.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
+
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
-                if (bean.qcStates != null)
-                    defaultReportURL.addParameter("QCState", bean.qcStates.getFormValue());
+                if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
+                    defaultReportURL.replaceParameter(eq, QCStateManager.getInstance().getQCStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                // Public States case
+                if (bean.qcStates != null && QCStateSet.getPublicStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
+                    defaultReportURL = getQCStateFilteredURL(defaultReportURL, PUBLIC_STATES_LABEL, "Dataset", container);
+                // Private States case
+                if (bean.qcStates != null && QCStateSet.getPrivateStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
+                    defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, "Dataset", container);
+                defaultReportURL.addParameter("skipDataVisibility", 1);
 
         %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=text(innerHtml)%>
         </a><%
@@ -332,8 +347,8 @@
                     datasetLink.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
-                    if (bean.qcStates != null)
-                        datasetLink.addParameter(SharedFormParameters.QCState, bean.qcStates.getFormValue());
+                    if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
+                        datasetLink.replaceParameter(eq, QCStateManager.getInstance().getQCStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
 
                     innerHtml = "<a href=\"" + datasetLink.getLocalURIString() + "\">" + innerHtml + "</a>";
                 }

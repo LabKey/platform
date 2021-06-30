@@ -4044,8 +4044,6 @@ public class StudyManager
 
         String getRedirectUrl();
 
-        QCStateSet getQCStateSet();
-
         Map<String, String> getAliases();
     }
 
