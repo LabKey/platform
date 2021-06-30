@@ -86,12 +86,14 @@ public interface Resource
     @Nullable
     InputStream getInputStream() throws IOException;
 
-    // return false to force contentDisposition=="attachment"
+    /**
+     *  Return false to force contentDisposition=attachment.
+     * This does not mean the browser knows how to inline the document.  see MimeType.canInline().
+     */
     @Nullable
-    default boolean canInline()
+    default boolean allowInline()
     {
-        MimeMap.MimeType t = new MimeMap().getMimeTypeFor(getName());
-        return t.canInline();
+        return true;
     }
 
     /**

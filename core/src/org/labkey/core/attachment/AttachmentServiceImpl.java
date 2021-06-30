@@ -1282,11 +1282,11 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         @Override
-        public boolean canInline()
+        public boolean allowInline()
         {
             if (isFile() && "text/html".equals(getContentType()))
                 return false;
-            return super.canInline();
+            return super.allowInline();
         }
 
         private void initSearchProperties(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
