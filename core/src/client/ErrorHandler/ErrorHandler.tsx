@@ -50,11 +50,11 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
                                 {getErrorHeading(errorDetails)}
                                 {getSubHeading(errorDetails)}
                                 {getInstruction(errorDetails)}
-                                <button className="btn btn-primary error-backButton" onClick={this.onBackClick}>
+                                <button className="btn btn-primary error-backButton error-page-button" onClick={this.onBackClick}>
                                     Back
                                 </button>
                                 {!errorDetails.hideViewDetails &&
-                                    <button className="btn btn-default error-details-btn" onClick={this.onViewDetailsClick}>
+                                    <button className="btn btn-default error-page-button" onClick={this.onViewDetailsClick}>
                                         {viewDetailsBtnText}
                                     </button>
                                 }
