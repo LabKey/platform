@@ -808,14 +808,10 @@ public class Table
         return returnObject;
     }
 
-
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals)
     {
         return update(user, table, fieldsIn, pkVals, null, Level.WARN);
     }
-
-
-
 
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, Object pkVals, @Nullable Filter filter, Level level)
     {

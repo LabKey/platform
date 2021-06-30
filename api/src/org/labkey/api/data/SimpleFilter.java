@@ -617,7 +617,6 @@ public class SimpleFilter implements Filter
 
     public static class InClause extends MultiValuedFilterClause
     {
-
         public InClause(FieldKey fieldKey, Collection<?> params)
         {
             this(fieldKey, params, false, false);

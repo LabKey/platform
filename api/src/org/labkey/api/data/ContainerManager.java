@@ -45,6 +45,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
+import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.exp.ExperimentException;
@@ -95,6 +96,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -729,16 +731,74 @@ public class ContainerManager
         _removeFromCache(container);
     }
 
-    public static void updateLockState(Container container, LockState lockState, User user)
+    public static void updateLockState(Container container, LockState lockState, @NotNull Runnable auditRunnable)
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
         StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = ? WHERE RowID = ?");
+        sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?");
         new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
 
         _removeFromCache(container);
+
+        auditRunnable.run();
+    }
+
+    public static List<Container> getExcludedProjects()
+    {
+        return getProjects().stream()
+            .filter(p->p.getLockState() == Container.LockState.Excluded)
+            .collect(Collectors.toList());
+    }
+
+    public static List<Container> getNonExcludedProjects()
+    {
+        return getProjects().stream()
+            .filter(p->p.getLockState() != Container.LockState.Excluded)
+            .collect(Collectors.toList());
+    }
+
+    public static void setExcludedProjects(Collection<GUID> ids, @NotNull Runnable auditRunnable)
+    {
+        // First clear all existing "Excluded" states
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?");
+        new SqlExecutor(CORE.getSchema()).execute(sql, LockState.Excluded);
+
+        // Now set the passed-in projects to "Excluded"
+        if (!ids.isEmpty())
+        {
+            ColumnInfo entityIdCol = CORE.getTableInfoContainers().getColumn("EntityId");
+            Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
+            SQLFragment frag = new SQLFragment("UPDATE ");
+            frag.append(CORE.getTableInfoContainers().getSelectName());
+            frag.append(" SET LockState = ?, ExpirationDate = NULL ");
+            frag.add(LockState.Excluded);
+            frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
+            new SqlExecutor(CORE.getSchema()).execute(frag);
+        }
+
+        clearCache();
+
+        auditRunnable.run();
+    }
+
+    public static void updateExpirationDate(Container container, LocalDate expirationDate, @NotNull Runnable auditRunnable)
+    {
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET ExpirationDate = ? WHERE RowID = ?");
+
+        // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
+        new SqlExecutor(CORE.getSchema()).execute(sql, java.sql.Date.valueOf(expirationDate), container.getRowId());
+
+        _removeFromCache(container);
+
+        auditRunnable.run();
     }
 
     public static void updateType(Container container, String newType, User user)
@@ -2704,8 +2764,11 @@ public class ContainerManager
             String title = rs.getString("Title");
             boolean searchable = rs.getBoolean("Searchable");
             String lockStateString = rs.getString("LockState");
-            LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).orNull() : null;
-            Date expirationDate = rs.getDate("ExpirationDate");
+            LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).or(LockState.Unlocked) : LockState.Unlocked;
+
+            // Note: Would prefer rs.getObject("ExpirationDate", LocalDate.class), but jTDS throws on LocalDate
+            java.sql.Date sqlDate = rs.getDate("ExpirationDate");
+            LocalDate expirationDate = null == sqlDate ? null : sqlDate.toLocalDate();
 
             Container dirParent = null;
             if (null != parentId)
@@ -2716,7 +2779,7 @@ public class ContainerManager
             d.setType(type);
             d.setTitle(title);
             d.setLockState(lockState);
-            d.setExpirationDate(expirationDate);
+            d.setExpirationDateLD(expirationDate);
             return d;
         }
 

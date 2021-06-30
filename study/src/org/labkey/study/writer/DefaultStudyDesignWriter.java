@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;

@@ -86,6 +86,8 @@ public interface SampleTypeService
     @Nullable
     ExpSampleType getSampleType(String lsid);
 
+    void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user);
+
     /**
      * @param includeOtherContainers whether sample types from the shared container or the container's project should be included
      */
