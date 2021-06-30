@@ -5040,6 +5040,9 @@ public class DavController extends SpringActionController
         String contentDisposition = getRequest().getParameter("contentDisposition");
         if (!StringUtils.equals("attachment",contentDisposition) && !StringUtils.equals("inline",contentDisposition))
             contentDisposition = null;
+        // default is to let the browser decide whether render inline or download, unless resource does not want to support "inline"
+        if (!resource.allowInline())
+            contentDisposition = "attachment";
 
         if (!StringUtils.isEmpty(contentDisposition))
         {
