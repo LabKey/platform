@@ -1661,7 +1661,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _lockState = lockState;
     }
 
-    @Deprecated
+    @Deprecated @JsonIgnore
     public @Nullable LocalDate getExpirationDateLD()
     {
         return _expirationDate;
