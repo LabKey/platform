@@ -120,6 +120,13 @@ public class StudySecurityTest extends BaseWebDriverTest
         return StudySecurityPage.StudySecurityType.BASIC_READ.equals(studySecurityPage.getSecurityType());
     }
 
+    @Override
+    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+    {
+        super.doCleanup(afterTest);
+        _userHelper.deleteUsers(false, USER_READER, USER_EDITOR, USER_AUTHOR, USER_LIMITED, USER_NONE, USER_IN_TWO);
+    }
+
     /**
      * Validate that the Study Security Type is set to 'basic read-only' by default.
      */
@@ -317,6 +324,22 @@ public class StudySecurityTest extends BaseWebDriverTest
                 DS_ENROLL, DatasetRoles.AUTHOR,
                 DS_MISSED, DatasetRoles.AUTHOR);
         verifyPermissions(USER_AUTHOR, expectedDatasetRoles);
+
+        // Check for Issue 42681 (The principal Guests may not be assigned the role Restricted Reader! error in study security).
+        // This will set the guest to a per dataset permission and then checks that the guest column is present and has
+        // the expected values in the permissions dropdown.
+        log(String.format("Verify that '%s' can have per dataset permissions.", GROUP_GUESTS));
+        goToStudyFolder();
+        StudySecurityPage studySecurityPage = _studyHelper.enterStudySecurity();
+        studySecurityPage.setGroupStudySecurityAndUpdate(Map.of(GROUP_GUESTS, GroupSecuritySetting.PER_DATASET));
+
+        List<DatasetRoles> expectedPermissions = Arrays.asList(DatasetRoles.NONE, DatasetRoles.READER, DatasetRoles.AUTHOR, DatasetRoles.EDITOR);
+        List<DatasetRoles> actualPermissions = studySecurityPage.getAllowedDatasetPermissions(GROUP_GUESTS);
+
+        Collections.sort(expectedPermissions);
+        Collections.sort(actualPermissions);
+        checker().verifyEquals(String.format("The 'Per Dataset Permissions' options not as expected for '%s'.", GROUP_GUESTS),
+                expectedPermissions, actualPermissions);
 
     }
 
@@ -739,13 +762,6 @@ public class StudySecurityTest extends BaseWebDriverTest
             navigateToFolder(getProjectName(), FOLDER_NAME);
         }
 
-    }
-
-    @Override
-    protected void doCleanup(boolean afterTest) throws TestTimeoutException
-    {
-        super.doCleanup(afterTest);
-        _userHelper.deleteUsers(false, USER_READER, USER_EDITOR, USER_AUTHOR, USER_LIMITED, USER_NONE, USER_IN_TWO);
     }
 
     @Override
