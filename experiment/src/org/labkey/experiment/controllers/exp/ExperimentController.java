@@ -6699,4 +6699,90 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public static class SaveOrderedSamplesQueryAction extends ReadOnlyApiAction<OrderedSamplesForm>
+    {
+
+        @Override
+        public void validateForm(OrderedSamplesForm form, Errors errors)
+        {
+            if (form.getSampleIds().isEmpty() && form.getUniqueIds().isEmpty())
+                errors.reject(ERROR_MSG, "Either sampleIds or uniqueIds must be provided.");
+        }
+
+        @Override
+        public Object execute(OrderedSamplesForm form, BindException errors) throws Exception
+        {
+            SQLFragment select = getOrderedRowsSql(form);
+            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.toString());
+
+//            def = QueryService.get().getSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), "x");
+            return success(def.getName());
+        }
+
+        private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
+        {
+            SQLFragment sql = new SQLFragment("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
+            String comma = "";
+            int index = 1;
+            if (!form.getSampleIds().isEmpty())
+            {
+                for (String sampleId : form.getSampleIds())
+                {
+                    sql.append(comma).append("(").append(index);
+                    sql.append(",?");
+                    sql.add(sampleId);
+                    sql.append(")");
+                    comma = "\n,";
+                    index++;
+                }
+                sql.append("\n) AS _values_ (_ordinal_, _sample_id_))\n");
+
+                sql.append("SELECT _ordered_ids_._ordinal, _samples_.RowId FROM ");
+                sql.append("_ordered_ids INNER JOIN ");
+                TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
+                ColumnInfo nameCol = tInfo.getColumn("Name");
+                sql.append(tInfo.getFromSQL("_samples_"));
+                sql.append(" ON _ordered_ids_._sample_id_ = ").append(nameCol.getValueSql("_samples_"));
+            }
+            return sql;
+        }
+    }
+
+    public static class OrderedSamplesForm
+    {
+        List<String> _sampleIds;
+        List<String> _uniqueIds;
+        String _queryName;
+
+        public List<String> getSampleIds()
+        {
+            return _sampleIds;
+        }
+
+        public void setSampleIds(List<String> sampleIds)
+        {
+            this._sampleIds = sampleIds;
+        }
+
+        public List<String> getUniqueIds()
+        {
+            return _uniqueIds;
+        }
+
+        public void setUniqueIds(List<String> uniqueIds)
+        {
+            this._uniqueIds = uniqueIds;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+    }
 }
