@@ -28,17 +28,6 @@ public class DatasetQuerySettings extends QuerySettings
 {
     private boolean _showSourceLinks;
     private boolean _showEditLinks = true;
-    private boolean _useQCSet = true;
-
-    public boolean isUseQCSet()
-    {
-        return _useQCSet;
-    }
-
-    public void setUseQCSet(boolean useQCSet)
-    {
-        _useQCSet = useQCSet;
-    }
 
     public DatasetQuerySettings(String dataRegionName)
     {
