@@ -385,11 +385,6 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
 
         url = new ActionURL(StudyController.DatasetAction.class, getContainer());
         url.addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-        if (QCStateManager.getInstance().showQCStates(getContainer()))
-        {
-            QCStateSet stateSet = QCStateSet.getAllStates(getContainer());
-            url.addParameter(BaseStudyController.SharedFormParameters.QCState, stateSet.getFormValue());
-        }
         return url;
     }
 

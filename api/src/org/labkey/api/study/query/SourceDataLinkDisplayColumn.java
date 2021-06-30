@@ -21,7 +21,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -77,7 +76,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
                     ExpObject expObject = _publishSource.resolvePublishSource(sourceId);
                     if (expObject instanceof ExpSampleType)
                     {
-                        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleTypeURL((ExpSampleType)expObject);
+                        ActionURL url = _publishSource.getSourceActionURL(expObject, ctx.getContainer());
                         // by default the container is where the sample definition lives, use the current container instead so
                         // the user is returned to the original folder that the link was attempted from.
                         url.setContainer(ctx.getContainer());

@@ -2103,13 +2103,13 @@ public class CoreController extends SpringActionController
 
             HttpServletRequest request = getViewContext().getRequest();
             if (!(request instanceof MultipartHttpServletRequest))
-                throw new BadRequestException("Expected multi-part form", null);
+                throw new BadRequestException("Expected multi-part form");
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
             Map<String, MultipartFile> map = multipartRequest.getFileMap();
             if (map.size() == 0)
                 return ret;
             if (map.size() > 1)
-                throw new BadRequestException("Expected one file", null);
+                throw new BadRequestException("Expected one file");
 
             // TODO cleanup on server shutdown/startup
             // TODO register session cleanup event

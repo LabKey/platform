@@ -52,6 +52,7 @@
 <labkey:form action="<%=urlFor(UpdateQCStateAction.class)%>" method="POST">
     <input type="hidden" name="update" value="true" />
     <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
+    <input type="hidden" name="dataRegionName" value="<%= h(bean.getDataRegionName()) %>" />
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
     <table>
         <tr>
