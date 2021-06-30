@@ -10,6 +10,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.CustomizeView;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.StudyHelper;
 
@@ -80,24 +81,24 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     {
         String runName = "Link to study run";
         log("Creating the study projects");
-        _containerHelper.createProject("Study 1", "Study");
+        _containerHelper.createProject(getProjectName() + " Study 1", "Study");
         _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
                 .createStudy();
 
-        _containerHelper.createProject("Study 2", "Study");
+        _containerHelper.createProject(getProjectName() + " Study 2", "Study");
         _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
                 .createStudy();
 
-        _containerHelper.createProject("Study 3", "Study");
+        _containerHelper.createProject(getProjectName() + " Study 3", "Study");
         _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
                 .createStudy();
 
         File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run2.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
-        linkToStudy(runName, "Study 1", 1);
-        linkToStudy(runName, "Study 2", 1);
-        linkToStudy(runName, "Study 3", 1);
+        linkToStudy(runName, getProjectName() + " Study 1", 1);
+        linkToStudy(runName, getProjectName() + " Study 2", 1);
+        linkToStudy(runName, getProjectName() + " Study 3", 1);
 
         log("Verifying linked column does not exists because more then 3 studies are linked");
         goToProjectHome();
@@ -106,11 +107,19 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText(runName));
         DataRegionTable runsTable = DataRegionTable.DataRegion(getDriver()).withName("Data").waitFor();
         checker().verifyFalse("Linked column for Study 1 should not be present",
-                runsTable.getColumnNames().contains("linked_to_Study_1_Study"));
+                runsTable.getColumnNames().contains("linked_to_Auto_Link_To_Study_Test_Study_1_Study"));
         checker().verifyFalse("Linked column for Study 2 should not be present",
-                runsTable.getColumnNames().contains("linked_to_Study_2_Study"));
+                runsTable.getColumnNames().contains("linked_to_Auto_Link_To_Study_Test_Study_2_Study"));
         checker().verifyFalse("Linked column for Study 3 should not be present",
-                runsTable.getColumnNames().contains("linked_to_Study_3_Study"));
+                runsTable.getColumnNames().contains("linked_to_Auto_Link_To_Study_Test_Study_3_Study"));
+
+        log("Verifying if columns can be added from customize grid");
+        CustomizeView customizeView = runsTable.openCustomizeGrid();
+        customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study_1_Study");
+        customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study_2_Study");
+        customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study_3_Study");
+        customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study");
+        customizeView.saveCustomView();
     }
 
     private void linkToStudy(String runName, String targetStudy, int numOfRows)
@@ -152,8 +161,8 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         _containerHelper.deleteProject(getProjectName(), afterTest);
-        _containerHelper.deleteProject("Study 1");
-        _containerHelper.deleteProject("Study 2");
-        _containerHelper.deleteProject("Study 3");
+        _containerHelper.deleteProject(getProjectName() + " Study 1", afterTest);
+        _containerHelper.deleteProject(getProjectName() + " Study 2", afterTest);
+        _containerHelper.deleteProject(getProjectName() + " Study 3", afterTest);
     }
 }
