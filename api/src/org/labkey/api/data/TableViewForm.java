@@ -62,8 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
-
 /**
  * Basic form for handling posts into views.
  * Supports insert, update, delete functionality with a minimum of fuss
@@ -408,7 +406,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
-        RemapCache cache = new RemapCache();        // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
+        RemapCache cache = new RemapCache();
 
         for (String propName : keys)
         {
@@ -474,19 +472,17 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             {
                 boolean skipError = false;
 
-                if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+                // Attempt to resolve lookups by display value
+                ColumnInfo col = getColumnByFormFieldName(propName);
+                if (col != null && col.getFk() != null)
                 {
-                    ColumnInfo col = getColumnByFormFieldName(propName);
-                    if (col != null && col.getFk() != null)
-                    {
-                        ForeignKey fk = col.getFk();
-                        Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, str);
+                    ForeignKey fk = col.getFk();
+                    Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, str);
 
-                        if (remappedValue != null)
-                        {
-                            values.put(propName, remappedValue);
-                            skipError = true;
-                        }
+                    if (remappedValue != null)
+                    {
+                        values.put(propName, remappedValue);
+                        skipError = true;
                     }
                 }
 

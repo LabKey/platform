@@ -71,8 +71,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
-
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
 {
     ExpProtocol _protocol;
@@ -848,7 +846,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
-        private final RemapCache _cache = new RemapCache();       // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
+        private final RemapCache _cache = new RemapCache();
 
         RunTableUpdateService(ExpRunTable queryTable)
         {
@@ -918,20 +916,17 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             }
 
                             ForeignKey fk = col.getFk();
-                            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+                            if (fk != null && fk.allowImportByAlternateKey() && value != null)
                             {
-                                if (fk != null && fk.allowImportByAlternateKey() && value != null)
+                                try
                                 {
-                                    try
-                                    {
-                                        value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
-                                    }
-                                    catch (ConversionException e)
-                                    {
-                                        Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
-                                        if (remappedValue != null)
-                                            value = remappedValue;
-                                    }
+                                    value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
+                                }
+                                catch (ConversionException e)
+                                {
+                                    Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                                    if (remappedValue != null)
+                                        value = remappedValue;
                                 }
                             }
                             run.setProperty(user, propertyDescriptor, value);
