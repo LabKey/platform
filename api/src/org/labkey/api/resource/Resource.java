@@ -16,6 +16,7 @@
 package org.labkey.api.resource;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Path;
 
 import java.io.IOException;
@@ -84,6 +85,16 @@ public interface Resource
 
     @Nullable
     InputStream getInputStream() throws IOException;
+
+    /**
+     *  Return false to force contentDisposition=attachment.
+     * This does not mean the browser knows how to inline the document.  see MimeType.canInline().
+     */
+    @Nullable
+    default boolean allowInline()
+    {
+        return true;
+    }
 
     /**
      * The String returned can be used as a cache key and,
