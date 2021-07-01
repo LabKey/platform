@@ -215,7 +215,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         }
                         if (!canEdit && viewName == nameField.getValue())
                         {
-                            Ext4.Msg.alert("Error saving", "This grid view is not editable.  You must save this grid view with an alternate name.");
+                            Ext4.Msg.show({
+                                title:"Error saving",
+                                msg: "This grid view is not editable.  You must save this grid view with an alternate name.",
+                                buttons: Ext4.Msg.OK,
+                                icon: Ext4.Msg.ERROR
+                            });
                             return;
                         }
 
