@@ -134,7 +134,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                             else if (trimmedValue.length > 50)
                                 return "The grid view name must be less than 50 characters long";
                             else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue) > -1) {
-                                return "The grid view name '" + value + "' is not allowed";
+                                return "The name '" + value + "' is not allowed";
                             }
                             return true;
                         },
