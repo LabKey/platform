@@ -6699,6 +6699,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public static class SaveOrderedSamplesQueryAction extends ReadOnlyApiAction<OrderedSamplesForm>
     {
@@ -6706,7 +6707,8 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(OrderedSamplesForm form, Errors errors)
         {
-            if (form.getSampleIds().isEmpty() && form.getUniqueIds().isEmpty())
+            if ((form.getSampleIds() == null || form.getSampleIds().isEmpty()) &&
+                    (form.getUniqueIds() == null || form.getUniqueIds().isEmpty()))
                 errors.reject(ERROR_MSG, "Either sampleIds or uniqueIds must be provided.");
         }
 
@@ -6714,10 +6716,10 @@ public class ExperimentController extends SpringActionController
         public Object execute(OrderedSamplesForm form, BindException errors) throws Exception
         {
             SQLFragment select = getOrderedRowsSql(form);
-            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.toString());
+            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.getSQL());
 
 //            def = QueryService.get().getSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), "x");
-            return success(def.getName());
+            return success("Session query created", def.getName());
         }
 
         private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
@@ -6730,7 +6732,7 @@ public class ExperimentController extends SpringActionController
                 for (String sampleId : form.getSampleIds())
                 {
                     sql.append(comma).append("(").append(index);
-                    sql.append(",?");
+                    sql.append(", ?");
                     sql.add(sampleId);
                     sql.append(")");
                     comma = "\n,";
@@ -6738,8 +6740,8 @@ public class ExperimentController extends SpringActionController
                 }
                 sql.append("\n) AS _values_ (_ordinal_, _sample_id_))\n");
 
-                sql.append("SELECT _ordered_ids_._ordinal, _samples_.RowId FROM ");
-                sql.append("_ordered_ids INNER JOIN ");
+                sql.append("SELECT _ordered_ids_._ordinal_, _samples_.RowId FROM ");
+                sql.append("_ordered_ids_ INNER JOIN ");
                 TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
                 ColumnInfo nameCol = tInfo.getColumn("Name");
                 sql.append(tInfo.getFromSQL("_samples_"));
