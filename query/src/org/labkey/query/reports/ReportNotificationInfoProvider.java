@@ -48,7 +48,7 @@ public final class ReportNotificationInfoProvider extends NotificationInfoProvid
             if (!reportInfoMap.containsKey(containerId))
                 reportInfoMap.put(containerId, new HashMap<>());
             Map<Integer, List<NotificationInfo>> subMap = reportInfoMap.get(containerId);
-            NotificationInfo notificationInfo = new NotificationInfo(report);
+            NotificationInfo notificationInfo = new NotificationInfo(report, modifiedRangeStart, modifiedRangeEnd);
             if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
             {
                 // Don't include hidden reports (or if container was deleted)

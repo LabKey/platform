@@ -20,12 +20,13 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.ReportUrls;
-import org.labkey.api.study.StudyUrls;
-import org.labkey.api.util.DateUtil;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -111,45 +112,36 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
         _reportAndDatasetList = buildReportAndDatasetList(c, reports);
     }
 
-    private String buildReportAndDatasetList(Container c, Map<ViewCategory, List<NotificationInfo>> reports)
+    public static class NotificationBean
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<tr><th>&nbsp;&nbsp;</th><th>Name</th><th>Type</th><th>Last Modified</th><th>Status</th></tr>");
-        for (Map.Entry<ViewCategory, List<NotificationInfo>> catEntry : reports.entrySet())
-        {
-            sb.append("<tr><th colspan='5'>");
-            sb.append("Category '").append(PageFlowUtil.filter(catEntry.getKey().getLabel())).append("'");
-            sb.append("</th></tr>");
-            int i = 0;
-            for (NotificationInfo notificationInfo : catEntry.getValue())
-            {
-                String rowCls = (i++ % 2 == 0) ? "labkey-row" : "labkey-alternate-row";
+        private Map<ViewCategory, List<NotificationInfo>> _reports;
 
-                // Ugh, need a bogus ViewContext with a non-null ActionURL.
-                // TODO: Use the deprecated ViewContext.getMockViewContext instead?
-                // TODO: Better yet, fix all the getRunReportURL implementations to take Container, @Nullable ActionURL instead of ViewContext
-                ViewContext context = new ViewContext();
-                context.setActionURL(new ActionURL());
-                context.setContainer(c);
-                ActionURL url = "Dataset".equalsIgnoreCase(notificationInfo.getType()) ?
-                        PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(c, notificationInfo.getRowId()) :
-                           notificationInfo.getReport().getRunReportURL(context);
-                sb.append("<tr class='").append(rowCls).append("'>");
-                sb.append("<td>&nbsp;&nbsp;</td>");
-                sb.append("<td>");
-                if (null != url)
-                    sb.append("<a href='").append(PageFlowUtil.filter(url.getURIString())).append("'>");
-                sb.append(PageFlowUtil.filter(notificationInfo.getName()));
-                if (null != url)
-                    sb.append("</a>");
-                sb.append("</td>");
-                sb.append("<td>").append(PageFlowUtil.filter(notificationInfo.getType())).append("</td>\n");
-                sb.append("<td>").append(PageFlowUtil.filter(DateUtil.formatDateTime(c, notificationInfo.getModified()))).append("</td>");
-                sb.append("<td>").append(PageFlowUtil.filter(notificationInfo.getStatus())).append("</td>");
-                sb.append("</tr>");
-            }
+        public Map<ViewCategory, List<NotificationInfo>> getReports()
+        {
+            return _reports;
         }
 
-        return sb.toString();
+        public void setReports(Map<ViewCategory, List<NotificationInfo>> reports)
+        {
+            _reports = reports;
+        }
+    }
+
+    private String buildReportAndDatasetList(Container c, Map<ViewCategory, List<NotificationInfo>> reports)
+    {
+        try
+        {
+            NotificationBean bean = new NotificationBean();
+            bean.setReports(reports);
+
+            ViewContext context = ViewContext.getMockViewContext(User.getSearchUser(), c, new ActionURL(), true);
+            JspView<NotificationBean> view = new JspView<>("/org/labkey/query/reports/view/reportAndDatasetList.jsp", bean);
+
+            return HttpView.renderToString(view, context.getRequest());
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }
