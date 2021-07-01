@@ -247,9 +247,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .append(" d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                 .append(" FROM ").append(d, "d")
                 .applyIf(t != null, s ->
-                    s.append("LEFT OUTER JOIN ").append(t, "t")
+                    s.append("LEFT OUTER JOIN ")
+                    .append(t, "t")
+                    .append(" ON d.lsid = t.lsid")
                 )
-                .append(" ON d.lsid = t.lsid")
                 .append(" WHERE d.Container=?").add(container.getEntityId())
                 .append(" AND d.rowid=?").add(keys[0]);
 
