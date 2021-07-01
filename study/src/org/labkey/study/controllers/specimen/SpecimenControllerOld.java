@@ -159,8 +159,6 @@ public class SpecimenControllerOld extends BaseStudyController
             {
                 UserSchema querySchema = StudyService.get().getStudyQuerySchema(study, getUser());
                 DatasetQuerySettings qs = (DatasetQuerySettings)querySchema.getSettings(getViewContext(), DatasetQueryView.DATAREGION, ds.getName());
-                qs.setUseQCSet(false);
-
                 DatasetQueryView queryView = new DatasetQueryView(querySchema, qs, errors)
                 {
                     @Override

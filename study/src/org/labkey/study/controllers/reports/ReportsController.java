@@ -1075,7 +1075,6 @@ public class ReportsController extends BaseStudyController
     public static HttpView getParticipantNavTrail(ViewContext context, List<String> participantGroup)
     {
         String participantId = context.getActionURL().getParameter("participantId");
-        String qcState = context.getActionURL().getParameter(SharedFormParameters.QCState);
 
         ActionURL previousParticipantURL = null;
         ActionURL nextParticipantURL = null;
@@ -1108,7 +1107,7 @@ public class ReportsController extends BaseStudyController
                 }
             }
         }
-        StudyController.ParticipantNavView view = new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, qcState, title);
+        StudyController.ParticipantNavView view = new StudyController.ParticipantNavView(previousParticipantURL, nextParticipantURL, null, title);
         view.setShowCustomizeLink(false);
 
         return view;
@@ -1175,10 +1174,7 @@ public class ReportsController extends BaseStudyController
             Dataset def = getDatasetDefinition();
 
             if (def != null)
-            {
-                String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
-                _addNavTrail(root, def.getDatasetId(), 0, null, qcState);
-            }
+                _addNavTrail(root, def.getDatasetId(), 0, null);
         }
     }
 

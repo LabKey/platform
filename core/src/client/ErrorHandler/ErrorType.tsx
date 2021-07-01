@@ -282,7 +282,7 @@ export const getImage = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} className="pull-right" />;
+    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)}/>;
 };
 
 export const getSubHeading = (errorDetails: ErrorDetails): ReactNode => {

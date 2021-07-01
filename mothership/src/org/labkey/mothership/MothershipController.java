@@ -652,7 +652,7 @@ public class MothershipController extends SpringActionController
             catch (RuntimeValidationException e)
             {
                 // MothershipReport was malformed and couldn't be persisted
-                throw new BadRequestException(null, null);
+                throw new BadRequestException();
             }
             catch (Exception e)
             {

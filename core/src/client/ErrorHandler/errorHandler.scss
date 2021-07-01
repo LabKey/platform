@@ -29,23 +29,21 @@
   font-weight: bold;
 }
 
-.error-backButton {
+.error-page-button {
   display: inline-block;
   text-align: center;
   margin: 0.5rem 5rem 0.5rem 0.5rem;
-  background-color: #538AC5;
   font-size: 14px;
   padding-left: 15px;
   padding-right: 15px;
 }
 
-.error-details-body {
-  padding: 15px;
+.error-backButton {
+  background-color: #538AC5;
 }
 
-.error-details-btn {
-  display: inline-block;
-  text-align: center;
+.error-details-body {
+  padding: 15px;
 }
 
 .error-details-container {

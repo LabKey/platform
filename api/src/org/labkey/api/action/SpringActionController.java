@@ -328,7 +328,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, String message) throws Exception
     {
-        return handleBadRequestException(request, response, controller, new BadRequestException(message,null));
+        return handleBadRequestException(request, response, controller, new BadRequestException(message));
     }
 
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x) throws Exception
