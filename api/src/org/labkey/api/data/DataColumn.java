@@ -703,19 +703,7 @@ public class DataColumn extends DisplayColumn
                 displayValue = getDisplayValue(ctx);
             textInputValue = Objects.toString(displayValue, strVal);
 
-//            if (boundColumnFK.getLookupTableInfo().isPublic())
-//            {
-//                Container lookupContainer = boundColumnFK.getLookupContainer() != null ? boundColumnFK.getLookupContainer() : ctx.getContainer();
-//                ActionURL autoCompleteURL = new ActionURL("query", "lookupAutoComplete", lookupContainer);
-//                autoCompleteURL.addParameter("schemaName", boundColumnFK.getLookupSchemaName());
-//                autoCompleteURL.addParameter("queryName", boundColumnFK.getLookupTableName());
-//                // TODO boundColumnFK.getLookupColumnName()
-//                // TODO boundColumnFK.getLookupDisplayName()
-//                // TODO "query.maxRows"?
-//                renderAutoCompleteFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput, autoCompleteURL);
-//            }
-//            else
-                renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
+            renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
         }
         else
         {
