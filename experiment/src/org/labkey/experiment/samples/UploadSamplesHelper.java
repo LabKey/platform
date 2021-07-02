@@ -686,7 +686,7 @@ public abstract class UploadSamplesHelper
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
 
-        public PrepareDataIteratorBuilder(ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in)
+        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in)
         {
             this.sampletype = sampletype;
             this.builder = in;

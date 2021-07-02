@@ -4058,12 +4058,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return associatedDatasets;
     }
 
-    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
-    {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
-    }
-
-    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds, boolean deleteRunsUsingMaterials, ExpSampleType stDeleteFrom)
+    /**
+     * Delete samples by rowId. When <code>stDeleteFrom</code> SampleType is provided,
+     * the samples must all be members of the SampleType.  When <code>stSampleType</code> is
+     * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE}.
+     */
+    public void deleteMaterialByRowIds(User user, Container container,
+                                       Collection<Integer> selectedMaterialIds,
+                                       boolean deleteRunsUsingMaterials,
+                                       @Nullable ExpSampleType stDeleteFrom)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4084,18 +4087,22 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            Set<ExpSampleType> sampleTypes = new HashSet<>();
-            if (null != stDeleteFrom)
-                sampleTypes.add(stDeleteFrom);
             for (ExpMaterial material : materials)
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
+
                 if (null == stDeleteFrom)
                 {
-                    ExpSampleType st = material.getSampleType();
-                    if (null != st)
-                        sampleTypes.add(st);
+                    // verify the material doesn't belong to a SampleType
+                    if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                        throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                }
+                else
+                {
+                    // verify the material doesn't belong to a SampleType
+                    if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
+                        throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
             }
 
@@ -4159,11 +4166,11 @@ public class ExperimentServiceImpl implements ExperimentService
                 executor.execute(materialInputSQL);
             }
 
-            try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
+            try (Timing ignored = MiniProfiler.step("expsampletype materialized table"))
             {
-                for (ExpSampleType st : sampleTypes)
+                if (stDeleteFrom != null)
                 {
-                    TableInfo dbTinfo = ((ExpSampleTypeImpl)st).getTinfo();
+                    TableInfo dbTinfo = ((ExpSampleTypeImpl)stDeleteFrom).getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
@@ -4632,7 +4639,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds);
+            deleteMaterialByRowIds(user, c, matIds, true, null);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
