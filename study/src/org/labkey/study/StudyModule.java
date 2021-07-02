@@ -60,6 +60,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
@@ -203,6 +204,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 
@@ -455,13 +457,29 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("linkedSampleTypeDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'SampleType'").getObject(Long.class));
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
 
+                // grab the counts of report and dataset notification settings (by notification option)
+                Set<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies();
+                Map<ReportContentEmailManager.NotifyOption, Integer> notifyOptionCounts = new HashMap<>();
+                allStudies.forEach(study -> {
+                    Map<Integer, SortedSet<Integer>> settings = ReportContentEmailManager.getUserCategoryMap(study.getContainer());
+                    for (SortedSet<Integer> config : settings.values())
+                    {
+                        ReportContentEmailManager.NotifyOption option = ReportContentEmailManager.removeNotifyOption(config);
+                        notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
+                    }
+                });
+
+                Map<String, Integer> notificationMap = new HashMap<>();
+                notifyOptionCounts.forEach((key, value) -> notificationMap.put(key.name(), value));
+                metric.put("reportAndDatasetNotificationOptions", notificationMap);
+
                 // TODO: Move to specimen module and switch to top-level stats
                 // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
                 HashBag<String> specimenBag = new HashBag<>();
                 MutableInt requestsEnabled = new MutableInt(0);
                 MutableInt hasLocations = new MutableInt(0);
 
-                StudyManager.getInstance().getAllStudies().stream()
+                allStudies.stream()
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), false))
                     .forEach(schema->{
                         RepositorySettings settings = SettingsManager.get().getRepositorySettings(schema.getContainer());
