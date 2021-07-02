@@ -30,9 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -239,22 +237,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> _select(Container container, Object[] keys) throws ConversionException
     {
-        TableInfo d = getDbTable();
-        TableInfo t = _sampleType == null ? null : _sampleType.getTinfo();
-
-        SQLFragment sql = new SQLFragment("SELECT ")
-                .appendIf(t != null, "t.*,")
-                .append(" d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-                .append(" FROM ").append(d, "d")
-                .applyIf(t != null, s ->
-                    s.append("LEFT OUTER JOIN ")
-                    .append(t, "t")
-                    .append(" ON d.lsid = t.lsid")
-                )
-                .append(" WHERE d.Container=?").add(container.getEntityId())
-                .append(" AND d.rowid=?").add(keys[0]);
-
-        return new SqlSelector(getDbTable().getSchema(), sql).getMap();
+        throw new IllegalStateException("Overridden .getRow()/.getRows() calls .getMaterialMap()");
     }
 
     public Set<String> getAliquotSpecificFields()
@@ -392,7 +375,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Integer> id = new LinkedList<>();
         Integer rowId = getMaterialRowId(oldRowMap);
         id.add(rowId);
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType);
         return oldRowMap;
     }
 
@@ -430,7 +413,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 result.add(map);
             }
             // TODO check if this handle attachments???
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType);
         }
 
         if (result.size() > 0)

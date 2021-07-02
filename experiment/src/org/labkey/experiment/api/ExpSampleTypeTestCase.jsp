@@ -87,6 +87,8 @@
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="org.labkey.api.query.QueryUpdateServiceException" %>
 <%@ page import="org.labkey.api.query.InvalidKeyException" %>
+<%@ page import="static org.hamcrest.CoreMatchers.containsString" %>
+<%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -1011,6 +1013,23 @@ public void testExpMaterialPermissions() throws Exception
     User user = TestContext.get().getUser();
     var schema = QueryService.get().getUserSchema(user, c, ExpSchema.SCHEMA_EXP);
 
+    // create sample type
+    ExpSampleTypeImpl st = SampleTypeServiceImpl.get().createSampleType(c, user,
+            "MySamples", null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
+            -1, -1, -1, -1, null, null);
+
+    // insert a sample
+    var errors = new BatchValidationException();
+    List<Map<String,Object>> ret = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_SAMPLES)
+            .getTable("MySamples")
+            .getUpdateService()
+            .insertRows(user, c, List.of(CaseInsensitiveHashMap.of("name", "SampleInSampleType")), errors, null, null);
+    String msg = errors.getRowErrors().size() > 0 ? errors.getRowErrors().get(0).toString() : "no message";
+    assertFalse(msg, errors.hasErrors());
+    assertEquals(1,ret.size());
+    assertNotNull(ret.get(0).get("rowid"));
+    int stSampleId = (int) JdbcType.INTEGER.convert(ret.get(0).get("rowid"));
+
     // verify insert, update aren't allowed, but read and delete are allowed
     var materialsTable = schema.getTable(ExpSchema.TableType.Materials.name());
     var qus = materialsTable.getUpdateService();
@@ -1020,10 +1039,34 @@ public void testExpMaterialPermissions() throws Exception
     assertFalse(qus.hasPermission(user, InsertPermission.class));
     assertFalse(qus.hasPermission(user, UpdatePermission.class));
 
-    // create a sample
-    var lsid = ExperimentService.get().generateGuidLSID(c, ExpMaterial.class);
+    // create a sample outside of a SampleType
+    var lsid = ExperimentService.get().generateLSID(c, ExpMaterial.class, "SampleNotInSampleType");
     ExpMaterial m = ExperimentService.get().createExpMaterial(c, Lsid.parse(lsid));
     m.save(user);
+
+    // verify we can't delete both samples when targeting the default 'Material' cpasType
+    try
+    {
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(
+                user, c, List.of(stSampleId, m.getRowId()), true, null);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("Error deleting sample of default 'Material' type: 'SampleInSampleType' is in the sample type '" + st.getLSID() + "'"));
+    }
+
+    // verify we can't delete both samples when targeting the "MySamples" type
+    try
+    {
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(
+                user, c, List.of(stSampleId, m.getRowId()), true, st);
+        fail("Expected to throw exception");
+    }
+    catch (Exception e)
+    {
+        assertThat(e.getMessage(), containsString("Error deleting '" + st.getName() + "' sample: 'SampleNotInSampleType' is in the sample type '" + ExpMaterial.DEFAULT_CPAS_TYPE + "'"));
+    }
 
     // verify read via QUS
     var rows = qus.getRows(user, c, List.of(CaseInsensitiveHashMap.of("rowId", m.getRowId())));
