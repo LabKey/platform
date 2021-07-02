@@ -6727,7 +6727,7 @@ public class ExperimentController extends SpringActionController
             SQLFragment sql = new SQLFragment("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
             String comma = "";
             int index = 1;
-            if (!form.getSampleIds().isEmpty())
+            if (form.getSampleIds() != null && !form.getSampleIds().isEmpty())
             {
                 for (String sampleId : form.getSampleIds())
                 {
@@ -6755,7 +6755,6 @@ public class ExperimentController extends SpringActionController
     {
         List<String> _sampleIds;
         List<String> _uniqueIds;
-        String _queryName;
 
         public List<String> getSampleIds()
         {
@@ -6775,16 +6774,6 @@ public class ExperimentController extends SpringActionController
         public void setUniqueIds(List<String> uniqueIds)
         {
             this._uniqueIds = uniqueIds;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
         }
     }
 }
