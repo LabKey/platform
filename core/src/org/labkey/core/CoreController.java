@@ -129,6 +129,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
 import org.labkey.api.util.PageFlowUtil.NoContent;
@@ -482,7 +483,9 @@ public class CoreController extends SpringActionController
             {
                 // If the URL has requested that the content be sent inline or not (instead of as an attachment), respect that
                 // Otherwise, default to sending as attachment
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, form.getInline() == null || !form.getInline().booleanValue());
+                MimeMap.MimeType mime = (new MimeMap()).getMimeTypeFor(file.getName());
+                boolean canInline = mime.canInline() && mime != MimeMap.MimeType.HTML;
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file, !canInline || form.getInline() == null || !form.getInline().booleanValue());
             }
             return null;
         }
@@ -2103,13 +2106,13 @@ public class CoreController extends SpringActionController
 
             HttpServletRequest request = getViewContext().getRequest();
             if (!(request instanceof MultipartHttpServletRequest))
-                throw new BadRequestException("Expected multi-part form", null);
+                throw new BadRequestException("Expected multi-part form");
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
             Map<String, MultipartFile> map = multipartRequest.getFileMap();
             if (map.size() == 0)
                 return ret;
             if (map.size() > 1)
-                throw new BadRequestException("Expected one file", null);
+                throw new BadRequestException("Expected one file");
 
             // TODO cleanup on server shutdown/startup
             // TODO register session cleanup event

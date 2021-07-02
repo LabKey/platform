@@ -37,8 +37,10 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.StudyModule;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
@@ -181,17 +183,17 @@ public abstract class BaseStudyController extends SpringActionController
 
     protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId)
     {
-        return _addNavTrail(root, datasetId, visitId, null, null);
+        return _addNavTrail(root, datasetId, visitId, null);
     }
 
-    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter, String qcStateSetFormValue)
+    protected NavTree _addNavTrail(NavTree root, int datasetId, int visitId, CohortFilter cohortFilter)
     {
         Study study = addRootNavTrail(root);
-        _appendDataset(root, study, datasetId, visitId, cohortFilter, qcStateSetFormValue);
+        _appendDataset(root, study, datasetId, visitId, cohortFilter);
         return root;
     }
 
-    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, @Nullable CohortFilter cohortFilter, String qcStateSetFormValue)
+    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, @Nullable CohortFilter cohortFilter)
     {
         if (datasetId > 0)
         {
@@ -218,8 +220,12 @@ public abstract class BaseStudyController extends SpringActionController
                         addParameter(DatasetDefinition.DATASETKEY, datasetId);
                 if (cohortFilter != null)
                     cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
-                if (qcStateSetFormValue != null)
-                    datasetUrl.addParameter(SharedFormParameters.QCState, qcStateSetFormValue);
+
+                ActionURL url = getViewContext().getActionURL();
+                String param = QCStateSet.getQCParameter(DatasetQueryView.DATAREGION, url);
+                if (param != null)
+                    datasetUrl.addParameter(param, url.getParameter(param));
+
                 root.addChild(label.toString(), datasetUrl.getLocalURIString());
             }
         }
