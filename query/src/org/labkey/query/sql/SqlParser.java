@@ -349,8 +349,12 @@ public class SqlParser
         return null==_parameters ? new ArrayList<QParameter>(0) : _parameters;
     }
 
-    
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
+    {
+        return parseExpr(str, false, errors);
+    }
+
+    public QExpr parseExpr(String str, boolean constExpression, List<? super QueryParseException> errors)
     {
         _parseErrors = new ArrayList<>();
         try (var parser = getAntlrParser())
@@ -359,7 +363,10 @@ public class SqlParser
             ParserRuleReturnScope exprScope = null;
             try
             {
-                exprScope = parser.parseExpression();
+                if (constExpression)
+                    exprScope = parser.parseConstantExpression();
+                else
+                    exprScope = parser.parseExpression();
                 int last = parser.getTokenStream().LA(1);
                 if (EOF != last)
                     //noinspection ThrowableInstanceNeverThrown
@@ -787,27 +794,38 @@ public class SqlParser
 
         return new QParameter(parameter, identName.getIdentifier(), type, required, value);
     }
-    
 
     private QNode convertParseTree(CommonTree node)
     {
+        return convertParseTree(node, false);
+    }
+
+    private QNode convertParseTree(CommonTree node, boolean constExpr)
+    {
+        if (node.getToken().getType() == SqlBaseParser.CONSTANT_EXPRESSION)
+        {
+            assert 1 == node.getChildCount();
+            return convertParseTree((CommonTree)node.getChild(0), true);
+        }
+
         LinkedList<QNode> l = new LinkedList<>();
         for (int i=0 ; i<node.getChildCount() ; i++)
         {
             CommonTree child = (CommonTree)node.getChild(i);
             if (child.getType() == COMMA)
                 continue;
-            QNode q = convertParseTree(child);
+            boolean fn = node.getType() == METHOD_CALL && i==0;
+            QNode q = convertParseTree(child, constExpr && !fn);
             if (q != null)
                 l.add(q);
             else
                 assert _parseErrors.size() > 0;
         }
-        return convertNode(node, l);
+        return convertNode(node, l, constExpr);
     }
 
-    
-    private QNode convertNode(CommonTree node, LinkedList<QNode> children)
+
+    private QNode convertNode(CommonTree node, LinkedList<QNode> children, boolean constExpr)
     {
         switch (node.getType())
         {
@@ -918,7 +936,8 @@ public class SqlParser
             }
             case AGGREGATE:
             {
-                QAggregate qAggregate = (QAggregate)qnode(node, children);
+                if (constExpr) return constError(node);
+                QAggregate qAggregate = (QAggregate)qnode(node, children, false);
                 if (!qAggregate.getType().dialectSupports(_dialect))
                 {
                     _parseErrors.add(new QueryParseException(null != _dialect ? (_dialect.getProductName() + " does not support aggregate function " + qAggregate.getType().name()) : "Unknown SQL dialect", null, node.getLine(), node.getCharPositionInLine()));
@@ -959,6 +978,7 @@ public class SqlParser
             }
             case TABLE_PATH_SUBSTITUTION:
             {
+                if (constExpr) return constError(node);
                 if (children.size() != 3)
                 {
                     _parseErrors.add(new QueryParseException("Bad escape syntax in FROM clause.", null, node.getLine(), node.getCharPositionInLine()));
@@ -987,7 +1007,8 @@ public class SqlParser
             }
             case QUERY:
             {
-                QQuery query = (QQuery)qnode(node, children);
+                if (constExpr) return constError(node);
+                QQuery query = (QQuery)qnode(node, children, false);
                 if (query.hasTransformableAggregate() && null != _dialect && _dialect.isSqlServer())
                 {
                     return makeTransformedAggregateQuery(query);
@@ -996,8 +1017,9 @@ public class SqlParser
             }
             case RANGE:
             {
+                if (constExpr) return constError(node);
                 // copy an annotations on the table specifications to the range node
-                QUnknownNode range = (QUnknownNode)qnode(node, children);
+                QUnknownNode range = (QUnknownNode)qnode(node, children, false);
                 var annotations = ((SupportsAnnotations)node.getChild(0)).getAnnotations();
                 if (null != annotations)
                     range.setAnnotations(QNode.convertAnnotations(annotations));
@@ -1007,7 +1029,7 @@ public class SqlParser
                 break;
         }
 
-        return qnode(node, children);
+        return qnode(node, children, constExpr);
     }
 
     private QQuery makeTransformedAggregateQuery(QQuery query)
@@ -1497,9 +1519,9 @@ public class SqlParser
     }
 
 
-    QNode qnode(CommonTree n, LinkedList<QNode> children)
+    QNode qnode(CommonTree n, LinkedList<QNode> children, boolean constExpr)
     {
-        QNode q = qnode(n);
+        QNode q = qnode(n, constExpr);
         if (null == q)
             return null;
         if (q instanceof QDot && children.size() == 0)
@@ -1509,8 +1531,14 @@ public class SqlParser
     }
 
 
+    QNode constError(CommonTree node)
+    {
+        _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "' in constant expression", null, node.getLine(), node.getCharPositionInLine()));
+        return null;
+    }
 
-    QNode qnode(CommonTree node)
+
+    QNode qnode(CommonTree node, boolean constExpr)
     {
         int type = node.getType();
         QNode q;
@@ -1522,8 +1550,10 @@ public class SqlParser
                 break;
             case IDENT:
             case QUOTED_IDENTIFIER:
+                if (constExpr) return constError(node);
                 return QIdentifier.create(node);
             case IFDEFINED:
+                if (constExpr) return constError(node);
                 q = new QIfDefined(node);
                 break;
             case DOT:
@@ -1558,15 +1588,20 @@ public class SqlParser
                 q = new QFrom();
                 break;
             case SELECT_FROM:
+                if (constExpr) return constError(node);
                 q = new QSelectFrom();
                 break;
             case SELECT:
                 q = new QSelect();
                 break;
+            case VALUES:
+                q = new QValues();
+                break;
             case PIVOT:
                 q = new QPivot();
                 break;
             case QUERY:
+                if (constExpr) return constError(node);
                 q = new QQuery();
                 break;
             case WHERE:
@@ -1618,6 +1653,7 @@ public class SqlParser
             case INTERSECT:
             case UNION:
             case UNION_ALL:
+                if (constExpr) return constError(node);
                 return new QUnion(node);
 
             case ON:
