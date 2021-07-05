@@ -665,7 +665,6 @@ public class QuerySelect extends QueryRelation implements Cloneable
             QIdentifier alias = (QIdentifier) children.get(1);
             QValuesTable valuesTable = new QValuesTable(QuerySelect.this, values, alias);
 
-            valuesTable.setAlias(alias);
             FieldKey aliasKey = valuesTable.getAlias();
             if (_tables.containsKey(aliasKey))
             {
@@ -1455,9 +1454,14 @@ public class QuerySelect extends QueryRelation implements Cloneable
             resolveFields(((QJoin)qt)._left);
             resolveFields(((QJoin)qt)._right);
         }
-        else if (qt instanceof QTable)
+        else if (qt instanceof QValuesTable)
         {
             ((QTable)qt).getQueryRelation().resolveFields();
+        }
+        else if (qt instanceof QTable)
+        {
+            if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
+                ((QTable)qt).getQueryRelation().resolveFields();
         }
     }
 

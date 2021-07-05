@@ -1760,7 +1760,13 @@ public class Query
         new SqlTest("SELECT r1.guid, r1.month, r1.d, r1.seven, r1.date, r2.guid, r2.month, r2.d, r2.seven, r2.date  FROM R r1 INNER JOIN R r2 ON r1.RowId = r2.RowId"),
         new SqlTest("SELECT d, seven, d, seven FROM R"),
         new SqlTest("SELECT * FROM R A inner join R B ON 1=1"),
-        new SqlTest("SELECT A.*, B.* FROM R A inner join R B on 1=1")
+        new SqlTest("SELECT A.*, B.* FROM R A inner join R B on 1=1"),
+
+        // VALUES tests
+        new SqlTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as x", 2, 2),
+        new SqlTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as x WHERE x.column1 = 'two'", 2, 1),
+        new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT * FROM v", 2, 2),
+        new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1)
     };
 
 
@@ -1838,7 +1844,11 @@ public class Query
         new FailTest("SELECT A, B, count(*) As C " +
             "FROM (SELECT seven as A, twelve/0 AS B FROM lists.R) " +
             "GROUP BY A, B " +
-            "PIVOT C BY B", false)
+            "PIVOT C BY B", false),
+
+        // VALUES tests
+        new FailTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2))"), // require alias
+        new FailTest("SELECT column1, column2 FROM (VALUES (a,b),(1,2)) as x"), // can't use identifiers
     };
 
     private static final InvolvedColumnsTest[] involvedColumnsTests = new InvolvedColumnsTest[]
