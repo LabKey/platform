@@ -162,13 +162,15 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <ConfirmModal
                 title='Keep unsaved changes?'
-                msg='You have made changes to this domain that have not yet been saved. Do you want to save these changes before leaving?'
                 confirmVariant='primary'
                 onConfirm={this.submitAndNavigate}
                 onCancel={this.navigate}
                 cancelButtonText='No, Discard Changes'
                 confirmButtonText='Yes, Save Changes'
-            />
+            >
+                You have made changes to this domain that have not yet been saved. Do you want to save these changes
+                before leaving?
+            </ConfirmModal>
         )
     }
 
@@ -192,19 +194,16 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <ConfirmModal
                 title='Save without resolving issues?'
-                msg={
-                    <>
-                        {question}
-                        <ul>{warnings}</ul>
-                        {suggestion}
-                    </>
-                }
                 confirmVariant='primary'
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
                 cancelButtonText='No, edit and resolve issues'
                 confirmButtonText='Yes, save changes'
-            />
+            >
+                {question}
+                <ul>{warnings}</ul>
+                {suggestion}
+            </ConfirmModal>
         )
     }
 
