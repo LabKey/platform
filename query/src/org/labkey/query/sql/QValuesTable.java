@@ -1,5 +1,6 @@
 package org.labkey.query.sql;
 
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -8,6 +9,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.data.xml.ColumnType;
 
 import java.util.LinkedHashMap;
@@ -16,15 +18,18 @@ import java.util.Set;
 
 public class QValuesTable extends QTable
 {
-    QueryRelation relation;
+    QuerySelect selectParent;
     Query query;
     QValues values;
     int countOfColumns;
 
-    QValuesTable(Query query, QValues values, QIdentifier alias)
+    QueryRelation relation;
+
+    QValuesTable(QuerySelect selectParent, QValues values, QIdentifier alias)
     {
         super(values, null);
-        this.query = query;
+        this.selectParent = selectParent;
+        this.query = selectParent._query;
         this.values = values;
         setAlias(alias);
         var rows = values.childList();
@@ -86,7 +91,66 @@ public class QValuesTable extends QTable
         @Override
         protected void resolveFields()
         {
+            values = (QValues)_resolveFields(values, null, null);
         }
+
+        // simplified version of QuerySelect.resolveFields(), just resolve parameters and wrap method identifiers with QField
+        QExpr _resolveFields(QExpr expr, @Nullable QNode parent, @Nullable Object referant)
+        {
+            LogManager.getLogger(QValuesTable.class).debug("QValuesTable.resolveFields()");
+            if (expr instanceof QQuery || expr instanceof QUnion)
+            {
+                getParseErrors().add(new QueryParseException("Unexpected subquery expression", null, expr.getLine(), expr.getColumn()));
+                return null;
+            }
+            if (expr instanceof QIfDefined)
+                return new QNull();
+
+            FieldKey key = expr.getFieldKey();
+            if (key != null)
+            {
+                if (key.getParent() == null)
+                {
+                    QParameter param = selectParent.resolveParameter(key);
+                    if (null != param)
+                        return param;
+                }
+                getParseErrors().add(new QueryParseException("Unexpected identifier " + expr.getTokenText(), null, expr.getLine(), expr.getColumn()));
+                return null;
+            }
+
+            if (expr.childList().isEmpty())
+                return expr;
+
+            QExpr methodName = null;
+            if (expr instanceof QMethodCall)
+            {
+                methodName = (QExpr)expr.childList().get(0);
+                if (null == methodName.getFieldKey())
+                    methodName = null;
+            }
+
+            QExpr ret = (QExpr) expr.clone();
+            for (QNode child : expr.children())
+            {
+                //
+                if (child == methodName)
+                {
+                    FieldKey methodKey = ((QExpr) child).getFieldKey();
+                    if (methodKey.getTable() != null)
+                        getParseErrors().add(new QueryParseException("Unexpected identifier " + expr.getTokenText(), null, expr.getLine(), expr.getColumn()));
+                    ret.appendChild(new QField(null, methodKey.getName(), expr));
+                }
+                else
+                {
+                    QExpr resolved = _resolveFields((QExpr) child, expr, referant);
+                    if (null != resolved)
+                        ret.appendChild(resolved);
+                }
+            }
+            return ret;
+        }
+
 
         @Override
         protected void declareFields()
@@ -134,10 +198,8 @@ public class QValuesTable extends QTable
             if (countOfColumns == 0)
                 return Map.of();
             Map<String,RelationColumn> map = new LinkedHashMap<>();
-            var firstRow = values.childList().get(0).childList();
-            for (int i=0 ; i<firstRow.size() ; i++)
+            for (int i=0 ; i<countOfColumns ; i++)
             {
-                final QExpr expr = (QExpr)firstRow.get(i);
                 final int index = i;
                 RelationColumn rc = new RelationColumn()
                 {
@@ -180,6 +242,8 @@ public class QValuesTable extends QTable
                     @Override
                     public @NotNull JdbcType getJdbcType()
                     {
+                        var firstRow = values.childList().get(0).childList();
+                        final QExpr expr = (QExpr)firstRow.get(index);
                         return expr.getJdbcType();
                     }
 

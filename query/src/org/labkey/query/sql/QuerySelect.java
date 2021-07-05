@@ -663,7 +663,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
             List<QNode> children = node.childList();
             QValues values = (QValues) children.get(0);
             QIdentifier alias = (QIdentifier) children.get(1);
-            QValuesTable valuesTable = new QValuesTable(_query, values, alias);
+            QValuesTable valuesTable = new QValuesTable(QuerySelect.this, values, alias);
 
             valuesTable.setAlias(alias);
             FieldKey aliasKey = valuesTable.getAlias();
@@ -1199,6 +1199,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return ret;
         }
 
+        if (expr.childList().isEmpty())
+            return expr;
+
         // We need to recognize method call identifiers, so we handle
         // unqualified column names that are the same as a built-in method.
         // e.g. SELECT Floor, Floor(1.4) FROM ...
@@ -1454,8 +1457,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
         }
         else if (qt instanceof QTable)
         {
-            if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
-                ((QTable)qt).getQueryRelation().resolveFields();
+            ((QTable)qt).getQueryRelation().resolveFields();
         }
     }
 

@@ -1550,7 +1550,6 @@ public class SqlParser
                 break;
             case IDENT:
             case QUOTED_IDENTIFIER:
-                if (constExpr) return constError(node);
                 return QIdentifier.create(node);
             case IFDEFINED:
                 if (constExpr) return constError(node);
