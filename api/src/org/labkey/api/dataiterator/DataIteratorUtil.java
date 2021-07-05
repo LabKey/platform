@@ -205,7 +205,6 @@ public class DataIteratorUtil
         return targetAliasesMap;
     }
 
-
     /* NOTE doesn't check column mapping collisions */
     protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, Container container)
     {
