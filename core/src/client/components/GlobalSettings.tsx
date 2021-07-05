@@ -39,7 +39,7 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
                 <LabelHelpTip title="Tip">
                     <div>
                         <div> Default domain for user sign in.</div>
-                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configAdmin">More info</a>
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=authenticationModule#dom">More info</a>
                     </div>
                 </LabelHelpTip>
                 <span className="global-settings__default-domain-field">
