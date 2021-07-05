@@ -6726,7 +6726,6 @@ public class ExperimentController extends SpringActionController
             SQLFragment sql = new SQLFragment("SELECT * FROM (");
             String comma = "";
             int index = 1;
-            boolean isUnion = false;
             // TODO this should join to inventory.SampleItems if the inventory module is available
             // if inventory is not available, should bring in the material columns from that query
             if (form.getSampleIds() != null && !form.getSampleIds().isEmpty())
@@ -6749,15 +6748,14 @@ public class ExperimentController extends SpringActionController
                 ColumnInfo nameCol = tInfo.getColumn("Name");
                 sql.append(tInfo.getFromSQL("_samples_"));
                 sql.append(" ON _ordered_ids_._sample_id_ = ").append(nameCol.getValueSql("_samples_"));
-                sql.append(") A");
+                sql.append("\n) A");
             }
             if (form.getUniqueIds() != null && !form.getUniqueIds().isEmpty())
             {
                 comma = "";
                 if (index > 1)
                 {
-                    isUnion = true;
-                    sql.append("UNION ALL (\n");
+                    sql.append("\nUNION ALL\nSELECT * FROM (");
                 }
                 sql.append("WITH _ordered_unique_ids_ AS (\nSELECT * FROM (VALUES \n");
                 for (String uniqueId : form.getUniqueIds())
@@ -6778,8 +6776,6 @@ public class ExperimentController extends SpringActionController
                 sql.append(" ON _ordered_unique_ids_._unique_id_ = ").append(uniqueIdCol.getValueSql("_uniqueIdSamples_"));
                 sql.append(") B");
             }
-            if (isUnion)
-                sql.append(")");
             sql.append("\nORDER BY ordinal");
             return sql;
         }
