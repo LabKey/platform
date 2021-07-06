@@ -4678,7 +4678,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // we get this list now so that it doesn't include all of the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
-            Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);// group by sample type?
+            Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
             deleteMaterialByRowIds(user, c, matIds, true, true, null);
 
             // same drill for data objects
