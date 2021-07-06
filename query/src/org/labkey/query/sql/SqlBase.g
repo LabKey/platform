@@ -20,6 +20,7 @@ tokens
 	AGGREGATE;		// One of the aggregate functions (e.g. min, max, avg)
 	ALIAS;
     CASE2;
+    CONSTANT_EXPRESSION;    // 'marker' node that child expression is expected to be constant, not enforced by grammar
     DATATYPE;
 	DATE_LITERAL;
     DECLARATION;
@@ -228,6 +229,7 @@ THEN : 'then';
 TRUE : 'true';
 UNION : 'union';
 UPDATE : 'update';
+VALUES : 'values';
 VARIANCE: 'variance';
 VAR_POP: 'var_pop';
 VAR_SAMP: 'var_samp';
@@ -365,8 +367,16 @@ unionTerm
 select
 	: (selectFrom (whereClause)? (groupByClause)? (havingClause)? (pivotClause)?)
 	    -> ^(QUERY selectFrom whereClause? groupByClause? havingClause? pivotClause?)
+    | VALUES^ OPEN! valuesExprList CLOSE! (COMMA! OPEN! valuesExprList CLOSE!)*
     ;
 
+valuesExprList
+	: valuesExprListFragment -> ^(EXPR_LIST valuesExprListFragment?)
+ 	;
+
+valuesExprListFragment
+    : (simpleScalarExpression (COMMA! simpleScalarExpression)*)?
+    ;
 
 selectFrom!
 	: (selectClause fromClause?)
@@ -435,7 +445,7 @@ tableSpecification
 
 tableSpecificationPart
     : identifier
-    | '{' specType=identifier specFn=identifier OPEN constantExprList CLOSE '}' -> ^(TABLE_PATH_SUBSTITUTION $specType $specFn constantExprList)
+    | '{' specType=identifier specFn=identifier OPEN constantList CLOSE '}' -> ^(TABLE_PATH_SUBSTITUTION $specType $specFn constantList)
     ;
 
 
@@ -563,18 +573,33 @@ annotation
 // Once you have a precedence chart, writing the appropriate rules as below
 // is usually very straightforward
 
+
 logicalExpression
 	: expression
 	;
+
 
 // public entry point
 parseExpression
 	: logicalOrExpression EOF!;
 
+
 // Main expression rule
 expression
 	: logicalOrExpression
 	;
+
+
+// public entry point (testing)
+parseConstantExpression
+	: simpleScalarExpression EOF!;
+
+
+// This parses the same as 'expression', but leaves a marker node in the tree to indicate to SqlParser that
+// there should not be identifiers, subQueries, or table valued expression in this tree.  E.g. Simple constant scalar expression.
+simpleScalarExpression
+    : logicalOrExpression -> ^(CONSTANT_EXPRESSION logicalOrExpression)
+    ;
 
 // level 7 - OR
 logicalOrExpression
@@ -808,11 +833,12 @@ paramListFragment
     ;
 
 
-constantExprList
-	: constantExprListFragment -> ^(EXPR_LIST constantExprListFragment?)
+// list of atomic constants (number, string, timestamp), not constant expressions
+constantList
+	: constantListFragment -> ^(EXPR_LIST constantListFragment?)
  	;
 
-constantExprListFragment
+constantListFragment
     : (constant (COMMA! constant)*)?
     ;
 

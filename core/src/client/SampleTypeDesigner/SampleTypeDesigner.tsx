@@ -156,7 +156,6 @@ export class App extends React.PureComponent<any, State> {
                     onChange={this.onChange}
                     includeDataClasses={true}
                     useTheme={true}
-                    appPropertiesOnly={false}
                     showLinkToStudy={true}
                     successBsStyle={'primary'}
                 />

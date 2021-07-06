@@ -244,10 +244,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     <DomainForm
                         headerTitle={'Fields'}
                         domain={domain}
+                        domainFormDisplayOptions={{
+                            hideInferFromFile: true,
+                        }}
                         onChange={this.onChangeHandler}
                         useTheme={true}
                         successBsStyle={'primary'}
-                        allowImportExport={true}
                     />
                 }
                 { message && <Alert bsStyle={'danger'}>{message}</Alert>}

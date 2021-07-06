@@ -27,10 +27,21 @@ public class QExprList extends QExpr implements SupportsAnnotations
 
     }
 
+    public QExprList(Class validChildrenClass)
+    {
+        super(validChildrenClass);
+    }
+
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("(");
+        appendSql(builder, query, true);
+    }
+
+    protected void appendSql(SqlBuilder builder, Query query, boolean parens)
+    {
+        if (parens)
+            builder.append("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
@@ -38,13 +49,20 @@ public class QExprList extends QExpr implements SupportsAnnotations
             builder.nextPrefix(",");
         }
         builder.popPrefix();
-        builder.append(")");
+        if (parens)
+            builder.append(")");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("(");
+        appendSource(builder, true);
+    }
+
+    protected void appendSource(SourceBuilder builder, boolean parens)
+    {
+        if (parens)
+            builder.append("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
@@ -52,7 +70,8 @@ public class QExprList extends QExpr implements SupportsAnnotations
             builder.nextPrefix(",");
         }
         builder.popPrefix();
-        builder.append(")");
+        if (parens)
+            builder.append(")");
     }
 
     @Override
