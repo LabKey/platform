@@ -6704,13 +6704,14 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class SaveOrderedSamplesQueryAction extends ReadOnlyApiAction<OrderedSamplesForm>
     {
+        private static final String SAMPLE_ID_PREFIX = "s:";
+        private static final String UNIQUE_ID_PREFIX = "u:";
 
         @Override
         public void validateForm(OrderedSamplesForm form, Errors errors)
         {
-            if ((form.getSampleIds() == null || form.getSampleIds().isEmpty()) &&
-                    (form.getUniqueIds() == null || form.getUniqueIds().isEmpty()))
-                errors.reject(ERROR_MSG, "Either sampleIds or uniqueIds must be provided.");
+            if (form.getIds() == null || form.getIds().isEmpty())
+                errors.reject(ERROR_REQUIRED, "Ids must be provided");
         }
 
         @Override
@@ -6723,25 +6724,39 @@ public class ExperimentController extends SpringActionController
 
         private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
         {
-            SQLFragment sql = new SQLFragment("SELECT * FROM (");
-            String comma = "";
-            int index = 1;
             // TODO this should join to inventory.SampleItems if the inventory module is available
             // if inventory is not available, should bring in the material columns from that query
-            if (form.getSampleIds() != null && !form.getSampleIds().isEmpty())
+            SQLFragment sql = new SQLFragment("SELECT * FROM (");
+            String sampleIdComma = "";
+            String uniqueIdComma = "";
+            int index = 1;
+            SQLFragment sampleIdValuesSql = new SQLFragment();
+            SQLFragment uniqueIdValuesSql = new SQLFragment();
+            for (String id: form.getIds())
+            {
+                if (id.startsWith(SAMPLE_ID_PREFIX))
+                {
+                    sampleIdValuesSql.append(sampleIdComma).append("(").append(index);
+                    sampleIdValuesSql.append(", ");
+                    sampleIdValuesSql.append("'").append(id.substring(SAMPLE_ID_PREFIX.length())).append("'");
+                    sampleIdValuesSql.append(")");
+                    sampleIdComma = "\n,";
+                }
+                else if (id.startsWith(UNIQUE_ID_PREFIX))
+                {
+                    uniqueIdValuesSql.append(uniqueIdComma).append("(").append(index);
+                    uniqueIdValuesSql.append(", ");
+                    uniqueIdValuesSql.append("'").append(id.substring(UNIQUE_ID_PREFIX.length())).append("'");
+                    uniqueIdValuesSql.append(")");
+                    uniqueIdComma = "\n,";
+                }
+                index++;
+            }
+            if (!sampleIdValuesSql.isEmpty())
             {
                 sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
-                for (String sampleId : form.getSampleIds())
-                {
-                    sql.append(comma).append("(").append(index);
-                    sql.append(", ");
-                    sql.append("'").append(sampleId).append("'");
-                    sql.append(")");
-                    comma = "\n,";
-                    index++;
-                }
+                sql.append(sampleIdValuesSql);
                 sql.append("\n) AS _values_ (_ordinal_, _sample_id_))\n");
-
                 sql.append("SELECT _ordered_ids_._ordinal_ as Ordinal, _ordered_ids_._sample_id_ as Id, _samples_.RowId as RowId\n");
                 sql.append("FROM _ordered_ids_\nINNER JOIN ");
                 TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
@@ -6750,23 +6765,14 @@ public class ExperimentController extends SpringActionController
                 sql.append(" ON _ordered_ids_._sample_id_ = ").append(nameCol.getValueSql("_samples_"));
                 sql.append("\n) A");
             }
-            if (form.getUniqueIds() != null && !form.getUniqueIds().isEmpty())
+            if (!uniqueIdValuesSql.isEmpty())
             {
-                comma = "";
-                if (index > 1)
+                if (!sampleIdValuesSql.isEmpty())
                 {
                     sql.append("\nUNION ALL\nSELECT * FROM (");
                 }
                 sql.append("WITH _ordered_unique_ids_ AS (\nSELECT * FROM (VALUES \n");
-                for (String uniqueId : form.getUniqueIds())
-                {
-                    sql.append(comma).append("(").append(index);
-                    sql.append(", ");
-                    sql.append("'").append(uniqueId).append("'");
-                    sql.append(")");
-                    comma = "\n,";
-                    index++;
-                }
+                sql.append(uniqueIdValuesSql);
                 sql.append("\n) AS _values_ (_ordinal_, _unique_id_))\n");
                 sql.append("SELECT _ordered_unique_ids_._ordinal_ as Ordinal, _ordered_unique_ids_._unique_id_ as Id, _uniqueIdSamples_.RowId\n");
                 sql.append("FROM _ordered_unique_ids_\nINNER JOIN ");
@@ -6778,13 +6784,67 @@ public class ExperimentController extends SpringActionController
             }
             sql.append("\nORDER BY ordinal");
             return sql;
+
+//            String comma = "";
+//            if (form.getSampleIds() != null && !form.getSampleIds().isEmpty())
+//            {
+//                sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
+//                for (String sampleId : form.getSampleIds())
+//                {
+//                    sql.append(comma).append("(").append(index);
+//                    sql.append(", ");
+//                    sql.append("'").append(sampleId).append("'");
+//                    sql.append(")");
+//                    comma = "\n,";
+//                    index++;
+//                }
+//                sql.append("\n) AS _values_ (_ordinal_, _sample_id_))\n");
+//
+//                sql.append("SELECT _ordered_ids_._ordinal_ as Ordinal, _ordered_ids_._sample_id_ as Id, _samples_.RowId as RowId\n");
+//                sql.append("FROM _ordered_ids_\nINNER JOIN ");
+//                TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
+//                ColumnInfo nameCol = tInfo.getColumn("Name");
+//                sql.append(tInfo.getFromSQL("_samples_"));
+//                sql.append(" ON _ordered_ids_._sample_id_ = ").append(nameCol.getValueSql("_samples_"));
+//                sql.append("\n) A");
+//            }
+//            if (form.getUniqueIds() != null && !form.getUniqueIds().isEmpty())
+//            {
+//                comma = "";
+//                if (index > 1)
+//                {
+//                    sql.append("\nUNION ALL\nSELECT * FROM (");
+//                }
+//                sql.append("WITH _ordered_unique_ids_ AS (\nSELECT * FROM (VALUES \n");
+//                for (String uniqueId : form.getUniqueIds())
+//                {
+//                    sql.append(comma).append("(").append(index);
+//                    sql.append(", ");
+//                    sql.append("'").append(uniqueId).append("'");
+//                    sql.append(")");
+//                    comma = "\n,";
+//                    index++;
+//                }
+//                sql.append("\n) AS _values_ (_ordinal_, _unique_id_))\n");
+//                sql.append("SELECT _ordered_unique_ids_._ordinal_ as Ordinal, _ordered_unique_ids_._unique_id_ as Id, _uniqueIdSamples_.RowId\n");
+//                sql.append("FROM _ordered_unique_ids_\nINNER JOIN ");
+//                TableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
+//                sql.append(tInfo.getFromSQL("_uniqueIdSamples_"));
+//                ColumnInfo uniqueIdCol = tInfo.getColumn(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
+//                sql.append(" ON _ordered_unique_ids_._unique_id_ = ").append(uniqueIdCol.getValueSql("_uniqueIdSamples_"));
+//                sql.append(") B");
+//            }
+//            sql.append("\nORDER BY ordinal");
+//            return sql;
         }
     }
 
     public static class OrderedSamplesForm
     {
+        // List<{type: [Id, Uid], value: X}>
         List<String> _sampleIds;
         List<String> _uniqueIds;
+        List<String> _ids;
 
         public List<String> getSampleIds()
         {
@@ -6804,6 +6864,16 @@ public class ExperimentController extends SpringActionController
         public void setUniqueIds(List<String> uniqueIds)
         {
             this._uniqueIds = uniqueIds;
+        }
+
+        public List<String> getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(List<String> ids)
+        {
+            _ids = ids;
         }
     }
 }
