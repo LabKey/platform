@@ -144,7 +144,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         MimeMap.MimeType mime = _mimeMap.getMimeTypeFor(filename);
-        boolean asAttachment = null==mime || !mime.canInline();
+        boolean asAttachment = null==mime || mime==MimeMap.MimeType.HTML || !mime.canInline();
 
         response.reset();
         writeDocument(new ResponseWriter(response), parent, filename, asAttachment);
@@ -1281,6 +1281,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             initSearchProperties(name, displayTitle, cat);
         }
 
+        @Override
+        public boolean allowInline()
+        {
+            if (isFile() && "text/html".equals(getContentType()))
+                return false;
+            return super.allowInline();
+        }
 
         private void initSearchProperties(String name, @Nullable String displayTitle, @Nullable SearchService.SearchCategory cat)
         {
