@@ -595,7 +595,7 @@ parseConstantExpression
 	: simpleScalarExpression EOF!;
 
 
-// This is parses the same as 'expression', but leaves an marker node in the tree to indicate to SqlParser that
+// This parses the same as 'expression', but leaves a marker node in the tree to indicate to SqlParser that
 // there should not be identifiers, subQueries, or table valued expression in this tree.  E.g. Simple constant scalar expression.
 simpleScalarExpression
     : logicalOrExpression -> ^(CONSTANT_EXPRESSION logicalOrExpression)
