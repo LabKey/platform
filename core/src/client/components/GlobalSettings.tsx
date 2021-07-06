@@ -39,7 +39,7 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
                 <LabelHelpTip title="Tip">
                     <div>
                         <div> Default domain for user sign in.</div>
-                        { helpLinkNode("authenticationModule#dom", "More info") }
+                        {helpLinkNode('authenticationModule#dom', 'More info')}
                     </div>
                 </LabelHelpTip>
                 <span className="global-settings__default-domain-field">
