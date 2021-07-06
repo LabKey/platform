@@ -44,6 +44,7 @@ import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -79,7 +80,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
-    private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final Set<String> RESERVED_NAMES;
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
 
@@ -103,10 +103,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate
                 // the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
                 new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false)
-        )));
-
-        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid")
         )));
 
         logger = LogManager.getLogger(SampleTypeDomainKind.class);
@@ -238,7 +234,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
-        return INDEXES;
+        Set<PropertyStorageSpec.Index> indexes = Sets.newLinkedHashSet(Arrays.asList(
+                new PropertyStorageSpec.Index(true, "lsid")
+        ));
+        domain.getProperties().stream().filter(DomainProperty::isUniqueIdField).forEach(prop -> {
+            indexes.add(new PropertyStorageSpec.Index(true,  prop.getName()));
+        });
+        return Collections.unmodifiableSet(indexes);
     }
 
     @Override

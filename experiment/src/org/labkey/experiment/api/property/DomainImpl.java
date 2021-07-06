@@ -785,7 +785,7 @@ public class DomainImpl implements Domain
 
         List<ColumnInfo> uniqueIndexCols = new ArrayList<>();
         table.getUniqueIndices().values().forEach(idx -> {
-            uniqueIndexCols.addAll(idx.second);
+            idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add);
         });
 
         DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX);
