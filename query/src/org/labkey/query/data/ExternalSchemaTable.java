@@ -88,7 +88,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();
-        return (perm.isAssignableFrom(ReadPermission.class) || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));
+        return (perm == ReadPermission.class || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));
     }
 
     public void setContainer(String containerId)

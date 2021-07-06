@@ -1,7 +1,7 @@
 
 Ext4.namespace("LABKEY.experiment");
 
-LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, nounSingular, nounPlural) {
+LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName, selectionKey, nounSingular, nounPlural) {
     var loadingMsg = Ext4.Msg.show({
         title: "Retrieving data",
         msg: "Loading ..."
@@ -97,6 +97,13 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
+                                    let dr = LABKEY.DataRegions[dataRegionName];
+                                    if (dr) {
+                                        dr.clearSelected({
+                                            selectionKey: selectionKey,
+                                        });
+                                    }
+
                                     Ext4.Msg.hide();
                                     var responseMsg = Ext4.Msg.show({
                                         title: "Delete " + totalNoun,

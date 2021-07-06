@@ -817,14 +817,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         HttpServletRequest request = getRequest();
 
-        // TODO: Remove all ~checkboxes handling -- I don't think we ever output this
-        String[] checkboxes = request.getParameterValues("~checkboxes");
-
-        if (null != checkboxes)
-            for (String checkbox : checkboxes)
-                set(checkbox, "0");
-
-        // handle Spring style markers as well
+        // handle Spring style markers
         IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
             if (name.startsWith(SpringActionController.FIELD_MARKER))
                 set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");
