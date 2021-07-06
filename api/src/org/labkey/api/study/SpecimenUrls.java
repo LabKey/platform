@@ -17,11 +17,8 @@
 package org.labkey.api.study;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
-import org.springframework.web.servlet.mvc.Controller;
 
 /**
  * User: adam
@@ -29,14 +26,8 @@ import org.springframework.web.servlet.mvc.Controller;
  */
 public interface SpecimenUrls extends UrlProvider
 {
-    ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-    ActionURL getManageRequestURL(Container c, int requestId);
-    @Migrate // Eliminate this -- same as getManageRequestURL(Container, int);
-    ActionURL getRequestDetailsURL(Container c, int requestId);
     ActionURL getManageRequestStatusURL(Container c, int requestId);
+    ActionURL getManageRequestURL(Container c, int requestId);
     ActionURL getSpecimensURL(Container c);
     ActionURL getSpecimensURL(Container c, boolean showVials);
-    ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
-
-    Class<? extends Controller> getCopyParticipantCommentActionClass();
 }
