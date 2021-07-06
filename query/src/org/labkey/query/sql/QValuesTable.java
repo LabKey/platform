@@ -133,7 +133,6 @@ public class QValuesTable extends QTable
             QExpr ret = (QExpr) expr.clone();
             for (QNode child : expr.children())
             {
-                //
                 if (child == methodName)
                 {
                     FieldKey methodKey = ((QExpr) child).getFieldKey();
@@ -268,6 +267,8 @@ public class QValuesTable extends QTable
             ret.append(getAlias());
             ret.append(" (");
             String comma = "";
+            // generate names consistent with PostgreSQL default name for VALUES
+            // https://www.postgresql.org/docs/12/queries-values.html
             for (int i=1 ; i<= countOfColumns ; i++)
             {
                 ret.append(comma).append("column" + i);
