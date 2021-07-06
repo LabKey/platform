@@ -632,7 +632,11 @@ public class QuerySelect extends QueryRelation implements Cloneable
         private QJoinOrTable parseNode(QNode r)
         {
             if (r.getTokenType() == SqlBaseParser.RANGE)
+            {
+                if (r.getFirstChild().getTokenType() == SqlBaseParser.VALUES)
+                    return parseValues(r);
                 return parseRange(r);
+            }
             else if (r.getTokenType() == SqlBaseParser.JOIN)
                 return parseJoin(r);
             else
@@ -642,6 +646,36 @@ public class QuerySelect extends QueryRelation implements Cloneable
             }
         }
 
+        private QTable parseValues(QNode node)
+        {
+            int countChildren = node.childList().size();
+            if (2 < countChildren || !(node.childList().get(0) instanceof QValues))
+            {
+                parseError("Syntax error in JOIN clause", node);
+                return null;
+            }
+            if (countChildren < 2)
+            {
+                parseError("VALUES expression requires an alias", node);
+                return null;
+            }
+
+            List<QNode> children = node.childList();
+            QValues values = (QValues) children.get(0);
+            QIdentifier alias = (QIdentifier) children.get(1);
+            QValuesTable valuesTable = new QValuesTable(QuerySelect.this, values, alias);
+
+            FieldKey aliasKey = valuesTable.getAlias();
+            if (_tables.containsKey(aliasKey))
+            {
+                parseError(aliasKey + " was specified more than once", alias);
+            }
+            else
+            {
+                _tables.put(aliasKey, valuesTable);
+            }
+            return valuesTable;
+        }
 
         private QTable parseRange(QNode node)
         {
@@ -1164,6 +1198,9 @@ public class QuerySelect extends QueryRelation implements Cloneable
             return ret;
         }
 
+        if (expr.childList().isEmpty())
+            return expr;
+
         // We need to recognize method call identifiers, so we handle
         // unqualified column names that are the same as a built-in method.
         // e.g. SELECT Floor, Floor(1.4) FROM ...
@@ -1416,6 +1453,10 @@ public class QuerySelect extends QueryRelation implements Cloneable
                 resolveFields(((QJoin)qt)._on, null, qt);
             resolveFields(((QJoin)qt)._left);
             resolveFields(((QJoin)qt)._right);
+        }
+        else if (qt instanceof QValuesTable)
+        {
+            ((QTable)qt).getQueryRelation().resolveFields();
         }
         else if (qt instanceof QTable)
         {
