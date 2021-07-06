@@ -65,9 +65,9 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         {
             FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
             ImportOptions options = new ImportOptions(job.getContainerId(), job.getUser().getUserId());
-            options.setAnalysisDir(support.getDataDirectory());
+            options.setAnalysisDir(support.getDataDirectory().toPath());
 
-            job = new FolderImportJob(job.getContainer(), job.getUser(), null, support.findInputFile(FOLDER_XML), FOLDER_XML, job.getPipeRoot(), options);
+            job = new FolderImportJob(job.getContainer(), job.getUser(), null, support.findInputPath(FOLDER_XML), FOLDER_XML, job.getPipeRoot(), options);
             job.setStatus(PipelineJob.TaskStatus.running.toString(), "Starting folder import job", true);
 
             importContext = ((FolderImportJob) job).getImportContext();

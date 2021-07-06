@@ -195,8 +195,11 @@ public class FileContentServiceImpl implements FileContentService
         {
             case files:
                 String folderName = getFolderName(type);
+                if (folderName == null)
+                    folderName = "";
+
                 java.nio.file.Path dir = getFileRootPath(c);
-                return dir != null ? new File(dir.toFile(), folderName) : null;
+                return dir != null ? dir.resolve(folderName).toFile() : null;
 
             case pipeline:
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);

@@ -94,6 +94,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -491,7 +492,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
             String reportXml = "";
             // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(ImportContext)
-            FolderImportContext ex = new FolderImportContext(user, c, (File)null, null, null, null);
+            FolderImportContext ex = new FolderImportContext(user, c, (Path)null, null, null, null);
             ReportDescriptorDocument reportDoc = report.getDescriptor().getDescriptorDocument(ex);
             try (StringWriter writer = new StringWriter())
             {

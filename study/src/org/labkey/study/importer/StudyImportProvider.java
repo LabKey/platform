@@ -27,6 +27,9 @@ import org.labkey.study.model.StudyManager;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 
 /*
 * User: adam
@@ -55,12 +58,12 @@ public class StudyImportProvider extends PipelineProvider
         addAction(actionId, StudyController.ImportStudyFromPipelineAction.class, label, directory, directory.listFiles(new StudyImportFilter()), false, false, includeAll);
     }
 
-    private static class StudyImportFilter implements FileFilter
+    private static class StudyImportFilter implements DirectoryStream.Filter<Path>
     {
         @Override
-        public boolean accept(File file)
+        public boolean accept(Path entry) throws IOException
         {
-            return file.getName().endsWith("study.xml") || file.getName().endsWith(".study.zip") || file.getName().endsWith(".folder.zip");
+            return entry.endsWith("study.xml") || entry.endsWith(".study.zip") || entry.endsWith(".folder.zip");
         }
     }
 }

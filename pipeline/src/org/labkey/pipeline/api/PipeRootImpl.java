@@ -402,6 +402,13 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    /**
+     * Get a local directory that can be used for importing (Read/Write)
+     *
+     * Cloud: Uses temp directory
+     * Default: Uses file root
+     * @return
+     */
     @Override
     @NotNull
     public File getImportDirectory()
@@ -413,7 +420,9 @@ public class PipeRootImpl implements PipeRoot
         return new File(root, PipelineService.UNZIP_DIR);
     }
 
+    //TODO why do we have both of these? 1
     @Override
+    @NotNull
     public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException
     {
         File importDir = getImportDirectory();
@@ -424,6 +433,7 @@ public class PipeRootImpl implements PipeRoot
         return importDir;
     }
 
+    //TODO why do we have both of these? 2
     @Override
     public void deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {

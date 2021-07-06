@@ -85,7 +85,7 @@ public class ZipFile extends AbstractVirtualFile
     {
         // Make sure directory exists, is writeable
         if (!FileUtil.hasCloudScheme(root))
-            FileSystemFile.ensureWriteableDirectory(root.toFile());
+            FileSystemFile.ensureWriteableDirectory(root);
 
         Path zipFile = root.resolve(_makeLegalName(name));
         OutputStream fos = Files.newOutputStream(zipFile);

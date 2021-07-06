@@ -32,10 +32,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * User: adam
@@ -44,7 +49,7 @@ import java.util.stream.Collectors;
  */
 public class FileSystemFile extends AbstractVirtualFile
 {
-    private final File _root;
+    private final Path _root;
 
     // Required for xstream serialization on Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -55,31 +60,51 @@ public class FileSystemFile extends AbstractVirtualFile
 
     public FileSystemFile(File root)
     {
-        ensureWriteableDirectory(root);
+        this(root.toPath());
+    }
 
-        _root = root;
+    public FileSystemFile(Path root)
+    {
+        try
+        {
+            ensureWriteableDirectory(root);
+            _root = root;
+        }
+        catch (IOException e)
+        {
+            //TODO do more...
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public String getLocation()
     {
-        return _root.getAbsolutePath();
+        return _root.toAbsolutePath().toString();
     }
 
     @Override
     public PrintWriter getPrintWriter(String filename) throws IOException
     {
-        File file = new File(_root, makeLegalName(filename));
+        File file = new File(_root.toFile(), makeLegalName(filename));
 
         return PrintWriters.getPrintWriter(file);
     }
 
+    /**
+     *
+     * @param filename
+     * @return
+     * @throws IOException
+     */
     @Override
     public OutputStream getOutputStream(String filename) throws IOException
     {
-        File file = new File(_root, makeLegalName(filename));
+        //TODO makes this Path based
+        File file = new File(_root.toFile(), makeLegalName(filename));
 
-        return new FileOutputStream(file);
+        Path filepath = _root.resolve(makeLegalName(filename));
+        return Files.newOutputStream(filepath);
     }
 
     @Override
@@ -100,14 +125,15 @@ public class FileSystemFile extends AbstractVirtualFile
     // Expose this if/when some caller needs to customize the options
     private void saveXmlBean(String filename, XmlObject doc, XmlOptions options) throws IOException
     {
-        File file = new File(_root, makeLegalName(filename));
-        doc.save(file, options);
+//        File file = new File(_root, makeLegalName(filename));
+        Path file = _root.resolve(filename);
+        doc.save(file.toFile(), options);
     }
 
     @Override
     public VirtualFile getDir(String name)
     {
-        return new FileSystemFile(new File(_root, makeLegalName(name)));
+        return new FileSystemFile(_root.resolve(makeLegalName(name)));
     }
 
     @Override
@@ -127,23 +153,23 @@ public class FileSystemFile extends AbstractVirtualFile
         return FileUtil.makeLegalName(name);
     }
 
-    public static void ensureWriteableDirectory(File dir)
+    public static void ensureWriteableDirectory(Path dir) throws IOException
     {
-        if (!dir.exists())
+        if (!Files.exists(dir))
             //noinspection ResultOfMethodCallIgnored
-            dir.mkdir();
+            Files.createDirectories(dir);
 
-        if (!dir.isDirectory())
-            throw new MinorConfigurationException(dir.getAbsolutePath() + " is not a directory.");
+        if (!Files.isDirectory(dir))
+            throw new MinorConfigurationException(dir.toAbsolutePath() + " is not a directory.");
 
-        if (!dir.canWrite())
-            throw new MinorConfigurationException("Can't write to " + dir.getAbsolutePath());
+        if (!Files.isWritable(dir))
+            throw new MinorConfigurationException("Can't write to " + dir.toAbsolutePath());
     }
 
     @Override
     public XmlObject getXmlBean(String filename) throws IOException
     {
-        File file = new File(_root, makeLegalName(filename));
+        File file = new File(_root.toFile(), makeLegalName(filename));
 
         if (file.exists())
         {
@@ -162,10 +188,10 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public InputStream getInputStream(String filename) throws IOException
     {
-        File file = new File(_root, makeLegalName(filename));
+        Path file = _root.resolve(makeLegalName(filename));
 
-        if (file.exists())
-            return new BufferedInputStream(new FileInputStream(file));
+        if (Files.exists(file))
+            return new BufferedInputStream(Files.newInputStream(file));
         else
             return null;
     }
@@ -173,31 +199,58 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public String getRelativePath(String filename)
     {
-        File file = new File(_root, makeLegalName(filename));
+        Path file = _root.resolve(makeLegalName(filename));
         return ImportException.getRelativePath(_root, file);
     }
 
     @Override
     public List<String> list()
     {
-        File[] files = _root.listFiles(File::isFile);
-
-        return null == files ? Collections.emptyList() : Arrays.stream(files).map(File::getName).collect(Collectors.toList());
+        try (Stream<Path> files = Files.list(_root))
+        {
+            return null == files ? Collections.emptyList() :
+                    files.filter(Files::isRegularFile)
+                         .map(Path::getFileName)
+                         .map(Path::toString)
+                         .collect(Collectors.toList());
+        }
+        catch (IOException e)
+        {
+            //TODO should do more here...
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public List<String> listDirs()
     {
-        File[] dirs = _root.listFiles(File::isDirectory);
-
-        return null == dirs ? Collections.emptyList() : Arrays.stream(dirs).map(File::getName).collect(Collectors.toList());
+        try (Stream<Path> files = Files.list(_root))
+        {
+            return null == files ? Collections.emptyList() :
+                    files.filter(Files::isDirectory)
+                         .map(Path::toString)
+                         .collect(Collectors.toList());
+        }
+        catch (IOException e)
+        {
+            //TODO should do more here...
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public boolean delete(String filename)
     {
-        File file = new File(_root, makeLegalName(filename));
-        return file.delete();
+        Path file = _root.resolve(makeLegalName(filename));
+        try
+        {
+            return Files.deleteIfExists(file);
+        }
+        catch (IOException e)
+        {
+            //TODO do more here...
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

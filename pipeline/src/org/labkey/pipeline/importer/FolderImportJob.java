@@ -38,6 +38,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * User: cnathe
@@ -64,10 +65,10 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         _ctx.setLoggerGetter(new PipelineJobLoggerGetter(this));
     }
 
-    public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
+    public FolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = new FileSystemFile(folderXml.getParentFile());
+        _root = new FileSystemFile(folderXml.getParent());
         _originalFilename = originalFilename;
         setLogFile(FolderImportProvider.logForInputFile(new File("folder_load"), getPipeRoot()));
         _ctx = new FolderImportContext(user, c, folderXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);

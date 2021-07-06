@@ -87,6 +87,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -937,7 +938,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 try (ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
                 {
                     VirtualFile f = new MemoryVirtualFile();
-                    excel.write(f.getOutputStream("excel.xlsx"));
+                    excel.write(f.getOutputStream("excel.xlsx")); //TODO should this outputStream be closed?
 
                     try (ExcelLoader loader = new ExcelLoader(f.getInputStream("excel.xlsx"), true, getProject()))
                     {

@@ -28,8 +28,9 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,7 +40,7 @@ import java.util.Set;
  */
 public class FolderImportContext extends AbstractFolderContext
 {
-    private File _folderXml;
+    private Path _folderXml;
     HashSet<String> _importedReports = new HashSet<>();
 
     /** Required for xstream serialization on Java 7 */
@@ -49,7 +50,7 @@ public class FolderImportContext extends AbstractFolderContext
         super(null, null, null, null, null, null);
     }
 
-    public FolderImportContext(User user, Container c, File folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
+    public FolderImportContext(User user, Container c, Path folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
         super(user, c, null, dataTypes, logger, root);
         _folderXml = folderXml;
@@ -61,7 +62,7 @@ public class FolderImportContext extends AbstractFolderContext
     }
 
     @Override
-    public synchronized FolderDocument getDocument() throws ImportException, InvalidFileException
+    public synchronized FolderDocument getDocument() throws ImportException
     {
         FolderDocument folderDoc = super.getDocument();
 
@@ -83,44 +84,40 @@ public class FolderImportContext extends AbstractFolderContext
         return folderDoc;
     }
 
-    // Assume file was referenced in folder.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in
-    public File getFolderFile(File root, File dir, String name) throws ImportException
+//    // Assume file was referenced in folder.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in
+//    public File getFolderFile(File root, File dir, String name) throws ImportException
+//    {
+//        return getFolderFile(root, dir, name, _folderXml.getName());
+//    }
+//
+//    public File getFolderFile(File root, File dir, String name, String source) throws ImportException
+//    {
+//        File file = new File(dir, name);
+//
+//        if (!file.exists())
+//            throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(root, file));
+//
+//        if (!file.isFile())
+//            throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
+//
+//        return file;
+//    }
+
+    private FolderDocument readFolderDocument(Path folderXml) throws ImportException, IOException
     {
-        return getFolderFile(root, dir, name, _folderXml.getName());
-    }
-
-    public File getFolderFile(File root, File dir, String name, String source) throws ImportException
-    {
-        File file = new File(dir, name);
-
-        if (!file.exists())
-            throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(root, file));
-
-        if (!file.isFile())
-            throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
-
-        return file;
-    }
-
-    private FolderDocument readFolderDocument(File folderXml) throws ImportException, IOException, InvalidFileException
-    {
-        if (!folderXml.exists())
-            throw new ImportException(folderXml.getName() + " file does not exist.");
+        if (!Files.exists(folderXml))
+            throw new ImportException(folderXml.getFileName() + " file does not exist.");
 
         FolderDocument folderDoc;
 
         try
         {
-            folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(folderDoc, folderXml.getName());
+            folderDoc = FolderDocument.Factory.parse(Files.newBufferedReader(folderXml), XmlBeansUtil.getDefaultParseOptions());
+            XmlBeansUtil.validateXmlDocument(folderDoc, folderXml.getFileName().toString());
         }
-        catch (XmlException e)
+        catch (XmlException | XmlValidationException e)
         {
-            throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
-        }
-        catch (XmlValidationException e)
-        {
-            throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
+            throw new InvalidFileException(folderXml.getParent(), folderXml, e);
         }
 
         return folderDoc;

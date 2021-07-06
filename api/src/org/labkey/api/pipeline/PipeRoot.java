@@ -69,6 +69,20 @@ public interface PipeRoot extends SecurableResource
     @Nullable
     File resolvePath(String relativePath);
 
+    //TODO implement this properly
+    default Path resolveRelativePath(String relativePath)
+    {
+        return getRootNioPath().resolve(relativePath);
+    }
+
+
+    /**
+     * Get a local directory that can be used for importing (Read/Write)
+     *
+     * Cloud: Uses a temp directory
+     * Default: Uses folder within the file root
+     * @return
+     */
     @NotNull
     File getImportDirectory();
 
@@ -78,6 +92,7 @@ public interface PipeRoot extends SecurableResource
      * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
      * @throws FileNotFoundException if import directory path cannot be resolved
      */
+    @NotNull
     File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException;
 
     /**

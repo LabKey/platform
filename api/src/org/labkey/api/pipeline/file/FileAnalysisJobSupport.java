@@ -21,6 +21,7 @@ import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -75,6 +76,25 @@ public interface FileAnalysisJobSupport
      * and the pipeline definition to specify where those files should come from.
      */
     File findInputFile(String name);
+
+    default Path findInputPath(String filepath)
+    {
+        //TODO This needs implementation in derived classes...
+        return findInputFile(filepath).toPath();
+    }
+
+    default Path getDataDirectoryPath()
+    {
+        //TODO This needs implementation in derived classes...
+        return getDataDirectory().toPath();
+    }
+
+    default Path getAnalysisDirectoryPath()
+    {
+        //TODO This needs implementation in derived classes...
+        return getAnalysisDirectory().toPath();
+    }
+
 
     /**
      * Returns a file for use as output in the pipeline, given its name. 

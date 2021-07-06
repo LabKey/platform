@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * User: jeckels
@@ -224,7 +225,6 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             super(f.getPath());
         }
 
-        @Override
         public boolean isFile()
         {
             return !isDirectory();

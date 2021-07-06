@@ -249,7 +249,7 @@ abstract public class PipelineProvider
 
     public boolean supportsCloud()
     {
-        return false;
+        return true;
     }
 
     /**
