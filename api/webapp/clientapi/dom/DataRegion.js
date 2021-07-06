@@ -4276,14 +4276,14 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#clearSelected
      */
     LABKEY.DataRegion.setSelected = function(config) {
-        // Formerly LABKEY.DataRegion.setSelected
-        var url = LABKEY.ActionURL.buildURL("query", "setSelected.api", config.containerPath,
-                { 'key': config.selectionKey, 'checked': config.checked });
-
         LABKEY.Ajax.request({
-            url: url,
-            method: "POST",
-            params: { id: config.ids || config.id },
+            url: LABKEY.ActionURL.buildURL('query', 'setSelected.api', config.containerPath),
+            method: 'POST',
+            jsonData: {
+                checked: config.checked,
+                id: config.ids || config.id,
+                key: config.selectionKey,
+            },
             scope: config.scope,
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
@@ -4314,12 +4314,10 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion#getSelected
      */
     LABKEY.DataRegion.clearSelected = function(config) {
-        var url = LABKEY.ActionURL.buildURL('query', 'clearSelected.api', config.containerPath,
-                { 'key': config.selectionKey });
-
         LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'clearSelected.api', config.containerPath),
             method: 'POST',
-            url: url,
+            jsonData: { key: config.selectionKey },
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });
@@ -4344,16 +4342,24 @@ if (!LABKEY.DataRegions) {
      * </ul>
      * @param {Object} [config.scope] An optional scoping object for the success and error callback functions (default to this).
      * @param {string} [config.containerPath] An alternate container path. If not specified, the current container path will be used.
+     * @param {boolean} [config.clearSelected] If true, clear the session-based selection for this Data Region after
+     * retrieving the current selection. Defaults to false.
      *
      * @see LABKEY.DataRegion#setSelected
      * @see LABKEY.DataRegion#clearSelected
      */
     LABKEY.DataRegion.getSelected = function(config) {
-        var url = LABKEY.ActionURL.buildURL('query', 'getSelected.api', config.containerPath,
-                { 'key': config.selectionKey });
+        var jsonData = { key: config.selectionKey };
+
+        // Issue 41705: Support clearing selection from getSelected()
+        if (config.clearSelected) {
+            jsonData.clearSelected = true;
+        }
 
         LABKEY.Ajax.request({
-            url: url,
+            url: LABKEY.ActionURL.buildURL('query', 'getSelected.api', config.containerPath),
+            method: 'POST',
+            jsonData: jsonData,
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });
