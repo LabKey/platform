@@ -865,13 +865,13 @@ public class PipelineManager
         {
             importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
         }
-        else if (pipelineRoot.isCloudRoot())
-        {
-            // If expanded archive is on the remote root we need to copy locally, or else we may need to stream it multiple times
-            throw new NotImplementedException("Haven't managed to copy remote folders locally yet");
-            //TODO do this...
-//            Files.copy( ,importDir, StandardCopyOption.COPY_ATTRIBUTES);
-        }
+//        else if (pipelineRoot.isCloudRoot())
+//        {
+//            // If expanded archive is on the remote root we need to copy locally, or else we may need to stream it multiple times
+//            throw new NotImplementedException("Haven't managed to copy remote folders locally yet");
+//            //TODO do this...
+////            Files.copy( ,importDir, StandardCopyOption.COPY_ATTRIBUTES);
+//        }
 
         return importDir;
     }
