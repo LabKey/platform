@@ -4068,8 +4068,27 @@ public class ExperimentServiceImpl implements ExperimentService
                                        boolean deleteRunsUsingMaterials,
                                        @Nullable ExpSampleType stDeleteFrom)
     {
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom);
+    }
+
+    /**
+     * Delete samples by rowId. When <code>stDeleteFrom</code> SampleType is provided,
+     * the samples must all be members of the SampleType.  When <code>stSampleType</code> is
+     * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE} unless
+     * the <code>deleteFromAllSampleTypes</code> flag is true.
+     * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
+     */
+    private void deleteMaterialByRowIds(User user, Container container,
+                                       Collection<Integer> selectedMaterialIds,
+                                       boolean deleteRunsUsingMaterials,
+                                       boolean deleteFromAllSampleTypes,
+                                       @Nullable ExpSampleType stDeleteFrom)
+    {
         if (selectedMaterialIds.isEmpty())
             return;
+
+        if (stDeleteFrom != null && deleteFromAllSampleTypes)
+            throw new IllegalArgumentException("Can only delete from multiple sample types when no sample type is provided");
 
         final SqlDialect dialect = getExpSchema().getSqlDialect();
         try (DbScope.Transaction transaction = ensureTransaction();
@@ -4087,6 +4106,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
+            Map<String, ExpSampleType> sampleTypes = new HashMap<>();
+            if (null != stDeleteFrom)
+                sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
             for (ExpMaterial material : materials)
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
@@ -4094,9 +4116,23 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (null == stDeleteFrom)
                 {
-                    // verify the material doesn't belong to a SampleType
-                    if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                        throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                    if (deleteFromAllSampleTypes)
+                    {
+                        String cpasType = material.getCpasType();
+                        if (!sampleTypes.containsKey(cpasType))
+                        {
+                            ExpSampleType st = material.getSampleType();
+                            if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                                LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
+                            sampleTypes.put(cpasType, st);
+                        }
+                    }
+                    else
+                    {
+                        // verify the material doesn't belong to a SampleType
+                        if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                            throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                    }
                 }
                 else
                 {
@@ -4166,11 +4202,15 @@ public class ExperimentServiceImpl implements ExperimentService
                 executor.execute(materialInputSQL);
             }
 
-            try (Timing ignored = MiniProfiler.step("expsampletype materialized table"))
+            try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
             {
-                if (stDeleteFrom != null)
+                for (ExpSampleType st : sampleTypes.values())
                 {
-                    TableInfo dbTinfo = ((ExpSampleTypeImpl)stDeleteFrom).getTinfo();
+                    // Material may have been orphaned from it's SampleType
+                    if (st == null)
+                        continue;
+
+                    TableInfo dbTinfo = ((ExpSampleTypeImpl)st).getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
@@ -4639,7 +4679,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds, true, null);
+            deleteMaterialByRowIds(user, c, matIds, true, true, null);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
