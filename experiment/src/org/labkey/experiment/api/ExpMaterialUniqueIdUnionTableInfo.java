@@ -8,9 +8,9 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -23,6 +23,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
 {
     public static final String UNIQUE_ID_COL_NAME = "UniqueId";
+    public static final String NAME = "MaterialUniqueId";
 
     private final Container _container;
     private final User _user;
@@ -30,7 +31,7 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
 
     public ExpMaterialUniqueIdUnionTableInfo(Container container, User user)
     {
-        super(ExperimentService.get().getSchema(), "MaterialUniqueId", ExperimentService.get().getTinfoMaterial().getUserSchema());
+        super(ExperimentService.get().getSchema(), NAME, ExperimentService.get().getTinfoMaterial().getUserSchema());
         _user = user;
         _container = container;
         init();
@@ -40,7 +41,7 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
     {
         UserSchema samplesUserSchema = QueryService.get().getUserSchema(_user, _container, SamplesSchema.SCHEMA_NAME);
         List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(_container, _user, true);
-
+        SqlDialect dialect = getSchema().getSqlDialect();
         String unionAll = "";
         SQLFragment query = new SQLFragment();
 
@@ -49,16 +50,14 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
             if (tableInfo == null)
                 continue;
-            ColumnInfo rowCol = tableInfo.getColumn(FieldKey.fromParts(ROW_ID));
             List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isUniqueIdField).collect(Collectors.toList());
             for (ColumnInfo col : uniqueIdCols)
             {
                query.append(unionAll);
-               query.append("(SELECT ");
-               query.append(rowCol.getValueSql("S"));
+               query.append("(SELECT RowId");
                query.append(", ");
-               query.append(col.getValueSql("S")).append(" AS ").append(UNIQUE_ID_COL_NAME);
-               query.append(" FROM ").append(tableInfo, "S");
+               query.append(col.getName()).append(" AS ").append(UNIQUE_ID_COL_NAME);
+               query.append(" FROM samples.").append(dialect.quoteIdentifier(tableInfo.getName()));
                unionAll = ") UNION ALL\n";
             }
         }

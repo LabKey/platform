@@ -6726,17 +6726,17 @@ public class ExperimentController extends SpringActionController
         {
             // TODO this should join to inventory.SampleItems if the inventory module is available
             // if inventory is not available, should bring in the material columns from that query
-            SQLFragment sql = new SQLFragment("SELECT * FROM (");
+            SQLFragment sql = new SQLFragment();
             String sampleIdComma = "";
             String uniqueIdComma = "";
             int index = 1;
             SQLFragment sampleIdValuesSql = new SQLFragment();
             SQLFragment uniqueIdValuesSql = new SQLFragment();
-            for (String id: form.getIds())
+            for (String id : form.getIds())
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
-                    sampleIdValuesSql.append(sampleIdComma).append("(").append(index);
+                    sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
                     sampleIdValuesSql.append(", ");
                     sampleIdValuesSql.append("'").append(id.substring(SAMPLE_ID_PREFIX.length())).append("'");
                     sampleIdValuesSql.append(")");
@@ -6744,7 +6744,7 @@ public class ExperimentController extends SpringActionController
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
-                    uniqueIdValuesSql.append(uniqueIdComma).append("(").append(index);
+                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
                     uniqueIdValuesSql.append(", ");
                     uniqueIdValuesSql.append("'").append(id.substring(UNIQUE_ID_PREFIX.length())).append("'");
                     uniqueIdValuesSql.append(")");
@@ -6752,119 +6752,52 @@ public class ExperimentController extends SpringActionController
                 }
                 index++;
             }
+
             if (!sampleIdValuesSql.isEmpty())
             {
-                sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
+                sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
                 sql.append(sampleIdValuesSql);
                 sql.append("\n) AS _values_ )\n");
-                sql.append("SELECT _ordered_ids_.column1 as Ordinal, _ordered_ids_.column2 as Id, _samples_.RowId as RowId\n");
-                sql.append("FROM _ordered_ids_\nINNER JOIN ");
-                TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
-                ColumnInfo nameCol = tInfo.getColumn("Name");
-                sql.append(tInfo.getFromSQL("_samples_"));
-                sql.append(" ON _ordered_ids_.column2 = ").append(nameCol.getValueSql("_samples_"));
-                sql.append("\n) A");
+            }
+            if (!uniqueIdValuesSql.isEmpty())
+            {
+                if (!sampleIdValuesSql.isEmpty())
+                    sql.append(",\n");
+                else
+                    sql.append("WITH ");
+
+                sql.append("_ordered_unique_ids_ AS (\nSELECT * FROM (VALUES\n");
+                sql.append(uniqueIdValuesSql);
+                sql.append("\n) AS _values_ )\n");
+            }
+            if (!sampleIdValuesSql.isEmpty())
+            {
+                sql.append("SELECT _ordered_ids_.column1 as Ordinal, _ordered_ids_.column2 as Id, exp.materials.RowId as RowId\n");
+                sql.append("FROM _ordered_ids_\n");
+                sql.append("INNER JOIN exp.materials ON _ordered_ids_.column2 = Name");
+                sql.append("\n");
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
                 if (!sampleIdValuesSql.isEmpty())
                 {
-                    sql.append("\nUNION ALL\nSELECT * FROM (");
+                    sql.append("\nUNION ALL\n");
                 }
-                sql.append("WITH _ordered_unique_ids_ AS (\nSELECT * FROM (VALUES \n");
-                sql.append(uniqueIdValuesSql);
-                sql.append("\n) AS _values_ )\n");
                 sql.append("SELECT _ordered_unique_ids_.column1 as Ordinal, _ordered_unique_ids_.column2 as Id, _uniqueIdSamples_.RowId\n");
-                sql.append("FROM _ordered_unique_ids_\nINNER JOIN ");
+                sql.append("FROM _ordered_unique_ids_\n");
+                sql.append("INNER JOIN ");
                 TableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
                 sql.append(tInfo.getFromSQL("_uniqueIdSamples_"));
-                ColumnInfo uniqueIdCol = tInfo.getColumn(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
-                sql.append(" ON _ordered_unique_ids_.column2 = ").append(uniqueIdCol.getValueSql("_uniqueIdSamples_"));
-                sql.append(") B");
+                sql.append(" ON _ordered_unique_ids_.column2 = ").append(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
             }
-            sql.append("\nORDER BY ordinal");
+            sql.append("\n\n\nORDER BY ordinal");
             return sql;
-
-//            String comma = "";
-//            if (form.getSampleIds() != null && !form.getSampleIds().isEmpty())
-//            {
-//                sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
-//                for (String sampleId : form.getSampleIds())
-//                {
-//                    sql.append(comma).append("(").append(index);
-//                    sql.append(", ");
-//                    sql.append("'").append(sampleId).append("'");
-//                    sql.append(")");
-//                    comma = "\n,";
-//                    index++;
-//                }
-//                sql.append("\n) AS _values_ (_ordinal_, _sample_id_))\n");
-//
-//                sql.append("SELECT _ordered_ids_._ordinal_ as Ordinal, _ordered_ids_._sample_id_ as Id, _samples_.RowId as RowId\n");
-//                sql.append("FROM _ordered_ids_\nINNER JOIN ");
-//                TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
-//                ColumnInfo nameCol = tInfo.getColumn("Name");
-//                sql.append(tInfo.getFromSQL("_samples_"));
-//                sql.append(" ON _ordered_ids_._sample_id_ = ").append(nameCol.getValueSql("_samples_"));
-//                sql.append("\n) A");
-//            }
-//            if (form.getUniqueIds() != null && !form.getUniqueIds().isEmpty())
-//            {
-//                comma = "";
-//                if (index > 1)
-//                {
-//                    sql.append("\nUNION ALL\nSELECT * FROM (");
-//                }
-//                sql.append("WITH _ordered_unique_ids_ AS (\nSELECT * FROM (VALUES \n");
-//                for (String uniqueId : form.getUniqueIds())
-//                {
-//                    sql.append(comma).append("(").append(index);
-//                    sql.append(", ");
-//                    sql.append("'").append(uniqueId).append("'");
-//                    sql.append(")");
-//                    comma = "\n,";
-//                    index++;
-//                }
-//                sql.append("\n) AS _values_ (_ordinal_, _unique_id_))\n");
-//                sql.append("SELECT _ordered_unique_ids_._ordinal_ as Ordinal, _ordered_unique_ids_._unique_id_ as Id, _uniqueIdSamples_.RowId\n");
-//                sql.append("FROM _ordered_unique_ids_\nINNER JOIN ");
-//                TableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
-//                sql.append(tInfo.getFromSQL("_uniqueIdSamples_"));
-//                ColumnInfo uniqueIdCol = tInfo.getColumn(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
-//                sql.append(" ON _ordered_unique_ids_._unique_id_ = ").append(uniqueIdCol.getValueSql("_uniqueIdSamples_"));
-//                sql.append(") B");
-//            }
-//            sql.append("\nORDER BY ordinal");
-//            return sql;
         }
     }
 
     public static class OrderedSamplesForm
     {
-        // List<{type: [Id, Uid], value: X}>
-        List<String> _sampleIds;
-        List<String> _uniqueIds;
         List<String> _ids;
-
-        public List<String> getSampleIds()
-        {
-            return _sampleIds;
-        }
-
-        public void setSampleIds(List<String> sampleIds)
-        {
-            this._sampleIds = sampleIds;
-        }
-
-        public List<String> getUniqueIds()
-        {
-            return _uniqueIds;
-        }
-
-        public void setUniqueIds(List<String> uniqueIds)
-        {
-            this._uniqueIds = uniqueIds;
-        }
 
         public List<String> getIds()
         {
