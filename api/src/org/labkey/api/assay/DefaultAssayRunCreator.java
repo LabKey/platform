@@ -1013,9 +1013,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public static List<ValidationError> validateColumnProperties(ContainerUser context, Map<ColumnInfo, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
+        RemapCache cache = new RemapCache();
         for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
         {
-            validateProperty(context, entry.getKey(), entry.getValue(), errors);
+            validateProperty(context, entry.getKey(), entry.getValue(), cache, errors);
         }
         return errors;
     }
@@ -1023,14 +1024,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public static List<ValidationError> validateProperties(ContainerUser context, Map<DomainProperty, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
+        RemapCache cache = new RemapCache();
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            validateProperty(context, entry.getKey(), entry.getValue(), errors);
+            validateProperty(context, entry.getKey(), entry.getValue(), cache, errors);
         }
         return errors;
     }
 
-    private static void validateProperty(ContainerUser context, ColumnInfo columnInfo, String value, List<ValidationError> errors)
+    private static void validateProperty(ContainerUser context, ColumnInfo columnInfo, String value, RemapCache cache, List<ValidationError> errors)
     {
         Lookup lookup = null;
         if (columnInfo.isLookup())
@@ -1042,7 +1044,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 false, lookup, columnInfo.getJavaClass(), cache, errors);
     }
 
-    private static void validateProperty(ContainerUser context, DomainProperty dp, String value, List<ValidationError> errors)
+    private static void validateProperty(ContainerUser context, DomainProperty dp, String value, RemapCache cache, List<ValidationError> errors)
     {
         String label = dp.getPropertyDescriptor().getNonBlankCaption();
         PropertyType type = dp.getPropertyDescriptor().getPropertyType();
@@ -1056,7 +1058,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         boolean missing = (value == null || value.length() == 0);
         int rowNum = 0;
-        RemapCache cache = new RemapCache();
 
         if (required && missing)
         {
