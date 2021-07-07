@@ -87,20 +87,25 @@ LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName
                             Ext4.Msg.hide();
                         }
                         else if (btn === 'ok') {
+                            const canDelete = response.data.canDelete;
                             Ext4.Ajax.request({
                                 url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
                                 method: 'POST',
                                 jsonData: {
                                     schemaName: schemaName,
                                     queryName: queryName,
-                                    rows: response.data.canDelete,
+                                    rows: canDelete,
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
-                                    let dr = LABKEY.DataRegions[dataRegionName];
+                                    // clear the selection only for the rows that were deleted
+                                    // TODO: support clearing selection in query-deleteRows.api using a selectionKey
+                                    const ids = canDelete.map((row) => row.RowId);
+                                    const dr = LABKEY.DataRegions[dataRegionName];
                                     if (dr) {
-                                        dr.clearSelected({
-                                            selectionKey: selectionKey,
+                                        dr.setSelected({
+                                            ids,
+                                            checked: false
                                         });
                                     }
 
