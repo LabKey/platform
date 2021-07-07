@@ -6756,13 +6756,13 @@ public class ExperimentController extends SpringActionController
             {
                 sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES \n");
                 sql.append(sampleIdValuesSql);
-                sql.append("\n) AS _values_ (_ordinal_, _sample_id_))\n");
-                sql.append("SELECT _ordered_ids_._ordinal_ as Ordinal, _ordered_ids_._sample_id_ as Id, _samples_.RowId as RowId\n");
+                sql.append("\n) AS _values_ )\n");
+                sql.append("SELECT _ordered_ids_.column1 as Ordinal, _ordered_ids_.column2 as Id, _samples_.RowId as RowId\n");
                 sql.append("FROM _ordered_ids_\nINNER JOIN ");
                 TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
                 ColumnInfo nameCol = tInfo.getColumn("Name");
                 sql.append(tInfo.getFromSQL("_samples_"));
-                sql.append(" ON _ordered_ids_._sample_id_ = ").append(nameCol.getValueSql("_samples_"));
+                sql.append(" ON _ordered_ids_.column2 = ").append(nameCol.getValueSql("_samples_"));
                 sql.append("\n) A");
             }
             if (!uniqueIdValuesSql.isEmpty())
@@ -6773,13 +6773,13 @@ public class ExperimentController extends SpringActionController
                 }
                 sql.append("WITH _ordered_unique_ids_ AS (\nSELECT * FROM (VALUES \n");
                 sql.append(uniqueIdValuesSql);
-                sql.append("\n) AS _values_ (_ordinal_, _unique_id_))\n");
-                sql.append("SELECT _ordered_unique_ids_._ordinal_ as Ordinal, _ordered_unique_ids_._unique_id_ as Id, _uniqueIdSamples_.RowId\n");
+                sql.append("\n) AS _values_ )\n");
+                sql.append("SELECT _ordered_unique_ids_.column1 as Ordinal, _ordered_unique_ids_.column2 as Id, _uniqueIdSamples_.RowId\n");
                 sql.append("FROM _ordered_unique_ids_\nINNER JOIN ");
                 TableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
                 sql.append(tInfo.getFromSQL("_uniqueIdSamples_"));
                 ColumnInfo uniqueIdCol = tInfo.getColumn(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
-                sql.append(" ON _ordered_unique_ids_._unique_id_ = ").append(uniqueIdCol.getValueSql("_uniqueIdSamples_"));
+                sql.append(" ON _ordered_unique_ids_.column2 = ").append(uniqueIdCol.getValueSql("_uniqueIdSamples_"));
                 sql.append(") B");
             }
             sql.append("\nORDER BY ordinal");
