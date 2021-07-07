@@ -44,9 +44,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Admin-customizable template for sending automated emails from the server. Subclasses are used
- * for each specific type of email to send. A simple substitution syntax allows for replacing sections
- * with dynamic content.
+ * Admin-customizable template for sending automated emails from the server. Subclasses are used for each specific type
+ * of email to send. A simple substitution syntax allows for replacing sections with dynamic content.
  *
  * User: Karl Lum
  * Date: Jan 15, 2007
@@ -121,18 +120,20 @@ public abstract class EmailTemplate
         public abstract boolean isEditableIn(Container c);
     }
 
+    // These four members are final and immutable
+    @NotNull private final String _name;
+    private final String _description;
     /** The format of the email to be generated */
     @NotNull private final ContentType _contentType;
-    @NotNull private final String _name;
-    private String _body;
-    private String _subject;
-    @Nullable private String _senderName;
-    @Nullable private String _replyToEmail;
-    private String _description;
-    private int _priority = 50;
     /** Scope is the locations in which the user should be able to edit this template. It should always be the same
      * for a given subclass, regardless of the instances */
-    private Scope _scope = Scope.Site;
+    private final Scope _scope;
+
+    // These five members are mutable since they can be overridden by customizing the email template
+    private String _body;
+    private String _subject;
+    @Nullable private String _senderName = DEFAULT_SENDER;
+    @Nullable private String _replyToEmail = DEFAULT_REPLY_TO;
     /**
      * Container in which this template is stored. Null for the default templates defined in code, the root
      * container for site level templates, or a specific folder.
@@ -193,39 +194,39 @@ public abstract class EmailTemplate
         });
     }
 
-    public EmailTemplate(@NotNull String name)
-    {
-        this(name, "", "", "", ContentType.Plain);
-    }
-
-    public EmailTemplate(@NotNull String name, String subject, String body, String description)
-    {
-        this(name, subject, body, description, ContentType.Plain);
-    }
-
-    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
-    {
-        this(name, subject, body, description, contentType, DEFAULT_SENDER, DEFAULT_REPLY_TO);
-    }
-
-    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName, @Nullable String replyToEmail)
+    public EmailTemplate(@NotNull String name, String description, String subject, String body, @NotNull ContentType contentType, Scope scope)
     {
         _name = name;
+        _description = description;
         _subject = subject;
         _body = body;
-        _description = description;
         _contentType = contentType;
-        _senderName = senderDisplayName;
-        _replyToEmail = replyToEmail;
+        _scope = scope;
     }
 
+    // Getters for immutable members
     @NotNull public String getName(){return _name;}
+    public String getDescription(){return _description;}
+    @NotNull public ContentType getContentType()
+    {
+        return _contentType;
+    }
+    public Scope getEditableScope(){return _scope;}
+
+    // Getters/setters for mutable members
     public String getSubject(){return _subject;}
     public void setSubject(String subject){_subject = subject;}
     public String getBody(){return _body;}
+    public void setBody(String body){_body = body;}
+    public Container getContainer(){return _container;}
+    /* package */ void setContainer(Container c){_container = c;}
+    @Nullable public String getSenderName(){return _senderName;}
+    public void setSenderName(@Nullable String senderName){_senderName = senderName;}
+    @Nullable public String getReplyToEmail(){return _replyToEmail;}
+    public void setReplyToEmail(@Nullable String senderEmail){_replyToEmail = senderEmail;}
 
     /**
-     * Templates that declare themselves to have an HTNML content type can also include a plain-text alternative
+     * Templates that declare themselves to have an HTML content type can also include a plain-text alternative
      * by using the boundary separator. Everything before the boundary is considered part of the HTML, and everything
      * after is part of the text.
      */
@@ -256,27 +257,6 @@ public abstract class EmailTemplate
     public boolean hasMultipleContentTypes()
     {
         return getContentType() == ContentType.HTML && _body.contains(BODY_PART_BOUNDARY);
-    }
-
-    public void setBody(String body){_body = body;}
-    @Deprecated // Priority is COMPLETELY ignored and will be removed
-    public void setPriority(int priority){_priority = priority;}
-    public int getPriority(){return _priority;}
-    public String getDescription(){return _description;}
-    public void setDescription(String description){_description = description;}
-    public Scope getEditableScopes(){return _scope;}
-    public void setEditableScopes(Scope scope){_scope = scope;}
-    public Container getContainer(){return _container;}
-    /* package */ void setContainer(Container c){_container = c;}
-    @Nullable public String getSenderName(){return _senderName;}
-    public void setSenderName(@Nullable String senderName){_senderName = senderName;}
-    @Nullable public String getReplyToEmail(){return _replyToEmail;}
-    public void setReplyToEmail(@Nullable String senderEmail){_replyToEmail = senderEmail;}
-
-    @NotNull
-    public ContentType getContentType()
-    {
-        return _contentType;
     }
 
     public boolean isValid(String[] error)

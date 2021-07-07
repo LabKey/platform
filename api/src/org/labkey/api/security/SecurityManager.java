@@ -2641,9 +2641,9 @@ public class SecurityManager
         protected boolean _verificationUrlRequired = true;
         protected final List<ReplacementParam> _replacements = new ArrayList<>();
 
-        protected SecurityEmailTemplate(String name)
+        protected SecurityEmailTemplate(@NotNull String name, String description, String subject, String body)
         {
-            super(name);
+            super(name, description, subject, body, ContentType.Plain, Scope.Site);
 
             _replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
             {
@@ -2712,16 +2712,12 @@ public class SecurityManager
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationEmailTemplate()
         {
-            this("Register new user");
+            this("Register new user", DEFAULT_SUBJECT, DEFAULT_BODY);
         }
 
-        public RegistrationEmailTemplate(String name)
+        private RegistrationEmailTemplate(String name, String subject, String body)
         {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the new user and administrator when a user is added to the site.");
-            setPriority(1);
+            super(name, "Sent to the new user and administrator when a user is added to the site.", subject, body);
 
             _replacements.add(new ReplacementParam<String>("optionalMessage", String.class, "An optional message to include with the new user email"){
                 @Override
@@ -2732,12 +2728,10 @@ public class SecurityManager
 
     public static class RegistrationAdminEmailTemplate extends RegistrationEmailTemplate
     {
+        @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationAdminEmailTemplate()
         {
-            super("Register new user (bcc to admin)");
-            setSubject("^recipient^ : " + DEFAULT_SUBJECT);
-            setBody("The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
-            setPriority(2);
+            super("Register new user (bcc to admin)", "^recipient^ : " + DEFAULT_SUBJECT, "The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
             _verificationUrlRequired = false;
         }
     }
@@ -2756,16 +2750,12 @@ public class SecurityManager
 
         public PasswordResetEmailTemplate()
         {
-            this("Reset password");
+            this("Reset password", DEFAULT_SUBJECT, DEFAULT_BODY);
         }
 
-        public PasswordResetEmailTemplate(String name)
+        private PasswordResetEmailTemplate(String name, String subject, String body)
         {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the user and administrator when the password of a user is reset.");
-            setPriority(3);
+            super(name, "Sent to the user and administrator when the password of a user is reset.", subject, body);
         }
     }
 
@@ -2773,10 +2763,7 @@ public class SecurityManager
     {
         public PasswordResetAdminEmailTemplate()
         {
-            super("Reset password (bcc to admin)");
-            setSubject("^recipient^ : " + DEFAULT_SUBJECT);
-            setBody("The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
-            setPriority(4);
+            super("Reset password (bcc to admin)", "^recipient^ : " + DEFAULT_SUBJECT, "The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
             _verificationUrlRequired = false;
         }
     }

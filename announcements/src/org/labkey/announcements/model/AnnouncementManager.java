@@ -58,7 +58,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -1106,8 +1105,7 @@ public class AnnouncementManager
 
         public NotificationEmailTemplate()
         {
-            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
-            setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
+            super(NAME, DEFAULT_DESCRIPTION, DEFAULT_SUBJECT, loadBody(), ContentType.HTML, Scope.SiteOrFolder);
 
             _replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
             {

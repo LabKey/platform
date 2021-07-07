@@ -16,7 +16,6 @@
 package org.labkey.api.util.emailTemplate;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
@@ -35,24 +34,9 @@ public abstract class UserOriginatedEmailTemplate extends EmailTemplate
     private List<ReplacementParam> _replacements = new ArrayList<>();
     protected User _originatingUser;
 
-    public UserOriginatedEmailTemplate(@NotNull String name)
+    public UserOriginatedEmailTemplate(@NotNull String name, String description, String subject, String body, @NotNull ContentType contentType, Scope scope)
     {
-        this(name, "", "", "", ContentType.Plain);
-    }
-
-    public UserOriginatedEmailTemplate(@NotNull String name, String subject, String body, String description)
-    {
-        this(name, subject, body, description, ContentType.Plain);
-    }
-
-    public UserOriginatedEmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
-    {
-        this(name, subject, body, description, contentType, DEFAULT_SENDER, DEFAULT_REPLY_TO);
-    }
-
-    public UserOriginatedEmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName, @Nullable String replyToEmail)
-    {
-        super(name, subject, body, description, contentType, senderDisplayName, replyToEmail);
+        super(name, description, subject, body, contentType, scope);
         _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user who originated the action"){
             @Override
             public String getValue(Container c) {

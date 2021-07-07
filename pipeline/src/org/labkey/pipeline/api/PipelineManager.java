@@ -536,9 +536,9 @@ public class PipelineManager
                 "Manage your email notifications at\n" +
                 "^setupURL^\n";
 
-        protected PipelineEmailTemplate(String name)
+        protected PipelineEmailTemplate(@NotNull String name, String description, String subject, String body)
         {
-            super(name);
+            super(name, description, subject, body, ContentType.Plain, Scope.Site);
 
             _replacements.add(new ReplacementParam<>("dataURL", String.class, "Link to the job details for this pipeline job")
             {
@@ -595,11 +595,7 @@ public class PipelineManager
     {
         public PipelineJobSuccess()
         {
-            super("Pipeline job succeeded");
-            setSubject("The pipeline job: ^jobDescription^ has completed successfully");
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to users who have been configured to receive notifications when a pipeline job completes successfully");
-            setPriority(10);
+            super("Pipeline job succeeded", "Sent to users who have been configured to receive notifications when a pipeline job completes successfully", "The pipeline job: ^jobDescription^ has completed successfully", DEFAULT_BODY);
         }
     }
 
@@ -607,11 +603,7 @@ public class PipelineManager
     {
         public PipelineJobFailed()
         {
-            super("Pipeline job failed");
-            setSubject("The pipeline job: ^jobDescription^ did not complete successfully");
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to users who have been configured to receive notifications when a pipeline job fails");
-            setPriority(11);
+            super("Pipeline job failed", "Sent to users who have been configured to receive notifications when a pipeline job fails", "The pipeline job: ^jobDescription^ did not complete successfully", DEFAULT_BODY);
         }
     }
 
@@ -625,9 +617,9 @@ public class PipelineManager
         protected static final String DEFAULT_BODY = "The following jobs have completed between the time of: ^startTime^ " +
                 "and the end time of: ^endTime^:\n\n^pipelineJobs^";
 
-        protected PipelineDigestTemplate(String name, String subject, String body, String description)
+        protected PipelineDigestTemplate(String name, String description, String subject, String body)
         {
-            super(name, subject, body, description, ContentType.HTML);
+            super(name, description, subject, body, ContentType.HTML, Scope.Site);
 
             _replacements.add(new ReplacementParam<>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period", ContentType.HTML){
                 @Override
@@ -679,10 +671,9 @@ public class PipelineManager
         public PipelineDigestJobSuccess()
         {
             super("Pipeline jobs succeeded (digest)",
-                    "The pipeline jobs have completed successfully",
-                    DEFAULT_BODY,
-                    "Sent for pipeline jobs that have completed successfully during a configured time period");
-            setPriority(20);
+                    "Sent for pipeline jobs that have completed successfully during a configured time period", "The pipeline jobs have completed successfully",
+                    DEFAULT_BODY
+            );
         }
     }
 
@@ -691,10 +682,9 @@ public class PipelineManager
         public PipelineDigestJobFailed()
         {
             super("Pipeline jobs failed (digest)",
-                    "The pipeline jobs did not complete successfully",
-                    DEFAULT_BODY,
-                    "Sent for pipeline jobs that have not completed successfully during a configured time period");
-            setPriority(21);
+                    "Sent for pipeline jobs that have not completed successfully during a configured time period", "The pipeline jobs did not complete successfully",
+                    DEFAULT_BODY
+            );
         }
     }
 

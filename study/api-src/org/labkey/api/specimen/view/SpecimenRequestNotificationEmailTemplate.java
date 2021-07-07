@@ -70,8 +70,8 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 
     public SpecimenRequestNotificationEmailTemplate()
     {
-        super(NAME, DEFAULT_SUBJECT, loadBody(), "Sent to users when a specimen request has been edited or inserted.", ContentType.HTML, DEFAULT_SENDER, DEFAULT_REPLY_TO);
-        setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
+        super(NAME, "Sent to users when a specimen request has been edited or inserted.", DEFAULT_SUBJECT, loadBody(), ContentType.HTML, Scope.SiteOrFolder);
+        setSenderName(DEFAULT_SENDER);
 
         _replacements.add(new EmailTemplate.ReplacementParam<>("studyName", String.class, "The name of this folder's study")
         {

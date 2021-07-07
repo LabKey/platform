@@ -62,12 +62,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
     public IssueUpdateEmailTemplate()
     {
-        super("Issue update");
-        setSubject(DEFAULT_SUBJECT);
-        setBody(DEFAULT_BODY);
-        setDescription("Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.");
-        setPriority(10);
-        setEditableScopes(Scope.SiteOrFolder);
+        super("Issue update", "Sent to the users based on issue notification rules and settings after an issue has been edited or inserted.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.Plain, Scope.SiteOrFolder);
 
         _replacements.add(new ReplacementParam<Integer>("issueId", Integer.class, "Unique id for the issue")
         {

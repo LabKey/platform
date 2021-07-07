@@ -151,8 +151,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         public DailyDigestEmailTemplate()
         {
-            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
-            setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
+            super(NAME, DEFAULT_DESCRIPTION, DEFAULT_SUBJECT, loadBody(), ContentType.HTML, Scope.SiteOrFolder);
 
             _replacements.add(new ReplacementParam<>("folderName", String.class, "Folder that user subscribed to", ContentType.Plain)
             {

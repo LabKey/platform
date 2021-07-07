@@ -2348,16 +2348,7 @@ public class UserController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RequestAddressEmailTemplate()
         {
-            this("Request email address");
-        }
-
-        RequestAddressEmailTemplate(String name)
-        {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the user and administrator when a user requests to change their email address.");
-            setPriority(1);
+            super("Request email address", "Sent to the user and administrator when a user requests to change their email address.", DEFAULT_SUBJECT, DEFAULT_BODY);
             _replacements.add(new ReplacementParam<String>("currentEmailAddress", String.class, "Current email address for the current user"){
                 @Override
                 public String getValue(Container c) {return _currentEmailAddress;}
@@ -2407,16 +2398,7 @@ public class UserController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public ChangeAddressEmailTemplate()
         {
-            this("Change email address");
-        }
-
-        ChangeAddressEmailTemplate(String name)
-        {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the user and administrator when a user has changed their email address.");
-            setPriority(1);
+            super("Change email address", "Sent to the user and administrator when a user has changed their email address.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.Plain, Scope.Site);
             _replacements.add(new ReplacementParam<String>("oldEmailAddress", String.class, "Old email address for the current user"){
                 @Override
                 public String getValue(Container c) {return _oldEmailAddress;}
