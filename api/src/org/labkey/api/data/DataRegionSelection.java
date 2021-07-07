@@ -26,7 +26,6 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,31 +62,39 @@ public class DataRegionSelection
     // example usage: set an filtered set of selected values in session
     public static final String SNAPSHOT_SELECTED_VALUES = ".snapshotSelectValues";
 
-    private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create)
+    private static @NotNull String getSessionAttributeKey(@NotNull String path, @NotNull String key, boolean useSnapshot)
+    {
+        return path + key + (useSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES);
+    }
+
+    private static @NotNull Set<String> getSet(ViewContext context, @Nullable String key, boolean create)
     {
         return getSet(context, key, create, false);
     }
 
-    private static Set<String> getSet(ViewContext context, @Nullable String key, boolean create, boolean useSnapshot)
+    private static @NotNull Set<String> getSet(ViewContext context, @Nullable String key, boolean create, boolean useSnapshot)
     {
         if (key == null)
             key = getSelectionKeyFromRequest(context);
 
         if (key != null)
         {
-            key = context.getContainer().getPath() + key + (useSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES);
+            key = getSessionAttributeKey(context.getContainer().getPath(), key, useSnapshot);
             HttpSession session = context.getRequest().getSession(false);
             if (session != null)
             {
                 @SuppressWarnings("unchecked") Set<String> result = (Set<String>)session.getAttribute(key);
-                if (result == null && create)
+                if (result == null)
                 {
                     result = new LinkedHashSet<>();
-                    session.setAttribute(key, result);
+
+                    if (create)
+                        session.setAttribute(key, result);
                 }
                 return result;
             }
         }
+
         return new LinkedHashSet<>();
     }
 
@@ -109,7 +115,6 @@ public class DataRegionSelection
 
         return buf.toString();
     }
-
 
     /**
      * Get selected items from the request parameters including both current page's selection and session state
@@ -184,18 +189,14 @@ public class DataRegionSelection
         List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
         Set<String> result = new LinkedHashSet<>(parameterSelected);
 
-
         synchronized (lock)
         {
             Set<String> sessionSelected = getSet(context, key, false);
-            if (sessionSelected != null)
-            {
-                result.addAll(sessionSelected);
-
-                if (clearSession)
-                    sessionSelected.removeAll(result);
-            }
+            result.addAll(sessionSelected);
+            if (clearSession)
+                sessionSelected.removeAll(result);
         }
+
         return Collections.unmodifiableSet(result);
     }
 
@@ -214,8 +215,7 @@ public class DataRegionSelection
 
     public static @NotNull Set<Integer> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
     {
-        Set<String> selected = getSnapshotSelected(context, key);
-        return asInts(selected == null ? new HashSet<>() : selected);
+        return asInts(getSnapshotSelected(context, key));
     }
 
     private static @NotNull Set<Integer> asInts(Set<String> ids)
@@ -240,9 +240,10 @@ public class DataRegionSelection
     {
         return setSelected(context, key, selection, checked, false);
     }
-        /**
-         * Sets the checked state for the given ids in the session state.
-         */
+
+    /**
+     * Sets the checked state for the given ids in the session state.
+     */
     public static int setSelected(ViewContext context, String key, Collection<String> selection, boolean checked, boolean useSnapshot)
     {
         synchronized (lock)
@@ -257,22 +258,17 @@ public class DataRegionSelection
         }
     }
 
-    private static void clearAll(HttpSession session, String path, String key)
-    {
-        clearAll(session, path, key, false);
-    }
-
     private static void clearAll(HttpSession session, String path, String key, boolean isSnapshot)
     {
+        assert path != null : "DataRegion container path required";
         assert key != null : "DataRegion selection key required";
         if (session == null)
             return;
         synchronized (lock)
         {
-            session.removeAttribute(path + key + (isSnapshot ? SNAPSHOT_SELECTED_VALUES : SELECTED_VALUES));
+            session.removeAttribute(getSessionAttributeKey(path, key, isSnapshot));
         }
     }
-
 
     /**
      * Removes all selection state from the session for RenderContext.getSelectionKey().
@@ -280,9 +276,8 @@ public class DataRegionSelection
     public static void clearAll(RenderContext ctx)
     {
         clearAll(ctx.getRequest().getSession(false),
-                ctx.getContainer().getPath(), ctx.getCurrentRegion().getSelectionKey());
+                ctx.getContainer().getPath(), ctx.getCurrentRegion().getSelectionKey(), false);
     }
-
 
     /**
      * Removes all selection state from the session for the given key. If key is null, the request parameter DATA_REGION_SELECTION_KEY is used.
@@ -313,14 +308,21 @@ public class DataRegionSelection
      * Gets the ids of the selected items for all items in the given query form's view.  That is,
      * not just the items on the current page, but all selected items corresponding to the view's filters.
      */
-    public static List<String> getSelected(QueryForm form) throws IOException
+    public static List<String> getSelected(QueryForm form, boolean clearSelected) throws IOException
     {
-        UserSchema schema = form.getSchema();
-        if (schema == null)
-            throw new NotFoundException();
+        List<String> items;
+        var view = getQueryView(form);
 
-        QueryView view = schema.createView(form, null);
-        return getSelected(view, form.getQuerySettings().getSelectionKey());
+        synchronized (lock)
+        {
+            var selection = getSet(view.getViewContext(), form.getQuerySettings().getSelectionKey(), true);
+            items = getSelectedItems(view, selection);
+
+            if (clearSelected && !selection.isEmpty())
+                items.forEach(selection::remove);
+        }
+
+        return Collections.unmodifiableList(items);
     }
 
     private static Pair<DataRegion, RenderContext> getDataRegionContext(QueryView view)
@@ -346,64 +348,22 @@ public class DataRegionSelection
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
 
-        setDataRegionColumnsForSelection(rgn, rc, view, table );
+        setDataRegionColumnsForSelection(rgn, rc, view, table);
 
         return Pair.of(rgn, rc);
     }
 
-    public static List<String> getSelected(QueryView view, String key) throws IOException
+    private static @NotNull QueryView getQueryView(QueryForm form) throws NotFoundException
     {
-        Pair<DataRegion, RenderContext> dataRegionContext = getDataRegionContext(view);
-        DataRegion rgn = dataRegionContext.first;
-        RenderContext rc = dataRegionContext.second;
-        ViewContext context = view.getViewContext();
-
-        try (Timing ignored = MiniProfiler.step("getSelected"); Results results = rgn.getResults(rc))
-        {
-            return getSelectedItems(context, key, rc, rgn, results);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        var schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException();
+        return schema.createView(form, null);
     }
 
     public static List<String> getValidatedIds(List<String> selection, QueryForm form) throws IOException
     {
-        UserSchema schema = form.getSchema();
-        if (schema == null)
-            throw new NotFoundException();
-
-        QueryView view = schema.createView(form, null);
-
-        Pair<DataRegion, RenderContext> dataRegionContext = getDataRegionContext(view);
-        DataRegion rgn = dataRegionContext.first;
-        RenderContext ctx = dataRegionContext.second;
-
-        List<String> validatedIds = new ArrayList<>();
-        try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
-        {
-            if (rs == null)
-                return validatedIds;
-
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            while (rs.next())
-            {
-                ctx.setRow(factory.getRowMap(rs));
-                if (rgn.isRecordSelectorEnabled(ctx))
-                {
-                    String value = rgn.getRecordSelectorValue(ctx);
-                    if (selection.contains(value))
-                        validatedIds.add(value);
-                }
-            }
-            return validatedIds;
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
+        return getSelectedItems(getQueryView(form), selection);
     }
 
     /**
@@ -415,12 +375,7 @@ public class DataRegionSelection
      */
     public static int setSelectionForAll(QueryForm form, boolean checked) throws IOException
     {
-        UserSchema schema = form.getSchema();
-        if (schema == null)
-            throw new NotFoundException();
-
-        QueryView view = schema.createView(form, null);
-        return setSelectionForAll(view, form.getQuerySettings().getSelectionKey(), checked);
+        return setSelectionForAll(getQueryView(form), form.getQuerySettings().getSelectionKey(), checked);
     }
 
     private static List<String> setDataRegionColumnsForSelection(DataRegion rgn, RenderContext rc, QueryView view, TableInfo table)
@@ -452,34 +407,14 @@ public class DataRegionSelection
 
     public static int setSelectionForAll(QueryView view, String key, boolean checked) throws IOException
     {
-        // Turn off features of QueryView
-        view.setPrintView(true);
-        view.setShowConfiguredButtons(false);
-        view.setShowPagination(false);
-        view.setShowPaginationCount(false);
-        view.setShowDetailsColumn(false);
-        view.setShowUpdateColumn(false);
-
-        ViewContext context = view.getViewContext();
-
-        TableInfo table = view.getTable();
-
-        DataView v = view.createDataView();
-        DataRegion rgn = v.getDataRegion();
-
-        // Include all rows
-        view.getSettings().setShowRows(ShowRows.ALL);
-        view.getSettings().setOffset(Table.NO_OFFSET);
-
-        RenderContext rc = v.getRenderContext();
-        rc.setCache(false);
-
-        List<String> colNames = setDataRegionColumnsForSelection(rgn, rc, view, table );
+        var regionCtx = getDataRegionContext(view);
+        var rgn = regionCtx.first;
+        var rc = regionCtx.second;
 
         try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
-            List<String> selection = createSelectionList(rc, rgn, rs, colNames);
-            return setSelected(context, key, selection, checked);
+            var selection = createSelectionList(rc, rgn, rs, null);
+            return setSelected(view.getViewContext(), key, selection, checked);
         }
         catch (SQLException e)
         {
@@ -489,43 +424,52 @@ public class DataRegionSelection
 
     /**
      * Returns all items in the given result set that are selected and selectable
-     * @param context the view context from which to retrieve the session variable
-     * @param key session variable key
-     * @param ctx the render context
-     * @param rgn the data region
-     * @param rs the result set to be filtered
-     * @return list of items from the result set that are in the selectee session, or an empty list if none.
-     * @throws SQLException
+     * @param view the view from which to retrieve the data region context and session variable
+     * @param selectedValues optionally (nullable) specify a collection of selected values that will be matched
+     *                       against when selecting items. If null, then all items will be returned.
+     * @return list of items from the result set that are in the selected session, or an empty list if none.
+     * @throws IOException
      */
-    private static List<String> getSelectedItems(ViewContext context, String key, RenderContext ctx, DataRegion rgn, ResultSet rs) throws SQLException
+    private static List<String> getSelectedItems(QueryView view, Collection<String> selectedValues) throws IOException
     {
-        List<String> selected = new LinkedList<>();
-        Set<String> selectedValues = getSet(context, key, true);
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-        while (rs.next())
-        {
-            ctx.setRow(factory.getRowMap(rs));
-            if (rgn.isRecordSelectorEnabled(ctx))             // Don't select unselectables (#35513)
-            {
-                String value = rgn.getRecordSelectorValue(ctx);
-                if (selectedValues.contains(value))
-                    selected.add(value);
-            }
-        }
+        var dataRegionContext = getDataRegionContext(view);
+        var rgn = dataRegionContext.first;
+        var ctx = dataRegionContext.second;
 
-        return selected;
+        try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
+        {
+            return createSelectionList(ctx, rgn, rs, selectedValues);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
-    private static List<String> createSelectionList(RenderContext ctx, DataRegion rgn, ResultSet rs, List<String> colNames) throws SQLException
+    private static List<String> createSelectionList(
+            RenderContext ctx,
+            DataRegion rgn,
+            ResultSet rs,
+            @Nullable Collection<String> selectedValues
+    ) throws SQLException
     {
         List<String> selected = new LinkedList<>();
 
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-        while (rs.next())
+        if (rs != null)
         {
-            ctx.setRow(factory.getRowMap(rs));
-            if (rgn.isRecordSelectorEnabled(ctx))             // Don't select unselectables (#35513)
-                selected.add(rgn.getRecordSelectorValue(ctx));
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            while (rs.next())
+            {
+                ctx.setRow(factory.getRowMap(rs));
+
+                // Issue 35513: Don't select un-selectables
+                if (rgn.isRecordSelectorEnabled(ctx))
+                {
+                    var value = rgn.getRecordSelectorValue(ctx);
+                    if (selectedValues == null || selectedValues.contains(value))
+                        selected.add(value);
+                }
+            }
         }
 
         return selected;
