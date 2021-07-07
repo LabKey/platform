@@ -477,8 +477,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 if (col != null && col.getFk() != null)
                 {
                     ForeignKey fk = col.getFk();
-                    Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, str);
-
+                    Container container = fk.getLookupContainer() != null ? fk.getLookupContainer() : getContainer();
+                    Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
                     if (remappedValue != null)
                     {
                         values.put(propName, remappedValue);

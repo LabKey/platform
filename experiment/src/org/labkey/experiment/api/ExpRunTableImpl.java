@@ -924,7 +924,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                 }
                                 catch (ConversionException e)
                                 {
-                                    Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                                    Container remapContainer = fk.getLookupContainer() != null ? fk.getLookupContainer() : container;
+                                    Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, remapContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
                                     if (remappedValue != null)
                                         value = remappedValue;
                                 }

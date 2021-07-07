@@ -33,6 +33,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
@@ -1031,34 +1032,27 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     private static void validateProperty(ContainerUser context, ColumnInfo columnInfo, String value, List<ValidationError> errors)
     {
-        String lookupSchemaName = null, lookupQueryName = null;
+        Lookup lookup = null;
         if (columnInfo.isLookup())
         {
-            lookupSchemaName = columnInfo.getFk().getLookupSchemaName();
-            lookupQueryName = columnInfo.getFk().getLookupTableName();
+            ForeignKey fk = columnInfo.getFk();
+            lookup = new Lookup(fk.getLookupContainer(), fk.getLookupSchemaName(), fk.getLookupTableName());
         }
-        validateProperty(context, ColumnValidators.create(columnInfo, null), value, columnInfo.getName(), false,
-                lookupSchemaName, lookupQueryName, columnInfo.getJavaClass(), errors);
+        validateProperty(context, ColumnValidators.create(columnInfo, null), value, columnInfo.getName(),
+                false, lookup, columnInfo.getJavaClass(), cache, errors);
     }
 
     private static void validateProperty(ContainerUser context, DomainProperty dp, String value, List<ValidationError> errors)
     {
         String label = dp.getPropertyDescriptor().getNonBlankCaption();
         PropertyType type = dp.getPropertyDescriptor().getPropertyType();
-        String lookupSchemaName = null, lookupQueryName = null;
-        if (dp.getLookup() != null)
-        {
-            lookupSchemaName = dp.getLookup().getSchemaName();
-            lookupQueryName = dp.getLookup().getQueryName();
-        }
-
         validateProperty(context, ColumnValidators.create(null, dp), value, label, dp.isRequired(),
-                lookupSchemaName, lookupQueryName, type.getJavaType(), errors);
+                dp.getLookup(), type.getJavaType(), cache, errors);
     }
 
     private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value,
-                                         String label, Boolean required, String lookupSchemaName, String lookupQueryName,
-                                         Class type, List<ValidationError> errors)
+                                         String label, Boolean required, Lookup lookup, Class type, RemapCache cache,
+                                         List<ValidationError> errors)
     {
         boolean missing = (value == null || value.length() == 0);
         int rowNum = 0;
@@ -1091,9 +1085,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
                 // Attempt to resolve lookups by display value
                 boolean skipError = false;
-                if (lookupSchemaName != null && lookupQueryName != null)
+                if (lookup != null)
                 {
-                    Object remappedValue = cache.remap(SchemaKey.fromParts(lookupSchemaName), lookupQueryName, context.getUser(), context.getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, value);
+                    Container container = lookup.getContainer() != null ? lookup.getContainer() : context.getContainer();
+                    Object remappedValue = cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), context.getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, value);
                     if (remappedValue != null)
                         skipError = true;
                 }

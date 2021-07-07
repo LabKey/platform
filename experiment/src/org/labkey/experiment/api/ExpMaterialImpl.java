@@ -566,7 +566,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     boolean skipError = false;
                     if (dp.getLookup() != null)
                     {
-                        Object remappedValue = cache.remap(SchemaKey.fromParts(dp.getLookup().getSchemaName()), dp.getLookup().getQueryName(), user, getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                        Container container = dp.getLookup().getContainer() != null ? dp.getLookup().getContainer() : getContainer();
+                        Object remappedValue = cache.remap(SchemaKey.fromParts(dp.getLookup().getSchemaName()), dp.getLookup().getQueryName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
                         if (remappedValue != null)
                         {
                             value = remappedValue;
