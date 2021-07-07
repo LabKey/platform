@@ -30,21 +30,24 @@ import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by cnathe on 4/4/14.
  */
 public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
-    Map<Object, Object> _treatmentIdMap = new HashMap<>();
-    Map<String, CohortImpl> _cohortMap = new HashMap<>();
-    Map<Double, Visit> _visitMap = new HashMap<>();
-
+    private final Map<String, CohortImpl> _cohortMap = new HashMap<>();
+    private final Map<Double, Visit> _visitMap = new HashMap<>();
+    private final Map<BigDecimal, Visit> _visitMapBD = new HashMap<>();
     private final TreatmentVisitMapTransform _treatmentVisitMapTransform = new TreatmentVisitMapTransform();
+
+    private Map<Object, Object> _treatmentIdMap = new HashMap<>();
 
     @Override
     public String getDescription()
@@ -120,6 +123,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
                 {
                     _visitMap.put(visit.getSequenceNumMinDouble(), visit);
+                    _visitMapBD.put(visit.getSequenceNumMin(), visit);
                 }
             }
         }
@@ -159,6 +163,8 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     if (null != sequenceObj)
                     {
                         Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
+                        Visit visit2 = _visitMapBD.get(new BigDecimal(String.valueOf(sequenceObj)));
+                        assert Objects.equals(visit, visit2);
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else

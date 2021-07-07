@@ -97,8 +97,8 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 visitInfo.put("chronologicalOrder", visit.getChronologicalOrder());
                 visitInfo.put("displayName", visit.getDisplayString());
                 visitInfo.put("protocolDay", visit.getProtocolDay());
-                visitInfo.put("sequenceNumMin", visit.getSequenceNumMinDouble());
-                visitInfo.put("sequenceNumMax", visit.getSequenceNumMaxDouble());
+                visitInfo.put("sequenceNumMin", visit.getSequenceNumMin());
+                visitInfo.put("sequenceNumMax", visit.getSequenceNumMax());
                 visitInfo.put("description", visit.getDescription());
 
                 metaData.put(visit.getId().toString(), visitInfo);

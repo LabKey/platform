@@ -198,6 +198,8 @@ translateToDouble:
 
         // handle log-type events which can be unique'd by date
         Visit v = _sequenceNumMap.get(sequencenum);
+        Visit v2 = _sequenceNumMap.get(new BigDecimal(sequencenum));
+        assert (null == v && null == v2) || (v.getSequenceNumMinDouble() == v2.getSequenceNumMinDouble());
         if (null != v && v.getSequenceNumHandlingEnum() == Visit.SequenceHandling.logUniqueByDate)
         {
             int daysSinceEpoch = convertToDaysSinceEpoch(date);
@@ -210,7 +212,9 @@ translateToDouble:
 
     interface SequenceVisitMap
     {
+        @Deprecated
         Visit get(Double d);
+        Visit get(BigDecimal seq);
     }
 
     static class StudySequenceVisitMap implements SequenceVisitMap
@@ -227,6 +231,12 @@ translateToDouble:
         {
             return _svm.findVisitBySequence(seq);
         }
+
+        @Override
+        public Visit get(BigDecimal seq)
+        {
+            return _svm.findVisitBySequence(seq);
+        }
     }
 
     /**
@@ -238,6 +248,27 @@ translateToDouble:
         @Override
         public Visit get(final Double d)
         {
+            return new VisitImpl()
+            {
+                @Override
+                public double getSequenceNumMinDouble()
+                {
+                    return Math.floor(d);
+                }
+
+                @Override
+                public @NotNull SequenceHandling getSequenceNumHandlingEnum()
+                {
+                    return 9999.0 == Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+                }
+            };
+        }
+
+        @Override
+        public Visit get(BigDecimal seq)
+        {
+            // TODO: BigDecimal.floor()?
+            double d = seq.doubleValue();
             return new VisitImpl()
             {
                 @Override

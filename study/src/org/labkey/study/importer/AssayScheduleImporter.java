@@ -29,10 +29,12 @@ import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.xml.ExportDirType;
 import org.springframework.validation.BindException;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by klum on 1/24/14.
@@ -40,11 +42,12 @@ import java.util.Map;
 public class AssayScheduleImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
     // shared transform data structures
-    Map<Object, Object> _assaySpecimenIdMap = new HashMap<>();
-    Map<Double, Visit> _visitMap = new HashMap<>();
+    private final Map<Object, Object> _assaySpecimenIdMap = new HashMap<>();
+    private final Map<Double, Visit> _visitMap = new HashMap<>();
+    private final Map<BigDecimal, Visit> _visitMapBD = new HashMap<>();
 
-    private NonSharedTableMapBuilder _assaySpecimenTransform = new NonSharedTableMapBuilder(_assaySpecimenIdMap);
-    private AssaySpecimenVisitMapTransform _assaySpecimenVisitMapTransform = new AssaySpecimenVisitMapTransform();
+    private final NonSharedTableMapBuilder _assaySpecimenTransform = new NonSharedTableMapBuilder(_assaySpecimenIdMap);
+    private final AssaySpecimenVisitMapTransform _assaySpecimenVisitMapTransform = new AssaySpecimenVisitMapTransform();
 
     @Override
     public String getDescription()
@@ -130,6 +133,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
                 {
                     _visitMap.put(visit.getSequenceNumMinDouble(), visit);
+                    _visitMapBD.put(visit.getSequenceNumMin(), visit);
                 }
             }
         }
@@ -152,6 +156,8 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     if (null != sequenceObj)
                     {
                         Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
+                        Visit visit2 = _visitMapBD.get(new BigDecimal(String.valueOf(sequenceObj)));
+                        assert Objects.equals(visit, visit2);
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else
