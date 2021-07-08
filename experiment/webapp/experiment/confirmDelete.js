@@ -1,7 +1,7 @@
 
 Ext4.namespace("LABKEY.experiment");
 
-LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, nounSingular, nounPlural) {
+LABKEY.experiment.confirmDelete = function(dataRegionName, schemaName, queryName, selectionKey, nounSingular, nounPlural) {
     var loadingMsg = Ext4.Msg.show({
         title: "Retrieving data",
         msg: "Loading ..."
@@ -87,16 +87,28 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                             Ext4.Msg.hide();
                         }
                         else if (btn === 'ok') {
+                            const canDelete = response.data.canDelete;
                             Ext4.Ajax.request({
                                 url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
                                 method: 'POST',
                                 jsonData: {
                                     schemaName: schemaName,
                                     queryName: queryName,
-                                    rows: response.data.canDelete,
+                                    rows: canDelete,
                                     apiVersion: 13.2
                                 },
                                 success: LABKEY.Utils.getCallbackWrapper(function(response)  {
+                                    // clear the selection only for the rows that were deleted
+                                    // TODO: support clearing selection in query-deleteRows.api using a selectionKey
+                                    const ids = canDelete.map((row) => row.RowId);
+                                    const dr = LABKEY.DataRegions[dataRegionName];
+                                    if (dr) {
+                                        dr.setSelected({
+                                            ids,
+                                            checked: false
+                                        });
+                                    }
+
                                     Ext4.Msg.hide();
                                     var responseMsg = Ext4.Msg.show({
                                         title: "Delete " + totalNoun,

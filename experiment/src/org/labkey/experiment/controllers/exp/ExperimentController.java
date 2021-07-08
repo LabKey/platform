@@ -4796,11 +4796,12 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
+            if (form.getTargetSampleTypeId() == 0)
+                throw new NotFoundException("Target sample type required for the derived samples");
+
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
-            if (form.getTargetSampleTypeId() != 0 && sampleType == null)
-            {
+            if (sampleType == null)
                 throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleTypeId());
-            }
 
             InsertView insertView = new InsertView(new DataRegion(), errors);
 
@@ -4911,7 +4912,6 @@ public class ExperimentController extends SpringActionController
                 int i = 0;
                 for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    Map<DomainProperty, String> props = entry.getValue();
                     Lsid lsid = entry.getKey();
                     String name = lsid.getObjectId();
                     assert name != null;
