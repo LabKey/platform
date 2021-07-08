@@ -26,7 +26,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
+import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -135,7 +135,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
             bean.setReports(reports);
 
             ViewContext context = ViewContext.getMockViewContext(User.getSearchUser(), c, new ActionURL(), true);
-            JspView<NotificationBean> view = new JspView<>("/org/labkey/query/reports/view/reportAndDatasetList.jsp", bean);
+            JspTemplate<NotificationBean> view = new JspTemplate<>("/org/labkey/query/reports/view/reportAndDatasetList.jsp", bean);
 
             return HttpView.renderToString(view, context.getRequest());
         }

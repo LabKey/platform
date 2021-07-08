@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
-<%@ page import="org.labkey.api.util.HtmlString"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.reports.ReportsController.NotificationsForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -34,7 +32,6 @@
     JspView<NotificationsForm> me = (JspView<NotificationsForm>) HttpView.currentView();
     NotificationsForm form = me.getModelBean();
     String returnURLString = form.getReturnUrl();
-    ObjectMapper jsonMapper = new ObjectMapper();
 %>
 
 <script type="text/javascript">
@@ -47,8 +44,8 @@
 
         Ext4.create('LABKEY.ext4.ReportNotificationPanel', {
             title : 'Choose Notification Option',
-            categories : <%=HtmlString.unsafe(jsonMapper.writeValueAsString(form.getCategories()))%>,
-            datasets : <%=HtmlString.unsafe(jsonMapper.writeValueAsString(form.getDatasets()))%>,
+            categories : <%=toJsonArray(form.getCategories())%>,
+            datasets : <%=toJsonArray(form.getDatasets())%>,
             notifyOption : <%=q(form.getNotifyOption())%>,
             returnUrl : returnUrl,
             renderTo : 'manageNotificationsDiv',
