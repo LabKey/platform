@@ -84,6 +84,7 @@ public class ViewServlet extends HttpServlet
 
     public static final String ORIGINAL_URL_STRING = "LABKEY.OriginalURL";           // String
     public static final String ORIGINAL_URL_URLHELPER = "LABKEY.OriginalURLHelper";  // URLHelper
+    public static final String ORIGINAL_URL_CONTAINER_PATH = "LABKEY.OriginalContainerPath";  // Path
     public static final String REQUEST_ACTION_URL = "LABKEY.RequestURL";             // ActionURL
     public static final String REQUEST_STARTTIME = "LABKEY.StartTime";
     public static final String REQUEST_UID_COUNTER = "LABKEY.Counter";                   // Incrementing counter scoped to a single request
@@ -416,6 +417,8 @@ public class ViewServlet extends HttpServlet
     private Container canonicalizeContainer(HttpServletRequest request, ActionURL url)
     {
         Path path = url.getParsedPath();
+        request.setAttribute(ORIGINAL_URL_CONTAINER_PATH, path);
+
         Container c = ContainerManager.getForPath(path);
         if (null == c)
         {
