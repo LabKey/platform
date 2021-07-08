@@ -11,6 +11,7 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -54,7 +55,10 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
             for (ColumnInfo col : uniqueIdCols)
             {
                query.append(unionAll);
-               query.append("(SELECT RowId");
+               query.append("(SELECT RowId, RowId.Name, RowId.SampleSet.Name as SampleSet, RowId.IsAliquot, RowId.Created, RowId.CreatedBy ");
+               if (InventoryService.isFreezerManagementEnabled(_container)) {
+                   query.append(", RowId.SampleSet.LabelColor, RowId.StoredAmount, RowId.Units, RowId.FreezeThawCount, RowId.StorageStatus, RowId.CheckedOutBy, RowId.StorageLocation, RowId.StorageRow, RowId.StorageCol");
+               }
                query.append(", ");
                query.append(col.getName()).append(" AS ").append(UNIQUE_ID_COL_NAME);
                query.append(" FROM samples.").append(dialect.quoteIdentifier(tableInfo.getName()));
@@ -72,7 +76,6 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
 
     private void makeColumnInfos()
     {
-        // TODO add inventory columns if available, otherwise add additional material columns
         addColumn(new BaseColumnInfo(ROW_ID, this, JdbcType.VARCHAR));
         addColumn(new BaseColumnInfo(UNIQUE_ID_COL_NAME, this, JdbcType.VARCHAR));
     }

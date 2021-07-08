@@ -86,6 +86,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -6724,8 +6725,37 @@ public class ExperimentController extends SpringActionController
 
         private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
         {
-            // TODO this should join to inventory.SampleItems if the inventory module is available
-            // if inventory is not available, should bring in the material columns from that query
+            List<String> columns;
+            if (!InventoryService.isFreezerManagementEnabled(getContainer()))
+            {
+                columns = Arrays.asList(
+                        "S.Name AS SampleID",
+                        "S.SampleSet as SampleType",
+                        "S.isAliquot",
+                        "S.Created",
+                        "S.CreatedBy"
+                );
+            }
+            else
+            {
+                columns = Arrays.asList(
+                        "S.Name AS SampleID",
+                        "S.LabelColor",
+                        "S.SampleSet as SampleType",
+                        "S.StoredAmount",
+                        "S.Units",
+                        "S.FreezeThawCount",
+                        "S.StorageStatus",
+                        "S.CheckedOutBy",
+                        "S.StorageLocation",
+                        "S.StorageRow",
+                        "S.StorageCol",
+                        "S.IsAliquot",
+                        "S.Created",
+                        "S.CreatedBy"
+                );
+            }
+
             SQLFragment sql = new SQLFragment();
             String sampleIdComma = "";
             String uniqueIdComma = "";
@@ -6772,9 +6802,11 @@ public class ExperimentController extends SpringActionController
             }
             if (!sampleIdValuesSql.isEmpty())
             {
-                sql.append("SELECT _ordered_ids_.column1 as Ordinal, _ordered_ids_.column2 as Id, exp.materials.RowId as RowId\n");
-                sql.append("FROM _ordered_ids_\n");
-                sql.append("INNER JOIN exp.materials ON _ordered_ids_.column2 = Name");
+                String tableName = InventoryService.isFreezerManagementEnabled(getContainer()) ? "inventory.SampleItems" : "exp.materials";
+                sql.append("SELECT\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id,\n\t");
+                sql.append(StringUtils.join( columns, ",\n\t"));
+                sql.append("\nFROM _ordered_ids_\n");
+                sql.append("INNER JOIN ").append(tableName).append(" S ON _ordered_ids_.column2 = S.Name");
                 sql.append("\n");
             }
             if (!uniqueIdValuesSql.isEmpty())
@@ -6783,14 +6815,16 @@ public class ExperimentController extends SpringActionController
                 {
                     sql.append("\nUNION ALL\n");
                 }
-                sql.append("SELECT _ordered_unique_ids_.column1 as Ordinal, _ordered_unique_ids_.column2 as Id, _uniqueIdSamples_.RowId\n");
-                sql.append("FROM _ordered_unique_ids_\n");
+
+                sql.append("SELECT\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id,\n\t");
+                sql.append(StringUtils.join( columns, ",\n\t"));
+                sql.append("\nFROM _ordered_unique_ids_\n");
                 sql.append("INNER JOIN ");
                 TableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
-                sql.append(tInfo.getFromSQL("_uniqueIdSamples_"));
+                sql.append(tInfo.getFromSQL("S"));
                 sql.append(" ON _ordered_unique_ids_.column2 = ").append(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
             }
-            sql.append("\n\n\nORDER BY ordinal");
+            sql.append("\n\nORDER BY Ordinal");
             return sql;
         }
     }
