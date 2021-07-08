@@ -386,10 +386,10 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         if (isEditable)
         {
             AbstractTableInfo tableInfo = (AbstractTableInfo) getTable();
-            ActionURL updateActionURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getUpdateSpecimenQueryRowURL(getContainer(), "study", tableInfo);
+            ActionURL updateActionURL = SpecimenMigrationService.get().getUpdateSpecimenQueryRowURL(getContainer(), "study", tableInfo);
             setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
 
-            ActionURL insertActionURL = PageFlowUtil.urlProvider(SpecimenUrls.class).getInsertSpecimenQueryRowURL(getContainer(), "study", tableInfo);
+            ActionURL insertActionURL = SpecimenMigrationService.get().getInsertSpecimenQueryRowURL(getContainer(), "study", tableInfo);
             // we want a DetailsURL-like string so clear the container
             insertActionURL.setContainer(ContainerManager.getRoot());
             setInsertURL(insertActionURL.getLocalURIString(false));

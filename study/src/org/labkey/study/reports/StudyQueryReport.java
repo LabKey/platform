@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.QueryReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportQueryView;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -102,25 +103,21 @@ public class StudyQueryReport extends QueryReport
     @Override
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
-        return new QueryReportDescriptor.QueryViewGenerator() {
-            @Override
-            public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor)
-            {
-                ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
-                        descriptor.getProperty(ReportDescriptor.Prop.queryName),
-                        descriptor.getProperty(ReportDescriptor.Prop.viewName));
-                view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
-                view.setUseQueryViewActionExportURLs(true);
-                view.getSettings().setMaxRows(100);
+        return (context, descriptor) -> {
+            ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
+                    descriptor.getProperty(ReportDescriptor.Prop.queryName),
+                    descriptor.getProperty(ReportDescriptor.Prop.viewName));
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+            view.setUseQueryViewActionExportURLs(true);
+            view.getSettings().setMaxRows(100);
 
-                int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
-                Study study = StudyManager.getInstance().getStudy(context.getContainer());
-                DatasetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-                if (datasetDef != null && !datasetDef.canRead(context.getUser()))
-                    view.getSettings().setAllowCustomizeView(false);
+            int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
+            Study study = StudyManager.getInstance().getStudy(context.getContainer());
+            DatasetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            if (datasetDef != null && !datasetDef.canRead(context.getUser()))
+                view.getSettings().setAllowCustomizeView(false);
 
-                return view;
-            }
+            return view;
         };
     }
 
@@ -135,7 +132,7 @@ public class StudyQueryReport extends QueryReport
             DatasetDefinition datasetDef = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (datasetDef != null)
                 return new ActionURL(StudyController.DatasetReportAction.class, context.getContainer()).
-                            addParameter(DatasetDefinition.DATASETKEY, datasetId).
+                            addParameter(Dataset.DATASETKEY, datasetId).
                             addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, getDescriptor().getReportId().toString());
         }
 

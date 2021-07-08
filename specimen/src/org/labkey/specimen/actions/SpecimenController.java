@@ -1,6 +1,8 @@
 package org.labkey.specimen.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -37,6 +39,9 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -50,16 +55,13 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.AmbiguousLocationException;
 import org.labkey.api.specimen.RequestEventType;
 import org.labkey.api.specimen.RequestedSpecimens;
-import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenRequestException;
 import org.labkey.api.specimen.SpecimenRequestManager;
 import org.labkey.api.specimen.SpecimenRequestStatus;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.actions.ParticipantCommentForm;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -75,6 +77,7 @@ import org.labkey.api.specimen.requirements.SpecimenRequest;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.api.specimen.requirements.SpecimenRequestRequirementType;
+import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
@@ -119,15 +122,19 @@ import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.notifications.ActorNotificationRecipientSet;
 import org.labkey.specimen.pipeline.SpecimenArchive;
 import org.labkey.specimen.pipeline.SpecimenBatch;
@@ -161,6 +168,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -177,6 +185,7 @@ import java.util.Set;
 
 public class SpecimenController extends SpringActionController
 {
+    private static final Logger LOG = LogManager.getLogger(SpecimenController.class);
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(
         SpecimenController.class,
 
@@ -195,8 +204,38 @@ public class SpecimenController extends SpringActionController
         SpecimenReportActions.RequestParticipantReportAction.class,
         SpecimenReportActions.TypeParticipantReportAction.class,
         SpecimenReportActions.TypeSummaryReportAction.class,
-        SpecimenReportActions.TypeCohortReportAction.class
+        SpecimenReportActions.TypeCohortReportAction.class,
+
+        ParticipantCommentAction.SpecimenCommentInsertAction.class,
+        ParticipantCommentAction.SpecimenCommentUpdateAction.class
     );
+
+    public static class SpecimenUrlsImpl implements SpecimenUrls
+    {
+        @Override
+        public ActionURL getSpecimensURL(Container c)
+        {
+            return SpecimenController.getSpecimensURL(c);
+        }
+
+        @Override
+        public ActionURL getSpecimensURL(Container c, boolean showVials)
+        {
+            return SpecimenController.getSpecimensURL(c, showVials);
+        }
+
+        @Override
+        public ActionURL getManageRequestURL(Container c, int requestId)
+        {
+            return SpecimenController.getManageRequestURL(c, requestId, null);
+        }
+
+        @Override
+        public ActionURL getManageRequestStatusURL(Container c, int requestId)
+        {
+            return SpecimenController.getManageRequestStatusURL(c, requestId);
+        }
+    }
 
     private Study _study = null;
 
@@ -251,7 +290,7 @@ public class SpecimenController extends SpringActionController
         ActionURL rootURL;
         FolderType folderType = c.getFolderType();
         Module module = folderType.getDefaultModule();
-        if (null != module && "study".equals(folderType.getDefaultModule().getName()))
+        if (null != module && "study".equals(module.getName()))
         {
             rootURL = folderType.getStartURL(c, getUser());
         }
@@ -354,13 +393,13 @@ public class SpecimenController extends SpringActionController
         if (settings.isEnableRequests())
         {
             MenuButton requestMenuButton = new MenuButton("Request Options");
-            requestMenuButton.addMenuItem("View Existing Requests", SpecimenMigrationService.get().getViewRequestsURL(getContainer()));
+            requestMenuButton.addMenuItem("View Existing Requests", new ActionURL(SpecimenController.ViewRequestsAction.class, getContainer()));
             if (!commentsMode)
             {
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(SpecimenMigrationService.get().getShowCreateSpecimenRequestActionClass()).addReturnURL(getViewContext().getActionURL()).toString();
+                    String createRequestURL = urlFor(ShowCreateSpecimenRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
 
                     requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
@@ -393,13 +432,13 @@ public class SpecimenController extends SpringActionController
             {
                 MenuButton commentsMenuButton = new MenuButton("Comments" + (manualQCEnabled ? " and QC" : ""));
                 final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                String setCommentsURL = urlFor(SpecimenMigrationService.get().getUpdateCommentsActionClass()).toString();
+                String setCommentsURL = urlFor(UpdateCommentsAction.class).toString();
                 NavTree setItem = commentsMenuButton.addMenuItem("Set Vial Comment " + (manualQCEnabled ? "or QC State " : "") + "for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + setCommentsURL +
                                 "', 'post', 'rows')) " + jsRegionObject + ".form.submit(); return false;");
                 setItem.setId("Comments:Set");
 
-                String clearCommentsURL = urlFor(SpecimenMigrationService.get().getClearCommentsActionClass()).toString();
+                String clearCommentsURL = urlFor(ClearCommentsAction.class).toString();
                 NavTree clearItem = commentsMenuButton.addMenuItem("Clear Vial Comments for Selected",
                         "if (verifySelected(" + jsRegionObject + ".form, '" + clearCommentsURL +
                                 "', 'post', 'rows') && confirm('This will permanently clear comments for all selected vials. " +
@@ -465,8 +504,8 @@ public class SpecimenController extends SpringActionController
         if (getViewContext().hasPermission(AdminPermission.class))
         {
             Button upload = new Button.ButtonBuilder("Import Specimens")
-                    .href(SpecimenMigrationService.get().getUploadSpecimensURL(getContainer()))
-                    .build();
+                .href(new ActionURL(ShowUploadSpecimensAction.class, getContainer()))
+                .build();
             buttons.add(upload);
         }
 
@@ -3524,11 +3563,10 @@ public class SpecimenController extends SpringActionController
             {
                 // Get all the specimen objects. If it throws an exception then there was an error and we'll
                 // root around to figure out what to report
-                SpecimenManagerNew specimenManager = SpecimenManagerNew.get();
                 try
                 {
                     SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
-                    List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), globalIds);
+                    List<Vial> vials = SpecimenManager.get().getVials(getContainer(), getUser(), globalIds);
 
                     if (vials != null && vials.size() == globalIds.length)
                     {
@@ -3568,7 +3606,7 @@ public class SpecimenController extends SpringActionController
                     boolean hasSpecimenError = false;
                     for (String id : globalIds)
                     {
-                        Vial vial = specimenManager.getVial(getContainer(), getUser(), id);
+                        Vial vial = SpecimenManagerNew.get().getVial(getContainer(), getUser(), id);
                         if (vial == null)
                         {
                             errorList.add("Specimen " + id + " not found.");
@@ -4082,7 +4120,7 @@ public class SpecimenController extends SpringActionController
                 {
                     try
                     {
-                        List<Vial> vials = SpecimenManagerNew.get().getVials(getContainer(), getUser(), rowId);
+                        List<Vial> vials = SpecimenManager.get().getVials(getContainer(), getUser(), rowId);
                         selectedVials = new ArrayList<>(vials);
                     }
                     catch (SpecimenRequestException e)
@@ -4120,19 +4158,19 @@ public class SpecimenController extends SpringActionController
                     Vial vial = SpecimenManagerNew.get().getVial(container, user, commentsForm.getCopySampleId());
                     if (vial != null)
                     {
-                        _successUrl = new ActionURL(urlProvider(SpecimenUrls.class).getCopyParticipantCommentActionClass(), container).
-                                addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
-                                addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
-                                addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                                addReturnURL(new URLHelper(commentsForm.getReferrer()));
+                        _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
+                            addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
+                            addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
+                            addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
+                            addReturnURL(new URLHelper(commentsForm.getReferrer()));
                     }
                 }
                 else
                 {
-                    _successUrl = new ActionURL(urlProvider(SpecimenUrls.class).getCopyParticipantCommentActionClass(), container).
-                            addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
-                            addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                            addReturnURL(new URLHelper(commentsForm.getReferrer()));
+                    _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
+                        addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
+                        addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
+                        addReturnURL(new URLHelper(commentsForm.getReferrer()));
                 }
 
                 // delete existing vial comments if move is specified
@@ -5596,6 +5634,150 @@ public class SpecimenController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class CopyParticipantCommentAction extends SimpleViewAction<ParticipantCommentForm>
+    {
+        @Override
+        public ModelAndView getView(final ParticipantCommentForm form, BindException errors)
+        {
+            Study study = getStudyRedirectIfNull();
+            Dataset ds;
+
+            if (form.getVisitId() != 0)
+            {
+                ds = StudyService.get().getDataset(study.getContainer(), StudyInternalService.get().getParticipantVisitCommentDatasetId(study));
+            }
+            else
+            {
+                ds = StudyService.get().getDataset(study.getContainer(), StudyInternalService.get().getParticipantCommentDatasetId(study));
+            }
+
+            if (ds != null)
+            {
+                QueryView datasetQueryView = StudyInternalService.get().getDatasetQueryView(getViewContext(), study, getUser(), ds, form.getParticipantId(), form.getVisitId(), errors);
+                String lsid = getExistingComment(datasetQueryView);
+                ActionURL url;
+                if (lsid != null)
+                    url = new ActionURL(ParticipantCommentAction.SpecimenCommentUpdateAction.class, getContainer()).
+                            addParameter(ParticipantCommentForm.params.lsid, lsid);
+                else
+                    url = new ActionURL(ParticipantCommentAction.SpecimenCommentInsertAction.class, getContainer()).
+                            addParameter(ParticipantCommentForm.params.participantId, form.getParticipantId());
+
+                url.addParameter(ParticipantCommentForm.params.datasetId, ds.getDatasetId()).
+                        addParameter(ParticipantCommentForm.params.comment, form.getComment()).
+                        addReturnURL(form.getReturnActionURL()).
+                        addParameter(ParticipantCommentForm.params.visitId, form.getVisitId());
+
+                for (int rowId : form.getVialCommentsToClear())
+                    url.addParameter(ParticipantCommentForm.params.vialCommentsToClear, rowId);
+                return HttpView.redirect(url);
+            }
+            return new HtmlView("Dataset could not be found");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+
+        private String getExistingComment(QueryView queryView)
+        {
+            final TableInfo table = queryView.getTable();
+            if (table != null)
+            {
+                try (ResultSet rs = queryView.getResultSet())
+                {
+                    while (rs.next())
+                    {
+                        String lsid = rs.getString("lsid");
+                        if (lsid != null)
+                            return lsid;
+                    }
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Error encountered trying to get " + StudyService.get().getSubjectNounSingular(getContainer()) + " comments", e);
+                }
+            }
+            return null;
+        }
+    }
+
+    @RequiresPermission(EditSpecimenDataPermission.class)
+    public static class UpdateSpecimenQueryRowAction extends UserSchemaAction
+    {
+        @Override
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
+        {
+            // Don't allow GlobalUniqueId to be edited
+            TableInfo tableInfo = tableForm.getTable();
+            if (null != tableInfo.getColumn("GlobalUniqueId"))
+                ((BaseColumnInfo)tableInfo.getColumn("GlobalUniqueId")).setReadOnly(true);
+
+            var vialComments = tableInfo.getColumn("VialComments");
+            if (null != vialComments)
+            {
+                ((BaseColumnInfo)vialComments).setUserEditable(false);
+                ((BaseColumnInfo)vialComments).setHidden(true);
+            }
+
+            StudyInternalService.get().fixSpecimenRequestableColumn(tableForm);
+            ButtonBar bb = createSubmitCancelButtonBar(tableForm);
+            UpdateView view = new UpdateView(tableForm, errors);
+            view.getDataRegion().setButtonBar(bb);
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
+        {
+            doInsertUpdate(tableForm, errors, false);
+            return 0 == errors.getErrorCount();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            super.addNavTrail(root);
+            root.addChild("Edit " + _form.getQueryName());
+        }
+    }
+
+    @RequiresPermission(EditSpecimenDataPermission.class)
+    public static class InsertSpecimenQueryRowAction extends UserSchemaAction
+    {
+        @Override
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
+        {
+            TableInfo tableInfo = tableForm.getTable();
+            var vialComments = tableInfo.getColumn("VialComments");
+            if (null != vialComments)
+            {
+                ((BaseColumnInfo)vialComments).setUserEditable(false);
+                ((BaseColumnInfo)vialComments).setHidden(true);
+            }
+
+            StudyInternalService.get().fixSpecimenRequestableColumn(tableForm);
+            InsertView view = new InsertView(tableForm, errors);
+            view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
+        {
+            doInsertUpdate(tableForm, errors, true);
+            return 0 == errors.getErrorCount();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            super.addNavTrail(root);
+            root.addChild("Insert " + _form.getQueryName());
+        }
+    }
 /*
     // Used for testing
     @RequiresSiteAdmin

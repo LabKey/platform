@@ -73,11 +73,21 @@ public interface Study extends StudyEntity
 
     List<? extends ParticipantCategory> getParticipantCategories(User user);
 
+    @Nullable String getParticipantCohortProperty();
+
+    @Nullable Integer getParticipantCohortDatasetId();
+
+    boolean isManualCohortAssignment();
+
     boolean isAdvancedCohorts();
 
     TimepointType getTimepointType();
 
     Date getStartDate();
+
+    String getParticipantCommentProperty();
+
+    String getParticipantVisitCommentProperty();
 
     String getSubjectNounSingular();
 
