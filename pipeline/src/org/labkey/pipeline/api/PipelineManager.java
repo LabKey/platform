@@ -478,12 +478,12 @@ public class PipelineManager
 
     private static class PipelineDigestMessage
     {
-        private Container _c;
-        private PipelineDigestTemplate _template;
-        private PipelineStatusFileImpl[] _statusFiles;
-        private String _recipients;
-        private Date _min;
-        private Date _max;
+        private final Container _c;
+        private final PipelineDigestTemplate _template;
+        private final PipelineStatusFileImpl[] _statusFiles;
+        private final String _recipients;
+        private final Date _min;
+        private final Date _max;
 
         public PipelineDigestMessage(Container c, PipelineDigestTemplate template, PipelineStatusFileImpl[] statusFiles,
                                      Date min, Date max, String recipients)
@@ -527,7 +527,6 @@ public class PipelineManager
         protected String _jobDescription;
         protected Date _timeCreated;
         protected String _status;
-        private List<ReplacementParam> _replacements = new ArrayList<>();
 
         protected static final String DEFAULT_BODY = "Job description: ^jobDescription^\n" +
                 "Created: ^timeCreated^\n" +
@@ -539,8 +538,18 @@ public class PipelineManager
         protected PipelineEmailTemplate(@NotNull String name, String description, String subject, String body)
         {
             super(name, description, subject, body, ContentType.Plain, Scope.Site);
+        }
 
-            _replacements.add(new ReplacementParam<>("dataURL", String.class, "Link to the job details for this pipeline job")
+        public void setDataUrl(String dataUrl){_dataUrl = dataUrl;}
+        public void setJobDescription(String description){_jobDescription = description;}
+        public void setTimeCreated(Date timeCreated){_timeCreated = timeCreated;}
+        public void setStatus(String status){_status = status;}
+
+        @Override
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add(new ReplacementParam<>("dataURL", String.class, "Link to the job details for this pipeline job")
             {
                 @Override
                 public String getValue(Container c)
@@ -548,7 +557,7 @@ public class PipelineManager
                     return _dataUrl;
                 }
             });
-            _replacements.add(new ReplacementParam<>("jobDescription", String.class, "The job description")
+            replacements.add(new ReplacementParam<>("jobDescription", String.class, "The job description")
             {
                 @Override
                 public String getValue(Container c)
@@ -556,7 +565,7 @@ public class PipelineManager
                     return _jobDescription;
                 }
             });
-            _replacements.add(new ReplacementParam<>("timeCreated", Date.class, "The date and time this job was created")
+            replacements.add(new ReplacementParam<>("timeCreated", Date.class, "The date and time this job was created")
             {
                 @Override
                 public Date getValue(Container c)
@@ -564,7 +573,7 @@ public class PipelineManager
                     return _timeCreated;
                 }
             });
-            _replacements.add(new ReplacementParam<>("status", String.class, "The job status")
+            replacements.add(new ReplacementParam<>("status", String.class, "The job status")
             {
                 @Override
                 public String getValue(Container c)
@@ -572,7 +581,7 @@ public class PipelineManager
                     return _status;
                 }
             });
-            _replacements.add(new ReplacementParam<>("setupURL", String.class, "URL to configure the pipeline, including email notifications")
+            replacements.add(new ReplacementParam<>("setupURL", String.class, "URL to configure the pipeline, including email notifications")
             {
                 @Override
                 public String getValue(Container c)
@@ -580,15 +589,7 @@ public class PipelineManager
                     return PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getURIString();
                 }
             });
-
-            _replacements.addAll(super.getValidReplacements());
         }
-        public void setDataUrl(String dataUrl){_dataUrl = dataUrl;}
-        public void setJobDescription(String description){_jobDescription = description;}
-        public void setTimeCreated(Date timeCreated){_timeCreated = timeCreated;}
-        public void setStatus(String status){_status = status;}
-        @Override
-        public List<ReplacementParam> getValidReplacements(){return _replacements;}
     }
 
     public static class PipelineJobSuccess extends PipelineEmailTemplate
@@ -609,7 +610,6 @@ public class PipelineManager
 
     public static abstract class PipelineDigestTemplate extends EmailTemplate
     {
-        private List<ReplacementParam> _replacements = new ArrayList<>();
         private PipelineStatusFileImpl[] _statusFiles;
         private Date _startTime;
         private Date _endTime;
@@ -620,26 +620,28 @@ public class PipelineManager
         protected PipelineDigestTemplate(String name, String description, String subject, String body)
         {
             super(name, description, subject, body, ContentType.HTML, Scope.Site);
+        }
 
-            _replacements.add(new ReplacementParam<>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period", ContentType.HTML){
+        @Override
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            replacements.add(new ReplacementParam<>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period", ContentType.HTML){
                 @Override
                 public String getValue(Container c) {return getJobStatus();}
             });
-            _replacements.add(new ReplacementParam<>("startTime", Date.class, "The start of the time period for job completion", ContentType.HTML){
+            replacements.add(new ReplacementParam<>("startTime", Date.class, "The start of the time period for job completion", ContentType.HTML){
                 @Override
                 public Date getValue(Container c) {return _startTime;}
             });
-            _replacements.add(new ReplacementParam<>("endTime", Date.class, "The end of the time period for job completion", ContentType.HTML){
+            replacements.add(new ReplacementParam<>("endTime", Date.class, "The end of the time period for job completion", ContentType.HTML){
                 @Override
                 public Date getValue(Container c) {return _endTime;}
             });
-            _replacements.addAll(super.getValidReplacements());
         }
+
         public void setStatusFiles(PipelineStatusFileImpl[] statusFiles){_statusFiles = statusFiles;}
         public void setStartTime(Date startTime){_startTime = startTime;}
         public void setEndTime(Date endTime){_endTime = endTime;}
-        @Override
-        public List<ReplacementParam> getValidReplacements(){return _replacements;}
 
         private String getJobStatus()
         {

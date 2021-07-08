@@ -16,6 +16,7 @@
 
 package org.labkey.api.util.emailTemplate;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +56,7 @@ public abstract class EmailTemplate
     private static final Logger LOG = LogManager.getLogger(EmailTemplate.class);
     /** Pattern for recognizing substitution syntax, which is of the form ^TOKEN^ */
     private static final Pattern SCRIPT_PATTERN = Pattern.compile("\\^(.*?)\\^");
-    private static final List<ReplacementParam> REPLACEMENT_PARAMS = new ArrayList<>();
+    private static final List<ReplacementParam<?>> STANDARD_REPLACEMENTS = new ArrayList<>();
     /** Separates the token name from how it should be formatted (for date and numeric values)  */
     private static final String FORMAT_DELIMITER = "|";
 
@@ -120,7 +121,7 @@ public abstract class EmailTemplate
         public abstract boolean isEditableIn(Container c);
     }
 
-    // These four members are final and immutable
+    // These members are final and immutable
     @NotNull private final String _name;
     private final String _description;
     /** The format of the email to be generated */
@@ -129,7 +130,7 @@ public abstract class EmailTemplate
      * for a given subclass, regardless of the instances */
     private final Scope _scope;
 
-    // These five members are mutable since they can be overridden by customizing the email template
+    // These members are mutable since they can be overridden by customizing the email template
     private String _body;
     private String _subject;
     @Nullable private String _senderName = DEFAULT_SENDER;
@@ -140,53 +141,55 @@ public abstract class EmailTemplate
      */
     private Container _container = null;
 
+    private List<ReplacementParam<?>> _customReplacements = null;
+
     static
     {
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("organizationName", String.class, "Organization name (look and feel settings)"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("organizationName", String.class, "Organization name (look and feel settings)"){
             @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteShortName", String.class, "Header short name"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("siteShortName", String.class, "Header short name"){
             @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteEmailAddress", String.class, "System email address"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("siteEmailAddress", String.class, "System email address"){
             @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("contextPath", String.class, "Web application context path"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("contextPath", String.class, "Web application context path"){
             @Override
             public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("supportLink", String.class, "Page where users can request support"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("supportLink", String.class, "Page where users can request support"){
             @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemDescription", String.class, "Header description"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("systemDescription", String.class, "Header description"){
             @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemEmail", String.class, "From address for system notification emails"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("systemEmail", String.class, "From address for system notification emails"){
             @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("currentDateTime", Date.class, "Current date and time of the server"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("currentDateTime", Date.class, "Current date and time of the server"){
             @Override
             public Date getValue(Container c) {return new Date();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
             @Override
             public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
             @Override
             public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
             @Override
             public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
         });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("homePageURL", String.class, "The home page of this installation"){
+        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("homePageURL", String.class, "The home page of this installation"){
             @Override
             public String getValue(Container c) {
                 return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
@@ -259,6 +262,8 @@ public abstract class EmailTemplate
         return getContentType() == ContentType.HTML && _body.contains(BODY_PART_BOUNDARY);
     }
 
+    abstract protected void addCustomReplacements(Replacements replacements);
+
     public boolean isValid(String[] error)
     {
         try
@@ -293,7 +298,7 @@ public abstract class EmailTemplate
     protected boolean isValidReplacement(String paramNameAndFormat)
     {
         String paramName = getParameterName(paramNameAndFormat);
-        for (ReplacementParam param : getValidReplacements())
+        for (ReplacementParam<?> param : getAllReplacements())
         {
             if (param.getName().equalsIgnoreCase(paramName))
                 return true;
@@ -324,7 +329,7 @@ public abstract class EmailTemplate
     public String getReplacement(Container c, String paramNameAndFormat, ContentType contentType)
     {
         String paramName = getParameterName(paramNameAndFormat);
-        for (ReplacementParam param : getValidReplacements())
+        for (ReplacementParam<?> param : getAllReplacements())
         {
             if (param.getName().equalsIgnoreCase(paramName))
             {
@@ -437,9 +442,46 @@ public abstract class EmailTemplate
         return sb.toString();
     }
 
-    public List<ReplacementParam> getValidReplacements()
+    public List<ReplacementParam<?>> getStandardReplacements()
     {
-        return REPLACEMENT_PARAMS;
+        return STANDARD_REPLACEMENTS;
+    }
+
+    public static class Replacements
+    {
+        private final List<ReplacementParam<?>> _params;
+
+        private Replacements(List<ReplacementParam<?>> params)
+        {
+            _params = params;
+        }
+
+        public void add(ReplacementParam<?> replacementParam)
+        {
+            _params.add(replacementParam);
+        }
+    }
+
+    public List<ReplacementParam<?>> getCustomReplacements()
+    {
+        if (null == _customReplacements)
+        {
+            _customReplacements = new ArrayList<>();
+            addCustomReplacements(new Replacements(_customReplacements));
+        }
+
+        return _customReplacements;
+    }
+
+    public List<ReplacementParam<?>> getAllReplacements()
+    {
+        return ListUtils.union(getStandardReplacements(), getCustomReplacements());
+    }
+
+    @Deprecated // Old method should not be called or overridden! Leave this for a while to make sure...
+    final public List<ReplacementParam<?>> getValidReplacements()
+    {
+        throw new IllegalStateException();
     }
 
     public static abstract class ReplacementParam<Type> implements Comparable<ReplacementParam<Type>>

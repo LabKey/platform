@@ -2639,13 +2639,21 @@ public class SecurityManager
         private String _verificationUrl = "";
         private String _recipient = "";
         protected boolean _verificationUrlRequired = true;
-        protected final List<ReplacementParam> _replacements = new ArrayList<>();
 
         protected SecurityEmailTemplate(@NotNull String name, String description, String subject, String body)
         {
             super(name, description, subject, body, ContentType.Plain, Scope.Site);
+        }
 
-            _replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
+        public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
+        public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
+        public void setRecipient(String recipient){_recipient = recipient;}
+
+        @Override
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
             {
                 @Override
                 public String getValue(Container c)
@@ -2653,7 +2661,7 @@ public class SecurityManager
                     return _verificationUrl;
                 }
             });
-            _replacements.add(new ReplacementParam<>("emailAddress", String.class, "The email address of the user performing the operation")
+            replacements.add(new ReplacementParam<>("emailAddress", String.class, "The email address of the user performing the operation")
             {
                 @Override
                 public String getValue(Container c)
@@ -2661,7 +2669,7 @@ public class SecurityManager
                     return _originatingUser == null ? null : _originatingUser.getEmail();
                 }
             });
-            _replacements.add(new ReplacementParam<>("recipient", String.class, "The email address on the 'to:' line")
+            replacements.add(new ReplacementParam<>("recipient", String.class, "The email address on the 'to:' line")
             {
                 @Override
                 public String getValue(Container c)
@@ -2669,15 +2677,7 @@ public class SecurityManager
                     return _recipient;
                 }
             });
-
-            _replacements.addAll(super.getValidReplacements());
         }
-
-        public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
-        public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
-        public void setRecipient(String recipient){_recipient = recipient;}
-        @Override
-        public List<ReplacementParam> getValidReplacements(){return _replacements;}
 
         @Override
         public boolean isValid(String[] error)
@@ -2718,10 +2718,19 @@ public class SecurityManager
         private RegistrationEmailTemplate(String name, String subject, String body)
         {
             super(name, "Sent to the new user and administrator when a user is added to the site.", subject, body);
+        }
 
-            _replacements.add(new ReplacementParam<String>("optionalMessage", String.class, "An optional message to include with the new user email"){
+        @Override
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add(new ReplacementParam<>("optionalMessage", String.class, "An optional message to include with the new user email")
+            {
                 @Override
-                public String getValue(Container c) {return _optionalPrefix;}
+                public String getValue(Container c)
+                {
+                    return _optionalPrefix;
+                }
             });
         }
     }

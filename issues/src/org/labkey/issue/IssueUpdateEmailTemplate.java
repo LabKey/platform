@@ -29,7 +29,6 @@ import org.labkey.issue.model.IssueManager;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,8 +48,9 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                     "^modifiedFields^\n" +
                     "^comment^\n" +
                     "^attachments^";
-    private List<ReplacementParam> _replacements = new ArrayList<>();
-    private List<ReplacementParam> _allReplacements = new ArrayList<>();    // includes both static and dynamic custom field replacements
+    private final List<ReplacementParam<?>> _replacements = new ArrayList<>();
+    private final List<ReplacementParam<?>> _allReplacements = new ArrayList<>();    // includes both static and dynamic custom field replacements
+
     private Issue _newIssue;
     private ActionURL _detailsURL;
     private String _change;
@@ -58,7 +58,6 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
     private String _fieldChanges;
     private String _recipients;
     private String _attachments;
-    private Map<String, Object> _issueProperties = new HashMap<>();
 
     public IssueUpdateEmailTemplate()
     {
@@ -257,10 +256,6 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
                 return _fieldChanges;
             }
         });
-
-        // modifiedFields
-
-        _replacements.addAll(super.getValidReplacements());
     }
 
     private static IssueManager.EntryTypeNames getEntryTypeName(Container c, Issue issue)
@@ -331,7 +326,6 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         _comment = comment;
         _fieldChanges = fieldChanges;
         setOriginatingUser(creator);
-        _issueProperties = issueProperties;
 
         StringBuilder sb = new StringBuilder();
         String separator = "";
@@ -356,7 +350,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         _allReplacements.addAll(_replacements);
 
         // inject any custom fields into the replacement parameters
-        for (Map.Entry<String, Object> prop : _issueProperties.entrySet())
+        for (Map.Entry<String, Object> prop : issueProperties.entrySet())
         {
             if (!existingParams.contains(prop.getKey()))
             {
@@ -383,9 +377,10 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
     }
 
     @Override
-    public List<ReplacementParam> getValidReplacements()
+    protected void addCustomReplacements(Replacements replacements)
     {
-        return _allReplacements.isEmpty() ? _replacements : _allReplacements;
+        super.addCustomReplacements(replacements);
+        (_allReplacements.isEmpty() ? _replacements : _allReplacements).forEach(replacements::add);
     }
 
     @Override

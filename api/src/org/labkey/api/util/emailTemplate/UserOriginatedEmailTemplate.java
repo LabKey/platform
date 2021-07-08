@@ -19,9 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Convenience base class for email templates that will be used in the context of a specific user,
  * typically the user who initiated the action that is causing the email to be sent (such as posting
@@ -31,40 +28,49 @@ import java.util.List;
  */
 public abstract class UserOriginatedEmailTemplate extends EmailTemplate
 {
-    private List<ReplacementParam> _replacements = new ArrayList<>();
     protected User _originatingUser;
 
     public UserOriginatedEmailTemplate(@NotNull String name, String description, String subject, String body, @NotNull ContentType contentType, Scope scope)
     {
         super(name, description, subject, body, contentType, scope);
-        _replacements.add(new ReplacementParam<String>("userFirstName", String.class, "First name of the user who originated the action"){
+    }
+
+    @Override
+    protected void addCustomReplacements(Replacements replacements)
+    {
+        replacements.add(new ReplacementParam<>("userFirstName", String.class, "First name of the user who originated the action")
+        {
             @Override
-            public String getValue(Container c) {
+            public String getValue(Container c)
+            {
                 return _originatingUser == null ? null : _originatingUser.getFirstName();
             }
         });
-        _replacements.add(new ReplacementParam<String>("userLastName", String.class, "Last name of the user who originated the action"){
+        replacements.add(new ReplacementParam<>("userLastName", String.class, "Last name of the user who originated the action")
+        {
             @Override
-            public String getValue(Container c) {
+            public String getValue(Container c)
+            {
                 return _originatingUser == null ? null : _originatingUser.getLastName();
             }
         });
-        _replacements.add(new ReplacementParam<String>("userDisplayName", String.class, "Display name of the user who originated the action"){
+        replacements.add(new ReplacementParam<>("userDisplayName", String.class, "Display name of the user who originated the action")
+        {
             @Override
-            public String getValue(Container c) {
+            public String getValue(Container c)
+            {
                 return _originatingUser == null ? null : _originatingUser.getFriendlyName();
             }
         });
-        _replacements.add(new ReplacementParam<String>("userEmail", String.class, "Email address of the user who originated the action"){
+        replacements.add(new ReplacementParam<>("userEmail", String.class, "Email address of the user who originated the action")
+        {
             @Override
-            public String getValue(Container c) {
+            public String getValue(Container c)
+            {
                 return _originatingUser == null ? null : _originatingUser.getEmail();
             }
         });
-
-        _replacements.addAll(super.getValidReplacements());
     }
-    @Override
-    public List<ReplacementParam> getValidReplacements(){return _replacements;}
+
     public void setOriginatingUser(User user){_originatingUser = user;}
 }

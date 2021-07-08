@@ -73,7 +73,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -1095,8 +1094,6 @@ public class AnnouncementManager
         protected static final String NAME = "Message board notification";
         protected static final String BODY_PATH = "/org/labkey/announcements/emailNotification.txt";
 
-        private final List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
-
         private EmailNotificationBean notificationBean = null;
         private String reasonForEmail = "";
         private String attachments = "";
@@ -1106,111 +1103,6 @@ public class AnnouncementManager
         public NotificationEmailTemplate()
         {
             super(NAME, DEFAULT_DESCRIPTION, DEFAULT_SUBJECT, loadBody(), ContentType.HTML, Scope.SiteOrFolder);
-
-            _replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-
-                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true).toString();
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("createdOrResponded", String.class, "Created or Responded to a message", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new " + PageFlowUtil.filter(notificationBean.settings.getConversationName().toLowerCase());
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("messageDatetime", Date.class, "Date and time the message is created", ContentType.HTML)
-            {
-                @Override
-                public Date getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-                    return notificationBean.announcementModel.getCreated();
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("messageUrl", String.class, "Link to the original message", ContentType.Plain)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return messageUrl;
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("messageBody", String.class, "Message content, formatted as HTML", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-                    return notificationBean.body == null ? "" : notificationBean.body.toString();
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("messageBodyText", String.class, "Message content plain text", ContentType.Plain)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-                    return notificationBean.bodyText == null ? "" : notificationBean.bodyText;
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.Plain)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    if (notificationBean == null)
-                        return null;
-                    return StringUtils.trimToEmpty(notificationBean.isResponse ? "RE: " + notificationBean.parentModel.getTitle() : notificationBean.announcementModel.getTitle());
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("attachments", String.class, "Attachments for this message", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return attachments;
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("reasonFooter", String.class, "Footer information explaining why user is receiving this message", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return reasonForEmail;
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.Plain)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return emailPreferencesURL;
-                }
-            });
-
-            _replacements.addAll(super.getValidReplacements());
         }
 
         @Override
@@ -1230,9 +1122,112 @@ public class AnnouncementManager
         }
 
         @Override
-        public List<ReplacementParam> getValidReplacements()
+        protected void addCustomReplacements(Replacements replacements)
         {
-            return _replacements;
+            super.addCustomReplacements(replacements);
+
+            replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+
+                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true).toString();
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("createdOrResponded", String.class, "Created or Responded to a message", ContentType.HTML)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.announcementModel.getParent() != null ? " responded" : " created a new " + PageFlowUtil.filter(notificationBean.settings.getConversationName().toLowerCase());
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("messageDatetime", Date.class, "Date and time the message is created", ContentType.HTML)
+            {
+                @Override
+                public Date getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.announcementModel.getCreated();
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("messageUrl", String.class, "Link to the original message", ContentType.Plain)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    return messageUrl;
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("messageBody", String.class, "Message content, formatted as HTML", ContentType.HTML)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.body == null ? "" : notificationBean.body.toString();
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("messageBodyText", String.class, "Message content plain text", ContentType.Plain)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return notificationBean.bodyText == null ? "" : notificationBean.bodyText;
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.Plain)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    if (notificationBean == null)
+                        return null;
+                    return StringUtils.trimToEmpty(notificationBean.isResponse ? "RE: " + notificationBean.parentModel.getTitle() : notificationBean.announcementModel.getTitle());
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("attachments", String.class, "Attachments for this message", ContentType.HTML)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    return attachments;
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("reasonFooter", String.class, "Footer information explaining why user is receiving this message", ContentType.HTML)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    return reasonForEmail;
+                }
+            });
+
+            replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.Plain)
+            {
+                @Override
+                public String getValue(Container c)
+                {
+                    return emailPreferencesURL;
+                }
+            });
         }
 
         private static String loadBody()
