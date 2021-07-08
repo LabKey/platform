@@ -250,15 +250,19 @@ export class App extends React.Component<any, State> {
                 {selected === 'ConfirmModal' &&
                     this.renderPanel('ConfirmModal',
                         <>
-                            {showConfirm && <ConfirmModal
-                                    title={'Confirmation Modal Dialog'}
-                                    msg={<><p>You are about to do something. Are you sure you want to continue?</p><p><i>Don't worry clicking Confirm won't actually do anything.</i></p></>}
-                                    confirmButtonText={'Confirm'}
+                            {showConfirm && (
+                                <ConfirmModal
+                                    title="Confirmation Modal Dialog"
+                                    confirmButtonText="Confirm"
                                     onConfirm={() => {this.hideConfirm('Confirm')}}
-                                    cancelButtonText={'Cancel'}
+                                    cancelButtonText="Cancel"
                                     onCancel={() => {this.hideConfirm('Cancel')}}
-                                    confirmVariant={'danger'}
-                            />}
+                                    confirmVariant="danger"
+                                >
+                                    <p>You are about to do something. Are you sure you want to continue?</p>
+                                    <p><i>Don't worry clicking Confirm won't actually do anything.</i></p>
+                                </ConfirmModal>
+                            )}
                             <Button onClick={this.showConfirm} disabled={showConfirm}>Show Confirm Modal</Button>
                         </>
                     )

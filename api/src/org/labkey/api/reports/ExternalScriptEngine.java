@@ -16,6 +16,8 @@
 package org.labkey.api.reports;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -78,6 +80,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
     protected ExternalScriptEngineDefinition _def;
     protected Writer _originalWriter;
+
+    private static final Logger LOG = LogManager.getLogger(ExternalScriptEngine.class);
 
     public ExternalScriptEngine(ExternalScriptEngineDefinition def)
     {
@@ -318,8 +322,10 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         catch (IOException eio)
         {
             Map<String, String> env = pb.environment();
-            throw new RuntimeException("Failed starting process '" + pb.command() + "'. " +
-                    "Must be on server path. (PATH=" + env.get("PATH") + ")", eio);
+            String message = "Failed starting process '" + pb.command() + "'. " +
+                    "Must be on server path. (PATH=" + env.get("PATH") + ")";
+            LOG.error(message, eio);
+            throw new RuntimeException(message, eio);
         }
 
         // Write script process output to the provided writer

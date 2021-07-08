@@ -299,13 +299,14 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         return (
             <ConfirmModal
                 title={title}
-                msg={msg}
                 onConfirm={onConfirm}
                 onCancel={onCancel}
                 confirmVariant='danger'
                 confirmButtonText={confirmButtonText}
                 cancelButtonText={cancelButtonText}
-            />
+            >
+                {msg}
+            </ConfirmModal>
         )
     }
 
@@ -318,8 +319,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         }
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {
-                    domain &&
+                {domain &&
                     <DomainForm
                         headerTitle={'Metadata Properties'}
                         helpTopic={'metadataSql'}
@@ -334,29 +334,24 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                             hideAddFieldsButton: true,
                             hideTextOptions: true,
                             disableMvEnabled: true,
+                            hideImportExport: true,
+                            hideInferFromFile: true,
                         }}
                     />
                 }
 
-                {
-                    messages &&
-                    messages.size > 0 &&
-                    messages.map((bannerMessage, idx) => {
-                        return (
-                            <Alert
-                                key={idx}
-                                bsStyle={bannerMessage.messageType}
-                                onDismiss={() => this.dismissAlert(idx)}>
-                                {bannerMessage.message}
-                            </Alert>
-                        )
-                    })
-                }
+                {messages && messages.size > 0 && messages.map((bannerMessage, idx) => (
+                    <Alert
+                        key={idx}
+                        bsStyle={bannerMessage.messageType}
+                        onDismiss={() => this.dismissAlert(idx)}>
+                        {bannerMessage.message}
+                    </Alert>
+                ))}
 
-                { domain && this.renderButtons() }
+                {domain && this.renderButtons()}
 
-                {
-                    showAlias &&
+                {showAlias &&
                     <AliasFieldModal
                         domainFields={domain.fields}
                         showAlias={true}
@@ -365,20 +360,17 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                     />
                 }
 
-                {
-                    showResetConfirmationModal &&
+                {showResetConfirmationModal &&
                     this.renderConfirmationModal("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.",
                         this.onConfirmReset, this.dismissChangeConfirmation, "Reset", "Cancel")
                 }
 
-                {
-                    showEditSourceConfirmationModal &&
+                {showEditSourceConfirmationModal &&
                     this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
                         this.onConfirmEditSource, this.dismissChangeConfirmation, "Yes, Save", "No, Edit Source")
                 }
 
-                {
-                    showViewDataConfirmationModal &&
+                {showViewDataConfirmationModal &&
                     this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
                         this.onConfirmViewData, this.dismissChangeConfirmation, "Yes, Save", "No, View Data")
                 }

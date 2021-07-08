@@ -29,7 +29,8 @@
             testGetBaseFilters: testGetBaseFilters,
             testFilterOnSortColumn: testFilterOnSortColumn,
             testButtonBarConfig: testButtonBarConfig,
-            testRespectExcludingPrefixes: testRespectExcludingPrefixes
+            testRespectExcludingPrefixes: testRespectExcludingPrefixes,
+            testGetSelected: testGetSelected
         };
 
         var PAGE_OFFSET = 4;
@@ -887,6 +888,76 @@
                                 }
                             }
                         }, 100);
+                    }
+                }
+            });
+        }
+
+        function testGetSelected() {
+            var loadCount = 0;
+            new LABKEY.QueryWebPart({
+                title: 'Get Selected (Regression #41705)',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                maxRows: 2, // split into 3 pages of results
+                sort: 'id',
+                renderTo: RENDERTO,
+                failure: function() {
+                    alert('Failed test: testGetSelected failed to load');
+                },
+                listeners: {
+                    render: function(dr) {
+                        loadCount++;
+
+                        if (loadCount === 1) {
+                            dr.getSelected({
+                                success: function(data) {
+                                    if (data.selected.length !== 0) {
+                                        alert('Failed test: Expected initial selection to be empty. Contained ' + data.selected.length + ' values.');
+                                        return;
+                                    }
+
+                                    dr.selectPage(true);
+
+                                    // Allow for selection to persist
+                                    setTimeout(function() { dr.refresh(); }, 100);
+                                },
+                                failure: function(err) {
+                                    alert('Failed test: Failed to make initial request to region.getSelected()');
+                                }
+                            });
+                        } else if (loadCount === 2) {
+                            dr.getSelected({
+                                clearSelected: true,
+                                success: function(data) {
+                                    if (data.selected.length !== 2) {
+                                        alert('Failed test: Expected selection to have length 2. Contained ' + data.selected.length + ' values.');
+                                        return;
+                                    }
+
+                                    dr.refresh();
+                                },
+                                failure: function(err) {
+                                    alert('Failed test: Failed to make second request to region.getSelected()');
+                                }
+                            });
+                        } else if (loadCount === 3) {
+                            dr.getSelected({
+                                success: function(data) {
+                                    if (data.selected.length !== 0) {
+                                        alert('Failed test: Expected final selection to be empty. Contained ' + data.selected.length + ' values.');
+                                        return;
+                                    }
+
+                                    LABKEY.Utils.signalWebDriverTest('testGetSelected');
+                                },
+                                failure: function(err) {
+                                    alert('Failed test: Failed to make final request to region.getSelected()');
+                                }
+                            });
+                        } else {
+                            alert('Failed test: Unexpected number of requests made.');
+                        }
                     }
                 }
             });

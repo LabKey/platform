@@ -5517,7 +5517,18 @@ public class QueryController extends SpringActionController
     @SuppressWarnings({"unused", "WeakerAccess"})
     public static class SelectForm extends QueryForm
     {
+        protected boolean clearSelected;
         protected String key;
+
+        public boolean isClearSelected()
+        {
+            return clearSelected;
+        }
+
+        public void setClearSelected(boolean clearSelected)
+        {
+            this.clearSelected = clearSelected;
+        }
 
         public String getKey()
         {
@@ -5569,12 +5580,12 @@ public class QueryController extends SpringActionController
         {
             if (form.getQueryName() == null)
             {
-                Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), false);
+                Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
                 return new ApiSimpleResponse("selected", selected);
             }
             else
             {
-                List<String> selected = DataRegionSelection.getSelected(form);
+                List<String> selected = DataRegionSelection.getSelected(form, form.isClearSelected());
                 return new ApiSimpleResponse("selected", selected);
             }
         }
@@ -6358,7 +6369,7 @@ public class QueryController extends SpringActionController
         @Override
         QNode _parse(String s, List<QueryParseException> errors)
         {
-            return new SqlParser().parseExpr(s, errors);
+            return new SqlParser().parseExpr(s, true, errors);
         }
 
         @Override
