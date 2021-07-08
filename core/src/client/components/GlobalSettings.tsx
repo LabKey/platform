@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import { Panel, FormControl } from 'react-bootstrap';
-import { LabelHelpTip } from '@labkey/components';
+import { helpLinkNode, LabelHelpTip } from '@labkey/components';
 
 import FACheckBox from './FACheckBox';
 import { GlobalSettingsOptions } from './models';
@@ -39,7 +39,7 @@ class DefaultDomainField extends PureComponent<DefaultDomainProps> {
                 <LabelHelpTip title="Tip">
                     <div>
                         <div> Default domain for user sign in.</div>
-                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=configAdmin">More info</a>
+                        {helpLinkNode('authenticationModule#dom', 'More info')}
                     </div>
                 </LabelHelpTip>
                 <span className="global-settings__default-domain-field">

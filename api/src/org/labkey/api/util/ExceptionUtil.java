@@ -730,7 +730,15 @@ public class ExceptionUtil
                     Container c = HttpView.getContextContainer();
                     if (c.getLockState().isLocked())
                         c = ContainerManager.getRoot();
-                    return PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, HttpView.getContextURLHelper());
+
+                    // Issue 43387 - Retain original container info on login redirect URL, even if it resolved to something else
+                    ActionURL loginURL = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(c, HttpView.getContextURLHelper());
+                    Path originalContainerPath = (Path)request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
+                    if (originalContainerPath != null)
+                    {
+                        loginURL.setExtraPath(originalContainerPath.toString("/", ""));
+                    }
+                    return loginURL;
                 }
             }
 
@@ -887,17 +895,27 @@ public class ExceptionUtil
             // Issue 41891: do not add google analytics on error pages.
             pageConfig.setAllowTrackingScript(PageConfig.TrueFalse.False);
 
-            if (HttpView.hasCurrentView())
+            Path originalContainerPath = (Path)request.getAttribute(ViewServlet.ORIGINAL_URL_CONTAINER_PATH);
+
+            // Issue 43387 - don't render the full header if the container referenced in the request isn't the same
+            if (ex instanceof UnauthorizedException && (context.getContainer() == null || !context.getContainer().getParsedPath().equals(originalContainerPath)))
             {
-                errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, null);
             }
             else
             {
-                // context can be null for configuration exceptions depending on how far server got through initialization
-                errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
-            }
+                if (HttpView.hasCurrentView())
+                {
+                    errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
+                }
+                else
+                {
+                    // context can be null for configuration exceptions depending on how far server got through initialization
+                    errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
+                }
 
-            addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+                addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+            }
         }
         catch (ConfigurationException ce)
         {
@@ -911,19 +929,26 @@ public class ExceptionUtil
                 throw new ConfigurationException(ex.getMessage(), ex);
             }
 
-            // try to render just the react app
-            try
-            {
-                errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
-                addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+            renderHeaderlessReactErrorPage(ex, responseStatus, request, response, pageConfig, log, renderer, context, e);
+        }
+    }
 
-            }
-            catch (Exception exc)
+    private static void renderHeaderlessReactErrorPage(Throwable ex, int responseStatus, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig, Logger log, ErrorRenderer renderer, ViewContext context, @Nullable Exception errorRenderException)
+    {
+        HttpView<?> errorView;
+        // try to render just the react app
+        try
+        {
+            errorView = PageConfig.Template.App.getTemplate(context, new ErrorView(renderer), pageConfig);
+            addDependenciesAndRender(responseStatus, pageConfig, errorView, ex, request, response);
+        }
+        catch (Exception exc)
+        {
+            if (errorRenderException != null)
             {
-                log.error("Global.handleException", e);
-                log.error("Failed to create App template", exc);
+                log.error("Global.handleException", errorRenderException);
             }
-
+            log.error("Failed to create App template", exc);
         }
     }
 
