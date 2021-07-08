@@ -6719,44 +6719,55 @@ public class ExperimentController extends SpringActionController
         public Object execute(OrderedSamplesForm form, BindException errors) throws Exception
         {
             SQLFragment select = getOrderedRowsSql(form);
-            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.getSQL());
+            // need to set the key field so selections are possible
+            String metadata =
+                    "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                            "   <table tableName=\"tempQuery\" tableDbType=\"NOT_IN_DB\">\n" +
+                            "       <columns>\n" +
+                            "           <column columnName=\"RowId\">\n" +
+                            "               <isKeyField>true</isKeyField>\n" +
+                            "               <isHidden>true</isHidden>\n" +
+                            "           </column>\n" +
+                            "       </columns>\n" +
+                            "   </table>\n" +
+                            "</tables>";
+            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.getSQL(), metadata);
             return success("Session query created", def.getName());
         }
 
         private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
         {
-            List<String> columns;
+            List<String> columns = new ArrayList<>(Arrays.asList("S.RowId", "S.Ordinal", "S.Id"));
             if (!InventoryService.isFreezerManagementEnabled(getContainer()))
             {
-                columns = Arrays.asList(
+                columns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
                         "S.SampleSet as SampleType",
                         "S.isAliquot",
                         "S.Created",
                         "S.CreatedBy"
-                );
+                ));
             }
             else
             {
-                columns = Arrays.asList(
-                        "S.Name AS SampleID",
-                        "S.LabelColor",
-                        "S.SampleSet as SampleType",
-                        "S.StoredAmount",
-                        "S.Units",
-                        "S.FreezeThawCount",
-                        "S.StorageStatus",
-                        "S.CheckedOutBy",
-                        "S.StorageLocation",
-                        "S.StorageRow",
-                        "S.StorageCol",
-                        "S.IsAliquot",
-                        "S.Created",
-                        "S.CreatedBy"
-                );
+                columns.addAll(Arrays.asList(
+                        "I.Name AS SampleID",
+                        "I.LabelColor",
+                        "I.SampleSet",
+                        "I.StoredAmount",
+                        "I.Units",
+                        "I.FreezeThawCount",
+                        "I.StorageStatus",
+                        "I.CheckedOutBy",
+                        "I.StorageLocation",
+                        "I.StorageRow",
+                        "I.StorageCol",
+                        "I.IsAliquot",
+                        "I.Created",
+                        "I.CreatedBy"
+                ));
             }
 
-            SQLFragment sql = new SQLFragment();
             String sampleIdComma = "";
             String uniqueIdComma = "";
             int index = 1;
@@ -6783,6 +6794,7 @@ public class ExperimentController extends SpringActionController
                 index++;
             }
 
+            SQLFragment sql = new SQLFragment();
             if (!sampleIdValuesSql.isEmpty())
             {
                 sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
@@ -6800,30 +6812,30 @@ public class ExperimentController extends SpringActionController
                 sql.append(uniqueIdValuesSql);
                 sql.append("\n) AS _values_ )\n");
             }
+            sql.append("SELECT\n\t").append(StringUtils.join( columns, ",\n\t")).append("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
-                String tableName = InventoryService.isFreezerManagementEnabled(getContainer()) ? "inventory.SampleItems" : "exp.materials";
-                sql.append("SELECT\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id,\n\t");
-                sql.append(StringUtils.join( columns, ",\n\t"));
+                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id");
                 sql.append("\nFROM _ordered_ids_\n");
-                sql.append("INNER JOIN ").append(tableName).append(" S ON _ordered_ids_.column2 = S.Name");
+                sql.append("INNER JOIN exp.materials M ON _ordered_ids_.column2 = M.Name");
                 sql.append("\n");
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
                 if (!sampleIdValuesSql.isEmpty())
                 {
-                    sql.append("\nUNION ALL\n");
+                    sql.append("\nUNION ALL\n\n");
                 }
 
-                sql.append("SELECT\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id,\n\t");
-                sql.append(StringUtils.join( columns, ",\n\t"));
+                sql.append("SELECT\n\tS.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id");
                 sql.append("\nFROM _ordered_unique_ids_\n");
                 sql.append("INNER JOIN ");
                 TableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
                 sql.append(tInfo.getFromSQL("S"));
                 sql.append(" ON _ordered_unique_ids_.column2 = ").append(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
             }
+            sql.append(") S");
+            sql.append("\nLEFT JOIN inventory.SampleItems I on S.RowId = I.RowId");
             sql.append("\n\nORDER BY Ordinal");
             return sql;
         }
