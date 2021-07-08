@@ -28,9 +28,12 @@ import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
@@ -68,6 +71,7 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -1009,9 +1013,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public static List<ValidationError> validateColumnProperties(ContainerUser context, Map<ColumnInfo, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
+        RemapCache cache = new RemapCache();
         for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
         {
-            validateProperty(context, ColumnValidators.create(entry.getKey(), null), entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
+            validateProperty(context, entry.getKey(), entry.getValue(), cache, errors);
         }
         return errors;
     }
@@ -1019,19 +1024,37 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public static List<ValidationError> validateProperties(ContainerUser context, Map<DomainProperty, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
-
+        RemapCache cache = new RemapCache();
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            DomainProperty dp = entry.getKey();
-            String value = entry.getValue();
-            String label = dp.getPropertyDescriptor().getNonBlankCaption();
-            PropertyType type = dp.getPropertyDescriptor().getPropertyType();
-            validateProperty(context, ColumnValidators.create(null, dp), value, label, dp.isRequired(), type.getJavaType(), errors);
+            validateProperty(context, entry.getKey(), entry.getValue(), cache, errors);
         }
         return errors;
     }
 
-    private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value, String label, Boolean required, Class type, List<ValidationError> errors)
+    private static void validateProperty(ContainerUser context, ColumnInfo columnInfo, String value, RemapCache cache, List<ValidationError> errors)
+    {
+        Lookup lookup = null;
+        if (columnInfo.isLookup())
+        {
+            ForeignKey fk = columnInfo.getFk();
+            lookup = new Lookup(fk.getLookupContainer(), fk.getLookupSchemaName(), fk.getLookupTableName());
+        }
+        validateProperty(context, ColumnValidators.create(columnInfo, null), value, columnInfo.getName(),
+                false, lookup, columnInfo.getJavaClass(), cache, errors);
+    }
+
+    private static void validateProperty(ContainerUser context, DomainProperty dp, String value, RemapCache cache, List<ValidationError> errors)
+    {
+        String label = dp.getPropertyDescriptor().getNonBlankCaption();
+        PropertyType type = dp.getPropertyDescriptor().getPropertyType();
+        validateProperty(context, ColumnValidators.create(null, dp), value, label, dp.isRequired(),
+                dp.getLookup(), type.getJavaType(), cache, errors);
+    }
+
+    private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value,
+                                         String label, Boolean required, Lookup lookup, Class type, RemapCache cache,
+                                         List<ValidationError> errors)
     {
         boolean missing = (value == null || value.length() == 0);
         int rowNum = 0;
@@ -1055,14 +1078,24 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             catch (ConversionException e)
             {
-                String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type) + ".";
-                message +=  "  Value \"" + value + "\" could not be converted";
+                String message = ConvertHelper.getStandardConversionErrorMessage(value, label, type);
                 if (e.getCause() instanceof ArithmeticException)
-                    message +=  ": " + e.getCause().getLocalizedMessage();
+                    message += ": " + e.getCause().getLocalizedMessage();
                 else
                     message += ".";
 
-                errors.add(new SimpleValidationError(message));
+                // Attempt to resolve lookups by display value
+                boolean skipError = false;
+                if (lookup != null)
+                {
+                    Container container = lookup.getContainer() != null ? lookup.getContainer() : context.getContainer();
+                    Object remappedValue = cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), context.getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, value);
+                    if (remappedValue != null)
+                        skipError = true;
+                }
+
+                if (!skipError)
+                    errors.add(new SimpleValidationError(message));
             }
         }
     }
