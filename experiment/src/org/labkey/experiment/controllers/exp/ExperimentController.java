@@ -672,10 +672,23 @@ public class ExperimentController extends SpringActionController
                     ActionURL updateURL = new ActionURL(EditSampleTypeAction.class, _sampleType.getContainer());
                     updateURL.addParameter("RowId", _sampleType.getRowId());
                     updateURL.addReturnURL(getViewContext().getActionURL());
-                    ActionButton updateButton = new ActionButton(updateURL, "Edit Type", ActionButton.Action.LINK);
-                    updateButton.setDisplayPermission(DesignSampleTypePermission.class);
-                    updateButton.setPrimary(true);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
+
+                    if (!getContainer().equals(_sampleType.getContainer()))
+                    {
+                        String editLink = updateURL.toString();
+                        ActionButton updateButton = new ActionButton("Edit Type");
+                        updateButton.setURL("javascript:void(0)");
+                        updateButton.setActionType(ActionButton.Action.SCRIPT);
+                        updateButton.setScript("javascript: if (window.confirm('This sample type is defined in the " + _sampleType.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }");
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
+                    }
+                    else
+                    {
+                        ActionButton updateButton = new ActionButton(updateURL, "Edit Type", ActionButton.Action.LINK);
+                        updateButton.setDisplayPermission(DesignSampleTypePermission.class);
+                        updateButton.setPrimary(true);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
+                    }
 
                     ActionURL deleteURL = new ActionURL(DeleteSampleTypesAction.class, _sampleType.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _sampleType.getRowId());
