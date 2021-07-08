@@ -164,7 +164,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     {
                         Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
                         Visit visit2 = _visitMapBD.get(new BigDecimal(String.valueOf(sequenceObj)));
-                        assert Objects.equals(visit, visit2);
+                        assert Objects.equals(visit, visit2) : visit + " vs. " + visit2 + " for " + sequenceObj + ". " + Double.parseDouble(String.valueOf(sequenceObj)) + " vs. " + new BigDecimal(String.valueOf(sequenceObj));
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else
