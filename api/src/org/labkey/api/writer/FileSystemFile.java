@@ -100,9 +100,6 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public OutputStream getOutputStream(String filename) throws IOException
     {
-        //TODO makes this Path based
-        File file = new File(_root.toFile(), makeLegalName(filename));
-
         Path filepath = _root.resolve(makeLegalName(filename));
         return Files.newOutputStream(filepath);
     }
@@ -125,8 +122,7 @@ public class FileSystemFile extends AbstractVirtualFile
     // Expose this if/when some caller needs to customize the options
     private void saveXmlBean(String filename, XmlObject doc, XmlOptions options) throws IOException
     {
-//        File file = new File(_root, makeLegalName(filename));
-        Path file = _root.resolve(filename);
+        Path file = _root.resolve(makeLegalName(filename));
         doc.save(file.toFile(), options);
     }
 

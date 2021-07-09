@@ -16,7 +16,6 @@
 package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,7 +92,6 @@ import java.net.URI;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -857,30 +855,21 @@ public class PipelineManager
         return null;
     }
 
-    private static Path ensureLocalExpandedFolderArchive(@NotNull PipeRoot pipelineRoot, Path archiveFile, BindException errors)
+    private static Path getImportXmlFile(@NotNull PipeRoot pipelineRoot, Path archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
     {
-        Path importDir = pipelineRoot.getImportDirectory().toPath();
+        Path xmlFile = archiveFile;
 
         if (archiveFile.getFileName().toString().endsWith(".zip"))
         {
-            importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
+            Path importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
+            xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
         }
-//        else if (pipelineRoot.isCloudRoot())
-//        {
-//            // If expanded archive is on the remote root we need to copy locally, or else we may need to stream it multiple times
-//            throw new NotImplementedException("Haven't managed to copy remote folders locally yet");
-//            //TODO do this...
-////            Files.copy( ,importDir, StandardCopyOption.COPY_ATTRIBUTES);
-//        }
 
-        return importDir;
+        return xmlFile;
     }
 
-    public static Path getArchiveXmlFile(Container container, Path archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+    public static Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, String xmlFileName) throws InvalidFileException
     {
-        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
-        Path importDir = ensureLocalExpandedFolderArchive(pipelineRoot, archiveFile, errors);
-
         // when importing a folder archive for a study, the study.xml file may not be at the root
         if ("study.xml".equals(xmlFileName) && archiveFile.getFileName().endsWith(".folder.zip"))
         {
@@ -902,7 +891,13 @@ public class PipelineManager
             }
         }
 
-        Path xmlFile = importDir.toAbsolutePath().resolve(xmlFileName);
+        return importDir.toAbsolutePath().resolve(xmlFileName);
+    }
+
+    public static Path getArchiveXmlFile(Container container, Path archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+    {
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
+        Path xmlFile = getImportXmlFile(pipelineRoot, archiveFile, xmlFileName, errors);
 
         // if this is an import from a source template folder that has been previously implicitly exported
         // to the unzip dir (without ever creating a zip file) then just look there for the xmlFile.
