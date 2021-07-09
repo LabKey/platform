@@ -28,6 +28,7 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
     private final Container _container;
     private final User _user;
     private SQLFragment _unionSql;
+    private int _numUniqueIdCols = 0;
 
     public ExpMaterialUniqueIdUnionTableInfo(Container container, User user)
     {
@@ -51,6 +52,7 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
             if (tableInfo == null)
                 continue;
             List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isUniqueIdField).collect(Collectors.toList());
+            _numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {
                query.append(unionAll);
@@ -80,6 +82,10 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
         return null;
     }
 
+    public int getNumUniqueIdCols()
+    {
+        return _numUniqueIdCols;
+    }
 
     @NotNull
     @Override
