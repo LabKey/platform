@@ -154,9 +154,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     // DatasetQueryUpdateService
 
 
-    // standard string to use in URLs etc.
-    public static final String DATASETKEY = "datasetId";
-//    static final Object MANAGED_KEY_LOCK = new Object();
+    //    static final Object MANAGED_KEY_LOCK = new Object();
     private static final Logger _log = LogManager.getLogger(DatasetDefinition.class);
 
     private final ReentrantLock _lock = new ReentrantLock();

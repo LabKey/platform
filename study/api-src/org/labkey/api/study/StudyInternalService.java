@@ -2,12 +2,15 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.SecurityManager.ViewFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -70,4 +73,8 @@ public interface StudyInternalService
     Visit getVisitForSequence(Study study, double seqNum);
 
     ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter, boolean hasCreateGroupFromSelection);
+
+    QueryView getDatasetQueryView(ViewContext ctx, Study study, User user, Dataset ds, String participantId, int visitId, BindException errors);
+
+    void fixSpecimenRequestableColumn(QueryUpdateForm tableForm);
 }
