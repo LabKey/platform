@@ -6733,17 +6733,24 @@ public class ExperimentController extends SpringActionController
         {
             SQLFragment select = getOrderedRowsSql(form);
             // need to set the key field so selections are possible
+            // need the SampleTypeUnits so we will display using that unit
             String metadata =
                     "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                            "   <table tableName=\"tempQuery\" tableDbType=\"NOT_IN_DB\">\n" +
-                            "       <columns>\n" +
-                            "           <column columnName=\"RowId\">\n" +
-                            "               <isKeyField>true</isKeyField>\n" +
-                            "               <isHidden>true</isHidden>\n" +
-                            "           </column>\n" +
-                            "       </columns>\n" +
-                            "   </table>\n" +
-                            "</tables>";
+                    "   <table tableName=\"tempQuery\" tableDbType=\"NOT_IN_DB\">\n" +
+                    "       <columns>\n" +
+                    "           <column columnName=\"RowId\">\n" +
+                    "               <isKeyField>true</isKeyField>\n" +
+                    "               <isHidden>true</isHidden>\n" +
+                    "           </column>\n" +
+                    "           <column columnName=\"SampleTypeUnits\">\n" +
+                    "               <isHidden>true</isHidden>\n" +
+                    "           </column>\n" +
+                    "           <column columnName=\"Ordinal\">\n" +
+                    "               <isHidden>true</isHidden>\n" +
+                    "           </column>\n" +
+                    "       </columns>\n" +
+                    "   </table>\n" +
+                    "</tables>";
             QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.getSQL(), metadata);
             return success("Session query created", def.getName());
         }
@@ -6752,7 +6759,7 @@ public class ExperimentController extends SpringActionController
         {
             boolean isFMEnabled = InventoryService.isFreezerManagementEnabled(getContainer());
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
-            List<String> orderedIdCols = new ArrayList<>(Arrays.asList("RowId", "Ordinal", "Id"));
+            List<String> orderedIdCols = new ArrayList<>(Arrays.asList("RowId", "Ordinal"));
             List<String> sampleColumns = new ArrayList<>();
             if (!isFMEnabled)
             {
@@ -6772,6 +6779,7 @@ public class ExperimentController extends SpringActionController
                         "S.SampleSet",
                         "S.StoredAmount",
                         "S.Units",
+                        "S.SampleTypeUnits",
                         "S.FreezeThawCount",
                         "S.StorageStatus",
                         "S.CheckedOutBy",
@@ -6830,8 +6838,10 @@ public class ExperimentController extends SpringActionController
                 sql.append(uniqueIdValuesSql);
                 sql.append("\n) AS _values_ )\n"); // name of the alias here doesn't matter
             }
-            sql.append("SELECT\n\tOID.").append(StringUtils.join( orderedIdCols, ",\n\tOID."));
-            sql.append(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t")).append("\nFROM\n(");
+
+            sql.append("SELECT ").append(StringUtils.join( sampleColumns, ",\n\t"));
+            sql.append(",\n\tOID.").append(StringUtils.join( orderedIdCols, ",\n\tOID."));
+            sql.append("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
                 sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id");
