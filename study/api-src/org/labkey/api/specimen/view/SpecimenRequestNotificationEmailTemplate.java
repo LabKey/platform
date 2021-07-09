@@ -32,6 +32,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * User: jeckels
@@ -75,16 +76,20 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
      * Evaluates to null if there's no associated specimen request (as there would be in the admin preview mode),
      * otherwise delegates to subclass to determine the actual value.
      */
-    private abstract class NotificationReplacement<Type> extends ReplacementParam<Type>
+    private final class NotificationReplacement<Type> extends ReplacementParam<Type>
     {
-        public NotificationReplacement(String name, Class<Type> valueType, String description)
+        private final Function<Container, Type> _valueGetter;
+
+        public NotificationReplacement(String name, Class<Type> valueType, String description, Function<Container, Type> valueGetter)
         {
             super(name, valueType, description);
+            _valueGetter = valueGetter;
         }
 
-        public NotificationReplacement(String name, Class<Type> valueType, String description, ContentType contentType)
+        public NotificationReplacement(String name, Class<Type> valueType, String description, ContentType contentType, Function<Container, Type> valueGetter)
         {
             super(name, valueType, description, contentType);
+            _valueGetter = valueGetter;
         }
 
         @Override
@@ -96,11 +101,8 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
                 return null;
             }
 
-            return getNotificationValue(c);
+            return _valueGetter.apply(c);
         }
-
-        /** Get the actual value for the specimen request - only called when there is a request available */
-        protected abstract Type getNotificationValue(Container c);
     }
 
     public void init(NotificationBean notification)
@@ -119,151 +121,54 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
     @Override
     protected void addCustomReplacements(Replacements replacements)
     {
-        replacements.add(new ReplacementParam<>("studyName", String.class, "The name of this folder's study")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                Study study = StudyService.get().getStudy(c);
-                return study == null ? "<No study>" : study.getLabel();
-            }
+        replacements.add("studyName", String.class, "The name of this folder's study", ContentType.Plain, c -> {
+            Study study = StudyService.get().getStudy(c);
+            return study == null ? "<No study>" : study.getLabel();
         });
-        replacements.add(new ReplacementParam<>("subjectSuffix", String.class, "Email subject suffix, configured in specimen request notification settings")
-        {
-            @Override
-            public String getValue(Container c)
+        replacements.add("subjectSuffix", String.class, "Email subject suffix, configured in specimen request notification settings", ContentType.Plain, c -> _subjectSuffix);
+        replacements.add(new NotificationReplacement<>("specimenRequestNumber", Integer.class, "Unique, auto-incrementing number for this request", c -> _notification.getRequestId()));
+        replacements.add(new NotificationReplacement<>("destinationLocation", String.class, "The location to which the specimen is to be sent", c -> _notification.getRequestingSiteName()));
+        replacements.add(new NotificationReplacement<>("status", String.class, "The status of the request (submitted, approved, etc)", c -> _notification.getStatus()));
+        replacements.add(new NotificationReplacement<>("simpleStatus", String.class, "Either 'submitted' for brand new requests, or 'updated' for all other changes", c -> "submitted".equalsIgnoreCase(_notification.getStatus()) ? "submitted" : "updated"));
+        replacements.add(new NotificationReplacement<>("modifiedBy", String.class, "The user who created or modified the request", c -> _notification.getModifyingUser()));
+        replacements.add(new NotificationReplacement<>("action", String.class, "A description of what action was performed, such as 'New Request Created'", c -> _notification.getEventDescription()));
+        replacements.add(new NotificationReplacement<>("attachments", String.class, "A list of direct links to all the attachments associated with the request", ContentType.HTML, c -> {
+            List<Attachment> attachments = _notification.getAttachments();
+            if (attachments.isEmpty())
             {
-                return _subjectSuffix;
-            }
-        });
-        replacements.add(new NotificationReplacement<>("specimenRequestNumber", Integer.class, "Unique, auto-incrementing number for this request")
-        {
-            @Override
-            public Integer getNotificationValue(Container c)
-            {
-                return _notification.getRequestId();
-            }
-        });
-        replacements.add(new NotificationReplacement<>("destinationLocation", String.class, "The location to which the specimen is to be sent")
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                return _notification.getRequestingSiteName();
-            }
-        });
-        replacements.add(new NotificationReplacement<>("status", String.class, "The status of the request (submitted, approved, etc)")
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                return _notification.getStatus();
-            }
-        });
-        replacements.add(new NotificationReplacement<>("simpleStatus", String.class, "Either 'submitted' for brand new requests, or 'updated' for all other changes")
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                return "submitted".equalsIgnoreCase(_notification.getStatus()) ? "submitted" : "updated";
-            }
-        });
-        replacements.add(new NotificationReplacement<>("modifiedBy", String.class, "The user who created or modified the request")
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                return _notification.getModifyingUser();
-            }
-        });
-        replacements.add(new NotificationReplacement<>("action", String.class, "A description of what action was performed, such as 'New Request Created'")
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                return _notification.getEventDescription();
-            }
-        });
-        replacements.add(new NotificationReplacement<>("attachments", String.class, "A list of direct links to all the attachments associated with the request", ContentType.HTML)
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                List<Attachment> attachments = _notification.getAttachments();
-                if (attachments.isEmpty())
-                {
-                    return null;
-                }
-                StringBuilder sb = new StringBuilder();
-                for (Attachment att : attachments)
-                {
-                    sb.append(new LinkBuilder(att.getName()).href(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(_notification.getEvent(), att.getName())).clearClasses());
-                    sb.append("<br>");
-                }
-                return sb.toString();
-            }
-        });
-        replacements.add(new NotificationReplacement<>("specimenList", String.class, "A list of the specimens in the request, as configured in the Specimen Notification settings", ContentType.HTML)
-        {
-            @Override
-            public String getNotificationValue(Container c)
-            {
-                if (_notification.getSpecimenList() != null)
-                {
-                    StringBuilder sb = new StringBuilder("<p>");
-                    sb.append("<b>Specimen&nbsp;List</b> (<a href=\"");
-                    sb.append(PageFlowUtil.filter(_notification.getRequestURL()));
-                    sb.append("\">Request Link</a>)<br><br>\n");
-                    if (_notification.getIncludeSpecimensInBody())
-                    {
-                        sb.append(_notification.getSpecimenList());
-                    }
-                    sb.append("</p>");
-                    return sb.toString();
-                }
                 return null;
             }
-        });
-        replacements.add(new NotificationReplacement<>("requestDescription", String.class, "Typically includes assay plan, shipping information, etc")
-        {
-            @Override
-            protected String getNotificationValue(Container c)
+            StringBuilder sb = new StringBuilder();
+            for (Attachment att : attachments)
             {
-                return _notification.getRequestDescription();
+                sb.append(new LinkBuilder(att.getName()).href(SpecimenMigrationService.get().getSpecimenRequestEventDownloadURL(_notification.getEvent(), att.getName())).clearClasses());
+                sb.append("<br>");
             }
-        });
-        replacements.add(new NotificationReplacement<>("comments", String.class, "Text submitter wrote in Comments text box, or '[Not provided]'")
-        {
-            @Override
-            protected String getNotificationValue(Container c)
+            return sb.toString();
+        }));
+        replacements.add(new NotificationReplacement<>("specimenList", String.class, "A list of the specimens in the request, as configured in the Specimen Notification settings", ContentType.HTML, c -> {
+            if (_notification.getSpecimenList() != null)
             {
-                String comments = _notification.getComments();
-                return comments == null ? "[Not provided]" : comments;
+                StringBuilder sb = new StringBuilder("<p>");
+                sb.append("<b>Specimen&nbsp;List</b> (<a href=\"");
+                sb.append(PageFlowUtil.filter(_notification.getRequestURL()));
+                sb.append("\">Request Link</a>)<br><br>\n");
+                if (_notification.getIncludeSpecimensInBody())
+                {
+                    sb.append(_notification.getSpecimenList());
+                }
+                sb.append("</p>");
+                return sb.toString();
             }
-        });
-        replacements.add(new ReplacementParam<>("userFirstName", String.class, "First name of the user performing the operation, only works when reply to current user")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getFirstName();
-            }
-        });
-        replacements.add(new ReplacementParam<>("userLastName", String.class, "Last name of the user performing the operation, only works when reply to current user")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getLastName();
-            }
-        });
-        replacements.add(new ReplacementParam<>("userDisplayName", String.class, "Display name of the user performing the operation, only works when reply to current user")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getFriendlyName();
-            }
-        });
+            return null;
+        }));
+        replacements.add(new NotificationReplacement<>("requestDescription", String.class, "Typically includes assay plan, shipping information, etc", c -> _notification.getRequestDescription()));
+        replacements.add(new NotificationReplacement<>("comments", String.class, "Text submitter wrote in Comments text box, or '[Not provided]'", c -> {
+            String comments = _notification.getComments();
+            return comments == null ? "[Not provided]" : comments;
+        }));
+        replacements.add("userFirstName", String.class, "First name of the user performing the operation, only works when reply to current user", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getFirstName());
+        replacements.add("userLastName", String.class, "Last name of the user performing the operation, only works when reply to current user", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getLastName());
+        replacements.add("userDisplayName", String.class, "Display name of the user performing the operation, only works when reply to current user", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getFriendlyName());
     }
 }

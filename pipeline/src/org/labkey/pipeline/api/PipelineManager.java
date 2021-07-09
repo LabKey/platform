@@ -625,18 +625,9 @@ public class PipelineManager
         @Override
         protected void addCustomReplacements(Replacements replacements)
         {
-            replacements.add(new ReplacementParam<>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period", ContentType.HTML){
-                @Override
-                public String getValue(Container c) {return getJobStatus();}
-            });
-            replacements.add(new ReplacementParam<>("startTime", Date.class, "The start of the time period for job completion", ContentType.HTML){
-                @Override
-                public Date getValue(Container c) {return _startTime;}
-            });
-            replacements.add(new ReplacementParam<>("endTime", Date.class, "The end of the time period for job completion", ContentType.HTML){
-                @Override
-                public Date getValue(Container c) {return _endTime;}
-            });
+            replacements.add("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period", ContentType.HTML, c -> getJobStatus());
+            replacements.add("startTime", Date.class, "The start of the time period for job completion", ContentType.HTML, c -> _startTime);
+            replacements.add("endTime", Date.class, "The end of the time period for job completion", ContentType.HTML, c -> _endTime);
         }
 
         public void setStatusFiles(PipelineStatusFileImpl[] statusFiles){_statusFiles = statusFiles;}

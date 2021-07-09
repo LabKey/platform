@@ -177,32 +177,9 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         @Override
         protected void addCustomReplacements(Replacements replacements)
         {
-            replacements.add(new ReplacementParam<>("folderName", String.class, "Folder that user subscribed to", ContentType.Plain)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return c.getPath();
-                }
-            });
-
-            replacements.add(new ReplacementParam<>("postList", String.class, "List of new posts", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return posts;
-                }
-            });
-
-            replacements.add(new ReplacementParam<>("reasonFooter", String.class, "Footer message explaining why user is receiving this digest", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return reasonForEmail;
-                }
-            });
+            replacements.add("folderName", String.class, "Folder that user subscribed to", ContentType.Plain, Container::getPath);
+            replacements.add("postList", String.class, "List of new posts", ContentType.HTML, c -> posts);
+            replacements.add("reasonFooter", String.class, "Footer message explaining why user is receiving this digest", ContentType.HTML, c -> reasonForEmail);
         }
 
         private void initReason()

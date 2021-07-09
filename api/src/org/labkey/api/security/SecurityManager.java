@@ -2653,30 +2653,9 @@ public class SecurityManager
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
-            replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _verificationUrl;
-                }
-            });
-            replacements.add(new ReplacementParam<>("emailAddress", String.class, "The email address of the user performing the operation")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _originatingUser == null ? null : _originatingUser.getEmail();
-                }
-            });
-            replacements.add(new ReplacementParam<>("recipient", String.class, "The email address on the 'to:' line")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _recipient;
-                }
-            });
+            replacements.add("verificationURL", String.class, "Link for a user to set a password", ContentType.Plain, c -> _verificationUrl);
+            replacements.add("emailAddress", String.class, "The email address of the user performing the operation", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getEmail());
+            replacements.add("recipient", String.class, "The email address on the 'to:' line", ContentType.Plain, c -> _recipient);
         }
 
         @Override
@@ -2724,14 +2703,7 @@ public class SecurityManager
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
-            replacements.add(new ReplacementParam<>("optionalMessage", String.class, "An optional message to include with the new user email")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _optionalPrefix;
-                }
-            });
+            replacements.add("optionalMessage", String.class, "An optional message to include with the new user email", ContentType.Plain, c -> _optionalPrefix);
         }
     }
 

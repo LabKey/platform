@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
 import java.util.MissingFormatArgumentException;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -145,56 +146,19 @@ public abstract class EmailTemplate
 
     static
     {
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("organizationName", String.class, "Organization name (look and feel settings)"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("siteShortName", String.class, "Header short name"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("siteEmailAddress", String.class, "System email address"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("contextPath", String.class, "Web application context path"){
-            @Override
-            public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("supportLink", String.class, "Page where users can request support"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("systemDescription", String.class, "Header description"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("systemEmail", String.class, "From address for system notification emails"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("currentDateTime", Date.class, "Current date and time of the server"){
-            @Override
-            public Date getValue(Container c) {return new Date();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
-            @Override
-            public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
-            @Override
-            public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
-            @Override
-            public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
-        });
-        STANDARD_REPLACEMENTS.add(new ReplacementParam<>("homePageURL", String.class, "The home page of this installation"){
-            @Override
-            public String getValue(Container c) {
-                return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
-            }
-        });
+        Replacements replacements = new Replacements(STANDARD_REPLACEMENTS);
+        replacements.add("organizationName", String.class, "Organization name (look and feel settings)", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getCompanyName());
+        replacements.add("siteShortName", String.class, "Header short name", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getShortName());
+        replacements.add("siteEmailAddress", String.class, "System email address", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
+        replacements.add("contextPath", String.class, "Web application context path", ContentType.Plain, c -> AppProps.getInstance().getContextPath());
+        replacements.add("supportLink", String.class, "Page where users can request support", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getReportAProblemPath());
+        replacements.add("systemDescription", String.class, "Header description", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getDescription());
+        replacements.add("systemEmail", String.class, "From address for system notification emails", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
+        replacements.add("currentDateTime", Date.class, "Current date and time of the server", ContentType.Plain, c -> new Date());
+        replacements.add("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : c.getName());
+        replacements.add("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : c.getPath());
+        replacements.add("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString());
+        replacements.add("homePageURL", String.class, "The home page of this installation", ContentType.Plain, c -> ActionURL.getBaseServerURL()); // TODO: Use AppProps.getHomePageUrl() instead?
     }
 
     public EmailTemplate(@NotNull String name, String description, String subject, String body, @NotNull ContentType contentType, Scope scope)
@@ -451,7 +415,7 @@ public abstract class EmailTemplate
     {
         private final List<ReplacementParam<?>> _params;
 
-        private Replacements(List<ReplacementParam<?>> params)
+        public Replacements(List<ReplacementParam<?>> params)
         {
             _params = params;
         }
@@ -459,6 +423,18 @@ public abstract class EmailTemplate
         public void add(ReplacementParam<?> replacementParam)
         {
             _params.add(replacementParam);
+        }
+
+        public <Type> void add(@NotNull String name, Class<Type> valueType, String description, ContentType contentType, Function<Container, Type> valueGetter)
+        {
+            _params.add(new ReplacementParam<>(name, valueType, description, contentType)
+            {
+                @Override
+                public Type getValue(Container c)
+                {
+                    return valueGetter.apply(c);
+                }
+            });
         }
     }
 

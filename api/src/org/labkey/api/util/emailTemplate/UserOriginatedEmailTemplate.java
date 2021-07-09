@@ -16,7 +16,6 @@
 package org.labkey.api.util.emailTemplate;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 /**
@@ -38,38 +37,10 @@ public abstract class UserOriginatedEmailTemplate extends EmailTemplate
     @Override
     protected void addCustomReplacements(Replacements replacements)
     {
-        replacements.add(new ReplacementParam<>("userFirstName", String.class, "First name of the user who originated the action")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getFirstName();
-            }
-        });
-        replacements.add(new ReplacementParam<>("userLastName", String.class, "Last name of the user who originated the action")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getLastName();
-            }
-        });
-        replacements.add(new ReplacementParam<>("userDisplayName", String.class, "Display name of the user who originated the action")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getFriendlyName();
-            }
-        });
-        replacements.add(new ReplacementParam<>("userEmail", String.class, "Email address of the user who originated the action")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _originatingUser == null ? null : _originatingUser.getEmail();
-            }
-        });
+        replacements.add("userFirstName", String.class, "First name of the user who originated the action", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getFirstName());
+        replacements.add("userLastName", String.class, "Last name of the user who originated the action", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getLastName());
+        replacements.add("userDisplayName", String.class, "Display name of the user who originated the action", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getFriendlyName());
+        replacements.add("userEmail", String.class, "Email address of the user who originated the action", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getEmail());
     }
 
     public void setOriginatingUser(User user){_originatingUser = user;}

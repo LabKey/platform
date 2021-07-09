@@ -30,7 +30,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -96,14 +95,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
                 return _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString();
             }
         });
-        replacements.add(new ReplacementParam<>("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML)
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _reportAndDatasetList;
-            }
-        });
+        replacements.add("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML, c -> _reportAndDatasetList);
     }
 
     public void init(Container c, Map<ViewCategory, List<NotificationInfo>> reports)
