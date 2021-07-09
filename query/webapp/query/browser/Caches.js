@@ -146,6 +146,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDetails', {
                 schemaName: '' + schemaName, // stringify LABKEY.SchemaKey
                 queryName: queryName,
                 fk: fk,
+                // Only fetch trigger scripts for the top-level table or query
+                includeTriggers: fk === undefined,
                 success: function(json) {
                     this.detailsCache[cacheKey] = json;
                     this.fireEvent('newdetails', json);

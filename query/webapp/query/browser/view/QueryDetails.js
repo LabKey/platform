@@ -359,6 +359,41 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         return rows;
     },
 
+    formatTriggers: function (queryDetails) {
+        if (!queryDetails.triggers || queryDetails.triggers.length === 0)
+            return;
+
+        var tpl = new Ext4.XTemplate(
+            '<table class="lk-qd-coltable" style="margin-top: 1em;">',
+                '<thead>',
+                    '<tr><td colspan="4" class="lk-qd-collist-title">Triggers</td></tr>',
+                    '<tr>',
+                        '<td class="lk-qd-colheader">Name</td>',
+                        '<td class="lk-qd-colheader">Description</td>',
+                        '<td class="lk-qd-colheader">Module</td>',
+                        '<td class="lk-qd-colheader">Events</td>',
+                    '</tr>',
+                '</thead>',
+                '<tbody>',
+                '<tpl foreach="triggers">',
+                    '<tr>',
+                        '<td>{[Ext4.htmlEncode(values.name)]}</td>',
+                        '<td>{[Ext4.htmlEncode(values.description)]}</td>',
+                        '<td>{[Ext4.htmlEncode(values.module)]}</td>',
+                        '<td>{[Ext4.htmlEncode(values.events.join(", "))]}</td>',
+                    '</tr>',
+                '</tpl>',
+                '</tbody>',
+            '</table>'
+        );
+
+        return {
+            tag: 'div',
+            cls: 'lk-qd-triggers',
+            html: tpl.apply(queryDetails)
+        };
+    },
+
     formatIndices: function (queryDetails) {
         // If no indices are present, don't render anything
         if (!queryDetails.indices || !this.hasProperties(queryDetails.indices))
@@ -561,6 +596,10 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             var indices = this.formatIndices(queryDetails);
             if (indices)
                 children.push(indices);
+
+            let triggers = this.formatTriggers(queryDetails);
+            if (triggers)
+                children.push(triggers);
         }
 
         return Ext4.create('Ext.Component', {

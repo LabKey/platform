@@ -21,8 +21,15 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.UnexpectedException;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -33,7 +40,46 @@ import java.util.Map;
  */
 public interface Trigger
 {
-    default String getDebugName() { return getClass().getSimpleName(); }
+    /** The trigger name. */
+    default String getName() { return getClass().getSimpleName(); }
+
+    /** Short description of the trigger. */
+    default String getDescription() { return null; }
+
+    /** Name of module that defines this trigger. */
+    default String getModuleName() { return null; }
+
+    /**
+     * For script triggers, this is the path to the trigger script.
+     * For java triggers, this is the class name.
+     */
+    default String getSource() { return getClass().getName(); }
+
+    /**
+     * The set of events that this trigger implements.
+     */
+    default List<TableInfo.TriggerMethod> getEvents()
+    {
+        List<TableInfo.TriggerMethod> events = new ArrayList<>(8);
+        try
+        {
+            Class cls = getClass();
+            Method[] methods = cls.getDeclaredMethods();
+            Set<String> names = Arrays.stream(methods).map(Method::getName).collect(Collectors.toSet());
+
+            for (TableInfo.TriggerMethod m : TableInfo.TriggerMethod.values())
+            {
+                if (names.contains(m.name()))
+                    events.add(m);
+            }
+        }
+        catch (SecurityException e)
+        {
+            UnexpectedException.wrap(e);
+        }
+
+        return events;
+    }
 
     /**
      * True if this TriggerScript can be used in a streaming context; triggers will be called without old row values.
