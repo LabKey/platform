@@ -549,46 +549,11 @@ public class PipelineManager
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
-            replacements.add(new ReplacementParam<>("dataURL", String.class, "Link to the job details for this pipeline job")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _dataUrl;
-                }
-            });
-            replacements.add(new ReplacementParam<>("jobDescription", String.class, "The job description")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _jobDescription;
-                }
-            });
-            replacements.add(new ReplacementParam<>("timeCreated", Date.class, "The date and time this job was created")
-            {
-                @Override
-                public Date getValue(Container c)
-                {
-                    return _timeCreated;
-                }
-            });
-            replacements.add(new ReplacementParam<>("status", String.class, "The job status")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _status;
-                }
-            });
-            replacements.add(new ReplacementParam<>("setupURL", String.class, "URL to configure the pipeline, including email notifications")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getURIString();
-                }
-            });
+            replacements.add("dataURL", String.class, "Link to the job details for this pipeline job", ContentType.Plain, c -> _dataUrl);
+            replacements.add("jobDescription", String.class, "The job description", ContentType.Plain, c -> _jobDescription);
+            replacements.add("timeCreated", Date.class, "The date and time this job was created", ContentType.Plain, c -> _timeCreated);
+            replacements.add("status", String.class, "The job status", ContentType.Plain, c -> _status);
+            replacements.add("setupURL", String.class, "URL to configure the pipeline, including email notifications", ContentType.Plain, c -> PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(c).getURIString());
         }
     }
 

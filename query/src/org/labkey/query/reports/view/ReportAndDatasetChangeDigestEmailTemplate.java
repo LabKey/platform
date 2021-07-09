@@ -71,30 +71,9 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
     @Override
     protected void addCustomReplacements(Replacements replacements)
     {
-        replacements.add(new ReplacementParam<>("folderUrl", String.class, "URL to folder")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _folderUrl == null ? null : _folderUrl.getURIString();
-            }
-        });
-        replacements.add(new ReplacementParam<>("folderPath", String.class, "Path to folder")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return PageFlowUtil.filter(c.getPath());
-            }
-        });
-        replacements.add(new ReplacementParam<>("emailPrefsUrl", String.class, "URL to set email preferences")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString();
-            }
-        });
+        replacements.add("folderUrl", String.class, "URL to folder", ContentType.Plain, c -> _folderUrl == null ? null : _folderUrl.getURIString());
+        replacements.add("folderPath", String.class, "Path to folder", ContentType.Plain, c -> PageFlowUtil.filter(c.getPath()));
+        replacements.add("emailPrefsUrl", String.class, "URL to set email preferences", ContentType.Plain, c -> _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString());
         replacements.add("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML, c -> _reportAndDatasetList);
     }
 

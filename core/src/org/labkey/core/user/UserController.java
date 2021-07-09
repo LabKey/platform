@@ -2357,22 +2357,8 @@ public class UserController extends SpringActionController
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
-            replacements.add(new ReplacementParam<>("currentEmailAddress", String.class, "Current email address for the current user")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _currentEmailAddress;
-                }
-            });
-            replacements.add(new ReplacementParam<>("newEmailAddress", String.class, "Requested email address for the current user")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _requestedEmailAddress;
-                }
-            });
+            replacements.add("currentEmailAddress", String.class, "Current email address for the current user", ContentType.Plain, c -> _currentEmailAddress);
+            replacements.add("newEmailAddress", String.class, "Requested email address for the current user", ContentType.Plain, c -> _requestedEmailAddress);
         }
     }
 
@@ -2418,22 +2404,8 @@ public class UserController extends SpringActionController
         protected void addCustomReplacements(Replacements replacements)
         {
             super.addCustomReplacements(replacements);
-            replacements.add(new ReplacementParam<>("oldEmailAddress", String.class, "Old email address for the current user")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _oldEmailAddress;
-                }
-            });
-            replacements.add(new ReplacementParam<>("newEmailAddress", String.class, "New email address for the current user")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _newEmailAddress;
-                }
-            });
+            replacements.add("oldEmailAddress", String.class, "Old email address for the current user", ContentType.Plain, c -> _oldEmailAddress);
+            replacements.add("newEmailAddress", String.class, "New email address for the current user", ContentType.Plain, c -> _newEmailAddress);
         }
     }
 
