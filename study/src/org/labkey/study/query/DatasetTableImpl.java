@@ -150,16 +150,16 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("lsid", "lsid")));
 
         ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
-        insertURL.addParameter(DatasetDefinition.DATASETKEY, dsd.getDatasetId());
+        insertURL.addParameter(Dataset.DATASETKEY, dsd.getDatasetId());
         setInsertURL(new DetailsURL(insertURL));
 
         ActionURL gridURL = new ActionURL(StudyController.DatasetAction.class, dsd.getContainer());
-        gridURL.addParameter(DatasetDefinition.DATASETKEY, dsd.getDatasetId());
+        gridURL.addParameter(Dataset.DATASETKEY, dsd.getDatasetId());
         setGridURL(new DetailsURL(gridURL));
 
 //        ActionURL importURL = new ActionURL(StudyController.ShowImportDatasetAction.class, dsd.getContainer());
         ActionURL importURL = new ActionURL(StudyController.ImportAction.class, dsd.getContainer());
-        importURL.addParameter(DatasetDefinition.DATASETKEY, dsd.getDatasetId());
+        importURL.addParameter(Dataset.DATASETKEY, dsd.getDatasetId());
         setImportURL(new DetailsURL(importURL));
 
         ActionURL deleteRowsURL = new ActionURL(StudyController.DeleteDatasetRowsAction.class, dsd.getContainer());

@@ -17,10 +17,6 @@ package org.labkey.specimen.report.specimentype;
 
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenManager;
-import org.labkey.specimen.report.SpecimenVisitReport;
-import org.labkey.specimen.report.SpecimenVisitReportAction;
-import org.labkey.specimen.actions.SpecimenReportActions;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Params;
@@ -33,6 +29,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
+import org.labkey.specimen.SpecimenManager;
+import org.labkey.specimen.actions.SpecimenReportActions;
+import org.labkey.specimen.report.SpecimenVisitReport;
+import org.labkey.specimen.report.SpecimenVisitReportAction;
 
 import java.util.ArrayList;
 import java.util.List;

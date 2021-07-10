@@ -47,6 +47,7 @@ public interface StudyUrls extends UrlProvider
     ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol);
     ActionURL getLinkToStudyConfirmURL(Container container, ExpSampleType sampleType);
     ActionURL getLinkToStudyConfirmURL(Container container, ExpProtocol protocol);
+    ActionURL getTypeNotFoundURL(Container container, int datasetId);
 
     void addManageStudyNavTrail(NavTree root, Container container, User user);
 }

@@ -22,9 +22,12 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenRequestManager;
@@ -42,7 +45,6 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.specimen.actions.ShowUploadSpecimensAction;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
@@ -61,7 +63,6 @@ import org.labkey.specimen.view.SpecimenWebPartFactory;
 import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -128,18 +129,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getManageRequestStatusURL(Container c, int requestId)
-            {
-                return SpecimenController.getManageRequestStatusURL(c, requestId);
-            }
-
-            @Override
-            public ActionURL getManageRequestURL(Container c, int requestId, @Nullable ActionURL returnUrl)
-            {
-                return SpecimenController.getManageRequestURL(c, requestId, returnUrl);
-            }
-
-            @Override
             public ActionURL getSelectedSpecimensURL(Container c)
             {
                 return new ActionURL(SpecimenController.SelectedSpecimensAction.class, c);
@@ -158,45 +147,29 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public ActionURL getSpecimensURL(Container c, boolean showVials)
-            {
-                return SpecimenController.getSpecimensURL(c, showVials);
-            }
-
-            @Override
             public ActionURL getSpecimenEventsURL(Container c, ActionURL returnURL)
             {
                 return new ActionURL(SpecimenController.SpecimenEventsAction.class, c).addReturnURL(returnURL);
             }
 
             @Override
-            public ActionURL getUploadSpecimensURL(Container c)
+            public ActionURL getInsertSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
             {
-                return new ActionURL(ShowUploadSpecimensAction.class, c);
+                ActionURL url = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, c);
+                url.addParameter("schemaName", schemaName);
+                url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
+
+                return url;
             }
 
             @Override
-            public ActionURL getViewRequestsURL(Container c)
+            public ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table)
             {
-                return new ActionURL(SpecimenController.ViewRequestsAction.class, c);
-            }
+                ActionURL url = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, c);
+                url.addParameter("schemaName", schemaName);
+                url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, table.getName());
 
-            @Override
-            public Class<? extends Controller> getClearCommentsActionClass()
-            {
-                return SpecimenController.ClearCommentsAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getShowCreateSpecimenRequestActionClass()
-            {
-                return SpecimenController.ShowCreateSpecimenRequestAction.class;
-            }
-
-            @Override
-            public Class<? extends Controller> getUpdateCommentsActionClass()
-            {
-                return SpecimenController.UpdateCommentsAction.class;
+                return url;
             }
         });
      }

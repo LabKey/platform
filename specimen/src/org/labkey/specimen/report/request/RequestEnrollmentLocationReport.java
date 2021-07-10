@@ -16,11 +16,11 @@
 package org.labkey.specimen.report.request;
 
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.specimen.report.SummaryByVisitType;
-import org.labkey.api.study.Visit;
 import org.labkey.api.specimen.query.SpecimenQueryView;
+import org.labkey.api.study.Visit;
 import org.labkey.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.specimen.report.SpecimenVisitReportParameters;
+import org.labkey.specimen.report.SummaryByVisitType;
 
 import java.util.List;
 

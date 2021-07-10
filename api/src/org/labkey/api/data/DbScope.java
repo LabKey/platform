@@ -1297,7 +1297,8 @@ public class DbScope
                 aggregatePredicate.test(name)
             );
 
-            if (existing.length > 0)
+            // Don't fail if we can't get a listing for the directory
+            if (existing != null && existing.length > 0)
             {
                 String path = FileUtil.getAbsoluteCaseSensitiveFile(lib).getAbsolutePath();
                 throw new ConfigurationException("You must delete the following files from " + path + ": " + Arrays.toString(existing));
