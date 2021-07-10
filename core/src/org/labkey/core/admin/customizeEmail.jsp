@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate.ContentType" %>
+<%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate.ReplacementParam" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplateService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -43,6 +44,20 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
+    }
+
+    private JSONArray getReplacementJSON(List<ReplacementParam<?>> replacements)
+    {
+        return replacements.stream()
+            .sorted()
+            .map(param -> new JSONObject(Map.of(
+                "paramName", param.getName(),
+                "format", param.getContentType().toString(),
+                "valueType", param.getValueType().getSimpleName(),
+                "paramDesc", param.getDescription(),
+                "paramValue", param.getFormattedValue(getContainer(), null, ContentType.HTML)
+            )))
+            .collect(JSONArray.collector());
     }
 %>
 <%
@@ -111,24 +126,27 @@
                 in emails, use the delimiter
                 <pre style="padding-left: 2em;"><%= h(EmailTemplate.BODY_PART_BOUNDARY) %></pre>
                 to separate the sections of the template, with HTML first and plain text after. If no delimiter is
-                found, the entire template will be assumed to be HTML.
+                found, the entire template will be assumed to be HTML.<br><br>
             </td>
         </tr>
-        <tr><td colspan="2"><table id="validSubstitutions" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
-        <tr><td>&nbsp;</td></tr>
+        <tr><td colspan="2"><b>Standard Parameters</b></td></tr>
         <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on the site
             <% if (showRootLookAndFeelLink) { %>
-                <a href="<%=h(urlProvider(AdminUrls.class).getSiteLookAndFeelSettingsURL())%>">Look and Feel Settings</a>
+            <a href="<%=h(urlProvider(AdminUrls.class).getSiteLookAndFeelSettingsURL())%>">Look and Feel Settings</a>
             <% } else { %>
-                Look and Feel Settings
+            Look and Feel Settings
             <% } %>
             page and on the
             <% if (showProjectSettingsLink) { %>
-                <a href="<%=h(urlProvider(AdminUrls.class).getProjectSettingsURL(c))%>">Project Settings</a>
+            <a href="<%=h(urlProvider(AdminUrls.class).getProjectSettingsURL(c))%>">Project Settings</a>
             <% } else { %>
             Project Settings
             <% } %> page for each project</i>
         </tr>
+        <tr><td colspan="2"><table id="standardReplacements" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td colspan="2"><b>Custom Parameters</b></td></tr>
+        <tr><td colspan="2"><table id="customReplacements" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
     </table>
     <input id="emailDescriptionFF" type="hidden" name="templateDescription" value="<%=h(bean.getTemplateDescription())%>"/>
 </labkey:form><br/><br/>
@@ -152,20 +170,12 @@
             // Let users delete a site-scoped template if they're in the root and the template is stored in the root
             "showSiteReset", (c.isRoot() && c.equals(et.getContainer())),
             "hasMultipleContentTypes", (et.getContentType() == ContentType.HTML),
-            "replacements", et.getValidReplacements().stream()
-                .sorted()
-                .map(param -> new JSONObject(Map.of(
-                    "paramName", param.getName(),
-                    "format", param.getContentType().toString(),
-                    "valueType", param.getValueType().getSimpleName(),
-                    "paramDesc", param.getDescription(),
-                    "paramValue", param.getFormattedValue(c, null, ContentType.HTML)
-                )))
-                .collect(JSONArray.collector())
+            "standardReplacements", getReplacementJSON(et.getStandardReplacements()),
+            "customReplacements", getReplacementJSON(et.getCustomReplacements())
         )))
         .collect(JSONArray.collector());
 %>
-    var emailTemplates = <%=text(array.toString(4))%>
+    var emailTemplates = <%=array.getJavaScriptFragment(4)%>
 
     function changeEmailTemplate()
     {
@@ -202,14 +212,15 @@
 
     function clearValidSubstitutions()
     {
-        var table = Ext4.get('validSubstitutions').dom;
-        if (table != undefined)
+        for (const id of ['standardReplacements', 'customReplacements'])
         {
-            // delete all rows first
-            var count = table.rows.length;
-            for (var i = 0; i < count; i++)
-            {
-                table.deleteRow(0);
+            var table = Ext4.get(id).dom;
+            if (table != undefined) {
+                // delete all rows first
+                var count = table.rows.length;
+                for (var i = 0; i < count; i++) {
+                    table.deleteRow(0);
+                }
             }
         }
     }
@@ -219,7 +230,7 @@
         // delete all rows first
         clearValidSubstitutions();
 
-        if (record == undefined || record.replacements == undefined)
+        if (record == undefined || record.standardReplacements == undefined)
         {
             var selection = Ext4.get('templateClass').dom;
             for (var i=0; i < this.emailTemplates.length; i++)
@@ -231,53 +242,60 @@
                 }
             }
         }
-        var table = Ext4.get('validSubstitutions').dom;
-        var row;
-        var cell;
 
-        row = table.insertRow(table.rows.length);
-        cell = row.insertCell(0);
-        cell.className = "labkey-column-header";
-        cell.innerHTML = "Parameter Name";
-
-        cell = row.insertCell(1);
-        cell.className = "labkey-column-header";
-        cell.innerHTML = "Type";
-
-        cell = row.insertCell(2);
-        cell.className = "labkey-column-header";
-        cell.innerHTML = "Format";
-
-        cell = row.insertCell(3);
-        cell.className = "labkey-column-header";
-        cell.innerHTML = "Description";
-
-        cell = row.insertCell(4);
-        cell.className = "labkey-column-header";
-        cell.innerHTML = "Current Value";
-
-        if (record && record.replacements != undefined)
+        for (const ctx of [
+                {id: 'standardReplacements', replacements: record.standardReplacements},
+                {id: 'customReplacements', replacements: record.customReplacements},
+            ])
         {
-            for (var i = 0; i < record.replacements.length; i++)
-            {
-                row = table.insertRow(table.rows.length);
-                row.className = i % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+            var table = Ext4.get(ctx.id).dom;
+            var row;
+            var cell;
 
-                cell = row.insertCell(0);
-                cell.innerHTML = "<b>" + record.replacements[i].paramName + "</b>";
+            row = table.insertRow(table.rows.length);
+            cell = row.insertCell(0);
+            cell.className = "labkey-column-header";
+            cell.innerHTML = "Parameter Name";
 
-                cell = row.insertCell(1);
-                cell.innerHTML = record.replacements[i].valueType;
+            cell = row.insertCell(1);
+            cell.className = "labkey-column-header";
+            cell.innerHTML = "Type";
 
-                cell = row.insertCell(2);
-                cell.innerHTML = record.replacements[i].format;
+            cell = row.insertCell(2);
+            cell.className = "labkey-column-header";
+            cell.innerHTML = "Format";
 
-                cell = row.insertCell(3);
-                cell.innerHTML = record.replacements[i].paramDesc;
+            cell = row.insertCell(3);
+            cell.className = "labkey-column-header";
+            cell.innerHTML = "Description";
 
-                cell = row.insertCell(4);
-                var paramValue = record.replacements[i].paramValue;
-                cell.innerHTML = paramValue != '' ? paramValue : "<em>not available in designer</em>";
+            cell = row.insertCell(4);
+            cell.className = "labkey-column-header";
+            cell.innerHTML = "Current Value";
+
+            var replacements = ctx.replacements;
+
+            if (replacements !== undefined) {
+                for (var i = 0; i < replacements.length; i++) {
+                    row = table.insertRow(table.rows.length);
+                    row.className = i % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+
+                    cell = row.insertCell(0);
+                    cell.innerHTML = "<b>" + replacements[i].paramName + "</b>";
+
+                    cell = row.insertCell(1);
+                    cell.innerHTML = replacements[i].valueType;
+
+                    cell = row.insertCell(2);
+                    cell.innerHTML = replacements[i].format;
+
+                    cell = row.insertCell(3);
+                    cell.innerHTML = replacements[i].paramDesc;
+
+                    cell = row.insertCell(4);
+                    var paramValue = replacements[i].paramValue;
+                    cell.innerHTML = paramValue != '' ? paramValue : "<em>not available in designer</em>";
+                }
             }
         }
     }
