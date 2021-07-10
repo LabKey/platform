@@ -562,13 +562,13 @@ public abstract class EmailTemplate
         }
 
         @Test(expected = IllegalArgumentException.class)
-        public void testHMLToPlain()
+        public void testHTMLToPlain()
         {
             ContentType.Plain.format("plain <>\"", ContentType.HTML);
         }
 
         @Test
-        public void testHMLToHTML()
+        public void testHTMLToHTML()
         {
             assertEquals("plain <br/>&lt;&gt;&quot;", ContentType.HTML.format("plain <br/>&lt;&gt;&quot;", ContentType.HTML));
         }
