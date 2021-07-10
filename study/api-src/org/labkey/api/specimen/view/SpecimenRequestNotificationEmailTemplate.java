@@ -82,7 +82,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
 
         public NotificationReplacement(String name, Class<Type> valueType, String description, Function<Container, Type> valueGetter)
         {
-            super(name, valueType, description);
+            super(name, valueType, description, ContentType.Plain);
             _valueGetter = valueGetter;
         }
 

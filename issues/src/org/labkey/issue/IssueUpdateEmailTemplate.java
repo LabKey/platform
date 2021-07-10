@@ -121,7 +121,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
         public StringReplacementParam(String name, String description, Function<Container, String> valueGetter)
         {
-            super(name, String.class, description);
+            super(name, String.class, description, ContentType.Plain);
             _valueGetter = valueGetter;
         }
 
@@ -143,7 +143,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
         public UserIdReplacementParam(String name, String description, Function<Container, Integer> userIdGetter)
         {
-            super(name, String.class, description);
+            super(name, String.class, description, ContentType.Plain);
             _userIdGetter = userIdGetter;
         }
 
@@ -243,7 +243,7 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
         public CustomFieldReplacementParam(@NotNull String name, Type value, Class<Type> valueType)
         {
-            super(name, valueType, "");
+            super(name, valueType, "", ContentType.Plain);
             _value = value;
         }
 

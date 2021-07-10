@@ -468,11 +468,6 @@ public abstract class EmailTemplate
         private final String _description;
         private final ContentType _contentType;
 
-        public ReplacementParam(@NotNull String name, Class<Type> valueType, String description)
-        {
-            this(name, valueType, description, ContentType.Plain);
-        }
-
         public ReplacementParam(@NotNull String name, Class<Type> valueType, String description, ContentType contentType)
         {
             _name = name;
