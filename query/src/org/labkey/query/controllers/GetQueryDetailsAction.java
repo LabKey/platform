@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
@@ -71,12 +72,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 /**
  * User: dave
  * Date: Sep 3, 2009
- * Time: 3:36:07 PM
  */
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
@@ -214,6 +215,12 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             }
         }
 
+        if (form.isIncludeTriggers() && tinfo instanceof AbstractTableInfo)
+        {
+            Collection<Trigger> triggers = ((AbstractTableInfo)tinfo).getTriggers(container);
+            resp.put("triggers", triggers.stream().map(Trigger::toJSON).collect(Collectors.toList()));
+        }
+
         Map<FieldKey, Map<String, Object>> columnMetadata;
 
         //if the caller asked us to chase a foreign key, do that.  Note that any call to get a lookup table can throw a
@@ -308,7 +315,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             Map<String, CustomView> allViews = queryDef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
             Set<String> viewNames = new CaseInsensitiveHashSet("");
             if (form.getViewName() != null)
-                viewNames.addAll(Arrays.stream(form.getViewName()).map(String::trim).collect(Collectors.toList()));
+                viewNames.addAll(Arrays.stream(form.getViewName()).map(String::trim).collect(toList()));
 
             if (viewNames.contains("*"))
             {
@@ -434,6 +441,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         private String[] _additionalFields;
         private boolean _initializeMissingView;
         private boolean _includeSuggestedQueryColumns = true;
+        private boolean _includeTriggers;
 
         public String getSchemaName()
         {
@@ -503,6 +511,16 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         public void setIncludeSuggestedQueryColumns(boolean includeSuggestedQueryColumns)
         {
             _includeSuggestedQueryColumns = includeSuggestedQueryColumns;
+        }
+
+        public boolean isIncludeTriggers()
+        {
+            return _includeTriggers;
+        }
+
+        public void setIncludeTriggers(boolean includeTriggers)
+        {
+            _includeTriggers = includeTriggers;
         }
     }
 }
