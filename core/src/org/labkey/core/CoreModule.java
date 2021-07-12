@@ -387,6 +387,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
                 "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
                         "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
+        AdminConsole.addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
+                "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
+                        "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
+                        "search to find the other select values.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
