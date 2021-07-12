@@ -1885,6 +1885,24 @@ public class ExperimentController extends SpringActionController
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
                 }
             }
+
+            // add links to any other exp.data that share the same dataFileUrl path
+            var altDataList = ExperimentService.get().getAllExpDataByURL(_data.getDataFileUrl(), getContainer());
+            altDataList.removeIf(_data::equals);
+            if (altDataList.size() > 0)
+            {
+                MenuButton menu = new MenuButton("Alternate Data");
+                for (ExpData altData : altDataList)
+                {
+                    ExpRun altDataRun = altData.getRun();
+                    StringBuilder sb = new StringBuilder(altData.getName());
+                    if (altDataRun != null)
+                        sb.append(" created by run '").append(altDataRun.getName()).append("' (").append(altDataRun.getProtocol().getName()).append(")");
+                    menu.addMenuItem(sb.toString(), altData.detailsURL());
+                }
+                bb.add(menu);
+            }
+
             dr.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             dr.setButtonBar(bb);
 

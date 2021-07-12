@@ -3650,9 +3650,31 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<ExpDataImpl> getAllExpDataByURL(String canonicalURL)
+    public List<ExpDataImpl> getAllExpDataByURL(Path path, @Nullable Container c)
+    {
+        if (!FileUtil.hasCloudScheme(path))
+            return getAllExpDataByURL(path.toFile(), c);
+
+        return getAllExpDataByURL(FileUtil.pathToString(path), c);
+    }
+
+    @Override
+    public List<ExpDataImpl> getAllExpDataByURL(File file, @Nullable Container c)
+    {
+        File canonicalFile = FileUtil.getAbsoluteCaseSensitiveFile(file);
+        String url = canonicalFile.toPath().toUri().toString();
+
+        return getAllExpDataByURL(url, c);
+    }
+
+    @Override
+    public List<ExpDataImpl> getAllExpDataByURL(String canonicalURL, @Nullable Container c)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), canonicalURL);
+        if (c != null)
+        {
+            filter.addCondition(FieldKey.fromParts("Container"), c);
+        }
         Sort sort = new Sort("-Created");
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, sort).getArrayList(Data.class));
     }

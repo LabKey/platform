@@ -78,6 +78,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<?, String> _inputMaterials;
     private final Map<?, String> _outputDatas;
     private final Map<?, String> _outputMaterials;
+    private final boolean _allowCrossRunFileInputs;
 
     // Lazily created fields
     private Map<String, File> _uploadedData;
@@ -112,6 +113,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _inputMaterials = factory._inputMaterials == null ? emptyMap() : unmodifiableMap(factory._inputMaterials);
         _outputDatas = factory._outputDatas == null ? emptyMap() : unmodifiableMap(factory._outputDatas);
         _outputMaterials = factory._outputMaterials == null ? emptyMap() : unmodifiableMap(factory._outputMaterials);
+        _allowCrossRunFileInputs = factory._allowCrossRunFileInputs;
 
         // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
         _rawData = factory._rawData;
@@ -359,6 +361,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public Map<? extends Object, String> getOutputMaterials()
     {
         return _outputMaterials;
+    }
+
+    @Override
+    public boolean isAllowCrossRunFileInputs()
+    {
+        return _allowCrossRunFileInputs;
     }
 
     @Override
