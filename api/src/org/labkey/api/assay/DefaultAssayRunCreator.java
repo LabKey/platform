@@ -891,7 +891,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 dataType = context.getProvider().getDataType();
 
             // Reuse existing exp.data as the assay output file unless we are reimporting the
-            // file again (via the rerun mechanism) or the output file already one of the input files.
+            // file again (via the rerun mechanism) or the output file is already one of the input files.
+
             boolean reuseExistingData = context.getReRunId() == null;
             if (context.isAllowCrossRunFileInputs() && inputFiles.contains(file))
                 reuseExistingData = false;
