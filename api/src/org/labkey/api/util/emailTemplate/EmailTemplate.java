@@ -431,7 +431,7 @@ public abstract class EmailTemplate
         {
             return Streams.concat(STANDARD_REPLACEMENTS.stream(), _params.stream())
                 .anyMatch(r -> r.getName().equalsIgnoreCase(newParam.getName()));
-         }
+        }
 
         public <Type> void add(@NotNull String name, Class<Type> valueType, String description, ContentType contentType, Function<Container, Type> valueGetter)
         {
