@@ -16,6 +16,7 @@
 package org.labkey.api.data.triggers;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
@@ -173,4 +174,17 @@ public interface Trigger
     {
     }
 
+
+    /**
+     * JSON serialization for query-getQueryDetails.api
+     */
+    default JSONObject toJSON()
+    {
+        return new JSONObject()
+                .put("name", getName())
+                .put("description", getDescription())
+                .put("module", getModuleName())
+                .put("source", getSource())
+                .put("events", getEvents());
+    }
 }

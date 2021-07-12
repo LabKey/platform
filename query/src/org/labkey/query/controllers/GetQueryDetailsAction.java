@@ -218,13 +218,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         if (form.isIncludeTriggers() && tinfo instanceof AbstractTableInfo)
         {
             Collection<Trigger> triggers = ((AbstractTableInfo)tinfo).getTriggers(container);
-            resp.put("triggers", triggers.stream().map(t -> new JSONObject()
-                    .put("name", t.getName())
-                    .put("description", t.getDescription())
-                    .put("module", t.getModuleName())
-                    .put("source", t.getSource())
-                    .put("events", t.getEvents())
-            ).collect(Collectors.toList()));
+            resp.put("triggers", triggers.stream().map(Trigger::toJSON).collect(Collectors.toList()));
         }
 
         Map<FieldKey, Map<String, Object>> columnMetadata;
