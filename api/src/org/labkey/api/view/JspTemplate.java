@@ -62,7 +62,7 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
         @Test
         public void test() throws Exception
         {
-            String test = (new JspTemplate("/org/labkey/api/view/jspTemplateTest.jsp")).render();
+            String test = (new JspTemplate<>("/org/labkey/api/view/jspTemplateTest.jsp")).render();
             assertEquals("This is a JSP used by the JspTemplate.TestCase", test);
 
             RReport r = new RReport();
