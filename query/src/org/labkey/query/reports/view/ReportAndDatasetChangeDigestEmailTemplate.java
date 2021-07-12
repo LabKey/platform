@@ -30,7 +30,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +43,6 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 {
     private static final String DEFAULT_SUBJECT = "Report/Dataset Change Notification";
 
-    private final List<ReplacementParam> _replacements = new ArrayList<>();
     private ActionURL _folderUrl;
     private ActionURL _emailPrefsUrl;
     private String _reportAndDatasetList;
@@ -67,41 +65,16 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 
     public ReportAndDatasetChangeDigestEmailTemplate()
     {
-        super("Report/dataset change (digest)", DEFAULT_SUBJECT, loadBody(), "Daily digest of report and dataset changes", ContentType.HTML);
-
-        _replacements.add(new ReplacementParam<String>("folderUrl", String.class, "URL to folder")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return _folderUrl == null ? null : _folderUrl.getURIString();
-            }
-        });
-        _replacements.add(new ReplacementParam<String>("folderPath", String.class, "Path to folder")
-        {
-            @Override
-            public String getValue(Container c)
-            {
-                return PageFlowUtil.filter(c.getPath());
-            }
-        });
-        _replacements.add(new ReplacementParam<String>("emailPrefsUrl", String.class, "URL to set email preferences")
-        {
-            @Override
-            public String getValue(Container c) {return _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString();}
-        });
-        _replacements.add(new ReplacementParam<String>("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML)
-        {
-            @Override
-            public String getValue(Container c) {return _reportAndDatasetList; }
-        });
-        _replacements.addAll(super.getValidReplacements());
+        super("Report/dataset change (digest)", "Daily digest of report and dataset changes", DEFAULT_SUBJECT, loadBody(), ContentType.HTML, Scope.Site);
     }
 
     @Override
-    public List<ReplacementParam> getValidReplacements()
+    protected void addCustomReplacements(Replacements replacements)
     {
-        return _replacements;
+        replacements.add("folderUrl", String.class, "URL to folder", ContentType.Plain, c -> _folderUrl == null ? null : _folderUrl.getURIString());
+        replacements.add("folderPath", String.class, "Path to folder", ContentType.Plain, c -> PageFlowUtil.filter(c.getPath()));
+        replacements.add("emailPrefsUrl", String.class, "URL to set email preferences", ContentType.Plain, c -> _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString());
+        replacements.add("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML, c -> _reportAndDatasetList);
     }
 
     public void init(Container c, Map<ViewCategory, List<NotificationInfo>> reports)
