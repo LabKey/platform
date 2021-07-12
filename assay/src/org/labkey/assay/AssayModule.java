@@ -16,6 +16,7 @@
 
 package org.labkey.assay;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayBatchDomainKind;
 import org.labkey.api.assay.AssayProvider;
