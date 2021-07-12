@@ -784,6 +784,8 @@ public class DomainImpl implements Domain
             return;
 
         List<ColumnInfo> uniqueIndexCols = new ArrayList<>();
+        // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
+        // but exclude the uniqueId fields themselves.
         table.getUniqueIndices().values().forEach(idx -> {
             idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add);
         });
