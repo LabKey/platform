@@ -1,13 +1,11 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -18,9 +16,7 @@ import org.labkey.api.security.User;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
-
-public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
+public class FindMaterialByUniqueIdHelper
 {
     public static final String UNIQUE_ID_COL_NAME = "UniqueId";
     public static final String NAME = "MaterialUniqueId";
@@ -30,9 +26,8 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
     private SQLFragment _unionSql;
     private int _numUniqueIdCols = 0;
 
-    public ExpMaterialUniqueIdUnionTableInfo(Container container, User user)
+    public FindMaterialByUniqueIdHelper(Container container, User user)
     {
-        super(ExperimentService.get().getSchema(), NAME, ExperimentService.get().getTinfoMaterial().getUserSchema());
         _user = user;
         _container = container;
         init();
@@ -40,9 +35,11 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
 
     public void init()
     {
+        DbSchema dbSchema = ExperimentService.get().getSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
         UserSchema samplesUserSchema = QueryService.get().getUserSchema(_user, _container, SamplesSchema.SCHEMA_NAME);
         List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(_container, _user, true);
-        SqlDialect dialect = getSchema().getSqlDialect();
+
         String unionAll = "";
         SQLFragment query = new SQLFragment();
 
@@ -64,22 +61,9 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
         query.append(")");
 
         _unionSql = new SQLFragment();
-        _unionSql.appendComment("<ExpMaterialUniqueIdUnionTableInfo>", getSchema().getSqlDialect());
+        _unionSql.appendComment("<ExpMaterialUniqueIdUnionTableInfo>", dialect);
         _unionSql.append(query);
-        _unionSql.appendComment("</ExpMaterialUniqueIdUnionTableInfo>", getSchema().getSqlDialect());
-        makeColumnInfos();
-    }
-
-    private void makeColumnInfos()
-    {
-        addColumn(new BaseColumnInfo(ROW_ID, this, JdbcType.VARCHAR));
-        addColumn(new BaseColumnInfo(UNIQUE_ID_COL_NAME, this, JdbcType.VARCHAR));
-    }
-
-    @Override
-    public String getSelectName()
-    {
-        return null;
+        _unionSql.appendComment("</ExpMaterialUniqueIdUnionTableInfo>", dialect);
     }
 
     public int getNumUniqueIdCols()
@@ -88,16 +72,9 @@ public class ExpMaterialUniqueIdUnionTableInfo extends VirtualTable
     }
 
     @NotNull
-    @Override
-    public SQLFragment getFromSQL()
+    public SQLFragment getSQL()
     {
         return _unionSql;
     }
 
-
-    @Override
-    public String toString()
-    {
-        return "Exp.Materials Unique Id UNION table";
-    }
 }
