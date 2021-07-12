@@ -238,7 +238,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
                 new PropertyStorageSpec.Index(true, "lsid")
         ));
         domain.getProperties().stream().filter(DomainProperty::isUniqueIdField).forEach(prop -> {
-            indexes.add(new PropertyStorageSpec.Index(true,  prop.getName()));
+            indexes.add(new PropertyStorageSpec.Index(true,  "RowId", prop.getName()));
         });
         return Collections.unmodifiableSet(indexes);
     }
