@@ -350,17 +350,6 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", EVERY_CONTAINER, ManageFoldersAction.class);
         addTab(TYPE.FolderManagement,"Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
         addTab(TYPE.FolderManagement,"Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
-        addTab(TYPE.FolderManagement,"Module Properties", "props", c -> {
-            if (!c.isRoot())
-            {
-                // Show module properties tab only if a module w/ properties to set is present for current folder
-                for (Module m : c.getActiveModules())
-                    if (!m.getModuleProperties().isEmpty())
-                        return true;
-            }
-
-            return false;
-        }, ModulePropertiesAction.class);
         addTab(TYPE.FolderManagement,"Concepts", "concepts", c -> {
             // Show Concepts tab only if the experiment module is enabled in this container
             return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
@@ -665,12 +654,6 @@ public class AdminController extends SpringActionController
         public ActionURL getNotificationsURL(Container c)
         {
             return new ActionURL(NotificationsAction.class, c);
-        }
-
-        @Override
-        public ActionURL getModulePropertiesURL(Container c)
-        {
-            return new ActionURL(ModulePropertiesAction.class, c);
         }
 
         @Override
@@ -4780,17 +4763,6 @@ public class AdminController extends SpringActionController
             WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
 
             return saveFolderSettings(c, form, props, getUser(), errors);
-        }
-    }
-
-
-    @RequiresPermission(AdminPermission.class)
-    public static class ModulePropertiesAction extends FolderManagementViewAction
-    {
-        @Override
-        protected HttpView getTabView()
-        {
-            return new JspView<>("/org/labkey/core/project/modulePropertiesAdmin.jsp");
         }
     }
 

@@ -1,9 +1,0 @@
-<view xmlns="http://labkey.org/data/xml/view">
-    <permissions>
-        <permission name="update" />
-    </permissions>
-    <dependencies>
-        <dependency path="Ext4"/>
-        <dependency path="ModulePropertiesAdminPanel.js"/>
-    </dependencies>
-</view>

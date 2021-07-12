@@ -2072,7 +2072,6 @@ core/webapp/fileAddRemoveIcon.css -text
 core/webapp/fonts/Lato/LICENSE.txt -text
 core/webapp/fonts/Roboto/LICENSE.txt -text
 core/webapp/fonts/TitilliumWeb/OFL.txt -text
-core/webapp/ModulePropertiesAdminPanel.js -text
 core/webapp/notification/Notification.css -text
 core/webapp/notification/Notification.js -text
 core/webapp/notification/NotificationViewAll.css -text

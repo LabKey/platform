@@ -46,7 +46,6 @@ public interface AdminUrls extends UrlProvider
     ActionURL getManageFoldersURL(Container c);
     ActionURL getFolderTypeURL(Container c);
     ActionURL getMissingValuesURL(Container c);
-    ActionURL getModulePropertiesURL(Container c);
     ActionURL getNotificationsURL(Container c);
     ActionURL getExportFolderURL(Container c);
     ActionURL getImportFolderURL(Container c);
