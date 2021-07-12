@@ -56,6 +56,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -179,13 +180,13 @@ import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpMaterialUniqueIdUnionTableInfo;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.FindMaterialByUniqueIdHelper;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeDomainKind;
@@ -6761,6 +6762,7 @@ public class ExperimentController extends SpringActionController
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
             List<String> orderedIdCols = new ArrayList<>(Arrays.asList("RowId", "Ordinal"));
             List<String> sampleColumns = new ArrayList<>();
+            DialectStringHandler stringHandler = ExperimentService.get().getSchema().getSqlDialect().getStringHandler();
             if (!isFMEnabled)
             {
                 sampleColumns.addAll(Arrays.asList(
@@ -6804,7 +6806,7 @@ public class ExperimentController extends SpringActionController
                 {
                     sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
                     sampleIdValuesSql.append(", ");
-                    sampleIdValuesSql.append("'").append(id.substring(SAMPLE_ID_PREFIX.length())).append("'");
+                    sampleIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(SAMPLE_ID_PREFIX.length())));
                     sampleIdValuesSql.append(")");
                     sampleIdComma = "\n,";
                 }
@@ -6812,7 +6814,7 @@ public class ExperimentController extends SpringActionController
                 {
                     uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
                     uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append("'").append(id.substring(UNIQUE_ID_PREFIX.length())).append("'");
+                    uniqueIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(UNIQUE_ID_PREFIX.length())));
                     uniqueIdValuesSql.append(")");
                     uniqueIdComma = "\n,";
                 }
@@ -6851,8 +6853,8 @@ public class ExperimentController extends SpringActionController
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
-                ExpMaterialUniqueIdUnionTableInfo tInfo = new ExpMaterialUniqueIdUnionTableInfo(getContainer(), getUser());
-                if (tInfo.getNumUniqueIdCols() > 0)
+                FindMaterialByUniqueIdHelper uidHelper = new FindMaterialByUniqueIdHelper(getContainer(), getUser());
+                if (uidHelper.getNumUniqueIdCols() > 0)
                 {
                     haveData = true;
                     if (!sampleIdValuesSql.isEmpty())
@@ -6860,10 +6862,10 @@ public class ExperimentController extends SpringActionController
 
                     sql.append("SELECT\n\tU.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id");
                     sql.append("\nFROM _ordered_unique_ids_\n");
-                    sql.append("INNER JOIN ");
+                    sql.append("INNER JOIN (");
 
-                    sql.append(tInfo.getFromSQL("U"));
-                    sql.append(" ON _ordered_unique_ids_.column2 = ").append(ExpMaterialUniqueIdUnionTableInfo.UNIQUE_ID_COL_NAME);
+                    sql.append(uidHelper.getSQL()).append(") U");
+                    sql.append(" ON _ordered_unique_ids_.column2 = ").append(FindMaterialByUniqueIdHelper.UNIQUE_ID_COL_NAME);
                 }
             }
             if (!haveData) // no data to return but return data in the expected shape.
