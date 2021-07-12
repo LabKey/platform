@@ -400,6 +400,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");
         view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
+        if (form.isAllowCrossRunFileInputs())
+            view.getDataRegion().addHiddenFormField("allowCrossRunFileInputs", "true");
         if (errorReshow)
         {
             // Add unique name of uploaded files as hidden parameters

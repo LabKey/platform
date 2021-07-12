@@ -108,6 +108,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
     private ExpRun _reRun;
+    private boolean _allowCrossRunFileInputs;
 
     public static File BLANK_FILE = new File("");
 
@@ -383,6 +384,17 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public Map<?, String> getInputDatas()
     {
         return emptyMap();
+    }
+
+    @Override
+    public boolean isAllowCrossRunFileInputs()
+    {
+        return _allowCrossRunFileInputs;
+    }
+
+    public void setAllowCrossRunFileInputs(boolean allowCrossRunFileInputs)
+    {
+        _allowCrossRunFileInputs = allowCrossRunFileInputs;
     }
 
     @Override
