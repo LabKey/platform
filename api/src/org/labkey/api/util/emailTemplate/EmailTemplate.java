@@ -16,6 +16,7 @@
 
 package org.labkey.api.util.emailTemplate;
 
+import com.google.common.collect.Streams;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -422,12 +423,19 @@ public abstract class EmailTemplate
 
         public void add(ReplacementParam<?> replacementParam)
         {
+            assert !replacementExists(replacementParam) : "Replacement \"" + replacementParam.getName() + "\" already exists!";
             _params.add(replacementParam);
         }
 
+        private boolean replacementExists(ReplacementParam<?> newParam)
+        {
+            return Streams.concat(STANDARD_REPLACEMENTS.stream(), _params.stream())
+                .anyMatch(r -> r.getName().equalsIgnoreCase(newParam.getName()));
+         }
+
         public <Type> void add(@NotNull String name, Class<Type> valueType, String description, ContentType contentType, Function<Container, Type> valueGetter)
         {
-            _params.add(new ReplacementParam<>(name, valueType, description, contentType)
+            add(new ReplacementParam<>(name, valueType, description, contentType)
             {
                 @Override
                 public Type getValue(Container c)
