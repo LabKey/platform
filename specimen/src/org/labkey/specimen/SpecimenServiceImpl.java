@@ -225,7 +225,7 @@ public class SpecimenServiceImpl implements SpecimenService
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
-            List<Vial> matches = SpecimenManagerNew.get().getVials(studyContainer, user, participantId, date);
+            List<Vial> matches = SpecimenManager.get().getVials(studyContainer, user, participantId, date);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
@@ -245,7 +245,7 @@ public class SpecimenServiceImpl implements SpecimenService
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
-            List<Vial> matches = SpecimenManagerNew.get().getVials(studyContainer, user, participantId, visit);
+            List<Vial> matches = SpecimenManager.get().getVials(studyContainer, user, participantId, visit);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();

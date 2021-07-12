@@ -52,6 +52,7 @@ import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.SpecimenManager;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -132,14 +133,14 @@ public class SpecimenApiController extends SpringActionController
             vialProperties.put("derivativeTypeId", vial.getDerivativeTypeId());
             if (vial.getDerivativeTypeId() != null)
             {
-                DerivativeType derivativeType = SpecimenManagerNew.get().getDerivativeType(vial.getContainer(), vial.getDerivativeTypeId());
+                DerivativeType derivativeType = SpecimenManager.get().getDerivativeType(vial.getContainer(), vial.getDerivativeTypeId());
                 if (derivativeType != null)
                     vialProperties.put("derivativeType", derivativeType.getDerivative());
             }
             vialProperties.put("additiveTypeId", vial.getAdditiveTypeId());
             if (vial.getAdditiveTypeId() != null)
             {
-                AdditiveType additiveType = SpecimenManagerNew.get().getAdditiveType(vial.getContainer(), vial.getAdditiveTypeId());
+                AdditiveType additiveType = SpecimenManager.get().getAdditiveType(vial.getContainer(), vial.getAdditiveTypeId());
                 if (additiveType != null)
                     vialProperties.put("additiveType", additiveType.getAdditive());
             }
@@ -356,7 +357,7 @@ public class SpecimenApiController extends SpringActionController
             {
                 try
                 {
-                    List<Vial> vials = SpecimenManagerNew.get().getVials(container, form.getViewContext().getUser(), form.getRowIds());
+                    List<Vial> vials = SpecimenManager.get().getVials(container, form.getViewContext().getUser(), form.getRowIds());
                     vialList = getSpecimenListResponse(vials);
                 }
                 catch (SpecimenRequestException e)

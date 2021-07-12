@@ -16,12 +16,12 @@
 package org.labkey.specimen.report.specimentype;
 
 import org.labkey.api.security.User;
-import org.labkey.specimen.report.SpecimenTypeLevel;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
+import org.labkey.specimen.report.SpecimenTypeLevel;
 import org.labkey.specimen.report.SpecimenVisitReportParameters;
 
 import java.util.ArrayList;

@@ -231,7 +231,7 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
-        view.getDataRegion().addHiddenFormField(DatasetDefinition.DATASETKEY, "" + _dataset.getDatasetId());
+        view.getDataRegion().addHiddenFormField(Dataset.DATASETKEY, "" + _dataset.getDatasetId());
 
         return view;
     }

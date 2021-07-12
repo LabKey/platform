@@ -19,11 +19,11 @@
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotService" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -103,8 +103,8 @@
 
             out.println(button(bean.isEdit() ? "Done" : "Cancel").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
         %>
-    <%  if (getActionURL().getParameter(DatasetDefinition.DATASETKEY) != null) { %>
-    <input type="hidden" name="<%=h(DatasetDefinition.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(DatasetDefinition.DATASETKEY))%>">
+    <%  if (getActionURL().getParameter(Dataset.DATASETKEY) != null) { %>
+    <input type="hidden" name="<%=h(Dataset.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(Dataset.DATASETKEY))%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=h(StudyController.StudySnapshotForm.CREATE_SNAPSHOT)%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">

@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.api.specimen.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.api.specimen.Vial" %>
@@ -40,6 +39,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.specimen.actions.ManageRequestBean" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
