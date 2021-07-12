@@ -139,6 +139,13 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             Map<ExpData, ExpRun> filesWithRun = pair.second;
             if (!filesWithRun.isEmpty())
             {
+                // Create a confirmation view to prompt user about importing the files that have already been created by
+                // another run.  Ideally, we'd just extend ConfirmAction directly. Unfortunately, ConfirmAction expects
+                // the prompt view to be accessed via GET and then POSTs when the user confirms the action. However, the
+                // PipelineDataCollectorRedirectAction is invoked initially via POST from the file browser before we've
+                // confirmed. To create the confirmWrapper.jsp view, we need to initialize a FakeConfirmAction to pass
+                // the property values for rendering the hidden form values.
+
                 FakeConfirmAction confirmAction = new FakeConfirmAction();
                 confirmAction.setViewContext(getViewContext());
                 MutablePropertyValues mpv = new MutablePropertyValues(getPropertyValues());
