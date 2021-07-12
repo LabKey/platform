@@ -97,7 +97,7 @@ public class EmailTemplateService
 
         if (!c.isRoot())
         {
-            templates.removeIf(emailTemplate -> !emailTemplate.getEditableScopes().isEditableIn(c));
+            templates.removeIf(emailTemplate -> !emailTemplate.getEditableScope().isEditableIn(c));
         }
 
         templates.sort((o1, o2) ->
@@ -220,7 +220,7 @@ public class EmailTemplateService
 
     public void saveEmailTemplate(EmailTemplate template, Container c)
     {
-        if (!template.getEditableScopes().isEditableIn(c))
+        if (!template.getEditableScope().isEditableIn(c))
         {
             throw new NotFoundException("Cannot save template " + c + " in " + c);
         }

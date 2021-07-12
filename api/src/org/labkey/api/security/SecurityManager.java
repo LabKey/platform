@@ -2639,45 +2639,24 @@ public class SecurityManager
         private String _verificationUrl = "";
         private String _recipient = "";
         protected boolean _verificationUrlRequired = true;
-        protected final List<ReplacementParam> _replacements = new ArrayList<>();
 
-        protected SecurityEmailTemplate(String name)
+        protected SecurityEmailTemplate(@NotNull String name, String description, String subject, String body)
         {
-            super(name);
-
-            _replacements.add(new ReplacementParam<>("verificationURL", String.class, "Link for a user to set a password")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _verificationUrl;
-                }
-            });
-            _replacements.add(new ReplacementParam<>("emailAddress", String.class, "The email address of the user performing the operation")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _originatingUser == null ? null : _originatingUser.getEmail();
-                }
-            });
-            _replacements.add(new ReplacementParam<>("recipient", String.class, "The email address on the 'to:' line")
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return _recipient;
-                }
-            });
-
-            _replacements.addAll(super.getValidReplacements());
+            super(name, description, subject, body, ContentType.Plain, Scope.Site);
         }
 
         public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
         public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
         public void setRecipient(String recipient){_recipient = recipient;}
+
         @Override
-        public List<ReplacementParam> getValidReplacements(){return _replacements;}
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add("verificationURL", String.class, "Link for a user to set a password", ContentType.Plain, c -> _verificationUrl);
+            replacements.add("emailAddress", String.class, "The email address of the user performing the operation", ContentType.Plain, c -> _originatingUser == null ? null : _originatingUser.getEmail());
+            replacements.add("recipient", String.class, "The email address on the 'to:' line", ContentType.Plain, c -> _recipient);
+        }
 
         @Override
         public boolean isValid(String[] error)
@@ -2712,32 +2691,28 @@ public class SecurityManager
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationEmailTemplate()
         {
-            this("Register new user");
+            this("Register new user", DEFAULT_SUBJECT, DEFAULT_BODY);
         }
 
-        public RegistrationEmailTemplate(String name)
+        private RegistrationEmailTemplate(String name, String subject, String body)
         {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the new user and administrator when a user is added to the site.");
-            setPriority(1);
+            super(name, "Sent to the new user and administrator when a user is added to the site.", subject, body);
+        }
 
-            _replacements.add(new ReplacementParam<String>("optionalMessage", String.class, "An optional message to include with the new user email"){
-                @Override
-                public String getValue(Container c) {return _optionalPrefix;}
-            });
+        @Override
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add("optionalMessage", String.class, "An optional message to include with the new user email", ContentType.Plain, c -> _optionalPrefix);
         }
     }
 
     public static class RegistrationAdminEmailTemplate extends RegistrationEmailTemplate
     {
+        @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationAdminEmailTemplate()
         {
-            super("Register new user (bcc to admin)");
-            setSubject("^recipient^ : " + DEFAULT_SUBJECT);
-            setBody("The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
-            setPriority(2);
+            super("Register new user (bcc to admin)", "^recipient^ : " + DEFAULT_SUBJECT, "The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
             _verificationUrlRequired = false;
         }
     }
@@ -2756,16 +2731,12 @@ public class SecurityManager
 
         public PasswordResetEmailTemplate()
         {
-            this("Reset password");
+            this("Reset password", DEFAULT_SUBJECT, DEFAULT_BODY);
         }
 
-        public PasswordResetEmailTemplate(String name)
+        private PasswordResetEmailTemplate(String name, String subject, String body)
         {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the user and administrator when the password of a user is reset.");
-            setPriority(3);
+            super(name, "Sent to the user and administrator when the password of a user is reset.", subject, body);
         }
     }
 
@@ -2773,10 +2744,7 @@ public class SecurityManager
     {
         public PasswordResetAdminEmailTemplate()
         {
-            super("Reset password (bcc to admin)");
-            setSubject("^recipient^ : " + DEFAULT_SUBJECT);
-            setBody("The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
-            setPriority(4);
+            super("Reset password (bcc to admin)", "^recipient^ : " + DEFAULT_SUBJECT, "The following message was sent to ^recipient^ :\n\n" + DEFAULT_BODY);
             _verificationUrlRequired = false;
         }
     }

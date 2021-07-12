@@ -2343,36 +2343,23 @@ public class UserController extends SpringActionController
                 "to use the new email address when logging into the server.";
         String _currentEmailAddress;
         String _requestedEmailAddress;
-        List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RequestAddressEmailTemplate()
         {
-            this("Request email address");
-        }
-
-        RequestAddressEmailTemplate(String name)
-        {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the user and administrator when a user requests to change their email address.");
-            setPriority(1);
-            _replacements.add(new ReplacementParam<String>("currentEmailAddress", String.class, "Current email address for the current user"){
-                @Override
-                public String getValue(Container c) {return _currentEmailAddress;}
-            });
-            _replacements.add(new ReplacementParam<String>("newEmailAddress", String.class, "Requested email address for the current user"){
-                @Override
-                public String getValue(Container c) {return _requestedEmailAddress;}
-            });
-            _replacements.addAll(super.getValidReplacements());
+            super("Request email address", "Sent to the user and administrator when a user requests to change their email address.", DEFAULT_SUBJECT, DEFAULT_BODY);
         }
 
         void setCurrentEmailAddress(String currentEmailAddress) { _currentEmailAddress = currentEmailAddress; }
         void setRequestedEmailAddress(String requestedEmailAddress) { _requestedEmailAddress = requestedEmailAddress; }
+
         @Override
-        public List<ReplacementParam> getValidReplacements(){ return _replacements; }
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add("currentEmailAddress", String.class, "Current email address for the current user", ContentType.Plain, c -> _currentEmailAddress);
+            replacements.add("newEmailAddress", String.class, "Requested email address for the current user", ContentType.Plain, c -> _requestedEmailAddress);
+        }
     }
 
     private MimeMessage getChangeEmailMessage(String oldEmailAddress, String newEmailAddress) throws Exception
@@ -2407,31 +2394,19 @@ public class UserController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public ChangeAddressEmailTemplate()
         {
-            this("Change email address");
-        }
-
-        ChangeAddressEmailTemplate(String name)
-        {
-            super(name);
-            setSubject(DEFAULT_SUBJECT);
-            setBody(DEFAULT_BODY);
-            setDescription("Sent to the user and administrator when a user has changed their email address.");
-            setPriority(1);
-            _replacements.add(new ReplacementParam<String>("oldEmailAddress", String.class, "Old email address for the current user"){
-                @Override
-                public String getValue(Container c) {return _oldEmailAddress;}
-            });
-            _replacements.add(new ReplacementParam<String>("newEmailAddress", String.class, "New email address for the current user"){
-                @Override
-                public String getValue(Container c) {return _newEmailAddress;}
-            });
-            _replacements.addAll(super.getValidReplacements());
+            super("Change email address", "Sent to the user and administrator when a user has changed their email address.", DEFAULT_SUBJECT, DEFAULT_BODY, ContentType.Plain, Scope.Site);
         }
 
         void setOldEmailAddress(String oldEmailAddress) { _oldEmailAddress = oldEmailAddress; }
         void setNewEmailAddress(String newEmailAddress) { _newEmailAddress = newEmailAddress; }
+
         @Override
-        public List<ReplacementParam> getValidReplacements(){ return _replacements; }
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            super.addCustomReplacements(replacements);
+            replacements.add("oldEmailAddress", String.class, "Old email address for the current user", ContentType.Plain, c -> _oldEmailAddress);
+            replacements.add("newEmailAddress", String.class, "New email address for the current user", ContentType.Plain, c -> _newEmailAddress);
+        }
     }
 
     public static class GetUsersForm
