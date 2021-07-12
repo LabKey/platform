@@ -52,6 +52,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
@@ -74,6 +75,7 @@ import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
 import javax.servlet.ServletContext;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -260,9 +262,16 @@ public class AssayModule extends SpringModule
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
-            ModuleAssayCache.TestCase.class,
-            AssayIntegrationTestCase.class
+            ModuleAssayCache.TestCase.class
         );
+    }
+
+    @Override
+    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
+    {
+        ArrayList<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/assay/AssayIntegrationTestCase.jsp"));
+        return list;
     }
 
     @Override
