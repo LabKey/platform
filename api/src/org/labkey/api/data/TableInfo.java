@@ -408,6 +408,9 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         }
     }
 
+    /**
+     * Enumeration of trigger methods that may be implemented in trigger scripts.
+     */
     enum TriggerMethod
     {
         init, complete,
