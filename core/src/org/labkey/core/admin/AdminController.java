@@ -99,6 +99,7 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -9234,6 +9235,7 @@ public class AdminController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
+    @IgnoresForbiddenProjectCheck // This should be called in root
     public static class LogClientExceptionAction extends MutatingApiAction<ExceptionForm>
     {
         @Override

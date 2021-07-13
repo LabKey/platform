@@ -79,6 +79,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.IgnoresForbiddenProjectCheck;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
@@ -108,7 +109,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -1992,6 +1992,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
+    @IgnoresForbiddenProjectCheck // So we can display an error when visiting a forbidden project, #43278... but this should be called in root
     public class LoadLibraryAction extends ReadOnlyApiAction<LoadLibraryForm>
     {
         @Override
