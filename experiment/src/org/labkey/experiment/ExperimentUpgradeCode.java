@@ -425,4 +425,20 @@ public class ExperimentUpgradeCode implements UpgradeCode
             setStatus(TaskStatus.complete);
         }
     }
+
+    @SuppressWarnings({"UnusedDeclaration"}) // Called from exp-21.008-21.009.sql
+    @DeferredUpgrade
+    public void cleanupLengthTypePropertyValidators(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            SQLFragment sql = new SQLFragment("DELETE FROM exp.PropertyValidator WHERE TypeURI = \'urn:lsid:labkey.com:PropertyValidator:length\'");
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+            {
+                new SqlExecutor(ExperimentService.get().getSchema()).execute(new SQLFragment(sql));
+
+                transaction.commit();
+            }
+        }
+    }
 }

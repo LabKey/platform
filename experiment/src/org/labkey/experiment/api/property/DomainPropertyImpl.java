@@ -804,10 +804,15 @@ public class DomainPropertyImpl implements DomainProperty
         {
             if (0 != validator.getPropertyId() && getPropertyId() != validator.getPropertyId())
                 throw new IllegalStateException();
-            PropertyValidator impl = new PropertyValidator();
-            impl.copy(validator);
-            impl.setPropertyId(getPropertyId());
-            ensureValidators().add(new PropertyValidatorImpl(impl));
+
+            // Ensure validator is a valid kind (ex. urn:lsid:labkey.com:PropertyValidator:length is no longer valid)
+            if ( null != PropertyService.get().getValidatorKind(validator.getTypeURI()) )
+            {
+                PropertyValidator impl = new PropertyValidator();
+                impl.copy(validator);
+                impl.setPropertyId(getPropertyId());
+                ensureValidators().add(new PropertyValidatorImpl(impl));
+            }
         }
     }
 

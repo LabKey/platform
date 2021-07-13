@@ -53,7 +53,7 @@ public enum PropertyValidatorType
             return false;
         }
     },
-    Length
+    TextLength
     {
         @Override
         public HelpPopup createHelpPopup()
