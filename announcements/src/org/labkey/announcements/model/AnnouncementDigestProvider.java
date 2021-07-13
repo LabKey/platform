@@ -138,7 +138,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     public static class DailyDigestEmailTemplate extends EmailTemplate
     {
-        protected static final String DEFAULT_SUBJECT = "New posts to ^folderName^";
+        protected static final String DEFAULT_SUBJECT = "New posts to ^folderPath^";
         protected static final String DEFAULT_DESCRIPTION = "Message board daily digest notification";
         protected static final String NAME = "Message board daily digest";
         protected static final String BODY_PATH = "/org/labkey/announcements/dailyDigest.txt";
@@ -177,7 +177,6 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         @Override
         protected void addCustomReplacements(Replacements replacements)
         {
-            replacements.add("folderName", String.class, "Folder that user subscribed to", ContentType.Plain, Container::getPath);
             replacements.add("postList", String.class, "List of new posts", ContentType.HTML, c -> posts);
             replacements.add("reasonFooter", String.class, "Footer message explaining why user is receiving this digest", ContentType.HTML, c -> reasonForEmail);
         }

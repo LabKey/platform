@@ -16,7 +16,6 @@
 package org.labkey.query.reports.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.ReportUrls;
@@ -43,7 +42,6 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 {
     private static final String DEFAULT_SUBJECT = "Report/Dataset Change Notification";
 
-    private ActionURL _folderUrl;
     private ActionURL _emailPrefsUrl;
     private String _reportAndDatasetList;
 
@@ -71,8 +69,6 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
     @Override
     protected void addCustomReplacements(Replacements replacements)
     {
-        replacements.add("folderUrl", String.class, "URL to folder", ContentType.Plain, c -> _folderUrl == null ? null : _folderUrl.getURIString());
-        replacements.add("folderPath", String.class, "Path to folder", ContentType.Plain, c -> PageFlowUtil.filter(c.getPath()));
         replacements.add("emailPrefsUrl", String.class, "URL to set email preferences", ContentType.Plain, c -> _emailPrefsUrl == null ? null : _emailPrefsUrl.getURIString());
         replacements.add("reportAndDatasetList", String.class, "Formatted list of changed reports/datasets", ContentType.HTML, c -> _reportAndDatasetList);
     }
@@ -80,7 +76,6 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
     public void init(Container c, Map<ViewCategory, List<NotificationInfo>> reports)
     {
         _emailPrefsUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlManageNotifications(c);
-        _folderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c);
         _reportAndDatasetList = buildReportAndDatasetList(c, reports);
     }
 
