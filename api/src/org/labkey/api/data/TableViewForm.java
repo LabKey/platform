@@ -474,7 +474,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
                 // Attempt to resolve lookups by display value
                 ColumnInfo col = getColumnByFormFieldName(propName);
-                if (col != null && col.getFk() != null)
+                if (col != null && col.getFk() != null && col.getFk().allowImportByAlternateKey())
                 {
                     ForeignKey fk = col.getFk();
                     Container container = fk.getLookupContainer() != null ? fk.getLookupContainer() : getContainer();
