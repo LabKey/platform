@@ -6778,7 +6778,7 @@ public class ExperimentController extends SpringActionController
         {
             boolean isFMEnabled = InventoryService.isFreezerManagementEnabled(getContainer());
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
-            List<String> orderedIdCols = new ArrayList<>(Arrays.asList("RowId", "Ordinal"));
+            List<String> orderedIdCols = new ArrayList<>(Arrays.asList("Id AS ProvidedID", "RowId", "Ordinal"));
             List<String> sampleColumns = new ArrayList<>();
             DialectStringHandler stringHandler = ExperimentService.get().getSchema().getSqlDialect().getStringHandler();
             if (!isFMEnabled)
@@ -6859,8 +6859,9 @@ public class ExperimentController extends SpringActionController
                 sql.append("\n) AS _values_ )\n"); // name of the alias here doesn't matter
             }
 
-            sql.append("SELECT ").append(StringUtils.join( sampleColumns, ",\n\t"));
-            sql.append(",\n\tOID.").append(StringUtils.join( orderedIdCols, ",\n\tOID."));
+            sql.append("SELECT ");
+            sql.append("\n\tOID.").append(StringUtils.join(orderedIdCols, ",\n\tOID."));
+            sql.append(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t"));
             sql.append("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
