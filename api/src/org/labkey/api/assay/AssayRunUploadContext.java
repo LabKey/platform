@@ -131,6 +131,17 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         return emptyMap();
     }
 
+    /**
+     * Allow importing a file that has been marked as an output of another run.
+     * When true, the existing file (exp.data) will be added as an input to the
+     * assay run and a new exp.data object will be created for the imported file
+     * and attached as the output of the run.
+     */
+    default boolean isAllowCrossRunFileInputs()
+    {
+        return false;
+    }
+
     ProviderType getProvider();
 
     String getTargetStudy();
@@ -201,6 +212,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<?, String> _outputDatas;
         protected Map<?, String> _inputMaterials;
         protected Map<?, String> _outputMaterials;
+        protected boolean _allowCrossRunFileInputs;
         protected List<Map<String, Object>> _rawData;
         protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
@@ -311,6 +323,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public final FACTORY setOutputMaterials(Map<?, String> outputMaterials)
         {
             _outputMaterials = outputMaterials;
+            return self();
+        }
+
+        public final FACTORY setAllowCrossRunFileInputs(boolean allowCrossRunFileInputs)
+        {
+            _allowCrossRunFileInputs = allowCrossRunFileInputs;
             return self();
         }
 

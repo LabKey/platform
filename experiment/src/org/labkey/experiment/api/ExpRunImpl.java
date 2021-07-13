@@ -997,7 +997,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         if (originalData.getDataFileUrl() != null)
         {
-            for (ExpData data : ExperimentService.get().getAllExpDataByURL(originalData.getDataFileUrl()))
+            for (ExpData data : ExperimentService.get().getAllExpDataByURL(originalData.getDataFileUrl(), null))
             {
                 for (ExpRun run : data.getTargetRuns())
                 {
