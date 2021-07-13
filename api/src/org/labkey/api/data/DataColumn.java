@@ -65,6 +65,7 @@ import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VAL
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
+    public static final String EXPERIMENTAL_USE_QUERYSELECT_COMPONENT = "experimental-use-queryselect-component";
     private static final Logger LOG = LogManager.getLogger(DataColumn.class);
 
     private ColumnInfo _boundColumn;
@@ -641,7 +642,11 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
+                renderQuerySelectFormInput(ctx, out, _boundColumn.getFk(), formFieldName, value, strVal, disabledInput);
+            else
+                renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
@@ -846,6 +851,34 @@ public class DataColumn extends DisplayColumn
         sb.append("</script>\n");
         sb.append("<div id='").append(renderId).append("'></div>");
         out.write(sb.toString());
+    }
+
+    private void renderQuerySelectFormInput(RenderContext ctx, Writer out, ForeignKey fk, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<script type=\"text/javascript\">");
+        //sb.append("LABKEY.requiresScript('http://localhost:3001/querySelectInput.js', function() {\n");
+        sb.append("LABKEY.requiresScript('gen/querySelectInput', function() {\n");
+        sb.append(" LABKEY.App.loadApp('querySelectInput', ").append(PageFlowUtil.jsString(renderId)).append(", {\n");
+        sb.append("     name: ").append(PageFlowUtil.jsString(getInputPrefix() + formFieldName)).append("\n");
+        sb.append("     ,value: ").append(PageFlowUtil.jsString(strVal)).append("\n");
+        sb.append("     ,disabled: ").append(disabledInput).append("\n");
+        sb.append("     ,schemaName: ").append(PageFlowUtil.jsString(fk.getLookupSchemaName())).append("\n");
+        sb.append("     ,queryName: ").append(PageFlowUtil.jsString(fk.getLookupTableName())).append("\n");
+        if (fk.getLookupContainer() != null)
+            sb.append("     ,containerPath: ").append(PageFlowUtil.jsString(fk.getLookupContainer().getPath())).append("\n");
+        sb.append(" });\n");
+        sb.append("});\n");
+        sb.append("</script>\n");
+        sb.append("<div id='").append(renderId).append("'></div>");
+        out.write(sb.toString());
+
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        if (disabledInput)
+            renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 
     protected @Nullable ActionURL getAutoCompleteURLPrefix()

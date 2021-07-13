@@ -37,7 +37,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -211,10 +210,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
 
-        WebdavService.get().addExpDataProvider((path, container) -> {
-            ExpData expData = ExperimentService.get().getExpDataByURL(path, container);
-            return expData == null ? Collections.emptyList() : Collections.singletonList(expData);
-        });
+        WebdavService.get().addExpDataProvider((path, container) -> ExperimentService.get().getAllExpDataByURL(path, container));
     }
 
     @Override

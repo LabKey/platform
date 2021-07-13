@@ -17,7 +17,8 @@ package org.labkey.assay.actions;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.action.LabKeyError;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.assay.AssayDataCollector;
@@ -27,23 +28,42 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.template.PageConfig;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.P;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 
 /**
  * User: jeckels
@@ -77,7 +97,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
 
             for (String fileName : getViewContext().getRequest().getParameterValues("file"))
             {
-                if (fileName.indexOf("/") != -1 || fileName.indexOf("\\") != -1)
+                if (fileName.contains("/") || fileName.contains("\\"))
                 {
                     throw new NotFoundException(fileName);
                 }
@@ -111,7 +131,35 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         {
             throw new NotFoundException("Could not find any matching files");
         }
-        files = validateFiles(errors, files);
+
+        if (!form.isAllowCrossRunFileInputs())
+        {
+            // check for files with existing runs and prompt for confirmation if there are any
+            var pair = filesWithExistingRuns(files);
+            Map<ExpData, ExpRun> filesWithRun = pair.second;
+            if (!filesWithRun.isEmpty())
+            {
+                // Create a confirmation view to prompt user about importing the files that have already been created by
+                // another run.  Ideally, we'd just extend ConfirmAction directly. Unfortunately, ConfirmAction expects
+                // the prompt view to be accessed via GET and then POSTs when the user confirms the action. However, the
+                // PipelineDataCollectorRedirectAction is invoked initially via POST from the file browser before we've
+                // confirmed. To create the confirmWrapper.jsp view, we need to initialize a FakeConfirmAction to pass
+                // the property values for rendering the hidden form values.
+
+                FakeConfirmAction confirmAction = new FakeConfirmAction();
+                confirmAction.setViewContext(getViewContext());
+                MutablePropertyValues mpv = new MutablePropertyValues(getPropertyValues());
+                // add the property that will be POSTed if user confirms
+                mpv.addPropertyValue("allowCrossRunFileInputs", true);
+                confirmAction.setProperties(mpv);
+
+                ModelAndView confirmView = getConfirmView(pair.first, filesWithRun);
+                JspView<FakeConfirmAction> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", confirmAction);
+                confirmWrapper.setBody(confirmView);
+                getPageConfig().setTemplate(PageConfig.Template.Dialog);
+                return confirmWrapper;
+            }
+        }
 
         if (errors.getErrorCount() > 0)
         {
@@ -125,28 +173,80 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
             maps.add(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, file));
         }
         PipelineDataCollector.setFileCollection(getViewContext().getRequest().getSession(true), container, form.getProtocol(), maps);
-        throw new RedirectException(AssayService.get().getProvider(form.getProtocol()).getImportURL(container, form.getProtocol()));
+
+        ActionURL url = AssayService.get().getProvider(form.getProtocol()).getImportURL(container, form.getProtocol());
+        if (form.isAllowCrossRunFileInputs())
+            url.addParameter("allowCrossRunFileInputs", "true");
+
+        throw new RedirectException(url);
     }
 
-    /**
-     *
-     * @param errors any fatal errors with this set of files
-     * @param files the selected files
-     * @return the subset of the files that should actually be loaded
-     */
-    protected List<File> validateFiles(BindException errors, List<File> files)
+    private class FakeConfirmAction extends ConfirmAction<Object>
     {
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception { throw new IllegalStateException(); }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception { throw new IllegalStateException(); }
+
+        @Override
+        public void validateCommand(Object o, Errors errors) { throw new IllegalStateException(); }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return getViewContext().getActionURL();
+        }
+    }
+
+    private ModelAndView getConfirmView(List<File> remaining, Map<ExpData, ExpRun> filesWithRun)
+    {
+        List<DOM.Renderable> nodes = new ArrayList<>();
+
+        DOM.Renderable warn = P(
+                "The files listed below have been created by another run.",
+                " Importing these files into an assay will will attach the existing file as an input to the assay",
+                " and create another file record as an output of the assay run.",
+                " Would you like to continue to import these files?",
+                UL(filesWithRun.entrySet().stream().map(e ->
+                        LI("File '" + e.getKey().getName() + "' created by run '",
+                                A(at(href, e.getValue().detailsURL()), e.getValue().getName()),
+                                "' (" + e.getValue().getProtocol().getName() + ")"))));
+
+        nodes.add(warn);
+
+        if (!remaining.isEmpty())
+        {
+            nodes.add(P("The remaining files have not yet been imported:",
+                    UL(remaining.stream().map(f -> LI(f.getName())))));
+        }
+
+        return new HtmlView(createHtmlFragment(nodes));
+    }
+
+    // split the files into those that have been created by an run and the rest.
+    protected Pair<List<File>, Map<ExpData, ExpRun>> filesWithExistingRuns(List<File> files)
+    {
+        var unimported = new ArrayList<File>();
+        var existing = new LinkedHashMap<ExpData, ExpRun>();
         for (File file : files)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(file, getContainer());
             if (data != null)
-                LOG.debug("Found existing data: rowId=" + data.getRowId() + ", url=" + data.getDataFileUrl());
+                LOG.info("Found existing data: rowId=" + data.getRowId() + ", url=" + data.getDataFileUrl());
             if (data != null && data.getRun() != null)
             {
-                errors.addError(new LabKeyError("The file " + file.getAbsolutePath() + " has already been imported"));
+                ExpRun previousRun = data.getRun();
+                String msg ="File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")";
+                LOG.warn(msg);
+                existing.put(data, previousRun);
+            }
+            else
+            {
+                unimported.add(file);
             }
         }
-        return files;
+        return Pair.of(unimported, existing);
     }
 
     @Override
@@ -159,6 +259,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
     {
         private int _protocolId;
         private String _path;
+        private boolean _allowCrossRunFileInputs;
 
         public int getProtocolId()
         {
@@ -188,6 +289,16 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         public void setPath(String path)
         {
             _path = path;
+        }
+
+        public void setAllowCrossRunFileInputs(boolean allowCrossRunFileInputs)
+        {
+            _allowCrossRunFileInputs = allowCrossRunFileInputs;
+        }
+
+        public boolean isAllowCrossRunFileInputs()
+        {
+            return _allowCrossRunFileInputs;
         }
     }
 

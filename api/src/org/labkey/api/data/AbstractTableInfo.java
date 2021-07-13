@@ -1616,20 +1616,20 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     private final Map<Class<? extends TriggerFactory>, TriggerFactory> _triggerFactories = new LinkedHashMap<>();
 
-    public void addTriggerFactory(TriggerFactory factory)
+    public final void addTriggerFactory(TriggerFactory factory)
     {
         checkLocked();
         _triggerFactories.put(factory.getClass(), factory);
     }
 
     @Override
-    public boolean hasTriggers(@Nullable Container c)
+    public final boolean hasTriggers(@Nullable Container c)
     {
         return !getTriggers(c).isEmpty();
     }
 
     @Override
-    public boolean canStreamTriggers(Container c)
+    public final boolean canStreamTriggers(Container c)
     {
         for (Trigger script : getTriggers(c))
         {
@@ -1644,7 +1644,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private Collection<Trigger> _triggers = null;
 
     @NotNull
-    protected Collection<Trigger> getTriggers(@Nullable Container c)
+    public final Collection<Trigger> getTriggers(@Nullable Container c)
     {
         if (_triggers == null)
         {
@@ -1655,7 +1655,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
 
     @NotNull
-    private Collection<Trigger> loadTriggers(@Nullable Container c)
+    private final Collection<Trigger> loadTriggers(@Nullable Container c)
     {
         if (_triggerFactories.isEmpty())
             return Collections.emptyList();
@@ -1669,20 +1669,20 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (LOG.isDebugEnabled() && !scripts.isEmpty())
         {
             LOG.debug("Trigger scripts for '" + getPublicSchemaName() + "', '" + getName() + "': " +
-                    scripts.stream().map(Trigger::getDebugName).collect(Collectors.joining(", ")));
+                    scripts.stream().map(Trigger::getName).collect(Collectors.joining(", ")));
         }
 
         return scripts;
     }
 
     @Override
-    public void resetTriggers(Container c)
+    public final void resetTriggers(Container c)
     {
         _triggers = null;
     }
 
     @Override
-    public void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
+    public final void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
     {
         assert batchErrors != null;

@@ -271,7 +271,7 @@ class ScriptReferenceImpl implements ScriptReference
             RhinoEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
             Context ctx = Context.enter();
 
-            LOG.info("Compiling script '" + r.toString() + "'");
+            LOG.debug("Compiling script '" + r.toString() + "'");
 
             try (Reader reader = Readers.getReader(r.getInputStream()))
             {
@@ -323,6 +323,19 @@ class ScriptReferenceImpl implements ScriptReference
         MemTracker.getInstance().put(this);
     }
 
+    @Override
+    public String getModuleName()
+    {
+        return _module.getName();
+    }
+
+    @Override
+    public Path getPath()
+    {
+        return _path;
+    }
+
+    @Override
     public String toString()
     {
         return "[" + _module.getName() + "] " + _path.toString();
@@ -653,7 +666,7 @@ class RhinoEngine extends RhinoScriptEngine
 
             if (topLevel == null)
             {
-                LOG.info("RhinoEngine.createTopLevel: initialize cache");
+                LOG.debug("RhinoEngine.createTopLevel: initialize cache");
                 // Create the shared module script cache.
                 // This cache is managed by Rhino's module provider implementation.
                 ModuleSourceProvider moduleSourceProvider = new LabKeyModuleSourceProvider();
