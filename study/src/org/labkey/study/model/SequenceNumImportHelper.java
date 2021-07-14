@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import static org.labkey.study.model.VisitImpl.normalizeSequenceNum;
+
 /**
  * User: matthewb
  * Date: 2012-10-11
@@ -198,7 +200,7 @@ translateToDouble:
 
         // handle log-type events which can be unique'd by date
         Visit v = _sequenceNumMap.get(sequencenum);
-        Visit v2 = _sequenceNumMap.get(new BigDecimal(sequencenum));
+        Visit v2 = _sequenceNumMap.get(normalizeSequenceNum(new BigDecimal(sequencenum)));
         assert (null == v && null == v2) || (v.getSequenceNumMinDouble() == v2.getSequenceNumMinDouble());
         if (null != v && v.getSequenceNumHandlingEnum() == Visit.SequenceHandling.logUniqueByDate)
         {
