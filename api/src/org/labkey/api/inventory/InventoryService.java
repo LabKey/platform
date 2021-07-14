@@ -23,10 +23,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.util.List;
 import java.util.Map;
@@ -74,4 +77,12 @@ public interface InventoryService
 
     @NotNull
     String getWellLabel(int boxId, int row, Integer col);
+
+    static boolean isFreezerManagementEnabled(Container c)
+    {
+        Set<Module> moduleSet = c.getActiveModules();
+        return (moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"))
+                && (!moduleSet.contains(ModuleLoader.getInstance().getModule("Biologics"))
+                || ExperimentalFeatureService.get().isFeatureEnabled(InventoryService.EXPERIMENTAL_FM_BIOLOGICS)));
+    }
 }
