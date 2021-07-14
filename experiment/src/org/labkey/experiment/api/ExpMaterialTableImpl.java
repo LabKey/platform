@@ -203,7 +203,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append(") END)");
 
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("AliquotCount"), new SQLFragment(sql), JdbcType.BOOLEAN);
-                columnInfo.setLabel("Aliquots created");
+                columnInfo.setLabel("Aliquots Created Count");
                 columnInfo.setDescription("Total number of aliquots created from this sample");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
