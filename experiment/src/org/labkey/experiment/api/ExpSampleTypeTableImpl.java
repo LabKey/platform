@@ -189,7 +189,8 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 @Override
                 public Object getJsonValue(RenderContext ctx)
                 {
-                    return getDisplayValue(ctx);
+                    Object value = getDisplayValue(ctx);
+                    return value != null ? value.toString() : null;
                 }
 
                 @Override
