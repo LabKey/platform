@@ -1882,6 +1882,24 @@ public class ExperimentController extends SpringActionController
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
                 }
             }
+
+            // add links to any other exp.data that share the same dataFileUrl path
+            var altDataList = ExperimentService.get().getAllExpDataByURL(_data.getDataFileUrl(), getContainer());
+            altDataList.removeIf(_data::equals);
+            if (altDataList.size() > 0)
+            {
+                MenuButton menu = new MenuButton("Alternate Data");
+                for (ExpData altData : altDataList)
+                {
+                    ExpRun altDataRun = altData.getRun();
+                    StringBuilder sb = new StringBuilder(altData.getName());
+                    if (altDataRun != null)
+                        sb.append(" created by run '").append(altDataRun.getName()).append("' (").append(altDataRun.getProtocol().getName()).append(")");
+                    menu.addMenuItem(sb.toString(), altData.detailsURL());
+                }
+                bb.add(menu);
+            }
+
             dr.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             dr.setButtonBar(bb);
 
@@ -4796,11 +4814,12 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
+            if (form.getTargetSampleTypeId() == 0)
+                throw new NotFoundException("Target sample type required for the derived samples");
+
             ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), form.getTargetSampleTypeId());
-            if (form.getTargetSampleTypeId() != 0 && sampleType == null)
-            {
+            if (sampleType == null)
                 throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleTypeId());
-            }
 
             InsertView insertView = new InsertView(new DataRegion(), errors);
 
@@ -4911,7 +4930,6 @@ public class ExperimentController extends SpringActionController
                 int i = 0;
                 for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    Map<DomainProperty, String> props = entry.getValue();
                     Lsid lsid = entry.getKey();
                     String name = lsid.getObjectId();
                     assert name != null;

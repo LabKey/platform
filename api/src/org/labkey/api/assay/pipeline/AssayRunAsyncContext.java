@@ -70,6 +70,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     /** RowIds for all the domains associated with properties we need to remember */
     private Set<Integer> _domainIds = new HashSet<>();
     private Integer _reRunId;
+    private boolean _allowCrossRunFileInputs;
 
     private File _originalFileLocation;
 
@@ -99,13 +100,13 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _userId = _user.getUserId();
         _protocol = originalContext.getProtocol();
         _protocolId = _protocol.getRowId();
-        if(!_protocol.getName().equals(UNIT_TESTING_PROTOCOL_NAME))
+        if (!_protocol.getName().equals(UNIT_TESTING_PROTOCOL_NAME))
             _provider = (ProviderType) AssayService.get().getProvider(_protocol);
         _targetStudy = originalContext.getTargetStudy();
         _runName = originalContext.getName();
         _runComments = originalContext.getComments();
         _container = originalContext.getContainer();
-        if(_container != null)
+        if (_container != null)
             _containerId = _container.getId();
         _actionURL = originalContext.getActionURL();
         _uploadedData = originalContext.getUploadedData();
@@ -116,6 +117,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _batchPropertiesById = convertPropertiesToIds(_batchProperties);
         _runProperties = originalContext.getRunProperties();
         _runPropertiesById = convertPropertiesToIds(_runProperties);
+        _allowCrossRunFileInputs = originalContext.isAllowCrossRunFileInputs();
 
         _jobDescription = originalContext.getJobDescription();
         _jobNotificationProvider = originalContext.getJobNotificationProvider();
@@ -330,6 +332,12 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public Map<Object, String> getInputDatas()
     {
         return Collections.emptyMap();
+    }
+
+    @Override
+    public boolean isAllowCrossRunFileInputs()
+    {
+        return _allowCrossRunFileInputs;
     }
 
     @Override

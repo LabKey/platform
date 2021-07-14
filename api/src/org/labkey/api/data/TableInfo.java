@@ -408,6 +408,17 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         }
     }
 
+    /**
+     * Enumeration of trigger methods that may be implemented in trigger scripts.
+     */
+    enum TriggerMethod
+    {
+        init, complete,
+        beforeInsert, afterInsert,
+        beforeUpdate, afterUpdate,
+        beforeDelete, afterDelete
+    }
+
 
     /**
      * Queries may have named parameters, SELECT queries (the only kind we have right now) may

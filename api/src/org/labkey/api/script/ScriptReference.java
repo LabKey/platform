@@ -15,6 +15,8 @@
  */
 package org.labkey.api.script;
 
+import org.labkey.api.util.Path;
+
 import javax.script.ScriptContext;
 import javax.script.ScriptException;
 import java.util.Map;
@@ -24,6 +26,12 @@ import java.util.Map;
  */
 public interface ScriptReference
 {
+    /** The module where the script is defined. */
+    String getModuleName();
+
+    /** Script source path. */
+    Path getPath();
+
     /**
      * The context in which the script will run when {@link #eval()} or {@link #invoke()} is called.
      */

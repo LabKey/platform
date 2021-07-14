@@ -416,6 +416,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _startDate = startDate;
     }
 
+    @Override
     @Nullable
     public String getParticipantCohortProperty()
     {
@@ -423,7 +424,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             return _participantCohortProperty;
         Study shared = StudyManager.getInstance().getSharedStudy(this);
         if (null != shared)
-            return ((StudyImpl)shared).getParticipantCohortProperty();
+            return shared.getParticipantCohortProperty();
         return null;
     }
 
@@ -432,6 +433,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantCohortProperty = participantCohortProperty;
     }
 
+    @Override
     @Nullable
     public Integer getParticipantCohortDatasetId()
     {
@@ -439,7 +441,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             return _participantCohortDatasetId;
         Study shared = StudyManager.getInstance().getSharedStudy(this);
         if (null != shared)
-            return ((StudyImpl)shared).getParticipantCohortDatasetId();
+            return shared.getParticipantCohortDatasetId();
         return null;
     }
 
@@ -448,6 +450,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantCohortDatasetId = participantCohortDatasetId;
     }
 
+    @Override
     public boolean isManualCohortAssignment()
     {
         return _manualCohortAssignment;
@@ -589,6 +592,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantCommentDatasetId = participantCommentDatasetId;
     }
 
+    @Override
     public String getParticipantCommentProperty()
     {
         return _participantCommentProperty;
@@ -609,6 +613,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantVisitCommentDatasetId = participantVisitCommentDatasetId;
     }
 
+    @Override
     public String getParticipantVisitCommentProperty()
     {
         return _participantVisitCommentProperty;

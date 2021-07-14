@@ -472,13 +472,35 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpData> getExpData(Container c);
 
+    /**
+     * Get the <b>most recently</b> created ExpData for the URL, if it exists.
+     * @see #getAllExpDataByURL(String, Container)
+     */
     ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
 
+    /**
+     * Get the <b>most recently</b> created ExpData for the file, if it exists.
+     * @see #getAllExpDataByURL(Path, Container)
+     */
     ExpData getExpDataByURL(File f, @Nullable Container c);
 
+    /**
+     * Get the <b>most recently</b> created ExpData for the path, if it exists.
+     * @see #getAllExpDataByURL(Path, Container)
+     */
     ExpData getExpDataByURL(Path p, @Nullable Container c);
 
-    List<? extends ExpData> getAllExpDataByURL(String canonicalURL);
+    /**
+     * Get all ExpData for the dataFileUrl.
+     *
+     * Having an more than one ExpData for the same file path doesn't happen often but is allowed.
+     * Some examples:
+     * - The file or pipeline root may be shared by more than one container and an exp.data may be created in each container when importing assay data.
+     * - In the MS2 analysis pipeline, there are tools that rewrite an input file to add more data. We model them as separate exp.data.
+     */
+    List<? extends ExpData> getAllExpDataByURL(String canonicalURL, @Nullable Container c);
+    List<? extends ExpData> getAllExpDataByURL(File f, @Nullable Container c);
+    List<? extends ExpData> getAllExpDataByURL(Path p, @Nullable Container c);
 
     TableInfo getTinfoMaterial();
 

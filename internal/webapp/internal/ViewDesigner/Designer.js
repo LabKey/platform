@@ -16,7 +16,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     bodyStyle: 'background-color: transparent;',
 
     statics: {
-        RESERVED_VIEW_NAMES : ['default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
+        RESERVED_VIEW_NAMES : ['Default', '~~DETAILS~~', '~~INSERT~~', '~~UPDATE~~'],
         saveCustomizeViewPrompt: function(config) {
             var success = config.success,
                     scope = config.scope,
@@ -130,11 +130,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         validator: function(value) {
                             var trimmedValue = value.trim();
                             if (trimmedValue.length == 0)
-                                return "Blank grid view name is not allowed";
+                                return "Blank grid view name is not allowed.";
                             else if (trimmedValue.length > 50)
-                                return "The grid view name must be less than 50 characters long";
+                                return "The grid view name must be less than 50 characters long.";
                             else if (LABKEY.internal.ViewDesigner.Designer.RESERVED_VIEW_NAMES.indexOf(trimmedValue) > -1) {
-                                return "The grid view name '" + value + "' is not allowed";
+                                return "The grid view name '" + value + "' is not allowed.";
                             }
                             return true;
                         },
@@ -205,12 +205,22 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         var nameField = win.down('#nameFieldContainer').items.get(1);
                         if (!nameField.isValid())
                         {
-                            Ext4.Msg.alert("Invalid grid view name", nameField.getErrors());
+                            Ext4.Msg.show({
+                                title:"Invalid grid view name",
+                                msg: nameField.getErrors(),
+                                buttons: Ext4.Msg.OK,
+                                icon: Ext4.Msg.ERROR
+                            });
                             return;
                         }
                         if (!canEdit && viewName == nameField.getValue())
                         {
-                            Ext4.Msg.alert("Error saving", "This grid view is not editable.  You must save this grid view with an alternate name.");
+                            Ext4.Msg.show({
+                                title:"Error saving",
+                                msg: "This grid view is not editable.  You must save this grid view with an alternate name.",
+                                buttons: Ext4.Msg.OK,
+                                icon: Ext4.Msg.ERROR
+                            });
                             return;
                         }
 

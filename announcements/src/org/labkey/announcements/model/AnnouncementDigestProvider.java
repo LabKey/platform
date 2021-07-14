@@ -138,12 +138,10 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
     public static class DailyDigestEmailTemplate extends EmailTemplate
     {
-        protected static final String DEFAULT_SUBJECT = "New posts to ^folderName^";
+        protected static final String DEFAULT_SUBJECT = "New posts to ^folderPath^";
         protected static final String DEFAULT_DESCRIPTION = "Message board daily digest notification";
         protected static final String NAME = "Message board daily digest";
         protected static final String BODY_PATH = "/org/labkey/announcements/dailyDigest.txt";
-
-        private final List<EmailTemplate.ReplacementParam> _replacements = new ArrayList<>();
 
         private DailyDigestBean dailyDigestBean = null;
         private String reasonForEmail;
@@ -151,43 +149,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         public DailyDigestEmailTemplate()
         {
-            super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
-            setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
-
-            _replacements.add(new ReplacementParam<>("folderName", String.class, "Folder that user subscribed to", ContentType.Plain)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return c.getPath();
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("postList", String.class, "List of new posts", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return posts;
-                }
-            });
-
-            _replacements.add(new ReplacementParam<>("reasonFooter", String.class, "Footer message explaining why user is receiving this digest", ContentType.HTML)
-            {
-                @Override
-                public String getValue(Container c)
-                {
-                    return reasonForEmail;
-                }
-            });
-
-            _replacements.addAll(super.getValidReplacements());
-        }
-
-        @Override
-        public List<ReplacementParam> getValidReplacements()
-        {
-            return _replacements;
+            super(NAME, DEFAULT_DESCRIPTION, DEFAULT_SUBJECT, loadBody(), ContentType.HTML, Scope.SiteOrFolder);
         }
 
         private static String loadBody()
@@ -210,6 +172,13 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             this.dailyDigestBean = bean;
             initReason();
             initPosts();
+        }
+
+        @Override
+        protected void addCustomReplacements(Replacements replacements)
+        {
+            replacements.add("postList", String.class, "List of new posts", ContentType.HTML, c -> posts);
+            replacements.add("reasonFooter", String.class, "Footer message explaining why user is receiving this digest", ContentType.HTML, c -> reasonForEmail);
         }
 
         private void initReason()

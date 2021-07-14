@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.specimen.SpecimenManager"%>
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.specimen.model.SpecimenComment" %>
@@ -24,6 +23,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenEventBean" %>
 <%@ page import="org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission" %>

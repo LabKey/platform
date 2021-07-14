@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -100,6 +101,13 @@ public class LabKeyCollectors
         return JSONArray.collector();
     }
 
+    /**
+     * Returns a {@link Collector} that builds a {@link CaseInsensitiveHashSet} from a {@link Stream} of {@link String}s
+     */
+    public static Collector<String, ?, Set<String>> toCaseInsensitiveHashSet()
+    {
+        return Collectors.toCollection(CaseInsensitiveHashSet::new);
+    }
 
     public static class TestCase extends Assert
     {

@@ -16,6 +16,8 @@
 
 package org.labkey.api.util.emailTemplate;
 
+import com.google.common.collect.Streams;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -40,13 +42,13 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
 import java.util.MissingFormatArgumentException;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Admin-customizable template for sending automated emails from the server. Subclasses are used
- * for each specific type of email to send. A simple substitution syntax allows for replacing sections
- * with dynamic content.
+ * Admin-customizable template for sending automated emails from the server. Subclasses are used for each specific type
+ * of email to send. A simple substitution syntax allows for replacing sections with dynamic content.
  *
  * User: Karl Lum
  * Date: Jan 15, 2007
@@ -56,7 +58,7 @@ public abstract class EmailTemplate
     private static final Logger LOG = LogManager.getLogger(EmailTemplate.class);
     /** Pattern for recognizing substitution syntax, which is of the form ^TOKEN^ */
     private static final Pattern SCRIPT_PATTERN = Pattern.compile("\\^(.*?)\\^");
-    private static final List<ReplacementParam> REPLACEMENT_PARAMS = new ArrayList<>();
+    private static final List<ReplacementParam<?>> STANDARD_REPLACEMENTS = new ArrayList<>();
     /** Separates the token name from how it should be formatted (for date and numeric values)  */
     private static final String FORMAT_DELIMITER = "|";
 
@@ -121,111 +123,78 @@ public abstract class EmailTemplate
         public abstract boolean isEditableIn(Container c);
     }
 
+    // These members are final and immutable
+    @NotNull private final String _name;
+    private final String _description;
     /** The format of the email to be generated */
     @NotNull private final ContentType _contentType;
-    @NotNull private final String _name;
-    private String _body;
-    private String _subject;
-    @Nullable private String _senderName;
-    @Nullable private String _replyToEmail;
-    private String _description;
-    private int _priority = 50;
     /** Scope is the locations in which the user should be able to edit this template. It should always be the same
      * for a given subclass, regardless of the instances */
-    private Scope _scope = Scope.Site;
+    private final Scope _scope;
+
+    // These members are mutable since they can be overridden by customizing the email template
+    private String _body;
+    private String _subject;
+    @Nullable private String _senderName = DEFAULT_SENDER;
+    @Nullable private String _replyToEmail = DEFAULT_REPLY_TO;
     /**
      * Container in which this template is stored. Null for the default templates defined in code, the root
      * container for site level templates, or a specific folder.
      */
     private Container _container = null;
 
+    private List<ReplacementParam<?>> _customReplacements = null;
+
     static
     {
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("organizationName", String.class, "Organization name (look and feel settings)"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteShortName", String.class, "Header short name"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteEmailAddress", String.class, "System email address"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("contextPath", String.class, "Web application context path"){
-            @Override
-            public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("supportLink", String.class, "Page where users can request support"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemDescription", String.class, "Header description"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemEmail", String.class, "From address for system notification emails"){
-            @Override
-            public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("currentDateTime", Date.class, "Current date and time of the server"){
-            @Override
-            public Date getValue(Container c) {return new Date();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
-            @Override
-            public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
-            @Override
-            public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
-            @Override
-            public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
-        });
-        REPLACEMENT_PARAMS.add(new ReplacementParam<>("homePageURL", String.class, "The home page of this installation"){
-            @Override
-            public String getValue(Container c) {
-                return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
-            }
-        });
+        Replacements replacements = new Replacements(STANDARD_REPLACEMENTS);
+        replacements.add("organizationName", String.class, "Organization name (look and feel settings)", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getCompanyName());
+        replacements.add("siteShortName", String.class, "Header short name", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getShortName());
+        replacements.add("siteEmailAddress", String.class, "System email address", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
+        replacements.add("contextPath", String.class, "Web application context path", ContentType.Plain, c -> AppProps.getInstance().getContextPath());
+        replacements.add("supportLink", String.class, "Page where users can request support", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getReportAProblemPath());
+        replacements.add("systemDescription", String.class, "Header description", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getDescription());
+        replacements.add("systemEmail", String.class, "From address for system notification emails", ContentType.Plain, c -> LookAndFeelProperties.getInstance(c).getSystemEmailAddress());
+        replacements.add("currentDateTime", Date.class, "Current date and time of the server", ContentType.Plain, c -> new Date());
+        replacements.add("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : c.getName());
+        replacements.add("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : c.getPath());
+        replacements.add("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder", ContentType.Plain, c -> c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString());
+        replacements.add("homePageURL", String.class, "The home page of this installation", ContentType.Plain, c -> ActionURL.getBaseServerURL()); // TODO: Use AppProps.getHomePageUrl() instead?
     }
 
-    public EmailTemplate(@NotNull String name)
-    {
-        this(name, "", "", "", ContentType.Plain);
-    }
-
-    public EmailTemplate(@NotNull String name, String subject, String body, String description)
-    {
-        this(name, subject, body, description, ContentType.Plain);
-    }
-
-    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType)
-    {
-        this(name, subject, body, description, contentType, DEFAULT_SENDER, DEFAULT_REPLY_TO);
-    }
-
-    public EmailTemplate(@NotNull String name, String subject, String body, String description, @NotNull ContentType contentType, @Nullable String senderDisplayName, @Nullable String replyToEmail)
+    public EmailTemplate(@NotNull String name, String description, String subject, String body, @NotNull ContentType contentType, Scope scope)
     {
         _name = name;
+        _description = description;
         _subject = subject;
         _body = body;
-        _description = description;
         _contentType = contentType;
-        _senderName = senderDisplayName;
-        _replyToEmail = replyToEmail;
+        _scope = scope;
     }
 
+    // Getters for immutable members
     @NotNull public String getName(){return _name;}
+    public String getDescription(){return _description;}
+    @NotNull public ContentType getContentType()
+    {
+        return _contentType;
+    }
+    public Scope getEditableScope(){return _scope;}
+
+    // Getters/setters for mutable members
     public String getSubject(){return _subject;}
     public void setSubject(String subject){_subject = subject;}
     public String getBody(){return _body;}
+    public void setBody(String body){_body = body;}
+    public Container getContainer(){return _container;}
+    /* package */ void setContainer(Container c){_container = c;}
+    @Nullable public String getSenderName(){return _senderName;}
+    public void setSenderName(@Nullable String senderName){_senderName = senderName;}
+    @Nullable public String getReplyToEmail(){return _replyToEmail;}
+    public void setReplyToEmail(@Nullable String senderEmail){_replyToEmail = senderEmail;}
 
     /**
-     * Templates that declare themselves to have an HTNML content type can also include a plain-text alternative
+     * Templates that declare themselves to have an HTML content type can also include a plain-text alternative
      * by using the boundary separator. Everything before the boundary is considered part of the HTML, and everything
      * after is part of the text.
      */
@@ -258,26 +227,7 @@ public abstract class EmailTemplate
         return getContentType() == ContentType.HTML && _body.contains(BODY_PART_BOUNDARY);
     }
 
-    public void setBody(String body){_body = body;}
-    @Deprecated // Priority is COMPLETELY ignored and will be removed
-    public void setPriority(int priority){_priority = priority;}
-    public int getPriority(){return _priority;}
-    public String getDescription(){return _description;}
-    public void setDescription(String description){_description = description;}
-    public Scope getEditableScopes(){return _scope;}
-    public void setEditableScopes(Scope scope){_scope = scope;}
-    public Container getContainer(){return _container;}
-    /* package */ void setContainer(Container c){_container = c;}
-    @Nullable public String getSenderName(){return _senderName;}
-    public void setSenderName(@Nullable String senderName){_senderName = senderName;}
-    @Nullable public String getReplyToEmail(){return _replyToEmail;}
-    public void setReplyToEmail(@Nullable String senderEmail){_replyToEmail = senderEmail;}
-
-    @NotNull
-    public ContentType getContentType()
-    {
-        return _contentType;
-    }
+    abstract protected void addCustomReplacements(Replacements replacements);
 
     public boolean isValid(String[] error)
     {
@@ -313,7 +263,7 @@ public abstract class EmailTemplate
     protected boolean isValidReplacement(String paramNameAndFormat)
     {
         String paramName = getParameterName(paramNameAndFormat);
-        for (ReplacementParam param : getValidReplacements())
+        for (ReplacementParam<?> param : getAllReplacements())
         {
             if (param.getName().equalsIgnoreCase(paramName))
                 return true;
@@ -344,7 +294,7 @@ public abstract class EmailTemplate
     public String getReplacement(Container c, String paramNameAndFormat, ContentType contentType)
     {
         String paramName = getParameterName(paramNameAndFormat);
-        for (ReplacementParam param : getValidReplacements())
+        for (ReplacementParam<?> param : getAllReplacements())
         {
             if (param.getName().equalsIgnoreCase(paramName))
             {
@@ -457,9 +407,65 @@ public abstract class EmailTemplate
         return sb.toString();
     }
 
-    public List<ReplacementParam> getValidReplacements()
+    public List<ReplacementParam<?>> getStandardReplacements()
     {
-        return REPLACEMENT_PARAMS;
+        return STANDARD_REPLACEMENTS;
+    }
+
+    public static class Replacements
+    {
+        private final List<ReplacementParam<?>> _params;
+
+        public Replacements(List<ReplacementParam<?>> params)
+        {
+            _params = params;
+        }
+
+        public void add(ReplacementParam<?> replacementParam)
+        {
+            assert !replacementExists(replacementParam) : "Replacement \"" + replacementParam.getName() + "\" already exists!";
+            _params.add(replacementParam);
+        }
+
+        private boolean replacementExists(ReplacementParam<?> newParam)
+        {
+            return Streams.concat(STANDARD_REPLACEMENTS.stream(), _params.stream())
+                .anyMatch(r -> r.getName().equalsIgnoreCase(newParam.getName()));
+        }
+
+        public <Type> void add(@NotNull String name, Class<Type> valueType, String description, ContentType contentType, Function<Container, Type> valueGetter)
+        {
+            add(new ReplacementParam<>(name, valueType, description, contentType)
+            {
+                @Override
+                public Type getValue(Container c)
+                {
+                    return valueGetter.apply(c);
+                }
+            });
+        }
+    }
+
+    public List<ReplacementParam<?>> getCustomReplacements()
+    {
+        if (null == _customReplacements)
+        {
+            _customReplacements = new ArrayList<>();
+            addCustomReplacements(new Replacements(_customReplacements));
+        }
+
+        return _customReplacements;
+    }
+
+    public List<ReplacementParam<?>> getAllReplacements()
+    {
+        return ListUtils.union(getStandardReplacements(), getCustomReplacements());
+    }
+
+    @Deprecated // Old method should not be called or overridden! Leave this for a while to make sure...
+    final public List<ReplacementParam<?>> getValidReplacements()
+    {
+        throw new IllegalStateException();
     }
 
     public static abstract class ReplacementParam<Type> implements Comparable<ReplacementParam<Type>>
@@ -469,11 +475,6 @@ public abstract class EmailTemplate
         private final Class<Type> _valueType;
         private final String _description;
         private final ContentType _contentType;
-
-        public ReplacementParam(@NotNull String name, Class<Type> valueType, String description)
-        {
-            this(name, valueType, description, ContentType.Plain);
-        }
 
         public ReplacementParam(@NotNull String name, Class<Type> valueType, String description, ContentType contentType)
         {
@@ -569,13 +570,13 @@ public abstract class EmailTemplate
         }
 
         @Test(expected = IllegalArgumentException.class)
-        public void testHMLToPlain()
+        public void testHTMLToPlain()
         {
             ContentType.Plain.format("plain <>\"", ContentType.HTML);
         }
 
         @Test
-        public void testHMLToHTML()
+        public void testHTMLToHTML()
         {
             assertEquals("plain <br/>&lt;&gt;&quot;", ContentType.HTML.format("plain <br/>&lt;&gt;&quot;", ContentType.HTML));
         }

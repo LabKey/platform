@@ -34,6 +34,10 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
         this.setState(state => ({ showDetails: !state.showDetails }));
     };
 
+    onHomeClick = (): void => {
+        window.location.href = ActionURL.getBaseURL(false);
+    }
+
     render() {
         const { errorDetails } = this.props.context;
         const { showDetails } = this.state;
@@ -52,6 +56,9 @@ export class ErrorHandler extends PureComponent<ErrorHandlerProps, ErrorHandlerS
                                 {getInstruction(errorDetails)}
                                 <button className="btn btn-primary error-backButton error-page-button" onClick={this.onBackClick}>
                                     Back
+                                </button>
+                                <button className="btn btn-default error-page-button" onClick={this.onHomeClick}>
+                                    Home
                                 </button>
                                 {!errorDetails.hideViewDetails &&
                                     <button className="btn btn-default error-page-button" onClick={this.onViewDetailsClick}>

@@ -161,7 +161,7 @@ public class SampleTypeContentsView extends QueryView
         ActionButton button = super.createDeleteButton();
         if (button != null)
         {
-            button.setScript("LABKEY.experiment.confirmDelete('" + getSchema().getName() + "', '" + getQueryDef().getName() + "', '" + getSelectionKey() + "', 'sample', 'samples')");
+            button.setScript("LABKEY.experiment.confirmDelete('" + this.getDataRegionName() + "', '" + getSchema().getName() + "', '" + getQueryDef().getName() + "', '" + getSelectionKey() + "', 'sample', 'samples')");
             button.setRequiresSelection(true);
         }
         return button;

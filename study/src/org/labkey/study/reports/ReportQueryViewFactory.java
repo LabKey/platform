@@ -36,6 +36,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -43,7 +44,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
@@ -145,7 +145,7 @@ public class ReportQueryViewFactory
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
-            String id = getViewContext().getRequest().getParameter(DatasetDefinition.DATASETKEY);
+            String id = getViewContext().getRequest().getParameter(Dataset.DATASETKEY);
             if (id != null)
                 button.addMenuItem("Set Default", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
 

@@ -15,12 +15,15 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -58,6 +61,46 @@ public class TriggerDataBuilderHelper
         return new After(in);
     }
 
+    abstract class TriggerDataIterator extends WrapperDataIterator
+    {
+        final DataIteratorContext _context;
+        final BatchValidationException _errors;
+
+        protected TriggerDataIterator(DataIterator di, DataIteratorContext context)
+        {
+            super(DataIteratorUtil.wrapMap(di,true));
+            _context = context;
+            _errors = context._errors;
+        }
+
+        BatchValidationException getErrors()
+        {
+            return _errors;
+        }
+
+        MapDataIterator getInput()
+        {
+            return (MapDataIterator)_delegate;
+        }
+
+        @Override
+        public void debugLogInfo(StringBuilder sb)
+        {
+            sb.append(getDebugName()).append(": ").append(this.getClass().getName()).append("\n");
+            if (_target instanceof AbstractTableInfo)
+            {
+                Collection<Trigger> triggers = ((AbstractTableInfo)_target).getTriggers(_c);
+                for (var trigger : triggers)
+                {
+                    sb.append("  -trigger: ").append(trigger.getName()).append("\n");
+                }
+            }
+
+            if (null != _delegate)
+                _delegate.debugLogInfo(sb);
+        }
+    }
+
     class Before implements DataIteratorBuilder
     {
         final DataIteratorBuilder _pre;
@@ -81,18 +124,14 @@ public class TriggerDataBuilderHelper
     }
 
 
-    class BeforeIterator extends WrapperDataIterator
+    class BeforeIterator extends TriggerDataIterator
     {
-        final DataIteratorContext _context;
-        final BatchValidationException _errors;
         boolean _firstRow = true;
         Map<String,Object> _currentRow = null;
 
         BeforeIterator(DataIterator di, DataIteratorContext context)
         {
-            super(DataIteratorUtil.wrapMap(di,true));
-            _context = context;
-            _errors = context._errors;
+            super(di, context);
         }
 
         @Override
@@ -100,16 +139,6 @@ public class TriggerDataBuilderHelper
         {
             // DON'T FIRE TRIGGERS TWICE!
             return false;
-        }
-
-        BatchValidationException getErrors()
-        {
-            return _errors;
-        }
-
-        MapDataIterator getInput()
-        {
-            return (MapDataIterator)_delegate;
         }
 
 
@@ -177,26 +206,11 @@ public class TriggerDataBuilderHelper
     }
 
 
-    class AfterIterator extends WrapperDataIterator
+    class AfterIterator extends TriggerDataIterator
     {
-        final DataIteratorContext _context;
-        final BatchValidationException _errors;
-
         AfterIterator(DataIterator di, DataIteratorContext context)
         {
-            super(DataIteratorUtil.wrapMap(di,true));
-            _context = context;
-            _errors = context._errors;
-        }
-
-        BatchValidationException getErrors()
-        {
-            return _errors;
-        }
-
-        MapDataIterator getInput()
-        {
-            return (MapDataIterator)_delegate;
+            super(di, context);
         }
 
         @Override
