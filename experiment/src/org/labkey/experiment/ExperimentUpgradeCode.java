@@ -426,6 +426,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
+    // For a long time we've been creating unused property validators for text length. This script cleans those up. This
+    // is deferred because we are using the text length property validators in SND and need to convert them to
+    // the new type URI first.
     @SuppressWarnings({"UnusedDeclaration"}) // Called from exp-21.008-21.009.sql
     @DeferredUpgrade
     public void cleanupLengthTypePropertyValidators(final ModuleContext context)
@@ -436,7 +439,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
                 new SqlExecutor(ExperimentService.get().getSchema()).execute(new SQLFragment(sql));
-
                 transaction.commit();
             }
         }
