@@ -1436,6 +1436,7 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
 
         LABKEY.App.loadApp('conceptFilter', divId, {
             ontologyId: scope.column.sourceOntology,
+            conceptSubtree: scope.column.conceptSubtree,
             columnName: scope.column.caption,
             onFilterChange: function(filterValue) {
                 // Inputs may be set after app load, so look it up at execution time
