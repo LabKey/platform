@@ -33,7 +33,6 @@ import java.util.Objects;
  */
 public class RemapCache
 {
-    public static final String EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE = "resolve-lookups-by-value";
     Map<Key, SimpleTranslator.RemapPostConvert> remaps = new HashMap<>();
     private final boolean _allowBulkLoads;
 
