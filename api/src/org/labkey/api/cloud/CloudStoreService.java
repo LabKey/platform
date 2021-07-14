@@ -23,6 +23,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -151,6 +152,12 @@ public interface CloudStoreService
      */
     @Nullable
     Path getPathFromUrl(Container container, String url);
+
+    /**
+     * Return nio.Path matching url (which has bucket, etc.)
+     */
+    @Nullable
+    Path getPathFromUrl(String url);
 
     /**
      * Return nio.Path for otherContainer, given a cloud url/container

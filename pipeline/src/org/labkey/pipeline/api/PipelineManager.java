@@ -26,6 +26,7 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -862,6 +863,13 @@ public class PipelineManager
         if (archiveFile.getFileName().toString().endsWith(".zip"))
         {
             Path importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
+            xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
+        }
+        else if (pipelineRoot.isCloudRoot())
+        {
+            Path importDir = pipelineRoot.getImportDirectory().toPath();
+            //TODO Copy files locally instead of waiting to do it later... e.g., CloudStudyImporter.process
+            //TODO generify XML dir and file attribute downloads...
             xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
         }
 

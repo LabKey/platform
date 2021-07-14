@@ -619,12 +619,12 @@ public class PipeRootImpl implements PipeRoot
             {
                 if (null != uri && StringUtils.isNotBlank(uri.toString()) && !FileUtil.hasCloudScheme(uri))
                 {
-                    File rootPath = new File(uri);
+                    Path rootPath = Path.of(uri);
                     if (!NetworkDrive.exists(rootPath))
                     {
                         result.add("Pipeline root does not exist.");
                     }
-                    else if (!rootPath.isDirectory())
+                    else if (!Files.isDirectory(rootPath))
                     {
                         result.add("Pipeline root is not a directory.");
                     }

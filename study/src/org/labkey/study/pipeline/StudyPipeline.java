@@ -80,6 +80,11 @@ public class StudyPipeline extends PipelineProvider
         return new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
     }
 
+    public static File logForInputPath(java.nio.file.Path path, PipeRoot pipeRoot)
+    {
+        return new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(path.getFileName().toString(), "log"));
+    }
+
 
     public static File lockForDataset(Study study, File f)
     {

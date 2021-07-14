@@ -37,6 +37,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.Path;
 
 /**
  * Created by klum on 2/9/2015.
@@ -62,6 +63,7 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
         _reloadSourceName = reloadSourceName;
         _root = new FileSystemFile(root.getRootPath());
         File studyXml = new File(root.getRootPath(), "study.xml");
+
 
         _ctx = new StudyImportContext(info.getUser(), info.getContainer(), studyXml, null, new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(true);
@@ -132,6 +134,12 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
 
     @Override
     public File getSpecimenArchive() throws ImportException
+    {
+        return _ctx.getSpecimenArchive(_root).toFile();
+    }
+
+    @Override
+    public Path getSpecimenArchivePath() throws ImportException
     {
         return _ctx.getSpecimenArchive(_root);
     }

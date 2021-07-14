@@ -24,11 +24,14 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class PathSerialization
 {
@@ -71,14 +74,23 @@ public class PathSerialization
         public Path deserialize(JsonParser parser, DeserializationContext context) throws IOException
         {
             String str = parser.getValueAsString();
+//            return Path.of(URI.create(str));
             if (FileUtil.hasCloudScheme(str))
             {
-                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
-                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
-                return null;
+//                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
+//                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
+//                return Path.of(str);
+                CloudStoreService css = CloudStoreService.get();
+                if (css != null)
+                {
+                    //TODO this will likely work only for cloud paths that include access ids eg: s3://<pub-access-key>@s3.amazonaws.com/<my bucket>/...
+                    return css.getPathFromUrl(str);
+                }
+
+                return Path.of(str); //TODO this will cause issues...
             }
             else
-                return new File(str).toPath();
+                return Path.of(str);
         }
     }
 }

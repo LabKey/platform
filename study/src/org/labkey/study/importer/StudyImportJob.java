@@ -78,7 +78,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(studyXml.getParent());
         _originalFilename = originalFilename;
-        setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParent().toFile(), "study_load"), getPipeRoot()));
+        setLogFile(StudyPipeline.logForInputPath(studyXml.getParent().resolve("study_load"), getPipeRoot()));
         _errors = errors;
 
         _ctx = new StudyImportContext(user, c, studyXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);
@@ -159,6 +159,12 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 
     @Override
     public File getSpecimenArchive() throws ImportException
+    {
+        return _ctx.getSpecimenArchive(_root).toFile();
+    }
+
+    @Override
+    public Path getSpecimenArchivePath() throws ImportException
     {
         return _ctx.getSpecimenArchive(_root);
     }

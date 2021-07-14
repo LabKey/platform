@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -84,9 +85,9 @@ public class RecordedActionSet
         return _otherInputs;
     }
 
-    public void add(File inputFile, String inputRole)
+    public void add(Path inputFile, String inputRole)
     {
-        _otherInputs.put(inputFile.toURI(), inputRole);
+        _otherInputs.put(inputFile.toUri(), inputRole);
     }
 
     public void add(RecordedActionSet set)

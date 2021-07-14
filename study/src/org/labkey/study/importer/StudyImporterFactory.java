@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
+import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.XmlBeansUtil;
@@ -47,6 +48,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -121,7 +123,15 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(studyDir.getRelativePath(studyFileName), e);
                 }
 
-                StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
+                //TODO this should account for the CloudImportContext if cloud root
+                StudyImportContext studyImportContext = new StudyImportContext.Builder(user,c)
+                        .withDocument(studyDoc)
+                        .withDataTypes(ctx.getDataTypes())
+                        .withLogger(ctx.getLoggerGetter())
+                        .withRoot(job.getPipeRoot().isCloudRoot() ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
+                        .build();
+
+//                new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
                 studyImportContext.setCreateSharedDatasets(ctx.isCreateSharedDatasets());
                 studyImportContext.setFailForUndefinedVisits(ctx.isFailForUndefinedVisits());
                 studyImportContext.setActivity(ctx.getActivity());
@@ -138,7 +148,13 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // import specimens, if the module is present
                 if (null != SpecimenService.get())
                 {
-                    File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
+                    Path specimenFile = studyImportContext.getSpecimenArchive(studyDir);
+                    if (job.getPipeRoot().isCloudRoot())
+                    {   //TODO this should be done from the import context getSpecimenArchive
+                        specimenFile = job.getPipeRoot().getRootNioPath().relativize(specimenFile);
+                        specimenFile = job.getPipeRoot().getImportDirectory().toPath().resolve(specimenFile);
+                    }
+
                     StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false, false);
                 }
 

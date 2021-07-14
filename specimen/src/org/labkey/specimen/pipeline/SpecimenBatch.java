@@ -33,6 +33,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.io.Serializable;
+import java.nio.file.Path;
 
 /**
  * User: brittp
@@ -79,6 +80,12 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     public File getSpecimenArchive()
     {
         return _definitionFile;
+    }
+
+    @Override
+    public Path getSpecimenArchivePath()
+    {
+        return _definitionFile.toPath();
     }
 
     @Override

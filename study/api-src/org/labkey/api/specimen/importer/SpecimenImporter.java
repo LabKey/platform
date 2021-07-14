@@ -302,7 +302,6 @@ public class SpecimenImporter extends SpecimenTableManager
             throws IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());
-
         process(sifMap, merge, ctx.getLogger(), job, syncParticipantVisit, false, ctx.isFailForUndefinedVisits());
     }
 

@@ -21,8 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.admin.LoggerGetter;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.util.XmlBeansUtil;
@@ -126,17 +128,22 @@ public class StudyImportContext extends SimpleStudyImportContext
 
     // TODO: this should go away once study import fully supports using VirtualFile -  HMMM.  Why doesn't it?
     @Deprecated
-    private File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
+    private Path getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {
-        File rootFile = new File(root.getLocation());
-        File dirFile = new File(dir.getLocation());
-        File file = new File(dirFile, name);
+        Path rootFile = Path.of(root.getLocation().toString());
+        Path dirFile = Path.of(dir.getLocation());
+        Path file = dirFile.resolve(name);
         String source = "study.xml";
 
-        if (!file.exists())
+        if (CloudStoreService.get() != null) //TODO And container is using cloud root
+        {
+            file = CloudStoreService.get().getPathFromUrl(getContainer(), dir.getLocation()).resolve(name);
+        }
+
+        if (!Files.exists(file))
             throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(rootFile, file));
 
-        if (!file.isFile())
+        if (!Files.isRegularFile(file))
             throw new ImportException(source + " refers to " + ImportException.getRelativePath(rootFile, file) + ": expected a file but found a directory");
 
         return file;
@@ -162,7 +169,7 @@ public class StudyImportContext extends SimpleStudyImportContext
         return studyDoc;
     }
 
-    public File getSpecimenArchive(VirtualFile root) throws ImportException
+    public Path getSpecimenArchive(VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Specimens specimens = getXml().getSpecimens();
 
