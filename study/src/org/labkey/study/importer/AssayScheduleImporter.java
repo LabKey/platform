@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.labkey.study.model.VisitImpl.parseSequenceNum;
+
 /**
  * Created by klum on 1/24/14.
  */
@@ -156,7 +158,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     if (null != sequenceObj)
                     {
                         Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
-                        Visit visit2 = _visitMapBD.get(new BigDecimal(String.valueOf(sequenceObj)));
+                        Visit visit2 = _visitMapBD.get(parseSequenceNum(String.valueOf(sequenceObj)));
                         assert Objects.equals(visit, visit2);
                         if (visit != null)
                             newRow.put("visitId", visit.getId());

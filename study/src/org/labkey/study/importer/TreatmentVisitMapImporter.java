@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.labkey.study.model.VisitImpl.parseSequenceNum;
+
 /**
  * Created by cnathe on 4/4/14.
  */
@@ -162,9 +164,11 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     Object sequenceObj = newRow.get("visitId.sequenceNumMin");
                     if (null != sequenceObj)
                     {
-                        Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
-                        Visit visit2 = _visitMapBD.get(new BigDecimal(String.valueOf(sequenceObj)));
-                        assert Objects.equals(visit, visit2) : visit + " vs. " + visit2 + " for " + sequenceObj + ". " + Double.parseDouble(String.valueOf(sequenceObj)) + " vs. " + new BigDecimal(String.valueOf(sequenceObj));
+                        double seq = Double.parseDouble(String.valueOf(sequenceObj));
+                        Visit visit = _visitMap.get(seq);
+                        BigDecimal bd = parseSequenceNum(String.valueOf(sequenceObj));
+                        Visit visit2 = _visitMapBD.get(bd);
+                        assert Objects.equals(visit, visit2) : visit + " vs. " + visit2 + " for " + sequenceObj + ". " + seq + " vs. " + bd;
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else

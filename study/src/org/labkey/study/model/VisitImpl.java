@@ -233,7 +233,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setSequenceNumMin(BigDecimal sequenceMin)
     {
-        _sequenceMin = sequenceMin.stripTrailingZeros();
+        _sequenceMin = VisitImpl.normalizeSequenceNum(sequenceMin);
     }
 
     public String getFormattedSequenceNumMin()
@@ -261,7 +261,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setSequenceNumMax(BigDecimal sequenceMax)
     {
-        _sequenceMax = sequenceMax.stripTrailingZeros();
+        _sequenceMax = VisitImpl.normalizeSequenceNum(sequenceMax);
     }
 
     @Override
@@ -277,7 +277,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public void setProtocolDay(@Nullable BigDecimal protocolDay)
     {
-        _protocolDay = null != protocolDay ? protocolDay.stripTrailingZeros() : null;
+        _protocolDay = null != protocolDay ? VisitImpl.normalizeSequenceNum(protocolDay) : null;
     }
 
     public int getRowId()
@@ -294,12 +294,17 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     // only 4 scale digits
     public static BigDecimal parseSequenceNum(String s)
     {
-        return new BigDecimal(s);
+        return normalizeSequenceNum(new BigDecimal(s));
     }
 
     public static String formatSequenceNum(BigDecimal bd)
     {
         return SEQUENCE_FORMAT.format(bd);
+    }
+
+    public static BigDecimal normalizeSequenceNum(BigDecimal bd)
+    {
+        return bd.setScale(4, RoundingMode.UNNECESSARY);
     }
 
     @Override
