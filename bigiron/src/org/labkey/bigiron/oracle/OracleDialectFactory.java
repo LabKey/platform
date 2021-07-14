@@ -81,6 +81,9 @@ public class OracleDialectFactory implements SqlDialectFactory
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion.substring(startIndex, endIndex));
 
+        if (versionNumber.getMajor() == 10)
+            return new Oracle11gR1Dialect();
+
         // Restrict to 11g
         if (versionNumber.getMajor() == 11)
         {
