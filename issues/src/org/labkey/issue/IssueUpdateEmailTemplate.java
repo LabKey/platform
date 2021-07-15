@@ -18,6 +18,7 @@ package org.labkey.issue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -33,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -193,8 +193,12 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
             sb.append(attachment.getFilename());
         }
         _attachments = sb.toString();
-        Set<String> existingParams = _replacements.stream().map(ReplacementParam::getName).collect(Collectors.toSet());
-        _allReplacements.addAll(_replacements);
+        Set<String> existingParams = _replacements.stream()
+            .map(ReplacementParam::getName)
+            .collect(LabKeyCollectors.toCaseInsensitiveHashSet());
+
+        Replacements allReplacements = new Replacements(_allReplacements);
+        _replacements.forEach(allReplacements::add);
 
         // inject any custom fields into the replacement parameters
         for (Map.Entry<String, Object> prop : issueProperties.entrySet())
@@ -205,19 +209,19 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
 
                 if (value instanceof Integer)
                 {
-                    _allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Integer)value, Integer.class));
+                    allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Integer)value, Integer.class));
                 }
                 else if (value instanceof Date)
                 {
-                    _allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Date)value, Date.class));
+                    allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Date)value, Date.class));
                 }
                 else if (value instanceof Double)
                 {
-                    _allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Double)value, Double.class));
+                    allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), (Double)value, Double.class));
                 }
                 else
                 {
-                    _allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), String.valueOf(value), String.class));
+                    allReplacements.add(new CustomFieldReplacementParam<>(prop.getKey(), String.valueOf(value), String.class));
                 }
             }
         }

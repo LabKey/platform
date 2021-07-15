@@ -60,8 +60,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
-
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
@@ -693,25 +691,23 @@ public class DataColumn extends DisplayColumn
     protected void renderSelectFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
-        NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
+        ForeignKey boundColumnFK = _boundColumn.getFk();
+        NamedObjectList entryList = boundColumnFK.getSelectList(ctx);
         if (!entryList.isComplete())
         {
             // When incomplete, there are too many select options to render -- use a simple text input instead.
-            // TODO: if the FK target is public, we can generate an auto-complete input
             String textInputValue = strVal;
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+            Object displayValue = null;
+            TableViewForm viewForm = ctx.getForm();
+            if (viewForm != null && viewForm.contains(this, ctx))
             {
-                Object displayValue = null;
-                TableViewForm viewForm = ctx.getForm();
-                if (viewForm != null && viewForm.contains(this, ctx))
-                {
-                    // On error reshow, use the user supplied form value
-                    displayValue = viewForm.get(formFieldName);
-                }
-                if (displayValue == null)
-                    displayValue = getDisplayValue(ctx);
-                textInputValue = Objects.toString(displayValue, strVal);
+                // On error reshow, use the user supplied form value
+                displayValue = viewForm.get(formFieldName);
             }
+            if (displayValue == null)
+                displayValue = getDisplayValue(ctx);
+            textInputValue = Objects.toString(displayValue, strVal);
+
             renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
         }
         else

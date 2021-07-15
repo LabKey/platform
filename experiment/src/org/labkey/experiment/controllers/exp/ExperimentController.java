@@ -56,6 +56,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -86,6 +87,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -184,6 +186,7 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.FindMaterialByUniqueIdHelper;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeDomainKind;
@@ -6730,4 +6733,193 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class SaveOrderedSamplesQueryAction extends ReadOnlyApiAction<OrderedSamplesForm>
+    {
+        private static final String SAMPLE_ID_PREFIX = "s:";
+        private static final String UNIQUE_ID_PREFIX = "u:";
+
+        @Override
+        public void validateForm(OrderedSamplesForm form, Errors errors)
+        {
+            if (form.getIds() == null || form.getIds().isEmpty())
+                errors.reject(ERROR_REQUIRED, "Ids must be provided");
+        }
+
+        @Override
+        public Object execute(OrderedSamplesForm form, BindException errors) throws Exception
+        {
+            SQLFragment select = getOrderedRowsSql(form);
+            // need to set the key field so selections are possible
+            // need the SampleTypeUnits so we will display using that unit
+            String metadata =
+                    "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                    "   <table tableName=\"tempQuery\" tableDbType=\"NOT_IN_DB\">\n" +
+                    "       <columns>\n" +
+                    "           <column columnName=\"RowId\">\n" +
+                    "               <isKeyField>true</isKeyField>\n" +
+                    "               <isHidden>true</isHidden>\n" +
+                    "           </column>\n" +
+                    "           <column columnName=\"SampleTypeUnits\">\n" +
+                    "               <isHidden>true</isHidden>\n" +
+                    "           </column>\n" +
+                    "           <column columnName=\"Ordinal\">\n" +
+                    "               <isHidden>true</isHidden>\n" +
+                    "           </column>\n" +
+                    "       </columns>\n" +
+                    "   </table>\n" +
+                    "</tables>";
+            QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.getSQL(), metadata);
+            return success("Session query created", def.getName());
+        }
+
+        private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
+        {
+            boolean isFMEnabled = InventoryService.isFreezerManagementEnabled(getContainer());
+            String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
+            List<String> orderedIdCols = new ArrayList<>(Arrays.asList("Id AS ProvidedID", "RowId", "Ordinal"));
+            List<String> sampleColumns = new ArrayList<>();
+            DialectStringHandler stringHandler = ExperimentService.get().getSchema().getSqlDialect().getStringHandler();
+            if (!isFMEnabled)
+            {
+                sampleColumns.addAll(Arrays.asList(
+                        "S.Name AS SampleID",
+                        "S.SampleSet as SampleType",
+                        "S.isAliquot",
+                        "S.Created",
+                        "S.CreatedBy"
+                ));
+            }
+            else
+            {
+                sampleColumns.addAll(Arrays.asList(
+                        "S.Name AS SampleID",
+                        "S.LabelColor",
+                        "S.SampleSet",
+                        "S.StoredAmount",
+                        "S.Units",
+                        "S.SampleTypeUnits",
+                        "S.FreezeThawCount",
+                        "S.StorageStatus",
+                        "S.CheckedOutBy",
+                        "S.StorageLocation",
+                        "S.StorageRow",
+                        "S.StorageCol",
+                        "S.IsAliquot",
+                        "S.Created",
+                        "S.CreatedBy"
+                ));
+            }
+
+
+            String sampleIdComma = "";
+            String uniqueIdComma = "";
+            int index = 1;
+            SQLFragment sampleIdValuesSql = new SQLFragment();
+            SQLFragment uniqueIdValuesSql = new SQLFragment();
+            for (String id : form.getIds())
+            {
+                if (id.startsWith(SAMPLE_ID_PREFIX))
+                {
+                    sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
+                    sampleIdValuesSql.append(", ");
+                    sampleIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.append(")");
+                    sampleIdComma = "\n,";
+                }
+                else if (id.startsWith(UNIQUE_ID_PREFIX))
+                {
+                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
+                    uniqueIdValuesSql.append(", ");
+                    uniqueIdValuesSql.append(stringHandler.quoteStringLiteral(id.substring(UNIQUE_ID_PREFIX.length())));
+                    uniqueIdValuesSql.append(")");
+                    uniqueIdComma = "\n,";
+                }
+                index++;
+            }
+
+            boolean haveData = !sampleIdValuesSql.isEmpty();
+            SQLFragment sql = new SQLFragment();
+            if (!sampleIdValuesSql.isEmpty())
+            {
+                sql.append("WITH _ordered_ids_ AS (\nSELECT * FROM (VALUES\n");
+                sql.append(sampleIdValuesSql);
+                sql.append("\n) AS _values_ )\n"); // name of the alias here doesn't matter
+            }
+            if (!uniqueIdValuesSql.isEmpty())
+            {
+                if (!sampleIdValuesSql.isEmpty())
+                    sql.append(",\n");
+                else
+                    sql.append("WITH ");
+
+                sql.append("_ordered_unique_ids_ AS (\nSELECT * FROM (VALUES\n");
+                sql.append(uniqueIdValuesSql);
+                sql.append("\n) AS _values_ )\n"); // name of the alias here doesn't matter
+            }
+
+            sql.append("SELECT ");
+            sql.append("\n\tOID.").append(StringUtils.join(orderedIdCols, ",\n\tOID."));
+            sql.append(",\n\t").append(StringUtils.join( sampleColumns, ",\n\t"));
+            sql.append("\nFROM\n(");
+            if (!sampleIdValuesSql.isEmpty())
+            {
+                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id");
+                sql.append("\nFROM _ordered_ids_\n");
+                sql.append("INNER JOIN exp.materials M ON _ordered_ids_.column2 = M.Name");
+                sql.append("\n");
+            }
+            if (!uniqueIdValuesSql.isEmpty())
+            {
+                FindMaterialByUniqueIdHelper uidHelper = new FindMaterialByUniqueIdHelper(getContainer(), getUser());
+                if (uidHelper.getNumUniqueIdCols() > 0)
+                {
+                    haveData = true;
+                    if (!sampleIdValuesSql.isEmpty())
+                        sql.append("\nUNION ALL\n\n");
+
+                    sql.append("SELECT\n\tU.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id");
+                    sql.append("\nFROM _ordered_unique_ids_\n");
+                    sql.append("INNER JOIN (");
+
+                    sql.append(uidHelper.getSQL()).append(") U");
+                    sql.append(" ON _ordered_unique_ids_.column2 = ").append(FindMaterialByUniqueIdHelper.UNIQUE_ID_COL_NAME);
+                }
+            }
+            if (!haveData) // no data to return but return data in the expected shape.
+            {
+                sql = new SQLFragment("SELECT\n");
+                sql.append(orderedIdCols.stream().map(col -> "NULL AS " + col).collect(Collectors.joining(",\t\n")));
+                sql.append(",\t\n").append(StringUtils.join(sampleColumns, ",\t\n"));
+                sql.append("\nFROM ").append(samplesTable).append(" S WHERE 1 = 2");
+                return sql;
+            }
+            else
+            {
+                sql.append(") OID");
+                if (isFMEnabled)
+                    sql.append("\nLEFT JOIN inventory.SampleItems S on S.RowId = OID.RowId");
+                else
+                    sql.append("\nINNER JOIN exp.materials S on S.RowId = OID.RowId");
+                sql.append("\n\nORDER BY Ordinal");
+                return sql;
+            }
+        }
+    }
+
+    public static class OrderedSamplesForm
+    {
+        List<String> _ids;
+
+        public List<String> getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(List<String> ids)
+        {
+            _ids = ids;
+        }
+    }
 }
