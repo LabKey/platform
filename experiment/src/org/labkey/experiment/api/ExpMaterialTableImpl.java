@@ -196,7 +196,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
                 SQLFragment sql = new SQLFragment("(CASE WHEN ")
                         .append(rootMaterialLSIDField)
-                        .append(" IS NOT NULL THEN NULL ELSE (SELECT COUNT(*) FROM ")
+                        .append(" IS NOT NULL THEN NULL") // child aliquot count is only needed for 'root' samples
+                        .append(" ELSE (SELECT COUNT(*) FROM ")
                         .append(ExperimentService.get().getTinfoMaterial(), "aliquotMaterial")
                         .append(" WHERE aliquotMaterial.RootMaterialLSID = ")
                         .append(materialLSIDField)
@@ -204,7 +205,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("AliquotCount"), new SQLFragment(sql), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Aliquots Created Count");
-                columnInfo.setDescription("Total number of aliquots created from this sample");
+                columnInfo.setDescription("Total number of aliquots, of all generations, created from a root sample");
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 columnInfo.setHidden(false);
