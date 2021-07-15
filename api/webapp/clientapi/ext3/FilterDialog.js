@@ -1,10 +1,10 @@
-const CONCEPT_CODE_CONCEPT_URI = 'http://www.labkey.org/types#conceptCode';
-
 /*
  * Copyright (c) 2013-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+const CONCEPT_CODE_CONCEPT_URI = 'http://www.labkey.org/types#conceptCode';
+
 LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     autoHeight: true,
@@ -35,6 +35,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     cacheFacetResults: true,
 
+    hasOntologyModule: false,
+
     initComponent : function() {
 
         if (!this['dataRegionName']) {
@@ -46,6 +48,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if (!this.configureColumn(this.column)) {
             return;
         }
+
+        this.hasOntologyModule = LABKEY.moduleContext.api.moduleNames.indexOf('ontology') > -1;
 
         Ext.apply(this, {
             title: this.title || "Show Rows Where " + this.column.caption + "...",
@@ -65,7 +69,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 handler: this.closeDialog,
                 scope: this
             }],
-            width: this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI ?
+            width: this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule ?
                     (Ext.isGecko ? 533 : 518) :
                     // 24846
                     (Ext.isGecko ? 425 : 410),
@@ -319,9 +323,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     getDefaultView: function(filters) {
-        const xtypeVal = this.column.conceptURI !== CONCEPT_CODE_CONCEPT_URI?
-                'filter-view-default':
-                'filter-view-conceptfilter';
+        const xtypeVal = this.column.conceptURI === CONCEPT_CODE_CONCEPT_URI && this.hasOntologyModule
+                ? 'filter-view-conceptfilter'
+                : 'filter-view-default';
 
         return {
             xtype: xtypeVal,
