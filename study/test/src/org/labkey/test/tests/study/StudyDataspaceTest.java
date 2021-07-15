@@ -23,7 +23,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
 import org.labkey.test.components.studydesigner.ManageTreatmentsPage;
@@ -42,7 +42,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@Category({DailyC.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyDataspaceTest extends StudyBaseTest
 {

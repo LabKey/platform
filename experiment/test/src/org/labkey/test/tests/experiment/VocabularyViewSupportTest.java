@@ -17,7 +17,7 @@ import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.Locator;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.html.Table;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
@@ -36,7 +36,7 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 
-@Category({DailyC.class})
+@Category({Daily.class})
 public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 {
 

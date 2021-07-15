@@ -10,7 +10,7 @@ import org.labkey.remoteapi.CommandException;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
@@ -26,7 +26,7 @@ import java.util.Map;
 
 // Regression coverage for Issue 38448: ExpSchema lookups do not propagate ContainerFilter of parent table
 
-@Category({DailyC.class})
+@Category({Daily.class})
 public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
 {
 

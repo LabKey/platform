@@ -29,7 +29,7 @@ import org.labkey.test.Locators;
 import org.labkey.test.SortDirection;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
@@ -65,7 +65,7 @@ import static org.junit.Assert.fail;
 import static org.labkey.test.util.DataRegionTable.DataRegion;
 import static org.labkey.test.util.PasswordUtil.getUsername;
 
-@Category({Specimen.class, DailyC.class})
+@Category({Specimen.class, Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyTest extends StudyBaseTest
 {
