@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.labkey.study.model.VisitImpl.parseSequenceNum;
 
@@ -45,8 +44,7 @@ import static org.labkey.study.model.VisitImpl.parseSequenceNum;
 public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
     private final Map<String, CohortImpl> _cohortMap = new HashMap<>();
-    private final Map<Double, Visit> _visitMap = new HashMap<>();
-    private final Map<BigDecimal, Visit> _visitMapBD = new HashMap<>();
+    private final Map<BigDecimal, Visit> _visitMap = new HashMap<>();
     private final TreatmentVisitMapTransform _treatmentVisitMapTransform = new TreatmentVisitMapTransform();
 
     private Map<Object, Object> _treatmentIdMap = new HashMap<>();
@@ -124,8 +122,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
             {
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
                 {
-                    _visitMap.put(visit.getSequenceNumMinDouble(), visit);
-                    _visitMapBD.put(visit.getSequenceNumMin(), visit);
+                    _visitMap.put(visit.getSequenceNumMin(), visit);
                 }
             }
         }
@@ -164,11 +161,8 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     Object sequenceObj = newRow.get("visitId.sequenceNumMin");
                     if (null != sequenceObj)
                     {
-                        double seq = Double.parseDouble(String.valueOf(sequenceObj));
-                        Visit visit = _visitMap.get(seq);
                         BigDecimal bd = parseSequenceNum(String.valueOf(sequenceObj));
-                        Visit visit2 = _visitMapBD.get(bd);
-                        assert Objects.equals(visit, visit2) : visit + " vs. " + visit2 + " for " + sequenceObj + ". " + seq + " vs. " + bd;
+                        Visit visit = _visitMap.get(bd);
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else

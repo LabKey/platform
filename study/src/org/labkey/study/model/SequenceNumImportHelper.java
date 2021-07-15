@@ -28,11 +28,13 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.Visit.SequenceHandling;
 import org.labkey.api.study.importer.ImportHelperService.SequenceNumTranslator;
 import org.labkey.api.util.DateUtil;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
@@ -150,7 +152,7 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
     @Override
     public Double translateSequenceNum(@Nullable Object seq, @Nullable Object d)
     {
-        Double sequencenum = null;
+        Double sequencenum;
         Date date = null;
 
         if (null != d)
@@ -199,10 +201,8 @@ translateToDouble:
             return sequencenum;
 
         // handle log-type events which can be unique'd by date
-        Visit v = _sequenceNumMap.get(sequencenum);
-        Visit v2 = _sequenceNumMap.get(normalizeSequenceNum(new BigDecimal(sequencenum)));
-        assert (null == v && null == v2) || (v.getSequenceNumMinDouble() == v2.getSequenceNumMinDouble());
-        if (null != v && v.getSequenceNumHandlingEnum() == Visit.SequenceHandling.logUniqueByDate)
+        Visit v = _sequenceNumMap.get(normalizeSequenceNum(new BigDecimal(sequencenum)));
+        if (null != v && v.getSequenceNumHandlingEnum() == SequenceHandling.logUniqueByDate)
         {
             int daysSinceEpoch = convertToDaysSinceEpoch(date);
             int offset = Math.max(0,daysSinceEpoch - _startDaysSinceEpoch);
@@ -214,8 +214,6 @@ translateToDouble:
 
     interface SequenceVisitMap
     {
-        @Deprecated
-        Visit get(Double d);
         Visit get(BigDecimal seq);
     }
 
@@ -226,12 +224,6 @@ translateToDouble:
         StudySequenceVisitMap(Study study)
         {
             _svm = (SequenceVisitManager)StudyManager.getInstance().getVisitManager(study);
-        }
-
-        @Override
-        public Visit get(Double seq)
-        {
-            return _svm.findVisitBySequence(seq);
         }
 
         @Override
@@ -248,41 +240,16 @@ translateToDouble:
     static class TestSequenceVisitMap implements SequenceVisitMap
     {
         @Override
-        public Visit get(final Double d)
-        {
-            return new VisitImpl()
-            {
-                @Override
-                public double getSequenceNumMinDouble()
-                {
-                    return Math.floor(d);
-                }
-
-                @Override
-                public @NotNull SequenceHandling getSequenceNumHandlingEnum()
-                {
-                    return 9999.0 == Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
-                }
-            };
-        }
-
-        @Override
         public Visit get(BigDecimal seq)
         {
-            // TODO: BigDecimal.floor()?
-            double d = seq.doubleValue();
+            SequenceHandling sh = BigDecimal.valueOf(9999).equals(seq.setScale(0, RoundingMode.FLOOR)) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+
             return new VisitImpl()
             {
                 @Override
-                public double getSequenceNumMinDouble()
-                {
-                    return Math.floor(d);
-                }
-
-                @Override
                 public @NotNull SequenceHandling getSequenceNumHandlingEnum()
                 {
-                    return 9999.0 == Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+                    return sh;
                 }
             };
         }

@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.labkey.study.model.VisitImpl.parseSequenceNum;
 
@@ -45,8 +44,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
 {
     // shared transform data structures
     private final Map<Object, Object> _assaySpecimenIdMap = new HashMap<>();
-    private final Map<Double, Visit> _visitMap = new HashMap<>();
-    private final Map<BigDecimal, Visit> _visitMapBD = new HashMap<>();
+    private final Map<BigDecimal, Visit> _visitMap = new HashMap<>();
 
     private final NonSharedTableMapBuilder _assaySpecimenTransform = new NonSharedTableMapBuilder(_assaySpecimenIdMap);
     private final AssaySpecimenVisitMapTransform _assaySpecimenVisitMapTransform = new AssaySpecimenVisitMapTransform();
@@ -134,8 +132,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
             {
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
                 {
-                    _visitMap.put(visit.getSequenceNumMinDouble(), visit);
-                    _visitMapBD.put(visit.getSequenceNumMin(), visit);
+                    _visitMap.put(visit.getSequenceNumMin(), visit);
                 }
             }
         }
@@ -157,9 +154,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     Object sequenceObj = newRow.get("visitId.sequenceNumMin");
                     if (null != sequenceObj)
                     {
-                        Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
-                        Visit visit2 = _visitMapBD.get(parseSequenceNum(String.valueOf(sequenceObj)));
-                        assert Objects.equals(visit, visit2);
+                        Visit visit = _visitMap.get(parseSequenceNum(String.valueOf(sequenceObj)));
                         if (visit != null)
                             newRow.put("visitId", visit.getId());
                         else

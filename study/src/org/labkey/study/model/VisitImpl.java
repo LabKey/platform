@@ -130,7 +130,10 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     // formatSequenceNum(), but it's what we've always done when appending into SQL.
     private static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
     {
-        if (seqnum.scale() > 0)
+        // Is seqnum an integer?
+        if (seqnum.stripTrailingZeros().scale() <= 0)
+            seqnum = seqnum.setScale(0, RoundingMode.UNNECESSARY);
+        else
             seqnum = seqnum.setScale(MAX_SCALE, RoundingMode.HALF_UP);
 
         return sb.append(seqnum.toPlainString());
@@ -291,7 +294,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         _rowId = rowId;
     }
 
-    // only 4 scale digits
     public static BigDecimal parseSequenceNum(String s)
     {
         return normalizeSequenceNum(new BigDecimal(s));
@@ -304,7 +306,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public static BigDecimal normalizeSequenceNum(BigDecimal bd)
     {
-        return bd.setScale(4, RoundingMode.UNNECESSARY);
+        return bd.setScale(MAX_SCALE, RoundingMode.HALF_UP);
     }
 
     @Override
