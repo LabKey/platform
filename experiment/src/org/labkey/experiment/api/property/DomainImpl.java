@@ -783,9 +783,11 @@ public class DomainImpl implements Domain
         if (uniqueIdProps.isEmpty())
             return;
 
-        List<ColumnInfo> uniqueIndexCols = new ArrayList<>();
+        Set<ColumnInfo> uniqueIndexCols = new HashSet<>();
+        // Find the uniqueIndexCols so we can use these for selecting items to update the uniqueIds of,
+        // but exclude the uniqueId fields themselves.
         table.getUniqueIndices().values().forEach(idx -> {
-            uniqueIndexCols.addAll(idx.second);
+            idx.second.stream().filter(col -> !col.isUniqueIdField()).forEach(uniqueIndexCols::add);
         });
 
         DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), STORAGE_UNIQUE_ID_SEQUENCE_PREFIX);
