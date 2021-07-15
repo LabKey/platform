@@ -42,7 +42,7 @@ LABKEY.Utils = new function()
             'j-n-y|j-n-Y|' +
             'j-M-y|j-M-Y|' + DATEALTFORMATS_Either;
 
-    var DATETIMEFORMAT_WithMS = 'Y-m-d H:i:s.u'; //24 hr format with milliseconds
+    var DATETIMEFORMAT_WithMS = 'Y-m-d\\TH:i:s.u'; //24 hr format with milliseconds
 
     function isObject(v)
     {
