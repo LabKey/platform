@@ -44,6 +44,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
@@ -151,6 +152,7 @@ import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
@@ -207,7 +209,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -6735,22 +6739,73 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class SaveOrderedSamplesQueryAction extends ReadOnlyApiAction<OrderedSamplesForm>
+    public static class SaveFindIdsAction extends ReadOnlyApiAction<FindByIdsForm>
+    {
+
+        public static final String FIND_BY_IDS_SESSION_KEY_PREFIX = "findByIds";
+
+        @Override
+        public Object execute(FindByIdsForm form, BindException errors) throws Exception
+        {
+            HttpServletRequest request = getViewContext().getRequest();
+            String key = form.getSessionKey();
+
+            if (key == null)
+                key =  FIND_BY_IDS_SESSION_KEY_PREFIX + "_" + UniqueID.getServerSessionScopedUID();
+
+            if (request != null)
+            {
+
+                HttpSession session = request.getSession(false);
+                if (session != null)
+                {
+                    @SuppressWarnings("unchecked")
+                    List<String> existingIds = (List<String>) session.getAttribute(key);
+
+                    // deduplicate from existing ids
+                    if (existingIds != null && form.getSessionKey() != null)
+                    {
+                        existingIds.addAll(form.getIds().stream().filter(id -> !existingIds.contains(id)).collect(Collectors.toList()));
+                        session.setAttribute(key, existingIds);
+                    }
+                    else
+                    {
+                        session.setAttribute(key, form.getIds());
+                    }
+                    return success("Saved ids to session key", key);
+                }
+            }
+
+            return new SimpleResponse<>(false, "Unable to save to session.  Session or request may be null.");
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class SaveOrderedSamplesQueryAction extends ReadOnlyApiAction<FindByIdsForm>
     {
         private static final String SAMPLE_ID_PREFIX = "s:";
         private static final String UNIQUE_ID_PREFIX = "u:";
 
+        private List<String> _ids;
+
         @Override
-        public void validateForm(OrderedSamplesForm form, Errors errors)
+        public void validateForm(FindByIdsForm form, Errors errors)
         {
-            if (form.getIds() == null || form.getIds().isEmpty())
-                errors.reject(ERROR_REQUIRED, "Ids must be provided");
+            if (form.getSessionKey() == null)
+                errors.reject(ERROR_REQUIRED, "sessionKey must be provided");
+            else
+            {
+                _ids = getFindIdsFromSession(form.getSessionKey());
+                if (_ids == null || _ids.isEmpty())
+                    errors.reject(ERROR_REQUIRED, "No ids found corresponding to session key " + form.getSessionKey());
+            }
         }
 
         @Override
-        public Object execute(OrderedSamplesForm form, BindException errors) throws Exception
+        public Object execute(FindByIdsForm form, BindException errors) throws Exception
         {
-            SQLFragment select = getOrderedRowsSql(form);
+            SQLFragment select = getOrderedRowsSql();
             // need to set the key field so selections are possible
             // need the SampleTypeUnits so we will display using that unit
             String metadata =
@@ -6771,10 +6826,26 @@ public class ExperimentController extends SpringActionController
                     "   </table>\n" +
                     "</tables>";
             QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), ExperimentServiceImpl.get().getExpSchema().getName(), select.getSQL(), metadata);
-            return success("Session query created", def.getName());
+            return success("Session query created", Map.of("queryName", def.getName(), "ids", _ids));
         }
 
-        private SQLFragment getOrderedRowsSql(OrderedSamplesForm form)
+
+        private List<String> getFindIdsFromSession(String sessionKey)
+        {
+            HttpServletRequest request = getViewContext().getRequest();
+            List<String> ids = new ArrayList<>();
+            if (request != null)
+            {
+                HttpSession session = request.getSession(false);
+                if (session != null)
+                {
+                    ids = (List<String>) session.getAttribute(sessionKey);
+                }
+            }
+            return ids;
+        }
+
+        private SQLFragment getOrderedRowsSql()
         {
             boolean isFMEnabled = InventoryService.isFreezerManagementEnabled(getContainer());
             String samplesTable = isFMEnabled ? "inventory.SampleItems" : "exp.materials";
@@ -6818,7 +6889,7 @@ public class ExperimentController extends SpringActionController
             int index = 1;
             SQLFragment sampleIdValuesSql = new SQLFragment();
             SQLFragment uniqueIdValuesSql = new SQLFragment();
-            for (String id : form.getIds())
+            for (String id : _ids)
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
@@ -6908,7 +6979,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class OrderedSamplesForm
+    public static class FindByIdsForm extends FindSessionKeyForm
     {
         List<String> _ids;
 
@@ -6920,6 +6991,22 @@ public class ExperimentController extends SpringActionController
         public void setIds(List<String> ids)
         {
             _ids = ids;
+        }
+    }
+
+
+    public static class FindSessionKeyForm
+    {
+        private String _sessionKey;
+
+        public String getSessionKey()
+        {
+            return _sessionKey;
+        }
+
+        public void setSessionKey(String sessionKey)
+        {
+            _sessionKey = sessionKey;
         }
     }
 }
