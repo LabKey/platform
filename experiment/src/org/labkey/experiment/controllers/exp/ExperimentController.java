@@ -149,6 +149,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.SafeToRender;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
@@ -6749,13 +6750,18 @@ public class ExperimentController extends SpringActionController
         {
             HttpServletRequest request = getViewContext().getRequest();
             String key = form.getSessionKey();
+            boolean removePrevious = false;
 
             if (key == null)
-                key =  FIND_BY_IDS_SESSION_KEY_PREFIX + "_" + UniqueID.getServerSessionScopedUID();
+            {
+                removePrevious = true;
+                key = FIND_BY_IDS_SESSION_KEY_PREFIX + "_" + UniqueID.getServerSessionScopedUID();
+            }
 
             if (request != null)
             {
-
+                if (removePrevious)
+                    SessionHelper.clearAttributesWithPrefix(request, FIND_BY_IDS_SESSION_KEY_PREFIX);
                 HttpSession session = request.getSession(false);
                 if (session != null)
                 {
