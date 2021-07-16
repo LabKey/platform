@@ -534,7 +534,7 @@ public class SequenceVisitManager extends VisitManager
         if (visits.size() <= 16)
         {
             StringBuilder sb = new StringBuilder();
-            boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin().equals(v.getSequenceNumMax()));
+            boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin().compareTo(v.getSequenceNumMax()) == 0);
             if (allEqual)
             {
                 _indent(sb,indent);
@@ -554,7 +554,7 @@ public class SequenceVisitManager extends VisitManager
                 _indent(sb,indent); sb.append("CASE");
                 for (VisitImpl v : visits)
                 {
-                    if (v.getSequenceNumMin().equals(v.getSequenceNumMax()))
+                    if (v.getSequenceNumMin().compareTo(v.getSequenceNumMax()) == 0)
                     {
                         _indent(sb, indent);
                         sb.append(" WHEN ").append(sn).append(" = ");

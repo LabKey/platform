@@ -133,7 +133,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         for (VisitImpl visit : visitList)
         {
             boolean uniqueLabel = labelMap.get(visit.getLabel()).size() == 1;
-            boolean hasSequenceRange = !visit.getSequenceNumMin().equals(visit.getSequenceNumMax());
+            boolean hasSequenceRange = visit.getSequenceNumMin().compareTo(visit.getSequenceNumMax()) != 0;
 
             // add columns for each sequence, show if there is a sequence range
             for (BigDecimal seq : sequenceSet)
@@ -305,7 +305,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
 
         for (VisitImpl v : StudyManager.getInstance().getVisits(_study, Visit.Order.SEQUENCE_NUM))
         {
-            if (name.equals(v.getLabel()) || (!NEG_ONE.equals(seq) && v.isInRange(seq)))
+            if (name.equals(v.getLabel()) || (NEG_ONE.compareTo(seq) != 0 && v.isInRange(seq)))
             {
                 if (null != visitMatch)
                     return null;        // ambiguous
@@ -313,7 +313,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                 seq = v.getSequenceNumMin();
             }
         }
-        if (NEG_ONE.equals(seq))
+        if (NEG_ONE.compareTo(seq) == 0)
             return null;
 
         if (visitMatch == null)

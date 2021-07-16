@@ -242,7 +242,7 @@ translateToDouble:
         @Override
         public Visit get(BigDecimal seq)
         {
-            SequenceHandling sh = BigDecimal.valueOf(9999).equals(seq.setScale(0, RoundingMode.FLOOR)) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+            SequenceHandling sh = BigDecimal.valueOf(9999).compareTo(seq.setScale(0, RoundingMode.FLOOR)) == 0 ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
 
             return new VisitImpl()
             {

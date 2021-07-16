@@ -119,7 +119,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public static String getSequenceString(BigDecimal min, BigDecimal max)
     {
-        if (min.equals(max))
+        if (min.compareTo(max) == 0)
             return formatSequenceNum(min);
         else
             return formatSequenceNum(min) + " - " + formatSequenceNum(max);

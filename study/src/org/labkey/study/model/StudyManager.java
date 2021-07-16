@@ -1111,6 +1111,23 @@ public class StudyManager
 
     private VisitImpl ensureVisitWithoutSaving(Study study, double sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
     {
+        VisitImpl visit1 = ensureVisitWithoutSavingDouble(study, sequencenum, type, existingVisits);
+        VisitImpl visit2 = ensureVisitWithoutSaving(study, BigDecimal.valueOf(sequencenum), type, existingVisits);
+
+        assert Objects.equals(visit1.getLabel(), visit2.getLabel());
+        assert Objects.equals(visit1.getSequenceString(), visit2.getSequenceString());
+        assert Objects.equals(visit1.getSequenceNumMin(), visit2.getSequenceNumMin());
+        assert Objects.equals(visit1.getSequenceNumMax(), visit2.getSequenceNumMax());
+        assert Objects.equals(visit1.getFormattedSequenceNumMin(), visit2.getFormattedSequenceNumMin());
+        assert Objects.equals(visit1.getFormattedSequenceNumMax(), visit2.getFormattedSequenceNumMax());
+        assert Objects.equals(visit1.getDescription(), visit2.getDescription());
+        assert Objects.equals(visit1.getChronologicalOrder(), visit2.getChronologicalOrder());
+
+        return visit1;
+    }
+
+    private VisitImpl ensureVisitWithoutSavingDouble(Study study, double sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
+    {
         // Remember the SequenceNums closest to the requested id in case we need to create one
         double nextVisit = Double.POSITIVE_INFINITY;
         double previousVisit = Double.NEGATIVE_INFINITY;
@@ -1189,7 +1206,98 @@ public class StudyManager
                     }
                 }
             }
+        }
 
+        // create visit in shared study
+        Study visitStudy = getStudyForVisits(study);
+        return new VisitImpl(visitStudy.getContainer(), visitIdMin, visitIdMax, label, type);
+    }
+
+    private static final BigDecimal LARGE_POSITIVE = new BigDecimal(Integer.MAX_VALUE);   // No way to represent infinity, so just use a really large number
+    private static final BigDecimal LARGE_NEGATIVE = new BigDecimal(-Integer.MAX_VALUE);  // No way to represent infinity, so just use a really large negative number
+
+    private VisitImpl ensureVisitWithoutSaving(Study study, BigDecimal sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
+    {
+        // Remember the SequenceNums closest to the requested id in case we need to create one
+        BigDecimal nextVisit = LARGE_POSITIVE;
+        BigDecimal previousVisit = LARGE_NEGATIVE;
+        for (VisitImpl visit : existingVisits)
+        {
+            if (visit.getSequenceNumMin().compareTo(sequencenum) <= 0 && visit.getSequenceNumMax().compareTo(sequencenum) >= 0)
+                return visit;
+            // check to see if our new sequencenum is within the range of an existing visit:
+            // Check if it's the closest to the requested id, either before or after
+            if (visit.getSequenceNumMin().compareTo(nextVisit) < 0 && visit.getSequenceNumMin().compareTo(sequencenum) > 0)
+            {
+                nextVisit = visit.getSequenceNumMin();
+            }
+            if (visit.getSequenceNumMax().compareTo(previousVisit) > 0 && visit.getSequenceNumMax().compareTo(sequencenum) < 0)
+            {
+                previousVisit = visit.getSequenceNumMax();
+            }
+        }
+        BigDecimal visitIdMin = sequencenum;
+        BigDecimal visitIdMax = sequencenum;
+        String label = null;
+        if (!study.getTimepointType().isVisitBased())
+        {
+            boolean isFloatingPoint = sequencenum.stripTrailingZeros().scale() > 0;
+
+            // Do special handling for data-based studies
+            if (study.getDefaultTimepointDuration() == 1 || isFloatingPoint || sequencenum.compareTo(BigDecimal.ZERO) < 0)
+            {
+                // See if there's a fractional part to the number
+                if (isFloatingPoint)
+                {
+                    label = "Day " + sequencenum;
+                }
+                else
+                {
+                    // If not, drop the decimal from the default name
+                    label = "Day " + sequencenum.intValue();
+                }
+            }
+            else
+            {
+                // Try to create a timepoint that spans the default number of days
+                // For example, if duration is 7 days, do timepoints for days 0-6, 7-13, 14-20, etc
+                int intervalNumber = sequencenum.intValue() / study.getDefaultTimepointDuration();
+                visitIdMin = BigDecimal.valueOf((long)intervalNumber * study.getDefaultTimepointDuration());
+                visitIdMax = BigDecimal.valueOf((long)(intervalNumber + 1) * study.getDefaultTimepointDuration() - 1);
+
+                // Scale the timepoint to be smaller if there are existing timepoints that overlap
+                // on its desired day range
+                if (previousVisit != LARGE_NEGATIVE)
+                {
+                    visitIdMin = visitIdMin.max(previousVisit.add(BigDecimal.ONE));
+                }
+                if (nextVisit != LARGE_POSITIVE)
+                {
+                    visitIdMax = visitIdMax.min(nextVisit.subtract(BigDecimal.ONE));
+                }
+
+                // Default label is "Day X - Y"
+                label = "Day " + visitIdMin.intValue() + " - " + visitIdMax.intValue();
+                if (visitIdMin.compareTo(visitIdMax) == 0)
+                {
+                    // Single day timepoint, so don't use the range
+                    label = "Day " + visitIdMin.intValue();
+                }
+                else if (visitIdMin.intValue() == intervalNumber * study.getDefaultTimepointDuration() &&
+                        visitIdMax.intValue() == (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1)
+                {
+                    // The timepoint is the full span for the default duration, so see if we
+                    // should call it "Week" or "Month"
+                    if (study.getDefaultTimepointDuration() == 7)
+                    {
+                        label = "Week " + (intervalNumber + 1);
+                    }
+                    else if (study.getDefaultTimepointDuration() == 30 || study.getDefaultTimepointDuration() == 31)
+                    {
+                        label = "Month " + (intervalNumber + 1);
+                    }
+                }
+            }
         }
 
         // create visit in shared study
@@ -4770,7 +4878,6 @@ public class StudyManager
             String jdbc = (String)JdbcType.VARCHAR.convert(d);
             assertEquals(jdbc, iso);
         }
-
 
         @Test
         public void testExistingVisitBased()
