@@ -247,7 +247,7 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
-    public static String getDefaultDomain()
+    public static @NotNull String getDefaultDomain()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String value = props.get(DEFAULT_DOMAIN);

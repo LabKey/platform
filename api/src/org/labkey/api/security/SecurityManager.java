@@ -3499,7 +3499,7 @@ public class SecurityManager
 
             String defaultDomain = ValidEmail.getDefaultDomain();
             // If default domain is defined this should succeed; if it's not defined, this should fail.
-            testEmail("foo", defaultDomain != null && defaultDomain.length() > 0);
+            testEmail("foo", defaultDomain.length() > 0);
 
             testEmail("~()@bar.com", false);
             testEmail("this@that.com@con", false);
