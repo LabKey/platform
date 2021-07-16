@@ -339,7 +339,7 @@ public class LoginController extends SpringActionController
                 String defaultDomain = ValidEmail.getDefaultDomain();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Please sign in using your full email address, for example: ");
-                if (defaultDomain != null && defaultDomain.length() > 0)
+                if (defaultDomain.length() > 0)
                 {
                     sb.append("employee@");
                     sb.append(defaultDomain);

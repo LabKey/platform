@@ -11,6 +11,7 @@ type CollapseChangeListener = (collapse: boolean) => void;
 
 export interface AppContext {
     ontologyId: string;
+    conceptSubtree: string;
     initFilterValue?: string;
     initFilter?: Filter.IFilterType;
     subscribeFilterValue: (listener: ChangeListener) => void;
@@ -35,6 +36,7 @@ export const ConceptFilterView: FC<Props> = memo(props => {
         initFilter,
         onFilterChange,
         ontologyId,
+        conceptSubtree,
         subscribeFilterValue,
         unsubscribeFilterValue,
         subscribeFilterTypeChanged,
@@ -94,6 +96,7 @@ export const ConceptFilterView: FC<Props> = memo(props => {
             {!collapsed &&
                 <OntologyBrowserFilterPanel
                     ontologyId={ontologyId}
+                    conceptSubtree={conceptSubtree}
                     filterValue={filterValue}
                     filterType={filter}
                     onFilterChange={onFilterChange}
