@@ -5050,8 +5050,8 @@ public class StudyManager
                 assertNotSame("Should be a new visit", newVisit, existingVisit);
             }
             assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
-            assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMinDouble(), DELTA);
-            assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMaxDouble(), DELTA);
+            assertEquals("Wrong sequenceNumMin", VisitImpl.normalizeSequenceNum(new BigDecimal(seqNumMin)), newVisit.getSequenceNumMin());
+            assertEquals("Wrong sequenceNumMax", VisitImpl.normalizeSequenceNum(new BigDecimal(seqNumMax)), newVisit.getSequenceNumMax());
         }
     }
 
