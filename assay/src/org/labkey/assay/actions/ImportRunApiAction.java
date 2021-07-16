@@ -260,7 +260,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 factory.setUploadedData(Collections.emptyMap());
 
                 // Create an ExpData for the results if none exists in the outputData map
-                DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
+                DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData, null);
             }
         }
 
@@ -269,7 +269,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
             if (svc != null)
             {
-                ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+                ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true, null);
                 plateData.save(getUser());
                 outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
 
