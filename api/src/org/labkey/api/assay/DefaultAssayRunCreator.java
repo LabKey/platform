@@ -641,8 +641,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                                  @NotNull Map<ExpData, String> inputDatas,
                                  ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
     {
+        Logger log = context.getLogger() != null ? context.getLogger() : LOG;
+
         Map<?, String> inputs = context.getInputDatas();
-        addDatas(context.getContainer(), inputDatas, inputs, context.getLogger());
+        addDatas(context.getContainer(), inputDatas, inputs, log);
 
         // Inspect the uploaded files which will be added as outputs of the run
         if (context.isAllowCrossRunFileInputs())
@@ -662,7 +664,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         // Add this file as an input to the run. When we add the outputs to the run, we will detect
                         // that this file was already added as an input and create a new exp.data for the same file
                         // path and attach it as an output.
-                        context.getLogger().debug("found existing cross run file input: name=" + existingData.getName() + ", rowId=" + existingData.getRowId() + ", dataFileUrl=" + existingData.getDataFileUrl());
+                        log.debug("found existing cross run file input: name=" + existingData.getName() + ", rowId=" + existingData.getRowId() + ", dataFileUrl=" + existingData.getDataFileUrl());
                         inputDatas.put(existingData, CROSS_RUN_DATA_INPUT_ROLE);
                     }
                 }
@@ -896,6 +898,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
     {
+        Logger log = context.getLogger() != null ? context.getLogger() : LOG;
+
         // Create set of existing input files
         Set<File> inputFiles = new HashSet<>();
         for (ExpData inputData : inputDatas.keySet())
@@ -925,14 +929,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (context.isAllowCrossRunFileInputs() && inputFiles.contains(file))
                 reuseExistingData = false;
 
-            context.getLogger().debug("adding output data: file=" + file.getPath() + ", ");
-            context.getLogger().debug("  context.getReRunId()=" + context.getReRunId());
-            context.getLogger().debug("  provider.getReRunSupport()=" + getProvider().getReRunSupport());
-            context.getLogger().debug("  context.allowCrossRunFileInputs=" + context.isAllowCrossRunFileInputs());
-            context.getLogger().debug("  inputFiles.contains(file)=" + inputFiles.contains(file));
-            context.getLogger().debug("==> reuseExistingData = " + reuseExistingData);
+            log.debug("adding output data: file=" + file.getPath() + ", ");
+            log.debug("  context.getReRunId()=" + context.getReRunId());
+            log.debug("  provider.getReRunSupport()=" + getProvider().getReRunSupport());
+            log.debug("  context.allowCrossRunFileInputs=" + context.isAllowCrossRunFileInputs());
+            log.debug("  inputFiles.contains(file)=" + inputFiles.contains(file));
+            log.debug("==> reuseExistingData = " + reuseExistingData);
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, context.getLogger());
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, log);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(file))
             {
@@ -951,7 +955,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
 
         Map<?, String> outputs = context.getOutputDatas();
-        addDatas(context.getContainer(), outputDatas, outputs, context.getLogger());
+        addDatas(context.getContainer(), outputDatas, outputs, log);
     }
 
     /**
@@ -1052,7 +1056,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     // Disallow creating a run with inputs which are also outputs
     protected void checkForCycles(AssayRunUploadContext<ProviderType> context, Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
     {
-        Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
         for (ExpRunItem input : inputs.keySet())
         {
             if (outputs.containsKey(input))
