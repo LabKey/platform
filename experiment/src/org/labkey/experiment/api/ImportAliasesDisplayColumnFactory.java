@@ -43,7 +43,7 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                 {
                     Map<String, String> aliasMap = sampleType.getImportAliasMap();
                     List<String> importKeys = aliasMap.keySet().stream()
-                            .filter(key -> aliasMap.get(key).startsWith(_prefix))
+                            .filter(key -> _prefix == null || aliasMap.get(key).startsWith(_prefix))
                             .sorted()
                             .collect(Collectors.toList());
 
@@ -51,7 +51,7 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                     {
                         json = new JSONObject();
                         for (String importKey : importKeys)
-                            json.put(importKey, aliasMap.get(importKey).substring(_prefix.length()));
+                            json.put(importKey, aliasMap.get(importKey));
                     }
                 }
 

@@ -39,6 +39,7 @@ public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
         ModifiedBy,
         Folder,
         SampleCount,
+        ImportAliases,
         MaterialInputImportAliases,
         DataInputImportAliases,
         // Columns not supported by ExpSampleSetTableImpl.createColumn()

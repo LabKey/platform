@@ -86,6 +86,10 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample type");
                 return sampleCountColumnInfo;
             }
+            case ImportAliases:
+                AliasedColumn aliasesCol = new AliasedColumn(this, "ImportAliases", _rootTable.getColumn("RowId"));
+                aliasesCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(null));
+                return aliasesCol;
             case MaterialInputImportAliases:
                 AliasedColumn materialInputCol = new AliasedColumn(this, "MaterialInputImportAliases", _rootTable.getColumn("RowId"));
                 materialInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(MATERIAL_INPUTS_PREFIX));
@@ -119,6 +123,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleTypeTable.Column.Folder, new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         addColumn(ExpSampleTypeTable.Column.SampleCount);
+        addColumn(ExpSampleTypeTable.Column.ImportAliases).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.MaterialInputImportAliases).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.DataInputImportAliases).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.Properties);
