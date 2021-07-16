@@ -3143,12 +3143,10 @@ study/src/org/labkey/study/CohortFilterFactory.java -text
 study/src/org/labkey/study/controllers/BaseStudyController.java -text
 study/src/org/labkey/study/controllers/CreateChildStudyAction.java -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
-study/src/org/labkey/study/controllers/InsertUpdateAction.java -text
 study/src/org/labkey/study/controllers/ParticipantGroupController.java -text
 study/src/org/labkey/study/controllers/reports/ReportsController.java -text
 study/src/org/labkey/study/controllers/reports/StudyManageReportsBean.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
-study/src/org/labkey/study/controllers/specimen/ParticipantCommentAction.java -text
 study/src/org/labkey/study/controllers/StudyController.java -text
 study/src/org/labkey/study/controllers/StudyDesignController.java -text
 study/src/org/labkey/study/controllers/VisitForm.java -text

@@ -643,13 +643,6 @@ public class ExperimentJSONConverter
     }
 
 
-    @Deprecated(forRemoval = true)
-    @NotNull
-    public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user)
-    {
-        return serializeData(data, user, DEFAULT_SETTINGS);
-    }
-
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
@@ -684,13 +677,6 @@ public class ExperimentJSONConverter
         jsonObject.put(CPAS_TYPE, data.getCpasType());
 
         return jsonObject;
-    }
-
-    @Deprecated(forRemoval = true)
-    @NotNull
-    public static JSONObject serializeMaterial(@NotNull ExpMaterial material)
-    {
-        return serializeMaterial(material, DEFAULT_SETTINGS);
     }
 
     // TODO: Include MaterialInput edge properties (role and properties)
