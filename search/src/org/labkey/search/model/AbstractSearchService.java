@@ -208,8 +208,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             if (_isReady)
             {
                 assert _subtasks.size() == 0;
-                if (_tasks.remove(this))
-                    return true;
+                return _tasks.remove(this);
             }
             return false;
         }
@@ -494,7 +493,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         @Override
         public String toString()
         {
-            return "ItemRunnable of " + _item.toString();
+            return "ItemRunnable of " + _item;
         }
     }
 
@@ -626,7 +625,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    private Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
+    private final Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
 
     @Override
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
@@ -652,7 +651,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
 
     @Override
-    public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
+    public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)
     {
         int i = resourceIdentifier.indexOf(":");
         if (i == -1)
@@ -807,9 +806,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 {
                     _runningLock.wait();
                 }
-                catch (InterruptedException x)
-                {
-                }
+                catch (InterruptedException ignored) {}
             }
             return !_shuttingDown;
         }
@@ -829,29 +826,26 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         if (_threadsInitialized)
             return;
 
-        ThreadGroup group = new ThreadGroup("SearchService");
-        group.setDaemon(true);
-        group.setMaxPriority(Thread.MIN_PRIORITY + 1);
-        
         int countIndexingThreads = Math.max(1, getCountIndexingThreads());
-        for (int i=0 ; i<countIndexingThreads ; i++)
+        for (int i = 0; i < countIndexingThreads; i++)
         {
-            Thread t = new Thread(group, indexRunnable, "SearchService:index");
-            t.start();
-            _threads.add(t);
+            startThread(new Thread(indexRunnable, "SearchService:index"));
         }
 
-        {
-            Thread t = new Thread(group, runRunnable, "SearchService:runner");
-            t.start();
-            _threads.add(t);
-        }
+        startThread(new Thread(runRunnable, "SearchService:runner"));
 
         _threadsInitialized = true;
 
         ContextListener.addShutdownListener(this);
     }
-
+    
+    private void startThread(Thread t)
+    {
+        t.setDaemon(true);
+        t.setPriority(Thread.MIN_PRIORITY + 1);
+        t.start();
+        _threads.add(t);
+    }
 
     @Override
     public String getName()
@@ -879,7 +873,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             for (Thread t : _threads)
                 t.join(1000);
         }
-        catch (InterruptedException e) {}
+        catch (InterruptedException ignored) {}
         shutDown();
     }
 
@@ -896,21 +890,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 //                    if (!waitForRunning())
 //                        continue;
 
-                success = true;
                 i = _runQueue.poll(30, TimeUnit.SECONDS);
 
                 if (null != i)
                 {
                     while (!_shuttingDown && _itemQueue.size() > 1000)
                     {
-                        try {Thread.sleep(100);}catch(InterruptedException x){}
+                        try {Thread.sleep(100);}catch(InterruptedException ignored){}
                     }
                     i._run.run();
                 }
             }
-            catch (InterruptedException x)
-            {
-            }
+            catch (InterruptedException ignored) {}
             catch (Throwable x)
             {
                 success = false;
@@ -1088,9 +1079,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             else
                 _log.debug("skipping " + i._id);
         }
-        catch (InterruptedException x)
-        {
-        }
+        catch (InterruptedException ignored) {}
         catch (Throwable x)
         {
             _log.error("Error indexing " + (null != i ? i._id : ""), x);
