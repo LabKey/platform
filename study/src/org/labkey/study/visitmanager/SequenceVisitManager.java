@@ -49,6 +49,7 @@ import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.ParticipantGroupFilterClause;
 import org.labkey.study.query.StudyQuerySchema;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -494,10 +495,10 @@ public class SequenceVisitManager extends VisitManager
                 "WHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
         sql.add(getStudy().getContainer().getId());
 
-        final TreeSet<Double> sequenceNums = new TreeSet<>();
+        final TreeSet<BigDecimal> sequenceNums = new TreeSet<>();
 
         info(logger, "Select distinct sequence numbers from participant visit table");
-        new SqlSelector(schema, sql).forEach(rs -> sequenceNums.add(rs.getDouble(1)));
+        new SqlSelector(schema, sql).forEach(rs -> sequenceNums.add(rs.getBigDecimal(1)));
 
         if (sequenceNums.size() > 0)
         {

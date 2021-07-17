@@ -152,9 +152,9 @@ public class StudyInternalServiceImpl implements StudyInternalService
     }
 
     @Override
-    public Visit getVisitForSequence(Study study, double seqNum)
+    public BigDecimal getSequenceNum(double sequenceNumDouble)
     {
-        return StudyManager.getInstance().getVisitForSequence(study, seqNum);
+        return VisitImpl.getSequenceNum(sequenceNumDouble);
     }
 
     @Override

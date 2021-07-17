@@ -228,6 +228,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1905,9 +1906,9 @@ public class StudyController extends BaseStudyController
             {
                 if (v.getRowId() == postedVisit.getRowId())
                     continue;
-                double maxL = Math.max(v.getSequenceNumMinDouble(), postedVisit.getSequenceNumMinDouble());
-                double minR = Math.min(v.getSequenceNumMaxDouble(), postedVisit.getSequenceNumMaxDouble());
-                if (maxL<=minR)
+                BigDecimal maxL = v.getSequenceNumMin().max(postedVisit.getSequenceNumMin());
+                BigDecimal minR = v.getSequenceNumMax().max(postedVisit.getSequenceNumMax());
+                if (maxL.compareTo(minR) <= 0)
                 {
                     errors.reject("visitSummary", getVisitLabel() + " range overlaps with '" + v.getDisplayString() + "'");
                     validRange = false;

@@ -70,7 +70,7 @@ public interface StudyInternalService
 
     Visit getVisitForSequence(Study study, BigDecimal seqNum);
 
-    Visit getVisitForSequence(Study study, double seqNum);
+    BigDecimal getSequenceNum(double sequenceNumDouble);
 
     ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter, boolean hasCreateGroupFromSelection);
 

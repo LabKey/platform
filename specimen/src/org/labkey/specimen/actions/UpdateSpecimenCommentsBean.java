@@ -17,6 +17,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.specimen.SpecimenManager;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -102,7 +103,8 @@ public class UpdateSpecimenCommentsBean extends SpecimensViewBean
             if (visit != null)
             {
                 String ptid = vial.getPtid();
-                Visit v = StudyInternalService.get().getVisitForSequence(study, visit);
+                BigDecimal sequenceNum = StudyInternalService.get().getSequenceNum(visit);
+                Visit v = StudyInternalService.get().getVisitForSequence(study, sequenceNum);
                 if (ptid != null && v != null)
                 {
                     if (!pvMap.containsKey(ptid))

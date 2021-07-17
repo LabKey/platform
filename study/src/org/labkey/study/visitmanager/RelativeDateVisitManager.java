@@ -44,6 +44,7 @@ import org.labkey.study.query.DataspaceQuerySchema;
 import org.labkey.study.query.ParticipantGroupFilterClause;
 import org.labkey.study.query.StudyQuerySchema;
 
+import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -274,10 +275,10 @@ public class RelativeDateVisitManager extends VisitManager
         sql.add(getStudy().getContainer());
 
         // Build up a set so that we can create all of them in bulk
-        Set<Double> daysToEnsure = new HashSet<>();
+        Set<BigDecimal> daysToEnsure = new HashSet<>();
 
         new SqlSelector(schema, sql).forEach(Integer.class, day -> {
-            double seqNum = null != day ? day : 0;
+            BigDecimal seqNum = VisitImpl.getSequenceNum(null != day ? day : 0);
             daysToEnsure.add(seqNum);
         });
 

@@ -37,13 +37,7 @@ public interface Visit extends StudyEntity
 
     BigDecimal getSequenceNumMin();
 
-    @Deprecated // Use getSequenceNumMin()
-    double getSequenceNumMinDouble();
-
     BigDecimal getSequenceNumMax();
-
-    @Deprecated // Use getSequenceNumMax()
-    double getSequenceNumMaxDouble();
 
     BigDecimal getProtocolDay();
 

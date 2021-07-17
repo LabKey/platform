@@ -1078,11 +1078,10 @@ public class StudyManager
         return visit;
     }
 
-
-    public VisitImpl ensureVisit(Study study, User user, double sequencenum, Visit.Type type, boolean saveIfNew)
+    public VisitImpl ensureVisit(Study study, User user, BigDecimal sequenceNum, Visit.Type type, boolean saveIfNew)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
-        VisitImpl result = ensureVisitWithoutSaving(study, sequencenum, type, visits);
+        VisitImpl result = ensureVisitWithoutSaving(study, sequenceNum, type, visits);
         if (saveIfNew && result.getRowId() == 0)
         {
             // Insert it into the database if it's new
@@ -1091,12 +1090,11 @@ public class StudyManager
         return result;
     }
 
-
-    public boolean ensureVisits(Study study, User user, Set<Double> sequencenums, @Nullable Visit.Type type)
+    public boolean ensureVisits(Study study, User user, Set<BigDecimal> sequencenums, @Nullable Visit.Type type)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         boolean created = false;
-        for (double sequencenum : sequencenums)
+        for (BigDecimal sequencenum : sequencenums)
         {
             VisitImpl result = ensureVisitWithoutSaving(study, sequencenum, type, visits);
             if (result.getRowId() == 0)
@@ -1108,170 +1106,69 @@ public class StudyManager
         return created;
     }
 
-
-    private VisitImpl ensureVisitWithoutSaving(Study study, double sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
+    private VisitImpl ensureVisitWithoutSaving(Study study, double seqNumDouble, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
     {
-        VisitImpl visit1 = ensureVisitWithoutSavingDouble(study, sequencenum, type, existingVisits);
-        VisitImpl visit2 = ensureVisitWithoutSaving(study, BigDecimal.valueOf(sequencenum), type, existingVisits);
-
-        assert Objects.equals(visit1.getLabel(), visit2.getLabel());
-        assert Objects.equals(visit1.getSequenceString(), visit2.getSequenceString());
-        assert Objects.equals(visit1.getSequenceNumMin(), visit2.getSequenceNumMin());
-        assert Objects.equals(visit1.getSequenceNumMax(), visit2.getSequenceNumMax());
-        assert Objects.equals(visit1.getFormattedSequenceNumMin(), visit2.getFormattedSequenceNumMin());
-        assert Objects.equals(visit1.getFormattedSequenceNumMax(), visit2.getFormattedSequenceNumMax());
-        assert Objects.equals(visit1.getDescription(), visit2.getDescription());
-        assert Objects.equals(visit1.getChronologicalOrder(), visit2.getChronologicalOrder());
-
-        return visit1;
+        return ensureVisitWithoutSaving(study, VisitImpl.getSequenceNum(seqNumDouble), type, existingVisits);
     }
 
-    private VisitImpl ensureVisitWithoutSavingDouble(Study study, double sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
+    private VisitImpl ensureVisitWithoutSaving(Study study, BigDecimal sequenceNum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
     {
+        sequenceNum = VisitImpl.normalizeSequenceNum(sequenceNum);
+
         // Remember the SequenceNums closest to the requested id in case we need to create one
-        double nextVisit = Double.POSITIVE_INFINITY;
-        double previousVisit = Double.NEGATIVE_INFINITY;
+        BigDecimal nextVisit = Visit.MAX_SEQUENCE_NUM;
+        BigDecimal previousVisit = Visit.MIN_SEQUENCE_NUM;
         for (VisitImpl visit : existingVisits)
         {
-            if (visit.getSequenceNumMinDouble() <= sequencenum && visit.getSequenceNumMaxDouble() >= sequencenum)
+            if (visit.getSequenceNumMin().compareTo(sequenceNum) <= 0 && visit.getSequenceNumMax().compareTo(sequenceNum) >= 0)
                 return visit;
             // check to see if our new sequencenum is within the range of an existing visit:
             // Check if it's the closest to the requested id, either before or after
-            if (visit.getSequenceNumMinDouble() < nextVisit && visit.getSequenceNumMinDouble() > sequencenum)
-            {
-                nextVisit = visit.getSequenceNumMinDouble();
-            }
-            if (visit.getSequenceNumMaxDouble() > previousVisit && visit.getSequenceNumMaxDouble() < sequencenum)
-            {
-                previousVisit = visit.getSequenceNumMaxDouble();
-            }
-        }
-        double visitIdMin = sequencenum;
-        double visitIdMax = sequencenum;
-        String label = null;
-        if (!study.getTimepointType().isVisitBased())
-        {
-            // Do special handling for data-based studies
-            if (study.getDefaultTimepointDuration() == 1 || sequencenum != Math.floor(sequencenum) || sequencenum < 0)
-            {
-                // See if there's a fractional part to the number
-                if (sequencenum != Math.floor(sequencenum))
-                {
-                    label = "Day " + sequencenum;
-                }
-                else
-                {
-                    // If not, drop the decimal from the default name
-                    label = "Day " + (int) sequencenum;
-                }
-            }
-            else
-            {
-                // Try to create a timepoint that spans the default number of days
-                // For example, if duration is 7 days, do timepoints for days 0-6, 7-13, 14-20, etc
-                int intervalNumber = (int) sequencenum / study.getDefaultTimepointDuration();
-                visitIdMin = intervalNumber * study.getDefaultTimepointDuration();
-                visitIdMax = (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1;
-
-                // Scale the timepoint to be smaller if there are existing timepoints that overlap
-                // on its desired day range
-                if (previousVisit != Double.NEGATIVE_INFINITY)
-                {
-                    visitIdMin = Math.max(visitIdMin, previousVisit + 1);
-                }
-                if (nextVisit != Double.POSITIVE_INFINITY)
-                {
-                    visitIdMax = Math.min(visitIdMax, nextVisit - 1);
-                }
-
-                // Default label is "Day X"
-                label = "Day " + (int) visitIdMin + " - " + (int) visitIdMax;
-                if ((int) visitIdMin == (int) visitIdMax)
-                {
-                    // Single day timepoint, so don't use the range
-                    label = "Day " + (int) visitIdMin;
-                }
-                else if (visitIdMin == intervalNumber * study.getDefaultTimepointDuration() &&
-                        visitIdMax == (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1)
-                {
-                    // The timepoint is the full span for the default duration, so see if we
-                    // should call it "Week" or "Month"
-                    if (study.getDefaultTimepointDuration() == 7)
-                    {
-                        label = "Week " + (intervalNumber + 1);
-                    }
-                    else if (study.getDefaultTimepointDuration() == 30 || study.getDefaultTimepointDuration() == 31)
-                    {
-                        label = "Month " + (intervalNumber + 1);
-                    }
-                }
-            }
-        }
-
-        // create visit in shared study
-        Study visitStudy = getStudyForVisits(study);
-        return new VisitImpl(visitStudy.getContainer(), visitIdMin, visitIdMax, label, type);
-    }
-
-    private static final BigDecimal LARGE_POSITIVE = new BigDecimal(Integer.MAX_VALUE);   // No way to represent infinity, so just use a really large number
-    private static final BigDecimal LARGE_NEGATIVE = new BigDecimal(-Integer.MAX_VALUE);  // No way to represent infinity, so just use a really large negative number
-
-    private VisitImpl ensureVisitWithoutSaving(Study study, BigDecimal sequencenum, @Nullable Visit.Type type, List<VisitImpl> existingVisits)
-    {
-        // Remember the SequenceNums closest to the requested id in case we need to create one
-        BigDecimal nextVisit = LARGE_POSITIVE;
-        BigDecimal previousVisit = LARGE_NEGATIVE;
-        for (VisitImpl visit : existingVisits)
-        {
-            if (visit.getSequenceNumMin().compareTo(sequencenum) <= 0 && visit.getSequenceNumMax().compareTo(sequencenum) >= 0)
-                return visit;
-            // check to see if our new sequencenum is within the range of an existing visit:
-            // Check if it's the closest to the requested id, either before or after
-            if (visit.getSequenceNumMin().compareTo(nextVisit) < 0 && visit.getSequenceNumMin().compareTo(sequencenum) > 0)
+            if (visit.getSequenceNumMin().compareTo(nextVisit) < 0 && visit.getSequenceNumMin().compareTo(sequenceNum) > 0)
             {
                 nextVisit = visit.getSequenceNumMin();
             }
-            if (visit.getSequenceNumMax().compareTo(previousVisit) > 0 && visit.getSequenceNumMax().compareTo(sequencenum) < 0)
+            if (visit.getSequenceNumMax().compareTo(previousVisit) > 0 && visit.getSequenceNumMax().compareTo(sequenceNum) < 0)
             {
                 previousVisit = visit.getSequenceNumMax();
             }
         }
-        BigDecimal visitIdMin = sequencenum;
-        BigDecimal visitIdMax = sequencenum;
+        BigDecimal visitIdMin = sequenceNum;
+        BigDecimal visitIdMax = sequenceNum;
         String label = null;
         if (!study.getTimepointType().isVisitBased())
         {
-            boolean isFloatingPoint = sequencenum.stripTrailingZeros().scale() > 0;
+            boolean isFloatingPoint = sequenceNum.stripTrailingZeros().scale() > 0;
 
             // Do special handling for data-based studies
-            if (study.getDefaultTimepointDuration() == 1 || isFloatingPoint || sequencenum.compareTo(BigDecimal.ZERO) < 0)
+            if (study.getDefaultTimepointDuration() == 1 || isFloatingPoint || sequenceNum.compareTo(BigDecimal.ZERO) < 0)
             {
                 // See if there's a fractional part to the number
                 if (isFloatingPoint)
                 {
-                    label = "Day " + sequencenum;
+                    label = "Day " + VisitImpl.formatSequenceNum(sequenceNum);
                 }
                 else
                 {
                     // If not, drop the decimal from the default name
-                    label = "Day " + sequencenum.intValue();
+                    label = "Day " + sequenceNum.intValue();
                 }
             }
             else
             {
                 // Try to create a timepoint that spans the default number of days
                 // For example, if duration is 7 days, do timepoints for days 0-6, 7-13, 14-20, etc
-                int intervalNumber = sequencenum.intValue() / study.getDefaultTimepointDuration();
+                int intervalNumber = sequenceNum.intValue() / study.getDefaultTimepointDuration();
                 visitIdMin = BigDecimal.valueOf((long)intervalNumber * study.getDefaultTimepointDuration());
                 visitIdMax = BigDecimal.valueOf((long)(intervalNumber + 1) * study.getDefaultTimepointDuration() - 1);
 
                 // Scale the timepoint to be smaller if there are existing timepoints that overlap
                 // on its desired day range
-                if (previousVisit != LARGE_NEGATIVE)
+                if (previousVisit != Visit.MIN_SEQUENCE_NUM)
                 {
                     visitIdMin = visitIdMin.max(previousVisit.add(BigDecimal.ONE));
                 }
-                if (nextVisit != LARGE_POSITIVE)
+                if (nextVisit != Visit.MAX_SEQUENCE_NUM)
                 {
                     visitIdMax = visitIdMax.min(nextVisit.subtract(BigDecimal.ONE));
                 }
@@ -1310,7 +1207,6 @@ public class StudyManager
         DataIteratorBuilder it = new BeanDataIterator.Builder(VisitAlias.class, aliases);
         importVisitAliases(study, user, it);
     }
-
 
     public int importVisitAliases(final Study study, User user, DataIteratorBuilder loader) throws ValidationException
     {
@@ -2250,23 +2146,12 @@ public class StudyManager
         }
     }
 
-    public VisitImpl getVisitForSequence(Study study, double seqNum)
-    {
-        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
-        for (VisitImpl v : visits)
-        {
-            if (seqNum >= v.getSequenceNumMinDouble() && seqNum <= v.getSequenceNumMaxDouble())
-                return v;
-        }
-        return null;
-    }
-
     public VisitImpl getVisitForSequence(Study study, BigDecimal seqNum)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
         for (VisitImpl v : visits)
         {
-            if (seqNum.compareTo(v.getSequenceNumMin()) >= 0 && seqNum.compareTo(v.getSequenceNumMax()) <= 0)
+            if (v.isInRange(seqNum))
                 return v;
         }
         return null;
@@ -5050,8 +4935,8 @@ public class StudyManager
                 assertNotSame("Should be a new visit", newVisit, existingVisit);
             }
             assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
-            assertEquals("Wrong sequenceNumMin", VisitImpl.normalizeSequenceNum(new BigDecimal(seqNumMin)), newVisit.getSequenceNumMin());
-            assertEquals("Wrong sequenceNumMax", VisitImpl.normalizeSequenceNum(new BigDecimal(seqNumMax)), newVisit.getSequenceNumMax());
+            assertEquals("Wrong sequenceNumMin", VisitImpl.getSequenceNum(seqNumMin), newVisit.getSequenceNumMin());
+            assertEquals("Wrong sequenceNumMax", VisitImpl.getSequenceNum(seqNumMax), newVisit.getSequenceNumMax());
         }
     }
 

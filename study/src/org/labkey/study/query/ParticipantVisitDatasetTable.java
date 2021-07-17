@@ -100,14 +100,14 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                 continue;
             sequenceSet.add(visit.getSequenceNumMin());
         }
+
         //Now find all the sequenceNums where data actually exists.
         //Make sure their visits show up...
-        List<Double> currentSequenceNumbers = _userSchema.getSequenceNumsForDataset(_dataset);
+        List<BigDecimal> currentSequenceNumbers = _userSchema.getSequenceNumsForDataset(_dataset);
         if (null != currentSequenceNumbers)
         {
-            for (Double d : currentSequenceNumbers)
+            for (BigDecimal seq : currentSequenceNumbers)
             {
-                BigDecimal seq = BigDecimal.valueOf(d);  // TODO: Migrate getSequenceNumsForDataset() to BigDecimal
                 sequenceSet.add(seq);
                 VisitImpl visit = visitManager.findVisitBySequence(seq);
                 if (null != visit && visitIds.add(visit.getRowId()))

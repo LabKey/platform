@@ -348,16 +348,16 @@ public abstract class VisitManager
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
     protected abstract SQLFragment getDatasetSequenceNumsSQL(Study study);
 
-    public Map<Integer, List<Double>> getDatasetSequenceNums()
+    public Map<Integer, List<BigDecimal>> getDatasetSequenceNums()
     {
         SQLFragment sql = getDatasetSequenceNumsSQL(getStudy());
-        final Map<Integer, List<Double>> ret = new HashMap<>();
+        final Map<Integer, List<BigDecimal>> ret = new HashMap<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs ->
         {
             Integer datasetId = rs.getInt(1);
-            Double sequenceNum = rs.getDouble(2);
-            List<Double> l = ret.computeIfAbsent(datasetId, k -> new ArrayList<>());
+            BigDecimal sequenceNum = rs.getBigDecimal(2);
+            List<BigDecimal> l = ret.computeIfAbsent(datasetId, k -> new ArrayList<>());
             l.add(sequenceNum);
         });
 

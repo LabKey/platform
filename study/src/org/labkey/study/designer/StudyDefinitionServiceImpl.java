@@ -32,7 +32,6 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -49,6 +48,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.StudyDesignDocument;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
@@ -245,7 +245,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
                 startDay = Math.max(previousDay + 1, startDay - 15);
                 endDay = Math.min(nextDay - 1, endDay + 15);
             }
-            VisitImpl visit = new VisitImpl(getContainer(), startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
+            VisitImpl visit = new VisitImpl(getContainer(), BigDecimal.valueOf(startDay), BigDecimal.valueOf(endDay), timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
             StudyManager.getInstance().createVisit(study, getUser(), visit);
             previousDay = endDay;
         }
