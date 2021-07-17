@@ -763,11 +763,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public static @NotNull ExpData createData(Container c, String name, @NotNull DataType dataType, @Nullable Logger log) throws ValidationException
     {
-        // NOTE: reuseExistingDatas flag is irrelevant when we aren't providing a File
+        // NOTE: reuseExistingData flag is irrelevant when we aren't providing a File
         return createData(c, null, name, dataType, false, log);
     }
 
-    public static @NotNull ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingDatas, @Nullable Logger log) throws ValidationException
+    public static @NotNull ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingData, @Nullable Logger log) throws ValidationException
     {
         if (log == null)
             log = LOG;
@@ -777,7 +777,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         if (data != null && data.getRun() != null)
         {
             // There's an existing data, but it's already marked as being created by another run.
-            if (reuseExistingDatas)
+            if (reuseExistingData)
             {
                 ExpRun previousRun = data.getRun();
                 throw new ValidationException("File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")");
