@@ -1907,7 +1907,7 @@ public class StudyController extends BaseStudyController
                 if (v.getRowId() == postedVisit.getRowId())
                     continue;
                 BigDecimal maxL = v.getSequenceNumMin().max(postedVisit.getSequenceNumMin());
-                BigDecimal minR = v.getSequenceNumMax().max(postedVisit.getSequenceNumMax());
+                BigDecimal minR = v.getSequenceNumMax().min(postedVisit.getSequenceNumMax());
                 if (maxL.compareTo(minR) <= 0)
                 {
                     errors.reject("visitSummary", getVisitLabel() + " range overlaps with '" + v.getDisplayString() + "'");
