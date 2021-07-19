@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="org.labkey.core.portal.CollaborationFolderType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -41,7 +42,7 @@
 
     String name = form.getName();
     String title = form.getTitle();
-    String folderTypeName = form.getFolderType() != null ? form.getFolderType() : "Collaboration"; //default to Collaboration
+    String folderTypeName = form.getFolderType() != null ? form.getFolderType() : CollaborationFolderType.TYPE_NAME; //default to Collaboration
 
     JSONArray modulesOut = new JSONArray();
     String[] activeModules = form.getActiveModules();
