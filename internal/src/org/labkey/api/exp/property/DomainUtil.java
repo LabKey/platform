@@ -76,6 +76,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -973,6 +974,7 @@ public class DomainUtil
     {
         Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames()));
+        Set<String> reservedPrefixes = domainKind.getReservedPropertyNamePrefixes(domain);
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
@@ -986,6 +988,14 @@ public class DomainUtil
             if (null == name || name.trim().length() == 0)
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
+                continue;
+            }
+
+            if (!reservedPrefixes.isEmpty())
+            {
+                String lcName = name.toLowerCase();
+                Optional<String> reservedPrefix = reservedPrefixes.stream().filter(prefix -> lcName.startsWith(prefix.toLowerCase())).findAny();
+                reservedPrefix.ifPresent(s -> exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + s + "' used in '" + name + "' is reserved for system use.")));
                 continue;
             }
 

@@ -103,6 +103,11 @@ abstract public class DomainKind<T>  implements Handler<String>
      */
     abstract public Set<String> getReservedPropertyNames(Domain domain);
 
+    public Set<String> getReservedPropertyNamePrefixes(Domain domain)
+    {
+        return Collections.emptySet();
+    }
+
     /**
      * Return the set of names that are always required and cannot subsequently
      * be deleted.

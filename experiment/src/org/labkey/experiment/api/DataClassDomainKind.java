@@ -210,6 +210,12 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
+    public Set<String> getReservedPropertyNamePrefixes(Domain domain)
+    {
+        return LINEAGE_FIELD_NAME_PREFIXES;
+    }
+
+    @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return INDEXES;
