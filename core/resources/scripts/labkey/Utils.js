@@ -42,11 +42,7 @@ LABKEY.Utils = new function()
             'j-n-y|j-n-Y|' +
             'j-M-y|j-M-Y|' + DATEALTFORMATS_Either;
 
-    // Match ExtJS detection - Both Chrome and Safari report that they're Safari, so eliminate Chrome when checking
-    var isSafari = !/\bchrome\b/.test(navigator.userAgent.toLowerCase()) && /safari/.test(navigator.userAgent.toLowerCase());
-
-    // Issue 43557 - Safari needs a 'T' between the date and time to parse dates via native Date constructor, so match here
-    var DATETIMEFORMAT_WithMS = isSafari ? 'Y-m-d\\TH:i:s.u' : 'Y-m-d H:i:s.u'; //24 hr format with milliseconds
+    var DATETIMEFORMAT_WithMS = 'Y-m-d H:i:s.u'; //24 hr format with milliseconds
 
     function isObject(v)
     {
