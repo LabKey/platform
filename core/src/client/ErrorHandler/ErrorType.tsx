@@ -18,7 +18,11 @@ const DETAILS_SUB_INSTRUCTION = (
         </p>
         <p className="labkey-error-details">
             If you are part of a{' '}
-            <a href="https://labkey.com/products-services/labkey-server/#server-editions" rel="noopener noreferrer" target="_blank">
+            <a
+                href="https://labkey.com/products-services/labkey-server/#server-editions"
+                rel="noopener noreferrer"
+                target="_blank"
+            >
                 {' '}
                 LabKey Server Premium Edition
             </a>{' '}
@@ -103,7 +107,10 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
     </>
 );
 
-const PERMISSION_SUBHEADING = () => 'You do not have the permissions required to access this page.';
+const PERMISSION_SUBHEADING = (errorMessage: string) => (
+    <>{errorMessage !== undefined ? errorMessage : 'You do not have the permissions required to access this page.'}</>
+);
+
 const PERMISSION_INSTRUCTION = () => "Please contact this server's administrator to gain access.";
 const PERMISSION_DETAILS = () => (
     <>
@@ -282,7 +289,7 @@ export const getImage = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)}/>;
+    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} />;
 };
 
 export const getSubHeading = (errorDetails: ErrorDetails): ReactNode => {
