@@ -120,7 +120,7 @@
     relatedIssues.append(", title :").append(q(issue.getTitle()));
     relatedIssues.append(", skipPost :").append(true);
     relatedIssues.append(", assignedTo :").append(issue.getAssignedTo());
-    relatedIssues.append(", priority :").append(issue.getProperty(Issue.Prop.priority));
+    relatedIssues.append(", priority :").append(q(issue.getProperty(Issue.Prop.priority)));
     relatedIssues.append(", related :").append(issue.getIssueId());
     relatedIssues.append("})");
 
