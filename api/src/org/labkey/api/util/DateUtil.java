@@ -32,6 +32,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -51,6 +53,7 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 
@@ -966,6 +969,12 @@ validNum:       {
         // Strangely, Firefox seem to adhere strictly to ECMA Specification of date string interchange format (i.e. date with
         // hyphens instead of forward slashes) in this particular case with milliseconds. Hence had to modify the previous string from yyyy/MM/dd to yyyy-MM-dd.
         // Chrome seem to behave as expected with this change (and so does MS Edge, but extensive testing has not been done on this browser).
+        return "yyyy-MM-dd HH:mm:ss.SSS";
+    }
+
+    public static String getSafariJsonDateTimeFormatString()
+    {
+        // Issue 43557 - Safari needs the ISO-8601-like 'T' between the date and time to parse this precise of a date
         return "yyyy-MM-dd'T'HH:mm:ss.SSS";
     }
 
@@ -1110,12 +1119,32 @@ validNum:       {
         return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
     }
 
+    private static final Pattern chromePattern = Pattern.compile("\\bchrome\\b");
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
+    private static final FastDateFormat safariJsonDateFormat = FastDateFormat.getInstance(getSafariJsonDateTimeFormatString());
 
     public static String formatJsonDateTime(Date date)
     {
-        return jsonDateFormat.format(date);
+        // Issue 43557 - Safari needs a 'T' between the date and time. Instead of needing to rev all client APIs to parse
+        // the new variant, conditionally send Safari its preferred format (which works fine in other browsers but not
+        // in all other parsing code)
+        boolean isSafari = false;
+        if (HttpView.hasCurrentView())
+        {
+            ViewContext context = HttpView.currentContext();
+            if (context != null && context.getRequest() != null)
+            {
+                String userAgent = context.getRequest().getHeader("User-Agent");
+                if (userAgent != null)
+                {
+                    // Chrome includes "Safari" in its user agent, so be sure to filter it out
+                    userAgent = userAgent.toLowerCase();
+                    isSafari = userAgent.contains("safari") && !chromePattern.matcher(userAgent).find();
+                }
+            }
+        }
+        return isSafari ? safariJsonDateFormat.format(date) : jsonDateFormat.format(date);
     }
 
 
