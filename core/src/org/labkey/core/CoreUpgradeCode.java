@@ -20,30 +20,18 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.reports.ExternalScriptEngineDefinition;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -78,69 +66,6 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
-    }
-
-    /**
-     * Invoked from 19.10-19.11 to encrypt RServe configuration passwords
-     */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void encryptRServeConfigPassword(final ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            if (svc != null)
-            {
-                try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
-                {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("type"), ExternalScriptEngineDefinition.Type.R);
-                    new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(),
-                            PageFlowUtil.set("rowid", "configuration"),
-                            filter, null).forEachMap(map -> {
-
-                                Integer rowId = (Integer)map.get("rowid");
-                                String config = (String)map.get("configuration");
-                                encryptPassword(rowId, config);
-                    });
-                    transaction.commit();
-                }
-            }
-        }
-    }
-
-    private void encryptPassword(Integer rowId, String configuration)
-    {
-        if (rowId != null && configuration != null)
-        {
-            ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
-            try
-            {
-                // parse the JSON string but don't attempt to decrypt the password
-                def.setConfiguration(configuration, false);
-                if (def.isRemote() && def.getPassword() != null)
-                {
-                    if (!Encryption.isMasterEncryptionPassPhraseSpecified())
-                    {
-                        // if we can't encrypt the password, we will just blank out that field and force the user to set it manually through the UI
-                        // once the encryption key is configured
-                        LOG.warn("Master encryption key not specified, unable to migrate saved remote R engine password");
-                        def.setPassword(null);
-                    }
-                    def.setChangePassword(true);
-                    def.updateConfiguration();
-
-                    User user = UserManager.getUser(def.getModifiedBy());
-                    if (user == null || !user.isActive())
-                        user = User.getSearchUser();
-
-                    Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), PageFlowUtil.map("configuration", def.getConfiguration()), rowId);
-                }
-            }
-            catch (IOException e)
-            {
-                LOG.error("unable to encrypt saved remote R engine password for configuration: " + def.getName(), e);
-            }
-        }
     }
 
     /**
