@@ -23,9 +23,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -50,6 +52,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -240,7 +243,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()));
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType());
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 
@@ -531,6 +534,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleTypeImpl st = (ExpSampleTypeImpl) getSampleType();
         Map<String, Object> values = new HashMap<>(values_);
         Map<String,Object> converted = new HashMap<>();
+        RemapCache cache = new RemapCache();
 
         TableInfo ti = null==st ? null : st.getTinfo();
         if (null != ti)
@@ -558,7 +562,21 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
                 catch (ConversionException x)
                 {
-                    throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
+                    // Attempt to resolve lookups by display value
+                    boolean skipError = false;
+                    if (dp.getLookup() != null)
+                    {
+                        Container container = dp.getLookup().getContainer() != null ? dp.getLookup().getContainer() : getContainer();
+                        Object remappedValue = cache.remap(SchemaKey.fromParts(dp.getLookup().getSchemaName()), dp.getLookup().getQueryName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                        if (remappedValue != null)
+                        {
+                            value = remappedValue;
+                            skipError = true;
+                        }
+                    }
+
+                    if (!skipError)
+                        throw new ValidationException(ConvertHelper.getStandardConversionErrorMessage(value, dp.getName(), dp.getPropertyDescriptor().getPropertyType().getJavaType()));
                 }
                 converted.put(dp.getName(), value);
                 values.remove(key);

@@ -10,6 +10,6 @@ import java.util.List;
 public interface WebdavResourceExpDataProvider
 {
     /** @return the ExpDatas associated with the data file's URL */
-    List<ExpData> getExpDataByPath(Path path, @Nullable Container container);
+    List<? extends ExpData> getExpDataByPath(Path path, @Nullable Container container);
 
 }

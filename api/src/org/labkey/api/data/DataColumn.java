@@ -60,11 +60,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
-
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
+    public static final String EXPERIMENTAL_USE_QUERYSELECT_COMPONENT = "experimental-use-queryselect-component";
     private static final Logger LOG = LogManager.getLogger(DataColumn.class);
 
     private ColumnInfo _boundColumn;
@@ -641,7 +640,11 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
+                renderQuerySelectFormInput(ctx, out, _boundColumn.getFk(), formFieldName, value, strVal, disabledInput);
+            else
+                renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
@@ -688,25 +691,23 @@ public class DataColumn extends DisplayColumn
     protected void renderSelectFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
-        NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
+        ForeignKey boundColumnFK = _boundColumn.getFk();
+        NamedObjectList entryList = boundColumnFK.getSelectList(ctx);
         if (!entryList.isComplete())
         {
             // When incomplete, there are too many select options to render -- use a simple text input instead.
-            // TODO: if the FK target is public, we can generate an auto-complete input
             String textInputValue = strVal;
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+            Object displayValue = null;
+            TableViewForm viewForm = ctx.getForm();
+            if (viewForm != null && viewForm.contains(this, ctx))
             {
-                Object displayValue = null;
-                TableViewForm viewForm = ctx.getForm();
-                if (viewForm != null && viewForm.contains(this, ctx))
-                {
-                    // On error reshow, use the user supplied form value
-                    displayValue = viewForm.get(formFieldName);
-                }
-                if (displayValue == null)
-                    displayValue = getDisplayValue(ctx);
-                textInputValue = Objects.toString(displayValue, strVal);
+                // On error reshow, use the user supplied form value
+                displayValue = viewForm.get(formFieldName);
             }
+            if (displayValue == null)
+                displayValue = getDisplayValue(ctx);
+            textInputValue = Objects.toString(displayValue, strVal);
+
             renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
         }
         else
@@ -846,6 +847,34 @@ public class DataColumn extends DisplayColumn
         sb.append("</script>\n");
         sb.append("<div id='").append(renderId).append("'></div>");
         out.write(sb.toString());
+    }
+
+    private void renderQuerySelectFormInput(RenderContext ctx, Writer out, ForeignKey fk, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<script type=\"text/javascript\">");
+        //sb.append("LABKEY.requiresScript('http://localhost:3001/querySelectInput.js', function() {\n");
+        sb.append("LABKEY.requiresScript('gen/querySelectInput', function() {\n");
+        sb.append(" LABKEY.App.loadApp('querySelectInput', ").append(PageFlowUtil.jsString(renderId)).append(", {\n");
+        sb.append("     name: ").append(PageFlowUtil.jsString(getInputPrefix() + formFieldName)).append("\n");
+        sb.append("     ,value: ").append(PageFlowUtil.jsString(strVal)).append("\n");
+        sb.append("     ,disabled: ").append(disabledInput).append("\n");
+        sb.append("     ,schemaName: ").append(PageFlowUtil.jsString(fk.getLookupSchemaName())).append("\n");
+        sb.append("     ,queryName: ").append(PageFlowUtil.jsString(fk.getLookupTableName())).append("\n");
+        if (fk.getLookupContainer() != null)
+            sb.append("     ,containerPath: ").append(PageFlowUtil.jsString(fk.getLookupContainer().getPath())).append("\n");
+        sb.append(" });\n");
+        sb.append("});\n");
+        sb.append("</script>\n");
+        sb.append("<div id='").append(renderId).append("'></div>");
+        out.write(sb.toString());
+
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        if (disabledInput)
+            renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 
     protected @Nullable ActionURL getAutoCompleteURLPrefix()

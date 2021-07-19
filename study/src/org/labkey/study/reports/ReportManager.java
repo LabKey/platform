@@ -228,7 +228,7 @@ public class ReportManager implements DatasetManager.DatasetListener
             if (datasets.containsKey(view.getQueryName()))
             {
                 return new ActionURL(StudyController.DatasetReportAction.class, c).
-                        addParameter(DatasetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDatasetId()).
+                        addParameter(Dataset.DATASETKEY, datasets.get(view.getQueryName()).getDatasetId()).
                         addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, view.getName());
             }
 

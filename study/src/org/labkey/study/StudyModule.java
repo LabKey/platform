@@ -132,7 +132,6 @@ import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
-import org.labkey.study.controllers.specimen.SpecimenControllerOld;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -255,9 +254,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-reports", ReportsController.class);
         addController("study-security", SecurityController.class);
         addController("study-shared", SharedStudyController.class);
-
-        // @Migrate
-        addController("specimen-old", SpecimenControllerOld.class);
 
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));

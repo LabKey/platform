@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -95,7 +96,11 @@ public abstract class SamplePropertyHelper<ObjectType>
             for (DomainProperty property : _domainProperties)
             {
                 String inputName = UploadWizardAction.getInputName(property, names.get(i));
-                sampleProperties.put(property, request.getParameter(inputName));
+                // handle the hidden input field prefixed with FIELD_MARKER for checkboxes
+                String value = request.getParameter(inputName);
+                if (value == null && request.getParameter(SpringActionController.FIELD_MARKER + inputName) != null)
+                    value = "0";
+                sampleProperties.put(property, value);
             }
             result.put(getObject(i, sampleProperties, parentMaterials), sampleProperties);
         }
@@ -201,7 +206,11 @@ public abstract class SamplePropertyHelper<ObjectType>
             {
                 String name = UploadWizardAction.getInputName(sampleProperty, sampleName);
                 String inputName = ColumnInfo.propNameFromName(name);
-                values.put(sampleProperty, request.getParameter(inputName));
+                // handle the hidden input field prefixed with FIELD_MARKER for checkboxes
+                String value = request.getParameter(inputName);
+                if (value == null && request.getParameter(SpringActionController.FIELD_MARKER + inputName) != null)
+                    value = "0";
+                values.put(sampleProperty, value);
             }
             result.put(sampleName, values);
         }

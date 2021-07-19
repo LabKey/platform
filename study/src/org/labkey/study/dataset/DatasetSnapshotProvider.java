@@ -172,7 +172,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 addParameter(qs.param(QueryParam.schemaName), settings.getSchemaName()).
                 addParameter(qs.param(QueryParam.queryName), settings.getQueryName()).
                 addParameter(qs.param(QueryParam.viewName), settings.getViewName()).
-                addParameter(DatasetDefinition.DATASETKEY, context.getActionURL().getParameter(DatasetDefinition.DATASETKEY)).
+                addParameter(Dataset.DATASETKEY, context.getActionURL().getParameter(Dataset.DATASETKEY)).
                 addParameter(ActionURL.Param.redirectUrl, PageFlowUtil.encode(context.getActionURL().getLocalURIString()));
         filter.applyToURL(result, qs.getDataRegionName());
         return result;
@@ -380,7 +380,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 Study study = StudyManager.getInstance().getStudy(qsDef.getContainer());
                 DatasetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
                 return new ActionURL(StudyController.DatasetAction.class, qsDef.getContainer()).
-                    addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
+                    addParameter(Dataset.DATASETKEY, def.getDatasetId());
             }
         }
         return null;
@@ -509,7 +509,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                 transaction.commit();
 
                                 return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                                    addParameter(DatasetDefinition.DATASETKEY, dsDef.getDatasetId());
+                                    addParameter(Dataset.DATASETKEY, dsDef.getDatasetId());
                             }
                         }
                     }

@@ -16,12 +16,14 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.CohortFilter" %>
+<%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.Params" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
@@ -49,13 +51,12 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterValue" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCUrlFilterKey" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.getQCStateFilteredURL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL" %>
 <%@ page import="static org.labkey.study.model.QCStateSet.PRIVATE_STATES_LABEL" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -292,7 +293,7 @@
             if (userCanRead)
             {
                 ActionURL defaultReportURL = new ActionURL(DefaultDatasetReportAction.class, container);
-                defaultReportURL.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
+                defaultReportURL.addParameter(Dataset.DATASETKEY, dataset.getDatasetId());
 
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
@@ -344,7 +345,7 @@
                 {
                     ActionURL datasetLink = new ActionURL(DatasetAction.class, container);
                     datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
-                    datasetLink.addParameter(DatasetDefinition.DATASETKEY, dataset.getDatasetId());
+                    datasetLink.addParameter(Dataset.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
                     if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))

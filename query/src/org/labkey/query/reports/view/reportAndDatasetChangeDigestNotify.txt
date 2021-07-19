@@ -25,7 +25,7 @@
 </head>
 <body>
 <table width="100%">
-    <tr><td>Summary of report and dataset changes for folder <a href="^folderUrl^">^folderPath^</a>.</td></tr>
+    <tr><td>Summary of report and dataset changes for folder <a href="^folderURL^">^folderPath^</a>.</td></tr>
 </table>
 <hr size="1"/>
 <br>
@@ -38,7 +38,7 @@
 
 <table width="100%">
     <tr><td>You have received this email because
-        you are signed up to receive notifications about changes to reports and datasets at <a href="^folderUrl^">^folderPath^</a>.
+        you are signed up to receive notifications about changes to reports and datasets at <a href="^folderURL^">^folderPath^</a>.
         If you no longer wish to receive these notifications you can <a href="^emailPrefsUrl^">change your email preferences</a>.
     </td></tr>
 </table>

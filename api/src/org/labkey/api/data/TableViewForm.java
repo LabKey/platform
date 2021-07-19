@@ -62,8 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
-
 /**
  * Basic form for handling posts into views.
  * Supports insert, update, delete functionality with a minimum of fuss
@@ -408,7 +406,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
-        RemapCache cache = new RemapCache();        // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
+        RemapCache cache = new RemapCache();
 
         for (String propName : keys)
         {
@@ -474,19 +472,17 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             {
                 boolean skipError = false;
 
-                if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+                // Attempt to resolve lookups by display value
+                ColumnInfo col = getColumnByFormFieldName(propName);
+                if (col != null && col.getFk() != null && col.getFk().allowImportByAlternateKey())
                 {
-                    ColumnInfo col = getColumnByFormFieldName(propName);
-                    if (col != null && col.getFk() != null)
+                    ForeignKey fk = col.getFk();
+                    Container container = fk.getLookupContainer() != null ? fk.getLookupContainer() : getContainer();
+                    Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
+                    if (remappedValue != null)
                     {
-                        ForeignKey fk = col.getFk();
-                        Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, str);
-
-                        if (remappedValue != null)
-                        {
-                            values.put(propName, remappedValue);
-                            skipError = true;
-                        }
+                        values.put(propName, remappedValue);
+                        skipError = true;
                     }
                 }
 
@@ -821,14 +817,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         HttpServletRequest request = getRequest();
 
-        // TODO: Remove all ~checkboxes handling -- I don't think we ever output this
-        String[] checkboxes = request.getParameterValues("~checkboxes");
-
-        if (null != checkboxes)
-            for (String checkbox : checkboxes)
-                set(checkbox, "0");
-
-        // handle Spring style markers as well
+        // handle Spring style markers
         IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
             if (name.startsWith(SpringActionController.FIELD_MARKER))
                 set(name.substring(SpringActionController.FIELD_MARKER.length()), "0");

@@ -31,8 +31,10 @@ import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -55,9 +57,37 @@ import java.util.Objects;
     }
 
     @Override
-    public String getDebugName()
+    public String getName()
     {
-        return _script.toString();
+        return _script.getPath().toString();
+    }
+
+    @Override
+    public String getModuleName()
+    {
+        return _script.getModuleName();
+    }
+
+    @Override
+    public String getSource()
+    {
+        return _script.getPath().toString();
+    }
+
+    @Override
+    public List<TableInfo.TriggerMethod> getEvents()
+    {
+        User user = _table.getUserSchema() != null ? _table.getUserSchema().getUser() : null;
+
+        List<TableInfo.TriggerMethod> events = new ArrayList<>(8);
+
+        for (TableInfo.TriggerMethod m : TableInfo.TriggerMethod.values())
+        {
+            if (_hasFn(_container, user, m.name()))
+                events.add(m);
+        }
+
+        return events;
     }
 
     @Override
@@ -153,7 +183,24 @@ import java.util.Objects;
     }
 
 
+    private boolean _hasFn(Container c, User user, String methodName)
+    {
+        return _try(c, user, null, (script) -> _script.hasFn(methodName));
+    }
+
     private <T> T _invokeTableScript(Container c, User user, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
+    {
+        return _try(c, user, extraContext, (script) -> {
+            if (_script.hasFn(methodName))
+            {
+                return _script.invokeFn(resultType, methodName, args);
+            }
+
+            return null;
+        });
+    }
+
+    private <T> T _try(Container c, User user, Map<String, Object> extraContext, ScriptFn<T> fn)
     {
         try
         {
@@ -180,10 +227,7 @@ import java.util.Objects;
                     _script.eval(bindings);
                 }
 
-                if (_script.hasFn(methodName))
-                {
-                    return _script.invokeFn(resultType, methodName, args);
-                }
+                return fn.apply(_script);
             }
             finally
             {
@@ -197,8 +241,11 @@ import java.util.Objects;
         {
             throw new UnexpectedException(e);
         }
+    }
 
-        return null;
+    interface ScriptFn<R>
+    {
+        R apply(ScriptReference scriptReference) throws NoSuchMethodException, ScriptException;
     }
 
 

@@ -28,9 +28,12 @@ import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.validator.ColumnValidator;
@@ -68,6 +71,7 @@ import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -103,6 +107,7 @@ import static java.util.Collections.unmodifiableCollection;
 public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> implements AssayRunCreator<ProviderType>
 {
     private static final Logger LOG = LogManager.getLogger(DefaultAssayRunCreator.class);
+    private static final String CROSS_RUN_DATA_INPUT_ROLE = "cross run input";
 
     private final ProviderType _provider;
 
@@ -490,7 +495,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         else
         {
-            insertedDatas.addAll(inputDatas.keySet());
+            for (Map.Entry<ExpData, String> entry : inputDatas.entrySet())
+            {
+                // skip any of the cross run inputData that are already in the outputData
+                if (CROSS_RUN_DATA_INPUT_ROLE.equals(entry.getValue()))
+                    continue;
+
+                insertedDatas.add(entry.getKey());
+            }
+
             insertedDatas.addAll(outputDatas.keySet());
 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
@@ -628,15 +641,41 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return true;
     }
 
-    protected void addInputDatas(AssayRunUploadContext<ProviderType> context, @NotNull Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addInputDatas(AssayRunUploadContext<ProviderType> context,
+                                 @NotNull Map<ExpData, String> inputDatas,
+                                 ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
     {
         Map<?, String> inputs = context.getInputDatas();
         addDatas(context.getContainer(), inputDatas, inputs);
+
+        // Inspect the uploaded files which will be added as outputs of the run
+        if (context.isAllowCrossRunFileInputs())
+        {
+            Map<String, File> files = context.getUploadedData();
+            for (Map.Entry<String, File> entry : files.entrySet())
+            {
+                String key = entry.getKey();
+                if (AssayDataCollector.PRIMARY_FILE.equals(key))
+                {
+                    File file = entry.getValue();
+
+                    // Check if the file is created by a run
+                    ExpData existingData = ExperimentService.get().getExpDataByURL(file, context.getContainer());
+                    if (existingData != null && existingData.getRunId() != null && !inputDatas.containsKey(existingData))
+                    {
+                        // Add this file as an input to the run. When we add the outputs to the run, we will detect
+                        // that this file was already added as an input and create a new exp.data for the same file
+                        // path and attach it as an output.
+                        inputDatas.put(existingData, CROSS_RUN_DATA_INPUT_ROLE);
+                    }
+                }
+            }
+        }
     }
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpData objects
-    protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved)
+    protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved) throws ValidationException
     {
         ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
 
@@ -667,7 +706,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    public static ExpData generateResultData(User user, Container container, AssayProvider provider, List<Map<String, Object>> dataArray, Map<Object, String> outputData)
+    public static ExpData generateResultData(User user, Container container, AssayProvider provider, List<Map<String, Object>> dataArray, Map<Object, String> outputData) throws ValidationException
     {
         ExpData newData = null;
 
@@ -687,28 +726,43 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return newData;
     }
 
-    public static ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingDatas)
+    public static ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingDatas) throws ValidationException
     {
         ExpData data = null;
         if (file != null)
         {
-            data = ExperimentService.get().getExpDataByURL(file, c);
-            if (data != null)
-                LOG.debug("found existing exp.data for file, rowId=" + data.getRowId() + ", datafileurl=" + data.getDataFileUrl());
+            List<? extends ExpData> existing = ExperimentService.get().getAllExpDataByURL(file, c);
+            if (!existing.isEmpty())
+            {
+                for (ExpData d : existing)
+                {
+                    LOG.info("found existing exp.data for file, rowId=" + d.getRowId() + ", runId=" + d.getRunId() + ", dataFileUrl=" + d.getDataFileUrl());
+                }
+
+                // pick the most recently created one
+                data = existing.get(0);
+            }
         }
-        if (!reuseExistingDatas && data != null && data.getRun() != null)
+
+        if (data != null && data.getRun() != null)
         {
-            // There's an existing data, but it's already marked as being created by another run, so create a new one
-            // for the same path so the new run claim it as its own
-            LOG.debug("data is already owned by another run, so create a new one. run=" + data.getRun().getName());
+            // There's an existing data, but it's already marked as being created by another run.
+            if (reuseExistingDatas)
+            {
+                ExpRun previousRun = data.getRun();
+                throw new ValidationException("File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")");
+            }
+
+            // Create a new one for the same path so the new run can claim it as its own
             data = null;
         }
+
         if (data == null)
         {
             if (dataType == null)
                 dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
-            LOG.debug("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
+            LOG.info("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
             data = ExperimentService.get().createData(c, dataType, name);
             data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
@@ -720,9 +774,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             if (dataType != null && !dataType.matches(new Lsid(data.getLSID())))
             {
-                // Reset its LSID so that it's the correct type
+                // Reset its LSID so that it's the correct type // CONSIDER: creating a new ExpData with the correct type instead
                 String newLsid = ExperimentService.get().generateGuidLSID(c, dataType);
-                LOG.debug("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
+                LOG.info("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
                 data.setLSID(newLsid);
             }
         }
@@ -816,8 +870,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
     {
+        // Create set of existing input files
+        Set<File> inputFiles = new HashSet<>();
+        for (ExpData inputData : inputDatas.keySet())
+        {
+            File f = inputData.getFile();
+            if (f != null)
+                inputFiles.add(f);
+        }
+
         Map<String, File> files = context.getUploadedData();
 
         AssayDataType dataType;
@@ -831,7 +894,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 dataType = context.getProvider().getDataType();
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, context.getReRunId() == null);
+            // Reuse existing exp.data as the assay output file unless we are reimporting the
+            // file again (via the rerun mechanism) or the output file is already one of the input files.
+
+            boolean reuseExistingData = context.getReRunId() == null;
+            if (context.isAllowCrossRunFileInputs() && inputFiles.contains(file))
+                reuseExistingData = false;
+
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(file))
             {
@@ -846,7 +916,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
         if (primaryFile != null)
         {
-            addRelatedOutputDatas(context, inputDatas, outputDatas, primaryFile);
+            addRelatedOutputDatas(context, inputFiles, outputDatas, primaryFile);
         }
 
         Map<?, String> outputs = context.getOutputDatas();
@@ -856,7 +926,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     /**
      * Add files that follow the general naming convention (same basename) as the primary file
      */
-    public void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, final File primaryFile)
+    public void addRelatedOutputDatas(AssayRunUploadContext context, Set<File> inputFiles, Map<ExpData, String> outputDatas, final File primaryFile) throws ValidationException
     {
         AssayDataType dataType = getProvider().getDataType();
         final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile);
@@ -866,15 +936,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             File[] relatedFiles = primaryFile.getParentFile().listFiles(getRelatedOutputDataFileFilter(primaryFile, baseName));
             if (relatedFiles != null)
             {
-                // Create set of existing input files
-                Set<File> inputFiles = new HashSet<>();
-                for (ExpData inputData : inputDatas.keySet())
-                {
-                    File f = inputData.getFile();
-                    if (f != null)
-                        inputFiles.add(f);
-                }
-
                 for (File relatedFile : relatedFiles)
                 {
                     // Ignore files already considered inputs to the run
@@ -906,7 +967,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @return null if the file is already linked to another run
      */
     @Nullable
-    public static Pair<ExpData, String> createdRelatedOutputData(AssayRunUploadContext context, String baseName, File relatedFile)
+    public static Pair<ExpData, String> createdRelatedOutputData(AssayRunUploadContext context, String baseName, File relatedFile) throws ValidationException
     {
         String roleName = null;
         DataType dataType = null;
@@ -1009,9 +1070,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public static List<ValidationError> validateColumnProperties(ContainerUser context, Map<ColumnInfo, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
+        RemapCache cache = new RemapCache();
         for (Map.Entry<ColumnInfo, String> entry : properties.entrySet())
         {
-            validateProperty(context, ColumnValidators.create(entry.getKey(), null), entry.getValue(), entry.getKey().getName(), false, entry.getKey().getJavaClass(), errors);
+            validateProperty(context, entry.getKey(), entry.getValue(), cache, errors);
         }
         return errors;
     }
@@ -1019,19 +1081,37 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     public static List<ValidationError> validateProperties(ContainerUser context, Map<DomainProperty, String> properties)
     {
         List<ValidationError> errors = new ArrayList<>();
-
+        RemapCache cache = new RemapCache();
         for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
         {
-            DomainProperty dp = entry.getKey();
-            String value = entry.getValue();
-            String label = dp.getPropertyDescriptor().getNonBlankCaption();
-            PropertyType type = dp.getPropertyDescriptor().getPropertyType();
-            validateProperty(context, ColumnValidators.create(null, dp), value, label, dp.isRequired(), type.getJavaType(), errors);
+            validateProperty(context, entry.getKey(), entry.getValue(), cache, errors);
         }
         return errors;
     }
 
-    private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value, String label, Boolean required, Class type, List<ValidationError> errors)
+    private static void validateProperty(ContainerUser context, ColumnInfo columnInfo, String value, RemapCache cache, List<ValidationError> errors)
+    {
+        Lookup lookup = null;
+        if (columnInfo.isLookup())
+        {
+            ForeignKey fk = columnInfo.getFk();
+            lookup = new Lookup(fk.getLookupContainer(), fk.getLookupSchemaName(), fk.getLookupTableName());
+        }
+        validateProperty(context, ColumnValidators.create(columnInfo, null), value, columnInfo.getName(),
+                false, lookup, columnInfo.getJavaClass(), cache, errors);
+    }
+
+    private static void validateProperty(ContainerUser context, DomainProperty dp, String value, RemapCache cache, List<ValidationError> errors)
+    {
+        String label = dp.getPropertyDescriptor().getNonBlankCaption();
+        PropertyType type = dp.getPropertyDescriptor().getPropertyType();
+        validateProperty(context, ColumnValidators.create(null, dp), value, label, dp.isRequired(),
+                dp.getLookup(), type.getJavaType(), cache, errors);
+    }
+
+    private static void validateProperty(ContainerUser context, List<ColumnValidator> validators, String value,
+                                         String label, Boolean required, Lookup lookup, Class type, RemapCache cache,
+                                         List<ValidationError> errors)
     {
         boolean missing = (value == null || value.length() == 0);
         int rowNum = 0;
@@ -1055,14 +1135,24 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             catch (ConversionException e)
             {
-                String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type) + ".";
-                message +=  "  Value \"" + value + "\" could not be converted";
+                String message = ConvertHelper.getStandardConversionErrorMessage(value, label, type);
                 if (e.getCause() instanceof ArithmeticException)
-                    message +=  ": " + e.getCause().getLocalizedMessage();
+                    message += ": " + e.getCause().getLocalizedMessage();
                 else
                     message += ".";
 
-                errors.add(new SimpleValidationError(message));
+                // Attempt to resolve lookups by display value
+                boolean skipError = false;
+                if (lookup != null)
+                {
+                    Container container = lookup.getContainer() != null ? lookup.getContainer() : context.getContainer();
+                    Object remappedValue = cache.remap(SchemaKey.fromParts(lookup.getSchemaName()), lookup.getQueryName(), context.getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, value);
+                    if (remappedValue != null)
+                        skipError = true;
+                }
+
+                if (!skipError)
+                    errors.add(new SimpleValidationError(message));
             }
         }
     }

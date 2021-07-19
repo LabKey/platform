@@ -30,6 +30,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.EditDatasetRowForm;
+import org.labkey.api.study.InsertUpdateAction;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;

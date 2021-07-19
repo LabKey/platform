@@ -58,6 +58,9 @@ import java.util.Set;
  */
 public interface Dataset extends StudyEntity, StudyCachable<Dataset>
 {
+    // standard string to use in URLs etc.
+    String DATASETKEY = "datasetId";
+
     enum DataSharing
     {
         NONE,

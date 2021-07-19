@@ -36,7 +36,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.StudyModule;
-import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -217,7 +216,7 @@ public abstract class BaseStudyController extends SpringActionController
                     label.append(", All Visits");
 
                 ActionURL datasetUrl = new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                        addParameter(DatasetDefinition.DATASETKEY, datasetId);
+                        addParameter(Dataset.DATASETKEY, datasetId);
                 if (cohortFilter != null)
                     cohortFilter.addURLParameters(study, datasetUrl, "Dataset");
 
