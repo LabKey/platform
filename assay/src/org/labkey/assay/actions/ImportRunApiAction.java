@@ -269,7 +269,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
             if (svc != null)
             {
-                ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true, null);
+                ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, null);
                 plateData.save(getUser());
                 outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
 

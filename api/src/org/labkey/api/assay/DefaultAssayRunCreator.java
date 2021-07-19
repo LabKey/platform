@@ -700,7 +700,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     if (data == null)
                     {
                         DataType dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
-                        data = createData(c, file, file.getName(), dataType, false, log);
+                        data = createData(c, file, file.getName(), dataType, false, true, log);
                     }
 
                     resolved.put(data, role);
@@ -763,28 +763,33 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public static @NotNull ExpData createData(Container c, String name, @NotNull DataType dataType, @Nullable Logger log) throws ValidationException
     {
-        // NOTE: reuseExistingData flag is irrelevant when we aren't providing a File
-        return createData(c, null, name, dataType, false, log);
+        // NOTE: reuseExistingData and errorOnDataOwned flags are irrelevant when we aren't providing a File
+        return createData(c, null, name, dataType, false, false, log);
     }
 
-    public static @NotNull ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingData, @Nullable Logger log) throws ValidationException
+    public static @NotNull ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingData, boolean errorIfDataOwned, @Nullable Logger log) throws ValidationException
     {
         if (log == null)
             log = LOG;
 
         ExpData data = findExistingData(c, file, log);
 
-        if (data != null && data.getRun() != null)
+        if (data != null)
         {
-            // There's an existing data, but it's already marked as being created by another run.
             if (reuseExistingData)
             {
-                ExpRun previousRun = data.getRun();
-                throw new ValidationException("File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")");
+                if (errorIfDataOwned && data.getRun() != null)
+                {
+                    // There's an existing data, but it's already marked as being created by another run.
+                    ExpRun previousRun = data.getRun();
+                    throw new ValidationException("File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")");
+                }
             }
-
-            // Create a new one for the same path so the new run can claim it as its own
-            data = null;
+            else
+            {
+                // Create a new one for the same path so the new run can claim it as its own
+                data = null;
+            }
         }
 
         if (data == null)
@@ -927,13 +932,18 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 dataType = context.getProvider().getDataType();
 
             // Reuse existing exp.data as the assay output file unless:
-            // - we are re-importing the run and the reRunSupport is ReRunReplace
+            // - we are re-importing the run and the reRunSupport is not ReRunDelete
             // - or the output file is already one of the input files and if we are allowing cross-run file inputs
             boolean reuseExistingData = true;
-            if (context.getReRunId() != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
+            if (context.getReRunId() != null && getProvider().getReRunSupport() != AssayProvider.ReRunSupport.ReRunAndDelete)
                 reuseExistingData = false;
             if (context.isAllowCrossRunFileInputs() && inputFiles.contains(file))
                 reuseExistingData = false;
+
+            // For Luminex re-import, we want to reuse the existing exp.data but not
+            // throw an error when we discover that the exp.data is already owned. The
+            // original run will be duplicated for re-import and then will be deleted.
+            boolean errorIfDataOwned = getProvider().getReRunSupport() != AssayProvider.ReRunSupport.ReRunAndDelete;
 
             log.info("adding output data: file=" + file.getPath());
             log.info("  context.getReRunId()=" + context.getReRunId());
@@ -941,8 +951,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             log.info("  context.allowCrossRunFileInputs=" + context.isAllowCrossRunFileInputs());
             log.info("  inputFiles.contains(file)=" + inputFiles.contains(file));
             log.info("==> reuseExistingData = " + reuseExistingData);
+            log.info("==> errorIfDataOwned = " + errorIfDataOwned);
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, log);
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, errorIfDataOwned, log);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(file))
             {
@@ -1052,7 +1063,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         else
         {
-            data = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType, true, context.getLogger());
+            data = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType, true, true, context.getLogger());
             assert data.getSourceApplication() == null;
             return new Pair<>(data, roleName);
         }

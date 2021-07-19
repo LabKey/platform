@@ -199,7 +199,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         {
             rawPlateMetadata = runJson.getJSONObject(AssayJSONConverter.PLATE_METADATA);
 
-            ExpData plateData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true, null);
+            ExpData plateData = DefaultAssayRunCreator.createData(run.getContainer(), "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, null);
             plateData.save(context.getUser());
             outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
         }

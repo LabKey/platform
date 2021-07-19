@@ -1071,7 +1071,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         if (data == null)
                         {
                             log.debug("exp.data doesn't exist, creating new one");
-                            data = DefaultAssayRunCreator.createData(context.getContainer(), file, "transformed output", new DataType(type), true, context.getLogger());
+                            data = DefaultAssayRunCreator.createData(context.getContainer(), file, "transformed output", new DataType(type), true, true, context.getLogger());
                             data.setName(file.getName());
                         }
 
