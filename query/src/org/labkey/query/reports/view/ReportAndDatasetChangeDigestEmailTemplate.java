@@ -101,12 +101,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
         {
             NotificationBean bean = new NotificationBean();
             bean.setReports(reports);
-
-            ViewContext context = ViewContext.getMockViewContext(User.getSearchUser(), c, new ActionURL(), true);
             return new JspTemplate<>("/org/labkey/query/reports/view/reportAndDatasetList.jsp", bean).render();
-
-
-            return HttpView.renderToString(view, context.getRequest());
         }
         catch (Exception e)
         {
