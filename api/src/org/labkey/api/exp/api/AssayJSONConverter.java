@@ -111,12 +111,6 @@ public class AssayJSONConverter
         return dataRows;
     }
 
-    @Deprecated(forRemoval = true)
-    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user)
-    {
-        return serializeRun(run, provider, protocol, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
-    }
-
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null, user, settings);

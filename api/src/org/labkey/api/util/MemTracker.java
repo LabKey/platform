@@ -25,6 +25,8 @@ import org.junit.Test;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -41,8 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * Tracks objects that may be expensive, commonly allocated so that we know that they're not being held and creating
@@ -132,7 +132,7 @@ public class MemTracker
         public String getClassName()
         {
             if (_reference instanceof Class)
-                return ((Class) _reference).getName();
+                return ((Class<?>) _reference).getName();
             else
                 return _reference.getClass().getName();
         }
@@ -456,7 +456,7 @@ public class MemTracker
     public static class TestCase extends Assert
     {
         @Test
-        public void testIdentity()
+        public void testIdentity() throws InvalidEmailException
         {
             MemTracker t = new MemTracker();
 
@@ -467,10 +467,9 @@ public class MemTracker
             t._put(a);
             assertEquals(1, t.getReferences().size());
 
-            // Intentional use of deprecated constructor below because we want distinct instances of the same integer;
-            // Integer.valueOf() will return the same object.
-            @SuppressWarnings({"deprecation", "CachedNumberConstructorCall"}) Object b = new Integer(1);
-            @SuppressWarnings({"deprecation", "CachedNumberConstructorCall"}) Object c = new Integer(1);
+            // Test with arbitrary class that implements equals()
+            Object b = new ValidEmail("test@test.com");
+            Object c = new ValidEmail("test@test.com");
             assertNotSame(b, c);
             assertEquals(b, c);
             t._put(b);

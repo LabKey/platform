@@ -37,14 +37,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * User: klum
- * Date: Jan 12, 2012
- * Time: 10:31:17 AM
- */
-
-/**
  * Represents a study's datasets and corresponding timepoints. Used to serialize JSON to the study schedule
  * UI.
+ * User: klum
+ * Date: Jan 12, 2012
  */
 public class StudySchedule implements CustomApiForm
 {
@@ -96,8 +92,8 @@ public class StudySchedule implements CustomApiForm
         JSONObject o = new JSONObject();
 
         o.put("label", visit.getDisplayString());
-        o.put("sequenceMin", visit.getSequenceNumMinDouble());
-        o.put("sequenceMax", visit.getSequenceNumMaxDouble());
+        o.put("sequenceMin", visit.getSequenceNumMin());
+        o.put("sequenceMax", visit.getSequenceNumMax());
         o.put("id", visit.getRowId());
         o.put("showByDefault", visit.isShowByDefault());
         if (visit.getCohort() != null)
