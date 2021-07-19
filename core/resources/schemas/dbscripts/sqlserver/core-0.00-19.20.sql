@@ -914,3 +914,7 @@ UPDATE core.RoleAssignments SET role = 'org.labkey.api.security.roles.QCAnalystR
 ALTER TABLE core.ReportEngineMap DROP CONSTRAINT PK_ReportEngineMap;
 ALTER TABLE core.ReportEngineMap ADD EngineContext NVARCHAR(64) NOT NULL DEFAULT 'report';
 ALTER TABLE core.ReportEngineMap ADD CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext);
+
+/* core-19.10-19.20.sql */
+
+EXEC core.fn_dropifexists '*', 'ms1', 'SCHEMA';
