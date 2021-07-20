@@ -826,7 +826,7 @@ public class StudyDesignController extends BaseStudyController
 
             response.put("RowId", visit.getRowId());
             response.put("Label", visit.getDisplayString());
-            response.put("SequenceNumMin", visit.getSequenceNumMinDouble());
+            response.put("SequenceNumMin", visit.getSequenceNumMin());
             response.put("DisplayOrder", visit.getDisplayOrder());
             response.put("Included", true);
             response.put("success", true);

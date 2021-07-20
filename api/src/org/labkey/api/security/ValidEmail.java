@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -147,7 +148,7 @@ public class ValidEmail
             LOG.debug("Resolving user name '" + rawEmail + "' using default domain '" + getDefaultDomain() + "'");
             String domain = getDefaultDomain();
 
-            if (null != domain && domain.length() > 0)
+            if (domain.length() > 0)
                 return trimmed + "@" + domain;
         }
 
@@ -163,7 +164,7 @@ public class ValidEmail
     }
 
 
-    public static String getDefaultDomain()
+    public static @NotNull String getDefaultDomain()
     {
         return AuthenticationManager.getDefaultDomain();
     }
