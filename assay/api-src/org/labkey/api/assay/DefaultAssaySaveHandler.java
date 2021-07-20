@@ -98,7 +98,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         {
             // Client didn't post the rows so reuse the values that are currently attached to the run
             // Inefficient but easy
-            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
             dataRows = serializedRun.getJSONArray(AssayJSONConverter.DATA_ROWS);
         }
         else
@@ -114,7 +114,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         JSONArray dataInputs;
         if (!runJson.has(ExperimentJSONConverter.DATA_INPUTS))
         {
-            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
             dataInputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_INPUTS);
         }
         else
@@ -130,7 +130,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         JSONArray materialInputs;
         if (!runJson.has(ExperimentJSONConverter.MATERIAL_INPUTS))
         {
-            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
             materialInputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_INPUTS);
         }
         else
@@ -146,7 +146,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         JSONArray dataOutputs;
         if (!runJson.has(ExperimentJSONConverter.DATA_OUTPUTS))
         {
-            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
             dataOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.DATA_OUTPUTS);
         }
         else
@@ -162,7 +162,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         JSONArray materialOutputs;
         if (!runJson.has(ExperimentJSONConverter.MATERIAL_OUTPUTS))
         {
-            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser());
+            JSONObject serializedRun = AssayJSONConverter.serializeRun(run, _provider, protocol, context.getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
             materialOutputs = serializedRun.getJSONArray(ExperimentJSONConverter.MATERIAL_OUTPUTS);
         }
         else

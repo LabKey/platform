@@ -184,6 +184,7 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
@@ -6699,6 +6700,15 @@ public class AdminController extends SpringActionController
         {
             VBox vbox = new VBox();
 
+            if (!reshow)
+            {
+                FolderType folderType = FolderTypeManager.get().getDefaultFolderType();
+                if (null != folderType)
+                {
+                    // If a default folder type has been configured by a site admin set that as the default folder type choice
+                    form.setFolderType(folderType.getName());
+                }
+            }
             JspView statusView = new JspView<>("/org/labkey/core/admin/createFolder.jsp", form, errors);
             vbox.addView(statusView);
 
@@ -8445,11 +8455,13 @@ public class AdminController extends SpringActionController
     {
         private final Collection<FolderType> _allFolderTypes;
         private final Collection<FolderType> _enabledFolderTypes;
+        private final FolderType _defaultFolderType;
 
-        public FolderTypesBean(Collection<FolderType> allFolderTypes, Collection<FolderType> enabledFolderTypes)
+        public FolderTypesBean(Collection<FolderType> allFolderTypes, Collection<FolderType> enabledFolderTypes, FolderType defaultFolderType)
         {
             _allFolderTypes = allFolderTypes;
             _enabledFolderTypes = enabledFolderTypes;
+            _defaultFolderType = defaultFolderType;
         }
 
         public Collection<FolderType> getAllFolderTypes()
@@ -8460,6 +8472,11 @@ public class AdminController extends SpringActionController
         public Collection<FolderType> getEnabledFolderTypes()
         {
             return _enabledFolderTypes;
+        }
+
+        public FolderType getDefaultFolderType()
+        {
+            return _defaultFolderType;
         }
     }
 
@@ -8475,13 +8492,51 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, boolean reshow, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", new FolderTypesBean(FolderTypeManager.get().getAllFolderTypes(), FolderTypeManager.get().getEnabledFolderTypes()));
+            FolderTypesBean bean;
+            if (reshow)
+            {
+                bean = getOptionsFromRequest();
+            }
+            else
+            {
+                FolderTypeManager manager = FolderTypeManager.get();
+                var defaultFolderType = manager.getDefaultFolderType();
+                // If a default folder type has not yet been configuration use "Collaboration" folder type as the default
+                defaultFolderType = defaultFolderType != null ? defaultFolderType : manager.getFolderType(CollaborationFolderType.TYPE_NAME);
+                bean = new FolderTypesBean(manager.getAllFolderTypes(), manager.getEnabledFolderTypes(), defaultFolderType);
+            }
+
+            return new JspView<>("/org/labkey/core/admin/enabledFolderTypes.jsp", bean, errors);
         }
 
         @Override
         public boolean handlePost(Object form, BindException errors)
         {
+            FolderTypesBean bean = getOptionsFromRequest();
+            var defaultFolderType = bean.getDefaultFolderType();
+            if (defaultFolderType == null)
+            {
+                errors.reject(ERROR_MSG, "Please select a default folder type.");
+                return false;
+            }
+            var enabledFolderTypes = bean.getEnabledFolderTypes();
+            if (!enabledFolderTypes.contains(defaultFolderType))
+            {
+                errors.reject(ERROR_MSG, "Folder type selected as the default, '" + defaultFolderType.getName() + "', must be enabled.");
+                return false;
+            }
+
+            FolderTypeManager.get().setEnabledFolderTypes(enabledFolderTypes, defaultFolderType);
+            return true;
+        }
+
+        private FolderTypesBean getOptionsFromRequest()
+        {
+            var allFolderTypes = FolderTypeManager.get().getAllFolderTypes();
             List<FolderType> enabledFolderTypes = new ArrayList<>();
+            FolderType defaultFolderType = null;
+            String defaultFolderTypeParam = getViewContext().getRequest().getParameter(FolderTypeManager.FOLDER_TYPE_DEFAULT);
+
             for (FolderType folderType : FolderTypeManager.get().getAllFolderTypes())
             {
                 boolean enabled = Boolean.TRUE.toString().equalsIgnoreCase(getViewContext().getRequest().getParameter(folderType.getName()));
@@ -8489,9 +8544,12 @@ public class AdminController extends SpringActionController
                 {
                     enabledFolderTypes.add(folderType);
                 }
+                if (folderType.getName().equals(defaultFolderTypeParam))
+                {
+                    defaultFolderType = folderType;
+                }
             }
-            FolderTypeManager.get().setEnabledFolderTypes(enabledFolderTypes);
-            return true;
+            return new FolderTypesBean(allFolderTypes, enabledFolderTypes, defaultFolderType);
         }
 
         @Override
