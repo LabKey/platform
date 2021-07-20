@@ -72,7 +72,7 @@ module.exports = {
     }, {
         name: 'querySelectInput',
         title: 'Query Select Input',
-        generateLib: true, // used in DataColumn.java
+        generateLib: true, // used in TypeAheadSelectDisplayColumn.java
         path: './src/client/QuerySelectInput'
     }]
 };
