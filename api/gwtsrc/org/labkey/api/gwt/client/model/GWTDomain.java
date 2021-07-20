@@ -54,6 +54,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
     private Set<String> reservedFieldNames = new HashSet<String>();
+    private Set<String> reservedFieldNamePrefixes = new HashSet<>();
     private Set<String> phiNotAllowedFieldNames = new HashSet<String>();
 
     private Set<String> excludeFromExportFieldNames = new HashSet<String>();
@@ -373,6 +374,15 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         }
     }
 
+    public Set<String> getReservedFieldNamePrefixes()
+    {
+        return this.reservedFieldNamePrefixes;
+    }
+
+    public void setReservedFieldNamePrefixes(Set<String> prefixes)
+    {
+        this.reservedFieldNamePrefixes = new HashSet<>(prefixes);
+    }
     /**
      *
      * @param excludeFromExportFieldNames These fields will be suppressed from the export field list. Primary use case is to not export List key fields.

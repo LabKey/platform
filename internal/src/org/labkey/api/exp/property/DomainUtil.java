@@ -244,6 +244,7 @@ public class DomainUtil
         // Handle reserved property names
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
+        d.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes(domain));
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
         d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
@@ -972,9 +973,9 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
-                : new CaseInsensitiveHashSet(updates.getReservedFieldNames()));
-        Set<String> reservedPrefixes = domainKind.getReservedPropertyNamePrefixes(domain);
+        Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
+                : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
+        Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes(domain) : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
@@ -995,7 +996,7 @@ public class DomainUtil
             {
                 String lcName = name.toLowerCase();
                 Optional<String> reservedPrefix = reservedPrefixes.stream().filter(prefix -> lcName.startsWith(prefix.toLowerCase())).findAny();
-                reservedPrefix.ifPresent(s -> exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + s + "' used in '" + name + "' is reserved for system use.")));
+                reservedPrefix.ifPresent(s -> exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + s + "' is reserved for system use.")));
                 continue;
             }
 
