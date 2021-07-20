@@ -652,7 +652,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     reservedPrefix.ifPresent(s -> {
                         throw new IllegalArgumentException("The prefix '" + s + "' is reserved for system use.");
                     });
-                    continue;
                 }
 
                 if (lowerReservedNames.contains(propertyName))
