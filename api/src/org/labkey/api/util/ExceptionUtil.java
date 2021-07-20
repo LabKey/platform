@@ -503,6 +503,7 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
+                (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage())) ||
                 JOB_RUNNER.getJobCount() > 10;
     }
 
