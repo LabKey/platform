@@ -72,23 +72,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
 {
     private static final Logger LOG = LogManager.getLogger(ExperimentUpgradeCode.class);
 
-    /**
-     * Called from multiple experiment upgrade scripts,
-     * uses @DeferredUpgrade and local flag to make sure we don't run this multiple times, when a server is upgraded
-     * multiple versions in at one go.
-     */
-    static private boolean rebuildEdgesHasRun = false;
-
-    @DeferredUpgrade
-    public static void rebuildAllEdges(ModuleContext context)
-    {
-        if (context.isNewInstall() || rebuildEdgesHasRun)
-            return;
-
-        rebuildEdgesHasRun = true;
-        ExperimentServiceImpl.get().rebuildAllEdges();
-    }
-
     @SuppressWarnings("unused")  // Called from exp-21.006-21.007.sql
     public static void upgradeMaterialSource(ModuleContext context)
     {
@@ -327,7 +310,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     @SuppressWarnings("unused") // called from exp-21.004-21.005.sql
     public static void deleteOrphanedUploadedFileObjects(ModuleContext context)
     {
-        if (context.isNewInstall() || rebuildEdgesHasRun)
+        if (context.isNewInstall())
             return;
 
         try
