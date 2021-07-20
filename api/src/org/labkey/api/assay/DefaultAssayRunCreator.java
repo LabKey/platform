@@ -751,7 +751,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             for (ExpData d : existing)
             {
-                log.info("found existing exp.data for file, rowId=" + d.getRowId() + ", runId=" + d.getRunId() + ", dataFileUrl=" + d.getDataFileUrl());
+                log.debug("found existing exp.data for file, rowId=" + d.getRowId() + ", runId=" + d.getRunId() + ", dataFileUrl=" + d.getDataFileUrl());
             }
 
             // pick the most recently created one
@@ -787,7 +787,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // Create a new one for the same path so the new run can claim it as its own
             if (!reuseExistingData)
             {
-                log.info("ignoring existing exp.data, will create a new one");
+                log.debug("ignoring existing exp.data, will create a new one");
                 data = null;
             }
         }
@@ -797,7 +797,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType == null)
                 dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
-            log.info("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
+            log.debug("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
             data = ExperimentService.get().createData(c, dataType, name);
             data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
@@ -945,13 +945,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // original run will be duplicated for re-import and then will be deleted.
             boolean errorIfDataOwned = getProvider().getReRunSupport() != AssayProvider.ReRunSupport.ReRunAndDelete;
 
-            log.info("adding output data: file=" + file.getPath());
-            log.info("  context.getReRunId()=" + context.getReRunId());
-            log.info("  provider.getReRunSupport()=" + getProvider().getReRunSupport());
-            log.info("  context.allowCrossRunFileInputs=" + context.isAllowCrossRunFileInputs());
-            log.info("  inputFiles.contains(file)=" + inputFiles.contains(file));
-            log.info("==> reuseExistingData = " + reuseExistingData);
-            log.info("==> errorIfDataOwned = " + errorIfDataOwned);
+            log.debug("adding output data: file=" + file.getPath());
+            log.debug("  context.getReRunId()=" + context.getReRunId());
+            log.debug("  provider.getReRunSupport()=" + getProvider().getReRunSupport());
+            log.debug("  context.allowCrossRunFileInputs=" + context.isAllowCrossRunFileInputs());
+            log.debug("  inputFiles.contains(file)=" + inputFiles.contains(file));
+            log.debug("==> reuseExistingData = " + reuseExistingData);
+            log.debug("==> errorIfDataOwned = " + errorIfDataOwned);
 
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, errorIfDataOwned, log);
             String role = ExpDataRunInput.DEFAULT_ROLE;
