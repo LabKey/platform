@@ -114,22 +114,12 @@
         <description>Contains the time at which this run group was created</description>
       </column>
       <column columnName="CreatedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user who created this run group</description>
       </column>
       <column columnName="Modified">
         <description>Contains the time at which this run group was last modified</description>
       </column>
       <column columnName="ModifiedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user who created this run group</description>
       </column>
       <column columnName="Container">
@@ -171,22 +161,12 @@
         <description>Contains the time at which this run was created</description>
       </column>
       <column columnName="CreatedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user who created this run</description>
       </column>
       <column columnName="Modified">
         <description>Contains the time at which this run was last modified</description>
       </column>
       <column columnName="ModifiedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user who last modified this run</description>
       </column>
       <column columnName="Container">
@@ -358,22 +338,12 @@
       <column columnName="MetricUnit"/>
       <column columnName="AutoLinkTargetContainer"/>
       <column columnName="CreatedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user that created this sample type</description>
       </column>
       <column columnName="Modified">
           <description>Contains the time at which this sample type was last modified</description>
       </column>
       <column columnName="ModifiedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user that last modified this sample type</description>
       </column>
       <column columnName="Container">
@@ -556,22 +526,12 @@
       </column>
       <column columnName="EntityId"/>
       <column columnName="CreatedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user that created this protocol</description>
       </column>
       <column columnName="Modified">
         <description>Contains the time at which this protocol was last modified</description>
       </column>
       <column columnName="ModifiedBy">
-        <fk>
-          <fkColumnName>UserId</fkColumnName>
-          <fkTable>Users</fkTable>
-          <fkDbSchema>core</fkDbSchema>
-        </fk>
         <description>Contains the user that last modified this protocol</description>
       </column>
       <column columnName="Container">

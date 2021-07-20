@@ -30,7 +30,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.JunitUtil;
@@ -41,7 +40,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -53,6 +51,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 {
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<>();
+    public static final int UNCATEGORIZED_ROWID = 0;
 
     private ViewCategoryManager()
     {
@@ -418,86 +417,6 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                 m.put("Parent", bean.getParentCategory().getRowId());
             }
         }
-    }
-
-    public class ViewCategoryTreeNode
-    {
-        private final ViewCategory _viewCategory;
-        private List<ViewCategoryTreeNode> _children = new ArrayList<>();
-        private boolean _isUserSubscribed;
-
-        public ViewCategoryTreeNode(ViewCategory viewCategory)
-        {
-            _viewCategory = viewCategory;
-        }
-
-        public List<ViewCategoryTreeNode> getChildren()
-        {
-            return _children;
-        }
-
-        public void setChildren(List<ViewCategoryTreeNode> children)
-        {
-            _children = children;
-        }
-
-        public void addChild(ViewCategoryTreeNode viewCategoryTreeNode)
-        {
-            _children.add(viewCategoryTreeNode);
-        }
-        public boolean isUserSubscribed()
-        {
-            return _isUserSubscribed;
-        }
-
-        public void setUserSubscribed(boolean isUserSubscribed)
-        {
-            _isUserSubscribed = isUserSubscribed;
-        }
-
-        public ViewCategory getViewCategory()
-        {
-            return _viewCategory;
-        }
-    }
-
-    public static final int UNCATEGORIZED_ROWID = 0;
-
-    public List<ViewCategoryTreeNode> getCategorySubcriptionTree(Container container, Set<Integer> subscriptionSet)
-    {
-        // We take advantage of the fact that this is at most 2 levels; the 1st level may have multiple categories
-        List<ViewCategory> categories = getAllCategories(container);
-        sortViewCategories(categories);
-        List<ViewCategoryTreeNode> viewCategoryTreeNodes = new ArrayList<>();
-
-        // Add Uncategorized category
-        ViewCategory uncategorizedCategory = ReportUtil.getDefaultCategory(container, null, null);
-        uncategorizedCategory.setRowId(UNCATEGORIZED_ROWID);
-        viewCategoryTreeNodes.add(makeTreeNode(uncategorizedCategory, subscriptionSet));
-
-        // Make a modifiable copy, #21696
-        categories.stream().filter(category -> null == category.getParentCategory()).forEach(category -> {
-            ViewCategoryTreeNode treeNode = makeTreeNode(category, subscriptionSet);
-            // Make a modifiable copy, #21696
-            List<ViewCategory> subCategories = new ArrayList<>(category.getSubcategories());
-            sortViewCategories(subCategories);
-            for (ViewCategory subCategory : subCategories)
-            {
-                ViewCategoryTreeNode subTreeNode = makeTreeNode(subCategory, subscriptionSet);
-                treeNode.addChild(subTreeNode);
-            }
-            viewCategoryTreeNodes.add(treeNode);
-        });
-
-        return viewCategoryTreeNodes;
-    }
-
-    private ViewCategoryTreeNode makeTreeNode(ViewCategory category, Set<Integer> subscriptionSet)
-    {
-        ViewCategoryTreeNode treeNode = new ViewCategoryTreeNode(category);
-        if (subscriptionSet.contains(category.getRowId()))
-            treeNode.setUserSubscribed(true);
-        return treeNode;
     }
 
     public static void sortViewCategories(List<ViewCategory> categories)

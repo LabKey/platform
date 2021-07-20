@@ -630,7 +630,7 @@ public class ExperimentController extends SpringActionController
             if (_sampleType.hasNameAsIdCol())
             {
                 SimpleDisplayColumn nameIdCol = new SimpleDisplayColumn();
-                nameIdCol.setCaption("Has Name Id Column");
+                nameIdCol.setCaption("Has Name Id Column:");
                 nameIdCol.setDisplayHtml("true");
                 detailsView.getDataRegion().addDisplayColumn(nameIdCol);
             }
@@ -655,6 +655,19 @@ public class ExperimentController extends SpringActionController
                 SimpleDisplayColumn parentCol = new SimpleDisplayColumn(PageFlowUtil.filter(_sampleType.getParentCol().getName()));
                 parentCol.setCaption("Parent Column");
                 detailsView.getDataRegion().addDisplayColumn(parentCol);
+            }
+
+            try
+            {
+                SimpleDisplayColumn importAliasCol = new SimpleDisplayColumn();
+                importAliasCol.setCaption("Parent Import Alias(es):");
+                if (!_sampleType.getImportAliasMap().isEmpty())
+                    importAliasCol.setDisplayHtml(PageFlowUtil.filter(StringUtils.join(_sampleType.getImportAliasMap().keySet(), ", ")));
+                detailsView.getDataRegion().addDisplayColumn(importAliasCol);
+            }
+            catch (IOException e)
+            {
+                // unable to parse import alias map from JSON
             }
 
             if (!getContainer().equals(_sampleType.getContainer()))

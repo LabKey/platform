@@ -15,6 +15,7 @@
  */
 package org.labkey.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -24,12 +25,17 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditUrls;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.audit.view.AuditChangesView;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
@@ -46,6 +52,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -60,7 +67,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +92,22 @@ public class AuditController extends SpringActionController
     public static void registerAdminConsoleLinks()
     {
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Management, "audit log", new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot()), CanSeeAuditLogPermission.class);
+    }
+
+    public static class AuditUrlsImpl implements AuditUrls
+    {
+        @Override
+        public ActionURL getAuditLog(Container container, String eventType, @Nullable Date startDate, @Nullable Date endDate)
+        {
+            ActionURL url = new ActionURL(AuditLogAction.class, container).addParameter("eventType", eventType);
+
+            if (startDate != null)
+                url.addParameter("startDate", DateUtil.toISO(startDate));
+            if (endDate != null)
+                url.addParameter("endDate", DateUtil.toISO(endDate));
+
+            return url;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -305,9 +330,15 @@ public class AuditController extends SpringActionController
         private int auditRowId;
         private String auditEventType;
 
-        public int getAuditRowId() {return auditRowId;}
+        public int getAuditRowId()
+        {
+            return auditRowId;
+        }
 
-        public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
+        public void setAuditRowId(int auditRowId)
+        {
+            this.auditRowId = auditRowId;
+        }
 
         public String getAuditEventType()
         {
@@ -403,6 +434,85 @@ public class AuditController extends SpringActionController
                 if (!_isSampleType && !getDataType().equalsIgnoreCase("sources"))
                     errors.reject(ERROR_MSG, "Unknown dataType: " + getDataType());
             }
+        }
+    }
+
+    public static class AuditLogForm
+    {
+        private String _eventType;
+        private Date _startDate;
+        private Date _endDate;
+
+        public String getEventType()
+        {
+            return _eventType;
+        }
+
+        public void setEventType(String eventType)
+        {
+            _eventType = eventType;
+        }
+
+        public Date getStartDate()
+        {
+            return _startDate;
+        }
+
+        public void setStartDate(Date startDate)
+        {
+            _startDate = startDate;
+        }
+
+        public Date getEndDate()
+        {
+            return _endDate;
+        }
+
+        public void setEndDate(Date endDate)
+        {
+            _endDate = endDate;
+        }
+    }
+
+    @RequiresPermission(CanSeeAuditLogPermission.class)
+    public class AuditLogAction extends SimpleViewAction<AuditLogForm>
+    {
+        private String _eventType;
+
+        @Override
+        public ModelAndView getView(AuditLogForm form, BindException errors) throws Exception
+        {
+            _eventType = form.getEventType();
+
+            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
+            QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, _eventType);
+
+            SimpleFilter filter = new SimpleFilter();
+            if (form.getStartDate() != null)
+            {
+                Calendar c = new GregorianCalendar();
+                c.setTime(form.getStartDate());
+                filter.addCondition(FieldKey.fromParts("created"), c, CompareType.DATE_GTE);
+            }
+
+            if (form.getEndDate() != null)
+            {
+                Calendar c = new GregorianCalendar();
+                c.setTime(form.getEndDate());
+                filter.addCondition(FieldKey.fromParts("created"), c, CompareType.DATE_LTE);
+            }
+
+            // add additional filters that may be on the URL
+            filter.addUrlFilters(getViewContext().getActionURL(), QueryView.DATAREGIONNAME_DEFAULT);
+            settings.setBaseFilter(filter);
+
+            return schema.createView(getViewContext(), settings, errors);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild(_eventType + " : Audit Log");
         }
     }
 }

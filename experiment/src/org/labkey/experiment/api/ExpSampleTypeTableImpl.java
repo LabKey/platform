@@ -18,11 +18,11 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.UserSchema;
@@ -32,6 +32,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
+
+import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
 
 /**
  * User: jeckels
@@ -84,6 +86,18 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample type");
                 return sampleCountColumnInfo;
             }
+            case ImportAliases:
+                AliasedColumn aliasesCol = new AliasedColumn(this, "ImportAliases", _rootTable.getColumn("RowId"));
+                aliasesCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(null));
+                return aliasesCol;
+            case MaterialInputImportAliases:
+                AliasedColumn materialInputCol = new AliasedColumn(this, "MaterialInputImportAliases", _rootTable.getColumn("RowId"));
+                materialInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(MATERIAL_INPUTS_PREFIX));
+                return materialInputCol;
+            case DataInputImportAliases:
+                AliasedColumn dataInputCol = new AliasedColumn(this, "DataInputImportAliases", _rootTable.getColumn("RowId"));
+                dataInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory("dataInputs/"));
+                return dataInputCol;
             case Properties:
                 return createPropertiesColumn(alias);
             default:
@@ -109,7 +123,10 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleTypeTable.Column.Folder, new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         addColumn(ExpSampleTypeTable.Column.SampleCount);
-        addColumn(Column.Properties);
+        addColumn(ExpSampleTypeTable.Column.ImportAliases).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.MaterialInputImportAliases).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.DataInputImportAliases).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.Properties);
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId"));
@@ -117,5 +134,4 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         setDetailsURL(detailsURL);
         setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
-
 }

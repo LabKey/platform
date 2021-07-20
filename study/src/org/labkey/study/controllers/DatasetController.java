@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -103,7 +104,7 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(CanSeeAuditLogPermission.class)
     public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
     {
         @Override

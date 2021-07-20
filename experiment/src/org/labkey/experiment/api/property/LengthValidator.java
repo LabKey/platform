@@ -42,7 +42,7 @@ public class LengthValidator extends DefaultPropertyValidator implements Validat
     @Override
     public String getTypeURI()
     {
-        return createValidatorURI(PropertyValidatorType.Length).toString();
+        return createValidatorURI(PropertyValidatorType.TextLength).toString();
     }
 
     @Override

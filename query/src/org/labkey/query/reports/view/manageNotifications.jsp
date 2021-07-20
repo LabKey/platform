@@ -15,13 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.reports.model.ViewCategory"%>
-<%@ page import="org.labkey.api.reports.model.ViewCategoryManager.ViewCategoryTreeNode"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.reports.ReportsController.NotificationsForm" %>
-<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -33,59 +30,29 @@
 %>
 <%
     JspView<NotificationsForm> me = (JspView<NotificationsForm>) HttpView.currentView();
-    List<ViewCategoryTreeNode> categories = me.getModelBean().getCategorySubcriptionTree();
-    String returnURLString = me.getModelBean().getReturnUrl();
+    NotificationsForm form = me.getModelBean();
+    String returnURLString = form.getReturnUrl();
 %>
 
 <script type="text/javascript">
     Ext4.onReady(function()
     {
-        var categories = getCategories();
-        var returnUrl = null;
+        var returnUrl = LABKEY.ActionURL.buildURL('project', 'begin', null, {'pageId' : 'study.DATA_ANALYSIS'});
         <% if (null != returnURLString) {%>
             returnUrl = <%=q(returnURLString)%>;
         <%}%>
-        var notifyOption = <%=q(me.getModelBean().getNotifyOption())%>;
 
-        var manager = Ext4.create('LABKEY.ext4.ManageReportNotifications');
-        var panel = manager.getManageReportPanel({
-                    renderTo : 'manageNotificationsDiv',
-                    minWidth : 750
-                },
-                categories, returnUrl, notifyOption);
+        Ext4.create('LABKEY.ext4.ReportNotificationPanel', {
+            title : 'Choose Notification Option',
+            categories : <%=toJsonArray(form.getCategories())%>,
+            datasets : <%=toJsonArray(form.getDatasets())%>,
+            notifyOption : <%=q(form.getNotifyOption())%>,
+            returnUrl : returnUrl,
+            renderTo : 'manageNotificationsDiv',
+            minWidth : 750,
+            maxWidth : 726
+        });
     });
-
-</script>
-
-<script type="text/javascript">
-    function getCategories()
-    {
-        var categories = [];
-        <%
-        for (ViewCategoryTreeNode categoryNode : categories) {
-            ViewCategory category = categoryNode.getViewCategory();
-        %>
-            categories.push({
-                'label' : <%=qh(category.getLabel())%>,
-                'rowid' : '<%=category.getRowId()%>',
-                'subscribed' : <%=categoryNode.isUserSubscribed()%>
-            });
-        <%
-            List<ViewCategoryTreeNode> subCategories = categoryNode.getChildren();
-            for (ViewCategoryTreeNode subCategoryNode : subCategories) {
-                ViewCategory subCategory = subCategoryNode.getViewCategory();
-        %>
-                categories.push({
-                    'label' : '&nbsp;&nbsp;&nbsp;&nbsp;' + <%=qh(subCategory.getLabel())%>,
-                    'rowid' : '<%=subCategory.getRowId()%>',
-                    'subscribed' : <%=subCategoryNode.isUserSubscribed()%>
-                });
-        <%
-            }
-        }
-        %>
-        return categories;
-    }
 
 </script>
 
