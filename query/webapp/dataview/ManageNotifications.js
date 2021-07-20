@@ -3,37 +3,54 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext4.define('LABKEY.ext4.ManageReportNotifications', {
+Ext4.define('LABKEY.ext4.ReportNotificationPanel', {
 
-    getManageReportPanel: function(config, categories, returnUrl, notifyOption) {
+    extend: 'Ext.panel.Panel',
 
-        if (!Ext4.ModelManager.isRegistered('CategoryNotifications')) {
-            Ext4.define('CategoryNotifications', {
-                extend: 'Ext.data.Model',
-                fields: [
-                    {name: 'label', type: 'string'},
-                    {name: 'rowid', type: 'int'},
-                    {name: 'subscribed', type: 'boolean'}
-                ]
-            });
-        }
-        var categoryStore = Ext4.create('Ext.data.Store', {
-            model : 'CategoryNotifications',
-            data  : categories
-        });
+    frame: false,
 
-        if (null == returnUrl)
-            returnUrl = LABKEY.ActionURL.buildURL('project', 'begin', null, {'pageId' : 'study.DATA_ANALYSIS'});
+    initComponent: function() {
 
-        var gridConfig = {
+        this.items = [{
+            xtype  : 'radiogroup',
+            id     : 'notifyOption',
+            columns: 1,
+            margin : '4, 4, 4, 6',
+            items  : [{
+                    boxLabel  : 'None.',
+                    name      : 'rb',
+                    inputValue: 'none',
+                    checked   : 'none' == this.notifyOption
+                },{
+                    boxLabel  : 'All. Your daily digest will list changes and additions to all reports and datasets.',
+                    name      : 'rb',
+                    inputValue: 'all',
+                    checked   : 'all' == this.notifyOption
+                },{
+                    boxLabel  : 'By category. Your daily digest will list changes and additions to reports and datasets in the subscribed categories.',
+                    name      : 'rb',
+                    inputValue: 'category',
+                    checked   : 'category' == this.notifyOption
+                },{
+                    boxLabel  : 'By dataset. Your daily digest will list changes and additions to subscribed datasets.',
+                    name      : 'rb',
+                    inputValue: 'dataset',
+                    checked   : 'dataset' == this.notifyOption
+                }
+            ],
+            listeners : {
+                change : function(button, newValue) {this.updateGrid(newValue.rb);},
+                scope : this
+            }
+        }];
+
+        this.items.push({
+            xtype    : 'gridpanel',
             margin   : '10',
-            disabled : 'select' != notifyOption,
-            store    : categoryStore,
+            store    : this.getSubscriptionStore(),
             maxWidth : 706,
-            pageId: -1,
-            index: -1,
-            border   : false, frame: false,
-            scroll   : 'vertical',
+            itemId   : 'selection-grid',
+            border   : false,
             columns  : [{
                 text     : 'Category',
                 flex     : 1,
@@ -54,116 +71,105 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
             cls       : 'iScroll', // webkit custom scroll bars
             selType   : 'rowmodel',
             scope     : this
-        };
+        });
 
-        var gridPanel = Ext4.create('Ext.grid.Panel', gridConfig);
-
-        var panelConfig = {
-            maxWidth : 726,
-            title : 'Choose Notification Option',
-            frame: false,
-            items : [
-                {
-                    xtype  : 'radiogroup',
-                    id     : 'notifyOption',
-                    columns: 1,
-                    margin : '4, 4, 4, 6',
-                    items  : [
-                        {
-                            boxLabel  : 'None.',
-                            name      : 'rb',
-                            inputValue: 'none',
-                            checked   : 'none' == notifyOption
+        this.dockedItems = [{
+            xtype: 'toolbar',
+            dock: 'bottom',
+            ui: 'footer',
+            style: 'background-color: transparent;',
+            margin: '2 0 0 0',
+            items: [{
+                type: 'button',
+                text: 'Save',
+                handler: function () {
+                    var selections = this.getSelections(this.getSubscriptionStore());
+                    var notifyOption = this.getComponent('notifyOption').getValue().rb;
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('reports', 'saveNotificationSettings.api'),
+                        method  : 'POST',
+                        jsonData: {
+                            'selections'   : selections,
+                            'notifyOption' : notifyOption
                         },
-                        {
-                            boxLabel  : 'All. Your daily digest will list changes and additions to all reports and datasets.',
-                            name      : 'rb',
-                            inputValue: 'all',
-                            checked   : 'all' == notifyOption
+                        headers : {'Content-Type' : 'application/json'},
+                        success : function(response) {
+                            window.location = this.returnUrl;
                         },
-                        {
-                            boxLabel  : 'By category. Your daily digest will list changes and additions to reports and datasets in the subscribed categories.',
-                            name      : 'rb',
-                            inputValue: 'select',
-                            checked   : 'select' == notifyOption
-                        }
-                    ],
-                    listeners : {
-                        change : function(button, newValue) {
-                            if ('select' != newValue.rb)
-                                gridPanel.disable();
-                            else
-                                gridPanel.enable();
-                        },
-                        scope : this
-                    }
+                        failure : LABKEY.Utils.displayAjaxErrorResponse,
+                        scope   : this
+                    });
                 },
-                gridPanel
-            ],
-            dockedItems: [{
-                xtype: 'toolbar',
-                dock: 'bottom',
-                ui: 'footer',
-                style: 'background-color: transparent;',
-                margin: '2 0 0 0',
-                items: [{
-                    type: 'button',
-                    text: 'Save',
-                    handler: function ()
-                    {
-                        var categories = this.getStoreCategories(categoryStore);
-                        var notifyOption = panel.getComponent('notifyOption').getValue().rb;
-                        Ext4.Ajax.request({
-                            url     : LABKEY.ActionURL.buildURL('reports', 'saveCategoryNotifications.api'),
-                            method  : 'POST',
-                            jsonData: {
-                                'categories'   : categories,
-                                'notifyOption' : notifyOption
-                            },
-                            headers : {'Content-Type' : 'application/json'},
-                            success : function(response) {
-                                window.location = returnUrl;
-                            },
-                            failure : function(resp) {
-                                var o;
-                                try {
-                                    o = Ext4.decode(resp.responseText);
-                                }
-                                catch (error) {
-
-                                }
-                            },
-                            scope   : this
-                        });
-
-                    },
-                    scope: this
+                scope: this
+            }, {
+                type: 'button',
+                text: 'Cancel',
+                handler: function () {
+                    window.location = this.returnUrl;
                 },
-                    {
-                        type: 'button',
-                        text: 'Cancel',
-                        handler: function ()
-                        {
-                            window.location = returnUrl;
-                        },
-                        scope: this
-                    }],
                 scope: this
             }],
             scope: this
-        };
+        }];
 
-        Ext4.applyIf(panelConfig, config);
-        var panel = Ext4.create('Ext.panel.Panel', panelConfig);
-        return panel;
+        this.on('render', function(cmp){this.updateGrid(this.notifyOption);}, this);
+        this.callParent(arguments);
     },
 
-    getStoreCategories: function(store) {
-        var categories = [];
-        Ext4.Array.each(store.getRange(), function(category, index) {
-            categories.push({'rowid' : category.getData().rowid, 'subscribed' : category.getData().subscribed});
-        }, this);
-        return categories;
-    }
+    getSubscriptionStore : function() {
+        if (!Ext4.ModelManager.isRegistered('LABKEY.NotificationConfigModel')) {
+            Ext4.define('LABKEY.NotificationConfigModel', {
+                extend: 'Ext.data.Model',
+                fields: [
+                    {name: 'label', type: 'string'},
+                    {name: 'rowid', type: 'int'},
+                    {name: 'subscribed', type: 'boolean'}
+                ]
+            });
+        }
 
+        if (!this.subscriptionStore) {
+            this.subscriptionStore = Ext4.create('Ext.data.Store', {
+                model : 'LABKEY.NotificationConfigModel'
+            });
+        }
+        return this.subscriptionStore;
+    },
+
+    updateGrid : function(value) {
+        var cmp = this.getComponent('selection-grid');
+        if (cmp) {
+            var enabled = value === 'category' || value === 'dataset';
+            cmp.setDisabled(!enabled);
+
+            if (value === 'category') {
+                this.getSubscriptionStore().loadData(this.categories);
+                label = 'Category';
+            }
+            else if (value === 'dataset') {
+                this.getSubscriptionStore().loadData(this.datasets);
+                label = 'Dataset'
+            }
+
+            // update the header label
+            if (enabled)
+                cmp.columns[0].setText(label);
+        }
+        else
+            console.warn('The grid component could not be found.');
+    },
+
+    getSelections : function(store) {
+        var selections = [];
+        var cmp = this.getComponent('selection-grid');
+
+        // no need for the selections if the grid is disabled
+        if (cmp && !cmp.isDisabled()) {
+            var recs = store.query('subscribed', true);
+            recs.each(function(item, idx){
+                selections.push(item.get('rowid'));
+            });
+        }
+        return selections;
+    }
 });

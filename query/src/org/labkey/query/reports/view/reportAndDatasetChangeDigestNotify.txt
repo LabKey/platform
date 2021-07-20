@@ -1,9 +1,25 @@
 <html>
 <head>
-    <style>
-        th, td
-        {
+    <style type="text/css">
+        th, td {
             text-align:left;
+        }
+
+        .labkey-alternate-row td {
+            background: #F4F4F4;
+        }
+
+        th, .labkey-row td, .labkey-alternate-row td {
+            padding: 1px 4px;
+            border-top: 0;
+            border-left: 0;
+            border-right: 1px solid #d3d3d3;
+            border-bottom: 1px solid #d3d3d3;
+        }
+
+        th {
+            border-bottom: solid 1px #AAAAAA !important;
+            vertical-align: top;
         }
     </style>
 </head>
