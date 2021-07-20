@@ -33,6 +33,7 @@ import java.util.Collections;
 /**
  * {@link DisplayColumn} that use a React QuerySelect component input to allow for type-ahead search/filter
  * for a select input that has too many options for a user to meaningfully scroll through.
+ * TODO: See Issue 43526 for more details on remaining TODOs for full replacement of DataColumn.renderSelectFormInput.
  */
 public class TypeAheadSelectDisplayColumn extends DataColumn
 {
