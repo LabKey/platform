@@ -534,7 +534,8 @@ public class XarReader extends AbstractXarImporter
                 // Issue 37936 - Skip validation of description for the magic specimen/sample link, which is auto-generated based on the container name
                 if (!existingMaterialSource.getName().equalsIgnoreCase(SpecimenService.SAMPLE_TYPE_NAME))
                 {
-                    IdentifiableEntity.diff(materialSource.getMaterialLSIDPrefix(), existingMaterialSource.getMaterialLSIDPrefix(), "Material LSID prefix", diffs);
+                    // Issue 42708 - don't compare the material LSID prefix. Just keep the current one, which should be
+                    // enough to assign unique LSIDs for new entries
                     IdentifiableEntity.diff(materialSource.getDescription(), existingMaterialSource.getDescription(), "Description", diffs);
                 }
                 if (!diffs.isEmpty())

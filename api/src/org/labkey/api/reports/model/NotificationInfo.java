@@ -32,29 +32,35 @@ public class NotificationInfo
     private final Date _modified;
     private final Container _container;
     private final int _categoryId;
-    private final String _type;
+    private final String _description;
     private final Integer _rowId;
     private final Report _report;
     private final String _status;
     private final int _displayOrder;
     private final boolean _hidden;
     private final boolean _shared;
+    private final Date _startDate;
+    private final Date _endDate;
+    private Type _type;
 
-    public NotificationInfo(ReportDB reportDB)
+    public NotificationInfo(ReportDB reportDB, Date startDate, Date endDate)
     {
         try
         {
+            _type = Type.report;
             _report = ReportService.get().getReport(reportDB);
             if (null == _report)
                 throw new IllegalStateException("Expected to get report.");
             ReportDescriptor reportDescriptor = _report.getDescriptor();
-            _type = _report.getTypeDescription();
+            _description = _report.getTypeDescription();
             _name = reportDescriptor.getReportName();
             _modified = reportDB.getModified();
             _rowId = reportDB.getRowId();
             _displayOrder = reportDB.getDisplayOrder();
             Integer categoryId = reportDB.getCategoryId();
             _container = ContainerManager.getForId(reportDB.getContainerId());
+            _startDate = startDate;
+            _endDate = endDate;
             if (null != _container)
             {
                 _status = reportDescriptor.getStatus();
@@ -87,10 +93,11 @@ public class NotificationInfo
         }
     }
 
-    public NotificationInfo(DatasetDB dataset, boolean isHidden)
+    public NotificationInfo(DatasetDB dataset, boolean isHidden, Date startDate, Date endDate)
     {
+        _type = Type.dataset;
         _name = dataset.getName();
-        _type = "Dataset";
+        _description = "Dataset";
         _modified = dataset.getModified();
         _rowId = dataset.getDatasetId();
         _categoryId = null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
@@ -101,6 +108,8 @@ public class NotificationInfo
         _container = ContainerManager.getForId(dataset.getContainer());
         _status = (null != _container) ?
                 (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), _container, "status") : "";
+        _startDate = startDate;
+        _endDate = endDate;
     }
 
     public String getName()
@@ -123,9 +132,9 @@ public class NotificationInfo
         return _categoryId;
     }
 
-    public String getType()
+    public String getDescription()
     {
-        return _type;
+        return _description;
     }
 
     public Integer getRowId()
@@ -156,6 +165,21 @@ public class NotificationInfo
     public boolean isShared()
     {
         return _shared;
+    }
+
+    public Date getStartDate()
+    {
+        return _startDate;
+    }
+
+    public Date getEndDate()
+    {
+        return _endDate;
+    }
+
+    public Type getType()
+    {
+        return _type;
     }
 
     public enum Type

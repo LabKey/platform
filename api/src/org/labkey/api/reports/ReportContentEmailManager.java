@@ -26,8 +26,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class ReportContentEmailManager
 {
@@ -53,10 +55,10 @@ public class ReportContentEmailManager
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {
-                return SELECT.getReportsForUserByCategory(reportInfosByCategory, allCategories, allCategories);
+                return CATEGORY.getReportsForUserByCategory(reportInfosByCategory, allCategories, allCategories);
             }
         },
-        SELECT
+        CATEGORY
         {
             @Override
             public int getSpecialCategoryId() {return -3;}
@@ -76,15 +78,37 @@ public class ReportContentEmailManager
                 }
                 return reportsForUserInitial;
             }
+        },
+        DATASET
+        {
+            @Override
+            public int getSpecialCategoryId() {return -4;}
+            @Override
+            public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
+                                                                                    SortedSet<Integer> datasets, SortedSet<Integer> allCategories)
+            {
+                Map<Integer, List<NotificationInfo>> reports = new HashMap<>();
+                for (Map.Entry<Integer, List<NotificationInfo>> entry : reportInfosByCategory.entrySet())
+                {
+                    List<NotificationInfo> matchedReports = entry.getValue().stream()
+                            .filter(ni -> datasets.contains(ni.getRowId()))
+                            .collect(Collectors.toList());
+
+                    if (!matchedReports.isEmpty())
+                        reports.put(entry.getKey(), matchedReports);
+                }
+                return reports;
+            }
         };
 
         public abstract int getSpecialCategoryId();
         public static NotifyOption getNotifyOption(String str)
         {
-            if (ALL.name().equalsIgnoreCase(str))
-                return ALL;
-            if (SELECT.name().equalsIgnoreCase(str))
-                return SELECT;
+            for (NotifyOption option : NotifyOption.values())
+            {
+                if (option.name().equalsIgnoreCase(str))
+                    return option;
+            }
             return NONE;        // default to NONE even if str is bad
         }
 
@@ -149,31 +173,12 @@ public class ReportContentEmailManager
 
     public static NotifyOption removeNotifyOption(SortedSet<Integer> subscriptionSet)
     {
-        NotifyOption notifyOption;
-        if (subscriptionSet.contains(NotifyOption.ALL.getSpecialCategoryId()))
+        for (NotifyOption option : NotifyOption.values())
         {
-            notifyOption = NotifyOption.ALL;
-            subscriptionSet.remove(NotifyOption.ALL.getSpecialCategoryId());
+            if (subscriptionSet.remove(option.getSpecialCategoryId()))
+                return option;
         }
-        else if (subscriptionSet.contains(NotifyOption.SELECT.getSpecialCategoryId()))
-        {
-            notifyOption = NotifyOption.SELECT;
-            subscriptionSet.remove(NotifyOption.SELECT.getSpecialCategoryId());
-        }
-        else if (subscriptionSet.contains(NotifyOption.NONE.getSpecialCategoryId()))
-        {
-            notifyOption = NotifyOption.NONE;
-            subscriptionSet.remove(NotifyOption.NONE.getSpecialCategoryId());
-        }
-        else if (subscriptionSet.isEmpty())
-        {
-            notifyOption = NotifyOption.NONE;
-        }
-        else
-        {
-            notifyOption = NotifyOption.SELECT;       // old sets may not have any option
-        }
-        return notifyOption;
+        return NotifyOption.NONE;
     }
 
     // Get set of report/dataset categories in the container that user has subscribed to
@@ -184,11 +189,11 @@ public class ReportContentEmailManager
         return makeIntegerSetFromDelimitedString(prefString, ";");
     }
 
-    public static void setSubscriptionSet(Container container, User user, SortedSet<Integer> subscriptionSet)
+    public static void setSubscriptionSet(Container container, User user, Set<Integer> selections)
     {
-        String prefString = makeDelimitedStringFromIntegerSet(subscriptionSet, ";");
+        String prefString = makeDelimitedStringFromIntegerSet(selections, ";");
         EmailService.get().setEmailPref(user, container, new ReportContentEmailPref(), prefString);
-        boolean addUser = subscriptionSet.size() > 1 || (1 == subscriptionSet.size() && !subscriptionSet.contains(NotifyOption.NONE.getSpecialCategoryId()));
+        boolean addUser = selections.size() > 1 || (1 == selections.size() && !selections.contains(NotifyOption.NONE.getSpecialCategoryId()));
         updateSubscriptionUserList(container, user, addUser);
     }
 
@@ -245,7 +250,7 @@ public class ReportContentEmailManager
         return subscriptionSet;
     }
 
-    private static String makeDelimitedStringFromIntegerSet(SortedSet<Integer> inputSet, String delim)
+    private static String makeDelimitedStringFromIntegerSet(Set<Integer> inputSet, String delim)
     {
         String resultString = "";
         String localDelim = "";

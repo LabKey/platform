@@ -17,11 +17,6 @@
         <ns:Label>Target Study</ns:Label>
         <ns:MvEnabled>false</ns:MvEnabled>
         <ns:DefaultType>LastEntered</ns:DefaultType>
-        <ns:PropertyValidator>
-          <ns:Name>Text Length</ns:Name>
-          <ns:TypeURI>urn:lsid:labkey.com:PropertyValidator:length</ns:TypeURI>
-          <ns:Expression>~lte=4000</ns:Expression>
-        </ns:PropertyValidator>
         <ns:Measure>false</ns:Measure>
         <ns:Dimension>false</ns:Dimension>
         <ns:RecommendedVariable>false</ns:RecommendedVariable>
@@ -38,11 +33,6 @@
         <ns:RangeURI>http://www.w3.org/2001/XMLSchema#string</ns:RangeURI>
         <ns:MvEnabled>false</ns:MvEnabled>
         <ns:DefaultType>LastEntered</ns:DefaultType>
-        <ns:PropertyValidator>
-          <ns:Name>Text Length</ns:Name>
-          <ns:TypeURI>urn:lsid:labkey.com:PropertyValidator:length</ns:TypeURI>
-          <ns:Expression>~lte=4000</ns:Expression>
-        </ns:PropertyValidator>
         <ns:Measure>false</ns:Measure>
         <ns:Dimension>false</ns:Dimension>
         <ns:RecommendedVariable>false</ns:RecommendedVariable>
@@ -59,11 +49,6 @@
         <ns:RangeURI>http://www.w3.org/2001/XMLSchema#string</ns:RangeURI>
         <ns:MvEnabled>false</ns:MvEnabled>
         <ns:DefaultType>LastEntered</ns:DefaultType>
-        <ns:PropertyValidator>
-          <ns:Name>Text Length</ns:Name>
-          <ns:TypeURI>urn:lsid:labkey.com:PropertyValidator:length</ns:TypeURI>
-          <ns:Expression>~lte=4000</ns:Expression>
-        </ns:PropertyValidator>
         <ns:Measure>false</ns:Measure>
         <ns:Dimension>false</ns:Dimension>
         <ns:RecommendedVariable>false</ns:RecommendedVariable>

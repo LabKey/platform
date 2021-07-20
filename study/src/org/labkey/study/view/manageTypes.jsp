@@ -39,6 +39,9 @@
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.audit.AuditUrls" %>
+<%@ page import="org.labkey.study.dataset.DatasetAuditProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -115,6 +118,10 @@
             ActionURL createURL = new ActionURL(DefineDatasetTypeAction.class, c);
         %>
         <td><%= link("Create New Dataset", createURL)%></td>
+    </tr>
+    <tr>
+        <td>Dataset audit logs can be viewed for all datasets in this folder.</td>
+        <td><%= link("View Audit Events ", PageFlowUtil.urlProvider(AuditUrls.class).getAuditLog(getContainer(), DatasetAuditProvider.DATASET_AUDIT_EVENT, null, null))%></td>
     </tr>
 </table>
 <%
