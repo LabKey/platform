@@ -774,20 +774,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         ExpData data = findExistingData(c, file, log);
 
-        if (data != null)
+        ExpRun previousRun;
+        if (data != null && null != (previousRun = data.getRun()))
         {
-            if (reuseExistingData)
+            // There's an existing data, but it's already marked as being created by another run
+            String msg = "File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")";
+            if (reuseExistingData && errorIfDataOwned)
+                throw new ValidationException(msg);
+
+            log.info(msg);
+
+            // Create a new one for the same path so the new run can claim it as its own
+            if (!reuseExistingData)
             {
-                if (errorIfDataOwned && data.getRun() != null)
-                {
-                    // There's an existing data, but it's already marked as being created by another run.
-                    ExpRun previousRun = data.getRun();
-                    throw new ValidationException("File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")");
-                }
-            }
-            else
-            {
-                // Create a new one for the same path so the new run can claim it as its own
+                log.info("ignoring existing exp.data, will create a new one");
                 data = null;
             }
         }
@@ -932,10 +932,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 dataType = context.getProvider().getDataType();
 
             // Reuse existing exp.data as the assay output file unless:
-            // - we are re-importing the run and the reRunSupport is not ReRunDelete
+            // - we are re-importing the run
             // - or the output file is already one of the input files and if we are allowing cross-run file inputs
             boolean reuseExistingData = true;
-            if (context.getReRunId() != null && getProvider().getReRunSupport() != AssayProvider.ReRunSupport.ReRunAndDelete)
+            if (context.getReRunId() != null)
                 reuseExistingData = false;
             if (context.isAllowCrossRunFileInputs() && inputFiles.contains(file))
                 reuseExistingData = false;
