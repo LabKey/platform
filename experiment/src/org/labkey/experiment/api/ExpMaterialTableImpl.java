@@ -23,6 +23,7 @@ import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -68,6 +69,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -82,6 +84,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -941,5 +944,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         excluded.addAll(this.getUniqueIdFields());
         excluded.addAll(excludeFromDetailedAuditField);
         return excluded;
+    }
+
+    @Override
+    public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
+    {
+        List<Pair<String, String>> templates = new ArrayList<>();
+        ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
+        url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+        try
+        {
+            if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
+            {
+                for (String aliasKey : getSampleType().getImportAliasMap().keySet())
+                    url.addParameter("includeColumn", aliasKey);
+            }
+        }
+        catch (IOException e)
+        {}
+        templates.add(Pair.of("Download Template", url.toString()));
+        return templates;
     }
 }
