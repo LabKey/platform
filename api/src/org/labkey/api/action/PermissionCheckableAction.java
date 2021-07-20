@@ -41,7 +41,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
@@ -155,8 +154,8 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         User user = context.getUser();
         Class<? extends Controller> actionClass = getClass();
 
-        if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class) && c.isForbiddenProject(user))
-            throw new ForbiddenProjectException();
+        if (!actionClass.isAnnotationPresent(IgnoresForbiddenProjectCheck.class))
+            c.throwIfForbiddenProject(user);
 
         Method method = context.getMethod();
         HttpUtil.Method[] methodsAllowed = arrayGetPost;
