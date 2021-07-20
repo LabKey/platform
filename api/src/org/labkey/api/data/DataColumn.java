@@ -598,15 +598,8 @@ public class DataColumn extends DisplayColumn
         return entry.getObject().toString();
     }
 
-    @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    protected String getStringValue(Object value, boolean disabledInput)
     {
-        if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
-            return;
-
-        boolean disabledInput = isDisabledInput(ctx);
-        final String formFieldName = getFormFieldName(ctx);
-
         String strVal = "";
         //UNDONE: Should use output format here.
         if (null != value)
@@ -628,6 +621,18 @@ public class DataColumn extends DisplayColumn
             else
                 strVal = ConvertUtils.convert(value);
         }
+        return strVal;
+    }
+
+    @Override
+    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    {
+        if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
+            return;
+
+        boolean disabledInput = isDisabledInput(ctx);
+        final String formFieldName = getFormFieldName(ctx);
+        String strVal = getStringValue(value, disabledInput);
 
         if (_boundColumn.isAutoIncrement())
         {
