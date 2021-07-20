@@ -48,6 +48,7 @@ import org.labkey.api.util.element.Select;
 import org.labkey.api.util.element.TextArea;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.TypeAheadSelectDisplayColumn;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
@@ -599,15 +600,8 @@ public class DataColumn extends DisplayColumn
         return entry.getObject().toString();
     }
 
-    @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    protected String getStringValue(Object value, boolean disabledInput)
     {
-        if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
-            return;
-
-        boolean disabledInput = isDisabledInput(ctx);
-        final String formFieldName = getFormFieldName(ctx);
-
         String strVal = "";
         //UNDONE: Should use output format here.
         if (null != value)
@@ -629,6 +623,18 @@ public class DataColumn extends DisplayColumn
             else
                 strVal = ConvertUtils.convert(value);
         }
+        return strVal;
+    }
+
+    @Override
+    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    {
+        if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
+            return;
+
+        boolean disabledInput = isDisabledInput(ctx);
+        final String formFieldName = getFormFieldName(ctx);
+        String strVal = getStringValue(value, disabledInput);
 
         if (_boundColumn.isAutoIncrement())
         {
@@ -641,10 +647,12 @@ public class DataColumn extends DisplayColumn
         else if (_inputType.toLowerCase().startsWith("select"))
         {
             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
-                renderQuerySelectFormInput(ctx, out, _boundColumn.getFk(), formFieldName, value, strVal, disabledInput);
+            {
+                TypeAheadSelectDisplayColumn displayColumn = new TypeAheadSelectDisplayColumn(_boundColumn, null);
+                displayColumn.renderInputHtml(ctx, out, value);
+            }
             else
                 renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
-
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
@@ -847,34 +855,6 @@ public class DataColumn extends DisplayColumn
         sb.append("</script>\n");
         sb.append("<div id='").append(renderId).append("'></div>");
         out.write(sb.toString());
-    }
-
-    private void renderQuerySelectFormInput(RenderContext ctx, Writer out, ForeignKey fk, String formFieldName, Object value, String strVal, boolean disabledInput)
-            throws IOException
-    {
-        String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("<script type=\"text/javascript\">");
-        //sb.append("LABKEY.requiresScript('http://localhost:3001/querySelectInput.js', function() {\n");
-        sb.append("LABKEY.requiresScript('gen/querySelectInput', function() {\n");
-        sb.append(" LABKEY.App.loadApp('querySelectInput', ").append(PageFlowUtil.jsString(renderId)).append(", {\n");
-        sb.append("     name: ").append(PageFlowUtil.jsString(getInputPrefix() + formFieldName)).append("\n");
-        sb.append("     ,value: ").append(PageFlowUtil.jsString(strVal)).append("\n");
-        sb.append("     ,disabled: ").append(disabledInput).append("\n");
-        sb.append("     ,schemaName: ").append(PageFlowUtil.jsString(fk.getLookupSchemaName())).append("\n");
-        sb.append("     ,queryName: ").append(PageFlowUtil.jsString(fk.getLookupTableName())).append("\n");
-        if (fk.getLookupContainer() != null)
-            sb.append("     ,containerPath: ").append(PageFlowUtil.jsString(fk.getLookupContainer().getPath())).append("\n");
-        sb.append(" });\n");
-        sb.append("});\n");
-        sb.append("</script>\n");
-        sb.append("<div id='").append(renderId).append("'></div>");
-        out.write(sb.toString());
-
-        // disabled inputs are not posted with the form, so we output a hidden form element:
-        if (disabledInput)
-            renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 
     protected @Nullable ActionURL getAutoCompleteURLPrefix()
