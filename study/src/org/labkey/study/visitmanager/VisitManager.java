@@ -88,8 +88,7 @@ public abstract class VisitManager
     private static final Logger LOGGER = LogManager.getLogger(VisitManager.class);
 
     protected StudyImpl _study;
-    private TreeMap<Double, VisitImpl> _sequenceMap;
-    private TreeMap<BigDecimal, VisitImpl> _sequenceMapNew;
+    private TreeMap<BigDecimal, VisitImpl> _sequenceMap;
 
     protected VisitManager(StudyImpl study)
     {
@@ -369,41 +368,6 @@ public abstract class VisitManager
      * Return a map mapping the minimum value of a visit to the visit.
      * In the case of a date-based study, this is actually a "Day" map, not a sequence map
      */
-    private TreeMap<Double, VisitImpl> getVisitSequenceMapOld()
-    {
-        List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
-        TreeMap<Double, VisitImpl> visitMap = new TreeMap<>();
-        for (VisitImpl v : visits)
-            visitMap.put(v.getSequenceNumMinDouble(),v);
-        return visitMap;
-    }
-
-    @Deprecated // Use BigDecimal version
-    public VisitImpl findVisitBySequence(double seq)
-    {
-        if (_sequenceMap == null)
-            _sequenceMap = getVisitSequenceMapOld();
-
-        if (_sequenceMap.containsKey(seq))
-            return _sequenceMap.get(seq);
-        SortedMap<Double, VisitImpl> m = _sequenceMap.headMap(seq);
-        if (m.isEmpty())
-            return null;
-        double seqMin = m.lastKey();
-        VisitImpl v = _sequenceMap.get(seqMin);
-        // v will be null only if we already searched for seq and didn't find it
-        if (null == v)
-            return null;
-        if (!(v.getSequenceNumMinDouble() <= seq && seq <= v.getSequenceNumMaxDouble()))
-            v = null;
-        _sequenceMap.put(seq, v);
-        return v;
-    }
-
-    /**
-     * Return a map mapping the minimum value of a visit to the visit.
-     * In the case of a date-based study, this is actually a "Day" map, not a sequence map
-     */
     private TreeMap<BigDecimal, VisitImpl> getVisitSequenceMap()
     {
         List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
@@ -420,23 +384,23 @@ public abstract class VisitManager
 
     public VisitImpl findVisitBySequence(BigDecimal seq)
     {
-        if (_sequenceMapNew == null)
-            _sequenceMapNew = getVisitSequenceMap();
+        if (_sequenceMap == null)
+            _sequenceMap = getVisitSequenceMap();
 
-        if (_sequenceMapNew.containsKey(seq))
-            return _sequenceMapNew.get(seq);
-        SortedMap<BigDecimal, VisitImpl> m = _sequenceMapNew.headMap(seq);
+        if (_sequenceMap.containsKey(seq))
+            return _sequenceMap.get(seq);
+        SortedMap<BigDecimal, VisitImpl> m = _sequenceMap.headMap(seq);
         if (m.isEmpty())
             return null;
         BigDecimal seqMin = m.lastKey();
-        VisitImpl v = _sequenceMapNew.get(seqMin);
+        VisitImpl v = _sequenceMap.get(seqMin);
         // v will be null only if we already searched for seq and didn't find it
         if (null == v)
             return null;
 
         if (!(v.getSequenceNumMin().compareTo(seq) <= 0 && seq.compareTo(v.getSequenceNumMax()) <= 0))
             v = null;
-        _sequenceMapNew.put(seq, v);
+        _sequenceMap.put(seq, v);
         return v;
     }
 

@@ -29,6 +29,8 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.DatasetTableImpl;
 
+import java.math.BigDecimal;
+
 /**
  * Avoid bookkeeping on study-managed tables for continuous-style studies, like EHRs.
  * User: kevink
@@ -109,7 +111,7 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    public VisitImpl findVisitBySequence(double seq)
+    public VisitImpl findVisitBySequence(BigDecimal seq)
     {
         return null;
     }

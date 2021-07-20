@@ -1342,7 +1342,7 @@ public class StudyManager
 
         public VisitAlias(String name, BigDecimal sequenceNum)
         {
-            this(name, sequenceNum.stripTrailingZeros(), null, false);
+            this(name, VisitImpl.normalizeSequenceNum(sequenceNum), null, false);
         }
 
         public String getName()
@@ -1363,7 +1363,7 @@ public class StudyManager
         @SuppressWarnings({"UnusedDeclaration"})
         public void setSequenceNum(BigDecimal sequenceNum)
         {
-            _sequenceNum = sequenceNum.stripTrailingZeros();
+            _sequenceNum = VisitImpl.normalizeSequenceNum(sequenceNum);
         }
 
         public boolean isOverridden()

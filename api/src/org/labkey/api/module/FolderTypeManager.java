@@ -54,6 +54,8 @@ public class FolderTypeManager
     private static final String SIMPLE_TYPE_FILE_EXTENSION = ".foldertype.xml";
     /** PropertyManager category name for folder type enabled state properties */
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
+    /** PropertyManager category name for the default folder type property */
+    public static final String FOLDER_TYPE_DEFAULT = "FolderTypeDefault";
 
     private final ModuleResourceCache<Collection<SimpleFolderType>> CACHE = ModuleResourceCaches.create("File-based folder types", new SimpleFolderTypeCacheHandler(), ResourceRootProvider.getStandard(new Path(SIMPLE_TYPE_DIR_NAME)));
     private final Map<String, FolderType> _javaFolderTypes = new ConcurrentHashMap<>();  // Map of folder types that are registered via java code
@@ -233,9 +235,22 @@ public class FolderTypeManager
     }
 
     /**
-     * @param enabledFolderTypes the new set of enabled folder types. This overwrites any previous enabled/disabled state.
+     * @return Default folder type set by a site administrator, or null if a default has not been set.
      */
-    public void setEnabledFolderTypes(Collection<FolderType> enabledFolderTypes)
+    @Nullable
+    public FolderType getDefaultFolderType()
+    {
+        String folderTypeName = PropertyManager.getProperties(FOLDER_TYPE_DEFAULT).get(FOLDER_TYPE_DEFAULT);
+        return null == folderTypeName ? null : getFolderType(folderTypeName);
+    }
+
+    /**
+     * @param enabledFolderTypes the new set of enabled folder types. This overwrites any previous enabled/disabled state.
+     * @param defaultFolderType the folder type that should be set as the default. This setting can be used to set the
+     *                          default folder type option when creating a new folder, for example. The setting is
+     *                          updated only if the folder type is included in the given list of enabled folder types.
+     */
+    public void setEnabledFolderTypes(Collection<FolderType> enabledFolderTypes, FolderType defaultFolderType)
     {
         PropertyManager.PropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
         // Reset completely based on the supplied config
@@ -245,6 +260,13 @@ public class FolderTypeManager
             enabledStates.put(folderType.getName(), Boolean.toString(enabledFolderTypes.contains(folderType)));
         }
         enabledStates.save();
+
+        if (defaultFolderType != null && enabledFolderTypes.contains(defaultFolderType))
+        {
+            PropertyManager.PropertyMap propDefaultFolderType = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_DEFAULT, true);
+            propDefaultFolderType.put(FOLDER_TYPE_DEFAULT, defaultFolderType.getName());
+            propDefaultFolderType.save();
+        }
     }
 
     private Collection<SimpleFolderType> getSimpleFolderTypes(Module module)
