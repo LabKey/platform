@@ -206,7 +206,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append(materialLSIDField)
                         .append(") END)");
 
-                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("AliquotCount"), new SQLFragment(sql), JdbcType.BOOLEAN);
+                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("AliquotCount"), new SQLFragment(sql), JdbcType.INTEGER);
                 columnInfo.setLabel("Aliquots Created Count");
                 columnInfo.setDescription("Total number of aliquots, of all generations, created from a root sample");
                 columnInfo.setUserEditable(false);
