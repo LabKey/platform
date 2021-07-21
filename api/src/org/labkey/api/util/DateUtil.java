@@ -32,6 +32,8 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -51,6 +53,7 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 
@@ -959,7 +962,7 @@ validNum:       {
     {
         // 1. added milliseconds (.SSS) to gap the discrepancy of milliseconds portion stored in database
         // but not being used while checking for work during a remote ETL run as part of implementing Issue 35780.
-        // Without millisecond portion here, datetime comparision would show these datetimes as equals,
+        // Without millisecond portion here, datetime comparison would show these datetimes as equals,
         // ex: 2019/01/01 11:11:11.117 and 2019/01/01 11:11:11.399 - since milliseconds would be ignored, this would result in No Work.
 
         // 2. Separately, adding .SSS to the existing string (yyyy/MM/dd HH:mm:ss) worked on Chrome (and MS Edge), but not on Firefox.
@@ -967,6 +970,12 @@ validNum:       {
         // hyphens instead of forward slashes) in this particular case with milliseconds. Hence had to modify the previous string from yyyy/MM/dd to yyyy-MM-dd.
         // Chrome seem to behave as expected with this change (and so does MS Edge, but extensive testing has not been done on this browser).
         return "yyyy-MM-dd HH:mm:ss.SSS";
+    }
+
+    public static String getSafariJsonDateTimeFormatString()
+    {
+        // Issue 43557 - Safari needs the ISO-8601-like 'T' between the date and time to parse this precise of a date
+        return "yyyy-MM-dd'T'HH:mm:ss.SSS";
     }
 
 
@@ -1110,12 +1119,26 @@ validNum:       {
         return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
     }
 
+    private static final Pattern chromePattern = Pattern.compile("\\bchrome\\b");
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
+    private static final FastDateFormat safariJsonDateFormat = FastDateFormat.getInstance(getSafariJsonDateTimeFormatString());
 
     public static String formatJsonDateTime(Date date)
     {
-        return jsonDateFormat.format(date);
+        // Issue 43557 - Safari needs a 'T' between the date and time. Instead of needing to rev all client APIs to parse
+        // the new variant, conditionally send Safari its preferred format (which works fine in other browsers but not
+        // in all other parsing code)
+        boolean isSafari = false;
+        if (HttpView.hasCurrentView())
+        {
+            ViewContext context = HttpView.currentContext();
+            if (context != null && context.getRequest() != null)
+            {
+                isSafari = HttpUtil.isSafari(context.getRequest());
+            }
+        }
+        return isSafari ? safariJsonDateFormat.format(date) : jsonDateFormat.format(date);
     }
 
 
@@ -1618,6 +1641,12 @@ Parse:
             assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime, true));
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime, true));
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
+
+            // Now try with milliseconds too
+            assertEquals(datetimeLocal + 213, parseDateTimeUS("2001-02-03 04:05:06.213", DateTimeOption.DateTime, true));
+            assertEquals(datetimeLocal + 213, parseDateTimeUS("2001-02-03T04:05:06.213", DateTimeOption.DateTime, true));
+            assertEquals(datetimeUTC + 213, parseDateTimeUS("2001-02-03 04:05:06.213Z", DateTimeOption.DateTime, true));
+            assertEquals(datetimeUTC + 213, parseDateTimeUS("2001-02-03T04:05:06.213Z", DateTimeOption.DateTime, true));
 
             assertIllegalDateTime("20131113_Guide Set plate 1.xls");
         }
