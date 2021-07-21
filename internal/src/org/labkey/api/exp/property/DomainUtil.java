@@ -533,17 +533,18 @@ public class DomainUtil
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
-        DomainKind kind = d.getDomainKind();
+        if (null == d)
+        {
+            ValidationException validationException = new ValidationException();
+            validationException.addError(new SimpleValidationError("Domain not found: " + update.getDomainURI()));
+            return validationException;
+        }
+
+        DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig);
 
         if (validationException.hasErrors())
         {
-            return validationException;
-        }
-
-        if (null == d)
-        {
-            validationException.addError(new SimpleValidationError("Domain not found: " + update.getDomainURI()));
             return validationException;
         }
 
@@ -996,8 +997,11 @@ public class DomainUtil
             {
                 String lcName = name.toLowerCase();
                 Optional<String> reservedPrefix = reservedPrefixes.stream().filter(prefix -> lcName.startsWith(prefix.toLowerCase())).findAny();
-                reservedPrefix.ifPresent(s -> exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + s + "' is reserved for system use.")));
-                continue;
+                if (reservedPrefix.isPresent())
+                {
+                    exception.addFieldError(name, getDomainErrorMessage(updates, "The prefix '" + reservedPrefix.get() + "' is reserved for system use."));
+                    continue;
+                }
             }
 
             if (reservedNames.contains(name))
