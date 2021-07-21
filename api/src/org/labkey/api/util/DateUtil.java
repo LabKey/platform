@@ -1135,13 +1135,7 @@ validNum:       {
             ViewContext context = HttpView.currentContext();
             if (context != null && context.getRequest() != null)
             {
-                String userAgent = context.getRequest().getHeader("User-Agent");
-                if (userAgent != null)
-                {
-                    // Chrome includes "Safari" in its user agent, so be sure to filter it out
-                    userAgent = userAgent.toLowerCase();
-                    isSafari = userAgent.contains("safari") && !chromePattern.matcher(userAgent).find();
-                }
+                isSafari = HttpUtil.isSafari(context.getRequest());
             }
         }
         return isSafari ? safariJsonDateFormat.format(date) : jsonDateFormat.format(date);
