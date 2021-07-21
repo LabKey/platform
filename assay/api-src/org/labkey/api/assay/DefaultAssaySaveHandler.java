@@ -191,7 +191,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
                                               Map<ExpMaterial, String> outputMaterial) throws ExperimentException, ValidationException
     {
         List<Map<String, Object>> dataRows = convertRunData(dataArray, run.getContainer(), protocol);
-        ExpData tsvData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData);
+        ExpData tsvData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData, null);
 
         // add plate metadata
         JSONObject rawPlateMetadata = null;
@@ -199,7 +199,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         {
             rawPlateMetadata = runJson.getJSONObject(AssayJSONConverter.PLATE_METADATA);
 
-            ExpData plateData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+            ExpData plateData = DefaultAssayRunCreator.createData(run.getContainer(), "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, null);
             plateData.save(context.getUser());
             outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
         }

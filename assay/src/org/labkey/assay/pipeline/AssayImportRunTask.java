@@ -876,7 +876,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                     factory.setRawPlateMetadata(plateMetadata);
 
                     // create an expdata object to track the metadata
-                    ExpData plateData = DefaultAssayRunCreator.createData(container, null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+                    ExpData plateData = DefaultAssayRunCreator.createData(container, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, getJob().getLogger());
                     plateData.save(user);
                     factory.setOutputDatas(Map.of(plateData, ExpDataRunInput.DEFAULT_ROLE));
                 }
