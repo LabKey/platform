@@ -78,7 +78,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         sb.append(" });\n");
         sb.append("});\n");
         sb.append("</script>\n");
-        sb.append("<div id='").append(renderId).append("'></div>");
+        sb.append("<div id=").append(PageFlowUtil.jsString(renderId)).append("></div>");
         out.write(sb.toString());
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
