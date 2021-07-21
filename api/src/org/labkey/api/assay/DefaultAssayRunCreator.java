@@ -645,8 +645,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                                  @NotNull Map<ExpData, String> inputDatas,
                                  ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
     {
+        Logger log = context.getLogger() != null ? context.getLogger() : LOG;
+
         Map<?, String> inputs = context.getInputDatas();
-        addDatas(context.getContainer(), inputDatas, inputs);
+        addDatas(context.getContainer(), inputDatas, inputs, log);
 
         // Inspect the uploaded files which will be added as outputs of the run
         if (context.isAllowCrossRunFileInputs())
@@ -666,6 +668,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         // Add this file as an input to the run. When we add the outputs to the run, we will detect
                         // that this file was already added as an input and create a new exp.data for the same file
                         // path and attach it as an output.
+                        log.debug("found existing cross run file input: name=" + existingData.getName() + ", rowId=" + existingData.getRowId() + ", dataFileUrl=" + existingData.getDataFileUrl());
                         inputDatas.put(existingData, CROSS_RUN_DATA_INPUT_ROLE);
                     }
                 }
@@ -675,7 +678,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     // CONSIDER: Move this to ExperimentService
     // Resolve submitted values into ExpData objects
-    protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved) throws ValidationException
+    protected void addDatas(Container c, @NotNull Map<ExpData, String> resolved, @NotNull Map<?, String> unresolved, @Nullable Logger log) throws ValidationException
     {
         ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
 
@@ -697,7 +700,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     if (data == null)
                     {
                         DataType dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
-                        data = createData(c, file, file.getName(), dataType, false);
+                        data = createData(c, file, file.getName(), dataType, false, true, log);
                     }
 
                     resolved.put(data, role);
@@ -708,6 +711,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public static ExpData generateResultData(User user, Container container, AssayProvider provider, List<Map<String, Object>> dataArray, Map<Object, String> outputData) throws ValidationException
     {
+        return generateResultData(user, container, provider, dataArray, outputData, null);
+    }
+
+    public static ExpData generateResultData(User user, Container container, AssayProvider provider, List<Map<String, Object>> dataArray, Map<Object, String> outputData, @Nullable Logger log) throws ValidationException
+    {
+        if (log == null)
+            log = LOG;
+
         ExpData newData = null;
 
         // Don't create an empty result data file if there are other outputs from this run, or if the user didn't
@@ -718,7 +729,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType == null)
                 dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
-            newData = createData(container, null, "Analysis Results", dataType, true);
+            newData = createData(container, "Analysis Results", dataType, log);
             newData.save(user);
             outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
         }
@@ -726,35 +737,59 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return newData;
     }
 
-    public static ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingDatas) throws ValidationException
+    // Find an existing ExpData for the File or null.
+    public static @Nullable ExpData findExistingData(Container c, @Nullable File file, @Nullable Logger log)
     {
-        ExpData data = null;
-        if (file != null)
-        {
-            List<? extends ExpData> existing = ExperimentService.get().getAllExpDataByURL(file, c);
-            if (!existing.isEmpty())
-            {
-                for (ExpData d : existing)
-                {
-                    LOG.info("found existing exp.data for file, rowId=" + d.getRowId() + ", runId=" + d.getRunId() + ", dataFileUrl=" + d.getDataFileUrl());
-                }
+        if (file == null)
+            return null;
 
-                // pick the most recently created one
-                data = existing.get(0);
+        if (log == null)
+            log = LOG;
+
+        List<? extends ExpData> existing = ExperimentService.get().getAllExpDataByURL(file, c);
+        if (!existing.isEmpty())
+        {
+            for (ExpData d : existing)
+            {
+                log.debug("found existing exp.data for file, rowId=" + d.getRowId() + ", runId=" + d.getRunId() + ", dataFileUrl=" + d.getDataFileUrl());
             }
+
+            // pick the most recently created one
+            return existing.get(0);
         }
 
-        if (data != null && data.getRun() != null)
+        return null;
+    }
+
+    public static @NotNull ExpData createData(Container c, String name, @NotNull DataType dataType, @Nullable Logger log) throws ValidationException
+    {
+        // NOTE: reuseExistingData and errorOnDataOwned flags are irrelevant when we aren't providing a File
+        return createData(c, null, name, dataType, false, false, log);
+    }
+
+    public static @NotNull ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingData, boolean errorIfDataOwned, @Nullable Logger log) throws ValidationException
+    {
+        if (log == null)
+            log = LOG;
+
+        ExpData data = findExistingData(c, file, log);
+
+        ExpRun previousRun;
+        if (data != null && null != (previousRun = data.getRun()))
         {
-            // There's an existing data, but it's already marked as being created by another run.
-            if (reuseExistingDatas)
-            {
-                ExpRun previousRun = data.getRun();
-                throw new ValidationException("File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")");
-            }
+            // There's an existing data, but it's already marked as being created by another run
+            String msg = "File '" + data.getName() + "' has been previously imported in run '" + previousRun.getName() + "' (" + previousRun.getRowId() + ")";
+            if (reuseExistingData && errorIfDataOwned)
+                throw new ValidationException(msg);
+
+            log.debug(msg);
 
             // Create a new one for the same path so the new run can claim it as its own
-            data = null;
+            if (!reuseExistingData)
+            {
+                log.debug("ignoring existing exp.data, will create a new one");
+                data = null;
+            }
         }
 
         if (data == null)
@@ -762,7 +797,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (dataType == null)
                 dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
 
-            LOG.info("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
+            log.debug("creating assay exp.data for file. dataType=" + dataType.getNamespacePrefix() + ", file=" + file);
             data = ExperimentService.get().createData(c, dataType, name);
             data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
@@ -776,7 +811,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 // Reset its LSID so that it's the correct type // CONSIDER: creating a new ExpData with the correct type instead
                 String newLsid = ExperimentService.get().generateGuidLSID(c, dataType);
-                LOG.info("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
+                log.debug("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
                 data.setLSID(newLsid);
             }
         }
@@ -872,6 +907,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException, ValidationException
     {
+        Logger log = context.getLogger() != null ? context.getLogger() : LOG;
+
         // Create set of existing input files
         Set<File> inputFiles = new HashSet<>();
         for (ExpData inputData : inputDatas.keySet())
@@ -894,14 +931,29 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 dataType = context.getProvider().getDataType();
 
-            // Reuse existing exp.data as the assay output file unless we are reimporting the
-            // file again (via the rerun mechanism) or the output file is already one of the input files.
-
-            boolean reuseExistingData = context.getReRunId() == null;
+            // Reuse existing exp.data as the assay output file unless:
+            // - we are re-importing the run
+            // - or the output file is already one of the input files and if we are allowing cross-run file inputs
+            boolean reuseExistingData = true;
+            if (context.getReRunId() != null)
+                reuseExistingData = false;
             if (context.isAllowCrossRunFileInputs() && inputFiles.contains(file))
                 reuseExistingData = false;
 
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData);
+            // For Luminex re-import, we want to reuse the existing exp.data but not
+            // throw an error when we discover that the exp.data is already owned. The
+            // original run will be duplicated for re-import and then will be deleted.
+            boolean errorIfDataOwned = getProvider().getReRunSupport() != AssayProvider.ReRunSupport.ReRunAndDelete;
+
+            log.debug("adding output data: file=" + file.getPath());
+            log.debug("  context.getReRunId()=" + context.getReRunId());
+            log.debug("  provider.getReRunSupport()=" + getProvider().getReRunSupport());
+            log.debug("  context.allowCrossRunFileInputs=" + context.isAllowCrossRunFileInputs());
+            log.debug("  inputFiles.contains(file)=" + inputFiles.contains(file));
+            log.debug("==> reuseExistingData = " + reuseExistingData);
+            log.debug("==> errorIfDataOwned = " + errorIfDataOwned);
+
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), file, file.getName(), dataType, reuseExistingData, errorIfDataOwned, log);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(file))
             {
@@ -920,7 +972,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
 
         Map<?, String> outputs = context.getOutputDatas();
-        addDatas(context.getContainer(), outputDatas, outputs);
+        addDatas(context.getContainer(), outputDatas, outputs, log);
     }
 
     /**
@@ -999,21 +1051,28 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
         }
 
-        ExpData data = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType, true);
-        if (data.getSourceApplication() == null)
+        // Find an existing data that isn't owned by another run or create a new own
+        ExpData data = findExistingData(context.getContainer(), relatedFile, context.getLogger());
+        if (data != null)
         {
+            if (data.getSourceApplication() == null)
+                return new Pair<>(data, roleName);
+
+            // The file is already linked to another run, so this one must have not created it
+            return null;
+        }
+        else
+        {
+            data = createData(context.getContainer(), relatedFile, relatedFile.getName(), dataType, true, true, context.getLogger());
+            assert data.getSourceApplication() == null;
             return new Pair<>(data, roleName);
         }
-
-        // The file is already linked to another run, so this one must have not created it
-        return null;
     }
 
 
     // Disallow creating a run with inputs which are also outputs
     protected void checkForCycles(AssayRunUploadContext<ProviderType> context, Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
     {
-        Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
         for (ExpRunItem input : inputs.keySet())
         {
             if (outputs.containsKey(input))

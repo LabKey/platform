@@ -74,6 +74,7 @@
 <%@ page import="static java.util.Collections.emptySet" %>
 <%@ page import="static org.hamcrest.CoreMatchers.hasItem" %>
 <%@ page import="static org.hamcrest.CoreMatchers.not" %>
+<%@ page import="org.labkey.api.assay.DefaultAssayRunCreator" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%!
@@ -85,7 +86,7 @@
     @Before
     public void setUp()
     {
-        log = LogManager.getLogger("AssayIntegrationTestCase");
+        log = LogManager.getLogger(DefaultAssayRunCreator.class);
         JunitUtil.deleteTestContainer();
         c = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
@@ -176,7 +177,7 @@
     // - imports a file into an assay
     // - sets some file properties
     // - deletes the assay run
-    // - verifies the exp.data is detatched from the run, but the properties haven't been deleted
+    // - verifies the exp.data is detached from the run, but the properties haven't been deleted
     // - re-imports the same file again
     //
     // Issue 42141: assay: importing a file into assay after deleting the run creates a new exp.data row
