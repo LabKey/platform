@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
@@ -116,7 +117,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
                 applyContainerFilter(getDefaultContainerFilter());
         }
 
-        _rules = supportTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+        _rules = canApplyTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
     }
 
     @Override
@@ -131,6 +132,14 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     public boolean supportTableRules()
     {
         return false;
+    }
+
+    /**
+     * Returns true if the table supports rules and the compliance module is available
+     */
+    public final boolean canApplyTableRules()
+    {
+        return supportTableRules() && ComplianceService.get().isComplianceSupported();
     }
 
     @Override
@@ -596,7 +605,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     public @NotNull Set<FieldKey> getPHIDataLoggingColumns()
     {
-        if (!supportTableRules() || getUserSchema().getUser().isServiceUser())
+        if (!canApplyTableRules() || getUserSchema().getUser().isServiceUser())
             return Collections.emptySet();
 
         Set<FieldKey> loggingColumns = new LinkedHashSet<>();
@@ -618,7 +627,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
     protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
-        if (!supportTableRules() || getUserSchema().getUser().isServiceUser())
+        if (!canApplyTableRules() || getUserSchema().getUser().isServiceUser())
             return "";
 
         return dataLoggingColumns
