@@ -10,6 +10,7 @@ export interface AppContext {
     schemaName: string;
     queryName: string;
     disabled?: boolean;
+    maxRows?: number;
 }
 
 interface Props {
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export const QuerySelectInput: FC<Props> = memo(props => {
-    const { name, disabled, containerPath, value, schemaName, queryName } = props.context;
+    const { name, disabled, containerPath, value, schemaName, queryName, maxRows = 100 } = props.context;
 
     return (
         <QuerySelect
@@ -31,7 +32,7 @@ export const QuerySelectInput: FC<Props> = memo(props => {
             disabled={disabled}
             value={value}
             loadOnFocus
-            maxRows={100}
+            maxRows={maxRows}
         />
     );
 });
