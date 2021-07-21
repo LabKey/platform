@@ -43,8 +43,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
+
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
+import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
 
 /**
  * User: kevink
@@ -54,6 +59,10 @@ import java.util.Set;
 public abstract class AbstractDomainKind<T> extends DomainKind<T>
 {
     public static final String OBJECT_URI_COLUMN_NAME = "lsid";
+    public static final Set<String> LINEAGE_FIELD_NAME_PREFIXES;
+    static {
+        LINEAGE_FIELD_NAME_PREFIXES = new HashSet<>(Arrays.asList(MATERIAL_INPUTS_PREFIX, DATA_INPUTS_PREFIX));
+    }
 
     @Override
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)

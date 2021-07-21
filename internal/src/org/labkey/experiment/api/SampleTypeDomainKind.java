@@ -228,13 +228,18 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             Map<String, String> aliases = st.getImportAliasMap();
             reserved.addAll(aliases.keySet());
-
         }
         catch (IOException e)
         {
             logger.error(String.format("Failed to parse SampleType parent aliases for [%1$s]", st.getRowId()), e);
         }
         return reserved;
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNamePrefixes()
+    {
+        return LINEAGE_FIELD_NAME_PREFIXES;
     }
 
     @Override

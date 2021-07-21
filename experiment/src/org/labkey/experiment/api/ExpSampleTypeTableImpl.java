@@ -33,6 +33,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
 
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
 import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
 
 /**
@@ -96,7 +97,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 return materialInputCol;
             case DataInputImportAliases:
                 AliasedColumn dataInputCol = new AliasedColumn(this, "DataInputImportAliases", _rootTable.getColumn("RowId"));
-                dataInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory("dataInputs/"));
+                dataInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(DATA_INPUTS_PREFIX));
                 return dataInputCol;
             case Properties:
                 return createPropertiesColumn(alias);
