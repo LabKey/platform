@@ -96,13 +96,13 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         public Factory(MultiValuedMap<String, String> map)
         {
             String maxRowsStr = getProperty(map, "maxRows");
-            _maxRows = maxRowsStr != null ? Integer.parseInt(maxRowsStr) : null;
+            _maxRows = maxRowsStr != null && !maxRowsStr.isEmpty() ? Integer.parseInt(maxRowsStr) : null;
         }
 
         private String getProperty(MultiValuedMap<String, String> map, String propertyName)
         {
             Collection<String> values = map == null ? Collections.emptyList() : map.get(propertyName);
-            if (!values.isEmpty())
+            if (values!= null && !values.isEmpty())
             {
                 return values.iterator().next();
             }
