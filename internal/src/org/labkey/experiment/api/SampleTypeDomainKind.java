@@ -237,7 +237,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public Set<String> getReservedPropertyNamePrefixes(Domain domain)
+    public Set<String> getReservedPropertyNamePrefixes()
     {
         return LINEAGE_FIELD_NAME_PREFIXES;
     }

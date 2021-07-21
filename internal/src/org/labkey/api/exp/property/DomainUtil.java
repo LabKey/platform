@@ -244,7 +244,7 @@ public class DomainUtil
         // Handle reserved property names
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
-        d.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes(domain));
+        d.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes());
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
         d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
@@ -976,7 +976,7 @@ public class DomainUtil
     {
         Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
-        Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes(domain) : updates.getReservedFieldNamePrefixes();
+        Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
