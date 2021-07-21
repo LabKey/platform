@@ -418,13 +418,7 @@ public class ParticipantGroupController extends BaseStudyController
             try
             {
                 Set<String> ptids = new LinkedHashSet<>();
-
                 QuerySettings settings = form.getQuerySettings();
-                ActionURL url = new ActionURL();
-                url.setRawQuery(form.getRequestURL());
-                form.getQuerySettings().setSortFilterURL(url);
-                settings.setMaxRows(Table.ALL_ROWS);
-
                 UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
                 if (schema == null)
                 {
