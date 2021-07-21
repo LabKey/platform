@@ -668,7 +668,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         // Add this file as an input to the run. When we add the outputs to the run, we will detect
                         // that this file was already added as an input and create a new exp.data for the same file
                         // path and attach it as an output.
-                        log.info("found existing cross run file input: name=" + existingData.getName() + ", rowId=" + existingData.getRowId() + ", dataFileUrl=" + existingData.getDataFileUrl());
+                        log.debug("found existing cross run file input: name=" + existingData.getName() + ", rowId=" + existingData.getRowId() + ", dataFileUrl=" + existingData.getDataFileUrl());
                         inputDatas.put(existingData, CROSS_RUN_DATA_INPUT_ROLE);
                     }
                 }
@@ -782,7 +782,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (reuseExistingData && errorIfDataOwned)
                 throw new ValidationException(msg);
 
-            log.info(msg);
+            log.debug(msg);
 
             // Create a new one for the same path so the new run can claim it as its own
             if (!reuseExistingData)
@@ -811,7 +811,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 // Reset its LSID so that it's the correct type // CONSIDER: creating a new ExpData with the correct type instead
                 String newLsid = ExperimentService.get().generateGuidLSID(c, dataType);
-                log.info("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
+                log.debug("LSID doesn't match desired type. Changed the LSID from '" + data.getLSID() + "' to '" + newLsid + "'");
                 data.setLSID(newLsid);
             }
         }
