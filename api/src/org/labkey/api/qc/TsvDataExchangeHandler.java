@@ -273,7 +273,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 settings.setAllowEmptyData(true);
                 settings.setThrowOnErrors(false);
 
-                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext, settings);
+                Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, context.getLogger() != null ? context.getLogger() : LOG, xarContext, settings);
 
                 // Combine the rows of any of the same DataTypes into a single entry
                 addToMergedMap(mergedDataMap, dataMap);
@@ -888,6 +888,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     @Override
     public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult, Set<File> inputDataFiles) throws ValidationException
     {
+        Logger log = context.getLogger();
+        if (log == null)
+            log = LOG;
+
         DefaultTransformResult result = new DefaultTransformResult(mergeResult);
         _filesToIgnore.add(scriptFile);
 
@@ -1038,7 +1042,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     {
                         File file = entry.getValue();
                         String type = entry.getKey();
-                        LOG.debug("processing transformed data file: type=" + type + ", file=" + file.getPath());
+                        log.debug("processing transformed data file: type=" + type + ", file=" + file.getPath());
 
                         File workingDir = getWorkingDirectory(context);
                         if (workingDir == null)
@@ -1054,7 +1058,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             File tempDirCopy = new File(workingDir, file.getName());
                             if (!file.equals(tempDirCopy))
                             {
-                                LOG.debug("moving to working directory=" + tempDirCopy);
+                                log.debug("moving to working directory=" + tempDirCopy);
                                 FileUtils.moveFile(file, tempDirCopy);
                                 file = tempDirCopy;
                             }
@@ -1066,8 +1070,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         ExpData data = ExperimentService.get().getExpDataByURL(file, context.getContainer());
                         if (data == null)
                         {
-                            LOG.debug("exp.data doesn't exist, creating new one");
-                            data = DefaultAssayRunCreator.createData(context.getContainer(), file, "transformed output", new DataType(type), true);
+                            log.debug("exp.data doesn't exist, creating new one");
+                            data = DefaultAssayRunCreator.createData(context.getContainer(), file, "transformed output", new DataType(type), true, true, context.getLogger());
                             data.setName(file.getName());
                         }
 
