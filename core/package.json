@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.6.3",
-    "@labkey/components": "2.57.1-miscFixes218S.1",
+    "@labkey/components": "2.57.1-miscFixes218S.2",
     "@labkey/themes": "1.2.0"
   },
   "devDependencies": {
