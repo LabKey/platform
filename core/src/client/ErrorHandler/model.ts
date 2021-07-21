@@ -11,4 +11,5 @@ export interface ErrorDetails {
     message?: string;
     stackTrace?: string;
     hideViewDetails?: boolean;
+    advice?: string;
 }

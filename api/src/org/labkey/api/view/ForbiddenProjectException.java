@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Thrown when a user accesses a forbidden project, for example, when an admin is impersonating within a project and
  * attempts to access a folder outside that project or when a non-project admin attempts to access a locked project.
@@ -27,5 +29,11 @@ public class ForbiddenProjectException extends UnauthorizedException
     public ForbiddenProjectException(String message)
     {
         super(message);
+    }
+
+    @Override
+    public @Nullable String getAdvice()
+    {
+        return null;
     }
 }

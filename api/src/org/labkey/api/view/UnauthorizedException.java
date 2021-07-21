@@ -16,7 +16,7 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.util.SkipMothershipLogging;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -56,5 +56,14 @@ public class UnauthorizedException extends HttpStatusException
     public Type getType()
     {
         return _type;
+    }
+
+    /**
+     * An additional sub-message to show on the error page. If null no additional message is shown.
+     * @return A String with additional advice for the unauthorized user
+     */
+    public @Nullable String getAdvice()
+    {
+        return "Please contact this server's administrator to gain access.";
     }
 }

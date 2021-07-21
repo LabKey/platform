@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Indicates to the HTTP client that the request needs authentication (status code 401),
  * which could be provided via HTTP BasicAuth.
@@ -27,5 +29,11 @@ public class RequestBasicAuthException extends UnauthorizedException
     {
         super();
         setType(Type.sendBasicAuth);
+    }
+
+    @Override
+    public @Nullable String getAdvice()
+    {
+        return null;
     }
 }
