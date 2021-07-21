@@ -41,8 +41,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static org.labkey.study.model.VisitImpl.normalizeSequenceNum;
-
 /**
  * User: matthewb
  * Date: 2012-10-11
@@ -201,7 +199,7 @@ translateToDouble:
             return sequencenum;
 
         // handle log-type events which can be unique'd by date
-        Visit v = _sequenceNumMap.get(normalizeSequenceNum(new BigDecimal(sequencenum)));
+        Visit v = _sequenceNumMap.get(VisitImpl.getSequenceNum(sequencenum));
         if (null != v && v.getSequenceNumHandlingEnum() == SequenceHandling.logUniqueByDate)
         {
             int daysSinceEpoch = convertToDaysSinceEpoch(date);
@@ -242,7 +240,7 @@ translateToDouble:
         @Override
         public Visit get(BigDecimal seq)
         {
-            SequenceHandling sh = BigDecimal.valueOf(9999).equals(seq.setScale(0, RoundingMode.FLOOR)) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+            SequenceHandling sh = BigDecimal.valueOf(9999).compareTo(seq.setScale(0, RoundingMode.FLOOR)) == 0 ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
 
             return new VisitImpl()
             {

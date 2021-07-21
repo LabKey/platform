@@ -26,6 +26,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.model.StudyManager;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -92,7 +93,7 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
                     new TableSelector(tableInfo).forEach(rs ->
                     {
                         String ptid = rs.getString("ParticipantId");
-                        Double sequenceNum = rs.getDouble("SequenceNum");
+                        BigDecimal sequenceNum = rs.getBigDecimal("SequenceNum");
                         String status = rs.getString("Status");
 
                         if (ptid != null)
@@ -133,9 +134,9 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
     private static class PtidSequenceNum
     {
         private final String _ptid;
-        private final Double _sequenceNum;
+        private final BigDecimal _sequenceNum;
 
-        public PtidSequenceNum(String ptid, Double sequenceNum)
+        public PtidSequenceNum(String ptid, BigDecimal sequenceNum)
         {
             _ptid = ptid;
             _sequenceNum = sequenceNum;
@@ -152,7 +153,8 @@ public class QueryAssayProgressSource implements AssayProgressReport.AssayData
         {
             if (obj instanceof PtidSequenceNum)
             {
-                return ((PtidSequenceNum)obj)._ptid.equals(_ptid) && ((PtidSequenceNum)obj)._sequenceNum.equals(_sequenceNum);
+                // Note: BigDecimal.compareTo() means this equals() check ignores scale... I THINK that's right
+                return ((PtidSequenceNum)obj)._ptid.equals(_ptid) && ((PtidSequenceNum)obj)._sequenceNum.compareTo(_sequenceNum) == 0;
             }
             return false;
         }

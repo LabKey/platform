@@ -1215,11 +1215,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
         if (sequenceNum != null)
         {
+            BigDecimal sequenceNumBD = VisitImpl.getSequenceNum(sequenceNum);
             // Look up the visit if we have a sequencenum
-            VisitImpl result = StudyManager.getInstance().getVisitForSequence(this, sequenceNum);
+            VisitImpl result = StudyManager.getInstance().getVisitForSequence(this, sequenceNumBD);
             if (result == null && returnPotentialTimepoints)
             {
-                result = StudyManager.getInstance().ensureVisit(this, null, sequenceNum, null, false);
+                result = StudyManager.getInstance().ensureVisit(this, null, sequenceNumBD, null, false);
             }
             return result;
         }

@@ -192,7 +192,7 @@ public class VisitMapImporter
                 throw new VisitMapImportException(errorMsg);
             uniqueSequenceNums.add(record.getSequenceNumMin());
 
-            if (!record.getSequenceNumMax().equals(record.getSequenceNumMin()) && uniqueSequenceNums.contains(record.getSequenceNumMax()))
+            if (record.getSequenceNumMax().compareTo(record.getSequenceNumMin()) != 0 && uniqueSequenceNums.contains(record.getSequenceNumMax()))
                 throw new VisitMapImportException(errorMsg);
             uniqueSequenceNums.add(record.getSequenceNumMax());
         }
@@ -241,7 +241,7 @@ public class VisitMapImporter
             VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
 
             // we're using sequenceNumMin as the key in this instance
-            if (visit != null && !visit.getSequenceNumMin().equals(record.getSequenceNumMin()))
+            if (visit != null && visit.getSequenceNumMin().compareTo(record.getSequenceNumMin()) != 0)
                 visit = null;
 
             if (visit == null)
@@ -277,7 +277,7 @@ public class VisitMapImporter
                     visit = _ensureMutable(visit);
                     visit.setVisitDateDatasetId(record.getVisitDatePlate());
                 }
-                if (!visit.getSequenceNumMax().equals(record.getSequenceNumMax()))
+                if (visit.getSequenceNumMax().compareTo(record.getSequenceNumMax()) != 0)
                 {
                     visit = _ensureMutable(visit);
                     visit.setSequenceNumMax(record.getSequenceNumMax());

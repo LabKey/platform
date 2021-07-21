@@ -88,6 +88,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.springframework.validation.BindException;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,7 +161,7 @@ public class StudyQuerySchema extends UserSchema
     final boolean _mustCheckPermissions;
     private boolean _dontAliasColumns = false;
 
-    private Map<Integer, List<Double>> _datasetSequenceMap;
+    private Map<Integer, List<BigDecimal>> _datasetSequenceMap;
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
     public static final String QCSTATE_TABLE_NAME = "QCState";
     protected Set<String> _tableNames;
@@ -421,7 +422,7 @@ public class StudyQuerySchema extends UserSchema
         }
     }
 
-    synchronized List<Double> getSequenceNumsForDataset(Dataset dsd)
+    synchronized List<BigDecimal> getSequenceNumsForDataset(Dataset dsd)
     {
         if (null == _datasetSequenceMap)
             _datasetSequenceMap =  StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();

@@ -75,6 +75,7 @@ import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -443,7 +444,7 @@ public class StudyDesignManager
                 startDay = Math.max(previousDay + 1, startDay - 15);
                 endDay = Math.min(nextDay - 1, endDay + 15);
             }
-            VisitImpl visit = new VisitImpl(studyFolder, startDay, endDay, timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
+            VisitImpl visit = new VisitImpl(studyFolder, BigDecimal.valueOf(startDay), BigDecimal.valueOf(endDay), timepoint.toString(), Visit.Type.REQUIRED_BY_TERMINATION);
             StudyManager.getInstance().createVisit(study, user, visit);
             previousDay = endDay;
         }

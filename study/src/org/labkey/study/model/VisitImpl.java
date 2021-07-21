@@ -78,25 +78,15 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     {
     }
 
-
-    @Deprecated // Use BigDecimal constructor instead
-    public VisitImpl(Container container, double seqMin, double seqMax, String label, @Nullable Type type)
-    {
-        this(container, BigDecimal.valueOf(seqMin), BigDecimal.valueOf(seqMax), label, null == type ? null : type.getCode());
-    }
-
-
     public VisitImpl(Container container, @NotNull BigDecimal seqMin, String label, Type type)
     {
         this(container, seqMin, seqMin, label, null == type ? null : type.getCode());
     }
 
-
     public VisitImpl(Container container, BigDecimal seqMin, BigDecimal seqMax, String label, @Nullable Type type)
     {
         this(container, seqMin, seqMax, label, null == type ? null : type.getCode());
     }
-
 
     public VisitImpl(Container container, @NotNull BigDecimal seqMin, @NotNull BigDecimal seqMax, String name, @Nullable Character typeCode)
     {
@@ -109,7 +99,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         _showByDefault = true;
     }
 
-
     @Override
     public String getSequenceString()
     {
@@ -119,7 +108,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
 
     public static String getSequenceString(BigDecimal min, BigDecimal max)
     {
-        if (min.equals(max))
+        if (min.compareTo(max) == 0)
             return formatSequenceNum(min);
         else
             return formatSequenceNum(min) + " - " + formatSequenceNum(max);
@@ -222,13 +211,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
-    @Deprecated // Use getSequenceNumMin()
-    public double getSequenceNumMinDouble()
-    {
-        return _sequenceMin.doubleValue();
-    }
-
-    @Override
     public BigDecimal getSequenceNumMin()
     {
         return _sequenceMin;
@@ -242,13 +224,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public String getFormattedSequenceNumMin()
     {
         return formatSequenceNum(_sequenceMin);
-    }
-
-    @Override
-    @Deprecated // Use getSequenceNumMax()
-    public double getSequenceNumMaxDouble()
-    {
-        return _sequenceMax.doubleValue();
     }
 
     @Override
@@ -297,6 +272,16 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public static BigDecimal parseSequenceNum(String s)
     {
         return normalizeSequenceNum(new BigDecimal(s));
+    }
+
+    public static BigDecimal getSequenceNum(double seqnum)
+    {
+        return normalizeSequenceNum(BigDecimal.valueOf(seqnum));
+    }
+
+    public static BigDecimal getSequenceNum(int seqnum)
+    {
+        return normalizeSequenceNum(BigDecimal.valueOf(seqnum));
     }
 
     public static String formatSequenceNum(BigDecimal bd)
