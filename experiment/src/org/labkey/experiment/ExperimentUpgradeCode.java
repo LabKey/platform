@@ -72,23 +72,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
 {
     private static final Logger LOG = LogManager.getLogger(ExperimentUpgradeCode.class);
 
-    /**
-     * Called from multiple experiment upgrade scripts,
-     * uses @DeferredUpgrade and local flag to make sure we don't run this multiple times, when a server is upgraded
-     * multiple versions in at one go.
-     */
-    static private boolean rebuildEdgesHasRun = false;
-
-    @DeferredUpgrade
-    public static void rebuildAllEdges(ModuleContext context)
-    {
-        if (context.isNewInstall() || rebuildEdgesHasRun)
-            return;
-
-        rebuildEdgesHasRun = true;
-        ExperimentServiceImpl.get().rebuildAllEdges();
-    }
-
     @SuppressWarnings("unused")  // Called from exp-21.006-21.007.sql
     public static void upgradeMaterialSource(ModuleContext context)
     {
@@ -327,7 +310,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     @SuppressWarnings("unused") // called from exp-21.004-21.005.sql
     public static void deleteOrphanedUploadedFileObjects(ModuleContext context)
     {
-        if (context.isNewInstall() || rebuildEdgesHasRun)
+        if (context.isNewInstall())
             return;
 
         try
@@ -423,6 +406,24 @@ public class ExperimentUpgradeCode implements UpgradeCode
             getLogger().info("Deleted " + count + " orphaned exp.objects");
 
             setStatus(TaskStatus.complete);
+        }
+    }
+
+    // For a long time we've been creating unused property validators for text length. This script cleans those up. This
+    // is deferred because we are using the text length property validators in SND and need to convert them to
+    // the new type URI first.
+    @SuppressWarnings({"UnusedDeclaration"}) // Called from exp-21.008-21.009.sql
+    @DeferredUpgrade
+    public void cleanupLengthTypePropertyValidators(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            SQLFragment sql = new SQLFragment("DELETE FROM exp.PropertyValidator WHERE TypeURI = \'urn:lsid:labkey.com:PropertyValidator:length\'");
+            try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+            {
+                new SqlExecutor(ExperimentService.get().getSchema()).execute(new SQLFragment(sql));
+                transaction.commit();
+            }
         }
     }
 }

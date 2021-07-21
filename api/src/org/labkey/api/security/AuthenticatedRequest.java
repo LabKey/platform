@@ -213,7 +213,10 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                 try { inner = getInnermostRequest(); } catch (Exception x){}
                 if (null == inner)
                     inner = getRequest();
-                throw new NullPointerException("Request.getSession(true) returned null: " + inner.getClass().getName());
+                // Issue 43548 - ignore failures to create sessions
+                NullPointerException npe = new NullPointerException("Request.getSession(true) returned null: " + inner.getClass().getName());
+                ExceptionUtil.decorateException(npe, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw npe;
             }
             if (s.isNew())
             {
