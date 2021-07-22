@@ -88,22 +88,27 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
                 return sampleCountColumnInfo;
             }
             case ImportAliases:
-                AliasedColumn aliasesCol = new AliasedColumn(this, "ImportAliases", _rootTable.getColumn("RowId"));
-                aliasesCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(null));
-                return aliasesCol;
+                return createImportAliasColumn("ImportAliases", null);
             case MaterialInputImportAliases:
-                AliasedColumn materialInputCol = new AliasedColumn(this, "MaterialInputImportAliases", _rootTable.getColumn("RowId"));
-                materialInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(MATERIAL_INPUTS_PREFIX));
-                return materialInputCol;
+                return createImportAliasColumn("MaterialInputImportAliases", MATERIAL_INPUTS_PREFIX);
             case DataInputImportAliases:
-                AliasedColumn dataInputCol = new AliasedColumn(this, "DataInputImportAliases", _rootTable.getColumn("RowId"));
-                dataInputCol.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(DATA_INPUTS_PREFIX));
-                return dataInputCol;
+                return createImportAliasColumn("DataInputImportAliases", DATA_INPUTS_PREFIX);
             case Properties:
                 return createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
+    }
+
+    private AliasedColumn createImportAliasColumn(String name, String prefix)
+    {
+        AliasedColumn aliasedColumn = new AliasedColumn(this, name, _rootTable.getColumn("RowId"));
+        aliasedColumn.setDisplayColumnFactory(new ImportAliasesDisplayColumnFactory(prefix));
+        aliasedColumn.setDescription("Display column for sample type import alias key/value pairs.");
+        aliasedColumn.setKeyField(false);
+        aliasedColumn.setRequired(false);
+        aliasedColumn.setHidden(true);
+        return aliasedColumn;
     }
 
     @Override
@@ -124,9 +129,9 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleTypeTable.Column.Folder, new ActionURL(ExperimentController.ListSampleTypesAction.class, getContainer()));
         addColumn(ExpSampleTypeTable.Column.SampleCount);
-        addColumn(ExpSampleTypeTable.Column.ImportAliases).setHidden(true);
-        addColumn(ExpSampleTypeTable.Column.MaterialInputImportAliases).setHidden(true);
-        addColumn(ExpSampleTypeTable.Column.DataInputImportAliases).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.ImportAliases);
+        addColumn(ExpSampleTypeTable.Column.MaterialInputImportAliases);
+        addColumn(ExpSampleTypeTable.Column.DataInputImportAliases);
         addColumn(ExpSampleTypeTable.Column.Properties);
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowSampleTypeAction.class, _userSchema.getContainer()),
