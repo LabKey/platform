@@ -443,7 +443,7 @@ public abstract class UploadSamplesHelper
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
-                            throw new ValidationException("Sample input '" + parentValue + "' in SampleType '" + namePart + "' not found");
+                            throw new ValidationException("Sample '" + parentValue + "' not found in Sample Type '" + namePart + "'.");
 
                     }
                  }
@@ -467,7 +467,7 @@ public abstract class UploadSamplesHelper
                             }
                         }
                         else
-                            throw new ValidationException("Sample output '" + parentValue + "' in SampleType '" + namePart + "' not found");
+                            throw new ValidationException("Sample output '" + parentValue + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
@@ -493,7 +493,13 @@ public abstract class UploadSamplesHelper
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
-                            throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                        {
+
+                            if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
+                                throw new ValidationException("Source '" + parentValue + "' not found in Source Type  '" + namePart + "'.");
+                            else
+                                throw new ValidationException("Data input '" + parentValue + "' not found in in Data Class '" + namePart + "'.");
+                        }
                     }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))

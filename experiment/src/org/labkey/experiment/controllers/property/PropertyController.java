@@ -998,7 +998,9 @@ public class PropertyController extends SpringActionController
 
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
             List<GWTPropertyDescriptor> reservedFields = new ArrayList<>();
-            Set reservedNames = domainKindName == null ? Collections.emptySet() : PropertyService.get().getDomainKindByName(domainKindName).getReservedPropertyNames(null);
+            DomainKind domainKind = domainKindName == null ? null : PropertyService.get().getDomainKindByName(domainKindName);
+            Set<String> reservedNames = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNames(null);
+            Set<String> reservedPrefixes = domainKind == null ? Collections.emptySet() : domainKind.getReservedPropertyNamePrefixes();
 
             if (loader != null)
             {
@@ -1008,7 +1010,8 @@ public class PropertyController extends SpringActionController
                     GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
                     prop.setContainer(getContainer().getId());
                     prop.setMvEnabled(col.isMvEnabled());
-                    if (reservedNames.contains(col.getColumnName()))
+                    String colName = col.getColumnName().toLowerCase();
+                    if (reservedNames.contains(colName) || reservedPrefixes.stream().anyMatch(prefix -> colName.startsWith(prefix.toLowerCase())))
                         reservedFields.add(prop);
                     else
                         fields.add(prop);

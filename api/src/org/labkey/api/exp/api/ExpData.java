@@ -36,6 +36,7 @@ public interface ExpData extends ExpRunItem
 {
     String DEFAULT_CPAS_TYPE = "Data";
     String DATA_INPUT_PARENT = "DataInputs";
+    String DATA_INPUTS_PREFIX = DATA_INPUT_PARENT + "/";
     String DATA_OUTPUT_CHILD = "DataOutputs";
 
     DataType getDataType();

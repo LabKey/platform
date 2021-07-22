@@ -26,7 +26,7 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
 
     public ImportAliasesDisplayColumnFactory(String prefix)
     {
-        _prefix = prefix;
+        _prefix = prefix == null ? null : prefix.toLowerCase();
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                 {
                     Map<String, String> aliasMap = sampleType.getImportAliasMap();
                     List<String> importKeys = aliasMap.keySet().stream()
-                            .filter(key -> _prefix == null || aliasMap.get(key).startsWith(_prefix))
+                            .filter(key -> _prefix == null || aliasMap.get(key).toLowerCase().startsWith(_prefix))
                             .sorted()
                             .collect(Collectors.toList());
 

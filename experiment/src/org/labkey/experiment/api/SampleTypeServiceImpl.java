@@ -628,6 +628,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
+        Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
 
         boolean hasNameProperty = false;
@@ -645,6 +646,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
             else
             {
+                if (!reservedPrefixes.isEmpty())
+                {
+                    Optional<String> reservedPrefix = reservedPrefixes.stream().filter(prefix -> propertyName.startsWith(prefix.toLowerCase())).findAny();
+                    reservedPrefix.ifPresent(s -> {
+                        throw new IllegalArgumentException("The prefix '" + s + "' is reserved for system use.");
+                    });
+                }
+
                 if (lowerReservedNames.contains(propertyName))
                 {
                     throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
@@ -652,10 +661,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
 
-                if (idCol1 == i)    idUri1    = dp.getPropertyURI();
-                if (idCol2 == i)    idUri2    = dp.getPropertyURI();
-                if (idCol3 == i)    idUri3    = dp.getPropertyURI();
-                if (parentCol == i) parentUri = dp.getPropertyURI();
+                if (dp != null)
+                {
+                    if (idCol1 == i) idUri1 = dp.getPropertyURI();
+                    if (idCol2 == i) idUri2 = dp.getPropertyURI();
+                    if (idCol3 == i) idUri3 = dp.getPropertyURI();
+                    if (parentCol == i) parentUri = dp.getPropertyURI();
+                }
             }
         }
 

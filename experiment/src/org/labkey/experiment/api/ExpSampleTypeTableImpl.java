@@ -33,6 +33,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
 
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
 import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
 
 /**
@@ -91,7 +92,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case MaterialInputImportAliases:
                 return createImportAliasColumn("MaterialInputImportAliases", MATERIAL_INPUTS_PREFIX);
             case DataInputImportAliases:
-                return createImportAliasColumn("DataInputImportAliases", "dataInputs/");
+                return createImportAliasColumn("DataInputImportAliases", DATA_INPUTS_PREFIX);
             case Properties:
                 return createPropertiesColumn(alias);
             default:
