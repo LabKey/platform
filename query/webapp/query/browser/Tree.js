@@ -17,7 +17,7 @@ Ext4.define('LABKEY.query.browser.Tree', {
         this.showHidden = LABKEY.ActionURL.getParameters().showHidden === 'true';
         this.showUserDefined = LABKEY.ActionURL.getParameters().showUserDefined !== 'false';
         this.showModuleDefined = LABKEY.ActionURL.getParameters().showModuleDefined !== 'false';
-        this.showSystemTables = LABKEY.ActionURL.getParameters().showSystemTables !== 'false';
+        this.showBuiltInTables = LABKEY.ActionURL.getParameters().showBuiltInTables !== 'false';
 
         if (!Ext4.ModelManager.isRegistered('SchemaBrowser.Queries')) {
             Ext4.define('SchemaBrowser.Queries', {
@@ -28,7 +28,7 @@ Ext4.define('LABKEY.query.browser.Tree', {
                         showHidden : this.showHidden,
                         showUserDefined: this.showUserDefined,
                         showModuleDefined: this.showModuleDefined,
-                        showSystemTables: this.showSystemTables
+                        showBuiltInTables: this.showBuiltInTables
                     }),
                     // don't use the "_dc" defeat cache parameter
                     noCache: false,
@@ -114,9 +114,9 @@ Ext4.define('LABKEY.query.browser.Tree', {
                     scope: this
                 }, {
                     xtype: 'checkbox',
-                    boxLabel: '<img src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid.gif" height="16" width="16" alt="System tables"/>&nbsp;<span style="font-size: 9.5px;">Show System Tables</span>',
-                    checked: this.showSystemTables,
-                    handler: function(cb, value) { this.updateFilter(cb, value, 'showSystemTables') },
+                    boxLabel: '<img src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid.gif" height="16" width="16" alt="Built-in tables"/>&nbsp;<span style="font-size: 9.5px;">Show Built-In Tables</span>',
+                    checked: this.showBuiltInTables,
+                    handler: function(cb, value) { this.updateFilter(cb, value, 'showBuiltInTables') },
                     scope: this
                 }]
             }];
@@ -151,6 +151,6 @@ Ext4.define('LABKEY.query.browser.Tree', {
         params[propertyName] = value;
 
         var url = LABKEY.ActionURL.buildURL('query', 'begin', null, params);
-        window.location.href = url;
+        window.location.href = url + window.location.hash;
     }
 });

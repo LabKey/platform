@@ -140,7 +140,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                     }
 
                     Map<String, JSONObject> queries = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-                    if (form.isShowSystemTables())
+                    if (form.isShowBuiltInTables())
                     {
                         //get built-in queries
                         List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
@@ -251,7 +251,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         private boolean _showHidden;
         private boolean _showUserDefined = true;
         private boolean _showModuleDefined = true;
-        private boolean _showSystemTables = true;
+        private boolean _showBuiltInTables = true;
 
         public String getNode()
         {
@@ -303,14 +303,14 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
             _showModuleDefined = showModuleDefined;
         }
 
-        public boolean isShowSystemTables()
+        public boolean isShowBuiltInTables()
         {
-            return _showSystemTables;
+            return _showBuiltInTables;
         }
 
-        public void setShowSystemTables(boolean showSystemTables)
+        public void setShowBuiltInTables(boolean showBuiltInTables)
         {
-            _showSystemTables = showSystemTables;
+            _showBuiltInTables = showBuiltInTables;
         }
     }
 }
