@@ -3788,6 +3788,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     {
                         for (ExpDataImpl output : datasToDelete)
                         {
+                            // Don't delete the exp.data output if it is being used in other runs
+                            List<? extends ExpRun> otherUsages = ExperimentService.get().getRunsUsingDatas(List.of(output));
+                            otherUsages.remove(run);
+                            if (!otherUsages.isEmpty())
+                            {
+                                LOG.debug("Skipping delete of cross-run data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+                                continue;
+                            }
+
                             for (ExpDataImpl input : inputData)
                             {
                                 if (input.getDataFileUrl().equals(output.getDataFileUrl()))
