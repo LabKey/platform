@@ -85,7 +85,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -1535,14 +1534,19 @@ public class PropertyController extends SpringActionController
     private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm form, boolean includeProjectAndShared)
     {
         Stream<? extends Domain> domains;
+        Set<String> domainKinds = emptySet();
+        Set<String> domainNames = emptySet();
+
         if (form.getDomainKinds() != null && !form.getDomainKinds().isEmpty())
         {
-            domains = PropertyService.get().getDomainsStream(c, user, form.getDomainKinds(), includeProjectAndShared);
+            domainKinds = form.getDomainKinds();
         }
-        else
+        if (form.getDomainNames() != null && !form.getDomainNames().isEmpty())
         {
-            domains = PropertyService.get().getDomainsStream(c, user, emptySet(), includeProjectAndShared);
+            domainNames = form.getDomainNames();
         }
+        domains = PropertyService.get().getDomainsStream(c, user, domainKinds, domainNames, includeProjectAndShared);
+
         return domains.map(d -> DomainUtil.getDomainDescriptor(getUser(), d)).collect(Collectors.toList());
     }
 
@@ -1554,6 +1558,7 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared = false;
         String containerPath;
         Set<String> domainKinds;
+        Set<String> domainNames;
         String apiVersion;
 
         public String getApiVersion()
@@ -1594,6 +1599,16 @@ public class PropertyController extends SpringActionController
         public void setDomainKinds(Set<String> domainKinds)
         {
             this.domainKinds = domainKinds;
+        }
+
+        public Set<String> getDomainNames()
+        {
+            return domainNames;
+        }
+
+        public void setDomainNames(Set<String> domainNames)
+        {
+            this.domainNames = domainNames;
         }
 
         public boolean isIncludeProjectAndShared()
@@ -1677,7 +1692,7 @@ public class PropertyController extends SpringActionController
                 }
 
                 List<PropertyDescriptor> pds = OntologyManager.getPropertyDescriptors(getContainer(), getUser(),
-                        form.getDomainIds(), form.getDomainKinds(), form.getSearch(),
+                        form.getDomainIds(), form.getDomainKinds(), form.getDomainNames(), form.getSearch(),
                         filter, form.getSort(), form.getMaxRows(), form.getOffset());
                 properties = pds.stream();
             }
@@ -1696,6 +1711,7 @@ public class PropertyController extends SpringActionController
         private List<String> propertyURIs;
         private Set<Integer> domainIds;
         private Set<String> domainKinds;
+        private Set<String> domainNames;
         private List<String> filters;
         private @Nullable String search;
         private String sort;
@@ -1740,6 +1756,16 @@ public class PropertyController extends SpringActionController
         public void setDomainKinds(Set<String> domainKinds)
         {
             this.domainKinds = domainKinds;
+        }
+
+        public Set<String> getDomainNames()
+        {
+            return domainNames;
+        }
+
+        public void setDomainNames(Set<String> domainNames)
+        {
+            this.domainNames = domainNames;
         }
 
         public String getSearch()
@@ -1887,7 +1913,7 @@ public class PropertyController extends SpringActionController
             Container c = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
             var gwtDomain = new GWTDomain<>();
-            String domainName = "TestVocabularyDomain" + GUID.makeGUID();
+            String domainName = "TestVocabularyDomain";
             gwtDomain.setName(domainName);
 
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
@@ -1922,7 +1948,7 @@ public class PropertyController extends SpringActionController
             Set<String> domainKinds = new HashSet<>();
             domainKinds.add(VocabularyDomainKind.KIND_NAME);
 
-            List<? extends Domain> vocabDomains = PropertyService.get().getDomains(c, user, domainKinds, false);
+            List<? extends Domain> vocabDomains = PropertyService.get().getDomains(c, user, domainKinds, null, false);
 
             boolean found = vocabDomains.stream().anyMatch(d -> d.getTypeId() == createdDomain.getTypeId());
             assertTrue("Vocabulary Domain Not found.", found);
@@ -1938,26 +1964,31 @@ public class PropertyController extends SpringActionController
             var props = domain.getProperties().stream().map(DomainProperty::getPropertyDescriptor).collect(Collectors.toSet());
 
             // find by domainIds
-            var pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, null, null);
+            var pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null,null, null, null, null, null);
             assertEquals(domain.getProperties().size(), pds.size());
 
             // find by domainKinds
-            pds = OntologyManager.getPropertyDescriptors(c, user, null, Set.of(VocabularyDomainKind.KIND_NAME), null, null, null, null, null);
+            pds = OntologyManager.getPropertyDescriptors(c, user, null, Set.of(VocabularyDomainKind.KIND_NAME), null, null, null, null, null, null);
+            assertFalse(pds.isEmpty());
+            assertTrue(pds.containsAll(props)); // there may be other VocabularyDomains in the test container
+
+            // find by domainNames
+            pds = OntologyManager.getPropertyDescriptors(c, user, null, null, Set.of("TestVocabularyDomain"), null, null, null, null, null);
             assertFalse(pds.isEmpty());
             assertTrue(pds.containsAll(props)); // there may be other VocabularyDomains in the test container
 
             // find by domainId and search term
-            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, "howdy", null, null, null, null);
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, "howdy", null, null, null, null);
             assertEquals(1, pds.size());
             assertEquals("testStringField", pds.get(0).getName());
 
             // find by domainId and property descriptor feature
-            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, new SimpleFilter(FieldKey.fromParts("propertyId", "dimension"), true), null, null, null);
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, new SimpleFilter(FieldKey.fromParts("propertyId", "dimension"), true), null, null, null);
             assertEquals(1, pds.size());
             assertEquals("testIntField", pds.get(0).getName());
 
             // pagination
-            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, 1, 1L);
+            pds = OntologyManager.getPropertyDescriptors(c, user, Set.of(domain.getTypeId()), null, null, null, null, null, 1, 1L);
             assertEquals(1, pds.size());
             // sorted by propertyId, testStringField is after testIntField
             assertEquals("testStringField", pds.get(0).getName());

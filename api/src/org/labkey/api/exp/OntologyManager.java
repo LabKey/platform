@@ -75,6 +75,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
@@ -2083,6 +2084,7 @@ public class OntologyManager
             Container c, User user,
             @Nullable Set<Integer> domainIds,
             @Nullable Set<String> domainKinds,
+            @Nullable Set<String> domainNames,
             @Nullable String searchTerm,
             @Nullable SimpleFilter propertyFilter,
             @Nullable String sortColumn,
@@ -2112,9 +2114,19 @@ public class OntologyManager
             filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
         }
 
+        Set<String> kinds = emptySet();
+        Set<String> names = emptySet();
         if (domainKinds != null && !domainKinds.isEmpty())
         {
-            List<? extends Domain> domains = PropertyService.get().getDomains(c, user, domainKinds, true);
+            kinds = domainKinds;
+        }
+        if (domainNames != null && !domainNames.isEmpty())
+        {
+            names = domainNames;
+        }
+        if (!kinds.isEmpty() || !names.isEmpty())
+        {
+            List<? extends Domain> domains = PropertyService.get().getDomains(c, user, kinds, names, true);
             filter.addInClause(FieldKey.fromParts("domainId"), domains.stream().map(Domain::getTypeId).collect(Collectors.toSet()));
         }
 
