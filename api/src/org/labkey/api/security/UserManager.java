@@ -62,6 +62,7 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.sql.SQLException;
@@ -106,21 +107,28 @@ public class UserManager
     public interface UserListener extends PropertyChangeListener
     {
         /** Fires when a user account is first created */
-        void userAddedToSite(User user);
+        default void userAddedToSite(User user) {}
 
         /** Fires when a user account is being completely deleted from the server */
-        void userDeletedFromSite(User user);
+        default void userDeletedFromSite(User user) {}
 
         /** Fires when a user account is being disabled, which prevents them from logging in but retains information associated with their account */
-        void userAccountDisabled(User user);
+        default void userAccountDisabled(User user) {}
 
         /** Fires when a user account is being enabled, which allows them to log in again */
-        void userAccountEnabled(User user);
+        default void userAccountEnabled(User user) {}
+
+        /** Tell the user what side effects will happen if the user account is deactivated */
+        default List<HtmlString> previewUserAccountDeactivated(User user) { return Collections.emptyList(); }
+
+        /** Tell the user what side effects will happen if the user account is completely deleted */
+        default List<HtmlString> previewUserAccountDeleted(User user) { return Collections.emptyList(); }
 
         /** Fires when a user's information has been changed, such as their first name */
-        default void userPropertiesUpdated(int userid)
-        {
-        }
+        default void userPropertiesUpdated(int userid) {}
+
+        @Override
+        default void propertyChange(PropertyChangeEvent evt) {}
     }
 
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
@@ -180,6 +188,26 @@ public class UserManager
             }
         }
         return errors;
+    }
+
+    public static List<HtmlString> previewUserAccountDeleted(User user)
+    {
+        List<HtmlString> result = new ArrayList<>();
+        for (UserListener listener : _listeners)
+        {
+            result.addAll(listener.previewUserAccountDeleted(user));
+        }
+        return result;
+    }
+
+    public static List<HtmlString> previewUserAccountDeactivated(User user)
+    {
+        List<HtmlString> result = new ArrayList<>();
+        for (UserListener listener : _listeners)
+        {
+            result.addAll(listener.previewUserAccountDeactivated(user));
+        }
+        return result;
     }
 
     protected static List<Throwable> fireUserDisabled(User user)

@@ -188,11 +188,6 @@ public class GroupMembershipCache
     public static class GroupMembershipUserListener implements UserListener
     {
         @Override
-        public void userAddedToSite(User user)
-        {
-        }
-
-        @Override
         public void userDeletedFromSite(User user)
         {
             // Blow away groups immediately after user is deleted, otherwise this user's groups, and therefore permissions, will remain active
@@ -211,11 +206,6 @@ public class GroupMembershipCache
         public void userAccountEnabled(User user)
         {
             uncache(user);
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt)
-        {
         }
     }
 }

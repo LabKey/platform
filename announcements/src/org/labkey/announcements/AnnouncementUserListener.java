@@ -29,16 +29,6 @@ import java.beans.PropertyChangeEvent;
 public class AnnouncementUserListener implements UserListener
 {
     @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-    @Override
-    public void userAddedToSite(User user)
-    {
-    }
-
-    @Override
     public void userDeletedFromSite(User user)
     {
         AnnouncementManager.deleteUserFromAllMemberLists(user);
