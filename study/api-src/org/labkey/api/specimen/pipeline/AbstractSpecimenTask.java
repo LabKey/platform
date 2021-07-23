@@ -205,33 +205,6 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
         VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException;
         void afterImport(SimpleStudyImportContext ctx);
-        default @Nullable File ensureLocalCopy(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException
-        {
-            PipeRoot pipeRoot = job.getPipeRoot();
-
-            if (inputFile == null || !pipeRoot.isCloudRoot())
-            {
-                return inputFile.toFile();
-            }
-
-            Path remoteCtxRoot = CloudStoreService.get().getPathFromUrl(job.getContainer(), ctx.getRoot().getLocation());
-            Path relativeInputPath = remoteCtxRoot.relativize(inputFile);
-            Path importPath = pipeRoot.getImportDirectory().toPath().resolve(relativeInputPath.toString());
-
-            if (Files.exists(importPath)) // check if file has been downloaded already
-            {
-                return importPath.toFile();
-            }
-            else
-            {
-                //TODO attempt download...
-                throw new IOException("File not found.");
-//              return Files.copy(inputFile, importPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-////            if (Files.exists(importPath) && importPath.compareTo(inputFile) )
-////            {
-////            }
-        }
     }
 
     protected static class DefaultImportHelper implements ImportHelper
@@ -245,7 +218,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             if (inputFile != null)
             {
                 // Might need to transform to a file type that we know how to import
-                File specimenArchive = ensureLocalCopy(job, ctx, inputFile);
+                File specimenArchive = inputFile.toFile();  // File conversion here should be safe as file should be local...
 
                 for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
                 {

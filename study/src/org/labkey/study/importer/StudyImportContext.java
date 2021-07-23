@@ -135,11 +135,6 @@ public class StudyImportContext extends SimpleStudyImportContext
         Path file = dirFile.resolve(name);
         String source = "study.xml";
 
-        if (CloudStoreService.get() != null) //TODO And container is using cloud root
-        {
-            file = CloudStoreService.get().getPathFromUrl(getContainer(), dir.getLocation()).resolve(name);
-        }
-
         if (!Files.exists(file))
             throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(rootFile, file));
 

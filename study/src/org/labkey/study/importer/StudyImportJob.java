@@ -23,6 +23,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -76,17 +77,35 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     public StudyImportJob(Container c, User user, ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot, ImportOptions options)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = new FileSystemFile(studyXml.getParent());
         _originalFilename = originalFilename;
         setLogFile(StudyPipeline.logForInputPath(studyXml.getParent().resolve("study_load"), getPipeRoot()));
         _errors = errors;
 
-        _ctx = new StudyImportContext(user, c, studyXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);
-        _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
-        _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
-        _ctx.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
-        _ctx.setIncludeSubfolders(options.isIncludeSubfolders());
-        _ctx.setActivity(options.getActivity());
+        Path importRoot = studyXml.getParent();
+        VirtualFile vfRoot = new FileSystemFile(importRoot);
+        StudyImportContext context = generateImportContext(user, c, studyXml, options, vfRoot);
+        //check if cloud based pipeline root, and study xml hasn't been downloaded already
+        if (pipeRoot.isCloudRoot() && !studyXml.startsWith(pipeRoot.getImportDirectory().toPath().toAbsolutePath()))
+        {
+            if (CloudStoreService.get() != null)   //proxy of is Cloud Module enabled for the current job/container
+            {
+                try
+                {
+                    importRoot = CloudStoreService.get().copyExpandedArchiveLocally(studyXml, context.getXml(), context.getRoot().getLocation(), pipeRoot, context.getLoggerGetter().getLogger(), errors);
+                    vfRoot = new FileSystemFile(importRoot);
+
+                    // Replace remote based context with local temp dir based context
+                    context = generateImportContext(user, c, importRoot.resolve(studyXml.getFileName().toString()), options, vfRoot);
+                }
+                catch (ImportException e)
+                {
+                    errors.addSuppressed(e);
+                }
+            }
+        }
+
+        _root = vfRoot;
+        _ctx = context;
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);
@@ -95,6 +114,23 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
 
         for (String message : options.getMessages())
             _ctx.getLogger().info(message);
+    }
+
+    private StudyImportContext generateImportContext(User user, Container c, Path studyXml, ImportOptions options, VirtualFile root)
+    {
+        StudyImportContext context = new StudyImportContext.Builder(user, c)
+                .withStudyXml(studyXml)
+                .withDataTypes(options.getDataTypes())
+                .withLogger(new PipelineJobLoggerGetter(this))
+                .withRoot(root)
+                .build();
+        context.setSkipQueryValidation(options.isSkipQueryValidation());
+        context.setCreateSharedDatasets(options.isCreateSharedDatasets());
+        context.setFailForUndefinedVisits(options.isFailForUndefinedVisits());
+        context.setIncludeSubfolders(options.isIncludeSubfolders());
+        context.setActivity(options.getActivity());
+
+        return context;
     }
 
     @Override

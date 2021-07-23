@@ -15,15 +15,18 @@
  */
 package org.labkey.api.cloud;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.study.xml.StudyDocument;
+import org.springframework.validation.BindException;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -47,6 +50,8 @@ public interface CloudStoreService
     {
         ServiceRegistry.get().registerService(CloudStoreService.class, impl);
     }
+
+    Path copyExpandedArchiveLocally(Path studyXml, StudyDocument.Study xml, String location, PipeRoot pipeRoot, Logger logger, BindException errors);
 
     class StoreInfo
     {

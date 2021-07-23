@@ -175,11 +175,6 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
     private static void runImporters(StudyImportContext ctx, PipelineJob job, BindException errors) throws Exception
     {
         processImporter(ctx, job, errors, new TopLevelStudyPropertiesImporter());
-        if (job.getPipeRoot().isCloudRoot())
-        {
-            new CloudStudyImporter().process(ctx, job.getPipeRoot(), errors);
-
-        }
 
         // study.objective, study.personnel, and study.studyproperties tables
         new StudyPropertiesImporter().process(ctx, ctx.getRoot(), errors);

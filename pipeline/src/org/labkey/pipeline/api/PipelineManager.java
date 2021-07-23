@@ -865,13 +865,8 @@ public class PipelineManager
             Path importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
             xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
         }
-        else if (pipelineRoot.isCloudRoot())
-        {
-            Path importDir = pipelineRoot.getImportDirectory().toPath();
-            //TODO Copy files locally instead of waiting to do it later... e.g., CloudStudyImporter.process
-            //TODO generify XML dir and file attribute downloads...
-            xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
-        }
+        //Downloading expanded archive will be handled later in the archive processing...
+        //We don't really have the job context here
 
         return xmlFile;
     }
