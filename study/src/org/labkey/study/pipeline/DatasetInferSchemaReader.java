@@ -45,7 +45,8 @@ import java.util.stream.Collectors;
  */
 public class DatasetInferSchemaReader extends DatasetFileReader implements SchemaReader
 {
-    protected Pattern _filePattern = Pattern.compile("(^.*).(?:tsv|txt|xls|xlsx)$");
+    protected Pattern _filePattern = Pattern.compile("^(.*)\.(?:tsv|txt|xls|xlsx)$");
+
     private Map<Integer, DatasetImportInfo> _datasetInfoMap = new LinkedHashMap<>();
     private List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
     private Map<File, Pair<String, String>> _inputDataMap;
