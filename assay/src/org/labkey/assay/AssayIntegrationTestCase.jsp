@@ -377,5 +377,12 @@
         var dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
         assertEquals(assayOutputData, dataList.get(0));
         assertEquals(firstData, dataList.get(1));
+        assertEquals(dataList.size(), 2);
+
+        log.info("delete the run and verify the duplicate exp.data was also deleted");
+        assayRun.delete(user);
+        dataList = ExperimentService.get().getAllExpDataByURL(firstData.getDataFileUrl(), null);
+        assertEquals(firstData, dataList.get(0));
+        assertEquals(dataList.size(), 1);
     }
 %>
