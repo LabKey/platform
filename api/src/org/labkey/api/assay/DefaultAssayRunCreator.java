@@ -107,7 +107,7 @@ import static java.util.Collections.unmodifiableCollection;
 public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> implements AssayRunCreator<ProviderType>
 {
     private static final Logger LOG = LogManager.getLogger(DefaultAssayRunCreator.class);
-    private static final String CROSS_RUN_DATA_INPUT_ROLE = "cross run input";
+    public static final String CROSS_RUN_DATA_INPUT_ROLE = "cross run input";
 
     private final ProviderType _provider;
 

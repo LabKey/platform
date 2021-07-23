@@ -40,6 +40,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
+import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -3780,6 +3781,21 @@ public class ExperimentServiceImpl implements ExperimentService
                     // Grab these to delete after we've deleted the Data rows
                     List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
 
+                    // Find the cross-run file inputs: data outputs that are have the same dataFileUrl as an input
+                    List<ExpDataImpl> crossRun = new ArrayList<>();
+                    List<ExpDataImpl> inputData = run.getInputDatas(DefaultAssayRunCreator.CROSS_RUN_DATA_INPUT_ROLE, null);
+                    if (!inputData.isEmpty())
+                    {
+                        for (ExpDataImpl output : datasToDelete)
+                        {
+                            for (ExpDataImpl input : inputData)
+                            {
+                                if (input.getDataFileUrl().equals(output.getDataFileUrl()))
+                                    crossRun.add(output);
+                            }
+                        }
+                    }
+
                     // Archive all data files prior to deleting
                     //  ideally this would be transacted as a commit task but we decided against it due to complications
                     run.archiveDataFiles(user);
@@ -3790,6 +3806,13 @@ public class ExperimentServiceImpl implements ExperimentService
                     {
                         ExperimentDataHandler handler = data.findDataHandler();
                         handler.deleteData(data, container, user);
+                    }
+
+                    // Delete the cross run data completely
+                    for (ExpDataImpl data : crossRun)
+                    {
+                        LOG.debug("Deleting cross-run data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                        data.delete(user, false);
                     }
 
                     if (protocolImpl != null)
