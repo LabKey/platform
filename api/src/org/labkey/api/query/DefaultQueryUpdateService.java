@@ -652,7 +652,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         // get rid of the properties for this table
         if (null != getObjectUriColumn())
         {
-            SQLFragment lsids = new SQLFragment("SELECT t." + getObjectUriColumn().getColumnName() + " FROM ").append(getDbTable(), "t");
+            SQLFragment lsids = new SQLFragment()
+                    .append("SELECT t.").append(getObjectUriColumn().getColumnName())
+                    .append(" FROM ").append(getDbTable(), "t")
+                    .append(" WHERE t.").append(getObjectUriColumn().getColumnName()).append(" IS NOT NULL");
             OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, container, false);
         }
 
