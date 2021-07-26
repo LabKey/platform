@@ -6484,7 +6484,11 @@ public class ExperimentServiceImpl implements ExperimentService
                 if (rec._action.getActionSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE)
                 {
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
-                    boolean isParentRootMaterial = StringUtils.isEmpty(parent.getAliquotedFromLSID());
+
+                    // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
+                    // Use cache to double check detemine subaliquots's root
+                    boolean isParentRootMaterial = StringUtils.isEmpty(parent.getAliquotedFromLSID()) && !_aliquotRootCache.containsKey(parent.getLSID());
+
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
                         SQLFragment sql = new SQLFragment("UPDATE ").append(getTinfoMaterial(), "").
