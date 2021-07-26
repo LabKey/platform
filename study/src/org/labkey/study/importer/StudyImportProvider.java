@@ -66,4 +66,10 @@ public class StudyImportProvider extends PipelineProvider
             return entry.endsWith("study.xml") || entry.endsWith(".study.zip") || entry.endsWith(".folder.zip");
         }
     }
+
+    @Override
+    public boolean supportsCloud()
+    {
+        return true;
+    }
 }
