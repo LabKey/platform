@@ -161,12 +161,33 @@ LABKEY.Assay = new function(impl) {
 
         var formData = new FormData();
         formData.append("assayId", config.assayId);
-        if (config.name)
+        if (config.name) {
             formData.append("name", config.name);
-        if (config.comment)
+        }
+        if (config.comment) {
             formData.append("comment", config.comment);
-        if (config.batchId)
+        }
+        if (config.batchId) {
             formData.append("batchId", config.batchId);
+        }
+        if (config.reRunId) {
+            formData.append("reRunId", config.reRunId);
+        }
+        if (config.saveDataAsFile !== undefined) {
+            formData.append('saveDataAsFile', config.saveDataAsFile ? "true" : "false");
+        }
+        if (config.jobDescription) {
+            formData.append('jobDescription', config.jobDescription);
+        }
+        if (config.jobNotificationProvider) {
+            formData.append('jobNotificationProvider', config.jobNotificationProvider);
+        }
+        if (config.forceAsync !== undefined) {
+            formData.append('forceAsync', config.forceAsync ? "true" : "false");
+        }
+        if (config.allowCrossRunFileInputs !== undefined) {
+            formData.append('allowCrossRunFileInputs', config.allowCrossRunFileInputs ? "true" : "false");
+        }
 
         if (config.properties) {
             for (var key in config.properties) {

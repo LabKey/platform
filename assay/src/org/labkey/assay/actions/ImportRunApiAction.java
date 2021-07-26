@@ -101,6 +101,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         String jobDescription;
         String jobNotificationProvider;
         boolean forceAsync;
+        boolean allowCrossRunFileInputs;
 
         // TODO: support additional input/output data/materials
         Map<Object, String> inputData = new HashMap<>();
@@ -129,6 +130,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             forceAsync = json.optBoolean("forceAsync");
             jobDescription = json.optString("jobDescription", null);
             jobNotificationProvider = json.optString("jobNotificationProvider", null);
+            allowCrossRunFileInputs = json.optBoolean("allowCrossRunFileInputs");
 
             runProperties = json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
             if (runProperties != null)
@@ -169,6 +171,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             forceAsync = form.isForceAsync();
             jobDescription = form.getJobDescription();
             jobNotificationProvider = form.getJobNotificationProvider();
+            allowCrossRunFileInputs = form.isAllowCrossRunFileInputs();
         }
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
@@ -220,7 +223,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setReRunId(reRunId)
                 .setLogger(LOG)
                 .setJobDescription(jobDescription)
-                .setJobNotificationProvider(jobNotificationProvider);
+                .setJobNotificationProvider(jobNotificationProvider)
+                .setAllowCrossRunFileInputs(allowCrossRunFileInputs);
 
         if (file != null && rawData != null)
             throw new ExperimentException("Either file or " + AssayJSONConverter.DATA_ROWS + " is allowed, but not both");
@@ -342,6 +346,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _jobDescription;
         private String _jobNotificationProvider;
         private boolean _forceAsync;
+        private boolean _allowCrossRunFileInputs;
 
         public JSONObject getJson()
         {
@@ -513,6 +518,15 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             _forceAsync = forceAsync;
         }
 
+        public boolean isAllowCrossRunFileInputs()
+        {
+            return _allowCrossRunFileInputs;
+        }
+
+        public void setAllowCrossRunFileInputs(boolean allowCrossRunFileInputs)
+        {
+            _allowCrossRunFileInputs = allowCrossRunFileInputs;
+        }
     }
 
 }
