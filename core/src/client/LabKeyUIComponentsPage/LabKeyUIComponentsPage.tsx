@@ -187,10 +187,6 @@ export class App extends React.Component<any, State> {
                     name={"labkey-ui-components-select"}
                     placeholder={"Select a component..."}
                     inputClass={'col-xs-4'}
-                    formsy={false}
-                    showLabel={false}
-                    multiple={false}
-                    required={false}
                     value={this.state.selected}
                     valueKey={'value'}
                     labelKey={'value'}

@@ -61,9 +61,6 @@ export class AssayImportPage extends React.Component<any, State> {
                 name={'assay-import-panels-select'}
                 placeholder={"Select an assay..."}
                 inputClass={'col-xs-4'}
-                showLabel={false}
-                formsy={false}
-                multiple={false}
                 required={true}
                 valueKey={'id'}
                 labelKey={'name'}

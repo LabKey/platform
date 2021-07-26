@@ -3,8 +3,15 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React, { PureComponent } from 'react'
-import { FormControl, Tab, Tabs } from "react-bootstrap";
-import {Alert, LINEAGE_GROUPING_GENERATIONS, LineageFilter, LineageGraph, LineageGrid, VisGraphNode} from "@labkey/components";
+import { FormControl, Tab, Tabs } from 'react-bootstrap';
+import {
+    Alert,
+    LINEAGE_GROUPING_GENERATIONS,
+    LineageFilter,
+    LineageGraph,
+    LineageGrid,
+    VisGraphNode,
+} from '@labkey/components';
 
 interface StateProps {
     lsid: string
