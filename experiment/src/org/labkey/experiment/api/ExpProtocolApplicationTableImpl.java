@@ -173,7 +173,9 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addColumn(Column.StartTime);
         addColumn(Column.EndTime);
         addColumn(Column.RecordCount);
+
         addColumn(Column.Properties).setHidden(true);
+        addVocabularyDomains();
 
         setDefaultVisibleColumns(List.of(
                 FieldKey.fromParts(Column.Name),
