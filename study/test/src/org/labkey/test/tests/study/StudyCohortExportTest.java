@@ -17,10 +17,10 @@ package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.util.DataRegionTable;
 
-@Category({DailyC.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 13)
 public class StudyCohortExportTest extends StudyExportTest
 {

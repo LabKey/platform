@@ -26,7 +26,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.Locators;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.issues.InsertPage;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
@@ -53,7 +53,7 @@ import static org.junit.Assert.fail;
 import static org.labkey.test.pages.test.TestActions.ExceptionActions;
 import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJECT;
 
-@Category({DailyB.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTest
 {

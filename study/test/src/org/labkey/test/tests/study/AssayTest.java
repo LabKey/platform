@@ -22,7 +22,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
@@ -42,7 +42,7 @@ import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 
-@Category({DailyC.class, Assays.class})
+@Category({Daily.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
 {
     private static final String INVESTIGATOR = "Dr. No";

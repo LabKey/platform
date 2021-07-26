@@ -21,7 +21,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.util.StudyHelper;
 
@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * CreateVialsTest also uses the specimen merge feature.
  */
-@Category({DailyB.class, Specimen.class})
+@Category({Daily.class, Specimen.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 7)
 public class SpecimenMergeTest extends BaseWebDriverTest
 {

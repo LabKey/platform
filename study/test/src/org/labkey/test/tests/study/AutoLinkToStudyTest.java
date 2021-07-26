@@ -9,7 +9,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.StudyHelper;
@@ -17,7 +17,7 @@ import org.labkey.test.util.StudyHelper;
 import java.io.File;
 import java.util.List;
 
-@Category({DailyC.class, Assays.class})
+@Category({Daily.class, Assays.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 4)
 public class AutoLinkToStudyTest extends BaseWebDriverTest
 {

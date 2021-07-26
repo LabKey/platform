@@ -14,7 +14,7 @@ import org.labkey.remoteapi.domain.GetDomainCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.domain.SaveDomainCommand;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.study.CreateStudyPage;
 import org.labkey.test.util.StudyHelper;
 
@@ -27,7 +27,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@Category({DailyA.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 5)
 public class StudyDatasetDomainTest extends BaseWebDriverTest
 {

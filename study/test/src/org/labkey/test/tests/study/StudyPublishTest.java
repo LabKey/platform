@@ -30,7 +30,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.DomainDesignerPage;
@@ -68,7 +68,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Category({DailyC.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 30)
 public class StudyPublishTest extends StudyPHIExportTest
 {
