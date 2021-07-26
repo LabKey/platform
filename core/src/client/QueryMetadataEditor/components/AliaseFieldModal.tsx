@@ -82,9 +82,6 @@ export class AliasFieldModal extends PureComponent<AliasFieldModalProps, AliasFi
                             inputClass={'col-xs-12'}
                             valueKey="name"
                             labelKey="label"
-                            formsy={false}
-                            multiple={false}
-                            required={false}
                             clearable={false}
                         />
                     </Col>

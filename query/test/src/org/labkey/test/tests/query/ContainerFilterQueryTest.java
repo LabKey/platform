@@ -8,7 +8,7 @@ import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locators;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.APIContainerHelper;
 import org.labkey.test.util.ApiPermissionsHelper;
@@ -32,7 +32,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-@Category({DailyC.class})
+@Category({Daily.class})
 public class ContainerFilterQueryTest extends BaseWebDriverTest
 {
     private static final String OTHER_PROJECT = "Other ContainerFilterQueryTest Project"; // for permissions and linked schema tests

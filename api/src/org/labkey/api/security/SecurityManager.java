@@ -390,13 +390,6 @@ public class SecurityManager
 
     private static class SecurityUserListener implements UserManager.UserListener
     {
-
-        @Override
-        public void userAddedToSite(User user)
-        {
-            // do nothing
-        }
-
         @Override
         public void userDeletedFromSite(User user)
         {
@@ -409,18 +402,6 @@ public class SecurityManager
         {
             // This clears the cache of security policies. It does not remove the policies themselves.
             SecurityPolicyManager.removeAll();
-        }
-
-        @Override
-        public void userAccountEnabled(User user)
-        {
-            // do nothing
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-            // do nothing
         }
     }
 

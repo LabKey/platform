@@ -8,7 +8,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
@@ -26,7 +26,7 @@ Added the test to provide additional test coverage for below mentioned issue
 https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=42309
  */
 
-@Category({DailyA.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 10)
 public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 {

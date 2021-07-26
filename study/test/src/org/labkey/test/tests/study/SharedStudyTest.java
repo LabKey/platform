@@ -29,7 +29,7 @@ import org.labkey.test.Locators;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
@@ -51,7 +51,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-@Category({DailyA.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
 public class SharedStudyTest extends BaseWebDriverTest
 {
@@ -113,7 +113,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         datasetDesignerPage.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
         // leave the 'visits' column unmapped, make sure it doesn't have a value/only has a placeholder
         // (this dataset doesn't have a meaningful visit field)
-        assertEquals("Select...", datasetDesignerPage.getPreviewMappedColumnValue("Visits"));
+        assertEquals("", datasetDesignerPage.getPreviewMappedColumnValue("Visits"));
         datasetDesignerPage.clickSave();
 
         setPipelineRoot(STUDY_DIR.getAbsolutePath());

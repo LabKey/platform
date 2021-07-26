@@ -24,11 +24,9 @@ export const QuerySelectInput: FC<Props> = memo(props => {
         <QuerySelect
             componentId={'query-select' + name}
             inputClass={'col-sm-8 col-xs-12'}
-            formsy={false}
             name={name}
             schemaQuery={SchemaQuery.create(schemaName, queryName)}
             containerPath={containerPath}
-            showLabel={false}
             disabled={disabled}
             value={value}
             loadOnFocus

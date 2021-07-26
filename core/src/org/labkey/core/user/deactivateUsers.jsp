@@ -20,6 +20,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.DeactivateUsersBean" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -35,8 +37,16 @@
     <%
         for (User user : bean.getUsers())
         {
-            %><li><%=h(user.getDisplayName(currentUser))%></li><%
-        } 
+            %><li><%=h(user.getDisplayName(currentUser))%><%
+            if (!bean.isActivate()) { %>
+                <ul>
+                    <% for (HtmlString message : UserManager.previewUserAccountDeactivated(user)) { %>
+                    <li><%= message %></li>
+                    <% } %>
+                </ul>
+            <% } %>
+            </li> <%
+        }
     %>
     </ul>
 <labkey:form action="<%=urlPost%>" method="post">

@@ -173,29 +173,9 @@ public class MothershipModule extends DefaultModule
         UserManager.addUserListener(new UserManager.UserListener()
         {
             @Override
-            public void userAddedToSite(User user)
-            {
-            }
-
-            @Override
             public void userDeletedFromSite(User user)
             {
                 MothershipManager.get().deleteForUser(user);
-            }
-
-            @Override
-            public void userAccountDisabled(User user)
-            {
-            }
-
-            @Override
-            public void userAccountEnabled(User user)
-            {
-            }
-
-            @Override
-            public void propertyChange(PropertyChangeEvent evt)
-            {
             }
         });
     }

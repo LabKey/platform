@@ -16,7 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.junit.experimental.categories.Category;
-import org.labkey.test.categories.DailyC;
+import org.labkey.test.categories.Daily;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Created by RyanS on 5/18/2017.
  */
-@Category({DailyC.class})
+@Category({Daily.class})
 public class StudyContinuousTest extends AbstractStudyTimeKeyFieldTest
 {
     @Override

@@ -21,6 +21,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.DeleteUsersBean" %>
 <%@ page import="org.labkey.core.user.UserController.DeactivateUsersAction" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -36,10 +38,16 @@
 the following <%=h(bean.getUsers().size() > 1 ? "users" : "user")%>?
 This action cannot be undone.</p>
     <ul>
-    <%
-        for (User user : bean.getUsers())
-        {
-            %><li><%=h(user.getDisplayName(currentUser))%></li><%
+        <%
+            for (User user : bean.getUsers())
+            {
+        %><li><%=h(user.getDisplayName(currentUser))%>
+        <ul>
+            <% for (HtmlString message : UserManager.previewUserAccountDeleted(user)) { %>
+            <li><%= message %></li>
+            <% } %>
+        </ul>
+    </li> <%
         }
     %>
     </ul>

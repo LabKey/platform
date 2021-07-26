@@ -20,12 +20,12 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 
 import java.io.File;
 
-@Category({DailyA.class, Specimen.class})
+@Category({Daily.class, Specimen.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class SpecimenReplaceTest extends SpecimenMergeTest
 {

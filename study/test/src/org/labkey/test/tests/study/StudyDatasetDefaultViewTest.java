@@ -7,7 +7,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyA;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.study.ViewPreferencesPage;
 import org.labkey.test.util.DataRegionTable;
@@ -16,7 +16,7 @@ import org.labkey.test.util.PortalHelper;
 import java.util.Arrays;
 import java.util.List;
 
-@Category({DailyA.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 3)
 public class StudyDatasetDefaultViewTest extends BaseWebDriverTest
 {

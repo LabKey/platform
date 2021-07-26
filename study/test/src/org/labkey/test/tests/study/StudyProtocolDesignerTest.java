@@ -28,7 +28,7 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.DailyB;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.AssayScheduleWebpart;
 import org.labkey.test.components.studydesigner.BaseManageVaccineDesignVisitPage;
 import org.labkey.test.components.studydesigner.ImmunizationScheduleWebpart;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category({DailyB.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
 public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
