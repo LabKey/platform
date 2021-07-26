@@ -6984,9 +6984,7 @@ public class ExperimentController extends SpringActionController
                         .map(col -> {
                             int asIndex = col.indexOf("AS");
                             if (asIndex > 0)
-                            {
                                 return "NULL AS " + col.substring(asIndex+ 3);
-                            }
                             else
                                 return "NULL AS " + col;
                         })
