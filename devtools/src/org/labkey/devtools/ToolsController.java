@@ -462,8 +462,8 @@ public class ToolsController extends SpringActionController
                             String filePath = file.toString().replaceAll("\\\\", "/");
                             if (filePath.endsWith(".jsp"))
                             {
-                                // Accommodates /org/labkey and /org/scharp
-                                int idx = filePath.indexOf("/org/");
+                                // Accommodates /org/labkey, /org/scharp, and /com/hphc
+                                int idx = StringUtils.indexOfAny(filePath, "/org/", "/com/");
 
                                 if (-1 != idx)
                                 {
@@ -474,7 +474,7 @@ public class ToolsController extends SpringActionController
                                 }
                                 else
                                 {
-                                    out.println(filter("Can't find \"/org/\": " + filePath));
+                                    out.println(filter("Can't find \"/org/\" or \"/com/\": " + filePath));
                                 }
                             }
 
