@@ -76,6 +76,7 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -187,6 +188,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1925,10 +1927,10 @@ public class CoreController extends SpringActionController
     {
         if (archiveFilePath != null)
         {
-            File archiveFile = new File(archiveFilePath);
-            if (archiveFile.exists() && archiveFile.isFile())
+            java.nio.file.Path archiveFile = FileUtil.stringToPath(getContainer(), archiveFilePath);
+            if (Files.exists(archiveFile) && Files.isRegularFile(archiveFile))
             {
-                return new FileSystemFile(archiveFile.getParentFile());
+                return new FileSystemFile(archiveFile.getParent());
             }
         }
 

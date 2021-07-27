@@ -63,7 +63,10 @@ public class StudyImportProvider extends PipelineProvider
         @Override
         public boolean accept(Path entry) throws IOException
         {
-            return entry.endsWith("study.xml") || entry.endsWith(".study.zip") || entry.endsWith(".folder.zip");
+            // Path.endsWith checks the final path piece (eg, /root/filename.xml checks filename.xml).
+            // So, we want to check the string value instead
+            String pathString = entry.toString();
+            return pathString.endsWith("study.xml") || pathString.endsWith(".study.zip") || pathString.endsWith(".folder.zip");
         }
     }
 

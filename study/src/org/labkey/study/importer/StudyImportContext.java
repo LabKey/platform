@@ -21,12 +21,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.admin.LoggerGetter;
-import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -130,8 +129,8 @@ public class StudyImportContext extends SimpleStudyImportContext
     @Deprecated
     private Path getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {
-        Path rootFile = Path.of(root.getLocation().toString());
-        Path dirFile = Path.of(dir.getLocation());
+        Path rootFile = FileUtil.stringToPath(getContainer(), root.getLocation());
+        Path dirFile = FileUtil.stringToPath(getContainer(), dir.getLocation());
         Path file = dirFile.resolve(name);
         String source = "study.xml";
 

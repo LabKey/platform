@@ -29,9 +29,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.pipeline.AbstractSpecimenTask;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.importer.SimpleStudyImporter;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.FileSystemFile;
@@ -46,8 +46,8 @@ import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
@@ -209,10 +209,10 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         {
             if (archiveFilePath != null)
             {
-                File archiveFile = new File(archiveFilePath);
-                if (archiveFile.exists() && archiveFile.isFile())
+                Path archiveFile = FileUtil.stringToPath(container, archiveFilePath);
+                if (Files.exists(archiveFile) && Files.isRegularFile(archiveFile))
                 {
-                    VirtualFile vf = new FileSystemFile(archiveFile.getParentFile());
+                    VirtualFile vf = new FileSystemFile(archiveFile.getParent());
                     VirtualFile studyDir = vf.getXmlBean("study.xml") != null ? vf : vf.getDir("study");
                     XmlObject studyXml = studyDir.getXmlBean("study.xml");
 
