@@ -362,10 +362,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // need to register webdav resolvers in init() instead of startupAfterSpringConfig since static module files are loaded during module startup
         WebdavService.get().registerRootResolver(WebdavResolverImpl.get());
         WebdavService.get().registerRootResolver(WebFilesResolverImpl.get());
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
-        {
-            WebdavService.get().registerRootResolver(UserResolverImpl.get());
-        }
 
         DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider(this)
         {
@@ -998,6 +994,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
+
+        // We don't register this in init() because that's too early to touch experimental features, #43642
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
+        {
+            WebdavService.get().registerRootResolver(UserResolverImpl.get());
+        }
     }
 
     @Override
