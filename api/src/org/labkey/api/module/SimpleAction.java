@@ -145,10 +145,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
 
             if (!container.hasPermissions(user, perms))
             {
-                if (container.isForbiddenProject(user))
-                    throw new ForbiddenProjectException();
-                else
-                    throw new UnauthorizedException("You do not have permission to view this content.");
+                container.throwIfForbiddenProject(user);
+                throw new UnauthorizedException("You do not have permission to view this content.");
             }
         }
 
@@ -158,10 +156,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
             {
                 if (!container.hasPermission(user, perm))
                 {
-                    if (container.isForbiddenProject(user))
-                        throw new ForbiddenProjectException();
-                    else
-                        throw new UnauthorizedException("You do not have permission to view this content.");
+                    container.throwIfForbiddenProject(user);
+                    throw new UnauthorizedException("You do not have permission to view this content.");
                 }
             }
         }
