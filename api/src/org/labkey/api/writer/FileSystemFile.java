@@ -225,6 +225,7 @@ public class FileSystemFile extends AbstractVirtualFile
         {
             return null == files ? Collections.emptyList() :
                     files.filter(Files::isDirectory)
+                         .map(Path::getFileName)
                          .map(Path::toString)
                          .collect(Collectors.toList());
         }
