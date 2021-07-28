@@ -27,19 +27,15 @@ import org.labkey.api.util.XmlValidationException;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,12 +88,6 @@ public class FileSystemFile extends AbstractVirtualFile
         return PrintWriters.getPrintWriter(file);
     }
 
-    /**
-     *
-     * @param filename
-     * @return
-     * @throws IOException
-     */
     @Override
     public OutputStream getOutputStream(String filename) throws IOException
     {
@@ -153,7 +143,6 @@ public class FileSystemFile extends AbstractVirtualFile
     public static void ensureWriteableDirectory(Path dir) throws IOException
     {
         if (!Files.exists(dir))
-            //noinspection ResultOfMethodCallIgnored
             Files.createDirectories(dir);
 
         if (!Files.isDirectory(dir))
@@ -203,10 +192,15 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public List<String> list()
     {
+        return list(Files::isRegularFile);
+    }
+
+    private List<String> list(Predicate<Path> filter)
+    {
         try (Stream<Path> files = Files.list(_root))
         {
             return null == files ? Collections.emptyList() :
-                    files.filter(Files::isRegularFile)
+                    files.filter(filter)
                          .map(Path::getFileName)
                          .map(Path::toString)
                          .collect(Collectors.toList());
@@ -221,19 +215,7 @@ public class FileSystemFile extends AbstractVirtualFile
     @Override
     public List<String> listDirs()
     {
-        try (Stream<Path> files = Files.list(_root))
-        {
-            return null == files ? Collections.emptyList() :
-                    files.filter(Files::isDirectory)
-                         .map(Path::getFileName)
-                         .map(Path::toString)
-                         .collect(Collectors.toList());
-        }
-        catch (IOException e)
-        {
-            //TODO should do more here...
-            throw new RuntimeException(e);
-        }
+        return list(Files::isDirectory);
     }
 
     @Override
