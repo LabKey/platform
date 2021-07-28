@@ -394,11 +394,6 @@ public class ToolsController extends SpringActionController
                 return root;
             }
 
-            private boolean shouldInclude(String jspPath)
-            {
-                return !jspPath.contains("/biologics/view/Navigation");  // ignore funny JSP in biologics, until we adjust its source path
-            }
-
             // TODO: warn for duplicates - suspicious
             private Collection<String> findJspReferences(Module module, PrintWriter out)
             {
@@ -425,7 +420,7 @@ public class ToolsController extends SpringActionController
                                         public boolean string(int beginIndex, int endIndex)
                                         {
                                             String s = code.substring(beginIndex + 1, endIndex - 1);
-                                            if (s.length() > 4 && s.endsWith(".jsp") && shouldInclude(s))
+                                            if (s.length() > 4 && s.endsWith(".jsp"))
                                                 ret.add(s);
                                             return true;
                                         }
@@ -467,10 +462,7 @@ public class ToolsController extends SpringActionController
 
                                 if (-1 != idx)
                                 {
-                                    String path = filePath.substring(idx);
-
-                                    if (shouldInclude(path))
-                                        ret.add(path);
+                                    ret.add(filePath.substring(idx));
                                 }
                                 else
                                 {
