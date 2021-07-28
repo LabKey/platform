@@ -1992,7 +1992,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
-    @IgnoresForbiddenProjectCheck // So we can display an error when visiting a forbidden project, #43278... but this should be called in root
+    @IgnoresForbiddenProjectCheck // Skip the "forbidden project" check since it disallows root. See #43278.
     public class LoadLibraryAction extends ReadOnlyApiAction<LoadLibraryForm>
     {
         @Override

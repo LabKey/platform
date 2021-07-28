@@ -63,6 +63,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
+import org.labkey.api.view.ForbiddenProjectException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResource;
@@ -465,6 +466,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean isForbiddenProject(User user)
     {
+        return handleForbiddenProject(user, false);
+    }
+
+    public void throwIfForbiddenProject(User user)
+    {
+        handleForbiddenProject(user, true);
+    }
+
+    private boolean handleForbiddenProject(User user, boolean shouldThrow)
+    {
         if (null != user && !user.isSearchUser())
         {
             @Nullable Container impersonationProject = user.getImpersonationProject();
@@ -472,15 +483,25 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             // Root is never forbidden (site admin case), otherwise, impersonation project must match current project
             if (null != impersonationProject && !impersonationProject.equals(currentProject))
+            {
+                if (shouldThrow)
+                    throw new ForbiddenProjectException("You are not allowed to access this folder while impersonating within a different project.");
+
                 return true;
+            }
 
             // Handle locked projects
             if (null != currentProject)
             {
                 LockState lockState = currentProject.getLockState();
 
-                if (lockState.isLocked())
-                    return ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, lockState);
+                if (lockState.isLocked() && ContainerManager.LOCKED_PROJECT_HANDLER.isForbidden(currentProject, user, lockState))
+                {
+                    if (shouldThrow)
+                        throw new ForbiddenProjectException("You are not allowed to access this folder; it is " + lockState.getDescription() + ".");
+
+                    return true;
+                }
             }
         }
 

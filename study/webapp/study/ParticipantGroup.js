@@ -38,7 +38,11 @@ Ext4.define('Study.window.ParticipantGroup', {
                     };
 
                 if (fromSelection) {
-                    jsonData.selections = checked;
+                    // issue 43552 : if all rows are selected from the message bar, don't use the checkbox selectors
+                    if (region.totalRows === region.selectedCount)
+                        jsonData.selectAll = true;
+                    else
+                        jsonData.selections = checked;
                 }
                 else {
                     jsonData.selectAll = true;

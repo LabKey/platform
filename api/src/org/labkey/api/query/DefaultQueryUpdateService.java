@@ -74,11 +74,11 @@ import java.util.Set;
  */
 public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 {
-    private TableInfo _dbTable = null;
+    private final TableInfo _dbTable;
     private DomainUpdateHelper _helper = null;
     /** Map from DbTable column names to QueryTable column names, if they have been aliased */
     protected Map<String, String> _columnMapping = Collections.emptyMap();
-    private ValidatorContext _validatorContext;
+    private final ValidatorContext _validatorContext;
 
     public DefaultQueryUpdateService(@NotNull TableInfo queryTable, TableInfo dbTable)
     {
@@ -205,7 +205,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
@@ -217,7 +216,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (null != row)
         {
             if (row instanceof ArrayListMap)
-                ((ArrayListMap)row).getFindMap().remove("_row");
+                ((ArrayListMap<?, ?>)row).getFindMap().remove("_row");
             else
                 row.remove("_row");
         }
@@ -477,7 +476,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         for (ColumnInfo col : getQueryTable().getColumns())
         {
             // Only validate incoming values
-            if (row.keySet().contains(col.getColumnName()))
+            if (row.containsKey(col.getColumnName()))
             {
                 Object value = row.get(col.getColumnName());
                 validateValue(col, value);
@@ -567,7 +566,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             return row.get(pd.getLabel());
 
         Set<String> aliases = pd.getImportAliasSet();
-        if (aliases != null && aliases.size() > 0)
+        if (aliases.size() > 0)
         {
             for (String alias : aliases)
             {
@@ -589,7 +588,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             return true;
 
         Set<String> aliases = pd.getImportAliasSet();
-        if (aliases != null && aliases.size() > 0)
+        if (aliases.size() > 0)
         {
             for (String alias : aliases)
             {
@@ -656,6 +655,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     .append("SELECT t.").append(getObjectUriColumn().getColumnName())
                     .append(" FROM ").append(getDbTable(), "t")
                     .append(" WHERE t.").append(getObjectUriColumn().getColumnName()).append(" IS NOT NULL");
+            if (null != getDbTable().getColumn("container"))
+            {
+                lsids.append(" AND t.Container = ?");
+                lsids.add(container.getId());
+            }
+
             OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, container, false);
         }
 
@@ -722,23 +727,20 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 {
                     switch (col.getJdbcType())
                     {
-                        case DATE:
-                        case TIME:
-                        case TIMESTAMP:
-                            row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
-                            break;
-                        default:
+                        case DATE, TIME, TIMESTAMP -> row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
+                        default -> {
                             if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
                             {
                                 value = saveFile(c, col.getName(), value, file_link_dir_name);
                             }
                             row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
+                        }
                     }
                 }
                 catch (ConversionException e)
                 {
                     String type = ColumnInfo.getFriendlyTypeName(col.getJdbcType().getJavaClass());
-                    throw new ValidationException("Unable to convert value \'" + value.toString() + "\' to " + type, col.getName());
+                    throw new ValidationException("Unable to convert value '" + value.toString() + "' to " + type, col.getName());
                 }
                 catch (QueryUpdateServiceException e)
                 {
@@ -790,7 +792,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected boolean isAttachmentProperty(@NotNull DomainProperty dp)
     {
         PropertyDescriptor pd = dp.getPropertyDescriptor();
-        return (pd.getPropertyType().equals(PropertyType.ATTACHMENT));
+        return PropertyType.ATTACHMENT.equals(pd.getPropertyType());
     }
 
     protected boolean isAttachmentProperty(String name)
