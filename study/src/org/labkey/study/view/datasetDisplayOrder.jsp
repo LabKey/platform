@@ -22,6 +22,12 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<style>
+    .button-reordering {
+        width: 115px;
+        margin-bottom: 5px;
+    }
+</style>
 <script>
 function saveList() {
     var itemList = "";
@@ -74,7 +80,7 @@ function moveDatasetItem(action) {
                     List<DatasetDefinition> defs = getDatasets();
                     boolean first = true;
                 %>
-                <select name="items" size="<%= defs.size() %>">
+                <select name="items" style="width: 400px;" size="<%=Math.min(Math.max(defs.size(), 10), 25)%>">
                 <%
                 for (Dataset def: defs)
                 {
@@ -101,10 +107,10 @@ function moveDatasetItem(action) {
                 </select>
             </td>
             <td align="center" valign="center" style="padding-left: 10px;">
-                <%= button("Move Up").onClick("return moveDatasetItem('up')") %><br>
-                <%= button("Move Down").onClick("return moveDatasetItem('down')") %><br><br>
-                <%= button("Move to Top").onClick("return moveDatasetItem('top')") %><br>
-                <%= button("Move to Bottom").onClick("return moveDatasetItem('bottom')") %>
+                <%= button("Move Up").addClass("button-reordering").onClick("return moveDatasetItem('up')") %><br>
+                <%= button("Move Down").addClass("button-reordering").onClick("return moveDatasetItem('down')") %><br><br>
+                <%= button("Move to Top").addClass("button-reordering").onClick("return moveDatasetItem('top')") %><br>
+                <%= button("Move to Bottom").addClass("button-reordering").onClick("return moveDatasetItem('bottom')") %>
             </td>
         </tr>
     </table>
