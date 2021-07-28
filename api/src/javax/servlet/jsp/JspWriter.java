@@ -22,7 +22,7 @@ import org.labkey.api.util.SafeToRender;
 import java.io.IOException;
 
 /*
-    NOTE: This is the standard JspWriter abstract class that ships with Tomcat (8.5.51). Compiling it with the LabKey
+    NOTE: This is the standard JspWriter abstract class that ships with Tomcat (9.0.50). Compiling it with the LabKey
     source code serves no functional purpose; it's included solely to perform static analysis of JSP file output. By
     uncommenting a few methods below, you can distinguish JSP invocations of print(SafeToRender), print(Number), and
     print(Boolean) (all of which are safe and allowed) from print(Object) on other Object types. See instructions at
@@ -471,10 +471,10 @@ public abstract class JspWriter extends java.io.Writer {
      * and use IntelliJ to invoke find usages on print(Object) above to show attempts to render objects that are considered
      * unsafe. You must re-comment the lines below before building, otherwise JSPs will break at runtime.
      *
-     * Note that some modules may bind to the "real" JspWriter residing in tomcat-jsp-api-8.5.51.jar, in which case some
+     * Note that some modules may bind to the "real" JspWriter residing in tomcat-jsp-api-9.0.50.jar, in which case some
      * safe print() invocations may resolve to print(Object). If this occurs, you can delete the JspWriter source and class
      * files from the Tomcat jars in your gradle cache. To find those files, search &lt;HOME>/.gradle/caches for
-     * tomcat-jsp-api-8.5.51.jar and tomcat-jsp-api-8.5.51-sources.jar, and excise JspWriter.class and JspWriter.java from
+     * tomcat-jsp-api-9.0.50.jar and tomcat-jsp-api-9.0.50-sources.jar, and excise JspWriter.class and JspWriter.java from
      * those jar files.
      */
 

@@ -54,9 +54,8 @@ describe('ErrorHandler', () => {
         getServerContext().impersonatingUser = { displayName: impersonatedUser };
         getServerContext().user = { displayName: realUser, isSignedIn: true };
 
-        const subheading = 'You do not have the permissions required to access this page.';
         const wrapper = shallow(<ErrorHandler context={{ errorDetails }} />);
-        expect(wrapper.find('.labkey-error-subheading').text().includes(subheading)).toBeTruthy();
+        expect(wrapper.find('.labkey-error-subheading').text().includes(errorDetails.message)).toBeTruthy();
         expect(wrapper.find('.error-details-container')).toHaveLength(0);
 
         wrapper.setState({ showDetails: true });

@@ -15,11 +15,12 @@
  */
 package org.labkey.api.security.impersonation;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.UnauthorizedException;
 
 /**
- * Thrown to indicate that someone attempted to impersonate in an invalid way - such as a project admin trying
- * to access another project while impersonating a user.
+ * Thrown to indicate that someone attempted to impersonate in an invalid way - such as a project admin attempting to
+ * impersonate someone who's not a project user in this project.
  * User: adam
  * Date: 5/6/12
  */
@@ -36,5 +37,11 @@ public class UnauthorizedImpersonationException extends UnauthorizedException
     public ImpersonationContextFactory getFactory()
     {
         return _factory;
+    }
+
+    @Override
+    public @Nullable String getAdvice()
+    {
+        return null;
     }
 }

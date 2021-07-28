@@ -6980,7 +6980,15 @@ public class ExperimentController extends SpringActionController
             if (!haveData) // no data to return but return data in the expected shape.
             {
                 sql = new SQLFragment("SELECT\n");
-                sql.append(orderedIdCols.stream().map(col -> "NULL AS " + col).collect(Collectors.joining(",\t\n")));
+                sql.append(orderedIdCols.stream()
+                        .map(col -> {
+                            int asIndex = col.indexOf("AS");
+                            if (asIndex > 0)
+                                return "NULL AS " + col.substring(asIndex+ 3);
+                            else
+                                return "NULL AS " + col;
+                        })
+                        .collect(Collectors.joining(",\t\n")));
                 sql.append(",\t\n").append(StringUtils.join(sampleColumns, ",\t\n"));
                 sql.append("\nFROM ").append(samplesTable).append(" S WHERE 1 = 2");
                 return sql;

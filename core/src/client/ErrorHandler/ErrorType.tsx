@@ -18,7 +18,11 @@ const DETAILS_SUB_INSTRUCTION = (
         </p>
         <p className="labkey-error-details">
             If you are part of a{' '}
-            <a href="https://labkey.com/products-services/labkey-server/#server-editions" rel="noopener noreferrer" target="_blank">
+            <a
+                href="https://labkey.com/products-services/labkey-server/#server-editions"
+                rel="noopener noreferrer"
+                target="_blank"
+            >
                 {' '}
                 LabKey Server Premium Edition
             </a>{' '}
@@ -41,7 +45,7 @@ const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
             : 'It seems like something went wrong.'}
     </>
 );
-const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
+const NOTFOUND_INSTRUCTION = (errorDetails: ErrorDetails) => (
     <>
         <div className="labkey-error-instruction">
             Please contact your admin or reference the{' '}
@@ -49,7 +53,7 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
                 LabKey support forum.
             </a>
         </div>
-        {errorCode !== undefined && errorCode !== null && (
+        {errorDetails.errorCode !== undefined && errorDetails.errorCode !== null && (
             <div className="labkey-error-instruction">
                 If you would like to file a{' '}
                 <a
@@ -60,7 +64,7 @@ const NOTFOUND_INSTRUCTION = (errorCode?: string) => (
                     {' '}
                     LabKey support ticket
                 </a>
-                , your unique reference code is: {errorCode}
+                , your unique reference code is: {errorDetails.errorCode}
             </div>
         )}
     </>
@@ -103,8 +107,12 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
     </>
 );
 
-const PERMISSION_SUBHEADING = () => 'You do not have the permissions required to access this page.';
-const PERMISSION_INSTRUCTION = () => "Please contact this server's administrator to gain access.";
+const PERMISSION_SUBHEADING = (errorMessage: string) => (
+    <>{errorMessage !== undefined ? errorMessage : 'You do not have the permissions required to access this page.'}</>
+);
+
+const PERMISSION_INSTRUCTION = (errorDetails: ErrorDetails) => <>{errorDetails.advice} </>;
+
 const PERMISSION_DETAILS = () => (
     <>
         <p className="labkey-error-details labkey-error-details-question">What is a permission error?</p>
@@ -214,7 +222,7 @@ const EXECUTION_SUB_HEADING = (errorMessage?: string) => (
             : 'It seems like there is an issue with this installation of LabKey server.'}
     </>
 );
-const EXECUTION_INSTRUCTION = (errorCode?: string) => (
+const EXECUTION_INSTRUCTION = (errorDetails: ErrorDetails) => (
     <>
         <div className="labkey-error-instruction">
             Please report this bug to{' '}
@@ -226,7 +234,7 @@ const EXECUTION_INSTRUCTION = (errorCode?: string) => (
             below.
         </div>
         <div className="labkey-error-instruction">
-            Your unique reference code is: <b>{errorCode}</b>
+            Your unique reference code is: <b>{errorDetails.errorCode}</b>
         </div>
     </>
 );
@@ -237,7 +245,7 @@ type ErrorTypeInfo = {
     heading: string;
     subHeading: (errorMessage?: string) => ReactNode;
     imagePath: string;
-    instruction: (errorCode?: string) => ReactNode;
+    instruction: (errorDetails?: ErrorDetails) => ReactNode;
 };
 
 const ERROR_TYPE_INFO: { [key in ErrorType]: ErrorTypeInfo } = {
@@ -282,7 +290,7 @@ export const getImage = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)}/>;
+    return <img alt="LabKey Error" src={imageURL('_images', info.imagePath)} />;
 };
 
 export const getSubHeading = (errorDetails: ErrorDetails): ReactNode => {
@@ -296,7 +304,7 @@ export const getInstruction = (errorDetails: ErrorDetails): ReactNode => {
     const info = ERROR_TYPE_INFO[errorDetails.errorType];
     if (!info) return null;
 
-    return <div className="labkey-error-instruction">{info.instruction(errorDetails.errorCode)}</div>;
+    return <div className="labkey-error-instruction">{info.instruction(errorDetails)}</div>;
 };
 
 export const getViewDetails = (errorDetails: ErrorDetails): ReactNode => {
