@@ -179,7 +179,7 @@ public interface StudyService
 
     Set<? extends Study> getAllStudies(Container root);
 
-    boolean runStudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
+    boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 
