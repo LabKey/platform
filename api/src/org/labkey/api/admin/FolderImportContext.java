@@ -28,6 +28,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,6 +49,12 @@ public class FolderImportContext extends AbstractFolderContext
     public FolderImportContext()
     {
         super(null, null, null, null, null, null);
+    }
+
+    @Deprecated //Prefer the Path version -- This will not work for Cloud based archive files
+    public FolderImportContext(User user, Container c, File folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
+    {
+        this(user, c, folderXml.toPath(), dataTypes, logger, root);
     }
 
     public FolderImportContext(User user, Container c, Path folderXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
