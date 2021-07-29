@@ -41,6 +41,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -672,7 +673,9 @@ public class ProxyServlet extends HttpServlet
     /** The string prefixing rewritten cookies. */
     protected String getCookieNamePrefix()
     {
-        return "!Proxy!" + getServletName() + "!";
+        String name = StringUtils.replace(getServletName()," ","-");
+        // make sure this is a legal cookie name
+        return "!Proxy!" + PageFlowUtil.encodeURIComponent(name) + "!";
     }
 
     /** Copy response body data (the entity) from the proxy to the servlet client. */
