@@ -1,7 +1,7 @@
 package org.labkey.api.query;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
@@ -24,6 +24,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
@@ -230,35 +231,35 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     public Object getExcelCompatibleValue(RenderContext ctx)
     {
         updateInnerContext(ctx);
-        return toJSONObjectString(ctx);
+        return toJSONString(ctx);
     }
 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
         updateInnerContext(ctx);
-        return toJSONObjectString(ctx);
+        return toJSONString(ctx);
     }
 
     // return json object in same style as select rows response
-    private JSONObject toJSONObject(RenderContext ctx)
+    public JsonNode toJSONNode(RenderContext ctx)
     {
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            Object colMap = ExtendedApiQueryResponse.createColMap(ctx, this, true, true, false);
-            return new JSONObject(colMap);
+            Object o = ExtendedApiQueryResponse.createColMap(ctx, this, true, true, false, true);
+            return JsonUtil.DEFAULT_MAPPER.valueToTree(o);
         }
 
         return null;
     }
 
-    private String toJSONObjectString(RenderContext ctx)
+    private String toJSONString(RenderContext ctx)
     {
-        JSONObject json = toJSONObject(ctx);
-        if (json == null)
+        JsonNode node = toJSONNode(ctx);
+        if (node == null)
             return null;
 
-        return json.toString(2);
+        return node.toPrettyString();
     }
 
     @Override

@@ -46,9 +46,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 {
     boolean _arrayMultiValueColumns = false;
     boolean _includeFormattedValue = false;
+    boolean _nestedPropertiesAsArray = true;
+
 
     public enum ColMapEntry
     {
+        // fieldKey is only used when rendering nested properties as an ordered list
+        fieldKey,
         value,
         displayValue,
         formattedValue,
@@ -114,7 +118,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
     protected Object createColMap(DisplayColumn dc)
     {
-        return createColMap(getRenderContext(), dc, _arrayMultiValueColumns, _includeFormattedValue, _doItWithStyle);
+        return createColMap(getRenderContext(), dc, _arrayMultiValueColumns, _includeFormattedValue, _doItWithStyle, _nestedPropertiesAsArray);
     }
 
     public static Object createColMap(
@@ -122,22 +126,59 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             DisplayColumn dc,
             boolean arrayMultiValueColumns,
             boolean includeFormattedValue,
-            boolean doItWithStyle)
+            boolean doItWithStyle,
+            boolean nestedPropertiesAsArray)
     {
         if (dc instanceof NestedPropertyDisplayColumn)
         {
             NestedPropertyDisplayColumn npc = (NestedPropertyDisplayColumn) dc;
 
-            Map<String, Object> nestedProperties = new LinkedHashMap<>();
-            for (Pair<RenderContext, DisplayColumn> pair : npc.getNestedDisplayColumns(ctx))
+            Object nestedProps;
+            if (nestedPropertiesAsArray)
             {
-                RenderContext nestedCtx = pair.first;
-                DisplayColumn nestedCol = pair.second;
+                // nested properties as an ordered list
+                List<Object> nestedProperties = new ArrayList<>();
+                for (Pair<RenderContext, DisplayColumn> pair : npc.getNestedDisplayColumns(ctx))
+                {
+                    RenderContext nestedCtx = pair.first;
+                    DisplayColumn nestedCol = pair.second;
 
-                String key = npc.getNestedColumnKey(nestedCol);
-                nestedProperties.put(key, createColMap(nestedCtx, nestedCol, arrayMultiValueColumns, includeFormattedValue, doItWithStyle));
+                    String key = npc.getNestedColumnKey(nestedCol);
+
+                    Object o = createColMap(nestedCtx, nestedCol, arrayMultiValueColumns, includeFormattedValue, doItWithStyle, nestedPropertiesAsArray);
+                    if (o instanceof List)
+                    {
+                        ColMap map = new ColMap();
+                        map.put(ColMapEntry.fieldKey, key);
+                        map.put(ColMapEntry.value, o);
+                        o = map;
+                    }
+                    else if (o instanceof ColMap)
+                    {
+                        ((ColMap)o).put(ColMapEntry.fieldKey, key);
+                    }
+
+                    if (o != null)
+                        nestedProperties.add(o);
+                }
+                nestedProps = nestedProperties;
             }
-            return nestedProperties;
+            else
+            {
+                // nested properties as a map with name/propertyURI as the key
+                Map<String, Object> nestedProperties = new LinkedHashMap<>();
+                for (Pair<RenderContext, DisplayColumn> pair : npc.getNestedDisplayColumns(ctx))
+                {
+                    RenderContext nestedCtx = pair.first;
+                    DisplayColumn nestedCol = pair.second;
+
+                    String key = npc.getNestedColumnKey(nestedCol);
+                    nestedProperties.put(key, createColMap(nestedCtx, nestedCol, arrayMultiValueColumns, includeFormattedValue, doItWithStyle, nestedPropertiesAsArray));
+                }
+                nestedProps = nestedProperties;
+            }
+
+            return nestedProps;
         }
         else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
         {
