@@ -814,6 +814,7 @@ public class PipelineManager
         return archiveFile;
     }
 
+    @Deprecated //Prefer the Path version
     public static File getArchiveXmlFile(Container container, File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
     {
         return getArchiveXmlFile(container, archiveFile.toPath(), xmlFileName, errors).toFile();
@@ -874,7 +875,7 @@ public class PipelineManager
     public static Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, String xmlFileName) throws InvalidFileException
     {
         // when importing a folder archive for a study, the study.xml file may not be at the root
-        if ("study.xml".equals(xmlFileName) && archiveFile.getFileName().endsWith(".folder.zip"))
+        if ("study.xml".equals(xmlFileName) && archiveFile.getFileName().toString().endsWith(".folder.zip"))
         {
             File folderXml = new File(importDir.toFile(), "folder.xml");
             FolderDocument folderDoc;
