@@ -274,7 +274,7 @@ public class ExpLineage
 
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearestParents(null, seed, nodes, edges, true);
+        return findNearestParents(null, null, seed, nodes, edges, true);
     }
 
     public <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed)
@@ -284,20 +284,28 @@ public class ExpLineage
 
         Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
-        return findNearestParents(parentClazz, seed, nodes, edges);
+        return findNearestParents(parentClazz, null, seed, nodes, edges, false);
     }
 
-    private <T extends ExpRunItem> Set<T> findNearestParents(Class<T> parentClazz, Identifiable seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    /**
+     * Find nearest parents of the given cpasType (SampleType or DataClass)
+     */
+    public <T extends ExpRunItem> Set<T> findNearestParents(String cpasType, Identifiable seed)
     {
-        return findNearestParents(parentClazz, seed, nodes, edges, false);
+        if (!_seeds.contains(seed))
+            throw new UnsupportedOperationException();
+
+        Map<String, Identifiable> nodes = processNodes();
+        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
+        return findNearestParents(null, cpasType, seed, nodes, edges, false);
     }
 
-    private <T extends ExpRunItem> Set<T> findNearestParents(@Nullable Class<T> parentClazz, Identifiable seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges, boolean findBothMaterialAndData)
+    private <T extends ExpRunItem> Set<T> findNearestParents(@Nullable Class<T> parentClazz, @Nullable String cpasType, Identifiable seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges, boolean findBothMaterialAndData)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
 
-        assert parentClazz == ExpMaterial.class || parentClazz == ExpData.class || findBothMaterialAndData;
+        assert cpasType != null || parentClazz == ExpMaterial.class || parentClazz == ExpData.class || findBothMaterialAndData;
 
         // walk from start through edges looking for all sample children, stopping at first ones found
         Set<T> parents = new HashSet<>();
@@ -323,6 +331,10 @@ public class ExpLineage
                         stack.add(parent);
                         seen.add(parent);
                     }
+                }
+                else if (cpasType != null && parent instanceof ExpRunItem && cpasType.equals(((ExpRunItem)parent).getCpasType()))
+                {
+                    parents.add((T) parent);
                 }
                 else if ((parentClazz == ExpMaterial.class && parent instanceof ExpMaterial) ||
                          (parentClazz == ExpData.class && parent instanceof ExpData) ||

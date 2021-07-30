@@ -23,6 +23,8 @@ import org.labkey.api.data.Activity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.column.ColumnInfoFilter;
+import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -57,6 +59,9 @@ public interface ComplianceService
         ServiceRegistry.get().registerService(ComplianceService.class, instance);
     }
 
+    ColumnInfoTransformer NOOP_COLUMN_INFO_TRANSFORMER = columnInfo -> columnInfo;
+
+    boolean isComplianceSupported();
     String getModuleName();
     ActionURL urlFor(Container container, QueryAction action, ActionURL queryBasedUrl);
     boolean hasElecSignPermission(@NotNull Container container, @NotNull User user);
@@ -94,8 +99,18 @@ public interface ComplianceService
 
     JSONObject getPageContextJson();
 
+    ColumnInfoFilter filter(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
+
+    ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi);
+
     class DefaultComplianceService implements ComplianceService
     {
+        @Override
+        public boolean isComplianceSupported()
+        {
+            return false;
+        }
+
         @Override
         public String getModuleName()
         {
@@ -172,6 +187,19 @@ public interface ComplianceService
         public JSONObject getPageContextJson()
         {
             return null;
+        }
+
+        @Override
+        public ColumnInfoFilter filter(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi)
+        {
+            // no-op filter
+            return (col) -> true;
+        }
+
+        @Override
+        public ColumnInfoTransformer transformer(@NotNull PhiColumnBehavior behavior, @NotNull PHI maxAllowedPhi)
+        {
+            return NOOP_COLUMN_INFO_TRANSFORMER;
         }
     }
 }

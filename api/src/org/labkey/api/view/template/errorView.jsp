@@ -53,7 +53,8 @@
                 message: <%=q(model.getHeading())%>,
                 errorType: <%=q(model.getErrorType())%>,
                 stackTrace: <%=q(stackTrace.toString())%>,
-                errorCode: <%=q(model.getErrorCode())%>
+                errorCode: <%=q(model.getErrorCode())%>,
+                advice: <%=q(model.getAdvice())%>
             }
         });
     });

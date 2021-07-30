@@ -9293,7 +9293,7 @@ public class AdminController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @SuppressWarnings("UnusedDeclaration")
     @RequiresNoPermission
-    @IgnoresForbiddenProjectCheck // This should be called in root
+    @IgnoresForbiddenProjectCheck // Skip the "forbidden project" check since it disallows root
     public static class LogClientExceptionAction extends MutatingApiAction<ExceptionForm>
     {
         @Override

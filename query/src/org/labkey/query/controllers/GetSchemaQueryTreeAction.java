@@ -15,6 +15,7 @@
  */
 package org.labkey.query.controllers;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
@@ -139,50 +140,62 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
                     }
 
                     Map<String, JSONObject> queries = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-                    //get built-in queries
-                    List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
-
-                    for (String qname : queryNames)
+                    if (form.isShowBuiltInTables())
                     {
-                        TableInfo tinfo = null;
-                        try
+                        //get built-in queries
+                        List<String> queryNames = new ArrayList<>(form.isShowHidden() ? uschema.getTableNames() : uschema.getVisibleTableNames());
+
+                        for (String qname : queryNames)
                         {
-                            // Try to get the TableInfo so we can send back its description
-                            tinfo = uschema.getTable(qname);
-                        }
-                        catch (QueryException ignored)
-                        {
-                        }
+                            TableInfo tinfo = null;
+                            try
+                            {
+                                // Try to get the TableInfo so we can send back its description
+                                tinfo = uschema.getTable(qname);
+                            }
+                            catch (QueryException ignored)
+                            {
+                            }
 
-                        String label = qname;
-                        if (null != tinfo)
-                            label = tinfo.getTitle();           // Display title defaults to name, but uses label if set
+                            String label = qname;
+                            if (null != tinfo)
+                                label = tinfo.getTitle();           // Display title defaults to name, but uses label if set
 
-                        // If there's an error, still include the table in the tree
-                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, queries, true);
-                    }
-
-                    //get user-defined queries
-                    Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
-                    queryNames = new ArrayList<>(queryDefMap.keySet());
-
-                    for (String qname : queryNames)
-                    {
-                        QueryDefinition qdef = queryDefMap.get(qname);
-                        if (!qdef.isTemporary())
-                        {
-                            if (qdef.isHidden() && !form.isShowHidden())
-                                continue;
-
-                            // LinkedSchemaQueryDefinitions should be considered to be tables, and we can distinguish them
-                            // based on how the report isUserDefined()
-                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, !qdef.isUserDefined());
+                            // If there's an error, still include the table in the tree
+                            addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, queries, true, false);
                         }
                     }
 
-                    for (JSONObject value : queries.values())
+                    if (form.isShowModuleDefined() || form.isShowUserDefined())
                     {
-                        respArray.put(value);
+                        //get user-defined queries
+                        Map<String, QueryDefinition> queryDefMap = uschema.getQueryDefs();
+                        List<String> queryNames = new ArrayList<>(queryDefMap.keySet());
+
+                        for (String qname : queryNames)
+                        {
+                            QueryDefinition qdef = queryDefMap.get(qname);
+                            if (!qdef.isTemporary())
+                            {
+                                if (qdef.isHidden() && !form.isShowHidden())
+                                    continue;
+
+                                boolean fromModule = !StringUtils.isBlank(qdef.getModuleName());
+
+                                if ((!fromModule && form.isShowUserDefined()) ||
+                                        (fromModule && form.isShowModuleDefined()))
+                                {
+                                    // LinkedSchemaQueryDefinitions should be considered to be tables, and we can distinguish them
+                                    // based on how the report isUserDefined()
+                                    addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), queries, !qdef.isUserDefined(), fromModule);
+                                }
+                            }
+                        }
+
+                        for (JSONObject value : queries.values())
+                        {
+                            respArray.put(value);
+                        }
                     }
                 }
             }
@@ -207,7 +220,7 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         return schemaProps;
     }
 
-    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, Map<String, JSONObject> list, boolean table)
+    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, Map<String, JSONObject> list, boolean table, boolean fromModule)
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
@@ -219,6 +232,10 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         qprops.put("text", text);
         qprops.put("leaf", true);
         qprops.put("table", table);
+        if (!table)
+        {
+            qprops.put("fromModule", fromModule);
+        }
         if (null != description)
         {
             qprops.put("description", description);
@@ -232,6 +249,9 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         private String _node;
         private SchemaKey _schemaName;
         private boolean _showHidden;
+        private boolean _showUserDefined = true;
+        private boolean _showModuleDefined = true;
+        private boolean _showBuiltInTables = true;
 
         public String getNode()
         {
@@ -261,6 +281,36 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         public void setShowHidden(boolean showHidden)
         {
             _showHidden = showHidden;
+        }
+
+        public boolean isShowUserDefined()
+        {
+            return _showUserDefined;
+        }
+
+        public void setShowUserDefined(boolean showUserDefined)
+        {
+            _showUserDefined = showUserDefined;
+        }
+
+        public boolean isShowModuleDefined()
+        {
+            return _showModuleDefined;
+        }
+
+        public void setShowModuleDefined(boolean showModuleDefined)
+        {
+            _showModuleDefined = showModuleDefined;
+        }
+
+        public boolean isShowBuiltInTables()
+        {
+            return _showBuiltInTables;
+        }
+
+        public void setShowBuiltInTables(boolean showBuiltInTables)
+        {
+            _showBuiltInTables = showBuiltInTables;
         }
     }
 }

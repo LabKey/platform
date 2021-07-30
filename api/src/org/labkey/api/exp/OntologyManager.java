@@ -848,8 +848,8 @@ public class OntologyManager
             sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject().getSelectName()).append(" WHERE ");
             if (c != null)
             {
-                sqlDeleteProperties.append(" Container = ?").add(c.getId());
-                sqlDeleteProperties.append(" AND ");
+                sqlDeleteObjects.append(" Container = ?").add(c.getId());
+                sqlDeleteObjects.append(" AND ");
             }
             sqlDeleteObjects.append("ObjectURI IN (");
             sqlDeleteObjects.append(sub);

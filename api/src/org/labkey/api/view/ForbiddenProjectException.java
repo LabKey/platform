@@ -15,16 +15,25 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
- * Thrown when admin is impersonating within a project and attempts to access a folder outside that project. Used to
- * provide a more helpful error message compared with a vanilla {@link UnauthorizedException}.
+ * Thrown when a user accesses a forbidden project, for example, when an admin is impersonating within a project and
+ * attempts to access a folder outside that project or when a non-project admin attempts to access a locked project.
+ * Used to provide a more helpful error message compared with a vanilla {@link UnauthorizedException}.
  * User: adam
  * Date: Aug 27, 2008
  */
 public class ForbiddenProjectException extends UnauthorizedException
 {
-    public ForbiddenProjectException()
+    public ForbiddenProjectException(String message)
     {
-        super("You are not allowed to access this folder while impersonating within a different project.");
+        super(message);
+    }
+
+    @Override
+    public @Nullable String getAdvice()
+    {
+        return null;
     }
 }
