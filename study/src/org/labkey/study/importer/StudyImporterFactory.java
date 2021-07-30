@@ -62,7 +62,7 @@ import java.util.TreeMap;
 public class StudyImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter create()
+    public FolderImporter<?> create()
     {
         return new StudyFolderImporter();
     }
@@ -73,7 +73,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         return 60;
     }
 
-    public class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
+    public static class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()
@@ -88,7 +88,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
@@ -113,7 +113,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     if (studyXml instanceof StudyDocument)
                     {
                         studyDoc = (StudyDocument)studyXml;
-                        XmlBeansUtil.validateXmlDocument(studyDoc);
+                        XmlBeansUtil.validateXmlDocument(studyDoc, studyFileName);
                     }
                     else
                         throw new ImportException("Unable to get an instance of StudyDocument from " + studyFileName);
@@ -123,12 +123,12 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(studyDir.getRelativePath(studyFileName), e);
                 }
 
-                //TODO this should account for the CloudImportContext if cloud root
+                boolean isCloudRoot = job != null && job.getPipeRoot().isCloudRoot();
                 StudyImportContext studyImportContext = new StudyImportContext.Builder(user,c)
                         .withDocument(studyDoc)
                         .withDataTypes(ctx.getDataTypes())
                         .withLogger(ctx.getLoggerGetter())
-                        .withRoot(job.getPipeRoot().isCloudRoot() ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
+                        .withRoot(isCloudRoot ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
                         .build();
 
 //                new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
@@ -149,7 +149,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 if (null != SpecimenService.get())
                 {
                     Path specimenFile = studyImportContext.getSpecimenArchive(studyDir);
-                    if (job.getPipeRoot().isCloudRoot())
+                    if (isCloudRoot)
                     {   //TODO this should be done from the import context getSpecimenArchive
                         specimenFile = job.getPipeRoot().getRootNioPath().relativize(specimenFile);
                         specimenFile = job.getPipeRoot().getImportDirectory().toPath().resolve(specimenFile);
