@@ -511,6 +511,7 @@ public class PropertyController extends SpringActionController
     public static class UpdateDomainApiForm
     {
         private int domainId;
+        private String domainName;
         private boolean includeWarnings;
         private List<Integer> deleteFields;
         private List<GWTPropertyDescriptor> updateFields;
@@ -524,6 +525,16 @@ public class PropertyController extends SpringActionController
         public void setDomainId(int domainId)
         {
             this.domainId = domainId;
+        }
+
+        public String getDomainName()
+        {
+            return domainName;
+        }
+
+        public void setDomainName(String domainName)
+        {
+            this.domainName = domainName;
         }
 
         public boolean isIncludeWarnings()
@@ -592,13 +603,27 @@ public class PropertyController extends SpringActionController
         @Override
         public void validateForm(UpdateDomainApiForm form, Errors errors)
         {
-            if (form.getDomainId() == 0)
+            if (form.getDomainId() == 0 && form.getDomainName() == null)
             {
-                errors.rejectValue("domainId", ERROR_MSG, "domainId required");
+                errors.reject(ERROR_REQUIRED, "Either domainId or domainName is required.");
                 return;
             }
 
             _domain = PropertyService.get().getDomain(form.getDomainId());
+            if (_domain == null && form.getDomainName() != null)
+            {
+                Set<String> nameSet = new HashSet<>();
+                nameSet.add(form.getDomainName());
+                List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUser(), null, nameSet, false);
+                if (domains.size() > 1)
+                {
+                    errors.rejectValue("domainName", ERROR_MSG, "more than one domain for the domain name " + form.getDomainName());
+                }
+
+                if (domains.size() == 1)
+                    _domain = domains.get(0);
+            }
+
             if (_domain == null)
                 throw new NotFoundException("Could not find domain " + form.getDomainId() + ".");
 
