@@ -40,6 +40,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
@@ -66,6 +67,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -78,6 +80,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
@@ -211,6 +214,12 @@ public class OntologyManager
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
 
+    static public String PropertyOrderURI = "urn:exp.labkey.org/#PropertyOrder";
+    /**
+     * An comma-separated list of propertyID that indicates the sort order of the properties attached to an object.
+     */
+    static public SystemProperty PropertyOrder = new SystemProperty(PropertyOrderURI, PropertyType.STRING);
+
     static
     {
         BeanObjectFactory.Registry.register(ObjectProperty.class, new ObjectProperty.ObjectPropertyObjectFactory());
@@ -227,7 +236,7 @@ public class OntologyManager
      */
     public static @NotNull Map<String, Object> getProperties(Container container, String parentLSID)
     {
-        Map<String, Object> m = new HashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
         Map<String, ObjectProperty> propVals = getPropertyObjects(container, parentLSID);
         if (null != propVals)
         {
@@ -702,6 +711,9 @@ public class OntologyManager
 
 
     /**
+     * Get ordered map of property values for an object. The order of the properties in the
+     * Map corresponds to the <code>PropertyOrder</code> property, if present.
+     *
      * @return map from PropertyURI to ObjectProperty
      */
     public static Map<String, ObjectProperty> getPropertyObjects(Container container, String objectLSID)
@@ -728,8 +740,47 @@ public class OntologyManager
             }
         }
 
-        m = new HashMap<>();
-        for (ObjectProperty value : new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class))
+        List<ObjectProperty> props = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class);
+
+        // check for a "PropertyOrder" value
+        ObjectProperty propertyOrder = props.stream().filter(op -> PropertyOrderURI.equals(op.getPropertyURI())).findFirst().orElse(null);
+        if (propertyOrder != null)
+        {
+            String order = propertyOrder.getStringValue();
+            if (order != null)
+            {
+                // CONSIDER: Store as a JSONArray of propertyURI instead of propertyId
+                String[] parts = order.split(",");
+                try
+                {
+                    List<Integer> propertyIds = Arrays.stream(parts).map(s -> ConvertHelper.convert(s, Integer.class)).collect(Collectors.toList());
+
+                    // Don't include the "PropertyOrder" property
+                    props = new ArrayList<>(props);
+                    props.remove(propertyOrder);
+
+                    // Order by the index found in the PropertyOrder list, otherwise just stick it at the end
+                    Comparator<ObjectProperty> comparator = (op1, op2) -> {
+                        int i1 = propertyIds.indexOf(op1.getPropertyId());
+                        if (i1 == -1)
+                            i1 = propertyIds.size();
+
+                        int i2 = propertyIds.indexOf(op2.getPropertyId());
+                        if (i2 == -1)
+                            i2 = propertyIds.size();
+                        return i1 - i2;
+                    };
+                    props.sort(comparator);
+                }
+                catch (ConversionException e)
+                {
+                    _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                }
+            }
+        }
+
+        m = new LinkedHashMap<>();
+        for (ObjectProperty value : props)
         {
             m.put(value.getPropertyURI(), value);
         }
@@ -737,6 +788,25 @@ public class OntologyManager
         m = unmodifiableMap(m);
         mapCache.put(objectLSID, m);
         return m;
+    }
+
+    public static void updateObjectPropertyOrder(User user, Container container, String objectLSID, List<PropertyDescriptor> properties)
+            throws ValidationException
+    {
+        String ids = null;
+        if (properties != null && !properties.isEmpty())
+            ids = properties.stream().map(pd -> Integer.toString(pd.getPropertyId())).collect(joining(","));
+
+        updateObjectProperty(user, container, PropertyOrder.getPropertyDescriptor(), objectLSID, ids, null, false);
+    }
+
+    /**
+     * Get ordered list of the PropertyURI in {@link #PropertyOrder}, if present.
+     */
+    public static List<String> getObjectPropertyOrder(Container c, String objectLSID)
+    {
+        Map<String, ObjectProperty> props = getPropertyObjects(c, objectLSID);
+        return new ArrayList<>(props.keySet());
     }
 
     public static int ensureObject(Container container, String objectURI)
@@ -2755,6 +2825,7 @@ public class OntologyManager
         public void testBasicPropertiesObject() throws ValidationException
         {
             Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            User user = TestContext.get().getUser();
             String parentObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
 
@@ -2772,18 +2843,26 @@ public class OntologyManager
             assertEquals(oParent.getContainer(), c);
 
             String strProp = new Lsid("Junit", "OntologyManager", "stringProp").toString();
-            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
+            insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, strProp, "The String"));
+            PropertyDescriptor strPd = getPropertyDescriptor(strProp, c);
+            assertEquals(PropertyType.STRING, strPd.getPropertyType());
 
             String intProp = new Lsid("Junit", "OntologyManager", "intProp").toString();
-            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+            insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 5));
+            PropertyDescriptor intPd = getPropertyDescriptor(intProp, c);
+            assertEquals(PropertyType.INTEGER, intPd.getPropertyType());
 
             String longProp = new Lsid("Junit", "OntologyManager", "longProp").toString();
-            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, longProp, 6L));
+            insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, longProp, 6L));
+            PropertyDescriptor longPd = getPropertyDescriptor(longProp, c);
+            assertEquals(PropertyType.BIGINT, longPd.getPropertyType());
 
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.MILLISECOND, 0);
             String dateProp = new Lsid("Junit", "OntologyManager", "dateProp").toString();
-            insertProperties(c, parentObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
+            insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, dateProp, cal.getTime()));
+            PropertyDescriptor datePd = getPropertyDescriptor(dateProp, c);
+            assertEquals(PropertyType.DATE_TIME, datePd.getPropertyType());
 
             Map<String, Object> m = getProperties(c, oChild.getObjectURI());
             assertNotNull(m);
@@ -2792,6 +2871,29 @@ public class OntologyManager
             assertEquals(5, m.get(intProp));
             assertEquals(6L, m.get(longProp));
             assertEquals(cal.getTime(), m.get(dateProp));
+
+            // Set property order: date, str, int.  Long property will sort to last since it isn't explicitly included.
+            List<PropertyDescriptor> propertyOrder = List.of(datePd, strPd, intPd);
+            updateObjectPropertyOrder(user, c, childObjectLsid, propertyOrder);
+
+            Map<String, ObjectProperty> oProps = getPropertyObjects(c, childObjectLsid);
+            var iter = oProps.entrySet().iterator();
+            assertEquals(cal.getTime(), iter.next().getValue().value());
+            assertEquals("The String", iter.next().getValue().value());
+            assertEquals(5, iter.next().getValue().value());
+            assertEquals(6L, iter.next().getValue().value());
+            assertFalse(iter.hasNext());
+
+            // Update property order: int, date, long, str
+            propertyOrder = List.of(intPd, datePd, longPd, strPd);
+            updateObjectPropertyOrder(user, c, childObjectLsid, propertyOrder);
+            oProps = getPropertyObjects(c, childObjectLsid);
+            iter = oProps.entrySet().iterator();
+            assertEquals(5, iter.next().getValue().value());
+            assertEquals(cal.getTime(), iter.next().getValue().value());
+            assertEquals(6L, iter.next().getValue().value());
+            assertEquals("The String", iter.next().getValue().value());
+            assertFalse(iter.hasNext());
 
             deleteOntologyObjects(c, parentObjectLsid);
             assertNull(getOntologyObject(c, parentObjectLsid));

@@ -3,6 +3,7 @@ package org.labkey.api.query;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.ExtendedApiQueryResponse.ColMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -14,8 +15,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
@@ -38,7 +37,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -105,10 +103,8 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
 
         if (null != currentLsid)
         {
-            // get the properties used by the object
-            TableSelector ts = new TableSelector(OntologyManager.getTinfoObjectPropertiesView(),
-                    Set.of("PropertyURI"), new SimpleFilter(FieldKey.fromParts("ObjectURI"), currentLsid), null);
-            List<String> propertyURIs = ts.getArrayList(String.class);
+            // get the ordered list of properties used by the object
+            List<String> propertyURIs = OntologyManager.getObjectPropertyOrder(this.schema.getContainer(), currentLsid);
 
             // create property descriptors and columns
             for (String propertyURI : propertyURIs)
@@ -241,12 +237,23 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
         return toJSONString(ctx);
     }
 
+    public List<ColMap> toColMaps(RenderContext ctx)
+    {
+        if (innerCtxLsid != null && !innerCtxCols.isEmpty())
+        {
+            var nested = ExtendedApiQueryResponse.getNestedPropertiesArray(ctx, this, true, true, false);
+            return nested;
+        }
+
+        return null;
+    }
+
     // return json object in same style as select rows response
     public JsonNode toJSONNode(RenderContext ctx)
     {
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            Object o = ExtendedApiQueryResponse.createColMap(ctx, this, true, true, false, true);
+            var o = toColMaps(ctx);
             return JsonUtil.DEFAULT_MAPPER.valueToTree(o);
         }
 
