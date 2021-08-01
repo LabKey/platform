@@ -4967,7 +4967,7 @@ public class ExperimentController extends SpringActionController
                         Map<String, Object> pvs = new HashMap<>();
                         for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
                             pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                        outputMaterial.setProperties(getUser(), pvs);
+                        outputMaterial.setProperties(getUser(), pvs, false);
                     }
 
                     outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));

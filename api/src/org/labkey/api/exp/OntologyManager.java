@@ -32,7 +32,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -2045,23 +2044,23 @@ public class OntologyManager
      * supplied.
      */
     @Deprecated
-    public static void insertProperties(Container container, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
+    public static void insertProperties(Container container, @Nullable String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
         User user = HttpView.hasCurrentView() ? HttpView.currentContext().getUser() : null;
         insertProperties(container, user, ownerObjectLsid, properties);
     }
 
-    public static void insertProperties(Container container, User user, String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
+    public static void insertProperties(Container container, User user, @Nullable String ownerObjectLsid, ObjectProperty... properties) throws ValidationException
     {
         insertProperties(container, user, ownerObjectLsid, false, properties);
     }
 
-    public static void insertProperties(Container container, User user, String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
+    public static void insertProperties(Container container, User user, @Nullable String ownerObjectLsid, boolean skipValidation, ObjectProperty... properties) throws ValidationException
     {
         insertProperties(container, user, ownerObjectLsid, skipValidation, false, properties);
     }
 
-    public static void insertProperties(Container container, User user, String ownerObjectLsid, boolean skipValidation, boolean insertNullValues, ObjectProperty... properties) throws ValidationException
+    public static void insertProperties(Container container, User user, @Nullable String ownerObjectLsid, boolean skipValidation, boolean insertNullValues, ObjectProperty... properties) throws ValidationException
     {
         try (Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
@@ -2577,7 +2576,20 @@ public class OntologyManager
         return pd;
     }
 
-    public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject, boolean insertNullValues) throws ValidationException
+    /**
+     * Insert or update an object property value.
+     *
+     * @param user The user inserting the property - currently only used for validating lookup values.
+     * @param container Insert the property value into the this container.
+     * @param pd The property descriptor.
+     * @param lsid The object on which to attach the properties.
+     * @param value The value to insert.
+     * @param ownerObjectLsid The "owner" object or "parent" object, which isn't necessarily same as the object.  For example, samples use the ExpSampleType as the owner object.
+     * @param insertNullValues When true, a null value will be inserted if the value is null, otherwise any existing property value will be deleted if the value is null.
+     * @return The inserted ObjectProperty or null
+     * @throws ValidationException
+     */
+    public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable String ownerObjectLsid, boolean insertNullValues) throws ValidationException
     {
         ObjectProperty oprop;
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
@@ -2588,7 +2600,7 @@ public class OntologyManager
             if (value != null || insertNullValues)
             {
                 oprop.setPropertyId(pd.getPropertyId());
-                OntologyManager.insertProperties(container, user, expObject == null ? lsid : expObject.getLSID(), false, insertNullValues, oprop);
+                OntologyManager.insertProperties(container, user, ownerObjectLsid, false, insertNullValues, oprop);
             }
             else
             {
