@@ -24,4 +24,12 @@ package org.labkey.api.data;
  */
 public interface UpgradeCode
 {
+    /**
+     * Allow upgrade code to handle arbitrary 'method names', essentially allowing parameterized Java upgrade code.
+     * For example, the method name could include the name of an ETL to execute
+     */
+    default void fallthroughHandler(String methodName)
+    {
+        throw new RuntimeException("Can't find method " + methodName + "(ModuleContext moduleContext) on class " + this.getClass().getName());
+    }
 }

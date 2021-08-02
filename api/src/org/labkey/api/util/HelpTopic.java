@@ -44,6 +44,11 @@ public class HelpTopic
 
     private final String _topic;
 
+    public String getTopic()
+    {
+        return _topic;
+    }
+
     public HelpTopic(@NotNull String topic)
     {
         _topic = topic;
