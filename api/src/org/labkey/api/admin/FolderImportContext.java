@@ -30,6 +30,7 @@ import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -117,9 +118,9 @@ public class FolderImportContext extends AbstractFolderContext
 
         FolderDocument folderDoc;
 
-        try
+        try (InputStream inputStream = Files.newInputStream(folderXml))
         {
-            folderDoc = FolderDocument.Factory.parse(Files.newBufferedReader(folderXml), XmlBeansUtil.getDefaultParseOptions());
+            folderDoc = FolderDocument.Factory.parse(inputStream, XmlBeansUtil.getDefaultParseOptions());
             XmlBeansUtil.validateXmlDocument(folderDoc, folderXml.getFileName().toString());
         }
         catch (XmlException | XmlValidationException e)

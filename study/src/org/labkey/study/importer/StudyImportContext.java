@@ -150,9 +150,9 @@ public class StudyImportContext extends SimpleStudyImportContext
 
         StudyDocument studyDoc;
 
-        try
+        try (InputStream inputStream = Files.newInputStream(studyXml))
         {
-            studyDoc = StudyDocument.Factory.parse(Files.newBufferedReader(studyXml), XmlBeansUtil.getDefaultParseOptions());
+            studyDoc = StudyDocument.Factory.parse(inputStream, XmlBeansUtil.getDefaultParseOptions());
             XmlBeansUtil.validateXmlDocument(studyDoc, studyXml.getFileName().toString());
         }
         catch (XmlException | XmlValidationException e)

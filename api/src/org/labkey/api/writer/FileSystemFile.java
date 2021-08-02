@@ -25,7 +25,6 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -159,9 +158,9 @@ public class FileSystemFile extends AbstractVirtualFile
 
         if (Files.exists(file))
         {
-            try (BufferedReader reader = Files.newBufferedReader(file))
+            try (InputStream inputStream = Files.newInputStream(file))
             {
-                return XmlObject.Factory.parse(reader, XmlBeansUtil.getDefaultParseOptions());
+                return XmlObject.Factory.parse(inputStream, XmlBeansUtil.getDefaultParseOptions());
             }
             catch (XmlException e)
             {
