@@ -1573,7 +1573,7 @@ abstract public class PipelineJob extends Job implements Serializable
             if (null == _logFilePathName || FileUtil.hasCloudScheme(_logFilePathName))
                 throw new IllegalStateException("LogFile null or cloud.");
 
-            File logFile = null != _logFile ? _logFile : new File(_logFilePathName);
+            File logFile = null != _logFile ? _logFile : Path.of(URI.create(_logFilePathName)).toFile();
 
             // Create appending logger.
             String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
