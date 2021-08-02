@@ -24,7 +24,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         isAutoIncrement: {
             abbreviation: 'AI',
             label: 'Auto-Increment',
-            description: 'This value for this column is automatically assigned to an incrememnting integer value by the server.'
+            description: 'This value for this column is automatically assigned to an incrementing integer value by the server.'
         },
         isKeyField: {
             abbreviation: 'PK',
@@ -636,14 +636,15 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             children.push({
                 tag: 'span',
                 style: 'cursor: default;',
-                html: 'LabKey SQL query' + (queryDetails.moduleName ? ' defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module' : '')
+                html: '<img src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid-sql' + (queryDetails.moduleName ? '' : '-editable') + '.png" height="16" width="16" alt="' + (queryDetails.moduleName ? 'Module' : 'User') + '-defined query"/>' +
+                        '&nbsp;' + (queryDetails.moduleName ? '' : 'User-defined ') + 'LabKey SQL query' + (queryDetails.moduleName ? ' defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module' : '')
             });
         }
         else {
             children.push({
                 tag: 'span',
                 style: 'cursor: default;',
-                html: 'Built-in table'
+                html: '<img src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid.gif" height="16" width="16" alt="System table"/>&nbsp;Built-in table'
             });
         }
 

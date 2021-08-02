@@ -25,6 +25,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.ServletException;
@@ -42,6 +43,7 @@ public class ErrorRenderer
     private final ErrorRendererProperties _errorRendererProps;
     private final String _title;
     private final String _errorCode;
+    private final String _advice;
 
     private ErrorType _errorType;
 
@@ -65,6 +67,7 @@ public class ErrorRenderer
         _isStartupFailure = isStartupFailure;
         _errorRendererProps = (x instanceof ErrorRendererProperties ? (ErrorRendererProperties)x : null);
         _errorCode = errorCode;
+        _advice = (x instanceof UnauthorizedException ? ((UnauthorizedException) x).getAdvice() : null);
 
         if (null == _errorRendererProps)
         {
@@ -267,5 +270,10 @@ public class ErrorRenderer
     public String getErrorCode()
     {
         return _errorCode;
+    }
+
+    public String getAdvice()
+    {
+        return _advice;
     }
 }
