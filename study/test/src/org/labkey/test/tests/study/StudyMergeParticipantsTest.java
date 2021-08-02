@@ -185,7 +185,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         refresh();
         waitForFormElementToEqual(Locator.input("datasetCombo"),ALIAS_DATASET);
 
-        clickButton("Done", "Manage Study");
+        clickButton("Done");
     }
 
     @Override
