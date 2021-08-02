@@ -88,7 +88,7 @@ public abstract class BrowserEndpoint extends Endpoint
         }
     }
 
-    public abstract String getWSRemoteUri(Session session, EndpointConfig endpointConfig) throws MalformedURLException, ServletException;
+    public abstract String getWSRemoteUri(Session session, EndpointConfig endpointConfig) throws URISyntaxException, MalformedURLException, ServletException;
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig)
