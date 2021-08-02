@@ -28,6 +28,7 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -230,7 +231,7 @@ public class HttpUtil
      * Check for cases that should not respond with a Redirect, used by getUpgradeMaintenanceRedirect()
      * @return true if this seems like an API request based on the HTTP headers, including Content-Type and User-Agent
      */
-    public static boolean isApiLike(HttpServletRequest request, Controller action)
+    public static boolean isApiLike(@NotNull HttpServletRequest request, Controller action)
     {
         boolean throwUnauthorized = StringUtils.equals("UNAUTHORIZED",request.getHeader("X-ONUNAUTHORIZED"));
         boolean xmlhttp = StringUtils.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
@@ -241,7 +242,7 @@ public class HttpUtil
     }
 
     /** @return best guess if the request is from a browser vs. a WebDAV client or client API */
-    public static boolean isBrowser(HttpServletRequest request)
+    public static boolean isBrowser(@NotNull HttpServletRequest request)
     {
         if ("XMLHttpRequest".equals(request.getHeader("x-requested-with")))
             return true;
@@ -252,14 +253,20 @@ public class HttpUtil
     }
 
     /** @return best guess if the request came from a Chrome browser */
-    public static boolean isChrome(HttpServletRequest request)
+    public static boolean isChrome(@NotNull HttpServletRequest request)
     {
         String userAgent = request.getHeader("User-Agent");
         return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
     }
 
+    public static boolean isSafari(@NotNull HttpServletRequest request)
+    {
+        String userAgent = request.getHeader("User-Agent");
+        return !isChrome(request) && StringUtils.containsIgnoreCase(userAgent, "safari");
+    }
+
     /** @return best guess if the request came from the OSX integrated WebDAV client */
-    public static boolean isMacFinder(HttpServletRequest request)
+    public static boolean isMacFinder(@NotNull HttpServletRequest request)
     {
         String userAgent = request.getHeader("User-Agent");
         if (null == userAgent)
@@ -268,13 +275,11 @@ public class HttpUtil
     }
 
     /** @return best guess if the request came from the Windows Explorer integrated WebDAV client */
-    public static boolean isWindowsExplorer(HttpServletRequest request)
+    public static boolean isWindowsExplorer(@NotNull HttpServletRequest request)
     {
         String userAgent = request.getHeader("User-Agent");
         if (null == userAgent)
             return false;
         return userAgent.startsWith("Microsoft-WebDAV");
     }
-
-
 }
