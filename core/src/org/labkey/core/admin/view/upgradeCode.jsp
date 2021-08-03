@@ -1,15 +1,13 @@
 <%@ page import="org.labkey.api.data.DeferredUpgrade" %>
-<%@ page import="org.labkey.core.admin.sql.SqlScriptController.ScriptsAction" %>
-<%@ page import="org.labkey.core.admin.sql.SqlScriptController.UpgradeCodeAction" %>
 <%@ page import="org.labkey.api.data.UpgradeCode" %>
 <%@ page import="org.labkey.api.module.ModuleContext" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.core.admin.sql.SqlScriptController.ScriptsAction" %>
+<%@ page import="org.labkey.core.admin.sql.SqlScriptController.UpgradeCodeAction" %>
 <%@ page import="java.lang.reflect.Modifier" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
