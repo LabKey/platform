@@ -52,6 +52,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
 
     /** Will perform type conversion if needed */
     void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException;
+    void setProperty(User user, PropertyDescriptor pd, Object value, boolean insertNullValue) throws ValidationException;
     Object getProperty(PropertyDescriptor pd);
     Object getProperty(DomainProperty prop);
 
