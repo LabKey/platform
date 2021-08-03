@@ -40,5 +40,3 @@
     <%=button("Invoke").submit(true)%>&nbsp;
     <%=button("Cancel").href(urlFor(ScriptsAction.class))%>
 </labkey:form>
-
-

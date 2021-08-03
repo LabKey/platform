@@ -16,6 +16,8 @@
 
 package org.labkey.core.admin.sql;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -93,6 +95,7 @@ import java.util.stream.Collectors;
 public class SqlScriptController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SqlScriptController.class);
+    private static final Logger LOG = LogManager.getLogger(SqlScriptController.class);
 
     public SqlScriptController()
     {
@@ -1386,6 +1389,7 @@ public class SqlScriptController extends SpringActionController
             try
             {
                 ModuleLoader.getInstance().setUpgradeUser(getUser());
+                LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
                 _method.invoke(null, _ctx);
             }
             finally
