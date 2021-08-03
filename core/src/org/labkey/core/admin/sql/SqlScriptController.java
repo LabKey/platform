@@ -215,10 +215,10 @@ public class SqlScriptController extends SpringActionController
 
             StringBuilder html = new StringBuilder("<table>");
 
+            html.append("<tr><td colspan=4>");
+
             if (AppProps.getInstance().isDevMode())
             {
-                html.append("<tr><td colspan=4>");
-
                 if (form.isManagedOnly())
                     html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
@@ -227,11 +227,13 @@ public class SqlScriptController extends SpringActionController
                 html.append(PageFlowUtil.link("consolidate scripts").href(new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.link("scripts with errors").href(new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.link("upgrade code").href(new ActionURL(UpgradeCodeAction.class, ContainerManager.getRoot())));
 //                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
-                html.append("</td></tr>");
-                html.append("<tr><td>&nbsp;</td></tr>");
             }
+
+            // Make this link available on production deployments
+            html.append(PageFlowUtil.link("upgrade code").href(new ActionURL(UpgradeCodeAction.class, ContainerManager.getRoot())));
+            html.append("</td></tr>");
+            html.append("<tr><td>&nbsp;</td></tr>");
 
             html.append("<tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
@@ -1425,16 +1427,17 @@ public class SqlScriptController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new GetModuleStatusAction(),
-                controller.new ScriptsWithErrorsAction(),
-                controller.new ConsolidateScriptsAction(),
                 controller.new ConsolidateSchemaAction(),
+                controller.new ConsolidateScriptsAction(),
+                controller.new GetModuleStatusAction(),
                 controller.new OrphanedScriptsAction(),
-                controller.new ScriptAction(),
-                controller.new ReorderScriptAction(),
                 controller.new ReorderAllScriptsAction(),
+                controller.new ReorderScriptAction(),
                 controller.new SaveReorderedScriptAction(),
-                controller.new UnreachableScriptsAction()
+                controller.new ScriptAction(),
+                controller.new ScriptsWithErrorsAction(),
+                controller.new UnreachableScriptsAction(),
+                controller.new UpgradeCodeAction()
             );
 
             // @AdminConsoleAction
