@@ -1,6 +1,7 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -21,8 +22,6 @@ import java.util.List;
 @BaseWebDriverTest.ClassTimeout(minutes = 3)
 public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
 {
-    static public int emailCount = 1; //Initialised 1 because the initial email is sent while dataset creation in setUp.
-
     @BeforeClass
     public static void doSetup()
     {
@@ -57,6 +56,14 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         createDataset("D4", Arrays.asList("F33", "F31"), "C2");
         createDataset("D5", Arrays.asList("F11", "F24"), null);
 
+        log("Execute the script to send the email");
+        executeScript("LABKEY.Ajax.request({ url: '/labkey/home/reports-sendDailyDigest.view', method: 'POST' });");
+    }
+
+    @Before
+    public void clearEmails()
+    {
+        enableEmailRecorder();
     }
 
     @Test
@@ -81,7 +88,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
 
         goToModule("Dumbster");
         EmailRecordTable notifications = new EmailRecordTable(this);
-        while (notifications.getEmailCount() < emailCount)
+        while (notifications.getEmailCount() < 1)
             refresh();
 
         log("Verifying the email for sent for dataset change");
@@ -125,7 +132,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
 
         goToModule("Dumbster");
         EmailRecordTable notifications = new EmailRecordTable(this);
-        while (notifications.getEmailCount() < emailCount)
+        while (notifications.getEmailCount() < 1)
             refresh();
 
         log("Verifying the email for sent for dataset change");
@@ -169,7 +176,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
 
         goToModule("Dumbster");
         EmailRecordTable notifications = new EmailRecordTable(this);
-        while (notifications.getEmailCount() < emailCount)
+        while (notifications.getEmailCount() < 1)
             refresh();
 
         notifications.clickSubjectAtIndex("Report/Dataset Change Notification", 0);
@@ -195,6 +202,4 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
             panel.addField(field);
         definitionPage.clickSave();
     }
-
-
 }
