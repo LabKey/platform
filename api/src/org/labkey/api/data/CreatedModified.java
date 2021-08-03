@@ -30,7 +30,8 @@ public abstract class CreatedModified
     @JsonIgnore // created is serialized as Long
     public void setCreated(Date created)
     {
-        setCreated(created.getTime());
+        if (created != null)
+            setCreated(created.getTime());
     }
 
     @JsonProperty("createdBy")
@@ -60,7 +61,8 @@ public abstract class CreatedModified
     @JsonIgnore // modified is serialized as Long
     public void setModified(Date modified)
     {
-        setModified(modified.getTime());
+        if (modified != null)
+            setModified(modified.getTime());
     }
 
     @JsonProperty("modifiedBy")
