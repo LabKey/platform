@@ -34,6 +34,16 @@
     if (null == returnURL)
         returnURL = urlFor(ManageVisitsAction.class);
 %>
+<style>
+    .button-reordering {
+        width: 85px;
+        margin-bottom: 5px;
+    }
+
+    .section-spacing {
+        padding-left: 50px;
+    }
+</style>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
 {
@@ -90,7 +100,7 @@ function orderModule(listName, hiddenElName, down)
             <th style="font-weight: bold;" colspan="2">Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
                     "study and specimen data. By default, visits are displayed in order of increasing visit ID for visit-based studies, and in date " +
                     "order for date-based studies.")%></th>
-            <th style="font-weight: bold;" colspan="2">Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
+            <th class="section-spacing" style="font-weight: bold;" colspan="2">Chronological Order<%= helpPopup("Chronological Order", "Chronological visit order is used to determine which visits occurred before " +
                     "or after others. Visits are chronologically ordered when all participants move only downward through the visit list. Any given " +
                     StudyService.get().getSubjectNounSingular(getContainer()).toLowerCase() + " may skip some visits, depending on " +
                     "cohort assignment or other factors. It is generally not useful to set a chronological order for date-based studies.")%></th>
@@ -108,14 +118,14 @@ function orderModule(listName, hiddenElName, down)
             }
         %>
         <tr>
-            <td colspan="2" style="padding-right: 50px;">
+            <td colspan="2">
                 <input type="checkbox"
                        name="explicitDisplayOrder"
                        value="true"<%=checked(displayEnabled)%>
                        onClick="document.reorder.displayOrderItems.disabled = !this.checked;">
                 Explicitly set display order
             </td>
-            <td colspan="2">
+            <td colspan="2" class="section-spacing">
                 <input type="checkbox"
                        name="explicitChronologicalOrder"
                        value="true"<%=checked(chronologicalEnabled) %>
@@ -125,7 +135,7 @@ function orderModule(listName, hiddenElName, down)
         </tr>
         <tr>
             <td>
-                <select multiple name="displayOrderItems" size="<%= Math.min(visits.size(), 25) %>"<%=disabled(!displayEnabled)%>>
+                <select multiple name="displayOrderItems" style="width: 200px;" size="<%= Math.min(visits.size(), 25) %>"<%=disabled(!displayEnabled)%>>
                 <%
                     boolean first = true;
                     StringBuilder orderedList = new StringBuilder();
@@ -150,13 +160,13 @@ function orderModule(listName, hiddenElName, down)
                 </select>
                 <input type="hidden" name="displayOrder" value="<%= h(orderedList) %>">
             </td>
-            <td align="center" valign="center">
-                <%= button("Move Up").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 0);") %><br><br>
-                <%= button("Move Down").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 1);") %>
+            <td align="center" valign="center" style="padding-left: 10px;">
+                <%= button("Move Up").addClass("button-reordering").onClick("return orderModule('displayOrderItems', 'displayOrder', 0);") %><br>
+                <%= button("Move Down").addClass("button-reordering").onClick("return orderModule('displayOrderItems', 'displayOrder', 1);") %>
             </td>
 
-            <td>
-                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.size(), 25) %>"<%=disabled(!chronologicalEnabled)%>>
+            <td class="section-spacing">
+                <select multiple name="chronologicalOrderItems" style="width: 200px;" size="<%= Math.min(visits.size(), 25) %>"<%=disabled(!chronologicalEnabled)%>>
                 <%
                     visits = getVisits(Visit.Order.CHRONOLOGICAL);
                     first = true;
@@ -183,9 +193,9 @@ function orderModule(listName, hiddenElName, down)
                 <input type="hidden" name="chronologicalOrder" value="<%= h(orderedList) %>">
                 <%=generateReturnUrlFormField(returnURL)%>
             </td>
-            <td align="center" valign="center">
-                <%= button("Move Up").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br><br>
-                <%= button("Move Down").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 1)") %>
+            <td align="center" valign="center" style="padding-left: 10px;">
+                <%= button("Move Up").addClass("button-reordering").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br>
+                <%= button("Move Down").addClass("button-reordering").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 1)") %>
             </td>
         </tr>
     </table>
