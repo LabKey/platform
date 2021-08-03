@@ -41,6 +41,12 @@
             isCustomOrder = true;
     }
 %>
+<style>
+    .button-reordering {
+        width: 85px;
+        margin-bottom: 5px;
+    }
+</style>
 <script type="text/javascript">
 function saveList()
 {
@@ -136,9 +142,9 @@ function toggleItemSelector()
                 %>
                 </select>
             </td>
-            <td>
-                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
-                <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
+            <td align="center" valign="center" style="padding-left: 10px;">
+                <%= button("Move Up").addClass("button-reordering").onClick("return orderModule(0)") %><br>
+                <%= button("Move Down").addClass("button-reordering").onClick("return orderModule(1)") %>
             </td>
         </tr>
     </table>
