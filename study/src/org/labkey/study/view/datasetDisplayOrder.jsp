@@ -22,13 +22,17 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<style>
+    .button-reordering {
+        width: 115px;
+        margin-bottom: 5px;
+    }
+</style>
 <script>
-function saveList(listName)
-{
+function saveList() {
     var itemList = "";
     var itemSelect = document.reorder.items;
-    for (var i = 0; i < itemSelect.length; i++)
-    {
+    for (var i = 0; i < itemSelect.length; i++) {
         itemList += itemSelect.item(i).value;
         if (i < itemSelect.length - 1)
             itemList += ",";
@@ -36,45 +40,32 @@ function saveList(listName)
     document.reorder.order.value = itemList;
 }
 
-function submitReset()
-{
+function submitReset() {
     var form = document.reorder;
     var itemSelect = form.resetOrder.value = true;
     form.submit();
     return false;
 }
 
-function orderModule(down)
-{
+function moveDatasetItem(action) {
     var itemSelect = document.reorder.items;
     var selIndex = itemSelect.selectedIndex;
-    if (selIndex != -1)
-    {
-        var swapItem = null;
-        if (selIndex > 0 && down == 0)
-        {
-            swapItem = itemSelect.item(selIndex - 1);
-            itemSelect.selectedIndex--;
+    if (selIndex !== -1) {
+        var selItem = itemSelect.item(selIndex);
+        var isFirst = selIndex === 0;
+        var isLast = selIndex === itemSelect.length - 1;
+
+        if (action === 'top' && !isFirst) {
+            document.reorder.items.insertBefore(selItem, itemSelect.item(0));
+        } else if (action === 'bottom' && !isLast) {
+            document.reorder.items.appendChild(selItem);
+        } else if (action === 'up' && !isFirst) {
+            document.reorder.items.insertBefore(selItem, itemSelect.item(selIndex - 1));
+        } else if (action === 'down' && !isLast) {
+            document.reorder.items.insertBefore(selItem, itemSelect.item(selIndex + 2));
         }
-        else if (selIndex < itemSelect.length-1 && down == 1)
-        {
-            swapItem = itemSelect.item(selIndex + 1);
-            itemSelect.selectedIndex++;
-        }
-        if (swapItem != null)
-        {
-            var selItem = itemSelect.item(selIndex);
-            var selText = selItem.text;
-            var selValue = selItem.value;
-            selItem.text = swapItem.text;
-            selItem.value = swapItem.value;
-            swapItem.text = selText;
-            swapItem.value = selValue;
-            saveList();
-        }
-    }
-    else
-    {
+        saveList();
+    } else {
         alert("Please select a dataset first.");
     }
     return false;
@@ -89,7 +80,7 @@ function orderModule(down)
                     List<DatasetDefinition> defs = getDatasets();
                     boolean first = true;
                 %>
-                <select name="items" size="<%= defs.size() %>">
+                <select name="items" style="width: 400px;" size="<%=Math.min(Math.max(defs.size(), 10), 25)%>">
                 <%
                 for (Dataset def: defs)
                 {
@@ -115,9 +106,11 @@ function orderModule(down)
                 %>
                 </select>
             </td>
-            <td align="center" valign="center">
-                <%= button("Move Up").submit(true).onClick("return orderModule(0)") %><br><br>
-                <%= button("Move Down").submit(true).onClick("return orderModule(1)") %>
+            <td align="center" valign="center" style="padding-left: 10px;">
+                <%= button("Move Up").addClass("button-reordering").onClick("return moveDatasetItem('up')") %><br>
+                <%= button("Move Down").addClass("button-reordering").onClick("return moveDatasetItem('down')") %><br><br>
+                <%= button("Move to Top").addClass("button-reordering").onClick("return moveDatasetItem('top')") %><br>
+                <%= button("Move to Bottom").addClass("button-reordering").onClick("return moveDatasetItem('bottom')") %>
             </td>
         </tr>
     </table>

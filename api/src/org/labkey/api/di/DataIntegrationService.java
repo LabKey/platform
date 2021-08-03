@@ -47,6 +47,8 @@ public interface DataIntegrationService
     void registerStepProviders();
     @Nullable Integer runTransformNow(Container c, User u, String transformId) throws PipelineJobException, NotFoundException;
 
+    Map<String, String> truncateTargets(Container c, User user, String transformId);
+
     RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
 
     /**
@@ -58,7 +60,7 @@ public interface DataIntegrationService
      *
      * Target table must have columns diModified (TIMESTAMP) and/or diImportHash (VARCHAR)
      *   if it exists diModified column will be matched to input column "modified"
-     *   if it exists diImportHash columnm will be matched against an MD5 hash of the raw (unconverted) data values from input dataiterator
+     *   if it exists diImportHash column will be matched against an MD5 hash of the raw (unconverted) data values from input dataiterator
      * NOTE: if dataiterator contains generated data (e.g. LSID, they can be excluded form hash using setHashColumns)
      * NOTE: hash is column order sensitive
      *
@@ -94,7 +96,7 @@ public interface DataIntegrationService
         void setModifiedSince(Timestamp modifiedSince);
 
         /** config params to pass to QUS insert/merge */
-        public void setConfigParameters(Map<Enum,Object> config);
+        void setConfigParameters(Map<Enum, Object> config);
 
         /** check that this Reimport configuration is valid (valid target table, valid options etc) */
         void validate();

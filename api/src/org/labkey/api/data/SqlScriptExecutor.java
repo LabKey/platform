@@ -191,42 +191,43 @@ public class SqlScriptExecutor
                 assert null != _methodName;
 
                 method = _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
+
+                String displayName = method.getDeclaringClass().getSimpleName() + "." + method.getName() + "(ModuleContext moduleContext)";
+
+                Runnable runnable = () -> {
+                    // Make sure cached database meta data reflects all previously executed SQL
+                    CacheManager.clearAllKnownCaches();
+
+                    try
+                    {
+                        method.invoke(_upgradeCode, _moduleContext);
+                    }
+                    catch (InvocationTargetException | IllegalAccessException e)
+                    {
+                        throw new RuntimeException("Can't invoke method " + method.getName() + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
+                    }
+                    finally
+                    {
+                        // Just to be safe
+                        CacheManager.clearAllKnownCaches();
+                    }
+                };
+
+                if (method.isAnnotationPresent(DeferredUpgrade.class))
+                {
+                    _log.info("Adding deferred upgrade to execute " + displayName);
+                    _moduleContext.addDeferredUpgradeRunnable(displayName, runnable);
+                }
+                else
+                {
+                    _log.info("Executing " + displayName);
+                    runnable.run();
+                }
             }
             catch (NoSuchMethodException e)
             {
-                throw new RuntimeException("Can't find method " + _methodName + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
-            }
-
-            String displayName = method.getDeclaringClass().getSimpleName() + "." + method.getName() + "(ModuleContext moduleContext)";
-
-            Runnable runnable = () -> {
-                // Make sure cached database meta data reflects all previously executed SQL
-                CacheManager.clearAllKnownCaches();
-
-                try
-                {
-                    method.invoke(_upgradeCode, _moduleContext);
-                }
-                catch (InvocationTargetException | IllegalAccessException e)
-                {
-                    throw new RuntimeException("Can't invoke method " + method.getName() + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
-                }
-                finally
-                {
-                    // Just to be safe
-                    CacheManager.clearAllKnownCaches();
-                }
-            };
-
-            if (method.isAnnotationPresent(DeferredUpgrade.class))
-            {
-                _log.info("Adding deferred upgrade to execute " + displayName);
-                _moduleContext.addDeferredUpgradeRunnable(displayName, runnable);
-            }
-            else
-            {
-                _log.info("Executing " + displayName);
-                runnable.run();
+                // Give the upgrade code a chance to recognize something that doesn't map to a Java method
+                _upgradeCode.fallthroughHandler(_methodName);
             }
         }
     }

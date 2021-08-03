@@ -60,6 +60,7 @@ import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reader.ExcelFactory;
@@ -152,6 +153,7 @@ public class ApiModule extends CodeOnlyModule
             DatabaseCache.TestCase.class,
             DataIteratorUtil.TestCase.class,
             DateUtil.TestCase.class,
+            DetailsURL.TestCase.class,
             DbScope.DialectTestCase.class,
             DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
