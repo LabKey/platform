@@ -608,7 +608,7 @@ public class ExperimentJSONConverter
             PropertyType type = pd != null ? pd.getPropertyType() : op.getPropertyType();
 
             Object value = serializePropertyValue(c, type, settings, op.value());
-            json.put(propertyURI, op.value());
+            json.put(propertyURI, value);
         }
     }
 
