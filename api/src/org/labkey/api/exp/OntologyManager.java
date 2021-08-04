@@ -68,6 +68,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -2079,16 +2080,12 @@ public class OntologyManager
         return propDescCache.get(key);
     }
 
-
-    public static List<PropertyDescriptor> getPropertyDescriptors(
+    private static TableSelector getPropertyDescriptorTableSelector(
             Container c, User user,
-            @Nullable Set<Integer> domainIds,
-            @Nullable Set<String> domainKinds,
-            @Nullable Set<String> domainNames,
+            Set<Domain> domains,
             @Nullable String searchTerm,
             @Nullable SimpleFilter propertyFilter,
-            @Nullable String sortColumn,
-            @Nullable Integer maxRows, @Nullable Long offset)
+            @Nullable String sortColumn)
     {
         final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
 
@@ -2109,24 +2106,9 @@ public class OntologyManager
         }
 
         filter.addCondition(new FieldKey(propertyIdKey, "container"), c.getId());
-        if (domainIds != null && !domainIds.isEmpty())
-        {
-            filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
-        }
 
-        Set<String> kinds = emptySet();
-        Set<String> names = emptySet();
-        if (domainKinds != null && !domainKinds.isEmpty())
+        if (!domains.isEmpty())
         {
-            kinds = domainKinds;
-        }
-        if (domainNames != null && !domainNames.isEmpty())
-        {
-            names = domainNames;
-        }
-        if (!kinds.isEmpty() || !names.isEmpty())
-        {
-            List<? extends Domain> domains = PropertyService.get().getDomains(c, user, kinds, names, true);
             filter.addInClause(FieldKey.fromParts("domainId"), domains.stream().map(Domain::getTypeId).collect(Collectors.toSet()));
         }
 
@@ -2150,7 +2132,53 @@ public class OntologyManager
             sortColumn = "propertyId";
         Sort sort = new Sort(sortColumn);
 
-        TableSelector ts = new TableSelector(getTinfoPropertyDomain(), colMap.values(), filter, sort);
+        return new TableSelector(getTinfoPropertyDomain(), colMap.values(), filter, sort);
+    }
+
+    public static Set<Domain> getDomains(
+            Container c, User user,
+            @Nullable Set<Integer> domainIds,
+            @Nullable Set<String> domainKinds,
+            @Nullable Set<String> domainNames)
+    {
+        Set<Domain> domains = new HashSet<>();
+        if (domainIds != null && !domainIds.isEmpty())
+        {
+            domains.addAll(domainIds.stream().map(id -> PropertyService.get().getDomain(id)).collect(Collectors.toSet()));
+        }
+
+        Set<String> kinds = emptySet();
+        Set<String> names = emptySet();
+        if (domainKinds != null && !domainKinds.isEmpty())
+        {
+            kinds = domainKinds;
+        }
+        if (domainNames != null && !domainNames.isEmpty())
+        {
+            names = domainNames;
+        }
+        if (!kinds.isEmpty() || !names.isEmpty())
+        {
+            domains.addAll(PropertyService.get().getDomains(c, user, kinds, names, true));
+        }
+
+        return domains;
+    }
+
+    public static List<PropertyDescriptor> getPropertyDescriptors(
+            Container c, User user,
+            Set<Domain> domains,
+            @Nullable String searchTerm,
+            @Nullable SimpleFilter propertyFilter,
+            @Nullable String sortColumn,
+            @Nullable Integer maxRows,
+            @Nullable Long offset)
+    {
+        final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
+
+        TableSelector ts = getPropertyDescriptorTableSelector(c, user, domains, searchTerm,
+                propertyFilter, sortColumn);
+
         if (maxRows != null)
             ts.setMaxRows(maxRows);
         if (offset != null)
@@ -2184,6 +2212,19 @@ public class OntologyManager
             throw new RuntimeSQLException(e);
         }
         return props;
+    }
+
+    public static long getPropertyDescriptorsRowCount(
+            Container c, User user,
+            Set<Domain> domains,
+            @Nullable String searchTerm,
+            @Nullable SimpleFilter propertyFilter)
+    {
+
+        TableSelector ts = getPropertyDescriptorTableSelector(c, user, domains, searchTerm,
+                propertyFilter, null);
+
+        return ts.getRowCount();
     }
 
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
