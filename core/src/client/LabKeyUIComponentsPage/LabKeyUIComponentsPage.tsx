@@ -39,7 +39,6 @@ import {
 } from '@labkey/components';
 import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
-import { QueryGridPage } from "./QueryGridPage";
 import { QueriesListingPage } from "./QueriesListingPage";
 import { EditableGridPage } from "./EditableGridPage";
 import { DetailPage } from "./DetailPage";
@@ -76,7 +75,6 @@ const COMPONENT_NAMES = List<string>([
     {value: 'PermissionAssignments'},
     {value: 'Progress'},
     {value: 'QueriesListing'},
-    {value: 'QueryGridPanel'},
     {value: 'SchemaListing'},
     {value: 'SearchResultCard'},
     {value: 'SearchResultsPanel'},
@@ -398,9 +396,6 @@ export class App extends React.Component<any, State> {
                 }
                 {selected === 'QueriesListing' &&
                     <QueriesListingPage/>
-                }
-                {selected === 'QueryGridPanel' &&
-                    <QueryGridPage/>
                 }
                 {selected === 'SchemaListing' &&
                     this.renderPanel('SchemaListing',
