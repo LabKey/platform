@@ -62,6 +62,7 @@ public interface StudyPublishService
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
     String AUTO_LINK_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
+    String AUTO_LINK_CONTAINER_PROPERTY_URI = "terms.labkey.org#AutoLinkCategory";
 
     String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
     String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
