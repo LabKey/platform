@@ -170,6 +170,8 @@ public class SampleTypeAndDataClassFolderWriter extends BaseFolderWriter
 
         if (!datasToExport.isEmpty())
             exportedRuns.addAll(ExperimentService.get().getRunsUsingDatas(datasToExport));
+        // only want the sample derivation runs; other runs will get included in the experiment xar.
+        exportedRuns = exportedRuns.stream().filter(run -> run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)).collect(Collectors.toSet());
 
         if (!exportedRuns.isEmpty())
         {
