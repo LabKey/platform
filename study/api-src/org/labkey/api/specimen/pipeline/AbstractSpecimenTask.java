@@ -149,7 +149,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             if (null != activeImporter)
             {
                 SpecimenTransform activeTransformer = SpecimenService.get().getSpecimenTransform(activeImporter);
-                if (activeTransformer.getFileType().isType(inputFile))
+                if (activeTransformer != null && activeTransformer.getFileType().isType(inputFile))
                     doPostTransform(activeTransformer, inputFile, job);
             }
             else

@@ -35,6 +35,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -78,7 +79,8 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _originalFilename = originalFilename;
-        setLogFile(StudyPipeline.logForInputPath(studyXml.getParent().resolve("study_load"), getPipeRoot()));
+        String baseLogFileName = StudyPipeline.getLogFilename(studyXml.getParent().resolve("study_load"));
+        setupLocalDirectoryAndJobLog(pipeRoot, StudyModule.MODULE_NAME, baseLogFileName);
         _errors = errors;
 
         Path importRoot = studyXml.getParent();

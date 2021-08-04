@@ -75,14 +75,15 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
+    @Deprecated //use getLogFilename and place file at piperoot
     public static File logForInputFile(File f, PipeRoot pipeRoot)
     {
         return new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
     }
 
-    public static File logForInputPath(java.nio.file.Path path, PipeRoot pipeRoot)
+    public static String getLogFilename(java.nio.file.Path path)
     {
-        return new File(pipeRoot.getLogDirectory(), FileUtil.makeFileNameWithTimestamp(path.getFileName().toString(), "log"));
+        return FileUtil.makeFileNameWithTimestamp(path.getFileName().toString());
     }
 
 

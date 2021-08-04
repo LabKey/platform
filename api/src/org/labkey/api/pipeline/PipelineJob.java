@@ -1980,4 +1980,26 @@ abstract public class PipelineJob extends Job implements Serializable
         return errors;
     }
 
+    /**
+     * @return Path String for a local working directory, temporary if root is cloud based
+     */
+    protected String getDefaultLocalDirectoryString()
+    {
+        return !getPipeRoot().isCloudRoot() ? getPipeRoot().getRootPath().getPath() : FileUtil.getTempDirectory().getPath();
+    }
+
+    /**
+     * Generate a LocalDirectory and log file, temporary if need be, for use by the job
+     * Note: Override getDefaultLocalDirectoryString if piperoot isn't the desired local directory
+     *
+     * @param pipeRoot Pipeline's root directory
+     * @param moduleName supplying the pipeline
+     * @param baseLogFileName base name of the log file
+     */
+    protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String moduleName, String baseLogFileName)
+    {
+        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, moduleName, baseLogFileName, getDefaultLocalDirectoryString());
+        setLocalDirectory(localDirectory);
+        setLogFile(localDirectory.determineLogFile());
+    }
 }
