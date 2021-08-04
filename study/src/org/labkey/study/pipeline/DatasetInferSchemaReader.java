@@ -148,6 +148,10 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
                         if (DatasetDefinition.isDefaultFieldName(col.getColumnName(), _study))
                             continue;
 
+                        // issue 43558 : also test column names without spaces (they may be exported column captions)
+                        if (DatasetDefinition.isDefaultFieldName(col.getColumnName().replace(" ", ""), _study))
+                            continue;
+
                         PropertyType pt = PropertyType.getFromURI(null, col.getRangeURI(), null);
                         ImportTypesHelper.Builder pdb = new ImportTypesHelper.Builder(_study.getContainer(), pt);
 
