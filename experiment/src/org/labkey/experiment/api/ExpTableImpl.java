@@ -92,6 +92,12 @@ abstract public class ExpTableImpl<C extends Enum>
     public final void populate()
     {
         populateColumns();
+        markPopulated();
+    }
+
+    @Override
+    public final void markPopulated()
+    {
         _populated = true;
     }
 
@@ -325,7 +331,8 @@ abstract public class ExpTableImpl<C extends Enum>
         return colProperty;
     }
 
-    protected void addVocabularyDomains()
+    @Override
+    public void addVocabularyDomains()
     {
         List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
         for (Domain domain : domains)

@@ -123,17 +123,24 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return getOwnerObject().getLSID();
     }
 
+    // TODO: Should ExpMaterialImpl override this and return it's ExpSampleType?
     protected ExpObject getOwnerObject()
     {
         return this;
     }
 
     @Override
-    public void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException
+    public final void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException
+    {
+        this.setProperty(user, pd, value, false);
+    }
+
+    @Override
+    public void setProperty(User user, PropertyDescriptor pd, Object value, boolean insertNullValues) throws ValidationException
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
             throw new IllegalArgumentException("PropertyType resource is NYI in this method");
-        OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, this, false);
+        OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, getOwnerObjectLSID(), insertNullValues);
     }
 
     @Override

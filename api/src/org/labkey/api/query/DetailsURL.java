@@ -19,6 +19,8 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -26,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -308,6 +311,10 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             
         _source = StringUtils.trimToEmpty(_parsedUrl.getQueryString(true));
 
+        // Issue 43649: Support substitutions in URL fragment
+        if (!StringUtils.isEmpty(_parsedUrl.getFragment()))
+            _source += "#" + _parsedUrl.getFragment();
+
         super.parse();
     }
 
@@ -337,7 +344,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             copy._containerContext = new ContainerContext.FieldKeyContext(re);
         }
         // copy changes backwards
-        copy._parsedUrl.setRawQuery(copy._source);
+        copy._parsedUrl.setRawQuery(copy._parsedUrl.getQueryString(true));
         copy._url = copy._parsedUrl;
         copy._urlSource = null;
         return copy;
@@ -495,7 +502,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         String action = _url.getAction();
         if (!action.endsWith(".view"))
             action = action + ".view";
-        String to = "/" + encode(controller) + "-" + encode(action) + "?" + _url.getQueryString(true);
+        String to = "/" + PageFlowUtil.encode(controller) + "-" + PageFlowUtil.encode(action) + "?" + _url.getQueryString(true);
         assert null == DetailsURL.validateURL(to) : DetailsURL.validateURL(to);
         return to;
     }
@@ -508,9 +515,29 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         return fieldKeys.containsAll(super.getFieldKeys());
     }
 
-
-    private String encode(String s)
+    public static class TestCase extends Assert
     {
-        return PageFlowUtil.encode(s);
+        @Test
+        public void testSupportedFormats()
+        {
+            var context = Map.of(
+                "RowId", 1,
+                    "Player", "Griffey"
+            );
+            var expectedURL = new ActionURL("project", "begin", JunitUtil.getTestContainer()).addParameter("id", 1);
+            var testSlash = new DetailsURL("/project/begin.view?id=${RowId}", JunitUtil.getTestContainer());
+            var testDash = new DetailsURL("project-begin.view?id=${RowId}", JunitUtil.getTestContainer());
+            var testClassPath = new DetailsURL("org.labkey.core.portal.ProjectController$BeginAction.class?id=${RowId}", JunitUtil.getTestContainer());
+
+            assertEquals(expectedURL.toString(), testSlash.eval(context));
+            assertEquals(expectedURL.toString(), testDash.eval(context));
+            assertEquals(expectedURL.toString(), testClassPath.eval(context));
+
+            // Issue 43649: Support substitutions in URL fragment
+            var expectedHashURL = expectedURL.clone().setFragment("/section/player/Griffey");
+            var testHash = new DetailsURL("project-begin.view?id=${RowId}#/section/player/${Player}", JunitUtil.getTestContainer());
+
+            assertEquals(expectedHashURL.toString(), testHash.eval(context));
+        }
     }
 }

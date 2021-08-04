@@ -24,6 +24,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -95,6 +96,7 @@ public class SqlScriptController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    @IgnoresAllocationTracking
     @SuppressWarnings("unused")
     @RequiresPermission(AdminOperationsPermission.class)
     @AllowedDuringUpgrade
