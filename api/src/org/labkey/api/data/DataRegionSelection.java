@@ -80,7 +80,8 @@ public class DataRegionSelection
         if (key != null)
         {
             key = getSessionAttributeKey(context.getContainer().getPath(), key, useSnapshot);
-            HttpSession session = context.getRequest().getSession(false);
+            var request = context.getRequest();
+            HttpSession session = request != null ? context.getRequest().getSession(false) : null;
             if (session != null)
             {
                 @SuppressWarnings("unchecked") Set<String> result = (Set<String>)session.getAttribute(key);
@@ -183,7 +184,10 @@ public class DataRegionSelection
      */
     public static @NotNull Set<String> getSelected(ViewContext context, @Nullable String key, boolean clearSession)
     {
-        String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
+        String[] values = null;
+        var request = context.getRequest();
+        if (request != null)
+            values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
         if (null != values && values.length == 1 && values[0].contains("\t"))
             values = StringUtils.split(values[0],'\t');
         List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);

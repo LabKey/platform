@@ -1250,7 +1250,7 @@ public class XarReader extends AbstractXarImporter
             {
                 ExpMaterialImpl mi = new ExpMaterialImpl(m);
                 mi.save(getUser());
-                mi.setProperties(getUser(), props);
+                mi.setProperties(getUser(), props, false);
 
                 if (_auditBehaviorType == AuditBehaviorType.DETAILED)
                 {

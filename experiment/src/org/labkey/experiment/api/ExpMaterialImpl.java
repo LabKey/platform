@@ -521,15 +521,15 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException
+    public void setProperty(User user, PropertyDescriptor pd, Object value, boolean insertNullValues) throws ValidationException
     {
         if (null == pd.getStorageColumnName())
             super.setProperty(user, pd, value);
         else
-            setProperties(user, Collections.singletonMap(pd.getName(), value));
+            setProperties(user, Collections.singletonMap(pd.getName(), value), insertNullValues);
     }
 
-    public void setProperties(User user, Map<String,?> values_) throws ValidationException
+    public void setProperties(User user, Map<String,?> values_, boolean insertNullValues) throws ValidationException
     {
         ExpSampleTypeImpl st = (ExpSampleTypeImpl) getSampleType();
         Map<String, Object> values = new HashMap<>(values_);
@@ -587,7 +587,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), st.getContainer());
             if (null != pd)
-                super.setProperty(user, pd, entry.getValue());
+                super.setProperty(user, pd, entry.getValue(), insertNullValues);
         }
     }
 }

@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
@@ -28,7 +29,6 @@ import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,8 +47,11 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     boolean _arrayMultiValueColumns = false;
     boolean _includeFormattedValue = false;
 
+
     public enum ColMapEntry
     {
+        // fieldKey is only used when rendering nested properties as an ordered list
+        fieldKey,
         value,
         displayValue,
         formattedValue,
@@ -117,6 +120,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         return createColMap(getRenderContext(), dc, _arrayMultiValueColumns, _includeFormattedValue, _doItWithStyle);
     }
 
+    /**
+     * Return an object representing the DisplayColumn's value in the RenderContext.
+     *
+     * For basic column, the return value is a {@link ColMap}.
+     * For multi-value column, the return value is a {@link List<ColMap>}
+     * For a nested properties column, the return value is a {@link List<ColMap>}.
+     */
     public static Object createColMap(
             RenderContext ctx,
             DisplayColumn dc,
@@ -127,86 +137,105 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         if (dc instanceof NestedPropertyDisplayColumn)
         {
             NestedPropertyDisplayColumn npc = (NestedPropertyDisplayColumn) dc;
-
-            Map<String, Object> nestedProperties = new LinkedHashMap<>();
-            for (Pair<RenderContext, DisplayColumn> pair : npc.getNestedDisplayColumns(ctx))
-            {
-                RenderContext nestedCtx = pair.first;
-                DisplayColumn nestedCol = pair.second;
-
-                String key = npc.getNestedColumnKey(nestedCol);
-                nestedProperties.put(key, createColMap(nestedCtx, nestedCol, arrayMultiValueColumns, includeFormattedValue, doItWithStyle));
-            }
-            return nestedProperties;
+            return getNestedPropertiesArray(ctx, npc, arrayMultiValueColumns, includeFormattedValue, doItWithStyle);
         }
         else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
         {
             // render MultiValue columns as an array of 'value', 'displayValue', and 'url' objects
             IMultiValuedDisplayColumn mdc = (IMultiValuedDisplayColumn)dc;
-
-            List<Object> values = mdc.getJsonValues(ctx);
-            if (values == null)
-                return null;
-
-            List<String> urls = mdc.renderURLs(ctx);
-            List<Object> display = mdc.getDisplayValues(ctx);
-            List<String> formatted = null;
-            if (includeFormattedValue)
-                formatted = mdc.getFormattedTexts(ctx);
-
-
-            assert values.size() == urls.size() && values.size() == display.size();
-            List<Map<ColMapEntry, Object>> list = new ArrayList<>(values.size());
-            for (int i = 0; i < values.size(); i++)
-            {
-                Object value = values.get(i);
-                Object displayValue = display.get(i);
-                String formattedValue = null;
-                if (includeFormattedValue)
-                    formattedValue = formatted.get(i);
-                String url = urls.get(i);
-                ColMap nested = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
-
-                // TODO: missing value indicators ?
-
-                list.add(nested);
-            }
-            return list;
+            return getMultiValuedColumnArray(ctx, includeFormattedValue, mdc);
         }
         else
         {
-            //column value
-            Object value = dc.getJsonValue(ctx);
-            Object displayValue = dc.getDisplayValue(ctx);
+            return getColMap(ctx, dc, includeFormattedValue, doItWithStyle);
+        }
+    }
+
+    @NotNull
+    private static ColMap getColMap(RenderContext ctx, DisplayColumn dc, boolean includeFormattedValue, boolean doItWithStyle)
+    {
+        //column value
+        Object value = dc.getJsonValue(ctx);
+        Object displayValue = dc.getDisplayValue(ctx);
+        String formattedValue = null;
+        if (includeFormattedValue)
+            formattedValue = dc.getFormattedText(ctx);
+
+        String url = null;
+        if (null != value)
+            url = dc.renderURL(ctx);
+
+        //in the extended response format, each column will have a map of its own
+        //that will contain entries for value, mvValue, mvIndicator, etc.
+        ColMap colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
+
+        //missing values
+        if (dc instanceof MVDisplayColumn)
+        {
+            MVDisplayColumn mvColumn = (MVDisplayColumn) dc;
+            colMap.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
+            colMap.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
+        }
+
+        if (doItWithStyle)
+        {
+            String style = dc.getCssStyle(ctx);
+            if (!StringUtils.isEmpty(style))
+                colMap.put(ColMapEntry.style, style);
+        }
+
+        return colMap;
+    }
+
+    @Nullable
+    private static List<ColMap> getMultiValuedColumnArray(RenderContext ctx, boolean includeFormattedValue, IMultiValuedDisplayColumn mdc)
+    {
+        List<Object> values = mdc.getJsonValues(ctx);
+        if (values == null)
+            return null;
+
+        List<String> urls = mdc.renderURLs(ctx);
+        List<Object> display = mdc.getDisplayValues(ctx);
+        List<String> formatted = null;
+        if (includeFormattedValue)
+            formatted = mdc.getFormattedTexts(ctx);
+
+        assert values.size() == urls.size() && values.size() == display.size();
+        List<ColMap> list = new ArrayList<>(values.size());
+        for (int i = 0; i < values.size(); i++)
+        {
+            Object value = values.get(i);
+            Object displayValue = display.get(i);
             String formattedValue = null;
             if (includeFormattedValue)
-                formattedValue = dc.getFormattedText(ctx);
+                formattedValue = formatted.get(i);
+            String url = urls.get(i);
+            ColMap nested = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
 
-            String url = null;
-            if (null != value)
-                url = dc.renderURL(ctx);
+            // TODO: missing value indicators ?
 
-            //in the extended response format, each column will have a map of its own
-            //that will contain entries for value, mvValue, mvIndicator, etc.
-            Map<ColMapEntry, Object> colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
-
-            //missing values
-            if (dc instanceof MVDisplayColumn)
-            {
-                MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
-                colMap.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
-                colMap.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
-            }
-
-            if (doItWithStyle)
-            {
-                String style = dc.getCssStyle(ctx);
-                if (!StringUtils.isEmpty(style))
-                    colMap.put(ColMapEntry.style, style);
-            }
-
-            return colMap;
+            list.add(nested);
         }
+        return list;
+    }
+
+    @NotNull
+    public static List<ColMap> getNestedPropertiesArray(RenderContext ctx, NestedPropertyDisplayColumn npc, boolean arrayMultiValueColumns, boolean includeFormattedValue, boolean doItWithStyle)
+    {
+        List<ColMap> nestedProperties = new ArrayList<>();
+        for (Pair<RenderContext, DisplayColumn> pair : npc.getNestedDisplayColumns(ctx))
+        {
+            RenderContext nestedCtx = pair.first;
+            DisplayColumn nestedCol = pair.second;
+
+            String key = npc.getNestedColumnKey(nestedCol);
+
+            // NOTE: For now, we are assuming all of the nested property columns are basic display columns.
+            ColMap colMap = getColMap(nestedCtx, nestedCol, includeFormattedValue, doItWithStyle);
+            colMap.put(ColMapEntry.fieldKey, key);
+            nestedProperties.add(colMap);
+        }
+        return nestedProperties;
     }
 
     protected static ColMap makeColMap(

@@ -48,6 +48,12 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      */
     ColumnInfo createPropertyColumn(String alias);
 
+    /**
+     * Add an unselectable column for each of the Vocabulary domains that are
+     * in scope (current container, project, and shared.)
+     */
+    void addVocabularyDomains();
+
     void addCondition(SQLFragment condition, FieldKey... fieldKeys);
     void addRowIdCondition(SQLFragment rowidCondition);
     void addLSIDCondition(SQLFragment lsidCondition);
@@ -61,6 +67,7 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      * Add the standard set of columns to the table
      */
     void populate();
+    void markPopulated();
 
     /**
      * By default, only delete is allowed. Allows specific usages to enable other actions like update
