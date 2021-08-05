@@ -1272,7 +1272,7 @@ public class XarExporter
                             catch (URISyntaxException ignored) {}
                             simpleValue.setStringValue(link);
                         }
-                        // This property stories rowIds of assay designs; we need to translated them to LSIDs for export
+                        // This property stores rowIds of assay designs; we need to translate them to LSIDs for export
                         // TODO perhaps this property should hold protocol strings instead of rowIds
                         else if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
                         {
