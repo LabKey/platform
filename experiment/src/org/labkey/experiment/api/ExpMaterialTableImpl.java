@@ -480,8 +480,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // Show the Name field but don't mark is as required when using name expressions
             if (st.hasNameExpression())
             {
+                var nameExpression = st.getNameExpression();
+                nameCol.setNameExpression(nameExpression);
                 nameCol.setNullable(true);
-                String desc = appendNameExpressionDescription(nameCol.getDescription(), st.getNameExpression());
+                String desc = appendNameExpressionDescription(nameCol.getDescription(), nameExpression);
                 nameCol.setDescription(desc);
             }
             else

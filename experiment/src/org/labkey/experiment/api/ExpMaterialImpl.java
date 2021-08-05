@@ -524,7 +524,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public void setProperty(User user, PropertyDescriptor pd, Object value, boolean insertNullValues) throws ValidationException
     {
         if (null == pd.getStorageColumnName())
-            super.setProperty(user, pd, value, false);
+            super.setProperty(user, pd, value, insertNullValues);
         else
             setProperties(user, Collections.singletonMap(pd.getName(), value), insertNullValues);
     }

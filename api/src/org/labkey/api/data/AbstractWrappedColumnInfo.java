@@ -250,6 +250,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public String getNameExpression()
+    {
+        return delegate.getNameExpression();
+    }
+
+    @Override
     public boolean isAutoIncrement()
     {
         return delegate.isAutoIncrement();
