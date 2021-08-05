@@ -1798,7 +1798,10 @@ public class XarReader extends AbstractXarImporter
             getLog().debug("Finished loading Protocol with LSID '" + protocolLSID + "'");
         }
 
-        _xarSource.addProtocol(new ExpProtocolImpl(protocol));
+        ExpProtocolImpl protocolImpl = new ExpProtocolImpl(protocol);
+
+        _xarSource.addProtocol(protocolImpl);
+        XarReaderRegistry.get().postProcessImportedProtocol(getContainer(), getUser(), protocolImpl, _job.getLogger());
     }
 
     private void loadActionSet(ProtocolActionSetType actionSet) throws XarFormatException

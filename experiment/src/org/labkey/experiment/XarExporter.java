@@ -99,6 +99,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
@@ -1270,6 +1271,21 @@ public class XarExporter
                             }
                             catch (URISyntaxException ignored) {}
                             simpleValue.setStringValue(link);
+                        }
+                        // This property stories rowIds of assay designs; we need to translated them to LSIDs for export
+                        // TODO perhaps this property should hold protocol strings instead of rowIds
+                        else if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
+                        {
+                            String[] assayIds = value.getStringValue().split(",");
+                            List<String> protocolStrings = new ArrayList<>();
+                            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
+                            for (String assayId : assayIds)
+                            {
+                                int assayRowId = Integer.parseInt(assayId);
+                                Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
+                                protocol.ifPresent(expProtocol -> protocolStrings.add(relativizeLSIDPropertyValue(expProtocol.getLSID(), SimpleTypeNames.STRING)));
+                            }
+                            simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
                         }
                         else
                         {
