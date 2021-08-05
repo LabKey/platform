@@ -200,6 +200,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
                 String nameExpression = _dataClass.getNameExpression();
+                c.setNameExpression(nameExpression);
                 c.setNullable(nameExpression != null);
                 String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
                 c.setDescription(desc);

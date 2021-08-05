@@ -395,6 +395,20 @@ public class WrappedColumnInfo
         }
 
         @Override
+        public void setNameExpression(String nameExpression)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public String getNameExpression()
+                {
+                    return nameExpression;
+                }
+            };
+        }
+
+        @Override
         public void setMeasure(boolean measure)
         {
             checkLocked();
