@@ -34,9 +34,12 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -158,7 +161,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        DataIteratorBuilder dib = super.createImportDIB(user, container, data, context);
+
+        DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
+
+        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
+        dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
+
         if (InventoryService.get() != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
