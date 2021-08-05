@@ -164,7 +164,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
             UserSchema userSchema = getQueryTable().getUserSchema();
             if (userSchema != null)
-                return LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
+            {
+                DataIteratorBuilder persistStorageItem = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
+                DataIteratorBuilder autoLinkToStudy = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(persistStorageItem, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
+                return autoLinkToStudy;
+            }
             return dib;
         }
         else
