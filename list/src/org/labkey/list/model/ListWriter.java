@@ -89,6 +89,12 @@ public class ListWriter
     public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
     {
         Map<String, ListDefinition> lists = ListService.get().getLists(c, user, true);
+        // We exclude picklists because they contain just sampleIds, which will be different in the new container.
+        // Picklists are meant to be transient, so not including them in the export makes sense.
+        for (Map.Entry<String, ListDefinition> listEntry : lists.entrySet()) {
+            if (listEntry.getValue().isPicklist())
+                lists.remove(listEntry.getKey());
+        }
         PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
