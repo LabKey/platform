@@ -218,7 +218,19 @@ public class ExpDataIterators
             if (!(v instanceof RequiredValidator) || _aliquotedFromColInd < 0)
                 return super.validate(v, rowNum, value, data);
 
-            String aliquotedFromValue = (String) data.get(_aliquotedFromColInd);
+            String aliquotedFromValue = null;
+            Object aliquotedFromObj = data.get(_aliquotedFromColInd);
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    aliquotedFromValue = (String) aliquotedFromObj;
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFromValue = aliquotedFromObj.toString();
+                }
+            }
 
             // skip required field check for aliquots since aliquots properties are inherited
             if (!StringUtils.isEmpty(aliquotedFromValue))
