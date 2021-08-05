@@ -345,8 +345,8 @@ public class PublishController extends SpringActionController
                                     getUser(),
                                     getContainer(),
                                     _targetStudyContainer,
-                                    errors,
-                                    getLogger());
+                                    null,
+                                    errors, getLogger());
 
                             errors.forEach(this::error);
                         }

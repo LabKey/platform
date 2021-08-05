@@ -28,9 +28,9 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
@@ -90,6 +90,10 @@ public interface StudyPublishService
 
     ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
                           Pair<Dataset.PublishSource, Integer> publishSource,
+                          List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
+
+    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+                          String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 
     /**

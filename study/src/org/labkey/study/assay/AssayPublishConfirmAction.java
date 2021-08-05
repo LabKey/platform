@@ -288,7 +288,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     protected ActionURL linkToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
-        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
+        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, null, publishData, publishErrors);
     }
 
     @Override
