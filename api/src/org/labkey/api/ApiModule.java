@@ -92,10 +92,8 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.writer.ContainerUser;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -204,15 +202,6 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             ValidEmail.TestCase.class
         );
-    }
-
-    @Override
-    public @NotNull Collection<Factory<Class<?>>> getIntegrationTestFactories()
-    {
-        List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
-        //TODO: No test cases.
-        //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
-        return list;
     }
 
     @Override
