@@ -917,7 +917,7 @@ public class XarReader extends AbstractXarImporter
             }
             else
             {
-                throw new XarFormatException("An ExperimentRun with LSID " + pRunLSID.toString() + " already exists");
+                throw new XarFormatException("An ExperimentRun with LSID " + pRunLSID + " already exists");
             }
         }
 
@@ -1209,6 +1209,8 @@ public class XarReader extends AbstractXarImporter
         ExpSampleTypeImpl sampleSet = checkMaterialCpasType(declaredType);
 
         String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
+        String rootMaterialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getRootMaterialLSID(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
+        String aliquotedFromLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAliquotedFromLSID(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
         ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
         if (material == null && sampleSet != null)
@@ -1228,6 +1230,8 @@ public class XarReader extends AbstractXarImporter
         if (material == null)
         {
             Material m = new Material();
+            m.setRootMaterialLSID(rootMaterialLSID);
+            m.setAliquotedFromLSID(aliquotedFromLSID);
             m.setLSID(materialLSID);
             m.setName(trimString(xbMaterial.getName()));
             m.setCpasType(declaredType);
@@ -1273,7 +1277,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            updateSourceInfo(material.getDataObject(), sourceApplicationId, run == null ? null : run.getRowId(), context, tiMaterial);
+            updateSourceInfo(material.getDataObject(), sourceApplicationId, run == null ? null : run.getRowId(), rootMaterialLSID, aliquotedFromLSID, context, tiMaterial);
         }
 
         _xarSource.addMaterial(run == null ? null : run.getLSID(), material, null);
@@ -1283,7 +1287,7 @@ public class XarReader extends AbstractXarImporter
     }
 
     private void updateSourceInfo(RunItem output, Integer sourceApplicationId,
-                                  Integer runId, XarContext context, TableInfo tableInfo)
+                                  Integer runId, String rootMaterialLSID, String aliquotedFromLSID, XarContext context, TableInfo tableInfo)
             throws XarFormatException
     {
         String description = output.getClass().getSimpleName();
@@ -1319,6 +1323,26 @@ public class XarReader extends AbstractXarImporter
             }
         }
 
+        if (output instanceof Material)
+        {
+            if (rootMaterialLSID != null)
+            {
+                getLog().debug("Updating " + description + " with aliquot root LSID");
+                if (((Material) output).getRootMaterialLSID() != null)
+                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + rootMaterialLSID);
+                ((Material) output).setRootMaterialLSID(rootMaterialLSID);
+                changed = true;
+            }
+            if (aliquotedFromLSID != null)
+            {
+                getLog().debug("Updating " + description + " with aliquot parent LSID");
+                if (((Material) output).getAliquotedFromLSID() != null)
+                    throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; cannot set it to " + aliquotedFromLSID);
+                ((Material) output).setAliquotedFromLSID(aliquotedFromLSID);
+                changed = true;
+            }
+
+        }
         if (changed)
         {
             Table.update(getUser(), tableInfo, output, output.getRowId());
@@ -1426,7 +1450,7 @@ public class XarReader extends AbstractXarImporter
             }
 
             Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(data, sourceApplicationId, runId, context, tiData);
+            updateSourceInfo(data, sourceApplicationId, runId, null, null, context, tiData);
         }
         else
         {
