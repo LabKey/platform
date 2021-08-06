@@ -159,23 +159,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         DataIteratorBuilder dib = super.createImportDIB(user, container, data, context);
-        LOG.warn("Temp: inside of createImportDIB");
-        if (InventoryService.get() != null)
+        UserSchema userSchema = getQueryTable().getUserSchema();
+        if (InventoryService.get() != null && userSchema != null)
         {
-            LOG.warn("Temp: got inventory service");
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
-            UserSchema userSchema = getQueryTable().getUserSchema();
-            if (userSchema != null)
-            {
-                LOG.warn("Temp: got user schema");
-                DataIteratorBuilder persistStorageItem = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
-                DataIteratorBuilder autoLinkToStudy = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(persistStorageItem, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
-                return autoLinkToStudy;
-            }
+            dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
+            dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
             return dib;
         }
-        else
-            return dib;
+
+        if (userSchema != null)
+            return LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
+
+        return dib;
     }
 
     @Override
@@ -211,7 +207,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
 
         DbScope scope = getSchema().getDbSchema().getScope();
-        LOG.warn("Temp: inside of SampleTypeUpdateServiceDI.insertRows");
         List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
                 super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext));
 
