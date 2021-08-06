@@ -1292,7 +1292,8 @@ public class XarExporter
                                 }
                                 catch (NumberFormatException ignore)
                                 {
-                                    // do nothing. If already a non-integer string, we don't need to (don't know how to) do a conversion.
+                                    // assume it's an LSID and try to relativize it
+                                    protocolStrings.add(relativizeLSIDPropertyValue(assayId, SimpleTypeNames.STRING));
                                 }
                             }
                             simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
