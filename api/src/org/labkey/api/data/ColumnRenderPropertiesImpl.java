@@ -75,6 +75,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected String _shortLabel;
     protected String _description;
     protected boolean _hidden;
+    protected String _nameExpression;
     protected Boolean _measure;
     protected Boolean _dimension;
     protected Boolean _recommendedVariable = false;
@@ -553,6 +554,17 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
             return inferIsMeasure(getName(), getLabel(), isNumericType(), isAutoIncrement(), isLookup(), isHidden());
         else
             return _measure;
+    }
+
+    public String getNameExpression()
+    {
+        return _nameExpression;
+    }
+
+    public void setNameExpression(String nameExpression)
+    {
+        assert _checkLocked();
+        _nameExpression = nameExpression;
     }
 
     /** value must not be null/empty */

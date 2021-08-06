@@ -261,6 +261,9 @@ public class JsonWriter
 
                 props.put("crosstabColumnDimension", cinfo.getCrosstabColumnDimension());
             }
+
+            if (cinfo.getNameExpression() != null)
+                props.put("nameExpression", cinfo.getNameExpression());
         }
         else
         {
