@@ -227,6 +227,11 @@ public class ListDef extends Entity implements Cloneable
         return _category != Category.PrivatePicklist || getCreatedBy() == user.getUserId();
     }
 
+    public boolean isPicklist()
+    {
+        return _category == Category.PrivatePicklist || _category == Category.PublicPicklist;
+    }
+
     protected void copyTo(ListDef to)
     {
         super.copyTo(to);
