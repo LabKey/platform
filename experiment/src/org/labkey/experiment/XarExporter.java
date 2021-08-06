@@ -1281,9 +1281,19 @@ public class XarExporter
                             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
                             for (String assayId : assayIds)
                             {
-                                int assayRowId = Integer.parseInt(assayId);
-                                Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
-                                protocol.ifPresent(expProtocol -> protocolStrings.add(relativizeLSIDPropertyValue(expProtocol.getLSID(), SimpleTypeNames.STRING)));
+                                try
+                                {
+                                    int assayRowId = Integer.parseInt(assayId);
+                                    Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
+                                    if (protocol.isPresent())
+                                        protocolStrings.add(relativizeLSIDPropertyValue(protocol.get().getLSID(), SimpleTypeNames.STRING));
+                                    else
+                                        logProgress("Unable to find protocol for assay id " + assayRowId + ".  Not included in values for " + value.getName() + ".");
+                                }
+                                catch (NumberFormatException ignore)
+                                {
+                                    // do nothing. If already a non-integer string, we don't need to (don't know how to) do a conversion.
+                                }
                             }
                             simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
                         }
