@@ -1277,7 +1277,7 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            updateSourceInfo(material.getDataObject(), sourceApplicationId, run == null ? null : run.getRowId(), rootMaterialLSID, aliquotedFromLSID, context, tiMaterial);
+            updateSourceInfo(material.getDataObject(), sourceApplicationId, run, rootMaterialLSID, aliquotedFromLSID, context, tiMaterial);
         }
 
         _xarSource.addMaterial(run == null ? null : run.getLSID(), material, null);
@@ -1287,7 +1287,7 @@ public class XarReader extends AbstractXarImporter
     }
 
     private void updateSourceInfo(RunItem output, Integer sourceApplicationId,
-                                  Integer runId, String rootMaterialLSID, String aliquotedFromLSID, XarContext context, TableInfo tableInfo)
+                                  ExperimentRun run, String rootMaterialLSID, String aliquotedFromLSID, XarContext context, TableInfo tableInfo)
             throws XarFormatException
     {
         String description = output.getClass().getSimpleName();
@@ -1309,17 +1309,17 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException(description + " with LSID '" + lsid + "' already has a source application of " + output.getSourceApplicationId() + ", cannot set it to " + sourceApplicationId);
             }
         }
-        if (runId != null)
+        if (run != null && sourceApplicationId != null)
         {
             if (output.getRunId() == null)
             {
                 getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting its RunId");
-                output.setRunId(runId);
+                output.setRunId(run.getRowId());
                 changed = true;
             }
             else
             {
-                throw new XarFormatException(description + " with LSID '" + lsid + "' already has an experiment run id of " + output.getRunId() + ", cannot set it to " + runId);
+                throw new XarFormatException(description + " with LSID '" + lsid + "' already has an experiment run id of " + output.getRunId() + ", cannot set it to " + run.getRowId());
             }
         }
 
@@ -1327,18 +1327,24 @@ public class XarReader extends AbstractXarImporter
         {
             if (rootMaterialLSID != null)
             {
+                ExpMaterial rootMaterial = null;
+                if (run != null)
+                    rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
                 getLog().debug("Updating " + description + " with aliquot root LSID");
                 if (((Material) output).getRootMaterialLSID() != null)
                     throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot root material LSID of " + ((Material) output).getRootMaterialLSID() + "; cannot set it to " + rootMaterialLSID);
-                ((Material) output).setRootMaterialLSID(rootMaterialLSID);
+                ((Material) output).setRootMaterialLSID(rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID);
                 changed = true;
             }
             if (aliquotedFromLSID != null)
             {
+                ExpMaterial aliquotParent = null;
+                if (run != null)
+                    aliquotParent = _xarSource.getMaterial(run.getExpObject(), null, aliquotedFromLSID);
                 getLog().debug("Updating " + description + " with aliquot parent LSID");
                 if (((Material) output).getAliquotedFromLSID() != null)
                     throw new XarFormatException(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; cannot set it to " + aliquotedFromLSID);
-                ((Material) output).setAliquotedFromLSID(aliquotedFromLSID);
+                ((Material) output).setAliquotedFromLSID(aliquotParent != null ? aliquotParent.getLSID() : aliquotedFromLSID);
                 changed = true;
             }
 
@@ -1449,8 +1455,7 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException("Cannot reference a data file (" + expData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
 
-            Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(data, sourceApplicationId, runId, null, null, context, tiData);
+            updateSourceInfo(data, sourceApplicationId, experimentRun, null, null, context, tiData);
         }
         else
         {
