@@ -82,6 +82,8 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     DefaultScaleType getDefaultScale();
 
+    String getNameExpression();
+
     boolean isDimension();
 
     boolean isMeasure();

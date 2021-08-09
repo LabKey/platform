@@ -58,6 +58,8 @@ public interface MutableColumnRenderProperties extends ColumnRenderProperties
 
     void setDimension(boolean dimension);
 
+    void setNameExpression(String nameExpression);
+
     void setNullable(boolean nullable);
 
     void setRequired(boolean required);
