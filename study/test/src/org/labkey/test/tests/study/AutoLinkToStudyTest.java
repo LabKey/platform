@@ -120,6 +120,16 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study_3_Study");
         customizeView.addColumn("linked_to_Auto_Link_To_Study_Test_Study");
         customizeView.saveCustomView();
+
+        /*
+            Ensuring additional 'Linked to Study' columns are not visible for linked Datasets.
+            Test coverage for issue https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43440
+         */
+
+        clickAndWait(Locator.linkWithText("linked").index(0));
+        DataRegionTable datasetTable = new DataRegionTable("Dataset", getDriver());
+        checker().verifyFalse("Linked column for Study 1 should not be present",
+                datasetTable.getColumnNames().contains("linked_to_Auto_Link_To_Study_Test_Study_1_Study"));
     }
 
     private void linkToStudy(String runName, String targetStudy, int numOfRows)
