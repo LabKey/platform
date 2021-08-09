@@ -71,7 +71,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     DatasetDefinition.CheckForDuplicates checkDuplicates = DatasetDefinition.CheckForDuplicates.never;
     boolean isForUpdate = false;
     boolean useImportAliases = false;
-    Map<String, Map<Object, Object>>  _tableIdMapMap;    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
+    Map<String, Map<Object, Object>>  _tableIdMapMap = Map.of();    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
 
     DataIteratorBuilder builder = null;
 
@@ -90,6 +90,9 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
+
+        TableInfo table = datasetDefinition.getTableInfo(user, false);
+        needsQC = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
     }
 
     /**
@@ -107,11 +110,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     void setUseImportAliases(boolean aliases)
     {
         this.useImportAliases = aliases;
-    }
-
-    void setCheckDuplicates(DatasetDefinition.CheckForDuplicates check)
-    {
-        checkDuplicates = check;
     }
 
     public void setInput(DataIteratorBuilder b)

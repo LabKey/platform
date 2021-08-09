@@ -36,8 +36,8 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -47,8 +47,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ILineageDisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -423,7 +423,9 @@ public class StudyPublishManager implements StudyPublishService
             if (defaultQCStateId != null)
                 defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            BatchValidationException validationException = new BatchValidationException();
+            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);
 
             final ExpObject source = publishSource.first.resolvePublishSource(publishSource.second);
             createProvenanceRun(user, targetContainer, publishSource.first, source, errors, dataset, datasetLsids);
@@ -438,9 +440,9 @@ public class StudyPublishManager implements StudyPublishService
 
             transaction.commit();
         }
-        catch (ChangePropertyDescriptorException e)
+        catch (ChangePropertyDescriptorException | IOException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         //Make sure that the study is updated with the correct timepoints.
@@ -942,7 +944,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (defaultQCStateId != null)
                     defaultQCState = QCStateManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
-                        defaultQCState, insertOption, null, null, importLookupByAlternateKey, auditBehaviorType);
+                        defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
                 if (!errors.hasErrors())
                     transaction.commit();
             }
