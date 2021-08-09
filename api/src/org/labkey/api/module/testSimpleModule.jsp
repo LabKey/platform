@@ -1,8 +1,6 @@
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.SimpleModule" %>
-<%@ page import="static org.junit.Assert.assertFalse" %>
-<%@ page import="static org.junit.Assert.assertTrue" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.util.GUID" %>
