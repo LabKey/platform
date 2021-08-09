@@ -1,14 +1,16 @@
+<%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.SimpleModule" %>
-<%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="static junit.framework.TestCase.assertTrue" %>
+<%@ page import="static org.junit.Assert.assertFalse" %>
+<%@ page import="static org.junit.Assert.assertTrue" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.labkey.api.util.GUID" %>
 
 <%!
     // https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystem.html#getPathMatcher(java.lang.String)
 
-    //@Test
+    @Test
     public void testGlob()
     {
         var m = new SimpleModule();
