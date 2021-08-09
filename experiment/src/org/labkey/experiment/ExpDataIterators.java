@@ -1131,14 +1131,13 @@ public class ExpDataIterators
 
             // Wire up derived parent/child data and materials
             DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample, false));
-            DataIteratorBuilder step6 = LoggingDataIterator.wrap(new AutoLinkToStudyDataIteratorBuilder(step5, isSample, _container, _user, _expTable));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
-            DataIteratorBuilder step7 = step6;
+            DataIteratorBuilder step6 = step5;
             if (null != _indexFunction)
-                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
+                step6 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step5, _indexFunction)); // may need to add this after the aliases are set
 
-            return LoggingDataIterator.wrap(step7.getDataIterator(context));
+            return LoggingDataIterator.wrap(step6.getDataIterator(context));
         }
     }
 }
