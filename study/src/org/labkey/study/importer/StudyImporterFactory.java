@@ -106,6 +106,14 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 User user = ctx.getUser();
                 BindException errors = new NullSafeBindException(c, "import");
 
+                //TODO unify with other download location
+                boolean isCloudRoot = job != null && job.getPipeRoot().isCloudRoot();
+                if (isCloudRoot)
+                {
+                    Path dirPath = job.getPipeRoot().getRootNioPath().resolve(studyDir.getLocation());
+                    job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(dirPath.resolve(studyFileName), errors);
+                }
+
                 StudyDocument studyDoc;
                 XmlObject studyXml = studyDir.getXmlBean(studyFileName);
                 try
@@ -123,7 +131,6 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(studyDir.getRelativePath(studyFileName), e);
                 }
 
-                boolean isCloudRoot = job != null && job.getPipeRoot().isCloudRoot();
                 StudyImportContext studyImportContext = new StudyImportContext.Builder(user,c)
                         .withDocument(studyDoc)
                         .withDataTypes(ctx.getDataTypes())

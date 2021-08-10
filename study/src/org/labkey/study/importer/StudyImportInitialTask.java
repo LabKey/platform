@@ -27,6 +27,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -36,6 +37,8 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +64,13 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         PipelineJob job = getJob();
         StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
         StudyImportContext ctx = support.getImportContext();
+
+        boolean isCloudRoot = job.getPipeRoot().isCloudRoot();
+        if (isCloudRoot)
+        {
+            Path dirPath = FileUtil.getPath(job.getContainer(), URI.create(ctx.getRoot().getLocation()));
+            job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(dirPath.resolve(support.getOriginalFilename()), support.getSpringErrors());
+        }
 
         doImport(job, ctx, support.getSpringErrors(), support.getOriginalFilename());
 

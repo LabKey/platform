@@ -252,6 +252,16 @@ public class StudyImportContext extends SimpleStudyImportContext
             _container = c;
         }
 
+        public Builder(StudyImportContext original) throws ImportException
+        {
+            _user = original.getUser();
+            _container = original.getContainer();
+            _studyDocument = original.getDocument();
+            _dataTypes = original.getDataTypes();
+            _loggerGetter = original.getLoggerGetter();
+            _root = original.getRoot();
+        }
+
         public Builder withStudyXml(File studyXml)
         {
             _studyXml = studyXml.toPath();

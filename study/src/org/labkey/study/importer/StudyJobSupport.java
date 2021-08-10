@@ -21,6 +21,8 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
 import org.springframework.validation.BindException;
 
+import java.nio.file.Path;
+
 /*
 * User: adam
 * Date: Aug 31, 2009
@@ -41,4 +43,6 @@ public interface StudyJobSupport extends SpecimenJobSupport
 
     @Deprecated
     BindException getSpringErrors();
+
+    void downloadCloudArchive(Path studyXml, BindException errors);
 }

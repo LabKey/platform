@@ -202,6 +202,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
@@ -464,6 +465,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
                     }
                 });
+                Long cloudBackedStudies = allStudies.stream()
+                        .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
+                        .count();
+                metric.put("cloudBackedStudies", cloudBackedStudies);
 
                 Map<String, Integer> notificationMap = new HashMap<>();
                 notifyOptionCounts.forEach((key, value) -> notificationMap.put(key.name(), value));

@@ -20,10 +20,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
+import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.security.User;
 import org.labkey.api.study.pipeline.StudyBatch;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -44,8 +47,8 @@ import java.nio.file.Path;
  */
 public class StudyReloadSourceJob extends StudyBatch implements Serializable, StudyReloadSourceJobSupport, StudyImporter
 {
-    private final StudyImportContext _ctx;
-    private final VirtualFile _root;
+    private StudyImportContext _ctx;
+    private VirtualFile _root;
     private String _reloadSourceName;
     private BindException _errors;
 
@@ -148,5 +151,47 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
     public boolean isMerge()
     {
         return false;
+    }
+
+    @Override
+    public void downloadCloudArchive(Path studyXml, BindException errors)
+    {
+        //check if cloud based pipeline root, and study xml hasn't been downloaded already
+        if (!studyXml.startsWith(getPipeRoot().getImportDirectory().toPath().toAbsolutePath()))
+        {
+            if (CloudStoreService.get() != null)   //proxy of is Cloud Module enabled for the current job/container
+            {
+                try
+                {
+                    Path importRoot = CloudStoreService.get().copyExpandedArchiveLocally(studyXml, _ctx.getXml(), _ctx.getRoot().getLocation(), getPipeRoot(), _ctx.getLoggerGetter().getLogger(), errors);
+                    VirtualFile vfRoot = new FileSystemFile(importRoot);
+
+                    // Replace remote based context with local temp dir based context and root
+                    _ctx = generateImportContext(getUser(), getContainer(), importRoot.resolve(studyXml.getFileName().toString()), vfRoot);
+                    _root = vfRoot;
+                }
+                catch (ImportException e)
+                {
+                    errors.addSuppressed(e);
+                }
+            }
+        }
+    }
+
+    private StudyImportContext generateImportContext(User user, Container c, Path studyXml, VirtualFile root)
+    {
+        StudyImportContext context = new StudyImportContext.Builder(user, c)
+                .withStudyXml(studyXml)
+                .withDataTypes(_ctx.getDataTypes())
+                .withLogger(new PipelineJobLoggerGetter(this))
+                .withRoot(root)
+                .build();
+        context.setSkipQueryValidation(_ctx.isSkipQueryValidation());
+        context.setCreateSharedDatasets(_ctx.isCreateSharedDatasets());
+        context.setFailForUndefinedVisits(_ctx.isFailForUndefinedVisits());
+        context.setIncludeSubfolders(_ctx.isIncludeSubfolders());
+        context.setActivity(_ctx.getActivity());
+
+        return context;
     }
 }

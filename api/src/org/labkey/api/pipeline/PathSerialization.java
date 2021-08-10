@@ -85,6 +85,7 @@ public class PathSerialization
                 {
                     //TODO this will likely work only for cloud paths that include access ids eg: s3://<pub-access-key>@s3.amazonaws.com/<my bucket>/...
                     return css.getPathFromUrl(str);
+                    //TODO need LKS container to pull the appropriate S3 credentials/FileSystem representation (in the event of interrupted job)
                 }
 
                 return Path.of(str); //TODO this will cause issues...
