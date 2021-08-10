@@ -97,7 +97,7 @@ Enter vaccine design information in the grids below.
             Configure dropdown options for challenge types, immunogen types, genes, subtypes and routes at the project level to be shared across study designs or within this folder for
             study specific properties:
             <div style="display: inline" class="dropdown">
-                <button data-toggle="dropdown" class="btn btn-default">Configure <i class="fa fa-caret-down"></i></button>
+                <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">Configure <i class="fa fa-caret-down"></i></button>
                 <ul class="dropdown-menu dropdown-menu-right">
                     <%
                         NavTree folderTree = new NavTree("Folder");
