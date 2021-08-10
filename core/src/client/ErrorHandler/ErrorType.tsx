@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
-import { helpLinkNode, imageURL } from '@labkey/components';
+import { imageURL, HelpLink } from '@labkey/components';
 import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
@@ -13,8 +13,8 @@ const DETAILS_SUB_INSTRUCTION = (
     <>
         <p className="labkey-error-details labkey-error-details-question">What else can I do?</p>
         <p className="labkey-error-details">
-            Search through the {helpLinkNode('default', 'LabKey support documentation')} and previous forum questions to
-            troubleshoot your issue.
+            Search through the <HelpLink topic="default" referrer="errorPage">LabKey support documentation</HelpLink> and previous forum
+            questions to troubleshoot your issue.
         </p>
         <p className="labkey-error-details">
             If you are part of a{' '}
@@ -84,7 +84,8 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
         <div className="labkey-error-details">
             <ul>
                 <li>
-                    <b>Incorrect URL: </b>the wrong web address has been typed. {helpLinkNode('url', 'Read More >')}
+                    <b>Incorrect URL: </b>the wrong web address has been typed.{' '}
+                    <HelpLink topic="url" referrer="errorPage">Read More &gt;</HelpLink>
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
@@ -94,7 +95,7 @@ const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
             <ul>
                 <li>
                     <b>Permissions: </b>your account does not have the permissions to view this page.{' '}
-                    {helpLinkNode('permissionLevels', 'Read More >')}
+                    <HelpLink topic="permissionLevels" referrer="errorPage">Read More &gt;</HelpLink>
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
@@ -119,7 +120,7 @@ const PERMISSION_DETAILS = () => (
 
         <p className="labkey-error-details">
             A permission error occurs when the account you've logged into does not have the set permissions to access
-            this page. {helpLinkNode('permissionLevels', 'Read More >')}
+            this page. <HelpLink topic="permissionLevels" referrer="errorPage">Read More &gt;</HelpLink>
         </p>
         <div className="labkey-error-details labkey-error-subdetails">
             <FontAwesomeIcon icon={faCheckCircle} className="domain-panel-status-icon-green" /> Try contacting your
@@ -200,7 +201,7 @@ const CONFIGURATION_DETAILS = (errorDetails: ErrorDetails) => (
             <ul>
                 <li>
                     <b>Server Configuration Errors: </b>issues related to your machine, software version, or running
-                    dependencies. {helpLinkNode('troubleshootingAdmin', 'Read More >')}
+                    dependencies. <HelpLink topic="troubleshootingAdmin" referrer="errorPage">Read More &gt;</HelpLink>
                 </li>
             </ul>
             <div className="labkey-error-subdetails">
