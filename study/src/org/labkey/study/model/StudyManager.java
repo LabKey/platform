@@ -3474,7 +3474,7 @@ public class StudyManager
 
         Map<Enum, Object> options = new HashMap<>();
         options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-        options.put(DatasetUpdateService.Config.ForUpdate, Boolean.valueOf(false));
+        options.put(DatasetUpdateService.Config.ForUpdate, Boolean.FALSE);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
