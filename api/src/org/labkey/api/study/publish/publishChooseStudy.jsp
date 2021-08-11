@@ -42,6 +42,7 @@
     boolean unambiguous = !bean.isInsufficientPermissions() && !bean.isNullStudies() && bean.getStudies().size() == 1;
     Study firstStudy = null;
     Container firstStudyContainer = null;
+    boolean autoLinkEnabled = bean.isAutoLinkEnabled();
 
     if (unambiguous)
     {
@@ -209,6 +210,20 @@
     %>
     <labkey:input type="checkbox" label="<%= autoLinkLabel %>" id="autoLink" forceSmallContext="true"
                   contextContent="<%= autoLinkTip %>"/>
+    <%
+        }
+    %>
+
+    <%
+        if (autoLinkEnabled)
+        {
+    %>
+    <div class="form-group">
+        <label for="autoLinkCategory" class="control-label col-sm-3 col-lg-2"> Specify Linked Dataset Category </label>
+        <div class="col-sm-9 col-lg-10">
+            <labkey:input type="text" className="form-control" name="autoLinkCategory" id="autoLinkCategory" />
+        </div>
+    </div>
     <%
         }
     %>
