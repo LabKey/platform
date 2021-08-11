@@ -3474,7 +3474,7 @@ public class StudyManager
 
         Map<Enum, Object> options = new HashMap<>();
         options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-        options.put(DatasetUpdateService.Config.ForUpdate, Boolean.FALSE);
+        options.put(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.FALSE);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
@@ -3503,7 +3503,7 @@ public class StudyManager
                                           DatasetDefinition.CheckForDuplicates checkDuplicates,
                                           @Nullable QCState defaultQCState,
                                           Logger logger,
-                                          boolean forUpdate) throws IOException
+                                          boolean allowImportManagedKey) throws IOException
     {
         if (data.isEmpty())
             return Collections.emptyList();
@@ -3512,14 +3512,14 @@ public class StudyManager
         Map<Enum, Object> options = new HashMap<>();
 
         options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-        options.put(DatasetUpdateService.Config.ForUpdate, Boolean.valueOf(forUpdate));
+        options.put(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.valueOf(allowImportManagedKey));
         if (defaultQCState != null)
             options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
         options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
         context.setConfigParameters(options);
 
         DataLoader loader = new MapLoader(data);
-        context.setInsertOption(forUpdate ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
+        context.setInsertOption(allowImportManagedKey ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
 
         return importDatasetData(user, def, loader, new CaseInsensitiveHashMap<>(), context);
     }

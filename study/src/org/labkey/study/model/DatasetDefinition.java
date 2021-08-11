@@ -2249,9 +2249,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
-        boolean forUpdate = context.getConfigParameterBoolean(DatasetUpdateService.Config.ForUpdate);
-        b.setForUpdate(forUpdate);
-        b.setUseImportAliases(!forUpdate);
+        boolean allowImportManagedKey = context.getConfigParameterBoolean(DatasetUpdateService.Config.AllowImportManagedKey);
+        b.setAllowImportManagedKeys(allowImportManagedKey);
+        b.setUseImportAliases(!allowImportManagedKey);
         b.setKeyList((List<String>)context.getConfigParameter(DatasetUpdateService.Config.KeyList));
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();

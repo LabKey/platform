@@ -69,7 +69,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     QCState defaultQC;
     List<String> lsids = null;
     DatasetDefinition.CheckForDuplicates checkDuplicates = DatasetDefinition.CheckForDuplicates.never;
-    boolean isForUpdate = false;
+    boolean allowImportManagedKeys = false;
     boolean useImportAliases = false;
     Map<String, Map<Object, Object>>  _tableIdMapMap = Map.of();    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
 
@@ -100,11 +100,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
      * This is very gross, and it causes a special case here, as we want to re-use any server
      * managed keys, instead of regenerating them.
      *
-     * @param update
+     * @param allowImportManagedKeys
      */
-    void setForUpdate(boolean update)
+    void setAllowImportManagedKeys(boolean allowImportManagedKeys)
     {
-        this.isForUpdate = update;
+        this.allowImportManagedKeys = allowImportManagedKeys;
     }
 
     void setUseImportAliases(boolean aliases)
@@ -142,7 +142,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             _tableIdMapMap = (Map)contextConfig.get(DatasetUpdateService.Config.StudyImportMaps);
 
         // might want to make allow importManagedKey an explicit option, for now allow for GUID
-        boolean allowImportManagedKey = isForUpdate || _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID;
+        boolean allowImportManagedKey = allowImportManagedKeys || _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.GUID;
         boolean isManagedKey = _datasetDefinition.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && _datasetDefinition.getKeyManagementType() != Dataset.KeyManagementType.None;
 
         TimepointType timetype = _datasetDefinition.getStudy().getTimepointType();

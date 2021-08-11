@@ -242,7 +242,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             {
                                 DataIteratorContext dataIteratorContext = new DataIteratorContext();
                                 dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-                                dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.ForUpdate, Boolean.valueOf(false));
+                                dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.FALSE);
 
                                 if (study.isDataspaceStudy())
                                 {
@@ -478,7 +478,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                                 DataIteratorContext dataIteratorContext = new DataIteratorContext();
                                 dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-                                dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.ForUpdate, Boolean.valueOf(false));
+                                dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.FALSE);
                                 if (study.isDataspaceStudy())
                                 {
                                     if (!fieldMap.containsKey(new FieldKey(null, "container")))

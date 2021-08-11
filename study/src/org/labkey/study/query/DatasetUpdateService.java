@@ -98,7 +98,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         StudyImportMaps,        // expected: Map<String,Map<Object,Object>>
 
         KeyList,                // expected: List<String>
-        ForUpdate               // expected: Boolean
+        AllowImportManagedKey   // expected: Boolean
     }
 
     private static final Logger LOG = LogManager.getLogger(DatasetUpdateService.class);
