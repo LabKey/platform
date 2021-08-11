@@ -76,6 +76,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -3781,26 +3782,49 @@ public class ExperimentServiceImpl implements ExperimentService
                     // Grab these to delete after we've deleted the Data rows
                     List<ExpDataImpl> datasToDelete = getAllDataOwnedByRun(runId);
 
-                    // Find the cross-run file inputs: data outputs that are have the same dataFileUrl as an input
-                    List<ExpDataImpl> crossRun = new ArrayList<>();
+                    // Find the cross-run file input or output exp.data to delete after the run is deleted:
+                    // - data outputs that have the same dataFileUrl as an "cross run input" exp.data input and aren't being used in another run.
+                    // - data inputs with "cross run input" role, have no custom file properties, and aren't being used in another run.
+                    List<ExpDataImpl> crossRunInputs = new ArrayList<>();
+                    List<ExpDataImpl> crossRunOutputs = new ArrayList<>();
                     List<ExpDataImpl> inputData = run.getInputDatas(DefaultAssayRunCreator.CROSS_RUN_DATA_INPUT_ROLE, null);
                     if (!inputData.isEmpty())
                     {
-                        for (ExpDataImpl output : datasToDelete)
+                        for (ExpDataImpl input : inputData)
                         {
-                            // Don't delete the exp.data output if it is being used in other runs
-                            List<? extends ExpRun> otherUsages = ExperimentService.get().getRunsUsingDatas(List.of(output));
-                            otherUsages.remove(run);
-                            if (!otherUsages.isEmpty())
+                            // Find a matching exp.data output with the same dataFileUrl
+                            for (ExpDataImpl output : datasToDelete)
                             {
-                                LOG.debug("Skipping delete of cross-run data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+                                if (input.getDataFileUrl().equals(output.getDataFileUrl()))
+                                {
+                                    // Don't delete the exp.data output if it is being used in other runs
+                                    List<? extends ExpRun> otherUsages = ExperimentService.get().getRunsUsingDatas(List.of(output));
+                                    otherUsages.remove(run);
+                                    if (!otherUsages.isEmpty())
+                                    {
+                                        LOG.debug("Skipping delete of cross-run output data '" + output.getName() + "' (" + output.getRowId() + ") used by other runs: " + otherUsages.stream().map(ExpRun::getName).collect(Collectors.joining(", ")));
+                                        break;
+                                    }
+
+                                    crossRunOutputs.add(output);
+                                }
+                            }
+
+                            // If there are comments or file properties attached to the exp.data don't delete it.
+                            // TODO: We don't want to delete exp.data for uploaded files since we track created/createdby and other metadata... is there a better way to identify these exp.data we don't want to delete?
+                            // CONSIDER: move these properties to the matching output exp.data with the same dataFileUrl?
+                            if (hasFileProperties(container, input))
+                            {
+                                LOG.debug("Skipping delete of cross-run input data '" + input.getName() + "' (" + input.getRowId() + ") with custom file properties");
                                 continue;
                             }
 
-                            for (ExpDataImpl input : inputData)
+                            // If the file has no other usages, we can delete it.
+                            List<? extends ExpRun> otherUsages = ExperimentService.get().getRunsUsingDatas(List.of(input));
+                            otherUsages.remove(run);
+                            if (otherUsages.isEmpty())
                             {
-                                if (input.getDataFileUrl().equals(output.getDataFileUrl()))
-                                    crossRun.add(output);
+                                crossRunInputs.add(input);
                             }
                         }
                     }
@@ -3818,9 +3842,14 @@ public class ExperimentServiceImpl implements ExperimentService
                     }
 
                     // Delete the cross run data completely
-                    for (ExpDataImpl data : crossRun)
+                    for (ExpDataImpl data : crossRunInputs)
                     {
-                        LOG.debug("Deleting cross-run data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                        LOG.debug("Deleting cross-run input data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
+                        data.delete(user, false);
+                    }
+                    for (ExpDataImpl data : crossRunOutputs)
+                    {
+                        LOG.debug("Deleting cross-run output data: name=" + data.getName() + ", rowId=" + data.getRowId() + ", dataFileUrl=" + data.getDataFileUrl());
                         data.delete(user, false);
                     }
 
@@ -3831,6 +3860,33 @@ public class ExperimentServiceImpl implements ExperimentService
                 transaction.commit();
             }
         }
+    }
+
+
+    // return true if the data has a comment or any other custom file properties
+    private boolean hasFileProperties(Container c, ExpData data)
+    {
+        String comment = data.getComment();
+        if (comment != null)
+            return true;
+
+        FileContentService svc = FileContentService.get();
+        if (svc != null)
+        {
+            Domain d = PropertyService.get().getDomain(c, svc.getDomainURI(c));
+            if (d == null && !c.equals(data.getContainer()))
+                d = PropertyService.get().getDomain(data.getContainer(), svc.getDomainURI(data.getContainer()));
+
+            if (d != null)
+            {
+                Map<String, ObjectProperty> properties = data.getObjectProperties();
+                for (DomainProperty dp : d.getProperties())
+                    if (properties.containsKey(dp.getPropertyURI()))
+                        return true;
+            }
+        }
+
+        return false;
     }
 
     private Collection<Integer> getRelatedProtocolIds(Collection<Integer> selectedProtocolIds)
@@ -4680,7 +4736,7 @@ public class ExperimentServiceImpl implements ExperimentService
             ListService ls = ListService.get();
             if (ls != null)
             {
-                for (ListDefinition list : ListService.get().getLists(c, null, true).values())
+                for (ListDefinition list : ListService.get().getLists(c, null, false).values())
                 {
                     // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
                     if (list.getContainer().equals(c))

@@ -17,6 +17,7 @@ package org.labkey.api.products;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public abstract class ProductMenuProvider
     @Nullable
     public String getDocumentationUrl()
     {
-        return "https://www.labkey.org/Documentation/wiki-page.view?name=default";
+        return "https://www.labkey.org/Documentation/wiki-page.view?name=default&referrer=" + HelpTopic.Referrer.docMenu;
     }
 
     public String getDocumentationLabel()

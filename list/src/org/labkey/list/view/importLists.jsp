@@ -30,7 +30,7 @@ export and import, lists can be moved from one server to another or a folder can
 list templates.<%
     Container c = getContainer();
 
-    if (!ListService.get().getLists(c, getUser(), true).isEmpty())
+    if (!ListService.get().getLists(c, getUser(), false).isEmpty())
     {
 %><p>Warning: Existing lists will be replaced by lists in the archive with the same name; this could result in data loss and cannot be undone.</p>
 <%

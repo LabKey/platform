@@ -16,6 +16,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -35,6 +36,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -44,7 +47,9 @@ import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
@@ -189,6 +194,67 @@ public class ExpDataIterators
         }
     }
 
+    public static class ExpMaterialValidatorIterator extends ValidatorIterator
+    {
+        private Integer _aliquotedFromColInd = null;
+
+        public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
+        {
+            super(data, context, c, user);
+        }
+
+        @Override
+        protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data)
+        {
+            if (_aliquotedFromColInd == null)
+            {
+                Map<String, Integer> columnNameMap = ((SimpleTranslator) data).getColumnNameMap();
+                if (columnNameMap != null && columnNameMap.containsKey("AliquotedFrom"))
+                    _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
+                else
+                    _aliquotedFromColInd = -1;
+            }
+
+            if (!(v instanceof RequiredValidator) || _aliquotedFromColInd < 0)
+                return super.validate(v, rowNum, value, data);
+
+            String aliquotedFromValue = null;
+            Object aliquotedFromObj = data.get(_aliquotedFromColInd);
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    aliquotedFromValue = (String) aliquotedFromObj;
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFromValue = aliquotedFromObj.toString();
+                }
+            }
+
+            // skip required field check for aliquots since aliquots properties are inherited
+            if (!StringUtils.isEmpty(aliquotedFromValue))
+                return null;
+
+            return v.validate(rowNum, value);
+        }
+    }
+
+    public static class ExpMaterialDataIteratorBuilder extends StandardDataIteratorBuilder
+    {
+        public ExpMaterialDataIteratorBuilder(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user)
+        {
+            super(target, in, c, user);
+        }
+
+        @Override
+        protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user)
+        {
+            ExpMaterialValidatorIterator validate = new ExpMaterialValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user);
+            validate.setDebugName("ExpMaterialDataIteratorBuilder validate");
+            return validate;
+        }
+    }
 
     /**
      * Data iterator to handle aliases
