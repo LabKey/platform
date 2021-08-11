@@ -52,14 +52,25 @@ public class ListServiceImpl implements ListService
     @Override
     public Map<String, ListDefinition> getLists(Container container)
     {
-        return getLists(container, null, true);
+        return getLists(container, null, false);
     }
 
     @Override
-    public Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean includeAllLists)
+    public Map<String, ListDefinition> getLists(Container container, boolean includePicklists)
+    {
+        return getLists(container, null, false, includePicklists);
+    }
+
+    @Override
+    public Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility)
+    {
+        return getLists(container, user, checkVisibility, true);
+    }
+
+    private Map<String, ListDefinition> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists)
     {
         Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<>();
-        for (ListDef def : ListManager.get().getLists(container, user, includeAllLists))
+        for (ListDef def : ListManager.get().getLists(container, user, checkVisibility, includePicklists))
         {
             ListDefinition list = new ListDefinitionImpl(def);
             ret.put(list.getName(), list);
