@@ -16,6 +16,8 @@
 
 package org.labkey.core.admin.sql;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -40,6 +42,7 @@ import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
@@ -55,12 +58,14 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.core.admin.AdminController;
@@ -71,6 +76,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,6 +96,7 @@ import java.util.stream.Collectors;
 public class SqlScriptController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SqlScriptController.class);
+    private static final Logger LOG = LogManager.getLogger(SqlScriptController.class);
 
     public SqlScriptController()
     {
@@ -210,10 +217,10 @@ public class SqlScriptController extends SpringActionController
 
             StringBuilder html = new StringBuilder("<table>");
 
+            html.append("<tr><td colspan=4>");
+
             if (AppProps.getInstance().isDevMode())
             {
-                html.append("<tr><td colspan=4>");
-
                 if (form.isManagedOnly())
                     html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
@@ -223,9 +230,12 @@ public class SqlScriptController extends SpringActionController
                 html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.link("scripts with errors").href(new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
 //                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
-                html.append("</td></tr>");
-                html.append("<tr><td>&nbsp;</td></tr>");
             }
+
+            // Make this link available on production deployments
+            html.append(PageFlowUtil.link("upgrade code").href(new ActionURL(UpgradeCodeAction.class, ContainerManager.getRoot())));
+            html.append("</td></tr>");
+            html.append("<tr><td>&nbsp;</td></tr>");
 
             html.append("<tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
@@ -1302,6 +1312,111 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
+    public static class UpgradeCodeForm
+    {
+        private String _module;
+        private String _method;
+
+        public String getCombined()
+        {
+            return null;
+        }
+
+        public void setCombined(String combined)
+        {
+            String[] parts = combined.split(": ");
+            if (parts.length == 2)
+            {
+                _module = parts[0];
+                _method = parts[1];
+            }
+        }
+
+        public String getModule()
+        {
+            return _module;
+        }
+
+        public String getMethod()
+        {
+            return _method;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class UpgradeCodeAction extends FormViewAction<UpgradeCodeForm>
+    {
+        private Method _method;
+        private ModuleContext _ctx;
+
+        @Override
+        public void validateCommand(UpgradeCodeForm form, Errors errors)
+        {
+            Module module = ModuleLoader.getInstance().getModule(form.getModule());
+            if (null == module)
+            {
+                errors.reject(ERROR_MSG, "Module not found");
+            }
+            else
+            {
+                UpgradeCode code = module.getUpgradeCode();
+                if (null == code)
+                {
+                    errors.reject(ERROR_MSG, "Module doesn't have UpgradeCode");
+                }
+                else
+                {
+                    try
+                    {
+                        _method = code.getClass().getDeclaredMethod(form.getMethod(), ModuleContext.class);
+                        _ctx = ModuleLoader.getInstance().getModuleContext(form.getModule());
+                        if (null == _ctx)
+                            errors.reject(ERROR_MSG, "ModuleContext not found");
+                    }
+                    catch (NoSuchMethodException e)
+                    {
+                        errors.reject(ERROR_MSG, "Method doesn't exist");
+                    }
+                }
+            }
+        }
+
+        @Override
+        public ModelAndView getView(UpgradeCodeForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/core/admin/view/upgradeCode.jsp", null, errors);
+        }
+
+        @Override
+        public boolean handlePost(UpgradeCodeForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                ModuleLoader.getInstance().setUpgradeUser(getUser());
+                LOG.info("Executing " + _method.getDeclaringClass().getSimpleName() + "." + _method.getName() + "(ModuleContext moduleContext)");
+                _method.invoke(null, _ctx);
+            }
+            finally
+            {
+                ModuleLoader.getInstance().setUpgradeUser(null);
+            }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(UpgradeCodeForm form)
+        {
+            return new ActionURL(ScriptsAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            new ScriptsAction().addNavTrail(root);
+            root.addChild("Upgrade Code");
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -1314,16 +1429,17 @@ public class SqlScriptController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new GetModuleStatusAction(),
-                controller.new ScriptsWithErrorsAction(),
-                controller.new ConsolidateScriptsAction(),
                 controller.new ConsolidateSchemaAction(),
+                controller.new ConsolidateScriptsAction(),
+                controller.new GetModuleStatusAction(),
                 controller.new OrphanedScriptsAction(),
-                controller.new ScriptAction(),
-                controller.new ReorderScriptAction(),
                 controller.new ReorderAllScriptsAction(),
+                controller.new ReorderScriptAction(),
                 controller.new SaveReorderedScriptAction(),
-                controller.new UnreachableScriptsAction()
+                controller.new ScriptAction(),
+                controller.new ScriptsWithErrorsAction(),
+                controller.new UnreachableScriptsAction(),
+                controller.new UpgradeCodeAction()
             );
 
             // @AdminConsoleAction
