@@ -105,7 +105,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         dontRequire.add(name);
     }
 
-    private static class TranslateHelper
+    public static class TranslateHelper
     {
         TranslateHelper(ColumnInfo col, DomainProperty dp)
         {
@@ -116,6 +116,17 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         int indexMv = SimpleTranslator.NO_MV_INDEX;
         ColumnInfo target;
         DomainProperty dp;
+
+        public ColumnInfo getTarget()
+        {
+            return target;
+        }
+
+        public DomainProperty getDp()
+        {
+            return dp;
+        }
+
     }
 
     @Override
@@ -271,8 +282,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
 
         if (_validate)
         {
-            ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, _c, _user);
-            validate.setDebugName("StandardDIB validate");
+            ValidatorIterator validate = getValidatorIterator(validateInput, context, translateHelperMap, _c, _user);
 
             for (int index = 1; index <= validateInput.getColumnCount(); index++)
             {
@@ -290,7 +300,14 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 
-    private String getTranslateHelperKey(ColumnInfo col)
+    protected ValidatorIterator getValidatorIterator(DataIterator validateInput, DataIteratorContext context, Map<String, TranslateHelper> translateHelperMap, Container c, User user)
+    {
+        ValidatorIterator validate = new ValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user);
+        validate.setDebugName("StandardDIB validate");
+        return validate;
+    }
+
+    protected String getTranslateHelperKey(ColumnInfo col)
     {
         return col.getPropertyURI() + ":" + col.getName().toLowerCase();
     }

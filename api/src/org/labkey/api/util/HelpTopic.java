@@ -72,7 +72,22 @@ public class HelpTopic
 
     public String getHelpTopicHref()
     {
-        return HELP_LINK_PREFIX + _topic;
+        return getHelpTopicHref(Referrer.inPage);
+    }
+
+    public enum Referrer
+    {
+        /** The LabKey Documentation link under the user menu in the main page header */
+        docMenu,
+        /** Help links under the Developer header menu */
+        devMenu,
+        /** Links in the main page or its tooltips */
+        inPage
+    }
+
+    public String getHelpTopicHref(@NotNull Referrer referrer)
+    {
+        return HELP_LINK_PREFIX + _topic + "&referrer=" + referrer;
     }
 
     // Create a simple link (just an <a> tag with plain mixed case text, no graphics) to the help topic, displaying
@@ -97,7 +112,7 @@ public class HelpTopic
     // Create a NavTree for a menu item that links to the help topic, displaying the provided text, using the standard target, etc.
     public NavTree getNavTree(String displayText)
     {
-        NavTree tree = new NavTree(displayText, getHelpTopicHref());
+        NavTree tree = new NavTree(displayText, getHelpTopicHref(Referrer.docMenu));
         tree.setTarget(HelpTopic.TARGET_NAME);
 
         return tree;

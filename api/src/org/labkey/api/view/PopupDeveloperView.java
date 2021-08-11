@@ -86,7 +86,7 @@ public class PopupDeveloperView extends PopupMenuView
             }
 
             items.add(DeveloperMenuNavTrees.Section.referenceDocs, new NavTree("XML Schema Reference", "https://www.labkey.org/download/schema-docs/xml-schemas"));
-            items.add(DeveloperMenuNavTrees.Section.referenceDocs, new NavTree("SQL Reference", new HelpTopic("labkeySql").getHelpTopicHref()));
+            items.add(DeveloperMenuNavTrees.Section.referenceDocs, new NavTree("SQL Reference", new HelpTopic("labkeySql").getHelpTopicHref(HelpTopic.Referrer.devMenu)));
         });
     }
 }
