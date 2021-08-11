@@ -3,7 +3,7 @@ package org.labkey.api.exp.xar;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 
@@ -33,6 +33,24 @@ public class XarReaderRegistry
         _delegateMap.put(protocolPattern, delegate);
     }
 
+    public void postProcessImportedProtocol(Container container, User user, ExpProtocol protocol, Logger logger)
+    {
+        if (protocol == null)
+            return;
+
+        _delegateMap.keySet().stream().filter(protocol.getLSID()::contains).forEach(key -> {
+            XarReaderDelegate delegate = _delegateMap.get(key);
+            try
+            {
+                delegate.postProcessImportedProtocol(container, user, protocol, logger);
+            }
+            catch (Exception e)
+            {
+                logger.error(String.format("There was a problem during postprocessing with delegate '%s'", delegate.getXarDelegateName()), e);
+            }
+        });
+    }
+
     public void postProcessImportedRun(Container container, User user, ExpRun run, Logger logger)
     {
         if (run == null)
@@ -42,7 +60,7 @@ public class XarReaderRegistry
             XarReaderDelegate delegate = _delegateMap.get(key);
             try
             {
-                delegate.postProcessImportedRun(container, user, run);
+                delegate.postProcessImportedRun(container, user, run, logger);
             }
             catch (Exception e)
             {

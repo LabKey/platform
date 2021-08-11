@@ -96,6 +96,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String SAMPLE_ALIQUOT_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:SampleAliquotProtocol";
     String SAMPLE_ALIQUOT_PROTOCOL_NAME = "Sample Aliquot Protocol";
 
+    String SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX = "SampleManagement.JobProtocol";
+    String SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX = "SampleManagement.TaskProtocol";
+
     // Constant used by ExpDataIterators.AliasDataIterator
     String ALIASCOLUMNALIAS = "org.labkey.experiment.ExpDataIterators$AliasDataIterator#ALIAS";
 

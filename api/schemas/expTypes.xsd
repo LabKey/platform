@@ -198,6 +198,7 @@
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
 			<xs:element name="Alias" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="RootMaterialLSID" type="string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="AliquotedFromLSID" type="string" minOccurs="0" maxOccurs="1"/>
 		</xs:sequence>
 		<xs:attribute ref="rdf:about" use="required"/>
 	</xs:complexType>
