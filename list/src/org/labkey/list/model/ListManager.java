@@ -130,17 +130,24 @@ public class ListManager implements SearchService.DocumentProvider
 
     public Collection<ListDef> getLists(Container container)
     {
-        return getLists(container, null, true);
+        return getLists(container, null, false, true);
     }
 
-    public Collection<ListDef> getLists(Container container, @Nullable User user, boolean includeAllLists)
+    public Collection<ListDef> getLists(Container container, boolean includePicklists)
+    {
+        return getLists(container, null, false, includePicklists);
+    }
+
+    public Collection<ListDef> getLists(Container container, @Nullable User user, boolean checkVisibility, boolean includePicklists)
     {
         List<ListDef> ownLists = _listDefCache.get(container.getId());
         Collection<ListDef> scopedLists = getAllScopedLists(ownLists, container);
-        if (includeAllLists)
-            return scopedLists;
-        else
+        if (!includePicklists)
+            scopedLists = scopedLists.stream().filter(listDef -> !listDef.isPicklist()).collect(Collectors.toList());
+        if (checkVisibility)
             return scopedLists.stream().filter(listDef -> listDef.isVisible(user)).collect(Collectors.toList());
+        else
+            return scopedLists;
     }
 
     private Collection<ListDef> getAllScopedLists(Collection<ListDef> ownLists, Container container)
@@ -352,7 +359,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         Runnable r = () -> {
-            Map<String, ListDefinition> lists = ListService.get().getLists(c, null, true);
+            Map<String, ListDefinition> lists = ListService.get().getLists(c, null, false);
 
             try
             {

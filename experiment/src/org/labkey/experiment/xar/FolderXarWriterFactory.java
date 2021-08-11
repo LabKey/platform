@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
@@ -88,21 +89,51 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
             // if an additional context has been furnished, filter out runs not included in this export
             final XarExportContext fxarCtx = xarCtx;
-            return ExperimentService.get().getExpRuns(c, null, null).stream()
+            List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, null, null).stream()
                     .filter(
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
                             && (fxarCtx == null || fxarCtx.getIncludedAssayRuns().contains(run.getRowId()))
                     )
                     .collect(Collectors.toList());
+            // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure
+            // the assay definitions have already been processed and can be resolved properly.
+            List<ExpRun> reorderedRuns = allRuns.stream()
+                    .filter((run -> !run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX) &&
+                            !run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX)))
+                    .collect(Collectors.toList());
+            List<ExpRun> smJobRuns = allRuns.stream()
+                    .filter((run -> run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX) ||
+                            run.getProtocol().getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX)))
+                    .collect(Collectors.toList());
+            reorderedRuns.addAll(smJobRuns);
+            return reorderedRuns;
+//            return allRuns;
         }
 
         private List<Integer> getProtocols(Container c)
         {
             // don't include the sample derivation runs, we now have a separate exporter explicitly for sample types
-            return ExperimentService.get().getExpProtocols(c).stream()
-                    .filter(protocol -> !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME)
-                    && !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME))
+            List<ExpProtocol> protocols = ExperimentService.get().getExpProtocols(c)
+                    .stream()
+                    .filter(protocol ->
+                            !protocol.getLSID().startsWith(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME) &&
+                                    !protocol.getLSID().startsWith(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_NAME))
+                    .collect(Collectors.toList());
+            // the sm template tasks can make reference to assay designs, so we will put all the SM Job and Task Protocols at the end to assure
+            // the assay definitions have already been processed and can be resolved properly.
+            List<ExpProtocol> reorderedProtocols = protocols.stream()
+                    .filter((protocol ->
+                            !protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) &&
+                            !protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                    )
+                    .collect(Collectors.toList());
+            protocols.stream()
+                    .filter(protocol ->
+                            protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_JOB_PROTOCOL_PREFIX) ||
+                            protocol.getLSID().contains(ExperimentService.SAMPLE_MANAGEMENT_TASK_PROTOCOL_PREFIX))
+                    .forEach(reorderedProtocols::add);
+            return reorderedProtocols.stream()
                     .map(ExpObject::getRowId)
                     .collect(Collectors.toList());
         }

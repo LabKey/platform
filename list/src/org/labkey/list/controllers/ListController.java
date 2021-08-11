@@ -1048,7 +1048,7 @@ public class ListController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            response.put("lists", getJSONLists(ListService.get().getLists(getContainer(), getUser(), false)));
+            response.put("lists", getJSONLists(ListService.get().getLists(getContainer(), getUser(), true)));
             response.put("success", true);
 
             return response;

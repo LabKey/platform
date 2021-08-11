@@ -31,6 +31,7 @@ export const QuerySelectInput: FC<Props> = memo(props => {
             value={value}
             loadOnFocus
             maxRows={maxRows}
+            showLabel={false}
         />
     );
 });

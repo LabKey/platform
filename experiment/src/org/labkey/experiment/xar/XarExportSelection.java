@@ -122,15 +122,17 @@ public class XarExportSelection implements Serializable
             exporter.addExperiment(ExperimentServiceImpl.get().getExpExperiment(expId));
         }
 
-        for (ExpRun run : _runs)
-        {
-            exporter.addExperimentRun(run);
-        }
-
         for (int protocolId : _protocolIds)
         {
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
             exporter.addProtocol(protocol, true);
+        }
+
+        // Process runs after protocols because we want to assure the protocols are all defined
+        // since SM Workflow Tasks can reference assay design protocols
+        for (ExpRun run : _runs)
+        {
+            exporter.addExperimentRun(run);
         }
 
         for (int sampleTypeId : _sampleTypeIds)
