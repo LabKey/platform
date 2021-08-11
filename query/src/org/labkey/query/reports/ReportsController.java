@@ -3728,17 +3728,21 @@ public class ReportsController extends SpringActionController
             }
 
             // build the list of datasets
-            Study study = StudyService.get().getStudy(getContainer());
-            if (study != null)
+            StudyService studyService = StudyService.get();
+            if (studyService != null)
             {
-                List<? extends Dataset> datasetList = new ArrayList<>(study.getDatasets());
-                datasetList.sort((d1, d2) -> d1.getLabel().compareToIgnoreCase(d2.getLabel()));
-
-                for (Dataset ds : datasetList)
+                Study study = studyService.getStudy(getContainer());
+                if (study != null)
                 {
-                    datasets.add(Map.of("label", ds.getLabel(),
-                            "rowid", ds.getDatasetId(),
-                            "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.DATASET, ds.getDatasetId())));
+                    List<? extends Dataset> datasetList = new ArrayList<>(study.getDatasets());
+                    datasetList.sort((d1, d2) -> d1.getLabel().compareToIgnoreCase(d2.getLabel()));
+
+                    for (Dataset ds : datasetList)
+                    {
+                        datasets.add(Map.of("label", ds.getLabel(),
+                                "rowid", ds.getDatasetId(),
+                                "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.DATASET, ds.getDatasetId())));
+                    }
                 }
             }
 

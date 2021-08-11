@@ -1,6 +1,7 @@
 @import "@labkey/components-scss";
 
-.Select-control {
-  border-radius: unset;
-  border-color: #a9a9a9;
+.select-input__control {
+  margin-top: 3px;
+  border-radius: unset !important;
+  border-color: #a9a9a9 !important;
 }
