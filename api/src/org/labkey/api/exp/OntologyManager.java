@@ -31,6 +31,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -82,7 +83,6 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
-import static org.labkey.api.defaults.DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
@@ -2712,7 +2712,7 @@ public class OntologyManager
         List<Identifiable> objects = new ArrayList<>(maxUsageCount);
 
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL);
-        filter.addCondition(objectId_objectURI, DOMAIN_DEFAULT_VALUE_LSID_PREFIX, CompareType.DOES_NOT_START_WITH);
+        filter.addCondition(objectId_objectURI, DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX, CompareType.DOES_NOT_CONTAIN);
 
         TableSelector ts = new TableSelector(getTinfoObjectProperty(), colMap.values(), filter, new Sort("objectId"));
         try (var r = ts.getResults(true))
