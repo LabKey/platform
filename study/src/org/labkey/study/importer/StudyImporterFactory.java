@@ -107,8 +107,8 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 BindException errors = new NullSafeBindException(c, "import");
 
                 //TODO unify with other download location
-                boolean isCloudRoot = job != null && job.getPipeRoot().isCloudRoot();
-                if (isCloudRoot)
+                boolean useLocalImportDir = job != null && job.getPipeRoot().isCloudRoot() && FileUtil.hasCloudScheme(studyDir.getLocation());
+                if (useLocalImportDir)
                 {
                     Path dirPath = job.getPipeRoot().getRootNioPath().resolve(studyDir.getLocation());
                     job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(dirPath.resolve(studyFileName), errors);
@@ -135,7 +135,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                         .withDocument(studyDoc)
                         .withDataTypes(ctx.getDataTypes())
                         .withLogger(ctx.getLoggerGetter())
-                        .withRoot(isCloudRoot ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
+                        .withRoot(useLocalImportDir ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
                         .build();
 
 //                new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
@@ -156,7 +156,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 if (null != SpecimenService.get())
                 {
                     Path specimenFile = studyImportContext.getSpecimenArchive(studyDir);
-                    if (isCloudRoot)
+                    if (useLocalImportDir)
                     {   //TODO this should be done from the import context getSpecimenArchive
                         specimenFile = job.getPipeRoot().getRootNioPath().relativize(specimenFile);
                         specimenFile = job.getPipeRoot().getImportDirectory().toPath().resolve(specimenFile);

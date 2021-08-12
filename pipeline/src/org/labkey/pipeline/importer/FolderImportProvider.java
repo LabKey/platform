@@ -26,6 +26,8 @@ import org.labkey.pipeline.PipelineController;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 
 /**
  * Recognizes folder archives and attaches import options for use in the file browser.
@@ -48,7 +50,16 @@ public class FolderImportProvider extends PipelineProvider
             return;
 
         String actionId = createActionId(PipelineController.ImportFolderFromPipelineAction.class, null);
-        addAction(actionId, PipelineController.ImportFolderFromPipelineAction.class, "Import Folder", directory, directory.listFiles(new FolderImportFilter()), false, false, includeAll);
+        addAction(
+                actionId,
+                PipelineController.ImportFolderFromPipelineAction.class,
+                "Import Folder",
+                directory,
+                directory.listFiles(new FolderImportFilter()),
+                false,
+                false,
+                includeAll
+        );
     }
 
     public static String generateLogFilename(String prefix)
@@ -56,12 +67,18 @@ public class FolderImportProvider extends PipelineProvider
         return FileUtil.makeFileNameWithTimestamp(prefix);
     }
 
-    private static class FolderImportFilter implements FileFilter
+    @Override
+    public boolean supportsCloud()
+    {
+        return true;
+    }
+
+    private static class FolderImportFilter implements DirectoryStream.Filter<Path>
     {
         @Override
-        public boolean accept(File file)
+        public boolean accept(Path path)
         {
-            return file.getName().endsWith("folder.xml") || file.getName().endsWith(".folder.zip");
+            return path.getFileName().toString().endsWith("folder.xml") || path.getFileName().toString().endsWith(".folder.zip");
         }
     }
 }

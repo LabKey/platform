@@ -1086,7 +1086,7 @@ abstract public class PipelineJob extends Job implements Serializable
     // Should be called in run()'s finally by any class that overrides run(), if class uses LocalDirectory
     protected void finallyCleanUpLocalDirectory()
     {
-        if (null != _localDirectory)
+        if (null != _localDirectory & isDone())
         {
             try
             {
@@ -1809,6 +1809,8 @@ abstract public class PipelineJob extends Job implements Serializable
         PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
         if (notificationProvider != null)
             notificationProvider.onJobDone(this);
+
+        finallyCleanUpLocalDirectory();  //Since this potentially contains the job log, it should be run after the notifications tasks are executed
     }
 
     protected String getJobNotificationProvider()
