@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -45,7 +46,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -187,7 +187,7 @@
         <% } %>
     </div>
     <div style="float:left;margin-left:3px;" class="dropdown">
-        <button data-toggle="dropdown" class="btn btn-default">More <i class="fa fa-caret-down"></i></button>
+        <button data-toggle="dropdown" class="btn btn-default dropdown-toggle">More <i class="fa fa-caret-down"></i></button>
         <ul class="dropdown-menu dropdown-menu-left">
             <% NavTree navTree = new NavTree();
                 if (bean.getHasUpdatePermissions() && hasInsertPerms)
