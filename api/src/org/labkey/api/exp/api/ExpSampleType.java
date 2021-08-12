@@ -111,6 +111,10 @@ public interface ExpSampleType extends ExpObject
     @Nullable
     Container getAutoLinkTargetContainer();
 
+    /** @return Auto link dataset category if set. */
+    @Nullable
+    String getAutoLinkCategory();
+
     /**
      * Generate sample names for each row map in <code>maps</code> sample group.
      * If a row map already has a non-null value for the "name" key, no sample name will be generated.
