@@ -20,7 +20,9 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.util.UnexpectedException;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ClientEndpointConfig;
@@ -49,7 +51,7 @@ import java.util.Map;
 
 // moved from https://github.com/LabKey/rstudio/blob/release18.3/src/org/labkey/rstudio/shiny/BrowserEndpoint.java
 
-public abstract class BrowserEndpoint
+public abstract class BrowserEndpoint extends Endpoint
 {
     static Logger LOG = LogManager.getLogger(BrowserEndpoint.class);
 
@@ -86,22 +88,30 @@ public abstract class BrowserEndpoint
         }
     }
 
-    public abstract String getWSRemoteUri(Session session, EndpointConfig endpointConfig) throws MalformedURLException;
+    public abstract String getWSRemoteUri(Session session, EndpointConfig endpointConfig) throws URISyntaxException, MalformedURLException, ServletException;
 
-    @OnOpen
-    public void onOpen(Session session, EndpointConfig endpointConfig) throws URISyntaxException, IOException, DeploymentException
+    @Override
+    public void onOpen(Session session, EndpointConfig endpointConfig)
     {
-        LOG.debug("BrowserEndpoint.onOpen()");
-        String uri = getWSRemoteUri(session, endpointConfig);
-        Map<String,List<String>> requestHeaders = (Map<String, List<String>>)endpointConfig.getUserProperties().get("requestHeaders");
-        this.browserSession = session;
-        this.serverEndpoint = new ServerEndpoint(new URI(uri), requestHeaders);
+        try
+        {
+            String uri = getWSRemoteUri(session, endpointConfig);
+            LOG.debug("BrowserEndpoint.onOpen( " + session.getRequestURI() + " -> " + uri);
+            Map<String, List<String>> requestHeaders = (Map<String, List<String>>) endpointConfig.getUserProperties().get("requestHeaders");
+            this.browserSession = session;
+            this.serverEndpoint = new ServerEndpoint(new URI(uri), requestHeaders, endpointConfig.getUserProperties());
 
-        // wire up message handlers
-        new _Forwarder(browserSession, serverEndpoint.serverSession, "BrowserEndpoint");
+            // wire up message handlers
+            new _Forwarder(browserSession, serverEndpoint.serverSession, "BrowserEndpoint");
+        }
+        catch (URISyntaxException | IOException | DeploymentException | ServletException ex)
+        {
+            LOG.debug("BrowserEndpoint.onOpen", ex);
+            UnexpectedException.rethrow(ex);
+        }
     }
 
-    @OnClose
+    @Override
     public void onClose(Session session, CloseReason closeReason)
     {
         LOG.debug("BrowserEndpoint.onClose()");
@@ -109,23 +119,27 @@ public abstract class BrowserEndpoint
             serverEndpoint.close();
     }
 
-    @OnError
+    @Override
     public void onError(Session session, Throwable throwable)
     {
         LOG.error("BrowserEndpoint.onError()", throwable);
     }
 
 
-    public abstract Map<String,List<String>> prepareProxyHeaders(URI remoteURI, Map<String,List<String>> requestHeaders);
+    public abstract Map<String,List<String>> prepareProxyHeaders(URI remoteURI, Map<String,List<String>> requestHeaders, Map<String,Object> properties);
 
     @ClientEndpoint
     class ServerEndpoint extends Endpoint
     {
         final Session serverSession;
 
-        ServerEndpoint(URI remoteURI, Map<String,List<String>> requestHeaders) throws DeploymentException, IOException
+        /**
+         *  headers are from the original upgrade request
+         *  properties contains other configuration set in Configurator.modifyHandshake()
+         */
+        ServerEndpoint(URI remoteURI, Map<String,List<String>> requestHeaders, Map<String,Object> properties) throws DeploymentException, IOException
         {
-            final Map<String,List<String>> proxyHeaders = prepareProxyHeaders(remoteURI, requestHeaders);
+            final Map<String,List<String>> proxyHeaders = prepareProxyHeaders(remoteURI, requestHeaders, properties);
 
             WebSocketContainer clientEndPoint = ContainerProvider.getWebSocketContainer();
             ClientEndpointConfig config = ClientEndpointConfig.Builder.create()
