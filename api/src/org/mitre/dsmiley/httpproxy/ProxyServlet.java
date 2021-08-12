@@ -29,6 +29,7 @@ import org.apache.http.client.methods.AbortableHttpRequest;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.utils.URIUtils;
+import org.apache.http.cookie.SM;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -39,6 +40,8 @@ import org.apache.http.message.HeaderGroup;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -49,12 +52,16 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.net.HttpCookie;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -78,6 +85,36 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
  */
 public class ProxyServlet extends HttpServlet
 {
+    static final Map<String,String> preferredHeaderNames;
+    static
+    {
+        var map = new CaseInsensitiveHashMap<String>();
+        map.put(SM.COOKIE, SM.COOKIE);
+        map.put("DNT","DNT");
+        map.put("Origin", "Origin");
+        map.put("Sec-Fetch-Dest","Sec-Fetch-Dest");
+        map.put("Sec-Fetch-Mode","Sec-Fetch-Mode");
+        map.put("Sec-Fetch-Site","Sec-Fetch-Site");
+        map.put("Sec-Fetch-User","Sec-Fetch-User");
+        map.put("Sec-WebSocket-Accept","Sec-WebSocket-Accept");
+        map.put("Sec-WebSocket-Version","Sec-WebSocket-Version");
+        map.put("Sec-WebSocket-Extensions","Sec-WebSocket-Extensions");
+        map.put("Sec-WebSocket-Key","Sec-WebSocket-Key");
+        Arrays.stream(HttpHeaders.class.getFields()).filter(f -> Modifier.isStatic(f.getModifiers()) && Modifier.isFinal(f.getModifiers()) && Modifier.isPublic(f.getModifiers()) && f.getType()==String.class)
+                .forEach(f -> {
+                    try { map.put((String)f.get(null), (String)f.get(null)); } catch (IllegalAccessException x) {/* pass */}
+                });
+        preferredHeaderNames = Collections.unmodifiableMap(map);
+    }
+
+    public static String preferredHeaderName(String orig)
+    {
+        String preferred = preferredHeaderNames.get(orig);
+        assert null==preferred || preferred.equalsIgnoreCase(orig);
+        return null != preferred ? preferred : orig;
+    }
+
+
 
   /* INIT PARAMETER NAME CONSTANTS */
 
@@ -493,8 +530,10 @@ public class ProxyServlet extends HttpServlet
     protected void copyRequestHeader(HttpServletRequest servletRequest, HttpRequest proxyRequest,
                                      String headerName)
     {
+        headerName = preferredHeaderName(headerName);
+
         //Instead the content-length is effectively set via InputStreamEntity
-        if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH))
+        if (headerName.equals(HttpHeaders.CONTENT_LENGTH))
             return;
         if (hopByHopHeaders.containsHeader(headerName))
             return;
@@ -506,7 +545,7 @@ public class ProxyServlet extends HttpServlet
             // In case the proxy host is running multiple virtual servers,
             // rewrite the Host header to ensure that we get content from
             // the correct virtual server
-            if (headerName.equalsIgnoreCase(HttpHeaders.HOST) || headerName.equalsIgnoreCase("Origin"))
+            if (headerName.equals(HttpHeaders.HOST) || headerName.equals("Origin"))
             {
                 HttpHost host = getTargetHost(servletRequest);
                 headerValue = host.getHostName();
@@ -634,7 +673,9 @@ public class ProxyServlet extends HttpServlet
     /** The string prefixing rewritten cookies. */
     protected String getCookieNamePrefix()
     {
-        return "!Proxy!" + getServletConfig().getServletName() + "!";
+        String name = StringUtils.replace(getServletName()," ","-");
+        // make sure this is a legal cookie name
+        return "!Proxy!" + PageFlowUtil.encodeURIComponent(name) + "!";
     }
 
     /** Copy response body data (the entity) from the proxy to the servlet client. */

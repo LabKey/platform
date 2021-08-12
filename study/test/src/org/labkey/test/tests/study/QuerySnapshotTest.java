@@ -25,7 +25,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.BVT;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
@@ -283,10 +282,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("create a snapshot over a custom query");
         goToProjectHome();
         clickFolder(FOLDER_1);
-        goToManageViews();
-        new BootstrapMenu(getDriver(),
-                Locator.tagWithClassContaining("div", "lk-menu-drop")
-                        .waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).clickSubMenu(true, "Grid View");
+        goToManageViews().clickAddReport("Grid View");
 
         clickAndWait(Locator.linkWithText("Modify Dataset List (Advanced)"));
         createNewQuery("study");
@@ -393,10 +389,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         log("create a snapshot over a custom query with calculated columns");
         goToProjectHome();
         clickFolder(FOLDER_1);
-        goToManageViews();
-        new BootstrapMenu(getDriver(),
-                Locator.tagWithClassContaining("div", "lk-menu-drop")
-                        .waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT)).clickSubMenu(true, "Grid View");
+        goToManageViews().clickAddReport("Grid View");
 
         clickAndWait(Locator.linkWithText("Modify Dataset List (Advanced)"));
         createNewQuery("study");

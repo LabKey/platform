@@ -46,9 +46,13 @@ public abstract class SessionKeyManager<T>
     // All keys expire at the same time the LabKey session expires (explicit logout or session timeout).
     public String createKey(HttpServletRequest request, T context)
     {
+        return createKey(request.getSession(true), context);
+    }
+
+    public String createKey(HttpSession session, T context)
+    {
         String prefix = getKeyPrefix();
         String key = (null != prefix ? prefix : "") + GUID.makeHash();
-        HttpSession session = request.getSession(true);
         KEY_MAP.put(key, context);
 
         synchronized (SESSION_LOCK)
