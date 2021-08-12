@@ -2058,6 +2058,9 @@ public class PropertyController extends SpringActionController
             assertEquals(1, pds.size());
             // sorted by propertyId, testStringField is after testIntField
             assertEquals("testStringField", pds.get(0).getName());
+
+            long totalCount = OntologyManager.getPropertyDescriptorsRowCount(c, user, domains, null, null);
+            assertEquals(domain.getProperties().size(), totalCount);
         }
 
         @Test
