@@ -217,13 +217,11 @@
     <%
         if (autoLinkEnabled)
         {
+            String autoLinkCategoryTip = "Specify the desired category for the Assay Dataset that will be created (or appended to) in the target study when rows are linked. " +
+                    "If the category you specify does not exist, it will be created. If the Assay Dataset already exists, this setting will not overwrite a previously assigned category. " +
+                    "Leave blank to use the default category of \"Uncategorized\".";
     %>
-    <div class="form-group">
-        <label for="autoLinkCategory" class="control-label col-sm-3 col-lg-2"> Specify Linked Dataset Category </label>
-        <div class="col-sm-9 col-lg-10">
-            <labkey:input type="text" className="form-control" name="autoLinkCategory" id="autoLinkCategory" />
-        </div>
-    </div>
+    <labkey:input type="text" label="Specify Linked Dataset Category" className="form-control" name="autoLinkCategory" id="autoLinkCategory" contextContent="<%= autoLinkCategoryTip %>" forceSmallContext="true"/>
     <%
         }
     %>
