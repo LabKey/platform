@@ -1103,3 +1103,47 @@ if (Ext4.isSafari || Ext4.isGecko) {
         }
     });
 }
+
+/**
+ * Issue 43669: R report option groupings won't expand on Safari
+ * This is a bit of a work around because I was never able to pinpoint exactly why this was failing but the DOM rendering
+ * on Safari was causing the expand/title divs to not receive the click event. The work around is to render the container
+ * as a div and apply styling directly instead of rendering the legend element.
+ */
+Ext4.override(Ext4.form.FieldSet, {
+
+    createLegendCt: function () {
+        var me = this,
+                items = [],
+                legend = {
+                    xtype: 'container',
+                    baseCls: me.baseCls + '-header',
+                    id: me.id + '-legend',
+                    items: items,
+                    ownerCt: me,
+                    shrinkWrap: true,
+                    ownerLayout: me.componentLayout
+                };
+
+        if (Ext4.isSafari && me.collapsible) {
+            legend.style = {'background-color' :'#999', border: '1px solid #999', 'margin-top' : '8px', 'margin-bottom': '20px'};
+        }
+        else {
+            legend.autoEl = 'legend';
+        }
+
+        // Checkbox
+        if (me.checkboxToggle) {
+            items.push(me.createCheckboxCmp());
+        } else if (me.collapsible) {
+            // Toggle button
+            items.push(me.createToggleCmp());
+        }
+
+        // Title
+        items.push(me.createTitleCmp());
+
+        return legend;
+    },
+});
+
