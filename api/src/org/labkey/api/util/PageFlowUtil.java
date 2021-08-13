@@ -1345,7 +1345,7 @@ public class PageFlowUtil
     {
         String additions = getAttributes(properties);
 
-        return "<a class=\"labkey-menu-text-link\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\" " + additions +
+        return "<a class=\"labkey-menu-text-link dropdown-toggle\" style=\"" + (bold ? "font-weight: bold;" : "") + "\" href=\"" + filter(href) + "\" " + additions +
                 " onClick=\"if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : filter(onClick)) + "\"" +
                 (id == null ? "" : " id=\"" + filter(id) + "PopupLink\"") + "><span" +
                 (id == null ? "" : " id=\"" + filter(id) + "PopupText\"") + ">" + filter(text) + "</span>&nbsp;<span class=\"fa fa-caret-down\" style=\"position:relative;color:lightgray\"></span></a>";

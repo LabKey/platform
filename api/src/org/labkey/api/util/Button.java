@@ -244,6 +244,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(!isEnabled(), DISABLEDCLS)
             .cl(isSubmit(), PRIMARY_CLS)
             .cl(isDropdown(), "labkey-down-arrow")
+            .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
 
         return createHtmlFragment(
