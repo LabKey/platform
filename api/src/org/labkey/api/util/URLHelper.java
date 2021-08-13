@@ -167,10 +167,12 @@ public class URLHelper implements Cloneable, Serializable
         StringBuilder serverBuilder = new StringBuilder();
         serverBuilder.append(scheme).append("://").append(host);
         // we need to append a port number for http connections not on port 80, and for https connections not on 443
-        if (port != -1 && ((port != 80 && "http".equals(scheme)) || (port != 443 && "https".equals(scheme))))
-        {
+        if (port == 80 && ("http".equals(scheme) || "ws".equals(scheme)))
+            port = -1;
+        if (port == 443 && ("https".equals(scheme) || "wss".equals(scheme)))
+            port = -1;
+        if (port != -1)
             serverBuilder.append(":").append(port);
-        }
         return serverBuilder;
     }
 

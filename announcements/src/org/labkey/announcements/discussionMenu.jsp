@@ -88,7 +88,7 @@
     }
 %>
 <div id="<%=h(toggleId)%>" class="lk-menu-drop dropdown discussion-toggle">
-    <a class="labkey-link labkey-text-link" data-toggle="dropdown">Discussions</a>
+    <a class="labkey-link labkey-text-link dropdown-toggle" data-toggle="dropdown">Discussions</a>
     <ul class="dropdown-menu dropdown-menu-right">
 <%
     PopupMenuView.renderTree(menu, out);
