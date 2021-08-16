@@ -99,6 +99,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
@@ -548,6 +549,10 @@ public class XarExporter
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(material.getCpasType() == null ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
+        if (material.getRootMaterialLSID() != null)
+            xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(material.getRootMaterialLSID()));
+        if (material.getAliquotedFromLSID() != null)
+            xMaterial.setAliquotedFromLSID(_relativizedLSIDs.relativize(material.getAliquotedFromLSID()));
 
         Map<String, ObjectProperty> objectProperties = material.getObjectProperties();
         Collection<String> aliases = material.getAliases();
@@ -1215,7 +1220,7 @@ public class XarExporter
                         if (null == value.getFloatValue())
                             continue;
                         break;
-                    case DATE_TIME:
+                    case DATE: case DATE_TIME:
                         if (null == value.getDateTimeValue())
                             continue;
                         break;
@@ -1228,6 +1233,7 @@ public class XarExporter
 
                 switch(value.getPropertyType())
                 {
+                    case DATE:
                     case DATE_TIME:
                         simpleValue.setValueType(SimpleTypeNames.DATE_TIME);
                         simpleValue.setStringValue(DateUtil.formatDateTime(value.getDateTimeValue(), AbstractParameter.SIMPLE_FORMAT_PATTERN));
@@ -1269,6 +1275,32 @@ public class XarExporter
                             }
                             catch (URISyntaxException ignored) {}
                             simpleValue.setStringValue(link);
+                        }
+                        // This property stores rowIds of assay designs; we need to translate them to LSIDs for export
+                        // TODO perhaps this property should hold protocol strings instead of rowIds
+                        else if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
+                        {
+                            String[] assayIds = value.getStringValue().split(",");
+                            List<String> protocolStrings = new ArrayList<>();
+                            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
+                            for (String assayId : assayIds)
+                            {
+                                try
+                                {
+                                    int assayRowId = Integer.parseInt(assayId);
+                                    Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
+                                    if (protocol.isPresent())
+                                        protocolStrings.add(relativizeLSIDPropertyValue(protocol.get().getLSID(), SimpleTypeNames.STRING));
+                                    else
+                                        logProgress("Unable to find protocol for assay id " + assayRowId + ".  Not included in values for " + value.getName() + ".");
+                                }
+                                catch (NumberFormatException ignore)
+                                {
+                                    // assume it's an LSID and try to relativize it
+                                    protocolStrings.add(relativizeLSIDPropertyValue(assayId, SimpleTypeNames.STRING));
+                                }
+                            }
+                            simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
                         }
                         else
                         {
