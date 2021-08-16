@@ -62,7 +62,11 @@ public class SessionHelper
     /** If value is not found in session it is created and added */
     public static <Q> Q getAttribute(@NotNull HttpServletRequest req, @NotNull String key, @Nullable Callable<Q> initializeValue)
     {
-        HttpSession s = req.getSession(true);
+        return getAttribute(req.getSession(true), key, initializeValue);
+    }
+
+    public static <Q> Q getAttribute(HttpSession s, @NotNull String key, @Nullable Callable<Q> initializeValue)
+    {
         if (null == s)
             return null;
         synchronized (getSessionLock(s))
@@ -92,12 +96,14 @@ public class SessionHelper
     /** Does not modify the session */
     public static Object getAttribute(@NotNull HttpServletRequest req, @NotNull String key, @Nullable Object defaultValue)
     {
-        HttpSession s = req.getSession(true);
+        return getAttribute(req.getSession(true), key, defaultValue);
+    }
+
+    public static Object getAttribute(HttpSession s, @NotNull String key, @Nullable Object defaultValue)
+    {
         if (null == s)
             return defaultValue;
         Object value = s.getAttribute(key);
-//        if (value instanceof Reference)
-//            value = ((Reference)value).get();
         return null == value ? defaultValue : value;
     }
 
