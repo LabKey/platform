@@ -688,9 +688,39 @@ public class PropertyController extends SpringActionController
             if (hasErrors || includeWarnings)
                 updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
 
-            // CONSIDER: Echo back domain, or at least the inserted/updated fields
+            List<GWTPropertyDescriptor> createFields = null;
+            List<GWTPropertyDescriptor> updateFields = null;
+
+            // Get updated domain from cache
+            Domain d = PropertyService.get().getDomain(getContainer(), originalDomain.getDomainURI());
+            if (d != null)
+            {
+                // Get new field saved properties
+                if (form.createFields != null)
+                {
+                    for (GWTPropertyDescriptor createField : form.createFields)
+                    {
+                        createFields = d.getProperties().stream().filter(property -> property.getName().equalsIgnoreCase(createField.getName())).map(DomainUtil::getPropertyDescriptor).collect(Collectors.toList());
+                    }
+                }
+
+                // Get updated field saved properties
+                if (form.updateFields != null)
+                {
+                    for (GWTPropertyDescriptor createField : form.updateFields)
+                    {
+                        updateFields = d.getProperties().stream().filter(property -> property.getName().equalsIgnoreCase(createField.getName())).map(DomainUtil::getPropertyDescriptor).collect(Collectors.toList());
+                    }
+                }
+            }
+
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
+
+            // echo back fields
+            resp.put("createFields", createFields);
+            resp.put("updateFields", updateFields);
+            resp.put("deleteFields", form.deleteFields);
             return resp;
         }
 
