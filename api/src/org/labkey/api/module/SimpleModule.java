@@ -45,11 +45,11 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 /*
 * User: Dave
@@ -72,7 +72,7 @@ public class SimpleModule extends SpringModule
     public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
 
     private String _folderPathPattern = null;
-    private PathMatcher _pathMatcher = null;
+    private ContainerPathMatcher _pathMatcher = null;
 
     // remember listener so we can unregister it
     SimpleModuleContainerListener _containerListener = null;
@@ -101,7 +101,7 @@ public class SimpleModule extends SpringModule
     {
         if (null == _pathMatcher)
             return true;
-        return _pathMatcher.matches(Paths.get(c.getPath()));
+        return _pathMatcher.matches(c);
     }
 
     public void setFolderPathPattern(String pattern)
@@ -114,11 +114,27 @@ public class SimpleModule extends SpringModule
             _pathMatcher = null;
             return;
         }
-        if (!pattern.startsWith("glob:") && !pattern.startsWith("regex:"))
-            throw new IllegalArgumentException("Pattern must start with either 'glob:' or 'regex:' folderPathPattern='" + pattern +"'");
-        FileSystem fs = FileSystems.getDefault();
+        final var isGlob = pattern.startsWith("glob:");
+        final var isRegex = pattern.startsWith("regex:");
+        if (!isGlob && !isRegex)
+        {
+            throw new IllegalArgumentException("Pattern must start with either 'glob:' or 'regex:' folderPathPattern='" + pattern + "'");
+        }
+
         _folderPathPattern = pattern;
-        _pathMatcher = fs.getPathMatcher(pattern);
+        if (isGlob)
+        {
+            // 'glob' patterns are cross-platform. Use OS file system provided matcher.
+            FileSystem fs = FileSystems.getDefault();
+            final var fsPathMatcher = fs.getPathMatcher(pattern);
+            _pathMatcher = c -> fsPathMatcher.matches(Paths.get(c.getPath()));
+        }
+        else // regex pattern
+        {
+            // 'regex' patterns are not cross-platform. Don't use file system provided matcher.
+            final var regex = Pattern.compile(pattern.substring(6));
+            _pathMatcher = c -> regex.matcher(c.getPath()).matches();
+        }
     }
 
     public String getFolderPathPattern()
@@ -265,4 +281,9 @@ public class SimpleModule extends SpringModule
             _containerListener = null;
         }
     }
+}
+
+interface ContainerPathMatcher
+{
+    abstract boolean matches(Container c);
 }
