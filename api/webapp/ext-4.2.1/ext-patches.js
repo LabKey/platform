@@ -1104,12 +1104,6 @@ if (Ext4.isSafari || Ext4.isGecko) {
     });
 }
 
-/**
- * Issue 43669: R report option groupings won't expand on Safari
- * This is a bit of a work around because I was never able to pinpoint exactly why this was failing but the DOM rendering
- * on Safari was causing the expand/title divs to not receive the click event. The work around is to render the container
- * as a div and apply styling directly instead of rendering the legend element.
- */
 Ext4.override(Ext4.form.FieldSet, {
 
     createLegendCt: function () {
@@ -1125,6 +1119,12 @@ Ext4.override(Ext4.form.FieldSet, {
                     ownerLayout: me.componentLayout
                 };
 
+        // Issue 43669: R report option groupings won't expand on Safari
+        // For Safari, don't render the container element as legend and instead render it as a div
+        // and apply styling directly. If this causes problems, the alternative would be to either don't use
+        // collapsible fieldSets on Safari (or maybe not at all). Currently, there are very few instances of
+        // collapsible fieldSets.
+        //
         if (Ext4.isSafari && me.collapsible) {
             legend.style = {'background-color' :'#999', border: '1px solid #999', 'margin-top' : '8px', 'margin-bottom': '20px'};
         }
@@ -1144,6 +1144,6 @@ Ext4.override(Ext4.form.FieldSet, {
         items.push(me.createTitleCmp());
 
         return legend;
-    },
+    }
 });
 
