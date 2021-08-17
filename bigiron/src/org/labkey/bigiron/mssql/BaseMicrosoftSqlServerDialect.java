@@ -2018,7 +2018,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     // Query INFORMATION_SCHEMA.TABLES directly, since this is 50X faster than jTDS getTables() (which calls sp_tables). Select only the columns we care about. SQL Server always returns NULL for REMARKS.
-    private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ?";
+    private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES" +
+        " WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ? ORDER BY TABLE_TYPE, TABLE_NAME";
 
     /* Query the system views for columns directly, bypassing jTDS's getColumns() call to sp_columns.
         This allows retrieval of the full list of sparse columns in a wide table. NOTE: This query does not
@@ -2143,7 +2144,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 sql.add(catalog);
                 sql.add(schemaPattern);
 
-                if (!"%".equals(tableNamePattern))
+                if (null != tableNamePattern && !"%".equals(tableNamePattern))
                 {
                     sql.append(" AND TABLE_NAME = ?");
                     sql.add(tableNamePattern);

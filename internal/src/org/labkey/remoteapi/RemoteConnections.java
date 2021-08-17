@@ -16,6 +16,7 @@
 package org.labkey.remoteapi;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
@@ -44,7 +45,7 @@ public class RemoteConnections
     public static String CONNECTION_KIND_QUERY = "query";
     public static String CONNECTION_KIND_FILE = "file";
 
-    public static Map<String, String> getRemoteConnection(String connectionCategory, String name, Container container)
+    public static @NotNull Map<String, String> getRemoteConnection(String connectionCategory, String name, Container container)
     {
         return PropertyManager.getEncryptedStore().getProperties(container,
                 RemoteConnections.makeRemoteConnectionKey(connectionCategory, name));
