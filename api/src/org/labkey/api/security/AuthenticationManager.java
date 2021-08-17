@@ -1137,7 +1137,10 @@ public class AuthenticationManager
     public static void setLoginReturnProperties(HttpServletRequest request, LoginReturnProperties properties)
     {
         HttpSession session = request.getSession(true);
-        session.setAttribute(getLoginReturnPropertiesSessionKey(), properties);
+        if (null == properties)
+            session.removeAttribute(getLoginReturnPropertiesSessionKey());
+        else
+            session.setAttribute(getLoginReturnPropertiesSessionKey(), properties);
     }
 
 
