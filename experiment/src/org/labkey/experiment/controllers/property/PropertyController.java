@@ -632,6 +632,29 @@ public class PropertyController extends SpringActionController
                 throw new NotFoundException("Could not find domain " + form.getDomainId() + " in container '" + getContainer().getPath() + "'");
         }
 
+        // Update fields from server
+        private List<GWTPropertyDescriptor> getPropertyDescriptors(@NotNull Domain domain, @NotNull List<GWTPropertyDescriptor> fields)
+        {
+            List<GWTPropertyDescriptor> serverFields = new ArrayList<>();
+            Map<DomainProperty, Object> defaults = DefaultValueService.get().getDefaultValues(getContainer(), domain, getUser());
+
+            for (GWTPropertyDescriptor createField : fields)
+            {
+                Optional<? extends DomainProperty> found = domain.getProperties().stream().filter(property -> property.getName().equalsIgnoreCase(createField.getName())).findFirst();
+                if (found.isPresent())
+                {
+                    GWTPropertyDescriptor pd = DomainUtil.getPropertyDescriptor(found.get());
+                    Object defaultValue = defaults.get(found.get());
+                    if (defaultValue != null)
+                        pd.setDefaultValue(String.valueOf(defaultValue));
+
+                    serverFields.add(pd);
+                }
+            }
+
+            return serverFields;
+        }
+
         @Override
         public Object execute(UpdateDomainApiForm form, BindException errors) throws Exception
         {
@@ -688,30 +711,21 @@ public class PropertyController extends SpringActionController
             if (hasErrors || includeWarnings)
                 updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
 
-            List<GWTPropertyDescriptor> createFields = null;
-            List<GWTPropertyDescriptor> updateFields = null;
 
             // Get updated domain from cache
-            Domain d = PropertyService.get().getDomain(getContainer(), originalDomain.getDomainURI());
-            if (d != null)
-            {
-                // Get new field saved properties
-                if (form.createFields != null)
-                {
-                    for (GWTPropertyDescriptor createField : form.createFields)
-                    {
-                        createFields = d.getProperties().stream().filter(property -> property.getName().equalsIgnoreCase(createField.getName())).map(DomainUtil::getPropertyDescriptor).collect(Collectors.toList());
-                    }
-                }
+            Domain domain = PropertyService.get().getDomain(getContainer(), originalDomain.getDomainURI());
 
-                // Get updated field saved properties
+            // Get created and updated fields from server for return from api. Purposely not returning
+            // the whole domain as it could have hundreds of fields.
+            List<GWTPropertyDescriptor> createFields = null;
+            List<GWTPropertyDescriptor> updateFields = null;
+            if (domain != null)
+            {
+                if (form.createFields != null)
+                    createFields = getPropertyDescriptors(domain, form.createFields);
+
                 if (form.updateFields != null)
-                {
-                    for (GWTPropertyDescriptor createField : form.updateFields)
-                    {
-                        updateFields = d.getProperties().stream().filter(property -> property.getName().equalsIgnoreCase(createField.getName())).map(DomainUtil::getPropertyDescriptor).collect(Collectors.toList());
-                    }
-                }
+                    updateFields = getPropertyDescriptors(domain, form.updateFields);
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
