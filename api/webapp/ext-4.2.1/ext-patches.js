@@ -1103,3 +1103,47 @@ if (Ext4.isSafari || Ext4.isGecko) {
         }
     });
 }
+
+Ext4.override(Ext4.form.FieldSet, {
+
+    createLegendCt: function () {
+        var me = this,
+                items = [],
+                legend = {
+                    xtype: 'container',
+                    baseCls: me.baseCls + '-header',
+                    id: me.id + '-legend',
+                    items: items,
+                    ownerCt: me,
+                    shrinkWrap: true,
+                    ownerLayout: me.componentLayout
+                };
+
+        // Issue 43669: R report option groupings won't expand on Safari
+        // For Safari, don't render the container element as legend and instead render it as a div
+        // and apply styling directly. If this causes problems, the alternative would be to either don't use
+        // collapsible fieldSets on Safari (or maybe not at all). Currently, there are very few instances of
+        // collapsible fieldSets.
+        //
+        if (Ext4.isSafari && me.collapsible) {
+            legend.style = {'background-color' :'#999', border: '1px solid #999', 'margin-top' : '8px', 'margin-bottom': '20px'};
+        }
+        else {
+            legend.autoEl = 'legend';
+        }
+
+        // Checkbox
+        if (me.checkboxToggle) {
+            items.push(me.createCheckboxCmp());
+        } else if (me.collapsible) {
+            // Toggle button
+            items.push(me.createToggleCmp());
+        }
+
+        // Title
+        items.push(me.createTitleCmp());
+
+        return legend;
+    }
+});
+
