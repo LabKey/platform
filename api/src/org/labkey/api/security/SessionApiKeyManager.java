@@ -20,6 +20,8 @@ import org.labkey.api.util.SessionHelper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.websocket.server.HandshakeRequest;
+import java.util.concurrent.Callable;
 
 /**
  * Session keys are bound to a single HTTP session, and offer a way to authenticate headless clients when they are
@@ -62,15 +64,28 @@ public class SessionApiKeyManager extends SessionKeyManager<HttpSession>
 
     public String getApiKey(HttpServletRequest req, String controllerContext)
     {
+        return getApiKey(req.getSession(true), controllerContext);
+    }
+
+    public String getApiKey(HandshakeRequest req, String controllerContext)
+    {
+        return getApiKey((HttpSession)req.getHttpSession(), controllerContext);
+    }
+
+    public String getApiKey(HttpSession session, String controllerContext)
+    {
+        if (null == session)
+            throw new NullPointerException();
+
         // if apiKey is cached, validate it
         final String attr = controllerContext + "#apiKey";
-        String apiKey = SessionHelper.getAttribute(req, attr, null);
+        String apiKey = (String)SessionHelper.getAttribute(session, attr, (String)null);
 
         if (null != apiKey && null == get().getContext(apiKey))
-            SessionHelper.setAttribute(req, attr, null, true);
+            session.setAttribute(attr, null);
 
-        apiKey = SessionHelper.getAttribute(req, attr,
-                () -> get().createKey(req, req.getSession(true)));
+        apiKey = SessionHelper.getAttribute(session, attr,
+                () -> get().createKey(session, session));
         return apiKey;
     }
 }
