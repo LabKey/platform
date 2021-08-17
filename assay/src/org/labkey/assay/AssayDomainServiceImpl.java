@@ -287,7 +287,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
             }
         }
 
-        ObjectProperty autoLinkContainer = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CONTAINER_PROPERTY_URI);
+        ObjectProperty autoLinkContainer = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
         if (autoLinkContainer != null)
         {
             result.setAutoLinkCategory(autoLinkContainer.getStringValue());
@@ -540,11 +540,11 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     String autoLinkCategory = assay.getAutoLinkCategory();
                     if (autoLinkCategory != null)
                     {
-                        props.put(StudyPublishService.AUTO_LINK_CONTAINER_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CONTAINER_PROPERTY_URI, autoLinkCategory));
+                        props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
                     }
                     else
                     {
-                        props.remove(StudyPublishService.AUTO_LINK_CONTAINER_PROPERTY_URI);
+                        props.remove(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
                     }
 
                     protocol.setObjectProperties(props);

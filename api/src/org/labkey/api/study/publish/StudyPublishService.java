@@ -30,7 +30,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
@@ -62,7 +61,7 @@ public interface StudyPublishService
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
 
     String AUTO_LINK_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
-    String AUTO_LINK_CONTAINER_PROPERTY_URI = "terms.labkey.org#AutoLinkCategory";
+    String AUTO_LINK_CATEGORY_PROPERTY_URI = "terms.labkey.org#AutoLinkCategory";
 
     String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
     String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
@@ -92,7 +91,7 @@ public interface StudyPublishService
                           Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 
-    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
                           String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 

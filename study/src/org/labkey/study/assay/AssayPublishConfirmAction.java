@@ -290,8 +290,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     protected ActionURL linkToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
-        ViewCategory targetStudyCategory = form.getAutoLinkCategory() != null ? ViewCategoryManager.getInstance().ensureViewCategory(targetStudy, getUser(), form.getAutoLinkCategory()) : null;
-        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, targetStudyCategory, publishData, publishErrors);
+        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, form.getAutoLinkCategory(), publishData, publishErrors);
     }
 
     @Override
