@@ -1565,6 +1565,10 @@ public class QuerySelect extends QueryRelation implements Cloneable
             qt.appendSql(fromSql, this);
             fromSql.nextPrefix(",");
         }
+        if (_parsedJoins.isEmpty() && dialect.isOracle())
+        {
+            fromSql.append(" sys.dual ");
+        }
         fromSql.popPrefix();
 
 
