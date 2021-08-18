@@ -69,6 +69,18 @@ public class FolderImportContext extends AbstractFolderContext
         super(user, c, folderDoc, dataTypes, logger, root);
     }
 
+    public FolderImportContext(FolderImportContext original, VirtualFile root) throws ImportException
+    {
+        super(original.getUser(), original.getContainer(), original.getDocument(), original.getDataTypes(), original.getLoggerGetter(), root);
+        this.setActivity(original.getActivity());
+        this.setCreateSharedDatasets(original.isCreateSharedDatasets());
+        this.setIncludeSubfolders(original.isIncludeSubfolders());
+        this.setFailForUndefinedVisits(original.isFailForUndefinedVisits());
+        this.setLoggerGetter(original.getLoggerGetter());
+        this.setAddExportComment(original.isAddExportComment());
+        this.setSkipQueryValidation(original.isSkipQueryValidation());
+    }
+
     @Override
     public synchronized FolderDocument getDocument() throws ImportException
     {

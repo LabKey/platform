@@ -163,7 +163,7 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
             {
                 try
                 {
-                    Path importRoot = CloudStoreService.get().copyExpandedArchiveLocally(studyXml, _ctx.getXml(), _ctx.getRoot().getLocation(), getPipeRoot(), _ctx.getLoggerGetter().getLogger(), errors);
+                    Path importRoot = CloudStoreService.get().copyExpandedStudyArchiveLocally(studyXml, _ctx.getXml(), _ctx.getRoot().getLocation(), getPipeRoot(), _ctx.getLoggerGetter().getLogger(), errors);
                     VirtualFile vfRoot = new FileSystemFile(importRoot);
 
                     // Replace remote based context with local temp dir based context and root

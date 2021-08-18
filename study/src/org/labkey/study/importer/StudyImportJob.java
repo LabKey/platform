@@ -42,7 +42,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.springframework.validation.BindException;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.nio.file.Path;
 
@@ -137,7 +136,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
             {
                 try
                 {
-                    Path importRoot = CloudStoreService.get().copyExpandedArchiveLocally(studyXml, _ctx.getXml(), _ctx.getRoot().getLocation(), getPipeRoot(), _ctx.getLoggerGetter().getLogger(), errors);
+                    Path importRoot = CloudStoreService.get().copyExpandedStudyArchiveLocally(studyXml, _ctx.getXml(), _ctx.getRoot().getLocation(), getPipeRoot(), _ctx.getLoggerGetter().getLogger(), errors);
                     VirtualFile vfRoot = new FileSystemFile(importRoot);
 
                     // Replace remote based context with local temp dir based context

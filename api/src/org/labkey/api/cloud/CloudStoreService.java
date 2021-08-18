@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
@@ -51,7 +53,9 @@ public interface CloudStoreService
         ServiceRegistry.get().registerService(CloudStoreService.class, impl);
     }
 
-    Path copyExpandedArchiveLocally(Path studyXml, StudyDocument.Study xml, String location, PipeRoot pipeRoot, Logger logger, BindException errors);
+    Path copyExpandedStudyArchiveLocally(Path studyXml, StudyDocument.Study xml, String location, PipeRoot pipeRoot, Logger logger, BindException errors);
+
+    Path downloadFolderArchive(PipelineJob job) throws PipelineJobException;
 
     class StoreInfo
     {

@@ -63,6 +63,7 @@ public interface FileAnalysisJobSupport
     /**
      * @return the directory in which the original input file resides.
      */
+    @Deprecated //Prefer the getDataDirectoryPath version as File return type doesn't really support full URIs
     File getDataDirectory();
 
     /**
