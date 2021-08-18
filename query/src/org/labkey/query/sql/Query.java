@@ -343,16 +343,8 @@ public class Query
         else if (root instanceof QQuery)
         {
 
-            QuerySelect select = new QuerySelect(query, (QQuery) root, inFromClause)
-            {
-                @Override
-                protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
-                {
-                    if (skipSuggestedColumns)
-                        return Collections.emptySet();
-                    return super.getSuggestedColumns(selected);
-                }
-            };
+            QuerySelect select = new QuerySelect(query, (QQuery) root, inFromClause);
+            select.setSkipSuggestedColumns(skipSuggestedColumns);
 
             QPivot qPivot = root.getChildOfType(QPivot.class);
 
@@ -1766,7 +1758,11 @@ public class Query
         new SqlTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as x", 2, 2),
         new SqlTest("SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as x WHERE x.column1 = 'two'", 2, 1),
         new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT * FROM v", 2, 2),
-        new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1)
+        new SqlTest("WITH v AS (SELECT column1, column2 FROM (VALUES (CAST('1' as VARCHAR), CAST('1' as INTEGER)), ('two', 2)) as v_) SELECT column1 as txt, column2 as i FROM v WHERE column1 = 'two'", 2, 1),
+
+        // regression test: field reference in sub-select (https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=43580)
+        new SqlTest("SELECT (SELECT a.title), a.parent.rowid FROM core.containers a", 2, 1),
+        new SqlTest("SELECT (SELECT GROUP_CONCAT(b.displayname, ', ') FROM core.UsersAndGroups b WHERE b.email IN (SELECT UNNEST(STRING_TO_ARRAY(a.title, ',')))) AS procedurename, a.parent.rowid FROM core.containers a ", 2, 1)
     };
 
 
