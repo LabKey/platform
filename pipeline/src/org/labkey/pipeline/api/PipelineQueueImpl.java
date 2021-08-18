@@ -278,7 +278,10 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         {
             for (PipelineJob pipelineJob : _pending)
             {
-                result.put(pipelineJob.getJobGUID(), ++position);
+                if (!result.containsKey(pipelineJob.getJobGUID()))
+                {
+                    result.put(pipelineJob.getJobGUID(), ++position);
+                }
             }
         }
         return result;
