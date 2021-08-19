@@ -994,21 +994,35 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         jdbc:jtds:sqlserver://host:1433/database
         jdbc:jtds:sqlserver://host/database;SelectMethod=cursor
+        jdbc:jtds:sqlserver://host:1433;SelectMethod=cursor;databaseName=database
     */
+
+    private static final String JTDS_PREFIX = "jdbc:jtds:sqlserver://";
 
     private static class JtdsJdbcHelper implements JdbcHelper
     {
         @Override
         public String getDatabase(String url) throws ServletException
         {
-            if (url.startsWith("jdbc:jtds:sqlserver"))
+            if (url.startsWith(JTDS_PREFIX))
             {
                 int dbEnd = url.indexOf(';');
                 if (-1 == dbEnd)
                     dbEnd = url.length();
-                int dbDelimiter = url.lastIndexOf('/', dbEnd);
+                int dbDelimiter = url.indexOf('/', JTDS_PREFIX.length());
+
+                // Didn't find /database after the prefix, so look for databaseName property. See #43751.
                 if (-1 == dbDelimiter)
-                    throw new ServletException("Invalid jTDS connection url: " + url);
+                {
+                    dbDelimiter = url.indexOf(";databaseName=");
+                    if (-1 == dbDelimiter)
+                        throw new ServletException("Invalid jTDS connection url - no database is specified: " + url);
+                    dbDelimiter = url.indexOf("=", dbDelimiter);
+                    dbEnd = url.indexOf(";", dbDelimiter);
+                    if (-1 == dbEnd)
+                        dbEnd = url.length();
+                }
+
                 return url.substring(dbDelimiter + 1, dbEnd);
             }
             else if (url.startsWith("jdbc:sqlserver"))
@@ -2018,7 +2032,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     // Query INFORMATION_SCHEMA.TABLES directly, since this is 50X faster than jTDS getTables() (which calls sp_tables). Select only the columns we care about. SQL Server always returns NULL for REMARKS.
-    private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ?";
+    private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES" +
+        " WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ?";
 
     /* Query the system views for columns directly, bypassing jTDS's getColumns() call to sp_columns.
         This allows retrieval of the full list of sparse columns in a wide table. NOTE: This query does not
@@ -2143,11 +2158,14 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 sql.add(catalog);
                 sql.add(schemaPattern);
 
-                if (!"%".equals(tableNamePattern))
+                if (null != tableNamePattern && !"%".equals(tableNamePattern))
                 {
                     sql.append(" AND TABLE_NAME = ?");
                     sql.add(tableNamePattern);
                 }
+
+                // Specification for getTables() states that results are ordered
+                sql.append(" ORDER BY TABLE_TYPE, TABLE_NAME");
 
                 return new MetadataSqlSelector(scope, sql).getResultSet();
             }
@@ -2300,7 +2318,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 idx = skipToToken(tokens, idx + 1, skipToSet);
 
                 if (-1 == idx)
-                    return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing a terminating token for " + firstToken.toString());
+                    return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing a terminating token for " + firstToken);
 
                 Token token = Token.getToken(tokens[idx]);
 
@@ -2395,7 +2413,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             }
             catch (Exception e)
             {
-                LOG.debug("Failed to access model.sys.database_files (\"" + e.toString() + "\") - determined that this database is RDS");
+                LOG.debug("Failed to access model.sys.database_files (\"" + e + "\") - determined that this database is RDS");
                 rds = true;
             }
         }

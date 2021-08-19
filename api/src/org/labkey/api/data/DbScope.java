@@ -318,11 +318,13 @@ public class DbScope
             finally
             {
                 Integer maxTotal = getDataSourceProperties().getMaxTotal();
+                _databaseName = (null != _dialect ? _dialect.getDatabaseName(getDataSourceProperties()) : null);
 
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 LOG.info("Initializing DbScope with the following configuration:" +
                         "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
                         "\n    Server URL:               " + dbmd.getURL() +
+                        "\n    Database Name:            " + _databaseName +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
                         "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
                         "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
@@ -331,7 +333,6 @@ public class DbScope
     (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : ""));
             }
 
-            _databaseName = _dialect.getDatabaseName(getDataSourceProperties());
             _databaseProductName = dbmd.getDatabaseProductName();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
