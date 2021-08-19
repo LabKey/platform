@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.ImportOptions;
+import org.labkey.api.cloud.CloudArchiveImporterSupport;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
@@ -62,7 +63,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         FolderImportContext importContext;
         PipelineJob job = getJob();
 
-        if (hasCloudRoot(job) && CloudStoreService.get() != null)
+        if (hasExpandedCloudRoot(job) && CloudStoreService.get() != null)
         {
             Path importRoot = CloudStoreService.get().downloadFolderArchive(job);
             job.updateWorkingRoot(importRoot);
@@ -145,9 +146,13 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         return new RecordedActionSet();
     }
 
-    private boolean hasCloudRoot(PipelineJob job)
+    private boolean hasExpandedCloudRoot(PipelineJob job)
     {
-        return job.getPipeRoot().isCloudRoot(); //TODO should this check to target file's protocol?
+        if (!(job instanceof CloudArchiveImporterSupport))
+            return false;
+
+        CloudArchiveImporterSupport support = job.getJobSupport(CloudArchiveImporterSupport.class);
+        return job.getPipeRoot().isCloudRoot() && !support.getOriginalFilename().endsWith("zip"); // Zip archives can be streamed
     }
 
 
