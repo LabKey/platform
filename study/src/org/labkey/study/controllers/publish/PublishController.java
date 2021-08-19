@@ -346,6 +346,7 @@ public class PublishController extends SpringActionController
 
                     ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                     AssayProvider provider = AssayService.get().getProvider(protocol);
+                    ViewCategory targetCategory = _autoLinkCategory != null ? ViewCategoryManager.getInstance().ensureViewCategory(_targetStudyContainer, getUser(), _autoLinkCategory) : null;
 
                     _runIds.forEach((runId) -> {
 
@@ -361,7 +362,7 @@ public class PublishController extends SpringActionController
                                     getUser(),
                                     getContainer(),
                                     _targetStudyContainer,
-                                    _autoLinkCategory,
+                                    targetCategory,
                                     errors,
                                     getLogger());
 
