@@ -102,7 +102,8 @@ public abstract class AbstractPublishStartAction<FORM extends PublishStartForm> 
                     form.getReturnActionURL(),
                     form.getContainerFilterName(),
                     getBatchIds(),
-                    getBatchNoun()));
+                    getBatchNoun(),
+                    form.isAutoLinkEnabled()));
     }
 
     public static List<Integer> getCheckboxIds(ViewContext context)

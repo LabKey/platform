@@ -26,6 +26,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
@@ -61,6 +62,7 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
         private String _dataRegionSelectionKey;
         private String _containerFilterName;
         private boolean _runIds;
+        private boolean _isAutoLinkEnabled;
 
         @Override
         public String getDataRegionSelectionKey()
@@ -73,6 +75,18 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
         {
             _dataRegionSelectionKey = dataRegionSelectionKey;
         }
+
+        @Override
+        public boolean isAutoLinkEnabled()
+        {
+            return _isAutoLinkEnabled;
+        }
+
+        public void setAutoLinkEnabled(boolean autoLinkEnabled)
+        {
+            _isAutoLinkEnabled = autoLinkEnabled;
+        }
+
 
         public String getContainerFilterName()
         {
@@ -154,6 +168,8 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
         {
             _protocol = form.getProtocol();
             _provider = form.getProvider();
+
+            form.setAutoLinkEnabled(form.getProtocol().getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI) != null);
 
             AssayTableMetadata tableMetadata = _provider.getTableMetadata(_protocol);
             if (form.isRunIds())
