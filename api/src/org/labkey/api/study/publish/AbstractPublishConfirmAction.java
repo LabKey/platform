@@ -262,6 +262,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         publishURL.replaceParameter("defaultValueSource", PublishConfirmForm.DefaultValueSource.UserSpecified.toString());
         publishURL.replaceParameter("validate", "false");
+        publishURL.replaceParameter("autoLinkCategory", form.getAutoLinkCategory());
         ActionButton publishButton = new ActionButton(publishURL, "Link to Study");
         publishButton.setScript("return assayPublish_onLinkToStudy(this)", true);
         buttons.add(publishButton);

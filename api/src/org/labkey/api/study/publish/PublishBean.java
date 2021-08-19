@@ -1,8 +1,6 @@
 package org.labkey.api.study.publish;
 
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
 
 import java.util.List;
@@ -20,11 +18,12 @@ public class PublishBean
     private final String _containerFilterName;
     private final List<Integer> _batchIds;
     private final String _batchNoun;
+    private final boolean _autoLinkEnabled;
 
     public PublishBean(ActionURL successURL,
                        List<Integer> ids, String dataRegionSelectionKey,
                        Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, ActionURL returnURL,
-                       String containerFilterName, List<Integer> batchIds, String batchNoun)
+                       String containerFilterName, List<Integer> batchIds, String batchNoun, boolean autoLinkEnabled)
     {
         _successURL = successURL;
         _insufficientPermissions = insufficientPermissions;
@@ -36,6 +35,7 @@ public class PublishBean
         _containerFilterName = containerFilterName;
         _batchIds = batchIds;
         _batchNoun = batchNoun;
+        _autoLinkEnabled = autoLinkEnabled;
     }
 
     public ActionURL getSuccessURL()
@@ -86,5 +86,10 @@ public class PublishBean
     public String getBatchNoun()
     {
         return _batchNoun;
+    }
+
+    public Boolean isAutoLinkEnabled()
+    {
+        return _autoLinkEnabled;
     }
 }
