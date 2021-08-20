@@ -104,25 +104,6 @@ public class FolderImportContext extends AbstractFolderContext
         return folderDoc;
     }
 
-//    // Assume file was referenced in folder.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in
-//    public File getFolderFile(File root, File dir, String name) throws ImportException
-//    {
-//        return getFolderFile(root, dir, name, _folderXml.getName());
-//    }
-//
-//    public File getFolderFile(File root, File dir, String name, String source) throws ImportException
-//    {
-//        File file = new File(dir, name);
-//
-//        if (!file.exists())
-//            throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(root, file));
-//
-//        if (!file.isFile())
-//            throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
-//
-//        return file;
-//    }
-
     private FolderDocument readFolderDocument(Path folderXml) throws ImportException, IOException
     {
         if (!Files.exists(folderXml))
