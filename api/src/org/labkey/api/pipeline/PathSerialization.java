@@ -24,14 +24,12 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.util.FileUtil;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class PathSerialization
 {
@@ -71,15 +69,13 @@ public class PathSerialization
         }
 
         @Override
-        public Path deserialize(JsonParser parser, DeserializationContext context) throws IOException
+        public @Nullable Path deserialize(JsonParser parser, DeserializationContext context) throws IOException
         {
             String str = parser.getValueAsString();
-//            return Path.of(URI.create(str));
             if (FileUtil.hasCloudScheme(str))
             {
-//                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
-//                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
-//                return Path.of(str);
+                // TODO: problem is that we need a container to map a URL string to an S3 path, because we have a prefix derived form the container (#35865)
+                // TODO: one possibility is to tease out what config/container matches the bucket/prefix we find, but there could be more than 1 match
                 CloudStoreService css = CloudStoreService.get();
                 if (css != null)
                 {
@@ -88,10 +84,8 @@ public class PathSerialization
                     //TODO need LKS container to pull the appropriate S3 credentials/FileSystem representation (in the event of interrupted job)
                 }
 
-                return Path.of(str); //TODO this will cause issues...
             }
-            else
-                return Path.of(str);
+            return Path.of(str);
         }
     }
 }

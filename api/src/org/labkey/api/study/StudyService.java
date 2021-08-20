@@ -180,12 +180,6 @@ public interface StudyService
 
     Set<? extends Study> getAllStudies(Container root);
 
-    @Deprecated //prefer the Path version
-    default boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
-    {
-        return runStudyImportJob(c, user, url, studyXml.toPath(), originalFilename, errors, pipelineRoot, options);
-    }
-
     boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
