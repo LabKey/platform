@@ -69,7 +69,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         if (isCloudRoot)
         {
             Path dirPath = FileUtil.getPath(job.getContainer(), FileUtil.createUri(ctx.getRoot().getLocation()));
-            job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(dirPath.resolve(support.getOriginalFilename()), support.getSpringErrors());
+            job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(job, dirPath.resolve(support.getOriginalFilename()), support.getSpringErrors());
         }
 
         doImport(job, ctx, support.getSpringErrors(), support.getOriginalFilename());

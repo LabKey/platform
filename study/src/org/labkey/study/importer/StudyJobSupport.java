@@ -16,6 +16,9 @@
 
 package org.labkey.study.importer;
 
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.cloud.CloudStoreService;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
@@ -44,5 +47,44 @@ public interface StudyJobSupport extends SpecimenJobSupport
     @Deprecated
     BindException getSpringErrors();
 
-    void downloadCloudArchive(Path studyXml, BindException errors);
+    /**
+     * Retrieve an expanded study archive's files from the CloudStoreService if necessary
+     *
+     * Note: Updates job's working root to point to the local temp dir download location
+     * @param job Job being executed
+     * @param studyXml Path to study file being downloaded
+     * @param errors Delayed errors collection
+     */
+    default void downloadCloudArchive(PipelineJob job, Path studyXml, BindException errors)
+    {
+        //check if cloud based pipeline root, and study xml hasn't been downloaded already
+        if (!studyXml.startsWith(job.getPipeRoot().getImportDirectory().toPath().toAbsolutePath()))
+        {
+            if (CloudStoreService.get() != null)   //proxy of is Cloud Module enabled for the current job/container
+            {
+                try
+                {
+                    StudyImportContext ctx = getImportContext();
+                    Path importRoot = CloudStoreService.get().copyExpandedStudyArchiveLocally(studyXml, ctx.getXml(), ctx.getRoot().getLocation(), job.getPipeRoot(), ctx.getLoggerGetter().getLogger(), errors);
+
+                    // Replace remote based context with local temp dir based context
+                    updateWorkingRoot(importRoot);
+                }
+                catch (ImportException e)
+                {
+                    errors.addSuppressed(e);
+                }
+            }
+            else
+            {
+                throw new IllegalStateException("Cloud module service not available.");
+            }
+        }
+    }
+
+    /**
+     * Set the working root to the path provided
+     * @param newRoot new path to use
+     */
+    void updateWorkingRoot(Path newRoot);
 }

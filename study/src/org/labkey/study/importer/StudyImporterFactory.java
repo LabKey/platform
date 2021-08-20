@@ -111,7 +111,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 if (useLocalImportDir)
                 {
                     Path dirPath = job.getPipeRoot().getRootNioPath().resolve(studyDir.getLocation());
-                    job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(dirPath.resolve(studyFileName), errors);
+                    job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(job, dirPath.resolve(studyFileName), errors);
                 }
 
                 StudyDocument studyDoc;

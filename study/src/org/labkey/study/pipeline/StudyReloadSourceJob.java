@@ -154,28 +154,11 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
     }
 
     @Override
-    public void downloadCloudArchive(Path studyXml, BindException errors)
+    public void updateWorkingRoot(Path newRoot)
     {
-        //check if cloud based pipeline root, and study xml hasn't been downloaded already
-        if (!studyXml.startsWith(getPipeRoot().getImportDirectory().toPath().toAbsolutePath()))
-        {
-            if (CloudStoreService.get() != null)   //proxy of is Cloud Module enabled for the current job/container
-            {
-                try
-                {
-                    Path importRoot = CloudStoreService.get().copyExpandedStudyArchiveLocally(studyXml, _ctx.getXml(), _ctx.getRoot().getLocation(), getPipeRoot(), _ctx.getLoggerGetter().getLogger(), errors);
-                    VirtualFile vfRoot = new FileSystemFile(importRoot);
-
-                    // Replace remote based context with local temp dir based context and root
-                    _ctx = generateImportContext(getUser(), getContainer(), importRoot.resolve(studyXml.getFileName().toString()), vfRoot);
-                    _root = vfRoot;
-                }
-                catch (ImportException e)
-                {
-                    errors.addSuppressed(e);
-                }
-            }
-        }
+        VirtualFile vfRoot = new FileSystemFile(newRoot);
+        _ctx = generateImportContext(getUser(), getContainer(), newRoot.resolve(getOriginalFilename()), vfRoot);
+        _root = vfRoot;
     }
 
     private StudyImportContext generateImportContext(User user, Container c, Path studyXml, VirtualFile root)
