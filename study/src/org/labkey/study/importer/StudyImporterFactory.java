@@ -106,8 +106,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 User user = ctx.getUser();
                 BindException errors = new NullSafeBindException(c, "import");
 
-                //TODO unify with other download location
-                boolean useLocalImportDir = job != null && job.getPipeRoot().isCloudRoot() && FileUtil.hasCloudScheme(studyDir.getLocation());
+                boolean useLocalImportDir = job != null && job.getJobSupport(StudyJobSupport.class).useLocalImportDir(job, studyDir.getLocation());
                 if (useLocalImportDir)
                 {
                     Path dirPath = job.getPipeRoot().getRootNioPath().resolve(studyDir.getLocation());
@@ -138,7 +137,6 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                         .withRoot(useLocalImportDir ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
                         .build();
 
-//                new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
                 studyImportContext.setCreateSharedDatasets(ctx.isCreateSharedDatasets());
                 studyImportContext.setFailForUndefinedVisits(ctx.isFailForUndefinedVisits());
                 studyImportContext.setActivity(ctx.getActivity());

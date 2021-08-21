@@ -69,7 +69,6 @@ public interface PipeRoot extends SecurableResource
     @Nullable
     File resolvePath(String relativePath);
 
-    //TODO implement this properly
     default Path resolveRelativePath(String relativePath)
     {
         return getRootNioPath().resolve(relativePath);

@@ -29,7 +29,7 @@ public class InvalidFileException extends ImportException
     @Deprecated // prefer the Path version
     public InvalidFileException(File root, File file, Throwable t)
     {
-        super(getErrorString(root, file, t.getMessage()));
+        this(root.toPath(), file.toPath(), t);
     }
 
     public InvalidFileException(Path root, Path file, Throwable t)

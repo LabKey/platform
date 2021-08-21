@@ -125,7 +125,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void updateWorkingRoot(Path importRoot) throws PipelineJobException
     {
-        throw new PipelineJobException("Unable to update working root. Updates not supported by job");
+        throw new PipelineJobException("Unable to update working root. Updates not supported by job.");
     }
 
     public enum TaskStatus

@@ -188,7 +188,8 @@ public class StudyReload
             {
                 throw new UnauthorizedException("Reload user is inactive");
             }
-            if (!study.hasPermission(user, UpdatePermission.class))  //TODO double check required permission
+
+            if (!study.hasPermission(user, UpdatePermission.class))
             {
                 throw new UnauthorizedException("Reload user has insufficient permissions");
             }
@@ -237,7 +238,7 @@ public class StudyReload
                 }
                 else
                 {
-                    studyXml = root.resolveRelativePath("study.xml");  //TODO this is likely wrong...
+                    studyXml = root.resolveRelativePath("study.xml");
                 }
 
                 study = manager.getStudy(c);

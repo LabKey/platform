@@ -19,6 +19,7 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.api.specimen.pipeline.SpecimenJobSupport;
@@ -87,4 +88,9 @@ public interface StudyJobSupport extends SpecimenJobSupport
      * @param newRoot new path to use
      */
     void updateWorkingRoot(Path newRoot);
+
+    default boolean useLocalImportDir(PipelineJob job, String studyLocation)
+    {
+        return job != null && job.getPipeRoot().isCloudRoot() && FileUtil.hasCloudScheme(studyLocation);
+    }
 }
