@@ -59,7 +59,7 @@ public class StudyReload
 
     private static String getDescription(Study study)
     {
-        return study.getLabel();
+        return study != null ? study.getLabel() : "";
     }
 
     @NotNull
@@ -141,7 +141,7 @@ public class StudyReload
                 if (study == null)
                     throw new ImportException("Reload failed. Study doesn't exist.");
 
-                return reloadStudy(study, options, source, null, study.getLastReload());
+                return reloadStudy(study, options, source, null);
             }
         }
 
@@ -170,7 +170,7 @@ public class StudyReload
 
                     if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                     {
-                        return reloadStudy(study, options, source, lastModified, lastReload);
+                        return reloadStudy(study, options, source, lastModified);
                     }
                 }
                 else
@@ -195,7 +195,7 @@ public class StudyReload
             }
         }
 
-        public ReloadStatus reloadStudy(StudyImpl study, ImportOptions options, String source, Long lastModified, Date lastReload) throws ImportException
+        public ReloadStatus reloadStudy(StudyImpl study, @NotNull ImportOptions options, String source, Long lastModified)
         {
             options.addMessage("Study reload was initiated by " + source);
 
@@ -224,7 +224,7 @@ public class StudyReload
             try
             {
                 c = ContainerManager.getForId(options.getContainerId());
-                Path studyXml = null;
+                Path studyXml;
                 PipeRoot root = StudyReload.getPipelineRoot(c);
 
                 // Task overrides default analysis directory, usually when study.xml is located
@@ -241,6 +241,7 @@ public class StudyReload
                     studyXml = root.resolveRelativePath("study.xml");
                 }
 
+                assert c != null;
                 study = manager.getStudy(c);
                 //noinspection ThrowableInstanceNeverThrown
                 BindException errors = new NullSafeBindException(c, "reload");
