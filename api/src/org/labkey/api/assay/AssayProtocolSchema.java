@@ -388,7 +388,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         addQCFlagColumn(runTable);
 
         var dataLinkColumn = runTable.getMutableColumn(ExpRunTable.Column.Name);
-        dataLinkColumn.setLabel("Assay Id");
+        dataLinkColumn.setLabel("Assay ID");
         dataLinkColumn.setDescription("The assay/experiment ID that uniquely identifies this assay run.");
         dataLinkColumn.setURL(new DetailsURL(new ActionURL(AssayDetailRedirectAction.class, getContainer()), Collections.singletonMap("runId", "rowId")));
 
