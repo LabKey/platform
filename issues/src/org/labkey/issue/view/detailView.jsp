@@ -265,8 +265,8 @@
             <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
             for (DomainProperty prop : column1Props)
-            {%>
-            <%=bean.renderColumn(prop, getViewContext())%><%
+            { if (prop.isShownInDetailsView()) { %>
+            <%=bean.renderColumn(prop, getViewContext())%><% }
             }%>
         </table></td>
         <td valign="top" width="33%"><table class="lk-fields-table">
@@ -278,8 +278,8 @@
             }
 
             for (DomainProperty prop : column2Props)
-            {%>
-            <%=bean.renderColumn(prop, getViewContext())%><%
+            { if (prop.isShownInDetailsView()) { %>
+            <%=bean.renderColumn(prop, getViewContext())%><% }
             }%>
         </table></td>
     </tr>

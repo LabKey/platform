@@ -352,8 +352,14 @@
                         </script><%
 
                     for (DomainProperty prop : column1Props)
-                    {%>
-                                <%=bean.renderColumn(prop, getViewContext())%><%
+                    {
+                        boolean showField = bean.isInsert() && prop.isShownInInsertView() || !bean.isInsert() && prop.isShownInUpdateView();
+                        if (showField)
+                        {
+                         %>
+                                    <%=bean.renderColumn(prop, getViewContext())%>
+                         <%
+                        }
                     }%>
                 </table>
             </td>
@@ -386,8 +392,14 @@
                 <tr><%=bean.renderLabel(bean.getLabel("Notify", false))%><td><%=bean.getNotifyList()%></td></tr><%
             }
             for (DomainProperty prop : column2Props)
-            {%>
-                <%=bean.renderColumn(prop, getViewContext())%><%
+            {
+                boolean showField = bean.isInsert() && prop.isShownInInsertView() || !bean.isInsert() && prop.isShownInUpdateView();
+                if (showField)
+                {
+                %>
+                    <%=bean.renderColumn(prop, getViewContext())%>
+                <%
+                }
             }%>
             </table></td>
         </tr>

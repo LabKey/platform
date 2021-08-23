@@ -129,7 +129,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
     private void addAllColumns()
     {
-        IssuesQuerySchema schema = (IssuesQuerySchema)getUserSchema();
+        IssuesQuerySchema schema = getUserSchema();
         Set<String> baseProps = new CaseInsensitiveHashSet();
         Map<String, String> colNameMap = new HashMap<>();
         for (String colName : getDomainKind().getReservedPropertyNames(getDomain()))
@@ -290,7 +290,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
             }
             cols.add(extensionCol);
 
-            if (!baseProps.contains(colName))
+            if (!baseProps.contains(colName) && !col.isHidden())
             {
                 _extraDefaultColumns.add(FieldKey.fromParts(colName));
             }
