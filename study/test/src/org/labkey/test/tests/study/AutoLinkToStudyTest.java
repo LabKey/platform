@@ -1,6 +1,7 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -11,8 +12,11 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.ext4.Window;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
+import org.openqa.selenium.WebElement;
 
 import java.io.File;
 import java.util.List;
@@ -22,6 +26,9 @@ import java.util.List;
 public class AutoLinkToStudyTest extends BaseWebDriverTest
 {
     private final static String ASSAY_NAME = "Test Assay";
+    private final String STUDY1 = getProjectName() + " Study 1";
+    private final String STUDY2 = getProjectName() + " Study 2";
+    private final String STUDY3 = getProjectName() + " Study 3";
 
     @BeforeClass
     public static void setupProject()
@@ -38,12 +45,22 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
                 .setTimepointType(StudyHelper.TimepointType.DATE)
                 .createStudy();
 
+        _containerHelper.createProject(STUDY1, "Study");
+        _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
+                .createStudy();
+
+        _containerHelper.createProject(STUDY2, "Study");
+        _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
+                .createStudy();
+
+        _containerHelper.createProject(STUDY3, "Study");
+        _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
+                .createStudy();
+
         log("Creating an assay");
         goToProjectHome();
         goToManageAssays();
-        _assayHelper.createAssayDesign("General", ASSAY_NAME)
-                .setAutoLinkTarget("(Data import folder)")
-                .clickSave();
+        _assayHelper.createAssayDesign("General", ASSAY_NAME).clickSave();
     }
 
     @Override
@@ -62,6 +79,17 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     public void testAutoLinkInSameFolder()
     {
         String runName = "Run 1";
+        String categoryName = "Auto linked category";
+
+        log("Editing the assay design for auto link");
+        goToProjectHome();
+        goToManageAssays();
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        _assayHelper.clickEditAssayDesign()
+                .setAutoLinkTarget("(Data import folder)")
+                .setAutoLinkCategory(categoryName)
+                .clickSave();
+
         File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run1.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
@@ -71,6 +99,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.setFilter("Run/Name", "Equals", runName);
         checker().verifyEquals("New dataset is not created in Study from Assay import", 6, table.getDataRowCount());
+        //checker().verifyEquals("Incorrect category for the dataset(Category exists case)", categoryName, getCategory(getProjectName(), ASSAY_NAME));
     }
 
     /*
@@ -81,24 +110,21 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     {
         String runName = "Link to study run";
         log("Creating the study projects");
-        _containerHelper.createProject(getProjectName() + " Study 1", "Study");
-        _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
-                .createStudy();
 
-        _containerHelper.createProject(getProjectName() + " Study 2", "Study");
-        _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
-                .createStudy();
-
-        _containerHelper.createProject(getProjectName() + " Study 3", "Study");
-        _studyHelper.startCreateStudy().setTimepointType(StudyHelper.TimepointType.DATE)
-                .createStudy();
+        log("Editing the assay design for auto link");
+        goToProjectHome();
+        goToManageAssays();
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        _assayHelper.clickEditAssayDesign()
+                .setAutoLinkTarget("(Data import folder)")
+                .clickSave();
 
         File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run2.xls");
         importAssayRun(runFile, ASSAY_NAME, runName);
 
-        linkToStudy(runName, getProjectName() + " Study 1", 1);
-        linkToStudy(runName, getProjectName() + " Study 2", 1);
-        linkToStudy(runName, getProjectName() + " Study 3", 1);
+        linkToStudy(runName, STUDY1, 1, null);
+        linkToStudy(runName, STUDY2, 1, null);
+        linkToStudy(runName, STUDY3, 1, null);
 
         log("Verifying linked column does not exists because more then 3 studies are linked");
         goToProjectHome();
@@ -132,7 +158,32 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
                 datasetTable.getColumnNames().contains("linked_to_Auto_Link_To_Study_Test_Study_1_Study"));
     }
 
-    private void linkToStudy(String runName, String targetStudy, int numOfRows)
+    @Test
+    public void testPredefinedDatasetCategories()
+    {
+        String categoryName = "CAT1";
+        String runName = "Predefined Dataset Category";
+        createDatasetCategory(STUDY1, categoryName);
+
+        goToProjectHome();
+        goToManageAssays();
+        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+        _assayHelper.clickEditAssayDesign().setAutoLinkTarget("").clickSave();
+
+        goToProjectHome();
+        File runFile = new File(TestFileUtils.getSampleData("AssayImportExport"), "GenericAssay_Run3.xls");
+        importAssayRun(runFile, ASSAY_NAME, runName);
+
+        linkToStudy(runName, STUDY1, 1, categoryName); // Category exists in Study 1
+        linkToStudy(runName, STUDY2, 1, "CAT2"); // New category.
+        linkToStudy(runName, STUDY3, 1, null); // Uncategorized
+
+//        checker().verifyEquals("Incorrect category for the dataset(Category exists case)", categoryName, getCategory(STUDY1, ASSAY_NAME));
+//        checker().verifyEquals("Incorrect category for the dataset(New category case)", "CAT2", getCategory(STUDY2, ASSAY_NAME));
+//        checker().verifyEquals("Incorrect category for the dataset(Uncategorized case)", "", getCategory(STUDY3, ASSAY_NAME));
+    }
+
+    private void linkToStudy(String runName, String targetStudy, int numOfRows, @Nullable String categoryName)
     {
         goToProjectHome();
         goToManageAssays();
@@ -147,6 +198,8 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
 
         log("Link to study: Choose target");
         selectOptionByText(Locator.id("targetStudy"), "/" + targetStudy + " (" + targetStudy + " Study)");
+        if (categoryName != null)
+            setFormElement(Locator.name("autoLinkCategory"), categoryName);
         clickButton("Next");
 
         new DataRegionTable("Data", getDriver()).clickHeaderButtonAndWait("Link to Study");
@@ -167,12 +220,54 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         clickButton("Save and Finish");
     }
 
+    private void createDatasetCategory(String projectName, String name)
+    {
+        goToProjectHome(projectName);
+        goToManageViews();
+        Locator.linkWithText("Manage Categories").findElement(getDriver()).click();
+        _extHelper.waitForExtDialog("Manage Categories");
+        Window categoryWindow = new Window.WindowFinder(getDriver()).withTitle("Manage Categories").waitFor();
+        categoryWindow.clickButton("New Category", 0);
+        WebElement newCategoryField = Locator.input("label").withAttributeContaining("id", "textfield").notHidden().waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT);
+        setFormElementJS(newCategoryField, name);
+        fireEvent(newCategoryField, SeleniumEvent.blur);
+        waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
+        clickButton("Done", 0);
+        _extHelper.waitForExtDialogToDisappear("Manage Categories");
+    }
+
+    private String getCategory(String projectName, String datasetName)
+    {
+        goToProjectHome(projectName);
+        goToSchemaBrowser();
+        DataRegionTable table = viewQueryData("study", "DataSets");
+        table.setFilter("label", "EQUALS", datasetName);
+        return table.getDataAsText(0, "categoryid");
+    }
+
+    private void deleteDatasets(String projectName)
+    {
+        goToProjectHome(projectName);
+        _studyHelper.goToManageDatasets().clickDeleteMultipleDatasets();
+        checkCheckbox(Locator.name("datasetIds"));
+        clickButton("Delete Selected");
+        acceptAlert().contains("Are you sure you want to delete the selected rows?");
+    }
+
+    @Before
+    public void datasetCleanUp()
+    {
+        deleteDatasets(STUDY1);
+        deleteDatasets(STUDY2);
+        deleteDatasets(STUDY3);
+    }
+
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         _containerHelper.deleteProject(getProjectName(), afterTest);
-        _containerHelper.deleteProject(getProjectName() + " Study 1", afterTest);
-        _containerHelper.deleteProject(getProjectName() + " Study 2", afterTest);
-        _containerHelper.deleteProject(getProjectName() + " Study 3", afterTest);
+        _containerHelper.deleteProject(STUDY1, afterTest);
+        _containerHelper.deleteProject(STUDY2, afterTest);
+        _containerHelper.deleteProject(STUDY3, afterTest);
     }
 }
