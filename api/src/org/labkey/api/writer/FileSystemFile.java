@@ -68,7 +68,6 @@ public class FileSystemFile extends AbstractVirtualFile
         }
         catch (IOException e)
         {
-            //TODO do more...
             throw new RuntimeException(e);
         }
     }
@@ -206,7 +205,6 @@ public class FileSystemFile extends AbstractVirtualFile
         }
         catch (IOException e)
         {
-            //TODO should do more here...
             throw new RuntimeException(e);
         }
     }
@@ -227,7 +225,6 @@ public class FileSystemFile extends AbstractVirtualFile
         }
         catch (IOException e)
         {
-            //TODO do more here...
             throw new RuntimeException(e);
         }
     }
