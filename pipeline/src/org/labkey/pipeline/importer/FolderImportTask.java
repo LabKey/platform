@@ -65,7 +65,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 
         if (hasExpandedCloudRoot(job) && CloudStoreService.get() != null)
         {
-            Path importRoot = CloudStoreService.get().downloadFolderArchive(job);
+            Path importRoot = CloudStoreService.get().downloadExpandedArchive(job);
             job.updateWorkingRoot(importRoot);
         }
 

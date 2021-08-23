@@ -132,12 +132,6 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport, Cl
     }
 
     @Override
-    public VirtualFile getDataDirectory()
-    {
-        return getRoot();
-    }
-
-    @Override
     public void updateWorkingRoot(Path newRoot) throws PipelineJobException
     {
         _root = new FileSystemFile(newRoot);

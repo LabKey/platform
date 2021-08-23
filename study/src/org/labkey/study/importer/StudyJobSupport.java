@@ -16,9 +16,10 @@
 
 package org.labkey.study.importer;
 
-import org.labkey.api.admin.ImportException;
+import org.labkey.api.cloud.CloudArchiveImporterSupport;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
@@ -32,7 +33,7 @@ import java.nio.file.Path;
 * Date: Aug 31, 2009
 * Time: 2:02:54 PM
 */
-public interface StudyJobSupport extends SpecimenJobSupport
+public interface StudyJobSupport extends SpecimenJobSupport, CloudArchiveImporterSupport
 {
     StudyImpl getStudy();
 
@@ -66,12 +67,12 @@ public interface StudyJobSupport extends SpecimenJobSupport
                 try
                 {
                     StudyImportContext ctx = getImportContext();
-                    Path importRoot = CloudStoreService.get().copyExpandedStudyArchiveLocally(studyXml, ctx.getXml(), ctx.getRoot().getLocation(), job.getPipeRoot(), ctx.getLoggerGetter().getLogger(), errors);
+                    Path importRoot = CloudStoreService.get().downloadExpandedArchive(job);
 
                     // Replace remote based context with local temp dir based context
                     updateWorkingRoot(importRoot);
                 }
-                catch (ImportException e)
+                catch (PipelineJobException e)
                 {
                     errors.addSuppressed(e);
                 }

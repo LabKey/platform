@@ -53,9 +53,7 @@ public interface CloudStoreService
         ServiceRegistry.get().registerService(CloudStoreService.class, impl);
     }
 
-    Path copyExpandedStudyArchiveLocally(Path studyXml, StudyDocument.Study xml, String location, PipeRoot pipeRoot, Logger logger, BindException errors);
-
-    Path downloadFolderArchive(PipelineJob job) throws PipelineJobException;
+    Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
     class StoreInfo
     {
