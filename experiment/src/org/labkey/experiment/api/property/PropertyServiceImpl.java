@@ -214,7 +214,7 @@ public class PropertyServiceImpl implements PropertyService
     @Override
     public List<DomainKind> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
-        List<? extends Domain> domains = getDomains(container, user, domainKinds, includeProjectAndShared);
+        List<? extends Domain> domains = getDomains(container, user, domainKinds, null, includeProjectAndShared);
         List<DomainKind> dks = new ArrayList<>();
         domains.forEach(d -> {
             if(null != d.getDomainKind())
@@ -249,9 +249,9 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
-    public List<? extends Domain> getDomains(Container container, User user, @Nullable Set<String> domainKinds, boolean includeProjectAndShared)
+    public List<? extends Domain> getDomains(Container container, User user, @Nullable Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared)
     {
-        return getDomainsStream(container, user, domainKinds, includeProjectAndShared).collect(Collectors.toList());
+        return getDomainsStream(container, user, domainKinds, domainNames, includeProjectAndShared).collect(Collectors.toList());
     }
 
     @Override
@@ -264,9 +264,8 @@ public class PropertyServiceImpl implements PropertyService
                 .collect(Collectors.toList());
     }
 
-
     @Override
-    public Stream<? extends Domain> getDomainsStream(Container container, User user, @Nullable Set<String> domainKinds, boolean includeProjectAndShared)
+    public Stream<? extends Domain> getDomainsStream(Container container, User user, @Nullable Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared)
     {
         Stream<? extends Domain> stream = getDomains(container, user, includeProjectAndShared)
                 .stream()
@@ -274,6 +273,9 @@ public class PropertyServiceImpl implements PropertyService
 
         if (domainKinds != null && !domainKinds.isEmpty())
             stream = stream.filter(d -> domainKinds.contains(d.getDomainKind().getKindName()));
+
+        if (domainNames != null && !domainNames.isEmpty())
+            stream = stream.filter(d -> domainNames.contains(d.getName()));
 
         return stream;
     }

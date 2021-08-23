@@ -87,6 +87,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -265,6 +267,14 @@ public class StudyPublishManager implements StudyPublishService
         return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
     }
 
+    @Override
+    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+                                 String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
+                                 List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
+    {
+        return publishData(user, sourceContainer, targetContainer, datasetCategory, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
+    }
+
     private ActionURL publishData(User user, Container sourceContainer, Container targetContainer, String sourceName,
                                   Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
@@ -291,6 +301,13 @@ public class StudyPublishManager implements StudyPublishService
                                   Pair<Dataset.PublishSource, Integer> publishSource,
                                   List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
+        return publishData(user, sourceContainer, targetContainer, null, sourceName, publishSource, dataMaps, columns, keyPropertyName, errors);
+    }
+
+    private ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
+                                  String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
+                                  List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
+    {
         // Partition dataMaps by targetStudy.
         Map<Container, List<Map<String, Object>>> partitionedDataMaps = new HashMap<>();
         for (Map<String, Object> dataMap : dataMaps)
@@ -311,12 +328,12 @@ public class StudyPublishManager implements StudyPublishService
         {
             Container targetStudy = entry.getKey();
             List<Map<String, Object>> maps = entry.getValue();
-            url = _publishData(user, sourceContainer, targetStudy, sourceName, publishSource, maps, columns, keyPropertyName, errors);
+            url = _publishData(user, sourceContainer, targetStudy, datasetCategory, sourceName, publishSource, maps, columns, keyPropertyName, errors);
         }
         return url;
     }
 
-    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, String sourceName,
+    private ActionURL _publishData(User user, Container sourceContainer, @NotNull Container targetContainer, @Nullable ViewCategory datasetCategory, String sourceName,
                                    Pair<Dataset.PublishSource, Integer> publishSource,
                                    List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
@@ -367,11 +384,16 @@ public class StudyPublishManager implements StudyPublishService
 
             if (dataset == null)
             {
-                dataset = createDataset(user, new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, sourceName))
+                DatasetDefinition.Builder datasetBuilder = new DatasetDefinition.Builder(createUniqueDatasetName(targetStudy, sourceName))
                         .setStudy(targetStudy)
                         .setKeyPropertyName(keyPropertyName)
                         .setPublishSourceId(publishSource.second)
-                        .setPublishSource(publishSource.first));
+                        .setPublishSource(publishSource.first);
+
+                if (datasetCategory != null)
+                    datasetBuilder.setCategoryId(datasetCategory.getRowId());
+
+                dataset = createDataset(user, datasetBuilder);
             }
             else if (publishSource.second != null)
             {
@@ -386,6 +408,14 @@ public class StudyPublishManager implements StudyPublishService
                 {
                     errors.add("The destination dataset belongs to a different linked data source");
                     return null;
+                }
+
+                // Set category (if given) if pre-existing category is 'Uncategorized'
+                if (datasetCategory != null && dataset.getCategoryId() == null)
+                {
+                    dataset = dataset.createMutable();
+                    dataset.setCategoryId(datasetCategory.getRowId());
+                    StudyManager.getInstance().updateDatasetDefinition(user, dataset, errors);
                 }
 
                 // Make sure the key property matches,
@@ -1080,7 +1110,16 @@ public class StudyPublishManager implements StudyPublishService
                 LOG.debug("Found configured target study container ID, " + targetStudyContainerId + " for auto-linking with " + run.getName() + " from container " + container.getPath());
                 final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
 
-                return autoLinkResults(protocol, provider, run, user, container, targetStudyContainer, errors, LOG);
+                // Determine if the category is predefined
+                ViewCategory targetStudyCategory = null;
+                if (protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI) != null)
+                {
+                    String categoryName = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI).getStringValue();
+                    targetStudyCategory = ViewCategoryManager.getInstance().ensureViewCategory(targetStudyContainer, user, categoryName);
+                    LOG.debug("Determined predefined Dataset Category to assign, " + targetStudyCategory.getLabel());
+                }
+
+                return autoLinkResults(protocol, provider, run, user, container, targetStudyContainer, targetStudyCategory, errors, LOG);
             }
         }
 
@@ -1156,7 +1195,7 @@ public class StudyPublishManager implements StudyPublishService
 
     @Nullable
     public ActionURL autoLinkResults(ExpProtocol protocol, AssayProvider provider, ExpRun run, User user, Container container,
-                                     Container targetStudyContainer, List<String> errors, Logger log)
+                                     Container targetStudyContainer, @Nullable ViewCategory datasetCategory, List<String> errors, Logger log)
     {
         if (targetStudyContainer != null)
         {
@@ -1253,7 +1292,7 @@ public class StudyPublishManager implements StudyPublishService
                 });
 
                 log.debug("Identified " + keys + " rows with sufficient data to link to " + targetStudyContainer.getPath() + " for auto-linking with " + run.getName() + " from container " + container.getPath());
-                return provider.linkToStudy(user, container, protocol, targetStudyContainer, keys, errors);
+                return provider.linkToStudy(user, container, protocol, targetStudyContainer, datasetCategory, keys, errors);
             }
             else
                 log.info("Unable to link the assay data, there is no study in the folder: " + targetStudyContainer.getPath());
