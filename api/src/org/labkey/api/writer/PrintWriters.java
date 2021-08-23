@@ -54,20 +54,7 @@ public class PrintWriters
      */
     public static PrintWriter getPrintWriter(File file) throws FileNotFoundException
     {
-        try
-        {
-            return getPrintWriter(file.toPath());
-        }
-        catch (FileNotFoundException e)
-        {
-            // TODO Retain old behavior
-            throw e;
-        }
-        catch (IOException e)
-        {
-            //TODO Do more...
-            throw new RuntimeException(e);
-        }
+        return getPrintWriter(file.toPath());
     }
 
     /**
@@ -76,11 +63,17 @@ public class PrintWriters
      * @param file Path destination for the new PrintWriter
      * @return A standard, buffered PrintWriter targeting the File
      */
-    public static PrintWriter getPrintWriter(Path file) throws IOException
+    public static PrintWriter getPrintWriter(Path file)
     {
-        return new StandardPrintWriter(Files.newOutputStream(file));
+        try
+        {
+            return new StandardPrintWriter(Files.newOutputStream(file));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("Error creating Output file writer: ", e);
+        }
     }
-
 
     // Use factory methods above, unless you really need to subclass
     public static class StandardPrintWriter extends PrintWriter
