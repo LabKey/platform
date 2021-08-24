@@ -31,6 +31,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -264,6 +266,7 @@ public class PublishController extends SpringActionController
     {
         private List<Integer> _runId;
         private Container _targetStudy;
+        private String _autoLinkCategory;
 
         public Container getTargetStudy()
         {
@@ -284,6 +287,16 @@ public class PublishController extends SpringActionController
         {
             _runId = runId;
         }
+
+        public String getAutoLinkCategory()
+        {
+            return _autoLinkCategory;
+        }
+
+        public void setAutoLinkCategory(String autoLinkCategory)
+        {
+            _autoLinkCategory = autoLinkCategory;
+        }
     }
 
     private static class AutoLinkPipelineJob extends PipelineJob
@@ -292,6 +305,7 @@ public class PublishController extends SpringActionController
         private Integer _protocolId;
         private List<Integer> _runIds = Collections.emptyList();
         private ActionURL _statusUrl;
+        private String _autoLinkCategory;
 
         // For serialization
         protected AutoLinkPipelineJob() {}
@@ -302,6 +316,7 @@ public class PublishController extends SpringActionController
             _targetStudyContainer = form.getTargetStudy();
             _protocolId = form.getProtocol().getRowId();
             _runIds = form.getRunId();
+            _autoLinkCategory = form.getAutoLinkCategory();
 
             setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_link_to_study", "log")));
         }
@@ -331,6 +346,8 @@ public class PublishController extends SpringActionController
 
                     ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
                     AssayProvider provider = AssayService.get().getProvider(protocol);
+                    ViewCategory targetCategory = _autoLinkCategory != null ? ViewCategoryManager.getInstance().ensureViewCategory(_targetStudyContainer, getUser(), _autoLinkCategory) : null;
+
                     _runIds.forEach((runId) -> {
 
                         info("Starting linkage for run : " + runId);
@@ -345,6 +362,7 @@ public class PublishController extends SpringActionController
                                     getUser(),
                                     getContainer(),
                                     _targetStudyContainer,
+                                    targetCategory,
                                     errors,
                                     getLogger());
 
