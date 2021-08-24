@@ -275,8 +275,7 @@ public class JobRunner implements Executor
 
         JobThreadFactory(int priority)
         {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+            group = Thread.currentThread().getThreadGroup();
             namePrefix = "JobThread-" + poolNumber.getAndIncrement() + ".";
             this.priority = priority;
         }
