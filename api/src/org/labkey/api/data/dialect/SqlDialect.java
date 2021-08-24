@@ -1473,7 +1473,7 @@ public abstract class SqlDialect
     public boolean isProcedureExists(DbScope scope, String schema, String name)
     {
         /* Does not handle overloaded functions for dialects that support them (Postgres) */
-        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM information_schema.routines WHERE UPPER(specific_schema) = UPPER(?) AND UPPER(routine_name) = UPPER(?)");
+        SQLFragment sqlf = new SQLFragment("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES WHERE UPPER(specific_schema) = UPPER(?) AND UPPER(routine_name) = UPPER(?)");
         sqlf.add(schema);
         sqlf.add(name);
         return new SqlSelector(scope, sqlf).exists();
