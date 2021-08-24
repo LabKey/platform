@@ -198,11 +198,6 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
     public interface ImportHelper
     {
-//        default VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
-//        {
-//            return getSpecimenDir(job, ctx, inputFile !=  null ? inputFile.toPath() : null);
-//        }
-
         VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException;
         void afterImport(SimpleStudyImportContext ctx);
     }
