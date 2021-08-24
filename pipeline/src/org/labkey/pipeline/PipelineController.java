@@ -1347,7 +1347,7 @@ public class PipelineController extends SpringActionController
             {
                 PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
                 if (pipelineRoot != null)
-                    pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                    pipelineRoot.deleteImportDirectory(null);
             }
 
             return success;

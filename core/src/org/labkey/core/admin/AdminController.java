@@ -4512,7 +4512,7 @@ public class AdminController extends SpringActionController
             // make sure we are able to delete any existing unzip dir in the pipeline root
             try
             {
-                pipelineUnzipDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                pipelineUnzipDir = pipelineRoot.deleteImportDirectory(null);
             }
             catch (DirectoryNotDeletedException e)
             {

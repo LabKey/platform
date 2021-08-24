@@ -814,12 +814,6 @@ public class PipelineManager
         return archiveFile;
     }
 
-    @Deprecated //Prefer the Path version
-    public static File getArchiveXmlFile(Container container, File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
-    {
-        return getArchiveXmlFile(container, archiveFile.toPath(), xmlFileName, errors).toFile();
-    }
-
     private static Path expandZipLocally(PipeRoot pipelineRoot, Path archiveFile, BindException errors)
     {
         try
@@ -827,7 +821,7 @@ public class PipelineManager
             // check if the archive file already exists in the unzip dir of this pipeline root
             File importDir = pipelineRoot.getImportDirectory();
             if (!archiveFile.getParent().toAbsolutePath().toString().equals(importDir.getAbsolutePath()))
-                importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+                importDir = pipelineRoot.deleteImportDirectory(null);
 
             if (!importDir.exists() || importDir.listFiles(s -> !s.equals(archiveFile.getFileName().toString())).length == 0)
             {
@@ -857,7 +851,7 @@ public class PipelineManager
         return null;
     }
 
-    private static Path getImportXmlFile(@NotNull PipeRoot pipelineRoot, Path archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+    private static Path getImportXmlFile(@NotNull PipeRoot pipelineRoot, @NotNull Path archiveFile, @NotNull String xmlFileName, BindException errors) throws InvalidFileException
     {
         Path xmlFile = archiveFile;
 
@@ -872,7 +866,7 @@ public class PipelineManager
         return xmlFile;
     }
 
-    public static Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, String xmlFileName) throws InvalidFileException
+    public static @NotNull Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, @NotNull String xmlFileName) throws InvalidFileException
     {
         // when importing a folder archive for a study, the study.xml file may not be at the root
         if ("study.xml".equals(xmlFileName) && archiveFile.getFileName().toString().endsWith(".folder.zip"))

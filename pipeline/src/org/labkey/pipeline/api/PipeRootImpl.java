@@ -420,28 +420,16 @@ public class PipeRootImpl implements PipeRoot
         return new File(root, PipelineService.UNZIP_DIR);
     }
 
-    //TODO why do we have both of these? 1
     @Override
-    @NotNull
-    public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException
-    {
-        File importDir = getImportDirectory();
-
-        if (importDir.exists() && !FileUtil.deleteDir(importDir))
-            throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
-
-        return importDir;
-    }
-
-    //TODO why do we have both of these? 2
-    @Override
-    public void deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
+    public File deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
         File importDir = getImportDirectory();
         if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
+
+        return importDir;
     }
 
     @Override

@@ -86,19 +86,11 @@ public interface PipeRoot extends SecurableResource
     File getImportDirectory();
 
     /**
-     * Create File object for the import directory and ensure that the directory does not exist
+     * Delete the import directory and its contents
      * @return File object for import directory
      * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
-     * @throws FileNotFoundException if import directory path cannot be resolved
      */
-    @NotNull
-    File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException;
-
-    /**
-     * Delete the import directory and its contents
-     * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
-     */
-    void deleteImportDirectory(@Nullable Logger log) throws DirectoryNotDeletedException;
+    File deleteImportDirectory(@Nullable Logger log) throws DirectoryNotDeletedException;
 
     /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);
