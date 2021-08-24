@@ -277,14 +277,7 @@ public class AnnouncementManager
             // Once a user is added to a thread, they see all messages in entire thread
             AnnouncementModel parentThread = AnnouncementManager.getAnnouncement(c, ann.getParent());
             if (parentThread != null)
-            {
-                Collection<AnnouncementModel> childMsgs = parentThread.getResponses();
                 saveMemberList(user, userIds, parentThread.getRowId());
-                for (AnnouncementModel msg : childMsgs)
-                {
-                    saveMemberList(user, userIds, msg.getRowId());
-                }
-            }
 
             // Attach member list to current message/response. This gives us a history of changes and is needed to handle moderator reviews.
             saveMemberList(user, userIds, ann.getRowId());
