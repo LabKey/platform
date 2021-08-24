@@ -25,6 +25,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.cloud.CloudArchiveImporterSupport;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -106,11 +107,11 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 User user = ctx.getUser();
                 BindException errors = new NullSafeBindException(c, "import");
 
-                boolean useLocalImportDir = job != null && job.getJobSupport(StudyJobSupport.class).useLocalImportDir(job, studyDir.getLocation());
+                boolean useLocalImportDir = job != null && job.getJobSupport(CloudArchiveImporterSupport.class).useLocalImportDir(job, studyDir.getLocation());
                 if (useLocalImportDir)
                 {
                     Path dirPath = job.getPipeRoot().getRootNioPath().resolve(studyDir.getLocation());
-                    job.getJobSupport(StudyJobSupport.class).downloadCloudArchive(job, dirPath.resolve(studyFileName), errors);
+                    job.getJobSupport(CloudArchiveImporterSupport.class).downloadCloudArchive(job, dirPath.resolve(studyFileName), errors);
                 }
 
                 StudyDocument studyDoc;
