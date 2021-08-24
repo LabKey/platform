@@ -126,8 +126,8 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
                     {
                         // Translate both values to new Date objects to avoid Timestamp/Date comparison problems - issue 40166
                         Date newDate = new Date(DateUtil.parseDateTime(container, entry.getValue().toString()));
-                        Date oldDate = new Date(study.getStartDate().getTime());
-                        recomputeStartDates = !oldDate.equals(newDate);
+                        Date oldDate = study.getStartDate() != null ? new Date(study.getStartDate().getTime()) : null;
+                        recomputeStartDates = !newDate.equals(oldDate);
 
                         if (recomputeStartDates)
                         {
