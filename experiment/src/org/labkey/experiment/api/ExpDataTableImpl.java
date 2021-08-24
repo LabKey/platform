@@ -938,7 +938,11 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 try (ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
                 {
                     VirtualFile f = new MemoryVirtualFile();
-                    excel.write(f.getOutputStream("excel.xlsx")); //TODO should this outputStream be closed?
+
+                    try (OutputStream os = f.getOutputStream("excel.xlsx"))
+                    {
+                        excel.write(os);
+                    }
 
                     try (ExcelLoader loader = new ExcelLoader(f.getInputStream("excel.xlsx"), true, getProject()))
                     {
