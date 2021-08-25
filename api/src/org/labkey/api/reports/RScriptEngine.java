@@ -248,8 +248,9 @@ public class RScriptEngine extends ExternalScriptEngine
                 sb.append("render(run_pandoc=TRUE, ");
                 if (useDefaultOutputFormat(context))
                 {
-                    sb.append("html_document(keep_md=TRUE, self_contained=FALSE, fig_caption=TRUE, " +
-                            "theme=NULL, css=NULL, smart=TRUE, highlight=\"default\"), ");
+                    sb.append("html_document(")
+                            .append(PANDOC_DEFAULT_OUTPUT_OPTIONS_LIST)
+                            .append("), ");
                 }
                 else
                 {
