@@ -1534,8 +1534,14 @@ public class DbScope
             Class<Driver> driverClass = (Class<Driver>)Class.forName(props.getDriverClassName());
             driver = driverClass.getConstructor().newInstance();
             info = new Properties();
-            info.put("user", props.getUsername());
-            info.put("password", props.getPassword());
+            if (props.getUsername() != null)
+            {
+                info.put("user", props.getUsername());
+            }
+            if (props.getPassword() != null)
+            {
+                info.put("password", props.getPassword());
+            }
         }
         catch (Exception e)
         {
