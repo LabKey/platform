@@ -855,7 +855,7 @@ public class PipelineManager
     {
         Path xmlFile = archiveFile;
 
-        if (archiveFile.getFileName().toString().endsWith(".zip"))
+        if (archiveFile.getFileName().toString().toLowerCase().endsWith(".zip"))
         {
             Path importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
             xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
@@ -869,7 +869,7 @@ public class PipelineManager
     public static @NotNull Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, @NotNull String xmlFileName) throws InvalidFileException
     {
         // when importing a folder archive for a study, the study.xml file may not be at the root
-        if ("study.xml".equals(xmlFileName) && archiveFile.getFileName().toString().endsWith(".folder.zip"))
+        if ("study.xml".equalsIgnoreCase(xmlFileName) && archiveFile.getFileName().toString().toLowerCase().endsWith(".folder.zip"))
         {
             File folderXml = new File(importDir.toFile(), "folder.xml");
             FolderDocument folderDoc;
