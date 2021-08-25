@@ -668,7 +668,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 to.setHidden(from.isHidden());
                 if (from.isUniqueIdField())
                 {
-                    to.setUserEditable(false);
+                    // Issue 43760: We do not setUserEditable to false here because that hides it from the details view
                     to.setHasDbSequence(true);
                     to.setShownInInsertView(false);
                 }
