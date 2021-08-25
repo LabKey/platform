@@ -147,10 +147,14 @@
     int i=0;
     for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
-        if ((i++ % 2) == 0)
-            column1Props.add(prop);
-        else
-            column2Props.add(prop);
+        boolean showField = bean.isInsert() && prop.isShownInInsertView() || !bean.isInsert() && prop.isShownInUpdateView();
+        if (showField)
+        {
+            if ((i++ % 2) == 0)
+                column1Props.add(prop);
+            else
+                column2Props.add(prop);
+        }
     }
 %>
 
@@ -352,14 +356,8 @@
                         </script><%
 
                     for (DomainProperty prop : column1Props)
-                    {
-                        boolean showField = bean.isInsert() && prop.isShownInInsertView() || !bean.isInsert() && prop.isShownInUpdateView();
-                        if (showField)
-                        {
-                         %>
-                                    <%=bean.renderColumn(prop, getViewContext())%>
-                         <%
-                        }
+                    {%>
+                                <%=bean.renderColumn(prop, getViewContext())%><%
                     }%>
                 </table>
             </td>
@@ -392,14 +390,8 @@
                 <tr><%=bean.renderLabel(bean.getLabel("Notify", false))%><td><%=bean.getNotifyList()%></td></tr><%
             }
             for (DomainProperty prop : column2Props)
-            {
-                boolean showField = bean.isInsert() && prop.isShownInInsertView() || !bean.isInsert() && prop.isShownInUpdateView();
-                if (showField)
-                {
-                %>
-                    <%=bean.renderColumn(prop, getViewContext())%>
-                <%
-                }
+            {%>
+                <%=bean.renderColumn(prop, getViewContext())%><%
             }%>
             </table></td>
         </tr>

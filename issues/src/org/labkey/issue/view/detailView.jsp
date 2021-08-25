@@ -89,10 +89,13 @@
 
     for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
-        if ((i++ % 2) == 0)
-            column1Props.add(prop);
-        else
-            column2Props.add(prop);
+        if (prop.isShownInDetailsView())
+        {
+            if ((i++ % 2) == 0)
+                column1Props.add(prop);
+            else
+                column2Props.add(prop);
+        }
     }
 
     int commentCount = issue.getComments().size();
@@ -265,8 +268,8 @@
             <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
             for (DomainProperty prop : column1Props)
-            { if (prop.isShownInDetailsView()) { %>
-            <%=bean.renderColumn(prop, getViewContext())%><% }
+            {%>
+            <%=bean.renderColumn(prop, getViewContext())%><%
             }%>
         </table></td>
         <td valign="top" width="33%"><table class="lk-fields-table">
@@ -278,8 +281,8 @@
             }
 
             for (DomainProperty prop : column2Props)
-            { if (prop.isShownInDetailsView()) { %>
-            <%=bean.renderColumn(prop, getViewContext())%><% }
+            {%>
+            <%=bean.renderColumn(prop, getViewContext())%><%
             }%>
         </table></td>
     </tr>
