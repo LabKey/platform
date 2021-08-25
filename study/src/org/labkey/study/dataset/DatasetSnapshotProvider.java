@@ -79,6 +79,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.query.DatasetQuerySettings;
+import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.springframework.validation.BindException;
@@ -241,6 +242,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             {
                                 DataIteratorContext dataIteratorContext = new DataIteratorContext();
                                 dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+                                dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.FALSE);
+
                                 if (study.isDataspaceStudy())
                                 {
                                     if (!fieldMap.containsKey(new FieldKey(null, "container")))
@@ -248,14 +251,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                         errors.reject(SpringActionController.ERROR_MSG, "Dataspace snapshot query must have a column called 'container'");
                                         return;
                                     }
-                                    Map<Enum, Object> config = Collections.singletonMap(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
-                                    dataIteratorContext.setConfigParameters(config);
+                                    dataIteratorContext.putConfigParameter(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
+                                    dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.never);
                                 }
+                                else
+                                    dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceOnly);
+
                                 StudyManager.getInstance().importDatasetData(context.getUser(), def,
                                     new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
-                                    dataIteratorContext,
-                                    study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
-                                    null, null);
+                                    dataIteratorContext);
 
                                 for (ValidationException e : dataIteratorContext.getErrors().getRowErrors())
                                     errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
@@ -474,6 +478,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                                 DataIteratorContext dataIteratorContext = new DataIteratorContext();
                                 dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+                                dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.FALSE);
                                 if (study.isDataspaceStudy())
                                 {
                                     if (!fieldMap.containsKey(new FieldKey(null, "container")))
@@ -481,14 +486,15 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                         errors.reject(SpringActionController.ERROR_MSG, "Dataspace snapshot query must have a column called 'container'");
                                         return null;
                                     }
-                                    Map<Enum, Object> config = Collections.singletonMap(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
-                                    dataIteratorContext.setConfigParameters(config);
+                                    dataIteratorContext.putConfigParameter(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
+                                    dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.never);
                                 }
+                                else
+                                    dataIteratorContext.putConfigParameter(DatasetUpdateService.Config.CheckForDuplicates, DatasetDefinition.CheckForDuplicates.sourceOnly);
+
                                 newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(), dsDef,
                                     new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
-                                    dataIteratorContext,
-                                    study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
-                                    null, null);
+                                    dataIteratorContext);
 
                                 for (ValidationException error : dataIteratorContext.getErrors().getRowErrors())
                                     errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
