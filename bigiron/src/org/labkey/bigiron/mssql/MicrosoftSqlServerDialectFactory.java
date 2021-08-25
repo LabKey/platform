@@ -68,14 +68,11 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        switch (driverClassName)
+        return switch (driverClassName)
         {
-            case "net.sourceforge.jtds.jdbc.Driver":
-            case "com.microsoft.sqlserver.jdbc.SQLServerDriver":
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
-            default:
-                return null;
-        }
+            case "net.sourceforge.jtds.jdbc.Driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver" -> new MicrosoftSqlServer2012Dialect(_tableResolver);
+            default -> null;
+        };
     }
 
     static final String RECOMMENDED = PRODUCT_NAME + " 2019 is the recommended version.";
@@ -278,7 +275,11 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                         "jdbc:jtds:sqlserver://www.host.com/database," +
                         "jdbc:jtds:sqlserver://www.host.com:1433/database," +
                         "jdbc:jtds:sqlserver://www.host.com/database;SelectMethod=cursor," +
-                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor");
+                        "jdbc:jtds:sqlserver://www.host.com:1433/database;SelectMethod=cursor," +
+                        "jdbc:jtds:sqlserver://www.host.com:1433;databaseName=database," +
+                        "jdbc:jtds:sqlserver://www.host.com:1433;databaseName=database;," +
+                        "jdbc:jtds:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database," +
+                        "jdbc:jtds:sqlserver://www.host.com:1433;SelectMethod=cursor;databaseName=database;");
                 }
 
                 @NotNull
