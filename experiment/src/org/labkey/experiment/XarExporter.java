@@ -1325,7 +1325,7 @@ public class XarExporter
                 sb.append(error.getCursorLocation().xmlText());
                 sb.append("\n");
             }
-            throw new ExperimentException("Failed to create a valid XML file\n" + sb.toString());
+            throw new ExperimentException("Failed to create a valid XML file\n" + sb);
         }
 
         XmlOptions options = new XmlOptions();
@@ -1370,14 +1370,8 @@ public class XarExporter
         }
     }
 
-    @Deprecated
-    public void write(OutputStream out) throws IOException
-    {
-        writeAsArchive(out);
-    }
-
     /** TODO use VFS so we can void two impl */
-    public void writeAsArchive(OutputStream out) throws IOException
+    public void writeAsArchive(OutputStream out) throws IOException, ExperimentException
     {
         try (ZipOutputStream zOut = new ZipOutputStream(out))
         {
@@ -1405,7 +1399,7 @@ public class XarExporter
                     }
                 }
             }
-            catch (Exception e)
+            catch (IOException | RuntimeException e)
             {
                 // insert the stack trace into the zip file
                 ZipEntry errorEntry = new ZipEntry("error.log");
@@ -1415,6 +1409,7 @@ public class XarExporter
                 ps.println("Failed to complete export of the XAR file: ");
                 e.printStackTrace(ps);
                 zOut.closeEntry();
+                throw e;
             }
         }
     }
