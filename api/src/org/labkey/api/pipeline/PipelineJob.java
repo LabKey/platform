@@ -124,11 +124,6 @@ abstract public class PipelineJob extends Job implements Serializable
         _actionSet = new RecordedActionSet();
     }
 
-    public void updateWorkingRoot(Path importRoot) throws PipelineJobException
-    {
-        throw new PipelineJobException("Unable to update working root. Updates not supported by job.");
-    }
-
     public enum TaskStatus
     {
         /** Job is in the queue, waiting for its turn to run */
@@ -826,6 +821,7 @@ abstract public class PipelineJob extends Job implements Serializable
                     workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
                     ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
                 }
+
                 actions = task.run();
                 success = true;
             }

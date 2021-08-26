@@ -1,5 +1,6 @@
 package org.labkey.api.cloud;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.util.FileUtil;
@@ -22,7 +23,7 @@ public interface CloudArchiveImporterSupport
      * @param studyXml Path to study file being downloaded
      * @param errors Delayed errors collection
      */
-    default void downloadCloudArchive(PipelineJob job, Path studyXml, BindException errors)
+    default void downloadCloudArchive(@NotNull PipelineJob job, @NotNull Path studyXml, BindException errors) throws UnsupportedOperationException
     {
         //check if cloud based pipeline root, and study xml hasn't been downloaded already
         if (!studyXml.startsWith(job.getPipeRoot().getImportDirectory().toPath().toAbsolutePath()))

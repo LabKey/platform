@@ -66,7 +66,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         if (hasExpandedCloudRoot(job) && CloudStoreService.get() != null)
         {
             Path importRoot = CloudStoreService.get().downloadExpandedArchive(job);
-            job.updateWorkingRoot(importRoot);
+            job.getJobSupport(CloudArchiveImporterSupport.class).updateWorkingRoot(importRoot);
         }
 
         boolean isFileAnalysisJob = FileAnalysisJobSupport.class.isInstance(job); // File watcher triggered job
