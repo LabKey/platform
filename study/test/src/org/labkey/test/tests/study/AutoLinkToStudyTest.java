@@ -13,6 +13,7 @@ import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.ext4.Window;
+import org.labkey.test.pages.query.ExecuteQueryPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
@@ -99,7 +100,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.setFilter("Run/Name", "Equals", runName);
         checker().verifyEquals("New dataset is not created in Study from Assay import", 6, table.getDataRowCount());
-        //checker().verifyEquals("Incorrect category for the dataset(Category exists case)", categoryName, getCategory(getProjectName(), ASSAY_NAME));
+        checker().verifyEquals("Incorrect category for the dataset(Category exists case)", categoryName, getCategory(getProjectName(), ASSAY_NAME));
     }
 
     /*
@@ -178,9 +179,9 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         linkToStudy(runName, STUDY2, 1, "CAT2"); // New category.
         linkToStudy(runName, STUDY3, 1, null); // Uncategorized
 
-//        checker().verifyEquals("Incorrect category for the dataset(Category exists case)", categoryName, getCategory(STUDY1, ASSAY_NAME));
-//        checker().verifyEquals("Incorrect category for the dataset(New category case)", "CAT2", getCategory(STUDY2, ASSAY_NAME));
-//        checker().verifyEquals("Incorrect category for the dataset(Uncategorized case)", "", getCategory(STUDY3, ASSAY_NAME));
+        checker().verifyEquals("Incorrect category for the dataset(Category exists case)", categoryName, getCategory(STUDY1, ASSAY_NAME));
+        checker().verifyEquals("Incorrect category for the dataset(New category case)", "CAT2", getCategory(STUDY2, ASSAY_NAME));
+        checker().verifyEquals("Incorrect category for the dataset(Uncategorized case)", " ", getCategory(STUDY3, ASSAY_NAME));
     }
 
     private void linkToStudy(String runName, String targetStudy, int numOfRows, @Nullable String categoryName)
@@ -240,8 +241,9 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     {
         goToProjectHome(projectName);
         goToSchemaBrowser();
-        DataRegionTable table = viewQueryData("study", "DataSets");
-        table.setFilter("label", "EQUALS", datasetName);
+        ExecuteQueryPage executeQueryPage = ExecuteQueryPage.beginAt(this, "study", "DataSets");
+        DataRegionTable table = executeQueryPage.getDataRegion();
+        table.setFilter("Label", "Equals", datasetName);
         return table.getDataAsText(0, "categoryid");
     }
 
@@ -249,9 +251,12 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     {
         goToProjectHome(projectName);
         _studyHelper.goToManageDatasets().clickDeleteMultipleDatasets();
-        checkCheckbox(Locator.name("datasetIds"));
-        clickButton("Delete Selected");
-        acceptAlert().contains("Are you sure you want to delete the selected rows?");
+        if (Locator.css("[class='table labkey-data-region-legacy'] tr").findElements(getDriver()).size() > 0)
+        {
+            checkCheckbox(Locator.name("datasetIds"));
+            clickButton("Delete Selected");
+            acceptAlert().contains("Are you sure you want to delete the selected rows?");
+        }
     }
 
     @Before
