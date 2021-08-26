@@ -204,7 +204,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
     protected static class DefaultImportHelper implements ImportHelper
     {
-        private File _unzipDir;
+        private Path _unzipDir;
 
         @Override
         public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException
@@ -213,7 +213,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             if (inputFile != null)
             {
                 // Might need to transform to a file type that we know how to import
-                File specimenArchive = inputFile.toFile();  // File conversion here should be safe as file should be local...
+                Path specimenArchive = inputFile;
 
                 for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
                 {
@@ -221,8 +221,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     {
                         if (job != null)
                             job.setStatus("TRANSFORMING " + transformer.getName() + " DATA");
-                        specimenArchive = ARCHIVE_FILE_TYPE.getFile(inputFile.getParent().toFile(), transformer.getFileType().getBaseName(inputFile));
-                        transformer.transform(job, inputFile.toFile(), specimenArchive);
+                        specimenArchive = ARCHIVE_FILE_TYPE.getPath(inputFile.getParent(), transformer.getFileType().getBaseName(inputFile));
+                        transformer.transform(job, inputFile, specimenArchive);
                         break;
                     }
                 }
@@ -237,12 +237,12 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     if (job != null)
                         job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
 
-                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive.getPath());
+                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive);
                     String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
-                    _unzipDir = new File(specimenArchive.getParentFile(), tempDirName);
+                    _unzipDir = specimenArchive.getParent().resolve(tempDirName);
                     ZipUtil.unzipToDirectory(specimenArchive, _unzipDir, ctx.getLogger());
 
-                    ctx.getLogger().info("Archive unzipped to " + _unzipDir.getPath());
+                    ctx.getLogger().info("Archive unzipped to " + _unzipDir);
                     return new FileSystemFile(_unzipDir);
                 }
             }

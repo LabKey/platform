@@ -21,6 +21,7 @@ import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * User: jeckels
@@ -28,20 +29,41 @@ import java.io.IOException;
  */
 public class FileXarSource extends AbstractFileXarSource
 {
+    @Deprecated
     public FileXarSource(File file, PipelineJob job)
     {
         super(job);
-        _xmlFile = FileUtil.resolveFile(file);
+        _xmlFile = file.toPath();
     }
 
-    @Override
-    public File getLogFile() throws IOException
+    public FileXarSource(Path file, PipelineJob job) throws IOException
     {
-        return getLogFileFor(_xmlFile);
+        super(job);
+        _xmlFile = file.toRealPath();
+    }
+
+    @Deprecated
+    public File getLogFile()
+    {
+        return getLogFilePath().toFile();
+    }
+
+
+    @Override
+    public Path getLogFilePath()
+    {
+        try
+        {
+            return getLogFileFor(_xmlFile);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Unable to access log file", e);
+        }
     }
 
     public String toString()
     {
-        return _xmlFile.getPath();
+        return _xmlFile.toString();
     }
 }

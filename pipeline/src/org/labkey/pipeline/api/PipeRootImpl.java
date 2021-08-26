@@ -421,10 +421,10 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public File deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
+    public Path deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
-        File importDir = getImportDirectory();
-        if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
+        Path importDir = getImportDirectory().toPath();
+        if (Files.exists(importDir) && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }

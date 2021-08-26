@@ -363,9 +363,15 @@ public class FileType implements Serializable
      * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
      * If nothing matches, uses the defaultSuffix to build a file name.
      */
+    @Deprecated //please switch to using the nio.Path version as the File class can have issues using full URIs
     public File getFile(File parentDir, String basename)
     {
         return new File(parentDir, getName(parentDir, basename));
+    }
+
+    public Path getPath(Path parentDir, String basename)
+    {
+        return parentDir.resolve(getName(parentDir, basename));
     }
 
     /**

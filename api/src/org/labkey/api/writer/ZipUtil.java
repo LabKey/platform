@@ -26,9 +26,11 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -42,40 +44,51 @@ import java.util.zip.ZipOutputStream;
  */
 public class ZipUtil
 {
-    // Unzip a zipped input stream to the specified directory
-    public static List<File> unzipToDirectory(InputStream is, File unzipDir) throws IOException
+    // Unzip a zipped file archive to the specified directory
+    @Deprecated
+    public static List<Path> unzipToDirectory(File zipFile, File unzipDir) throws IOException
     {
-        return unzipToDirectory(is, unzipDir, null);
+        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath());
     }
 
-
-    // Unzip a zipped file archive to the specified directory
-    public static List<File> unzipToDirectory(File zipFile, File unzipDir) throws IOException
+    public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir) throws IOException
     {
         return unzipToDirectory(zipFile, unzipDir, null);
     }
 
-    public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
+    @Deprecated
+    public static List<Path> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
+    {
+        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath(), log);
+    }
+
+    public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir, @Nullable Logger log) throws IOException
     {
         return unzipToDirectory(zipFile, unzipDir, log, false);
     }
 
     // Unzip an archive to the specified directory; log each file if Logger is non-null
-    public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
+    public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
     {
-        InputStream is = new FileInputStream(zipFile);
+        InputStream is = Files.newInputStream(zipFile);
         return unzipToDirectory(is, unzipDir, log, includeFolder);
     }
 
-    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
+    // Unzip a zipped input stream to the specified directory
+    public static List<Path> unzipToDirectory(InputStream is, Path unzipDir) throws IOException
+    {
+        return unzipToDirectory(is, unzipDir, null);
+    }
+
+    public static List<Path> unzipToDirectory(InputStream is, Path unzipDir, @Nullable Logger log) throws IOException
     {
         return unzipToDirectory(is, unzipDir, log, false);
     }
 
     // Unzips an input stream to the specified directory; logs each file if Logger is non-null.
-    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
+    public static List<Path> unzipToDirectory(InputStream is, Path unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
     {
-        List<File> files = new ArrayList<>();
+        List<Path> files = new ArrayList<>();
 
         // ZipInputStream.close() should close InputStream is. Use a CheckedInputStream to be sure.
         try (ZipInputStream zis = new ZipInputStream(new CheckedInputStream(is)))
@@ -84,18 +97,19 @@ public class ZipUtil
 
             while (null != (entry = zis.getNextEntry()))
             {
-                File destFile = new File(unzipDir, entry.getName());
+                Path destFile = unzipDir.resolve(entry.getName());
 
-                if (!destFile.getCanonicalPath().startsWith(unzipDir.getCanonicalPath() + File.separator)) {
+                //Verify that the entry target doesn't attempt to push data outside the unzipDir by resolving '..'
+                if (!destFile.toAbsolutePath().normalize().startsWith(unzipDir.toAbsolutePath().normalize().toString())) {
                     throw new IOException("Zip entry is outside of the target dir: " + entry.getName());
                 }
 
                 if (entry.isDirectory())
                 {
-                    destFile.mkdirs();
-                    if (!destFile.isDirectory())
+                    Files.createDirectories(destFile);
+                    if (!Files.isDirectory(destFile))
                     {
-                        throw new IOException("Failed to create directory: " + destFile.getName());
+                        throw new IOException("Failed to create directory: " + destFile.getFileName().toString());
                     }
                     if (includeFolder)
                         files.add(destFile);
@@ -105,20 +119,25 @@ public class ZipUtil
                 if (null != log)
                     log.info("Expanding " + entry.getName());
 
-                destFile.getParentFile().mkdirs();
-                if (destFile.exists())
+                Files.createDirectories(destFile.getParent());
+                if (Files.exists(destFile))
                 {
-                    throw new IOException("File already exists: " + destFile.getName());
+                    throw new IOException("File already exists: " + destFile.getFileName().toString());
                 }
-                if (!destFile.createNewFile())
+
+                try
                 {
-                    throw new IOException("Failed to extract file: " + destFile.getName());
+                    Files.createFile(destFile);
+                }
+                catch (FileAlreadyExistsException e)
+                {
+                    throw new IOException("Failed to extract file: " + destFile.getFileName(), e);
                 }
 
                 // We can't close() this, otherwise zis will get closed
                 BufferedInputStream bis = new BufferedInputStream(zis);
 
-                try (BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(destFile)))
+                try (BufferedOutputStream os = new BufferedOutputStream(Files.newOutputStream(destFile)))
                 {
                     FileUtil.copyData(bis, os);
                 }

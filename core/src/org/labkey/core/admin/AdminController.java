@@ -187,6 +187,7 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -4485,7 +4486,7 @@ public class AdminController extends SpringActionController
             Container container = getContainer();
             PipeRoot pipelineRoot;
             boolean isStudy = false;
-            File pipelineUnzipDir;  // Should be local & writable
+            Path pipelineUnzipDir;  // Should be local & writable
             PipelineUrls pipelineUrlProvider;
 
             if (form.getOrigin() == null)
@@ -4535,10 +4536,10 @@ public class AdminController extends SpringActionController
             }
 
             // get the main xml file from the unzipped import archive
-            Path archiveXml = pipelineUnzipDir.toPath().resolve("folder.xml");
+            Path archiveXml = pipelineUnzipDir.resolve("folder.xml");
             if (!Files.exists(archiveXml))
             {
-                archiveXml = pipelineUnzipDir.toPath().resolve( "study.xml");
+                archiveXml = pipelineUnzipDir.resolve( "study.xml");
                 isStudy = true;
             }
             if (!Files.exists(archiveXml))
@@ -4571,7 +4572,7 @@ public class AdminController extends SpringActionController
             return !errors.hasErrors();
         }
 
-        private @Nullable FolderImportConfig getFolderFromZipArchive(File pipelineUnzipDir, BindException errors)
+        private @Nullable FolderImportConfig getFolderFromZipArchive(Path pipelineUnzipDir, BindException errors)
         {
             // user chose to import from a zip file
             Map<String, MultipartFile> map = getFileMap();
@@ -4594,16 +4595,19 @@ public class AdminController extends SpringActionController
             // copy and unzip the uploaded import archive zip file to the pipeline unzip dir
             try
             {
-                File pipelineUnzipFile = new File(pipelineUnzipDir, zipFile.getOriginalFilename());
-                pipelineUnzipFile.getParentFile().mkdirs();
-                pipelineUnzipFile.createNewFile();
-                FileUtil.copyData(zipFile.getInputStream(), pipelineUnzipFile);
+                Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
+                Files.createDirectories(pipelineUnzipFile.getParent());
+                Files.createFile(pipelineUnzipFile);
+                try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
+                {
+                    FileUtil.copyData(zipFile.getInputStream(), os);
+                }
                 ZipUtil.unzipToDirectory(pipelineUnzipFile, pipelineUnzipDir);
 
                 return new FolderImportConfig(
                         false,
                         zipFile.getOriginalFilename(),
-                        pipelineUnzipFile.toPath(),
+                        pipelineUnzipFile,
                         pipelineUnzipFile
                 );
             }
@@ -4619,7 +4623,7 @@ public class AdminController extends SpringActionController
             }
         }
 
-        private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final File pipelineUnzipDir, final BindException errors) throws Exception
+        private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final Path pipelineUnzipDir, final BindException errors) throws Exception
         {
             // user choose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
@@ -4639,26 +4643,26 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            File implicitZipFile = new File(pipelineUnzipDir, zipFileName);
+            Path implicitZipFile = pipelineUnzipDir.resolve(zipFileName);
 
             // To support the simple import option unzip the zip file to the pipeline unzip dir of the current container
             ZipUtil.unzipToDirectory(implicitZipFile, pipelineUnzipDir);
 
             return new FolderImportConfig(
                     StringUtils.isNotEmpty(form.getSourceTemplateFolderId()),
-                    implicitZipFile.getName(),
-                    implicitZipFile.toPath(),
+                    implicitZipFile.getFileName().toString(),
+                    implicitZipFile,
                     null
             );
         }
 
         private class FolderImportConfig {
-            File pipelineUnzipFile;
+            Path pipelineUnzipFile;
             String originalFileName;
             Path archiveFile;
             boolean fromTemplateSourceFolder;
 
-            public FolderImportConfig(boolean fromTemplateSourceFolder, String originalFileName, Path archiveFile, @Nullable File pipelineUnzipFile)
+            public FolderImportConfig(boolean fromTemplateSourceFolder, String originalFileName, Path archiveFile, @Nullable Path pipelineUnzipFile)
             {
                 this.originalFileName = originalFileName;
                 this.archiveFile = archiveFile;

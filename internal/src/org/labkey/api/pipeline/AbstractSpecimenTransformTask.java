@@ -25,6 +25,7 @@ import org.labkey.api.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -52,7 +53,7 @@ public abstract class AbstractSpecimenTransformTask
         _job = job;
     }
 
-    public abstract void transform(File input, File output) throws PipelineJobException;
+    public abstract void transform(Path input, Path output) throws PipelineJobException;
 
     /**
      * Transform a row of data from the parsed input data file the transformed specimen row

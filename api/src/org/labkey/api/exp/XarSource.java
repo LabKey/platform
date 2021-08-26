@@ -115,7 +115,13 @@ public abstract class XarSource implements Serializable
 
     protected abstract String canonicalizeDataFileURL(String dataFileURL) throws XarFormatException;
 
-    public abstract File getLogFile() throws IOException;       // Log file always local file
+    @Deprecated //Prefer the getLogFilePath version
+    public abstract File getLogFile();       // Log file always local file
+    public Path getLogFilePath()
+    {
+        //TODO This should be overridden in inherited classes
+        return getLogFile().toPath();
+    }
 
     /**
      * Called before trying to import this XAR to let the source set up any resources that are required 

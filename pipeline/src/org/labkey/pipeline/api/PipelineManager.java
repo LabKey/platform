@@ -819,11 +819,11 @@ public class PipelineManager
         try
         {
             // check if the archive file already exists in the unzip dir of this pipeline root
-            File importDir = pipelineRoot.getImportDirectory();
-            if (!archiveFile.getParent().toAbsolutePath().toString().equals(importDir.getAbsolutePath()))
+            Path importDir = pipelineRoot.getImportDirectory().toPath();
+            if (!archiveFile.getParent().toAbsolutePath().toString().equalsIgnoreCase(importDir.toAbsolutePath().toString()))
                 importDir = pipelineRoot.deleteImportDirectory(null);
 
-            if (!importDir.exists() || importDir.listFiles(s -> !s.equals(archiveFile.getFileName().toString())).length == 0)
+            if (Files.notExists(importDir) || Files.list(importDir).noneMatch(s -> s.getFileName().toString().equalsIgnoreCase(archiveFile.getFileName().toString())))
             {
                 // Only unzip once
                 try (InputStream is = Files.newInputStream(archiveFile))
@@ -832,7 +832,7 @@ public class PipelineManager
                 }
             }
 
-            return importDir.toPath();
+            return importDir;
         }
         catch (FileNotFoundException e)
         {
