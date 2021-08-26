@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -46,9 +47,9 @@ public class ZipUtil
 {
     // Unzip a zipped file archive to the specified directory
     @Deprecated
-    public static List<Path> unzipToDirectory(File zipFile, File unzipDir) throws IOException
+    public static List<File> unzipToDirectory(File zipFile, File unzipDir) throws IOException
     {
-        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath());
+        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath()).stream().map(Path::toFile).collect(Collectors.toList());
     }
 
     public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir) throws IOException
@@ -57,9 +58,9 @@ public class ZipUtil
     }
 
     @Deprecated
-    public static List<Path> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
+    public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log) throws IOException
     {
-        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath(), log);
+        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath(), log).stream().map(Path::toFile).collect(Collectors.toList());
     }
 
     public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir, @Nullable Logger log) throws IOException
