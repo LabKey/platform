@@ -610,7 +610,8 @@ public class XarExporter
         {
             xSampleSet.setNameExpression(sampleType.getNameExpression());
         }
-        else if (sampleType.hasNameAsIdCol())
+
+        if (sampleType.hasNameAsIdCol())
         {
             xSampleSet.addKeyField(ExpMaterialTable.Column.Name.name());
         }

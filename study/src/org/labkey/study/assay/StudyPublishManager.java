@@ -36,8 +36,8 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -47,8 +47,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ILineageDisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -89,10 +89,15 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
@@ -453,7 +458,17 @@ public class StudyPublishManager implements StudyPublishService
             if (defaultQCStateId != null)
                 defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            BatchValidationException validationException = new BatchValidationException();
+            if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
+            {
+                // we allow linking data to a study even if the study security is set to read-only datasets, since the
+                // underlying insert uses the QUS, we pass in a contextual role to allow the insert to succeed
+                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                contextualRoles.add(RoleManager.getRole(FolderAdminRole.class));
+                user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
+            }
+            datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);
 
             final ExpObject source = publishSource.first.resolvePublishSource(publishSource.second);
             createProvenanceRun(user, targetContainer, publishSource.first, source, errors, dataset, datasetLsids);
@@ -468,9 +483,9 @@ public class StudyPublishManager implements StudyPublishService
 
             transaction.commit();
         }
-        catch (ChangePropertyDescriptorException e)
+        catch (ChangePropertyDescriptorException | IOException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         //Make sure that the study is updated with the correct timepoints.
@@ -972,7 +987,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (defaultQCStateId != null)
                     defaultQCState = QCStateManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
-                        defaultQCState, insertOption, null, null, importLookupByAlternateKey, auditBehaviorType);
+                        defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
                 if (!errors.hasErrors())
                     transaction.commit();
             }

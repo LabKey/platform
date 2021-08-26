@@ -49,7 +49,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -91,6 +90,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
@@ -150,9 +150,9 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
-import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.studydesign.AbstractStudyDesignDomainKind;
@@ -3452,62 +3452,77 @@ public class StudyManager
         }
     }
 
-
-    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
-                                          BatchValidationException errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger, boolean importLookupByAlternateKey, @Nullable AuditBehaviorType auditBehaviorType)
+    /**
+     * @deprecated pass in a DataIteratorContext instead of individual options
+     */
+    public List<String> importDatasetData(User user, DatasetDefinition def,
+                                          DataLoader loader,
+                                          Map<String, String> columnMap,
+                                          BatchValidationException errors,
+                                          DatasetDefinition.CheckForDuplicates checkDuplicates,
+                                          @Nullable QCState defaultQCState,
+                                          QueryUpdateService.InsertOption insertOption,
+                                          Logger logger,
+                                          boolean importLookupByAlternateKey,
+                                          @Nullable AuditBehaviorType auditBehaviorType)
             throws IOException
     {
-        parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
+
         context.setInsertOption(insertOption);
         context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+
         Map<Enum, Object> options = new HashMap<>();
         options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
-
+        options.put(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.FALSE);
+        options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
+        if (defaultQCState != null)
+            options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
         if (logger != null)
-        {
             options.put(QueryUpdateService.ConfigParameters.Logger, logger);
-        }
 
         context.setConfigParameters(options);
-        return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
+
+        return importDatasetData(user, def, loader, columnMap, context);
     }
 
-    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader, Map<String, String> columnMap,
-                                          DataIteratorContext context,
-                                          DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, StudyImportContext studyImportContext)
-            throws IOException
+    public List<String> importDatasetData(User user, DatasetDefinition def, DataLoader loader,
+                                          Map<String, String> columnMap, DataIteratorContext context) throws IOException
     {
         parseData(user, def, loader, columnMap);
-        Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
-        return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
+        return def.importDatasetData(user, loader, context);
     }
 
 
-    /** @deprecated pass in a BatchValidationException, not List<String>  */
-    @Deprecated
-    public List<String> importDatasetData(User user, DatasetDefinition def, List<Map<String, Object>> data,
-                                          List<String> errors, DatasetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, Logger logger, boolean forUpdate)
+    /**
+     * @deprecated pass in a DataIteratorContext instead of individual options
+     */
+    public List<String> importDatasetData(User user, DatasetDefinition def,
+                                          List<Map<String, Object>> data,
+                                          BatchValidationException errors,
+                                          DatasetDefinition.CheckForDuplicates checkDuplicates,
+                                          @Nullable QCState defaultQCState,
+                                          Logger logger,
+                                          boolean allowImportManagedKey) throws IOException
     {
         if (data.isEmpty())
             return Collections.emptyList();
 
+        DataIteratorContext context = new DataIteratorContext(errors);
         Map<Enum, Object> options = new HashMap<>();
-        options.put(QueryUpdateService.ConfigParameters.Logger, logger);
 
-        DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
-        DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(forUpdate ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
+        options.put(QueryUpdateService.ConfigParameters.Logger, logger);
+        options.put(DatasetUpdateService.Config.AllowImportManagedKey, Boolean.valueOf(allowImportManagedKey));
+        if (defaultQCState != null)
+            options.put(DatasetUpdateService.Config.DefaultQCState, defaultQCState);
+        options.put(DatasetUpdateService.Config.CheckForDuplicates, checkDuplicates);
         context.setConfigParameters(options);
 
-        List<String> lsids = def.importDatasetData(user, it, context, checkDuplicates, defaultQCState, null, logger, forUpdate);
-        batchValidateExceptionToList(context.getErrors(), errors);
-        return lsids;
-    }
+        DataLoader loader = new MapLoader(data);
+        context.setInsertOption(allowImportManagedKey ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
 
+        return importDatasetData(user, def, loader, new CaseInsensitiveHashMap<>(), context);
+    }
 
     public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared, boolean allowDomainUpdates, @Nullable Activity activity)
     {
