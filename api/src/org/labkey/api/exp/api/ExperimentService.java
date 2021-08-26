@@ -291,7 +291,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Looks in all the sample types visible from the given container for a single match with the specified name
      */
-    @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+    @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, @Nullable Container container, User user);
 
     @Nullable ExpData findExpData(Container c, User user,
                                   @NotNull ExpDataClass dataClass,
