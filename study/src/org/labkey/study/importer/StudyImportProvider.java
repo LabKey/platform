@@ -66,7 +66,7 @@ public class StudyImportProvider extends PipelineProvider
             // Path.endsWith checks the final path piece (eg, /root/filename.xml checks filename.xml).
             // So, we want to check the string value instead
             String pathString = entry.toString();
-            return pathString.endsWith("study.xml") || pathString.endsWith(".study.zip") || pathString.endsWith(".folder.zip");
+            return pathString.toLowerCase().endsWith("study.xml") || pathString.toLowerCase().endsWith(".study.zip") || pathString.toLowerCase().endsWith(".folder.zip");
         }
     }
 

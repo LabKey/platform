@@ -37,21 +37,17 @@ import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.model.VisitService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
-import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.sql.BatchUpdateException;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 /*
 * User: adam
@@ -271,21 +267,9 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             Logger log = ctx.getLogger();
             if (Files.isDirectory(path))
             {
-                try (Stream<Path> walk = Files.walk(path)) {
-                    walk.sorted(Comparator.reverseOrder())
-                            .forEach(p -> {
-                                try
-                                {
-                                    if (Files.deleteIfExists(p))
-                                    {
-                                        log.info("Deleting " + p);
-                                    }
-                                }
-                                catch (IOException e)
-                                {
-                                    log.error("Unable to delete file: " + p);
-                                }
-                            });
+                try
+                {
+                    FileUtil.deleteDir(path);
                 }
                 catch (IOException e)
                 {
