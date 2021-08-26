@@ -168,16 +168,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
 
-        if (InventoryService.get() != null)
+        UserSchema userSchema = getQueryTable().getUserSchema();
+        if (InventoryService.get() != null && userSchema != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
-            UserSchema userSchema = getQueryTable().getUserSchema();
-            if (userSchema != null)
-                return LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
-            return dib;
+            dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
         }
-        else
-            return dib;
+
+        if (userSchema != null)
+        {
+            dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
+        }
+
+        return dib;
     }
 
     @Override

@@ -8,4 +8,6 @@ public interface PublishStartForm extends DataRegionSelection.DataSelectionKeyFo
     ActionURL getReturnActionURL();
 
     String getContainerFilterName();
+
+    boolean isAutoLinkEnabled();
 }

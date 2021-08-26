@@ -31,6 +31,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -69,6 +70,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
@@ -2147,15 +2150,12 @@ public class OntologyManager
         return propDescCache.get(key);
     }
 
-
-    public static List<PropertyDescriptor> getPropertyDescriptors(
+    private static TableSelector getPropertyDescriptorTableSelector(
             Container c, User user,
-            @Nullable Set<Integer> domainIds,
-            @Nullable Set<String> domainKinds,
+            Set<Domain> domains,
             @Nullable String searchTerm,
             @Nullable SimpleFilter propertyFilter,
-            @Nullable String sortColumn,
-            @Nullable Integer maxRows, @Nullable Long offset)
+            @Nullable String sortColumn)
     {
         final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
 
@@ -2176,14 +2176,9 @@ public class OntologyManager
         }
 
         filter.addCondition(new FieldKey(propertyIdKey, "container"), c.getId());
-        if (domainIds != null && !domainIds.isEmpty())
-        {
-            filter.addInClause(FieldKey.fromParts("domainId"), domainIds);
-        }
 
-        if (domainKinds != null && !domainKinds.isEmpty())
+        if (!domains.isEmpty())
         {
-            List<? extends Domain> domains = PropertyService.get().getDomains(c, user, domainKinds, true);
             filter.addInClause(FieldKey.fromParts("domainId"), domains.stream().map(Domain::getTypeId).collect(Collectors.toSet()));
         }
 
@@ -2207,7 +2202,53 @@ public class OntologyManager
             sortColumn = "propertyId";
         Sort sort = new Sort(sortColumn);
 
-        TableSelector ts = new TableSelector(getTinfoPropertyDomain(), colMap.values(), filter, sort);
+        return new TableSelector(getTinfoPropertyDomain(), colMap.values(), filter, sort);
+    }
+
+    public static Set<Domain> getDomains(
+            Container c, User user,
+            @Nullable Set<Integer> domainIds,
+            @Nullable Set<String> domainKinds,
+            @Nullable Set<String> domainNames)
+    {
+        Set<Domain> domains = new HashSet<>();
+        if (domainIds != null && !domainIds.isEmpty())
+        {
+            domains.addAll(domainIds.stream().map(id -> PropertyService.get().getDomain(id)).collect(Collectors.toSet()));
+        }
+
+        Set<String> kinds = emptySet();
+        Set<String> names = emptySet();
+        if (domainKinds != null && !domainKinds.isEmpty())
+        {
+            kinds = domainKinds;
+        }
+        if (domainNames != null && !domainNames.isEmpty())
+        {
+            names = domainNames;
+        }
+        if (!kinds.isEmpty() || !names.isEmpty())
+        {
+            domains.addAll(PropertyService.get().getDomains(c, user, kinds, names, true));
+        }
+
+        return domains;
+    }
+
+    public static List<PropertyDescriptor> getPropertyDescriptors(
+            Container c, User user,
+            Set<Domain> domains,
+            @Nullable String searchTerm,
+            @Nullable SimpleFilter propertyFilter,
+            @Nullable String sortColumn,
+            @Nullable Integer maxRows,
+            @Nullable Long offset)
+    {
+        final FieldKey propertyIdKey = FieldKey.fromParts("propertyId");
+
+        TableSelector ts = getPropertyDescriptorTableSelector(c, user, domains, searchTerm,
+                propertyFilter, sortColumn);
+
         if (maxRows != null)
             ts.setMaxRows(maxRows);
         if (offset != null)
@@ -2241,6 +2282,19 @@ public class OntologyManager
             throw new RuntimeSQLException(e);
         }
         return props;
+    }
+
+    public static long getPropertyDescriptorsRowCount(
+            Container c, User user,
+            Set<Domain> domains,
+            @Nullable String searchTerm,
+            @Nullable SimpleFilter propertyFilter)
+    {
+
+        TableSelector ts = getPropertyDescriptorTableSelector(c, user, domains, searchTerm,
+                propertyFilter, null);
+
+        return ts.getRowCount();
     }
 
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
@@ -2656,7 +2710,11 @@ public class OntologyManager
 
         int usageCount = 0;
         List<Identifiable> objects = new ArrayList<>(maxUsageCount);
-        TableSelector ts = new TableSelector(getTinfoObjectProperty(), colMap.values(), new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL), new Sort("objectId"));
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("propertyId"), pd.getPropertyId(), CompareType.EQUAL);
+        filter.addCondition(objectId_objectURI, DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX, CompareType.DOES_NOT_CONTAIN);
+
+        TableSelector ts = new TableSelector(getTinfoObjectProperty(), colMap.values(), filter, new Sort("objectId"));
         try (var r = ts.getResults(true))
         {
             usageCount = r.getSize();

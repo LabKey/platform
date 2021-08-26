@@ -62,6 +62,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     private String _dataRegionSelectionKey;
     private String _containerFilterName;
     private String _defaultValueSource = DefaultValueSource.PublishSource.name();
+    private String _autoLinkCategory;
 
     public Integer getRowId()
     {
@@ -191,5 +192,15 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     public void setDefaultValueSource(String defaultValueSource)
     {
         _defaultValueSource = defaultValueSource;
+    }
+
+    public String getAutoLinkCategory()
+    {
+        return _autoLinkCategory;
+    }
+
+    public void setAutoLinkCategory(String autoLinkCategory)
+    {
+        _autoLinkCategory = autoLinkCategory;
     }
 }

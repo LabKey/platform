@@ -89,10 +89,13 @@
 
     for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
-        if ((i++ % 2) == 0)
-            column1Props.add(prop);
-        else
-            column2Props.add(prop);
+        if (prop.isShownInDetailsView())
+        {
+            if ((i++ % 2) == 0)
+                column1Props.add(prop);
+            else
+                column2Props.add(prop);
+        }
     }
 
     int commentCount = issue.getComments().size();

@@ -1733,7 +1733,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         synchronized(UPGRADE_LOCK)
         {
-            assert null == _upgradeUser;
             _upgradeUser = user;
         }
     }

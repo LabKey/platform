@@ -18,6 +18,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -288,7 +290,8 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     protected ActionURL linkToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
-        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, publishData, publishErrors);
+        ViewCategory targetStudyCategory = form.getAutoLinkCategory() != null ? ViewCategoryManager.getInstance().ensureViewCategory(targetStudy, getUser(), form.getAutoLinkCategory()) : null;
+        return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, targetStudyCategory, publishData, publishErrors);
     }
 
     @Override

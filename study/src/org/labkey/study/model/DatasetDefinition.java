@@ -47,7 +47,6 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
@@ -81,6 +80,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -116,11 +116,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
+import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.StudyQuerySchema;
 import org.springframework.beans.factory.InitializingBean;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -2043,9 +2044,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context,
-                                          CheckForDuplicates checkDuplicates, QCState defaultQCState,
-                                          StudyImportContext studyImportContext, Logger logger, boolean forUpdate)
+    public List<String> importDatasetData(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
         if (getKeyManagementType() == KeyManagementType.RowId)
         {
@@ -2053,12 +2052,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             // increments, as we're imitating a sequence.
             synchronized (getManagedKeyLock())
             {
-                return insertData(user, in, checkDuplicates, context, defaultQCState, studyImportContext, logger, forUpdate);
+                return insertData(user, in, context);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, context, defaultQCState, studyImportContext, logger, forUpdate);
+            return insertData(user, in, context);
         }
     }
 
@@ -2132,24 +2131,23 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
     }
 
-    private List<String> insertData(User user, DataIteratorBuilder in,
-            CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
-            StudyImportContext studyImportContext, Logger logger, boolean forUpdate)
+    private List<String> insertData(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
         ArrayList<String> lsids = new ArrayList<>();
-        DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, context, defaultQCState, studyImportContext, forUpdate);
+        Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
 
-        DbScope scope = ExperimentService.get().getSchema().getScope();
-
-        try (Transaction transaction = scope.ensureTransaction())
+        context.putConfigParameter(DatasetUpdateService.Config.KeyList, lsids);
+        try (Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
             long start = System.currentTimeMillis();
             {
-                Pump p = new Pump(insert.getDataIterator(context), context);
-                checkConnection(transaction);
-                p.run();
-                if (!context.getErrors().hasErrors())
-                    checkConnection(transaction);
+                UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), StudyQuerySchema.SCHEMA_NAME);
+                TableInfo table = schema.getTable(getName());
+                if (table != null)
+                {
+                    QueryUpdateService qus = table.getUpdateService();
+                    qus.loadRows(user, getContainer(), in, context, null);
+                }
             }
             long end = System.currentTimeMillis();
 
@@ -2158,7 +2156,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 throw errors;
 
             _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
-            StudyManager.datasetModified(this, true);
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
@@ -2182,7 +2179,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             }
             return Collections.emptyList();
         }
-        catch (RuntimeSQLException e)
+        catch (SQLException e)
         {
             String translated = translateSQLException(e);
             if (translated != null)
@@ -2190,7 +2187,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
                 context.getErrors().addRowError(new ValidationException(translated));
                 return Collections.emptyList();
             }
-            throw e;
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -2241,7 +2238,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         return _managedKeyLock;
     }
 
-
     /**
      * NOTE Currently the caller is still responsible for locking MANAGED_KEY_LOCK while this
      * Iterator is running.  This is asserted in the code, but it would be nice to move the
@@ -2249,34 +2245,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
-        return getInsertDataIterator(user, in, null, null, context, null, null, false);
-    }
-
-    /**
-     * NOTE Currently the caller is still responsible for locking MANAGED_KEY_LOCK while this
-     * Iterator is running.  This is asserted in the code, but it would be nice to move the
-     * locking into the iterator itself.
-     */
-    public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
-        @Nullable List<String> lsids,
-        @Nullable CheckForDuplicates checkDuplicates, DataIteratorContext context, QCState defaultQCState,
-        @Nullable StudyImportContext studyImportContext, boolean forUpdate)
-    {
         TableInfo table = getTableInfo(user, false);
-        boolean needToHandleQCState = table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME) != null;
-
-        DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this,
-                user,
-                needToHandleQCState,
-                defaultQCState,
-                studyImportContext);
+        DatasetDataIteratorBuilder b = new DatasetDataIteratorBuilder(this, user);
         b.setInput(in);
 
-        if (null != checkDuplicates)
-            b.setCheckDuplicates(checkDuplicates);
-        b.setForUpdate(forUpdate);
-        b.setUseImportAliases(!forUpdate);
-        b.setKeyList(lsids);
+        boolean allowImportManagedKey = context.getConfigParameterBoolean(DatasetUpdateService.Config.AllowImportManagedKey);
+        b.setAllowImportManagedKeys(allowImportManagedKey);
+        b.setUseImportAliases(!allowImportManagedKey);
+        b.setKeyList((List<String>)context.getConfigParameter(DatasetUpdateService.Config.KeyList));
 
         Container target = getDataSharingEnum() == DataSharing.NONE ? getContainer() : getDefinitionContainer();
         DataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(table, b, target, user, context);
@@ -2661,7 +2637,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
 
     @Override
-    public String updateDatasetRow(User u, String lsid, Map<String, Object> data, List<String> errors)
+    public String updateDatasetRow(User u, String lsid, Map<String, Object> data, BatchValidationException errors)
     {
         boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
 
@@ -2681,7 +2657,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             if (oldData == null)
             {
                 // No old record found, so we can't update
-                errors.add("Record not found with lsid: " + lsid);
+                errors.addRowError(new ValidationException("Record not found with lsid: " + lsid));
                 return null;
             }
 
@@ -2713,7 +2689,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             List<String> result = StudyManager.getInstance().importDatasetData(
                     u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
 
-            if (errors.size() > 0)
+            if (errors.hasErrors())
             {
                 // Update failed
                 return null;
@@ -2741,6 +2717,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             transaction.commit();
 
             return newLSID;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
         }
     }
 

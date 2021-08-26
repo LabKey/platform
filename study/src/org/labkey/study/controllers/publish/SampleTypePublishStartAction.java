@@ -52,6 +52,12 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
             return _containerFilterName;
         }
 
+        @Override
+        public boolean isAutoLinkEnabled()
+        {
+            return false; // ToDo for Rosaline in SampleType followup story
+        }
+
         public void setContainerFilterName(String containerFilterName)
         {
             _containerFilterName = containerFilterName;
