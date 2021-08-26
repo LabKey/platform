@@ -1553,7 +1553,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             String formattedDate = DateUtil.formatDateTime(new Date(), datePattern);
 
-            try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(_file, StandardOpenOption.APPEND)))
+            try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(_file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)))
             {
                 var line = formattedDate + " " +
                         String.format("%-5s", level) +
