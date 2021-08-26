@@ -674,26 +674,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-
-            // handle attachments
-            if (results != null && !results.isEmpty())
-            {
-                for (Map<String, Object> result : results)
-                {
-                    String lsid = (String) result.get("LSID");
-                    addAttachments(user, container, result, lsid);
-                }
-            }
-
-            return results;
+            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
-
-        /* This class overrides getRow() in order to suppport getRow() using "rowid" or "lsid" */
+        /* This class overrides getRow() in order to support getRow() using "rowid" or "lsid" */
         @Override
-        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
-                throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
         {
             aliasColumns(_columnMapping, keys);
 
