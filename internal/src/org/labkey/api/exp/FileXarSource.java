@@ -33,33 +33,25 @@ public class FileXarSource extends AbstractFileXarSource
     public FileXarSource(File file, PipelineJob job)
     {
         super(job);
-        _xmlFile = file.toPath();
+        _xmlFile = file.toPath().normalize();
     }
 
-    public FileXarSource(Path file, PipelineJob job) throws IOException
+    public FileXarSource(Path file, PipelineJob job)
     {
         super(job);
-        _xmlFile = file.toRealPath();
+        _xmlFile = file.normalize();
     }
 
     @Deprecated
-    public File getLogFile()
+    public File getLogFile() throws IOException
     {
         return getLogFilePath().toFile();
     }
 
-
     @Override
-    public Path getLogFilePath()
+    public Path getLogFilePath() throws IOException
     {
-        try
-        {
-            return getLogFileFor(_xmlFile);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Unable to access log file", e);
-        }
+        return getLogFileFor(_xmlFile);
     }
 
     public String toString()

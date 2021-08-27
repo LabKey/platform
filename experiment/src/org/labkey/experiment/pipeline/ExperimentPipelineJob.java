@@ -91,7 +91,7 @@ public class ExperimentPipelineJob extends PipelineJob
         header("XAR Import from " + xarSource.toString());
     }
 
-    protected XarSource createXarSource(Path file) throws IOException
+    protected XarSource createXarSource(Path file)
     {
         String name = file.getFileName().toString().toLowerCase();
         if (name.endsWith(".xar") || name.endsWith(".zip"))
@@ -108,17 +108,16 @@ public class ExperimentPipelineJob extends PipelineJob
     {
         if (_xarSource == null)
         {
+            _xarSource = createXarSource(_xarFile);
+
             try
             {
-                _xarSource = createXarSource(_xarFile);
+                setLogFile(_xarSource.getLogFilePath());
             }
             catch (IOException e)
             {
-                //TODO throw?
-                _log.error("Unable to access Xar Source file.");
+                _log.error("Failed to get log file for " + _xarFile, e);
             }
-
-            setLogFile(_xarSource.getLogFilePath());
         }
         return _xarSource;
     }
