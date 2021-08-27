@@ -2465,23 +2465,37 @@ public class AdminController extends SpringActionController
         }
     }
 
+    private static File getTomcatBaseDir()
+    {
+        // Issue 43823 - catalina.base and catalina.home typically match, but we should prefer catalina.base
+        String baseDir = System.getProperty("catalina.base");
+        if (baseDir == null)
+        {
+            baseDir = System.getProperty("catalina.home");
+        }
+        if (baseDir == null)
+        {
+            throw new IllegalStateException("Neither catalina.base nor catalina.home system property was set");
+
+        }
+        return new File(baseDir);
+    }
+
     @AdminConsoleAction
-    public class ShowPrimaryLogAction extends ExportAction
+    public class ShowPrimaryLogAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             getPageConfig().setNoIndex();
-            File tomcatHome = new File(System.getProperty("catalina.home"));
-            File logFile = new File(tomcatHome, "logs/labkey.log");
+            File logFile = new File(getTomcatBaseDir(), "logs/labkey.log");
             PageFlowUtil.streamLogFile(response, 0, logFile);
         }
     }
 
     private File getErrorLogFile()
     {
-        File tomcatHome = new File(System.getProperty("catalina.home"));
-        return new File(tomcatHome, "logs/labkey-errors.log");
+        return new File(getTomcatBaseDir(), "logs/labkey-errors.log");
     }
 
     private static ActionURL getActionsURL()
@@ -2491,7 +2505,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ActionsAction extends SimpleViewAction
+    public class ActionsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
