@@ -68,6 +68,12 @@ public class ZipUtil
         return unzipToDirectory(zipFile, unzipDir, log, false);
     }
 
+    @Deprecated
+    public static List<File> unzipToDirectory(File zipFile, File unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
+    {
+        return unzipToDirectory(zipFile.toPath(), unzipDir.toPath(), log, includeFolder).stream().map(Path::toFile).collect(Collectors.toList());
+    }
+
     // Unzip an archive to the specified directory; log each file if Logger is non-null
     public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
     {
