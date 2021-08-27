@@ -17,7 +17,6 @@ package org.labkey.study.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -32,7 +31,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.StudyModule;
 import org.labkey.study.model.Participant;
-import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyManager.ParticipantViewConfig;
 
@@ -95,8 +93,6 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     }
 
     public static final String PARTICIPANT_ID_KEY = "participantId";
-    public static final String QC_STATE_EXPLICIT_KEY = "QCState";
-    public static final String QC_STATE_INCLUDE_PRIVATE_DATA_KEY = "QCState_include_private_data";
     public static final String DATA_TYPE_KEY = "dataType";
     public static final String SOURCE_DATASET_ID_KEY = "datasetId";
     public static final String CURRENT_URL_KEY = "currentUrl";
@@ -131,20 +127,6 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         if (null != participant)
             participantId = participant.getParticipantId();
 
-        // check first for an explicit QC state; this will be the case for participant webparts included
-        // via the client API:
-        String encodedQCState = webPart.getPropertyMap().get(QC_STATE_EXPLICIT_KEY);
-        // if we don't find an explicit QC state, check for a boolean indicating public vs. all data.
-        // This will be the case for saved webpart parameters.  We store a boolean rather than explicit
-        // state IDs because the state set (and their IDs) can change over time.
-        if (encodedQCState == null)
-        {
-            String includePrivateDataString = webPart.getPropertyMap().get(QC_STATE_INCLUDE_PRIVATE_DATA_KEY);
-            boolean includePrivateData = Boolean.parseBoolean(includePrivateDataString);
-            encodedQCState = includePrivateData ?
-                    QCStateSet.getAllStates(portalCtx.getContainer()).getFormValue() :
-                    QCStateSet.getPublicStates(portalCtx.getContainer()).getFormValue();
-        }
         String dataTypeString = webPart.getPropertyMap().get(DATA_TYPE_KEY);
         DataType dataType = DataType.ALL; // We default to showing ALL
         if (dataTypeString != null)
@@ -170,7 +152,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         {
             // fall through; the default of -1 is fine.
         }
-        WebPartView view = createView(portalCtx.getContainer(), portalCtx.getUser(), participantId, sourceDatasetId, currentUrl, dataType, encodedQCState);
+        WebPartView view = createView(portalCtx.getContainer(), portalCtx.getUser(), participantId, sourceDatasetId, currentUrl, dataType);
         view.setFrame(WebPartView.FrameType.PORTAL);
         view.setTitle(StudyService.get().getSubjectNounSingular(portalCtx.getContainer()) + " " + (participantId != null ? participantId : "unknown"));
         return view;
@@ -181,8 +163,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
                                    final String participantId,
                                    final int sourceDatasetId,
                                    final String currentUrl,
-                                   DataType type,
-                                   final String encodedQCState)
+                                   DataType type)
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(container);
         if (participantId == null)
