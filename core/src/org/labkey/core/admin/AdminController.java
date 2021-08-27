@@ -2475,7 +2475,8 @@ public class AdminController extends SpringActionController
         }
         if (baseDir == null)
         {
-            throw new IllegalStateException("Neither catalina.base nor catalina.home system properties were set");
+            throw new IllegalStateException("Neither catalina.base nor catalina.home system property was set");
+
         }
         return new File(baseDir);
     }
