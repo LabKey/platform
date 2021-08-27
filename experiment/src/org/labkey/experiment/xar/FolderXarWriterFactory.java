@@ -134,7 +134,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
             try (OutputStream fOut = xarDir.getOutputStream(XAR_FILE_NAME))
             {
-                exporter.write(fOut);
+                exporter.writeAsArchive(fOut);
             }
         }
 

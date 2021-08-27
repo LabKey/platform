@@ -1772,9 +1772,9 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public ActionURL statusDetails(Container container)
+        public ActionURL statusDetails(Container container, int jobRowId)
         {
-            return new ActionURL(StatusController.DetailsAction.class, container);
+            return new ActionURL(StatusController.DetailsAction.class, container).addParameter("rowId", jobRowId);
         }
 
         @Override
