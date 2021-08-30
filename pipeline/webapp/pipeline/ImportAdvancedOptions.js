@@ -207,7 +207,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         if (Ext4.isDefined(this.getApplyToMultipleFoldersForm()) && this.getApplyToMultipleFoldersForm().isVisible())
             applyMultipleFoldersHeight = this.getApplyToMultipleFoldersForm().getHeight();
 
-        this.setHeight(this.baseHeight + specificImportOptionsHeight + applyMultipleFoldersHeight);
+        this.setHeight(this.baseHeight + specificImportOptionsHeight + applyMultipleFoldersHeight + this.getSubmitButton().getHeight());
     },
 
     getSubmitButton : function()
