@@ -37,6 +37,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -396,7 +397,7 @@ public interface Dataset extends StudyEntity, StudyCachable<Dataset>
      * @param data the data to be updated
      * @param errors any errors during update will be added to this object
      */
-    String updateDatasetRow(User u, String lsid, Map<String,Object> data, BatchValidationException errors);
+    String updateDatasetRow(User u, String lsid, Map<String,Object> data) throws ValidationException;
 
     /**
      * Fetches a single row from a dataset given an LSID

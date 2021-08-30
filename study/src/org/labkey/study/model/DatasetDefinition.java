@@ -2637,7 +2637,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
 
     @Override
-    public String updateDatasetRow(User u, String lsid, Map<String, Object> data, BatchValidationException errors)
+    public String updateDatasetRow(User u, String lsid, Map<String, Object> data) throws ValidationException
     {
         boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
 
@@ -2657,8 +2657,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
             if (oldData == null)
             {
                 // No old record found, so we can't update
-                errors.addRowError(new ValidationException("Record not found with lsid: " + lsid));
-                return null;
+                ValidationException error = new ValidationException();
+                error.addError(new SimpleValidationError("Record not found with lsid: " + lsid));
+                throw error;
             }
 
             Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
@@ -2686,13 +2687,16 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
 
+            BatchValidationException errors = new BatchValidationException();
             List<String> result = StudyManager.getInstance().importDatasetData(
                     u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
 
             if (errors.hasErrors())
             {
                 // Update failed
-                return null;
+                ValidationException error = new ValidationException();
+                errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
+                throw error;
             }
 
             // lsid is not in the updated map by default since it is not editable,
