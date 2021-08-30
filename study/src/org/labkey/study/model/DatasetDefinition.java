@@ -2650,7 +2650,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)
             managedKey = getKeyPropertyName();
 
-        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        try (Transaction transaction = scope.isTransactionActive() ? DbScope.NO_OP_TRANSACTION : scope.ensureTransaction())
         {
             Map<String, Object> oldData = getDatasetRow(u, lsid);
 
