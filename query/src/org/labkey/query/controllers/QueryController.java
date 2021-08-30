@@ -366,7 +366,7 @@ public class QueryController extends SpringActionController
 
             // Extract the username, password, and container from the secure property store
             Map<String, String> singleConnectionMap = RemoteConnections.getRemoteConnection(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY, name, getContainer());
-            if (null == singleConnectionMap || singleConnectionMap.isEmpty())
+            if (singleConnectionMap.isEmpty())
                 throw new NotFoundException();
             String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
             String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
@@ -551,6 +551,7 @@ public class QueryController extends SpringActionController
             sb.append("  <td class=\"labkey-column-header\">Data Source</td>");
             sb.append("  <td class=\"labkey-column-header\">Current Status</td>");
             sb.append("  <td class=\"labkey-column-header\">URL</td>");
+            sb.append("  <td class=\"labkey-column-header\">Database Name</td>");
             sb.append("  <td class=\"labkey-column-header\">Product Name</td>");
             sb.append("  <td class=\"labkey-column-header\">Product Version</td>");
             sb.append("  <td class=\"labkey-column-header\">Max Connections</td>");
@@ -591,6 +592,8 @@ public class QueryController extends SpringActionController
                 sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getURL()));
                 sb.append("</td><td>");
+                sb.append(PageFlowUtil.filter(scope.getDatabaseName()));
+                sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getDatabaseProductName()));
                 sb.append("</td><td>");
                 sb.append(PageFlowUtil.filter(scope.getDatabaseProductVersion()));
@@ -605,7 +608,7 @@ public class QueryController extends SpringActionController
                 Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
 
                 sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">\n");
-                sb.append("  <td colspan=5>\n");
+                sb.append("  <td colspan=9>\n");
                 sb.append("    <table>\n");
 
                 if (null != dsDefs)

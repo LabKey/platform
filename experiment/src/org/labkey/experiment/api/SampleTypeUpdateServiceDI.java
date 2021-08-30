@@ -159,16 +159,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         DataIteratorBuilder dib = super.createImportDIB(user, container, data, context);
-        if (InventoryService.get() != null)
+        UserSchema userSchema = getQueryTable().getUserSchema();
+        if (InventoryService.get() != null && userSchema != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
-            UserSchema userSchema = getQueryTable().getUserSchema();
-            if (userSchema != null)
-                return LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
-            return dib;
+            dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType.getMetricUnit()));
         }
-        else
-            return dib;
+        
+        if (userSchema != null)
+            dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, true, userSchema.getContainer(), userSchema.getUser(), getQueryTable()));
+
+        return dib;
     }
 
     @Override

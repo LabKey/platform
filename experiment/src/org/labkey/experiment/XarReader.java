@@ -470,7 +470,8 @@ public class XarReader extends AbstractXarImporter
         {
             materialSource.setNameExpression(sampleSet.getNameExpression());
         }
-        else if (keyFields.size() == 1 && keyFields.get(0).equals(ExpMaterialTable.Column.Name.name()))
+
+        if (keyFields.size() == 1 && keyFields.get(0).equals(ExpMaterialTable.Column.Name.name()))
         {
             // We can use Name as the idCol1 without requiring it to be a domain property
             materialSource.setIdCol1(ExpMaterialTable.Column.Name.name());
