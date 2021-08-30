@@ -1284,7 +1284,7 @@ public class XarExporter
                             String assayIdsString = value.getStringValue();
                             if (!StringUtils.isEmpty(assayIdsString))
                             {
-                                String[] assayIds = value.getStringValue().split(",");
+                                String[] assayIds = assayIdsString.split(",");
                                 List<String> protocolStrings = new ArrayList<>();
                                 List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
                                 for (String assayId : assayIds)
