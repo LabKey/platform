@@ -215,6 +215,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -5897,10 +5898,10 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
-            File systemDir = pipeRoot.ensureSystemDirectory();
-            File uploadDir = new File(systemDir, "UploadedXARs");
-            uploadDir.mkdirs();
-            if (!uploadDir.isDirectory())
+            Path systemDir = pipeRoot.ensureSystemDirectoryPath();
+            Path uploadDir = systemDir.resolve("UploadedXARs");
+            Files.createDirectories(uploadDir);
+            if (!Files.isDirectory(uploadDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
                 return false;
@@ -5910,24 +5911,26 @@ public class ExperimentController extends SpringActionController
             {
                 userDirName = GUEST_DIRECTORY_NAME;
             }
-            File userDir = new File(uploadDir, userDirName);
-            userDir.mkdirs();
-            if (!userDir.isDirectory())
+            Path userDir = uploadDir.resolve(userDirName);
+            Files.createDirectories(userDir);
+            if (!Files.isDirectory(userDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
                 return false;
             }
 
-            File xarFile = new File(userDir, formFile.getOriginalFilename());
+            Path xarFile = userDir.resolve(formFile.getOriginalFilename());
+
+            // As this is multi-part will need to use finally to close, to prevent a stream closure exception
             OutputStream out = null;
             try
             {
-                out = new BufferedOutputStream(new FileOutputStream(xarFile));
+                out = new BufferedOutputStream(Files.newOutputStream(xarFile));
                 out.write(bytes);
             }
             catch (IOException e)
             {
-                errors.reject(ERROR_MSG, "Unable to write uploaded XAR file to " + xarFile.getPath());
+                errors.reject(ERROR_MSG, "Unable to write uploaded XAR file to " + xarFile);
                 return false;
             }
             finally

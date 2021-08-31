@@ -54,18 +54,9 @@ public class ExperimentPipelineJob extends PipelineJob
 
     private transient XarSource _xarSource;
 
-    @Deprecated
     @JsonCreator
-    protected ExperimentPipelineJob(@JsonProperty("_xarFile") File xarFile,
+    protected ExperimentPipelineJob(@JsonProperty("_xarFile") Path xarFile,
                                     @JsonProperty("_description") String description,
-                                    @JsonProperty("_deleteExistingRuns") boolean deleteExistingRuns)
-    {
-        this(xarFile.toPath(), description, deleteExistingRuns);
-    }
-
-
-    @JsonCreator
-    protected ExperimentPipelineJob(@JsonProperty("_xarFile") Path xarFile, @JsonProperty("_description") String description,
                                     @JsonProperty("_deleteExistingRuns") boolean deleteExistingRuns)
     {
         super();
