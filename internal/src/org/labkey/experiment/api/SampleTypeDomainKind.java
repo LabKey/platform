@@ -32,6 +32,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
@@ -44,6 +45,7 @@ import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -516,5 +518,29 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     {
         ExpSampleType sampleType = domain != null ? SampleTypeService.get().getSampleType(domain.getDomainURI()) : null;
         return new SampleTypeDomainKindProperties(sampleType);
+    }
+
+    @Override
+    public boolean hasNullValues(Domain domain, DomainProperty prop)
+    {
+        SQLFragment allRowsSQL = new SQLFragment();
+        SQLFragment nonBlankRowsSQL = new SQLFragment();
+
+        if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
+        {
+            // Issue 43754: Don't include aliquot rows in the null value check (see ExpMaterialTableImpl.createColumn for IsAliquot)
+            String table = domain.getStorageTableName();
+            allRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
+                    .append("SELECT LSID FROM " + getStorageSchemaName() + "." + table)
+                    .append(") AND RootMaterialLSID IS NULL");
+
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
+            long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
+            return totalRows != nonBlankRows;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
