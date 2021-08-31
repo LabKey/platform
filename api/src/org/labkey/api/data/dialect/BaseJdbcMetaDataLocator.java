@@ -18,7 +18,7 @@ package org.labkey.api.data.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.SchemaTableInfo;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -46,7 +46,7 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
     {
         _scope = scope;
         _connectionHandler = connectionHandler;
-        _connection = connectionHandler.getConnection();
+        _connection = connectionHandler.getConnection(); // TODO: Do away with ConnectionHandler? Should be able to just implement getConnection() now
         _dbmd = _connection.getMetaData();
     }
 
@@ -75,7 +75,7 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
     }
 
     @Override
-    public JdbcMetaDataLocator singleTable(@NotNull TableInfo tableInfo) throws SQLException
+    public JdbcMetaDataLocator singleTable(@NotNull SchemaTableInfo tableInfo) throws SQLException
     {
         return singleTable(tableInfo.getMetaDataName());
     }
@@ -115,28 +115,32 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
     @Override
     public String getSchemaName()
     {
-        assert null != _schemaName;
+        if (null == _schemaName)
+            throw new IllegalStateException("Schema setting method has not been called");
         return _schemaName;
     }
 
     @Override
     public String getSchemaNamePattern()
     {
-        assert null != _schemaNamePattern;
+        if (null == _schemaNamePattern)
+            throw new IllegalStateException("Schema setting method has not been called");
         return _schemaNamePattern;
     }
 
     @Override
     public String getTableName()
     {
-        assert null != _tableName;
+        if (null == _tableName)
+            throw new IllegalStateException("Table setting method has not been called");
         return _tableName;
     }
 
     @Override
     public String getTableNamePattern()
     {
-        assert null != _tableNamePattern;
+        if (null == _tableNamePattern)
+            throw new IllegalStateException("Table setting method has not been called");
         return _tableNamePattern;
     }
 
@@ -158,7 +162,8 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
         return true;
     }
 
-    // We must escape LIKE wild card characters in cases where we're passing a table or schema name as a pattern parameter, #43821
+    // We must escape LIKE wild card characters in cases where we're passing a single table or schema name as a pattern
+    // parameter, see #43821
     private static String escapeName(@NotNull String name)
     {
         String ret = name.replace("\\", "\\\\");
