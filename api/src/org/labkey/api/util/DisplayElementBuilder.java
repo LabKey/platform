@@ -85,6 +85,8 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
 
     public BUILDER attributes(Map<String, String> attributes)
     {
+        if (attributes != null && attributes.containsKey(null))
+            throw new NullPointerException("Unexpected key value in attributes");
         if (attributes != null && !attributes.isEmpty())
             this.attributes = new TreeMap<>(attributes);
         else
