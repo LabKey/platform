@@ -15,9 +15,10 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo.ImportedKey;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -32,20 +33,59 @@ import java.sql.SQLException;
 public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
 {
     private final DbScope _scope;
-    private final String _schemaName;
-    private final String _tableNamePattern;
     private final ConnectionHandler _connectionHandler;
     private final Connection _connection;
     private final DatabaseMetaData _dbmd;
 
-    public BaseJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, ConnectionHandler connectionHandler) throws SQLException
+    private String _schemaName;
+    private String _schemaNamePattern;
+    private String _tableName;
+    private String _tableNamePattern;
+
+    public BaseJdbcMetaDataLocator(DbScope scope, ConnectionHandler connectionHandler) throws SQLException
     {
         _scope = scope;
-        _schemaName = schemaName;
-        _tableNamePattern = tableNamePattern;
         _connectionHandler = connectionHandler;
         _connection = connectionHandler.getConnection();
         _dbmd = _connection.getMetaData();
+    }
+
+    @Override
+    public JdbcMetaDataLocator singleSchema(@NotNull String schemaName)
+    {
+        _schemaName = schemaName;
+        _schemaNamePattern = escapeName(schemaName);
+        return this;
+    }
+
+    @Override
+    public JdbcMetaDataLocator allSchemas()
+    {
+        _schemaName = null;
+        _schemaNamePattern = "%";
+        return this;
+    }
+
+    @Override
+    public JdbcMetaDataLocator singleTable(@NotNull String tableName) throws SQLException
+    {
+        _tableName = tableName;
+        _tableNamePattern = escapeName(tableName);
+        return this;
+    }
+
+    @Override
+    public JdbcMetaDataLocator singleTable(@NotNull TableInfo tableInfo) throws SQLException
+    {
+        return singleTable(tableInfo.getMetaDataName());
+    }
+
+    @Override
+    public JdbcMetaDataLocator allTables()
+    {
+        _tableName = null;
+        _tableNamePattern = "%";
+        return this;
     }
 
     @Override
@@ -75,12 +115,28 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
     @Override
     public String getSchemaName()
     {
+        assert null != _schemaName;
         return _schemaName;
+    }
+
+    @Override
+    public String getSchemaNamePattern()
+    {
+        assert null != _schemaNamePattern;
+        return _schemaNamePattern;
     }
 
     @Override
     public String getTableName()
     {
+        assert null != _tableName;
+        return _tableName;
+    }
+
+    @Override
+    public String getTableNamePattern()
+    {
+        assert null != _tableNamePattern;
         return _tableNamePattern;
     }
 
@@ -100,5 +156,15 @@ public class BaseJdbcMetaDataLocator implements JdbcMetaDataLocator
     public boolean supportsSchemas()
     {
         return true;
+    }
+
+    // We must escape LIKE wild card characters in cases where we're passing a table or schema name as a pattern parameter, #43821
+    private static String escapeName(@NotNull String name)
+    {
+        String ret = name.replace("\\", "\\\\");
+        ret = ret.replace("_", "\\_");
+        ret = ret.replace("%", "\\%");
+
+        return ret;
     }
 }
