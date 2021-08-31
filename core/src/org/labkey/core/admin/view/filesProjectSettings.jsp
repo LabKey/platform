@@ -118,7 +118,7 @@
                                 type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
                                 <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(<%=h(!FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>);">
-                            Use a default based on the site-level root
+                            Use a default based on the <%=h(getContainer().isProject() ? "site-level file root" : "file root of the parent container")%>:
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr style="height: 1.75em">
