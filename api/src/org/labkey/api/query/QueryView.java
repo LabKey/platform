@@ -2460,7 +2460,9 @@ public class QueryView extends WebPartView<Object>
             for (ColumnInfo columnInfo : t.getColumns())
             {
                 FieldKey fieldKey = columnInfo.getFieldKey();
-                if (includeCols.contains(fieldKey) || columnInfo.isUserEditable())
+                // Issue 43760: "isUserEditable" does not mean what you think it means. UniqueIdFields must be marked as "UserEditable"
+                // in order to show up in a details view, but then that makes them show up in the export, where they shouldn't.  Booo.
+                if (includeCols.contains(fieldKey) || (columnInfo.isUserEditable() && !columnInfo.isUniqueIdField()))
                 {
                     fieldKeys.add(fieldKey);
                 }
