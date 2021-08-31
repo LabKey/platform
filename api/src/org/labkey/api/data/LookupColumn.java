@@ -29,6 +29,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 /**
  * A {@link org.labkey.api.data.ColumnInfo} that is part of a lookup target. This implementation knows
  * how to do the JOIN to the target query/table, and how to find the value of that expression in the generated ResultSet.
@@ -159,6 +161,11 @@ public class LookupColumn extends BaseColumnInfo
         return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
+    private String debugName(TableDescription t)
+    {
+        return (isNotBlank(t.getPublicSchemaName()) ? t.getPublicName() + "." : "") + t.getName() + " (" + t.getClass() + ")";
+    }
+
     public void addJoin(FieldKey foreignKeyFieldKey, ColumnInfo lookupKey, boolean equalOrIsNull)
     {
         FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKeyFieldKey.getName());
@@ -166,7 +173,14 @@ public class LookupColumn extends BaseColumnInfo
         ColumnInfo translatedFK = map.get(fieldKey);
         if (translatedFK == null)
         {
-            throw new IllegalArgumentException("ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + _foreignKey.getParentTable() + "' for lookup to '" + lookupKey.getFieldKey() + "'");
+            ForeignKey fk = _foreignKey.getFk();
+            String msg =
+                    "Error creating join for ForeignKey (" + fk.getClass() + ") on field '" + _foreignKey.getFieldKey() +"'. " +
+                    "'" + foreignKeyFieldKey + "' not found in table '" + debugName(_foreignKey.getParentTable()) + "' for join to '" + lookupKey.getFieldKey() + "'";
+            TableDescription t = fk.getLookupTableDescription();
+            if (null != t)
+                msg += " in table '" + debugName(t) + "'.";
+            throw new IllegalArgumentException(msg);
         }
 
         _additionalJoins.put(translatedFK, Pair.of(lookupKey, equalOrIsNull));
