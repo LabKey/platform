@@ -22,6 +22,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     isApplyToMultipleFolders: false,
     isFailForUndefinedVisits: false,
     showFailForUndefinedVisits: true,
+    isCloudRoot: false,
 
     initComponent: function()
     {
@@ -183,7 +184,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         {
             this.applyToMultipleFoldersForm = Ext4.create('LABKEY.import.ApplyToMultipleFolders', {
                 formId: this.formId,
-                hidden: !this.isApplyToMultipleFolders,
+                hidden: !this.isApplyToMultipleFolders || this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
                 rootVisible: this.isProjectAdmin
             });
 

@@ -1301,6 +1301,8 @@ public class PipelineController extends SpringActionController
                 _navTrail = "Import Study";
             _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
 
+            form.setCloudRoot(getPipelineRoot(getContainer()).isCloudRoot()); // Remove as part of Issue #43835
+
             return new JspView<>("/org/labkey/pipeline/startPipelineImport.jsp", form, errors);
         }
 
@@ -1408,6 +1410,7 @@ public class PipelineController extends SpringActionController
         private boolean _createSharedDatasets;
         private boolean _specificImportOptions;
         private boolean _applyToMultipleFolders;
+        private boolean _isCloudRoot; // Remove as part of Issue #43835
         private boolean _failForUndefinedVisits;
         private Set<String> _dataTypes;
         private List<Integer> _folderRowIds;
@@ -1520,6 +1523,16 @@ public class PipelineController extends SpringActionController
         public void setFromTemplateSourceFolder(boolean fromTemplateSourceFolder)
         {
             _fromTemplateSourceFolder = fromTemplateSourceFolder;
+        }
+
+        public boolean isCloudRoot()
+        {
+            return _isCloudRoot;
+        }
+
+        public void setCloudRoot(boolean isCloudRoot)
+        {
+            _isCloudRoot = isCloudRoot;
         }
     }
 
