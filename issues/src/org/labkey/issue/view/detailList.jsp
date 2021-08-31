@@ -285,9 +285,12 @@
                 propertyArr.addAll(bean.getCustomColumnConfiguration().getCustomProperties());
             %><table><tbody><%
                 for(DomainProperty prop : propertyArr)
-                {%>
-            <%=bean.renderColumn(prop, getViewContext(), true, true)%>
-            <%}%>
+                {
+                    if (prop.isShownInDetailsView())
+                    {%>
+                        <%=bean.renderColumn(prop, getViewContext(), true, true)%>
+                    <%}
+                }%>
             </tbody></table>
         </div>
     </div>

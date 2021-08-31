@@ -610,7 +610,8 @@ public class XarExporter
         {
             xSampleSet.setNameExpression(sampleType.getNameExpression());
         }
-        else if (sampleType.hasNameAsIdCol())
+
+        if (sampleType.hasNameAsIdCol())
         {
             xSampleSet.addKeyField(ExpMaterialTable.Column.Name.name());
         }
@@ -1280,27 +1281,33 @@ public class XarExporter
                         // TODO perhaps this property should hold protocol strings instead of rowIds
                         else if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
                         {
-                            String[] assayIds = value.getStringValue().split(",");
-                            List<String> protocolStrings = new ArrayList<>();
-                            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
-                            for (String assayId : assayIds)
+                            String assayIdsString = value.getStringValue();
+                            if (!StringUtils.isEmpty(assayIdsString))
                             {
-                                try
+                                String[] assayIds = assayIdsString.split(",");
+                                List<String> protocolStrings = new ArrayList<>();
+                                List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(value.getContainer());
+                                for (String assayId : assayIds)
                                 {
-                                    int assayRowId = Integer.parseInt(assayId);
-                                    Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
-                                    if (protocol.isPresent())
-                                        protocolStrings.add(relativizeLSIDPropertyValue(protocol.get().getLSID(), SimpleTypeNames.STRING));
-                                    else
-                                        logProgress("Unable to find protocol for assay id " + assayRowId + ".  Not included in values for " + value.getName() + ".");
+                                    try
+                                    {
+                                        int assayRowId = Integer.parseInt(assayId);
+                                        Optional<ExpProtocol> protocol = protocols.stream().filter(p -> p.getRowId() == assayRowId).findFirst();
+                                        if (protocol.isPresent())
+                                            protocolStrings.add(relativizeLSIDPropertyValue(protocol.get().getLSID(), SimpleTypeNames.STRING));
+                                        else
+                                            logProgress("Unable to find protocol for assay id " + assayRowId + ".  Not included in values for " + value.getName() + ".");
+                                    }
+                                    catch (NumberFormatException ignore)
+                                    {
+                                        // assume it's an LSID and try to relativize it
+                                        protocolStrings.add(relativizeLSIDPropertyValue(assayId, SimpleTypeNames.STRING));
+                                    }
                                 }
-                                catch (NumberFormatException ignore)
-                                {
-                                    // assume it's an LSID and try to relativize it
-                                    protocolStrings.add(relativizeLSIDPropertyValue(assayId, SimpleTypeNames.STRING));
-                                }
+                                simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
                             }
-                            simpleValue.setStringValue(StringUtils.join(protocolStrings, ","));
+                            else
+                                simpleValue.setStringValue(assayIdsString);
                         }
                         else
                         {

@@ -147,10 +147,14 @@
     int i=0;
     for (DomainProperty prop : bean.getCustomColumnConfiguration().getCustomProperties())
     {
-        if ((i++ % 2) == 0)
-            column1Props.add(prop);
-        else
-            column2Props.add(prop);
+        boolean showField = bean.isInsert() && prop.isShownInInsertView() || !bean.isInsert() && prop.isShownInUpdateView();
+        if (showField)
+        {
+            if ((i++ % 2) == 0)
+                column1Props.add(prop);
+            else
+                column2Props.add(prop);
+        }
     }
 %>
 
