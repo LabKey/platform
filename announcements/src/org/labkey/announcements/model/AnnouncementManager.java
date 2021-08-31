@@ -273,12 +273,6 @@ public class AnnouncementManager
         {
             List<Integer> userIds = ann.getMemberListIds();
 
-            // Secure Issue 43583: Change secure message boards notification filtering
-            // Once a user is added to a thread, they see all messages in entire thread
-            AnnouncementModel parentThread = AnnouncementManager.getAnnouncement(c, ann.getParent());
-            if (parentThread != null)
-                saveMemberList(user, userIds, parentThread.getRowId());
-
             // Attach member list to current message/response. This gives us a history of changes and is needed to handle moderator reviews.
             saveMemberList(user, userIds, ann.getRowId());
         }
