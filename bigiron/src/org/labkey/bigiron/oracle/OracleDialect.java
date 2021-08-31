@@ -18,7 +18,6 @@ package org.labkey.bigiron.oracle;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -64,9 +63,9 @@ abstract class OracleDialect extends SimpleSqlDialect
     private static final Map<DbScope, ConnectionPool> META_DATA_CONNECTION_POOLS = new ConcurrentHashMap<>();
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
         {
-            return new BaseJdbcMetaDataLocator(scope, schemaName, tableName, new ConnectionHandler()
+            return new BaseJdbcMetaDataLocator(scope, new ConnectionHandler()
             {
                 @Override
                 public Connection getConnection()

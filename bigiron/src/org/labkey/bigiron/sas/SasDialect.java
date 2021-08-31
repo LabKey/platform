@@ -423,15 +423,14 @@ public abstract class SasDialect extends SimpleSqlDialect
 
     private static final TableResolver TABLE_RESOLVER = new StandardTableResolver() {
         @Override
-        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+        public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
         {
-            // Issue 36340 - SAS doesn't support transactions, so use a no-op variant
-            return new StandardJdbcMetaDataLocator(scope, schemaName, tableName, new SasTransaction(scope))
+            return new StandardJdbcMetaDataLocator(scope)
             {
                 @Override
                 public String getCatalogName()
                 {
-                    return schemaName;
+                    return getSchemaName();
                 }
             };
         }
