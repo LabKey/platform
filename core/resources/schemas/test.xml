@@ -36,6 +36,7 @@
 		</columns>
 	</table>
 	<table tableName="a$b" tableDbType="VIEW">
+        <description>This is used to test LIKE wild card characters in table/view names</description>
 		<columns>
 			<column columnName="_ts"/>
 			<column columnName="EntityId"/>
@@ -110,7 +111,7 @@
         </columns>
     </table>
     <table tableName="a_b" tableDbType="UNKNOWN">
-        <description>This is used to test synonyms on SQL Server</description>
+        <description>This is used to test LIKE wild card characters in table/view names</description>
         <columns>
             <column columnName="_ts"/>
             <column columnName="RowId"/>
@@ -136,7 +137,7 @@
         </columns>
     </table>
     <table tableName="a%b" tableDbType="VIEW">
-        <description>This is used to test synonyms on SQL Server</description>
+        <description>This is used to test LIKE wild card characters in table/view names</description>
         <columns>
             <column columnName="Path"/>
             <column columnName="ContainerId"/>
@@ -169,7 +170,7 @@
         </columns>
     </table>
     <table tableName="a\b" tableDbType="VIEW">
-        <description>This is used to test synonyms on SQL Server</description>
+        <description>This is used to test LIKE wild card characters in table/view names</description>
         <columns>
             <column columnName="Email"/>
             <column columnName="_ts"/>
