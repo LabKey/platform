@@ -86,15 +86,10 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         {
             filter.addWhereClause(
             "RowId IN (" +
-                    "SELECT OldestRowId FROM " + CommSchema.getInstance().getTableInfoUserList() +
-                    " JOIN (" +
-                        "SELECT" +
-                            " MAX(announcements.rowid) AS NewestRowId," +
-                            " MIN(announcements.rowid) AS OldestRowId" +
-                        " FROM " + CommSchema.getInstance().getTableInfoAnnouncements() +
-                        " GROUP BY COALESCE(parent, announcements.entityid)) t" +
-                    " ON messageid=t.NewestRowId" +
-                    " WHERE userid=?)",
+                        "SELECT rowid FROM " + CommSchema.getInstance().getTableInfoUserList() + " " +
+                        "JOIN (SELECT latestid, rowid FROM " + CommSchema.getInstance().getTableInfoThreads() + ") t ON messageid=t.latestid " +
+                        "WHERE userid=?" +
+                    ")",
                     new Object[]{_user.getUserId()});
         }
 
