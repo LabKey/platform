@@ -35,7 +35,6 @@ import org.apache.commons.beanutils.converters.FloatArrayConverter;
 import org.apache.commons.beanutils.converters.FloatConverter;
 import org.apache.commons.beanutils.converters.IntegerArrayConverter;
 import org.apache.commons.beanutils.converters.LongArrayConverter;
-import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.commons.beanutils.converters.ShortArrayConverter;
 import org.apache.commons.beanutils.converters.ShortConverter;
 import org.apache.commons.beanutils.converters.SqlTimeConverter;
