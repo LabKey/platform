@@ -50,7 +50,7 @@ public class ProvisionedDbSchema extends DbSchema
     @Override
     public SchemaTableInfo createTableFromDatabaseMetaData(String requestedTableName) throws SQLException
     {
-        try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope(), getName(), requestedTableName))
+        try (JdbcMetaDataLocator locator = getSqlDialect().getJdbcMetaDataLocator(getScope()).singleSchema(getName()).singleTable(requestedTableName))
         {
             return new SingleTableMetaDataLoader(this, locator, DbSchema.getTemp() != this).load();
         }

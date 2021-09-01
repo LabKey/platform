@@ -35,21 +35,16 @@ public class SchemaNameCache
 {
     private static final SchemaNameCache INSTANCE = new SchemaNameCache();
 
-    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(50, CacheManager.YEAR, "Schema names in each scope", new CacheLoader<String, Map<String, String>>()
-    {
-        @Override
-        public Map<String, String> load(String dsName, @Nullable Object argument)
-        {
-            DbScope scope = DbScope.getDbScope(dsName);
+    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(50, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
+        DbScope scope = DbScope.getDbScope(dsName);
 
-            try
-            {
-                return loadSchemaNameMap(scope);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+        try
+        {
+            return loadSchemaNameMap(scope);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
     });
 
@@ -75,7 +70,7 @@ public class SchemaNameCache
     {
         final Map<String, String> schemaNameMap = new CaseInsensitiveTreeMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, null, null))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).allSchemas().allTables())
         {
             JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator, (dbmd, locator1) -> {
                 // Most dialects support schemas, but MySQL treats them as catalogs
