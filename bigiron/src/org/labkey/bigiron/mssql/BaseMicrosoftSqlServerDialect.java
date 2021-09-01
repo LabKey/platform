@@ -2144,7 +2144,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "            (\n" +
             "                t.user_type_id = c.user_type_id\n" +
             "            ) \n" +
-            " WHERE s.name = ? AND o.name = ?";
+            " WHERE s.name = ? AND o.name LIKE ? ESCAPE '\\'";
 
     @Override
     public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)
@@ -2160,7 +2160,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
                 if (null != tableNamePattern && !"%".equals(tableNamePattern))
                 {
-                    sql.append(" AND TABLE_NAME = ?");
+                    sql.append(" AND TABLE_NAME LIKE ? ESCAPE '\\'");
                     sql.add(tableNamePattern);
                 }
 
@@ -2178,9 +2178,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                 sql.add(schemaPattern);
                 sql.add(tableNamePattern);
 
-                if (null != columnNamePattern && !"%".equals(tableNamePattern))
+                if (null != columnNamePattern && !"%".equals(columnNamePattern))
                 {
-                    sql.append(" AND c.name = ?");
+                    sql.append(" AND c.name LIKE ? ESCAPE '\\'");
                     sql.add(columnNamePattern);
                 }
 

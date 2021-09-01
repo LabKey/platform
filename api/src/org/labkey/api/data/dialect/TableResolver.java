@@ -28,6 +28,6 @@ import java.util.Map;
 public interface TableResolver
 {
     void addTableInfoFactories(Map<String, SchemaTableInfoFactory> map, DbScope scope, String schemaName) throws SQLException;
-    JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String requestedTableName) throws SQLException;
+    JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException;
     ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName);
 }

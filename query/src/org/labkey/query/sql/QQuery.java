@@ -130,4 +130,13 @@ public class QQuery extends QExpr
     {
         return false;
     }
+
+
+    @Override
+    public void addFieldRefs(Object referant)
+    {
+        /* We could now traverse the nested QueryRelation, chasing down references.
+         * Instead, we just addRef() all "upward" references in QuerySelect.getField()
+         */
+    }
 }

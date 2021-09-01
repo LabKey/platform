@@ -34,9 +34,9 @@ public class StandardTableResolver implements TableResolver
     }
 
     @Override
-    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String tableName) throws SQLException
+    public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
     {
-        return new StandardJdbcMetaDataLocator(scope, schemaName, tableName);
+        return new StandardJdbcMetaDataLocator(scope);
     }
 
     private static final ForeignKeyResolver STANDARD_RESOLVER = new StandardForeignKeyResolver();

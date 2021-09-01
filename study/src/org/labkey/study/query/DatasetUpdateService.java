@@ -442,19 +442,12 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // Update will delete old and insert, so covering aliases, like insert, is needed
         aliasColumns(_columnMapping, row);
 
-        BatchValidationException errors = new BatchValidationException();
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
-        String newLsid = _dataset.updateDatasetRow(user, lsid, row, errors);
+        String newLsid = _dataset.updateDatasetRow(user, lsid, row);
         //update the lsid and return
         row.put("lsid", newLsid);
-        if(errors.hasErrors())
-        {
-            ValidationException error = new ValidationException();
-            errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
-            throw error;
-        }
 
         row = getRow(user, container, row);
 
