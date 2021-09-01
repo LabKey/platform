@@ -55,7 +55,8 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return Long.valueOf(s);
+            // Be tolerant of trailing decimal zeros like "39.0", which Long.parseLong() is not
+            return new BigDecimal(s).longValueExact();
         }
     },
 
@@ -139,7 +140,8 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return Integer.valueOf(s);
+            // Be tolerant of trailing decimal zeros like "39.0", which Integer.parseInt() is not
+            return new BigDecimal(s).intValueExact();
         }
     },
 
@@ -533,7 +535,7 @@ public enum JdbcType
             if (null != r)
                 return r;
         }
-        catch (NumberFormatException x)
+        catch (NumberFormatException | ArithmeticException x)
         {
             throw new ConversionException("Expected decimal value", x);
         }

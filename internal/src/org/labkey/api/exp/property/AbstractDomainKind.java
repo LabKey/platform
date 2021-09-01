@@ -185,7 +185,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         }
     }
 
-    private boolean getTotalAndNonBlankSql(Domain domain, DomainProperty prop, SQLFragment allRowsSQL, SQLFragment nonBlankRowsSQL)
+    protected boolean getTotalAndNonBlankSql(Domain domain, DomainProperty prop, SQLFragment allRowsSQL, SQLFragment nonBlankRowsSQL)
     {
         if (getStorageSchemaName() == null)
         {

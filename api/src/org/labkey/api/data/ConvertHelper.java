@@ -35,7 +35,6 @@ import org.apache.commons.beanutils.converters.FloatArrayConverter;
 import org.apache.commons.beanutils.converters.FloatConverter;
 import org.apache.commons.beanutils.converters.IntegerArrayConverter;
 import org.apache.commons.beanutils.converters.LongArrayConverter;
-import org.apache.commons.beanutils.converters.LongConverter;
 import org.apache.commons.beanutils.converters.ShortArrayConverter;
 import org.apache.commons.beanutils.converters.ShortConverter;
 import org.apache.commons.beanutils.converters.SqlTimeConverter;
@@ -159,8 +158,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new SqlTimeConverter()), java.sql.Time.class);
         _register(new LenientTimestampConverter(), java.sql.Timestamp.class);
         _register(new LenientDateConverter(), java.util.Date.class);
-        _register(new NullSafeConverter(new LongConverter()), Long.class);
-        _register(new LongConverter(), Long.TYPE);
+        _register(new NullSafeConverter(new _LongConverter()), Long.class);
+        _register(new _LongConverter(), Long.TYPE);
         _register(new NullSafeConverter(new LongArrayConverter()), long[].class);
         _register(new ReportIdentifierConverter(), ReportIdentifier.class);
         _register(new RoleConverter(), Role.class);
@@ -599,8 +598,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
             }
             else if (value instanceof Number)
             {
-                // NOTE: Inconsistent with String case which disallows non-zero fractional part
-                return ((Number) value).intValue();
+                try
+                {
+                    return BigDecimal.valueOf(((Number) value).doubleValue()).intValueExact();
+                }
+                catch (Exception e)
+                {
+                    throw new ConversionException("Could not convert '" + value + "' to an integer", e);
+                }
             }
 
             String s = value.toString();
@@ -624,6 +629,111 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 else
                 {
                     throw new ConversionException("Could not convert '" + s + "' to an integer", e);
+                }
+            }
+        }
+    }
+
+    public static final class _LongConverter implements Converter
+    {
+
+        // ----------------------------------------------------------- Constructors
+        /**
+         * Create a {@link Converter} that will throw a {@link ConversionException}
+         * if a conversion error occurs.
+         */
+        public _LongConverter()
+        {
+            this.defaultValue = null;
+            this.useDefault = false;
+        }
+
+        /**
+         * Create a {@link Converter} that will return the specified default value
+         * if a conversion error occurs.
+         *
+         * @param defaultValue The default value to be returned
+         */
+        public _LongConverter(Object defaultValue)
+        {
+            this.defaultValue = defaultValue;
+            this.useDefault = true;
+        }
+
+        // ----------------------------------------------------- Instance Variables
+        /**
+         * The default value specified to our Constructor, if any.
+         */
+        private final Object defaultValue;
+
+        /**
+         * Should we return the default value on conversion errors?
+         */
+        private final boolean useDefault;
+
+        // --------------------------------------------------------- Public Methods
+
+        /**
+         * Convert the specified input object into an output object of the
+         * specified type.
+         *
+         * @param type  Data type to which this value should be converted
+         * @param value The input value to be converted
+         * @throws ConversionException if conversion cannot be performed
+         *                             successfully
+         */
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (value == null)
+            {
+                if (useDefault)
+                {
+                    return (defaultValue);
+                }
+                else
+                {
+                    throw new ConversionException("No value specified");
+                }
+            }
+
+            if (value instanceof Long)
+            {
+                return value;
+            }
+            else if (value instanceof Number)
+            {
+                try
+                {
+                    return BigDecimal.valueOf(((Number) value).doubleValue()).longValueExact();
+                }
+                catch (Exception e)
+                {
+                    throw new ConversionException("Could not convert '" + value + "' to a long", e);
+                }
+            }
+
+            String s = value.toString();
+            try
+            {
+                try
+                {
+                    return Long.parseLong(s);
+                }
+                catch (NumberFormatException x)
+                {
+                    return (new BigDecimal(s)).longValueExact();
+                }
+            }
+            catch (Exception e)
+            {
+                if (useDefault)
+                {
+                    return (defaultValue);
+                }
+                else
+                {
+                    throw new ConversionException("Could not convert '" + s + "' to a long", e);
                 }
             }
         }
