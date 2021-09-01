@@ -26,7 +26,7 @@ public @interface TestWhen
 {
     enum When
     {
-        DRT, BVT, DAILY, WEEKLY, PERFORMANCE
+        SMOKE, DRT, BVT, DAILY, WEEKLY, PERFORMANCE
     }
     When value() default When.DRT;
 }

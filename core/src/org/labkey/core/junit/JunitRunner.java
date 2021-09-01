@@ -68,14 +68,10 @@ public class JunitRunner
     {
         Runner runner = request.getRunner();
         Description desc = runner.getDescription();
-        String description = desc.toString();
-
-        if ("null".equals(description))
-        {
-            StringBuilder sb = new StringBuilder();
-            ArrayList<Description> children = desc.getChildren();
-            description = children.stream().map(Description::toString).collect(Collectors.joining(", "));
-        }
+        ArrayList<Description> children = desc.getChildren();
+        String description = children.stream()
+            .map(Description::toString)
+            .collect(Collectors.joining(", "));
 
         try
         {
@@ -88,14 +84,14 @@ public class JunitRunner
             JUnitCore core = new JUnitCore();
             core.addListener(new RunListener() {
                 @Override
-                public void testStarted(Description description) throws Exception
+                public void testStarted(Description description)
                 {
                     LOG.debug("Starting test: " + description);
                     TestContext.get().clearPerfResults();
                 }
 
                 @Override
-                public void testFinished(Description description) throws Exception
+                public void testFinished(Description description)
                 {
                     LOG.debug("Finished test: " + description);
                     ArrayList<CPUTimer> timers = TestContext.get().getPerfResults();
@@ -104,7 +100,7 @@ public class JunitRunner
                 }
 
                 @Override
-                public void testFailure(Failure failure) throws Exception
+                public void testFailure(Failure failure)
                 {
                     Throwable t = failure.getException();
                     LOG.error("Test failed: " + failure.getDescription() + ":\n" + JunitController.renderTrace(t));
@@ -126,5 +122,4 @@ public class JunitRunner
                 LOG.info("Completed suite: " + description);
         }
     }
-
 }

@@ -97,6 +97,8 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private final AliasManager _aliasManager;
 //    private List<SelectColumn> _medianColumns = new ArrayList<>();                  // Possible way to support SQL Server Median
 
+    private boolean  skipSuggestedColumns = false;  // set to skip normal getSuggestedColumns() code
+
     /**
      * If this node has exactly one FROM table, it may be occasionally possible to skip
      * generating SQL for this node.
@@ -954,6 +956,11 @@ public class QuerySelect extends QueryRelation implements Cloneable
                     else
                         parseError("Could not resolve column: " + declareKey, location);
                 }
+                else
+                {
+                    // If I don't 'own' the column, just addRef() to avoid having to try to find this reference later.
+                    ret.addRef(this);
+                }
                 return ret;
             }
 
@@ -1565,6 +1572,10 @@ public class QuerySelect extends QueryRelation implements Cloneable
             qt.appendSql(fromSql, this);
             fromSql.nextPrefix(",");
         }
+        if (_parsedJoins.isEmpty() && dialect.isOracle())
+        {
+            fromSql.append(" sys.dual ");
+        }
         fromSql.popPrefix();
 
 
@@ -1934,9 +1945,18 @@ public class QuerySelect extends QueryRelation implements Cloneable
     }
 
 
+    public void setSkipSuggestedColumns(boolean skipSuggestedColumns)
+    {
+        this.skipSuggestedColumns = skipSuggestedColumns;
+    }
+
+
     @Override
     protected Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
+        if (skipSuggestedColumns)
+            return Collections.emptySet();
+
         resolveFields();
 
         if (!getParseErrors().isEmpty())

@@ -68,6 +68,7 @@ public class GWTProtocol implements IsSerializable
     // UNDONE: update 'autoCopy' to 'autoLink' for the two members below and align ui-components and tests accordingly
     private GWTContainer _autoCopyTargetContainer;
     private String _autoCopyTargetContainerId;
+    private String _autoLinkCategory;
     private boolean _saveScriptFiles;
     private boolean _editableRuns;
     private boolean _editableResults;
@@ -242,6 +243,16 @@ public class GWTProtocol implements IsSerializable
     public void setAutoCopyTargetContainerId(String autoCopyTargetContainerId)
     {
         _autoCopyTargetContainerId = autoCopyTargetContainerId;
+    }
+
+    public String getAutoLinkCategory()
+    {
+        return _autoLinkCategory;
+    }
+
+    public void setAutoLinkCategory(String autoLinkCategory)
+    {
+        _autoLinkCategory = autoLinkCategory;
     }
 
     public boolean isSaveScriptFiles()

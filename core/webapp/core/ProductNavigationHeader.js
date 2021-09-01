@@ -11,7 +11,6 @@
 
             LABKEY.requiresScript('gen/productNavigation', loadProductNav);
             // LABKEY.requiresScript('http://localhost:3001/productNavigation.js', loadProductNav);
-            productNavLoaded = true;
         } else {
             loadProductNav();
         }
@@ -20,6 +19,7 @@
     var loadProductNav = function() {
         LABKEY.App.loadApp('productNavigation', HEADER_CONTENT_ID, { show: true });
         $(document).on('click', addProductNavClickHandler);
+        productNavLoaded = true;
     };
 
     // stop the product navigation menu from closing when click within the menu div

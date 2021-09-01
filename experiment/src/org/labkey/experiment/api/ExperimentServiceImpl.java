@@ -605,10 +605,17 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @NotNull
     @Override
-    public List<ExpMaterialImpl> getExpMaterialsByName(String name, Container container, User user)
+    public List<ExpMaterialImpl> getExpMaterialsByName(@NotNull String name, @Nullable Container container, User user)
     {
-        List<ExpMaterialImpl> result = getSamplesByName(container, user).get(name);
-        return result == null ? Collections.emptyList() : result;
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        if (container != null)
+        {
+            filter.addCondition(FieldKey.fromParts("Container"), container);
+        }
+        List<Material> matches = new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filter, null).getArrayList(Material.class);
+        List<ExpMaterialImpl> results = ExpMaterialImpl.fromMaterials(matches);
+        results = results.stream().filter((m) -> m.getContainer().hasPermission(user, ReadPermission.class) && m.getSampleType() != null).collect(Collectors.toList());
+        return results;
     }
 
     @Override
@@ -7468,31 +7475,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /**
-     * @return all of the samples visible from the current container, mapped from name to sample.
-     */
-    public Map<String, List<ExpMaterialImpl>> getSamplesByName(Container container, User user)
-    {
-        Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
-        for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, user, true))
-        {
-            List<ExpMaterial> samples = new ArrayList<>(sampleType.getSamples(sampleType.getContainer()));
-            if (!container.equals(sampleType.getContainer()))
-            {
-                samples.addAll(((ExpSampleTypeImpl)sampleType).getSamples(container));
-            }
-            for (ExpMaterial expMaterial : samples)
-            {
-                List<ExpMaterialImpl> matchingSamples = potentialParents.computeIfAbsent(expMaterial.getName(), k -> new LinkedList<>());
-                matchingSamples.add((ExpMaterialImpl)expMaterial);
-            }
-        }
-
-        // CONSIDER: include samples not in any SampleType
-
-        return potentialParents;
-    }
-
-
     /**
      * Ensure that an alias entry exists for each string value passed in, else create it.
      * @return The list of rowId for each alias name.

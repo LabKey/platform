@@ -95,7 +95,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // NOTE: There really has to be better way to handle the functionality of StudyImportContext.getTableIdMap()
         // NOTE: Could this be handled by a method on StudySchema or something???
         // see StudyImportContext.getTableIdMapMap()
-        StudyImportMaps       // expected: Map<String,Map<Object,Object>>
+        StudyImportMaps,        // expected: Map<String,Map<Object,Object>>
+
+        KeyList,                // expected: List<String>
+        AllowImportManagedKey   // expected: Boolean
     }
 
     private static final Logger LOG = LogManager.getLogger(DatasetUpdateService.class);
@@ -277,8 +280,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             context.putConfigParameter(Config.CheckForDuplicates, dupePolicy);
         }
 
-        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, context);
-        return insert;
+        return _dataset.getInsertDataIterator(user, data, context);
     }
 
 
@@ -440,20 +442,12 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         // Update will delete old and insert, so covering aliases, like insert, is needed
         aliasColumns(_columnMapping, row);
 
-        List<String> errors = new ArrayList<>();
         String lsid = keyFromMap(oldRow);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
-        String newLsid = _dataset.updateDatasetRow(user, lsid, row, errors);
+        String newLsid = _dataset.updateDatasetRow(user, lsid, row);
         //update the lsid and return
         row.put("lsid", newLsid);
-        if(errors.size() > 0)
-        {
-            ValidationException e = new ValidationException();
-            for(String err : errors)
-                e.addError(new SimpleValidationError(err));
-            throw e;
-        }
 
         row = getRow(user, container, row);
 

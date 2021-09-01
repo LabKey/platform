@@ -23,11 +23,13 @@ import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestTimeout;
+import org.labkey.api.test.TestWhen;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@TestWhen(TestWhen.When.SMOKE)
 @RunWith(Parameterized.class)
 @TestTimeout(240)
 public class SchemaXMLTestCase extends Assert

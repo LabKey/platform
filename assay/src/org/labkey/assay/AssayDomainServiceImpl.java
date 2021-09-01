@@ -287,6 +287,12 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
             }
         }
 
+        ObjectProperty autoLinkContainer = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
+        if (autoLinkContainer != null)
+        {
+            result.setAutoLinkCategory(autoLinkContainer.getStringValue());
+        }
+
         result.setAllowTransformationScript((provider.createDataExchangeHandler() != null) && canUpdateTransformationScript());
         result.setAllowBackgroundUpload(provider.supportsBackgroundUpload());
         result.setAllowEditableResults(provider.supportsEditableResults());
@@ -376,6 +382,9 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                 DbSchema schema = AssayDbSchema.getInstance().getSchema();
                 try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                 {
+                    if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 300)
+                        throw new AssayException("Linked Dataset Category name must be shorter than 300 characters.");
+
                     ExpProtocol protocol;
                     if (assay.getProtocolId() == null)
                     {
@@ -527,6 +536,17 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     {
                         props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
                     }
+
+                    String autoLinkCategory = assay.getAutoLinkCategory();
+                    if (autoLinkCategory != null)
+                    {
+                        props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
+                    }
+                    else
+                    {
+                        props.remove(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
+                    }
+
                     protocol.setObjectProperties(props);
 
                     protocol.save(getUser());
