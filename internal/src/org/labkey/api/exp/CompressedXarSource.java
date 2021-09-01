@@ -57,7 +57,7 @@ public class CompressedXarSource extends AbstractFileXarSource
     @Override
     public void init() throws ExperimentException, IOException
     {
-        Path outputDir = _xarFile.resolve(".exploded");
+        Path outputDir = _xarFile.resolve(_xarFile + ".exploded");
         FileUtil.deleteDir(outputDir);
         if (Files.exists(outputDir))
         {
