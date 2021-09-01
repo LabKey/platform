@@ -40,11 +40,13 @@ import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -231,7 +233,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.RUN_RELATIVE_LOCATION.createURLRewriter(), getJob().getUser());
             exporter.addExperimentRun(run);
 
-            try (OutputStream fOut = Files.newOutputStream(tempFile))
+            try (OutputStream fOut = new BufferedOutputStream(Files.newOutputStream(tempFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE)))
             {
                 exporter.dumpXML(fOut);
                 fOut.close();
@@ -246,6 +248,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
     private Path getLoadingXarFile()
     {
-        return _factory.getXarFile(getJob()).resolve(".loading");
+        Path xarPath = _factory.getXarFile(getJob());
+        return xarPath.resolve(xarPath + ".loading");
     }
 }
