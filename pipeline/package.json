@@ -17,7 +17,7 @@
     "@labkey/components": "2.68.0"
   },
   "devDependencies": {
-    "@labkey/build": "4.0.0-fb-dependabotUpdates219.0",
+    "@labkey/build": "4.0.1",
     "@labkey/eslint-config-base": "0.0.8",
     "@labkey/eslint-config-react": "0.0.8"
   }

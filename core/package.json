@@ -53,10 +53,10 @@
   "dependencies": {
     "@labkey/api": "1.6.7",
     "@labkey/components": "2.68.0",
-    "@labkey/themes": "1.2.0-fb-dependabotUpdates219.0"
+    "@labkey/themes": "1.2.1"
   },
   "devDependencies": {
-    "@labkey/build": "4.0.0-fb-dependabotUpdates219.0",
+    "@labkey/build": "4.0.1",
     "@labkey/eslint-config-react": "0.0.8",
     "@types/enzyme": "3.10.8",
     "@types/enzyme-adapter-react-16": "1.0.6",
