@@ -530,11 +530,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             // Issue 43754: Don't include aliquot rows in the null value check (see ExpMaterialTableImpl.createColumn for IsAliquot)
             String table = domain.getStorageTableName();
-            allRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
+            SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
                     .append("SELECT LSID FROM " + getStorageSchemaName() + "." + table)
                     .append(") AND RootMaterialLSID IS NULL");
 
-            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
             return totalRows != nonBlankRows;
         }
