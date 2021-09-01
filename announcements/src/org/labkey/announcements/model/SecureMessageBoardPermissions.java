@@ -83,7 +83,20 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
 
         // Filter for non-editors
         if (!hasPermission(SecureMessageBoardReadPermission.class))
-            filter.addWhereClause("RowId IN (SELECT MessageId FROM " + CommSchema.getInstance().getTableInfoMemberList() + " WHERE UserId = ?)", new Object[]{_user.getUserId()});
+        {
+            filter.addWhereClause(
+            "RowId IN (" +
+                    "SELECT OldestRowId FROM " + CommSchema.getInstance().getTableInfoUserList() +
+                    " JOIN (" +
+                        "SELECT" +
+                            " MAX(announcements.rowid) AS NewestRowId," +
+                            " MIN(announcements.rowid) AS OldestRowId" +
+                        " FROM " + CommSchema.getInstance().getTableInfoAnnouncements() +
+                        " GROUP BY COALESCE(parent, announcements.entityid)) t" +
+                    " ON messageid=t.NewestRowId" +
+                    " WHERE userid=?)",
+                    new Object[]{_user.getUserId()});
+        }
 
         return filter;
     }
