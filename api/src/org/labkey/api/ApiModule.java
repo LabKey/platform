@@ -35,6 +35,7 @@ import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
@@ -243,6 +244,7 @@ public class ApiModule extends CodeOnlyModule
             FileSystemWatcherImpl.TestCase.class,
             FolderTypeManager.TestCase.class,
             GroupManager.TestCase.class,
+            JdbcMetaDataTest.class,
             JspTemplate.TestCase.class,
             LabKeyCollectors.TestCase.class,
             MapLoader.MapLoaderTestCase.class,

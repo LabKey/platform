@@ -920,9 +920,9 @@ public abstract class SqlDialect
         getTableResolver().addTableInfoFactories(map, scope, schemaName);
     }
 
-    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope, @Nullable String schemaName, @Nullable String requestedTableName) throws SQLException
+    public final JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
     {
-        return getTableResolver().getJdbcMetaDataLocator(scope, schemaName, requestedTableName);
+        return getTableResolver().getJdbcMetaDataLocator(scope);
     }
 
     public final ForeignKeyResolver getForeignKeyResolver(DbScope scope, @Nullable String schemaName, @Nullable String tableName)
