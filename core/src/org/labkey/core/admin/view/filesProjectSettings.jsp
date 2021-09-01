@@ -83,6 +83,7 @@
     boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());
     boolean isCurrentFileRootManaged = !(isCurrentFileRootCloud &&
                                                 null != storeInfos.get(bean.getCloudRootName()) && !storeInfos.get(bean.getCloudRootName()).isLabKeyManaged());
+    String fileRootText = getContainer().isProject() ? "site-level file root" : getContainer().getParsedPath().size() == 2 ? "file root of the parent project" : "file root of the parent folder";
 %>
 
 <%  if (bean.getConfirmMessage() != null) { %>
@@ -118,7 +119,7 @@
                                 type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
                                 <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(<%=h(!FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>);">
-                            Use a default based on the <%=h(getContainer().isProject() ? "site-level file root" : "file root of the parent container")%>:
+                            Use a default based on the <%=h(fileRootText)%>:
                             <input type="text" id="rootPath" size="64" disabled="true" value="<%=h(defaultRoot)%>"></td>
                     </tr>
                     <tr style="height: 1.75em">
