@@ -59,7 +59,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -788,7 +787,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        try (Transaction transaction = schema.getScope().ensureTransaction())
+        try (Transaction transaction = ensureTransaction())
         {
             CPUTimer time = new CPUTimer("purge");
             time.start();
@@ -2131,13 +2130,22 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         }
     }
 
+    private Transaction ensureTransaction()
+    {
+        // Make sure a transaction is active. If caller set one up, use a no-op version so that we can handle error
+        // situations without trashing the transaction call stack
+        DbScope scope = StudyService.get().getDatasetSchema().getScope();
+        return scope.isTransactionActive() ? DbScope.NO_OP_TRANSACTION : scope.ensureTransaction();
+    }
+
     private List<String> insertData(User user, DataIteratorBuilder in, DataIteratorContext context)
     {
         ArrayList<String> lsids = new ArrayList<>();
         Logger logger = (Logger)context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger);
 
         context.putConfigParameter(DatasetUpdateService.Config.KeyList, lsids);
-        try (Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
+
+        try (Transaction transaction = ensureTransaction())
         {
             long start = System.currentTimeMillis();
             {
@@ -2637,7 +2645,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
 
     @Override
-    public String updateDatasetRow(User u, String lsid, Map<String, Object> data, BatchValidationException errors)
+    public String updateDatasetRow(User u, String lsid, Map<String, Object> data) throws ValidationException
     {
         boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
 
@@ -2650,15 +2658,16 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)
             managedKey = getKeyPropertyName();
 
-        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = ensureTransaction())
         {
             Map<String, Object> oldData = getDatasetRow(u, lsid);
 
             if (oldData == null)
             {
                 // No old record found, so we can't update
-                errors.addRowError(new ValidationException("Record not found with lsid: " + lsid));
-                return null;
+                ValidationException error = new ValidationException();
+                error.addError(new SimpleValidationError("Record not found with lsid: " + lsid));
+                throw error;
             }
 
             Map<String,Object> mergeData = new CaseInsensitiveHashMap<>(oldData);
@@ -2686,13 +2695,16 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
 
+            BatchValidationException errors = new BatchValidationException();
             List<String> result = StudyManager.getInstance().importDatasetData(
                     u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
 
             if (errors.hasErrors())
             {
                 // Update failed
-                return null;
+                ValidationException error = new ValidationException();
+                errors.getRowErrors().forEach(e -> error.addError(new SimpleValidationError(e.getMessage())));
+                throw error;
             }
 
             // lsid is not in the updated map by default since it is not editable,
@@ -2760,7 +2772,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
 
-        try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = ensureTransaction())
         {
             deleteProvenance(getContainer(), u, lsids);
             deleteRows(lsids);
