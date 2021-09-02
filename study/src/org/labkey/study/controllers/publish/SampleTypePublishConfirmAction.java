@@ -242,7 +242,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                 form.getContainer(),
                 targetStudy,
                 form.getAutoLinkCategory() != null
-                        ? ViewCategoryManager.getInstance().ensureViewCategory(form.getContainer(), getUser(), form.getAutoLinkCategory())
+                        ? ViewCategoryManager.getInstance().ensureViewCategory(targetStudy, getUser(), form.getAutoLinkCategory())
                         : null,
                 sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
