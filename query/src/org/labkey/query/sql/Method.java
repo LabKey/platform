@@ -1481,7 +1481,7 @@ public abstract class Method
             }
         });
 
-        // Special functions to cast an argument to the JSON or JSONB data types
+        // Special functions to cast an argument to the JSON or JSONB data types without needing to support as official datatype in CAST
         postgresMethods.put("parse_json", new ParseJSONMethod("json"));
         postgresMethods.put("parse_jsonb", new ParseJSONMethod("jsonb"));
 
