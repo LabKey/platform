@@ -628,7 +628,7 @@ public class ExperimentController extends SpringActionController
                 detailsView.getDataRegion().addDisplayColumn(displayAutoLinkTargetColumn);
             }
 
-            DisplayColumn autoLinkCategoryColumn = detailsView.getDataRegion().getDisplayColumn("autoLinkCategory"); // ToDo Rosaline: Less hacky way of reordering displays?
+            DisplayColumn autoLinkCategoryColumn = detailsView.getDataRegion().getDisplayColumn("autoLinkCategory");
             autoLinkCategoryColumn.setVisible(false);
             SimpleDisplayColumn displayAutoLinkCategoryColumn = new SimpleDisplayColumn();
             displayAutoLinkCategoryColumn.setCaption("Auto Link Category:");
