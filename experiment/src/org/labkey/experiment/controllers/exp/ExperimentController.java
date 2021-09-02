@@ -94,6 +94,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.AbstractQueryImportAction;
@@ -4202,7 +4203,7 @@ public class ExperimentController extends SpringActionController
                 getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
                 ResponseHelper.setPrivate(getViewContext().getResponse());
 
-                exporter.write(getViewContext().getResponse().getOutputStream());
+                exporter.writeAsArchive(getViewContext().getResponse().getOutputStream());
                 return null;
             case PIPELINE_FILE:
                 if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
@@ -4212,7 +4213,8 @@ public class ExperimentController extends SpringActionController
                 PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
                 XarExportPipelineJob job = new XarExportPipelineJob(getViewBackgroundInfo(), pipeRoot, fileName, lsidRelativizer, selection, xarXmlFileName);
                 PipelineService.get().queueJob(job);
-                return getContainer().getStartURL(getUser());
+                PipelineStatusFile status = PipelineService.get().getStatusFile(job.getJobGUID());
+                return PageFlowUtil.urlProvider(PipelineUrls.class).statusDetails(getContainer(), status.getRowId());
             default:
                 throw new IllegalArgumentException("Unknown export type: " + exportType);
         }
