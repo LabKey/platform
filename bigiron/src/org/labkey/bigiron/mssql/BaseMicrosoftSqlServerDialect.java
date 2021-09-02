@@ -2154,6 +2154,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             @Override
             public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             {
+                if (null == schemaPattern)
+                    throw new IllegalStateException("null schemaPattern is not supported");
+
                 SQLFragment sql = new SQLFragment(ALL_TABLES_SQL);
                 sql.add(catalog);
                 sql.add(schemaPattern); // Note: Our query doesn't support schemaPattern == null because we never pass null
@@ -2173,6 +2176,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             @Override
             public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
             {
+                if (null == schemaPattern)
+                    throw new IllegalStateException("null schemaPattern is not supported");
+                if (null == tableNamePattern)
+                    throw new IllegalStateException("null tableNamePattern is not supported");
+
                 SQLFragment sql = new SQLFragment(ALL_TABLE_COLUMNS_SQL);
                 // Intentionally ignoring the 'catalog'; within the sp_columns proc we're bypassing, it's only used as a check that it is the same as the db_name
                 sql.add(schemaPattern);    // Note: Our query doesn't support schemaPattern == null because we never pass null
