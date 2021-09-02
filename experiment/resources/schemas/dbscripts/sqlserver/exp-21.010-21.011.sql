@@ -1,1 +1,1 @@
-ALTER TABLE exp.MaterialSource ADD AutoLinkCategory ENTITYID NULL;
+ALTER TABLE exp.MaterialSource ADD AutoLinkCategory VARCHAR(300) NULL;

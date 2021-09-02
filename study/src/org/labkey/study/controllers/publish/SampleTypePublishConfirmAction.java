@@ -11,6 +11,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Dataset;
@@ -236,7 +237,14 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
             return null;
         }
 
-        return StudyPublishService.get().publishData(getUser(), form.getContainer(), targetStudy, sampleType.getName(),
+        return StudyPublishService.get().publishData(
+                getUser(),
+                form.getContainer(),
+                targetStudy,
+                form.getAutoLinkCategory() != null
+                        ? ViewCategoryManager.getInstance().ensureViewCategory(form.getContainer(), getUser(), form.getAutoLinkCategory())
+                        : null,
+                sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                 dataMaps, ROW_ID, errors);
     }
