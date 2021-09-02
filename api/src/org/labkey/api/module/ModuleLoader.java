@@ -69,6 +69,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -92,10 +93,14 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -105,6 +110,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -483,6 +489,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         File modulesDir = coreModuleDir.getParentFile();
         new DebugInfoDumper(modulesDir);
 
+        final File lockFile = createLockFile(modulesDir);
+
         if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
             _newInstall = true;
 
@@ -610,6 +618,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+
+        lockFile.delete();
     }
 
     private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
@@ -627,6 +637,26 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
                 throw new IllegalStateException(msg);
             });
+    }
+
+    /** Create a file that indicates the server is in the midst of the upgrade process. Refuse to start up
+     * if a previous startup left the lock file in place. */
+    private File createLockFile(File modulesDir) throws ConfigurationException
+    {
+        File result = new File(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
+        if (result.exists())
+        {
+            throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete file and restart Tomcat.");
+        }
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
+        {
+            writer.write("LabKey instance beginning initialization at " + new Date());
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Unable to write lock file at " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " - ensure the user executing Tomcat has permission to create files in parent directory.", e);
+        }
+        return result;
     }
 
     // If in production mode then make sure this isn't a development build, #21567
@@ -1543,6 +1573,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         // Finally, fire the startup complete event
         ContextListener.moduleStartupComplete(_servletContext);
 
+
+
         clearAllSchemaDetails();
         setStartupState(StartupState.StartupComplete);
         setStartingUpMessage("Module startup complete");
@@ -1608,7 +1640,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    public void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade)
+    private void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade)
     {
         synchronized(UPGRADE_LOCK)
         {
