@@ -48,6 +48,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +62,25 @@ import static org.labkey.api.util.SubstitutionFormat.yearlySampleCount;
 
 public class NameGenerator
 {
+    /**
+     * $NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string)
+     * Examples:
+     *  ${AliquotedFrom}-:withCounter   : parentSample-1
+     *  ${AliquotedFrom}-${SourceParent/Property}-:withCounter  : parentSample-parentSource-1
+     *  ${AliquotedFrom}.:withCounter() : parentSample.1
+     *  ${AliquotedFrom}-:withCounter(1000) : parentSample-1000
+     *  ${AliquotedFrom}-:withCounter(1, '000') : parentSample-001
+     */
+    public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?([\'\"\\d]*)?\\)?";
+    public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
+
     private final TableInfo _parentTable;
+
+    public FieldKeyStringExpression getParsedNameExpression()
+    {
+        return _parsedNameExpression;
+    }
+
     private final FieldKeyStringExpression _parsedNameExpression;
 
     // extracted from name expression after parsing
@@ -68,16 +88,16 @@ public class NameGenerator
     private boolean _exprHasLineageInputs = false;
     private Map<FieldKey, TableInfo> _exprLookups = Collections.emptyMap();
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn)
     {
         _parentTable = parentTable;
-        _parsedNameExpression = FieldKeyStringExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects);
+        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn);
         initialize(importAliases);
     }
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
     {
-        this(nameExpression, parentTable, allowSideEffects, null);
+        this(nameExpression, parentTable, allowSideEffects, null, container, getNonConflictCountFn);
     }
 
     public NameGenerator(@NotNull FieldKeyStringExpression nameExpression, @Nullable TableInfo parentTable)
@@ -124,7 +144,8 @@ public class NameGenerator
         boolean hasLineageInputs = false;
         List<FieldKey> lookups = new ArrayList<>();
 
-        List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getParsedExpression();
+        // check for all parts, including those in sub nested expressions
+        List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
         for (StringExpressionFactory.StringPart part : parts)
         {
             if (!part.isConstant())
@@ -218,7 +239,7 @@ public class NameGenerator
             Map<String, Object> map = li.next();
             try
             {
-                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFn);
+                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFn, null);
                 map.put("name", name);
             }
             catch (DuplicateNameException dup)
@@ -246,14 +267,21 @@ public class NameGenerator
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
     {
-        return state.nextName(rowMap, null, null, null);
+        return state.nextName(rowMap, null, null, null, null);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
                                @Nullable Supplier<Map<String, Object>> extraPropsFn) throws NameGenerationException
     {
-        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn);
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn, null);
+    }
+
+    public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
+                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
+                               @Nullable Supplier<Map<String, Object>> extraPropsFn, @Nullable FieldKeyStringExpression altExpression) throws NameGenerationException
+    {
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn, altExpression);
     }
 
 
@@ -288,7 +316,7 @@ public class NameGenerator
             _rowNumber = -1;
         }
 
-        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn)
+        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn, FieldKeyStringExpression altExpression)
                 throws NameGenerationException
         {
             if (_rowNumber == -1)
@@ -298,7 +326,7 @@ public class NameGenerator
             String name;
             try
             {
-                name = genName(rowMap, parentDatas, parentSamples, extraPropsFn);
+                name = genName(rowMap, parentDatas, parentSamples, extraPropsFn, altExpression);
             }
             catch (IllegalArgumentException e)
             {
@@ -320,7 +348,8 @@ public class NameGenerator
         private String genName(@NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas,
                                @Nullable Set<ExpMaterial> parentSamples,
-                               @Nullable Supplier<Map<String, Object>> extraPropsFn)
+                               @Nullable Supplier<Map<String, Object>> extraPropsFn,
+                               @Nullable FieldKeyStringExpression altExpression)
                 throws IllegalArgumentException
         {
             // If sample counters bound to a column are found, e.g. in the expression "${myDate:dailySampleCount}" the dailySampleCount is bound to myDate column,
@@ -359,7 +388,9 @@ public class NameGenerator
             // Add extra context variables
             Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps);
 
-            String name = _parsedNameExpression.eval(ctx);
+            // allow using alternative expression for evaluation.
+            // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
+            String name = (altExpression != null ? altExpression : _parsedNameExpression).eval(ctx);
             if (name == null || name.length() == 0)
                 throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + _parsedNameExpression.getSource() + "'.  Check the pattern syntax and data values.");
 
@@ -532,6 +563,222 @@ public class NameGenerator
 
     }
 
+    /**
+     *  Same as FieldKeyExpression, but supports :withCounter syntax
+     */
+    public static class NameGenerationExpression extends FieldKeyStringExpression
+    {
+        private Container _container;
+        private Function<String, Long> _getNonConflictCountFn;
+
+        public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
+        {
+            super(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
+            _container = container;
+        }
+
+        public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
+        {
+            this(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container);
+            _getNonConflictCountFn = getNonConflictCountFn;
+        }
+
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
+        {
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn);
+        }
+
+        @Override
+        protected StringExpressionFactory.StringPart parsePart(String expression)
+        {
+            Matcher counterMatcher = WITH_COUNTER_PATTERN.matcher(expression);
+            if (counterMatcher.find())
+            {
+                String namePrefixExpression = counterMatcher.group(1);
+                int startInd = 0;
+                String startIndStr = counterMatcher.group(2);
+                String numberFormat = counterMatcher.group(3);
+                if (!StringUtils.isEmpty(startIndStr))
+                {
+                    try
+                    {
+                        startInd = Integer.valueOf(startIndStr);
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        ; // TODO throw error?
+                    }
+                }
+
+                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn);
+            }
+
+            return super.parsePart(expression);
+        }
+
+        @Override
+        protected void parse()
+        {
+            _parsedExpression = new ArrayList<>();
+            int start = 0;
+            int index;
+            final String openTag = "${";
+            final char closeTag = '}';
+
+            //TODO clean up parse
+            while (start < _source.length() && (index = _source.indexOf(openTag, start)) >= 0)
+            {
+                int closeIndex = _source.indexOf(closeTag, index + 2);
+                int nextOpenIndex = _source.indexOf(openTag, index + 2);
+                if (closeIndex == -1)
+                    break;
+                if (index > 0)
+                    _parsedExpression.add(new StringExpressionFactory.ConstantPart(_source.substring(start, index)));
+
+                if (nextOpenIndex > -1 && nextOpenIndex < closeIndex) // “${${AliquotedFrom}-:withCounter()}
+                {
+                    int open = 2;
+
+                    int subInd = nextOpenIndex + 2;
+                    while (subInd < _source.length())
+                    {
+                        int nextOpen = _source.indexOf(openTag, subInd);
+                        int nextClose = _source.indexOf(closeTag, subInd);
+
+                        if (nextOpen == -1 && nextClose == -1)
+                            break;
+
+                        if (nextOpen == -1 || nextClose < nextOpen)
+                        {
+                            open--;
+                            subInd = nextClose + 1;
+                        }
+                        else if (nextClose > nextOpen)
+                        {
+                            open++;
+                            subInd = nextOpen + 2;
+                        }
+
+                        if (open == 0)
+                            break;
+                    }
+
+                    if (open == 0)
+                    {
+                        String sub = _source.substring(start + 2, subInd - 1);
+                        StringExpressionFactory.StringPart part = parsePart(sub);
+                        _parsedExpression.add(part);
+                        start = subInd + 1;
+                        continue;
+                    }
+                }
+
+                String sub = _source.substring(index+2,closeIndex);
+
+                StringExpressionFactory.StringPart part = parsePart(sub);
+                if (part.hasSideEffects() && !_allowSideEffects)
+                    throw new IllegalArgumentException("Side-effecting expression part not allowed: " + sub);
+
+                _parsedExpression.add(part);
+                start = closeIndex + 1;
+            }
+            if (start < _source.length())
+                _parsedExpression.add(new StringExpressionFactory.ConstantPart(_source.substring(start)));
+        }
+    }
+
+    public static class CounterExpressionPart extends StringExpressionFactory.StringPart
+    {
+        protected String _prefixExpression;
+        private Integer _startIndex;
+
+        public FieldKeyStringExpression getParsedNameExpression()
+        {
+            return _parsedNameExpression;
+        }
+
+        private FieldKeyStringExpression _parsedNameExpression;
+
+        private final Function<String, Long> _getNonConflictCountFn;
+
+        private SubstitutionFormat _counterFormat;
+
+
+        private Container _container;
+
+        private Map<String, DbSequence> _counterSequences = new HashMap<>();
+
+        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, Container container, Function<String, Long> getNonConflictCountFn)
+        {
+            _parsedNameExpression = FieldKeyStringExpression.create(expression, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
+            _startIndex = startIndex;
+            _container = container;
+            _getNonConflictCountFn = getNonConflictCountFn;
+            if (!StringUtils.isEmpty(counterFormatStr))
+                _counterFormat = new SubstitutionFormat.NumberSubstitutionFormat(counterFormatStr);
+        }
+
+        @Override
+        public boolean isConstant() { return false; }
+
+        @Override
+        public Object getToken()
+        {
+            return _prefixExpression;
+        }
+
+        @NotNull
+        @Override
+        public Collection<SubstitutionFormat> getFormats()
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public String getValue(Map map)
+        {
+            String prefix = _parsedNameExpression.eval(map);
+            long existingCount = -1;
+
+            if (_getNonConflictCountFn != null)
+                existingCount = _getNonConflictCountFn.apply(prefix);
+
+            if (!_counterSequences.containsKey(prefix))
+            {
+                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, prefix);
+                long currentSeqMax = newSequence.current();
+
+                if (existingCount >= currentSeqMax || _startIndex > currentSeqMax)
+                    newSequence.ensureMinimum(existingCount > _startIndex ? existingCount : _startIndex);
+
+                _counterSequences.put(prefix, newSequence);
+            }
+
+            long count = _counterSequences.get(prefix).next();
+
+            Object countStr = String.valueOf(count);
+            if (_counterFormat != null)
+            {
+                countStr = _counterFormat.format(count);
+            }
+
+            return prefix + countStr;
+        }
+
+
+        @Override
+        public boolean hasSideEffects()
+        {
+            //TODO
+            return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "${" + _prefixExpression + "}";
+        }
+    }
 
     public class NameGenerationException extends Exception
     {

@@ -32,6 +32,6 @@ public class NameExpressionDataIteratorBuilder implements DataIteratorBuilder
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         DataIterator pre = _pre.getDataIterator(context);
-        return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _parentTable));
+        return LoggingDataIterator.wrap(new NameExpressionDataIterator(pre, context, _parentTable, null, null));
     }
 }

@@ -63,6 +63,7 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case MaterialLSIDPrefix:
             case Name:
             case NameExpression:
+            case AliquotNameExpression:
             case LabelColor:
             case MetricUnit:
             case AutoLinkTargetContainer:

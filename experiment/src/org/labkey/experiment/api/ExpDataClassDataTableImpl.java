@@ -620,7 +620,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
-                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this));
+                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this, getContainer(), null)); //TODO get nonConflictFn
             }
             else
             {

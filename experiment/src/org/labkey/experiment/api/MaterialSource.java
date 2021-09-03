@@ -44,6 +44,7 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     private String _parentCol;
 
     private String _nameExpression;
+    private String _aliquotNameExpression;
     private String _labelColor;
     private String _metricUnit;
     private Container _autoLinkTargetContainer;
@@ -126,6 +127,16 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public void setNameExpression(String nameExpression)
     {
         _nameExpression = nameExpression;
+    }
+
+    public String getAliquotNameExpression()
+    {
+        return _aliquotNameExpression;
+    }
+
+    public void setAliquotNameExpression(String aliquotNameExpression)
+    {
+        _aliquotNameExpression = aliquotNameExpression;
     }
 
     public String getLabelColor()

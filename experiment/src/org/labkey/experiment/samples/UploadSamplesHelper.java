@@ -692,12 +692,13 @@ public abstract class UploadSamplesHelper
         final Lsid.LsidBuilder lsidBuilder;
         final ExpMaterialTableImpl materialTable;
 
-        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in)
+        public PrepareDataIteratorBuilder(@NotNull ExpSampleTypeImpl sampletype, TableInfo materialTable, DataIteratorBuilder in, Container container)
         {
             this.sampletype = sampletype;
             this.builder = in;
             this.lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
+            // TODO container
         }
 
         @Override
@@ -766,6 +767,7 @@ public abstract class UploadSamplesHelper
     {
         final ExpSampleTypeImpl sampletype;
         final NameGenerator nameGen;
+        final NameGenerator aliquotNameGen;
         final NameGenerator.State nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final Container _container;
@@ -775,8 +777,6 @@ public abstract class UploadSamplesHelper
 
         String generatedName = null;
         String generatedLsid = null;
-
-        private Map<String, DbSequence> _aliquotSequences = new HashMap<>();
 
         _GenerateNamesDataIterator(ExpSampleTypeImpl sampletype, MapDataIterator source, DataIteratorContext context, int batchSize)
         {
@@ -791,6 +791,7 @@ public abstract class UploadSamplesHelper
                 // do nothing
             }
             nameGen = sampletype.getNameGenerator();
+            aliquotNameGen = sampletype.getAliquotNameGenerator();
             nameState = nameGen.createState(true);
             lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             _container = sampletype.getContainer();
@@ -831,30 +832,17 @@ public abstract class UploadSamplesHelper
                 }
 
                 boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
-                if (isAliquot)
-                {
-                    String aliquotName = null;
-                    // If a name is already provided, just use it as is
-                    Object currNameObj = map.get("Name");
-                    if (currNameObj != null)
-                        aliquotName = currNameObj.toString();
 
-                    if (StringUtils.isEmpty(aliquotName))
-                        aliquotName = aliquotedFrom + "-" + getAliquotSequence(aliquotedFrom).next();
 
-                    generatedName = aliquotName;
-                }
-                else
-                {
-                    Supplier<Map<String, Object>> extraPropsFn = () -> {
-                        if (importAliasMap != null)
-                           return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
-                        else
-                            return Collections.emptyMap();
-                    };
+                Supplier<Map<String, Object>> extraPropsFn = () -> {
+                    if (importAliasMap != null)
+                        return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
+                    else
+                        return Collections.emptyMap();
+                };
 
-                    generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn);
-                }
+                generatedName = nameGen.generateName(nameState, map, null, null, extraPropsFn, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);;
+
                 generatedLsid = lsidBuilder.setObjectId(generatedName).toString();
             }
             catch (NameGenerator.DuplicateNameException dup)
@@ -871,25 +859,6 @@ public abstract class UploadSamplesHelper
                 else
                     addRowError("All id columns are required for sample on row " + e.getRowNumber());
             }
-        }
-
-        private DbSequence getAliquotSequence(String aliquotedFrom)
-        {
-            ExpMaterial parent = this.sampletype.getSample(_container, aliquotedFrom);
-            String seqName = ALIQUOT_DB_SEQ_PREFIX + ":" + aliquotedFrom;
-            if (!_aliquotSequences.containsKey(seqName))
-            {
-                int seqId = parent != null ? parent.getRowId() : 0;
-                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, seqName, seqId, _batchSize);
-                long currentSeqMax = newSequence.current();
-                long currentAliquotMax = SampleTypeService.get().getMaxAliquotId(aliquotedFrom, this.sampletype.getLSID(), _container);
-                if (currentAliquotMax >= currentSeqMax)
-                    newSequence.ensureMinimum(currentAliquotMax);
-
-                _aliquotSequences.put(seqName, newSequence);
-            }
-
-            return _aliquotSequences.get(seqName);
         }
 
         @Override

@@ -77,16 +77,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleType
 {
     private static final String categoryName = "materialSource";
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
 
+    public static final String ALIQUOT_NAME_EXPRESSION = "${${AliquotedFrom}-:withCounter}";
+
     private Domain _domain;
     private NameGenerator _nameGen;
+    private NameGenerator _aliquotNameGen;
 
     // For serialization
     protected ExpSampleTypeImpl() {}
@@ -287,6 +293,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         _object.setNameExpression(expression);
     }
 
+    public void setAliquotNameExpression(String expression)
+    {
+        _object.setAliquotNameExpression(expression);
+    }
+
     @Override
     public String getNameExpression()
     {
@@ -297,6 +308,18 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public boolean hasNameExpression()
     {
         return _object.getNameExpression() != null;
+    }
+
+    @Override
+    public String getAliquotNameExpression()
+    {
+        return _object.getAliquotNameExpression();
+    }
+
+    @Override
+    public boolean hasAliquotNameExpression()
+    {
+        return _object.getAliquotNameExpression() != null;
     }
 
     // NOTE: intentionally not public in ExpSampleType interface
@@ -377,11 +400,44 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 {
                     // do nothing
                 }
-                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap);
+                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction());
             }
         }
 
         return _nameGen;
+    }
+
+    @Nullable
+    public NameGenerator getAliquotNameGenerator()
+    {
+        if (_aliquotNameGen == null)
+        {
+            String s;
+
+            if (_object.getAliquotNameExpression() != null)
+            {
+                s = _object.getAliquotNameExpression();
+            }
+            else
+            {
+                s = ALIQUOT_NAME_EXPRESSION;
+            }
+
+            TableInfo parentTable = QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), SamplesSchema.SCHEMA_NAME).getTable(getName());
+            Map<String, String> importAliasMap = null;
+            try
+            {
+                importAliasMap = getImportAliasMap();
+            }
+            catch (IOException e)
+            {
+                // do nothing
+            }
+
+            _aliquotNameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction());
+        }
+
+        return _aliquotNameGen;
     }
 
     @Override
@@ -746,5 +802,39 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
         _object.setMaterialParentImportAliasMap(SampleTypeServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
+    }
+
+    @Override
+    public Function<String, Long> getMaxSampleCounterFunction()
+    {
+        String sampleTypeLsid = getLSID();
+        Container container = getContainer();
+        return (sampleNamePrefix) ->
+        {
+            long max = 0;
+
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
+            filter.addCondition(FieldKey.fromParts("Name"), sampleNamePrefix, STARTS_WITH);
+
+            TableSelector selector = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("Name"), filter, null);
+            final List<String> sampleIds = new ArrayList<>();
+            selector.forEach(String.class, fullname -> sampleIds.add(fullname.replace(sampleNamePrefix, "")));
+
+            for (String sampleId : sampleIds)
+            {
+                try
+                {
+                    long id = Long.parseLong(sampleId);
+                    if (id > max)
+                        max = id;
+                }
+                catch (NumberFormatException ignored) {
+                    ;
+                }
+            }
+
+            return max;
+        };
     }
 }
