@@ -699,6 +699,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
+        if (aliquotNameExpression != null)
+            source.setAliquotNameExpression(aliquotNameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
         source.setAutoLinkTargetContainer(autoLinkTargetContainer);
@@ -876,6 +878,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
                 st.setNameExpression(sampleIdPattern);
+            }
+
+            String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
+            String oldAliquotPattern = st.getAliquotNameExpression();
+            if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
+            {
+                st.setAliquotNameExpression(aliquotIdPattern);
             }
 
             st.setLabelColor(options.getLabelColor());
