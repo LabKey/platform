@@ -58,8 +58,8 @@ const COMPONENT_NAMES = List<string>([
     {value: 'BreadcrumbCreate'},
     {value: 'Cards'},
     {value: 'ConfirmModal'},
-    {value: 'Detail'},
-    {value: 'DetailEditing'},
+    {value: 'DetailPanel'},
+    {value: 'EditableDetailPanel'},
     {value: 'EditableGridPanel'},
     {value: 'EntityInsertPanel'},
     {value: 'FileAttachmentForm'},
@@ -261,10 +261,10 @@ export class App extends React.Component<any, State> {
                         </>
                     )
                 }
-                {selected === 'Detail' &&
+                {selected === 'DetailPanel' &&
                     <DetailPage editable={false}/>
                 }
-                {selected === 'DetailEditing' &&
+                {selected === 'EditableDetailPanel' &&
                     <DetailPage editable={true}/>
                 }
                 {selected === 'EditableGridPanel' &&
