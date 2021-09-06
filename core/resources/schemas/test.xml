@@ -35,6 +35,25 @@
 			<column columnName="BitNotNull"/>
 		</columns>
 	</table>
+	<table tableName="a$b" tableDbType="VIEW">
+        <description>This is used to test LIKE wild card characters in table/view names</description>
+		<columns>
+			<column columnName="_ts"/>
+			<column columnName="EntityId"/>
+			<column columnName="RowId"/>
+			<column columnName="CreatedBy"/>
+			<column columnName="Created"/>
+			<column columnName="Container"/>
+			<column columnName="Text"/>
+			<column columnName="IntNull"/>
+			<column columnName="IntNotNull"/>
+			<column columnName="DatetimeNull"/>
+			<column columnName="DatetimeNotNull"/>
+			<column columnName="RealNull"/>
+			<column columnName="BitNull"/>
+			<column columnName="BitNotNull"/>
+		</columns>
+	</table>
     <table tableName="TestTable2" tableDbType="TABLE">
         <columns>
             <column columnName="_ts"/>
@@ -91,6 +110,25 @@
             <column columnName="ExpirationDate"/>
         </columns>
     </table>
+    <table tableName="a_b" tableDbType="UNKNOWN">
+        <description>This is used to test LIKE wild card characters in table/view names</description>
+        <columns>
+            <column columnName="_ts"/>
+            <column columnName="RowId"/>
+            <column columnName="EntityId"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Created"/>
+            <column columnName="Parent"/>
+            <column columnName="Name"/>
+            <column columnName="SortOrder"/>
+            <column columnName="Description"/>
+            <column columnName="Type"/>
+            <column columnName="Title"/>
+            <column columnName="Searchable"/>
+            <column columnName="LockState"/>
+            <column columnName="ExpirationDate"/>
+        </columns>
+    </table>
     <table tableName="ContainerAliases2" tableDbType="UNKNOWN">
         <description>This is used to test synonyms on SQL Server</description>
         <columns>
@@ -98,8 +136,41 @@
             <column columnName="ContainerId"/>
         </columns>
     </table>
+    <table tableName="a%b" tableDbType="VIEW">
+        <description>This is used to test LIKE wild card characters in table/view names</description>
+        <columns>
+            <column columnName="Path"/>
+            <column columnName="ContainerId"/>
+        </columns>
+    </table>
     <table tableName="Users2" tableDbType="UNKNOWN">
         <description>This is used to test synonyms on SQL Server</description>
+        <columns>
+            <column columnName="Email"/>
+            <column columnName="_ts"/>
+            <column columnName="EntityId"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Created"/>
+            <column columnName="ModifiedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="Owner"/>
+            <column columnName="UserId"/>
+            <column columnName="DisplayName"/>
+            <column columnName="FirstName"/>
+            <column columnName="LastName"/>
+            <column columnName="Phone"/>
+            <column columnName="Mobile"/>
+            <column columnName="Pager"/>
+            <column columnName="IM"/>
+            <column columnName="Description"/>
+            <column columnName="LastLogin"/>
+            <column columnName="Active"/>
+            <column columnName="HasPassword"/>
+            <column columnName="ExpirationDate"/>
+        </columns>
+    </table>
+    <table tableName="a\b" tableDbType="VIEW">
+        <description>This is used to test LIKE wild card characters in table/view names</description>
         <columns>
             <column columnName="Email"/>
             <column columnName="_ts"/>

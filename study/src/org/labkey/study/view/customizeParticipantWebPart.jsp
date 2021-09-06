@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.study.CompletionType" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
@@ -29,7 +28,6 @@
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory.DataType" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -45,7 +43,6 @@
     if (selectedData == null)
         selectedData = DataType.ALL.name();
     
-    boolean includePrivateData = Boolean.parseBoolean(bean.getPropertyMap().get(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY));
     String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
 %>
 <p>Each <%= h(subjectNoun.toLowerCase()) %> webpart will display datasets from a single <%= h(subjectNoun.toLowerCase()) %>.</p>
@@ -73,23 +70,6 @@
             %>
         </td>
     </tr>
-    <%
-        if (QCStateManager.getInstance().showQCStates(c))
-        {
-    %>
-    <tr>
-        <td>QC state to display:</td>
-        <td>
-            <%=select().name(SubjectDetailsWebPartFactory.QC_STATE_INCLUDE_PRIVATE_DATA_KEY)
-                .addOptions(Map.of(false, "Public data", true, "All Data"))
-                .selected(includePrivateData)
-                .className(null)
-            %>
-        </td>
-    </tr>
-    <%
-        }
-    %>
     <tr>
         <td>
             <%= button("Submit").submit(true) %>

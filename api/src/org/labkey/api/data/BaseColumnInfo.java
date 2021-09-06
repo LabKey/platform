@@ -1609,9 +1609,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         DbScope scope = parentTable.getSchema().getScope();
         Map<String, ImportedKey> importedKeys = new HashMap<>();    // Use map to handle multiple FKs with multiple fields from same table referencing same PK
 
-        try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, schemaName, parentTable.getMetaDataName()))
+        try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope).singleSchema(schemaName).singleTable(parentTable))
         {
-            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, (dbmd, loc) -> dbmd.getColumns(loc.getCatalogName(), loc.getSchemaName(), loc.getTableName(), columnNamePattern));
+            JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator, (dbmd, loc) -> dbmd.getColumns(loc.getCatalogName(), loc.getSchemaNamePattern(), loc.getTableNamePattern(), columnNamePattern));
 
             try (ResultSet rsCols = columnSelector.getResultSet())
             {

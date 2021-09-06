@@ -23,6 +23,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.xar.XarExportSelection;
 
@@ -40,7 +41,7 @@ public class XarExportPipelineJob extends PipelineJob
     private final File _exportFile;
     private final String _fileName;
     private final LSIDRelativizer _lsidRelativizer;
-    private XarExportSelection _selection;
+    private final XarExportSelection _selection;
     private final String _xarXmlFileName;
 
     @JsonCreator
@@ -72,7 +73,6 @@ public class XarExportPipelineJob extends PipelineJob
         setLogFile(new File(_exportFile.getPath() + ".log"));
 
         header("Experiment export to " + _exportFile.getName());
-        setStatus(TaskStatus.waiting);
     }
 
     @Override
@@ -92,29 +92,23 @@ public class XarExportPipelineJob extends PipelineJob
     {
         setStatus("EXPORTING");
 
-        FileOutputStream fOut = null;
         try
         {
             getLogger().info("Starting to write XAR to " + _exportFile.getPath());
             XarExporter exporter = new XarExporter(_lsidRelativizer, _selection, getUser(), _xarXmlFileName, getLogger());
             _exportFile.getParentFile().mkdirs();
-            fOut = new FileOutputStream(_exportFile);
-            exporter.write(fOut);
+            try (FileOutputStream fOut = new FileOutputStream(_exportFile);
+                 ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(getUser(), getContainer(), getInfo().getURL()))
+            {
+                exporter.writeAsArchive(fOut);
+            }
             getLogger().info("Export complete");
             setStatus(TaskStatus.complete);
         }
         catch (RuntimeException | IOException | ExperimentException e)
         {
-            logFailure(e);
+            error("Failed when exporting XAR", e);
+            setStatus(TaskStatus.error);
         }
-        finally
-        {
-            if (fOut != null) { try { fOut.close(); } catch (IOException ignored) {} }
-        }
-    }
-
-    private void logFailure(Throwable e)
-    {
-        getLogger().error("Failed when exporting XAR", e);
     }
 }
