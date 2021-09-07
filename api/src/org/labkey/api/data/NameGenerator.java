@@ -69,7 +69,8 @@ import static org.labkey.api.util.SubstitutionFormat.yearlySampleCount;
 public class NameGenerator
 {
     /**
-     * $NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string)
+     * full expression: ${NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string)}
+     * use regex to match the content inside the outer ${}
      * Examples:
      *  ${AliquotedFrom}-:withCounter   : parentSample-1
      *  ${AliquotedFrom}-${SourceParent/Property}-:withCounter  : parentSample-parentSource-1
