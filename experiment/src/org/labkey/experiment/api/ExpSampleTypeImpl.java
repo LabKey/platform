@@ -89,6 +89,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
 
     public static final String ALIQUOT_NAME_EXPRESSION = "${${AliquotedFrom}-:withCounter}";
+    public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
 
     private Domain _domain;
     private NameGenerator _nameGen;
@@ -400,7 +401,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 {
                     // do nothing
                 }
-                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction());
+                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), String.valueOf(getRowId()));
             }
         }
 
@@ -434,7 +435,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 // do nothing
             }
 
-            _aliquotNameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction());
+            _aliquotNameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
         }
 
         return _aliquotNameGen;

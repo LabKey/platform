@@ -115,6 +115,7 @@ import java.util.function.Supplier;
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private @NotNull ExpDataClassImpl _dataClass;
+    public static final String DATA_COUNTER_SEQ_PREFIX = "DataNameGenCounter-";
 
     @Override
     protected ContainerFilter getDefaultContainerFilter()
@@ -620,7 +621,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
 
-                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this, getContainer(), null)); //TODO get nonConflictFn
+                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, ExpDataClassDataTableImpl.this, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-"));
             }
             else
             {

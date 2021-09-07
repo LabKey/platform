@@ -38,8 +38,9 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private TableInfo _parentTable;
     private Container _container;
     private Function<String, Long> _getNonConflictCountFn;
+    private String _counterSeqPrefix;
 
-    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn)
+    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
         super(DataIteratorUtil.wrapMap(di, false));
         _context = context;
@@ -53,6 +54,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
         _container = container;
         _getNonConflictCountFn = getNonConflictCountFn;
+        _counterSeqPrefix = counterSeqPrefix;
 
     }
 
@@ -68,7 +70,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
     private void addNameGenerator(String nameExpression)
     {
-        NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false, _container, _getNonConflictCountFn);
+        NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false, _container, _getNonConflictCountFn, _counterSeqPrefix);
         NameGenerator.State state = nameGen.createState(false);
         _nameGeneratorMap.put(nameExpression, Pair.of(nameGen, state));
     }

@@ -96,16 +96,16 @@ public class NameGenerator
     private boolean _exprHasLineageInputs = false;
     private Map<FieldKey, TableInfo> _exprLookups = Collections.emptyMap();
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
         _parentTable = parentTable;
-        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn);
+        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
         initialize(importAliases);
     }
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
-        this(nameExpression, parentTable, allowSideEffects, null, container, getNonConflictCountFn);
+        this(nameExpression, parentTable, allowSideEffects, null, container, getNonConflictCountFn, counterSeqPrefix);
     }
 
     public NameGenerator(@NotNull FieldKeyStringExpression nameExpression, @Nullable TableInfo parentTable)
@@ -578,6 +578,7 @@ public class NameGenerator
     {
         private final Container _container;
         private Function<String, Long> _getNonConflictCountFn;
+        private String _counterSeqPrefix;
 
         public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
         {
@@ -585,20 +586,26 @@ public class NameGenerator
             _container = container;
         }
 
-        public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
+        public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             this(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container);
             _getNonConflictCountFn = getNonConflictCountFn;
+            _counterSeqPrefix = counterSeqPrefix;
         }
 
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null, null);
         }
 
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
         {
-            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn);
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, null);
+        }
+        
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        {
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
         }
 
         @Override
@@ -623,7 +630,7 @@ public class NameGenerator
                     }
                 }
 
-                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn);
+                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn, _counterSeqPrefix);
             }
 
             return super.parsePart(expression);
@@ -706,18 +713,20 @@ public class NameGenerator
 
         private SubstitutionFormat _counterFormat;
 
-
         private final Container _container;
 
         private final Map<String, DbSequence> _counterSequences = new HashMap<>();
 
-        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, Container container, Function<String, Long> getNonConflictCountFn)
+        private final String _counterSeqPrefix;
+
+        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             _prefixExpression = expression;
             _parsedNameExpression = FieldKeyStringExpression.create(expression, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
             _startIndex = startIndex;
             _container = container;
             _getNonConflictCountFn = getNonConflictCountFn;
+            _counterSeqPrefix = StringUtils.isBlank(counterSeqPrefix) ? COUNTER_SEQ_PREFIX : counterSeqPrefix;
             if (!StringUtils.isEmpty(counterFormatStr))
                 _counterFormat = new SubstitutionFormat.NumberSubstitutionFormat(counterFormatStr);
         }
@@ -749,7 +758,7 @@ public class NameGenerator
 
             if (!_counterSequences.containsKey(prefix))
             {
-                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, COUNTER_SEQ_PREFIX + prefix);
+                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
                 long currentSeqMax = newSequence.current();
 
                 if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)

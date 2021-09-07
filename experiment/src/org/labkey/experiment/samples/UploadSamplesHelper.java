@@ -698,7 +698,6 @@ public abstract class UploadSamplesHelper
             this.builder = in;
             this.lsidBuilder = generateSampleLSID(sampletype.getDataObject());
             this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
-            // TODO container
         }
 
         @Override
