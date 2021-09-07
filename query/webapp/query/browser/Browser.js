@@ -237,7 +237,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
     },
 
     buildQueryPanelId : function(schemaName, queryName) {
-        return this.qdpPrefix + encodeURIComponent('&' + schemaName.toString() + '&' + queryName);
+        return this.qdpPrefix + encodeURIComponent('&' + schemaName.toString() + '&' + queryName.toLowerCase());
     },
 
     getTree : function() {
