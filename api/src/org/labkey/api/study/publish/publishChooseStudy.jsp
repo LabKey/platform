@@ -101,6 +101,12 @@
     .form-group {
         display: flex !important;
     }
+
+    #chooseStudyError {
+        color: #a94442;
+        margin-bottom: 15px;
+        margin-left: 270px;
+    }
 </style>
 <script type="application/javascript">
 
@@ -122,6 +128,11 @@
         };
 
         handleNext = function(){
+            if ($("#autoLinkCategory").val().length > 200) {
+                let errorMessageDiv = $('#chooseStudyError');
+                errorMessageDiv.text("Linked Dataset Category name must be shorter than 200 characters.");
+                return;
+            }
 
             var autoLink = $("input[id='autoLink']");
             if (autoLink.prop('checked')){
@@ -185,6 +196,7 @@
     }
 %>
 
+<div id="chooseStudyError"> </div>
 <labkey:form method="POST" id="linkForm" layout="horizontal" action="<%=postURL%>">
     <%
         if (unambiguous)
