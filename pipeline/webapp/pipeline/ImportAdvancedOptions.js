@@ -120,6 +120,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 name: 'applyToMultipleFolders',
                 initChecked: this.isApplyToMultipleFolders ? "checked": "",
                 isChecked: this.isApplyToMultipleFolders,
+                hidden: this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
                 label: 'Apply to multiple folders',
                 optionsForm: this.getApplyToMultipleFoldersForm
             }];
@@ -184,7 +185,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         {
             this.applyToMultipleFoldersForm = Ext4.create('LABKEY.import.ApplyToMultipleFolders', {
                 formId: this.formId,
-                hidden: !this.isApplyToMultipleFolders || this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
+                hidden: !this.isApplyToMultipleFolders,
                 rootVisible: this.isProjectAdmin
             });
 
