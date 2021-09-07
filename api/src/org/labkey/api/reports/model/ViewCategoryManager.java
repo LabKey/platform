@@ -24,6 +24,7 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -41,6 +42,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 
 /**
  * User: klum
@@ -146,61 +150,67 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
     public ViewCategory saveCategory(Container c, User user, ViewCategory category)
     {
-        ViewCategory ret;
         List<Throwable> errors;
+        ViewCategory ret;
 
-        if (category.isNew()) // insert
+        try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            boolean topLevelCategory = (null == category.getParent());
-            final String[] parts;
-
-            if (topLevelCategory)
+            if (category.isNew()) // insert
             {
-                parts = new String[]{category.getLabel()};
-            }
-            else
-            {
-                ViewCategory parent = category.getParentCategory();
+                boolean topLevelCategory = (null == category.getParent());
+                final String[] parts;
 
-                if (null == parent)
-                    throw new IllegalStateException("Parent does not exist");
-
-                parts = new String[]{parent.getLabel(), category.getLabel()};
-            }
-
-            ViewCategory dup = ViewCategoryManager.getInstance().getCategory(c, parts);
-
-            if (null != dup)
-            {
                 if (topLevelCategory)
-                    throw new IllegalArgumentException("There is already a subcategory attached to the same parent with the name: " + category.getLabel());
+                {
+                    parts = new String[]{category.getLabel()};
+                }
                 else
-                    throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
-            }
-            category.beforeInsert(user, c.getId());
+                {
+                    ViewCategory parent = category.getParentCategory();
 
-            ret = Table.insert(user, getTableInfoCategories(), category);
+                    if (null == parent)
+                        throw new IllegalStateException("Parent does not exist");
 
-            ViewCategoryCache.get().clear(c);
+                    parts = new String[]{parent.getLabel(), category.getLabel()};
+                }
 
-            errors = fireCreatedCategory(user, ret);
-        }
-        else // update
-        {
-            ViewCategory existing = getCategory(c, category.getRowId());
-            if (existing != null)
-            {
-                existing.setLabel(category.getLabel());
-                existing.setDisplayOrder(category.getDisplayOrder());
+                ViewCategory dup = ViewCategoryManager.getInstance().getCategory(c, parts);
 
-                ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
+                if (null != dup)
+                {
+                    if (topLevelCategory)
+                        throw new IllegalArgumentException("There is already a subcategory attached to the same parent with the name: " + category.getLabel());
+                    else
+                        throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
+                }
+                category.beforeInsert(user, c.getId());
+
+                ret = Table.insert(user, getTableInfoCategories(), category);
 
                 ViewCategoryCache.get().clear(c);
 
-                errors = fireUpdateCategory(user, ret);
+                errors = fireCreatedCategory(user, ret);
             }
-            else
-                throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
+            else // update
+            {
+                ViewCategory existing = getCategory(c, category.getRowId());
+                if (existing != null)
+                {
+                    existing.setLabel(category.getLabel());
+                    existing.setDisplayOrder(category.getDisplayOrder());
+
+                    ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
+
+                    ViewCategoryCache.get().clear(c);
+
+                    errors = fireUpdateCategory(user, ret);
+                }
+                else
+                    throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
+            }
+
+            transaction.addCommitTask(() -> ViewCategoryCache.get().clear(c), DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.commit();
         }
 
         if (errors.size() != 0)

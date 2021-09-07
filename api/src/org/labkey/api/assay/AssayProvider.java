@@ -40,7 +40,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -162,7 +161,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     ActionURL getImportURL(Container container, ExpProtocol protocol);
 
     /** TargetStudy may be null if each row in dataKeys has a non-null AssayPublishKey#getTargetStudy(). */
-    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable ViewCategory datasetCategory, Map<Integer, PublishKey> dataKeys, List<String> errors);
+    ActionURL linkToStudy(User user, Container assayDataContainer, ExpProtocol protocol, @Nullable Container study, @Nullable String datasetCategory, Map<Integer, PublishKey> dataKeys, List<String> errors);
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
