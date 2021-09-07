@@ -2033,7 +2033,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     // Query INFORMATION_SCHEMA.TABLES directly, since this is 50X faster than jTDS getTables() (which calls sp_tables). Select only the columns we care about. SQL Server always returns NULL for REMARKS.
     private static final String ALL_TABLES_SQL = "SELECT TABLE_NAME, CASE TABLE_TYPE WHEN 'BASE TABLE' THEN 'TABLE' ELSE TABLE_TYPE END AS TABLE_TYPE, NULL AS REMARKS FROM INFORMATION_SCHEMA.TABLES" +
-        " WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA = ?";
+        " WHERE TABLE_CATALOG = ? AND TABLE_SCHEMA LIKE ? ESCAPE '\\'";
 
     /* Query the system views for columns directly, bypassing jTDS's getColumns() call to sp_columns.
         This allows retrieval of the full list of sparse columns in a wide table. NOTE: This query does not
@@ -2144,7 +2144,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "            (\n" +
             "                t.user_type_id = c.user_type_id\n" +
             "            ) \n" +
-            " WHERE s.name = ? AND o.name LIKE ? ESCAPE '\\'";
+            " WHERE s.name LIKE ? ESCAPE '\\' AND o.name LIKE ? ESCAPE '\\'";
 
     @Override
     public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)
@@ -2154,9 +2154,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             @Override
             public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
             {
+                if (null == schemaPattern)
+                    throw new IllegalStateException("null schemaPattern is not supported");
+
                 SQLFragment sql = new SQLFragment(ALL_TABLES_SQL);
                 sql.add(catalog);
-                sql.add(schemaPattern);
+                sql.add(schemaPattern); // Note: Our query doesn't support schemaPattern == null because we never pass null
 
                 if (null != tableNamePattern && !"%".equals(tableNamePattern))
                 {
@@ -2173,10 +2176,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             @Override
             public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
             {
+                if (null == schemaPattern)
+                    throw new IllegalStateException("null schemaPattern is not supported");
+                if (null == tableNamePattern)
+                    throw new IllegalStateException("null tableNamePattern is not supported");
+
                 SQLFragment sql = new SQLFragment(ALL_TABLE_COLUMNS_SQL);
                 // Intentionally ignoring the 'catalog'; within the sp_columns proc we're bypassing, it's only used as a check that it is the same as the db_name
-                sql.add(schemaPattern);
-                sql.add(tableNamePattern);
+                sql.add(schemaPattern);    // Note: Our query doesn't support schemaPattern == null because we never pass null
+                sql.add(tableNamePattern); // Note: Our query doesn't support tableNamePattern == null because we never pass null
 
                 if (null != columnNamePattern && !"%".equals(columnNamePattern))
                 {

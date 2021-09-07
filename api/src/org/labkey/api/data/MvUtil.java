@@ -212,7 +212,7 @@ public class MvUtil
     {
         Map<String, String> mvMap = new HashMap<>();
         mvMap.put("Q", "Data currently under quality control review.");
-        mvMap.put("N", "Required field marked by site as 'data not available'.");
+        mvMap.put("N", "Data in this field has been marked as not usable.");
 
         return mvMap;
     }
