@@ -308,7 +308,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void importFolderArchiveWithFailureFlag(File archive, boolean failForUndefinedVisits, int expectedCompleted, boolean expectedError)
     {
-        StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false, true);
+        StartImportPage importPage = StartImportPage.startImportFromFile(this, archive, false);
         importPage.setFailForUndefinedVisitsCheckBox(failForUndefinedVisits);
         importPage.clickStartImport();
         waitForElement(Locators.bodyTitle("Data Pipeline"));
