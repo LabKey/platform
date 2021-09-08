@@ -26,6 +26,7 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -66,7 +67,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -88,8 +88,11 @@ import javax.mail.internet.MimeMessage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -191,7 +194,7 @@ public class PipelineManager
                     Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
                 }
 
-                Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
+                org.labkey.api.util.Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
                 SearchService ss = SearchService.get();
                 if (null != ss)
                     ss.addPathToCrawl(davPath, null);
@@ -782,18 +785,24 @@ public class PipelineManager
         }
     }
 
+    @Deprecated // Prefer validateFolderImportFileNioPath //TODO not sure if this is used or exposed outside of our code
     public static File validateFolderImportFilePath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)
     {
-        File archiveFile = new File(archiveFilePath);
+        return validateFolderImportFileNioPath(archiveFilePath, pipeRoot, errors).toFile();
+    }
+
+    public static Path validateFolderImportFileNioPath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)
+    {
+        Path archiveFile = Path.of(archiveFilePath);
 
         if (!archiveFile.isAbsolute())
         {
             // Resolve the relative path to an absolute path under the current container's root
-            archiveFile = pipeRoot.resolvePath(archiveFilePath);
+            archiveFile = archiveFilePath.contains("://") ? pipeRoot.resolveToNioPathFromUrl(archiveFilePath) : pipeRoot.resolveToNioPath(archiveFilePath);
         }
 
         // Be sure that the referenced file exists and is under the pipeline root
-        if (archiveFile == null || !archiveFile.exists())
+        if (archiveFile == null || !Files.exists(archiveFile))
         {
             errors.reject(ERROR_MSG, "Could not find file at path: " + archiveFilePath);
         }
@@ -805,68 +814,94 @@ public class PipelineManager
         return archiveFile;
     }
 
-    public static File getArchiveXmlFile(Container container, File archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+    private static Path expandZipLocally(PipeRoot pipelineRoot, Path archiveFile, BindException errors)
     {
-        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
-        File xmlFile = archiveFile;
-
-        if (pipelineRoot != null && archiveFile.getName().endsWith(".zip"))
+        try
         {
+            // check if the archive file already exists in the unzip dir of this pipeline root
+            Path importDir = pipelineRoot.getImportDirectory().toPath();
+            if (!archiveFile.getParent().toAbsolutePath().toString().equalsIgnoreCase(importDir.toAbsolutePath().toString()))
+                importDir = pipelineRoot.deleteImportDirectory(null);
+
+            if (Files.notExists(importDir) || Files.list(importDir).noneMatch(s -> s.getFileName().toString().equalsIgnoreCase(archiveFile.getFileName().toString())))
+            {
+                // Only unzip once
+                try (InputStream is = Files.newInputStream(archiveFile))
+                {
+                    ZipUtil.unzipToDirectory(is, importDir);
+                }
+            }
+
+            return importDir;
+        }
+        catch (FileNotFoundException e)
+        {
+            errors.reject(ERROR_MSG, "File not found.");
+        }
+        catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
+        {
+            errors.reject(ERROR_MSG, e.getMessage());
+        }
+        catch (IOException e)
+        {
+            errors.reject(ERROR_MSG, "This file does not appear to be a valid .zip file.");
+        }
+
+        // Return null if errors were observed
+        return null;
+    }
+
+    private static Path getImportXmlFile(@NotNull PipeRoot pipelineRoot, @NotNull Path archiveFile, @NotNull String xmlFileName, BindException errors) throws InvalidFileException
+    {
+        Path xmlFile = archiveFile;
+
+        if (archiveFile.getFileName().toString().toLowerCase().endsWith(".zip"))
+        {
+            Path importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
+            xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
+        }
+        //Downloading expanded archive will be handled later in the archive processing...
+        //We don't really have the job context here
+
+        return xmlFile;
+    }
+
+    public static @NotNull Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, @NotNull String xmlFileName) throws InvalidFileException
+    {
+        // when importing a folder archive for a study, the study.xml file may not be at the root
+        if ("study.xml".equalsIgnoreCase(xmlFileName) && archiveFile.getFileName().toString().toLowerCase().endsWith(".folder.zip"))
+        {
+            File folderXml = new File(importDir.toFile(), "folder.xml");
+            FolderDocument folderDoc;
             try
             {
-                // check if the archive file already exists in the unzip dir of this pipeline root
-                File importDir = pipelineRoot.getImportDirectory();
-                if (!archiveFile.getParentFile().getAbsolutePath().equals(importDir.getAbsolutePath()))
-                    importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
-
-                if (!importDir.exists() || importDir.listFiles(s -> !s.equals(archiveFile.getName())).length == 0)
-                {
-                    // Only unzip once
-                    ZipUtil.unzipToDirectory(archiveFile, importDir);
-                }
-
-                // when importing a folder archive for a study, the study.xml file may not be at the root
-                if ("study.xml".equals(xmlFileName) && archiveFile.getName().endsWith(".folder.zip"))
-                {
-                    File folderXml = new File(importDir, "folder.xml");
-                    FolderDocument folderDoc;
-                    try
-                    {
-                        folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
-                        XmlBeansUtil.validateXmlDocument(folderDoc, xmlFileName);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
-                    }
-
-                    if (folderDoc.getFolder().isSetStudy())
-                    {
-                        importDir = new File(importDir, folderDoc.getFolder().getStudy().getDir());
-                    }
-                }
-
-                xmlFile = new File(importDir, xmlFileName);
+                folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
+                XmlBeansUtil.validateXmlDocument(folderDoc, xmlFileName);
             }
-            catch (FileNotFoundException e)
+            catch (Exception e)
             {
-                errors.reject(ERROR_MSG, "File not found.");
+                throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
             }
-            catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
+
+            if (folderDoc.getFolder().isSetStudy())
             {
-                errors.reject(ERROR_MSG, e.getMessage());
-            }
-            catch (IOException e)
-            {
-                errors.reject(ERROR_MSG, "This file does not appear to be a valid .zip file.");
+                importDir = importDir.resolve(folderDoc.getFolder().getStudy().getDir());
             }
         }
 
+        return importDir.toAbsolutePath().resolve(xmlFileName);
+    }
+
+    public static Path getArchiveXmlFile(Container container, Path archiveFile, String xmlFileName, BindException errors) throws InvalidFileException
+    {
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(container);
+        Path xmlFile = getImportXmlFile(pipelineRoot, archiveFile, xmlFileName, errors);
+
         // if this is an import from a source template folder that has been previously implicitly exported
         // to the unzip dir (without ever creating a zip file) then just look there for the xmlFile.
-        if (pipelineRoot != null && archiveFile.isDirectory())
+        if (pipelineRoot != null && Files.isDirectory(archiveFile))
         {
-            xmlFile = new File(archiveFile, xmlFileName);
+            xmlFile = java.nio.file.Path.of(archiveFile.toString(), xmlFileName);
         }
 
         return xmlFile;

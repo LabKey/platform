@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,9 +137,14 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
 
     public String getBaseName(File file)
     {
+        return getBaseName(file.toPath());
+    }
+
+    public String getBaseName(Path file)
+    {
         FileType ft = findInputType(file);
         if (ft == null)
-            return file.getName();
+            return file.getFileName().toString();
 
         return ft.getBaseName(file);
     }
@@ -218,7 +224,13 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
     }
 
+    @Deprecated  //Prefer the Path version
     public FileType findInputType(File file)
+    {
+        return findInputType(file.toPath());
+    }
+
+    public FileType findInputType(Path file)
     {
         for (FileType type : getInputTypes())
         {

@@ -188,6 +188,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         datasetDesignerPage = propertiesPage.clickEditDefinition();
         datasetDesignerPage.setDataRowUniquenessType(DatasetDesignerPage.DataRowUniquenessType.PTID_TIMEPOINT);
         datasetDesignerPage.saveExpectFail("Changing the dataset key would result in duplicate keys for dataset " + dataset);
+        datasetDesignerPage.clickCancel();
     }
 
     protected void testCannotSetAdditionalKeyForDemographics()

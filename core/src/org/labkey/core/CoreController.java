@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -76,6 +77,7 @@ import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -187,6 +189,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1849,51 +1852,90 @@ public class CoreController extends SpringActionController
             if (null == registry)
                 throw new RuntimeException();
 
-            ImportContext folderImportCtx = getFolderImportContext(form);
-            boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
-
-            List<FolderImporter> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
+            List<FolderImporter<?>> registeredImporters = new ArrayList<>(registry.getRegisteredFolderImporters());
             if (form.isSortAlpha())
                 registeredImporters.sort(new ImporterAlphaComparator());
 
-            List<Map<String, Object>> selectableImporters = new ArrayList<>();
-            for (FolderImporter importer : registeredImporters)
-            {
-                if (importer.getDataType() != null)
-                {
-                    Map<String, Object> importerMap = new HashMap<>();
-                    importerMap.put("dataType", importer.getDataType());
-                    importerMap.put("description", importer.getDescription());
-                    importerMap.put("isValidForImportArchive", isZipArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
-
-                    ImportContext ctx = getImporterSpecificImportContext(form, importer, folderImportCtx);
-                    Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
-                    if (childrenDataTypes != null)
-                    {
-                        List<Map<String, Object>> childrenProps = new ArrayList<>();
-                        for (Map.Entry<String, Boolean> entry : childrenDataTypes.entrySet())
-                        {
-                            Map<String, Object> props = new HashMap<>();
-                            props.put("dataType", entry.getKey());
-                            props.put("isValidForImportArchive", isZipArchive || entry.getValue());
-                            childrenProps.add(props);
-                        }
-                        importerMap.put("children", childrenProps);
-                    }
-
-                    selectableImporters.add(importerMap);
-                }
-            }
+            List<Map<String, Object>> selectableImporters = isCloudArchive(form) ?
+                    getCloudArchiveImporters(form, registeredImporters) :
+                    getSelectableImporters(form, registeredImporters);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("importers", selectableImporters);
             return response;
         }
+
+        private static final String DATATYPE_KEY = "dataType";
+        private static final String DESCRIPTION_KEY = "description";
+        private static final String IS_VALID_FOR_ARCHIVE_KEY = "isValidForImportArchive";
+
+        private List<Map<String, Object>> getCloudArchiveImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        {
+            return getSelectableImporters(form, registeredImporters, true, null);
+        }
+
+        private boolean isCloudArchive(FolderImporterForm form)
+        {
+            return FileUtil.hasCloudScheme(form.getArchiveFilePath());
+        }
+
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters) throws Exception
+        {
+            ImportContext folderImportCtx = getFolderImportContext(form);
+            boolean isZipArchive = isZipArchive(form); // if archive is a zip, we can't tell what objects it has at this point
+
+            return getSelectableImporters(form, registeredImporters, isZipArchive, folderImportCtx);
+        }
+
+        private List<Map<String, Object>> getSelectableImporters(FolderImporterForm form, List<FolderImporter<?>> registeredImporters, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        {
+            List<Map<String, Object>> selectableImporters = new ArrayList<>();
+            for (FolderImporter<?> importer : registeredImporters)
+            {
+                if (importer.getDataType() != null)
+                {
+                    selectableImporters.add(getImporterProps(form, importer, isZipOrCloudArchive, folderImportCtx));
+                }
+            }
+
+            return selectableImporters;
+        }
+
+        private Map<String, Object> getImporterProps(FolderImporterForm form, FolderImporter<?> importer, boolean isZipOrCloudArchive, @Nullable ImportContext folderImportCtx) throws Exception
+        {
+            Map<String, Object> importerMap = new HashMap<>();
+            importerMap.put(DATATYPE_KEY, importer.getDataType());
+            importerMap.put(DESCRIPTION_KEY, importer.getDescription());
+            importerMap.put(IS_VALID_FOR_ARCHIVE_KEY, isZipOrCloudArchive || (folderImportCtx != null && importer.isValidForImportArchive(folderImportCtx)));
+
+            ImportContext ctx = isZipOrCloudArchive ? folderImportCtx : getImporterSpecificImportContext(form, importer, folderImportCtx);
+            Map<String, Boolean> childrenDataTypes = importer.getChildrenDataTypes(ctx);
+            if (childrenDataTypes != null)
+            {
+                importerMap.put("children", getChildProps(childrenDataTypes, isZipOrCloudArchive));
+            }
+
+            return importerMap;
+        }
+
+        private List<Map<String, Object>> getChildProps(Map<String, Boolean> childrenDataTypes, boolean isZipArchive)
+        {
+            List<Map<String, Object>> childrenProps = new ArrayList<>();
+            for (Map.Entry<String, Boolean> entry : childrenDataTypes.entrySet())
+            {
+                Map<String, Object> props = new HashMap<>();
+                props.put(DATATYPE_KEY, entry.getKey());
+                props.put(IS_VALID_FOR_ARCHIVE_KEY, isZipArchive || entry.getValue());
+                childrenProps.add(props);
+            }
+
+            return childrenProps;
+        }
     }
 
-    private ImportContext getImporterSpecificImportContext(FolderImporterForm form, FolderImporter importer, ImportContext defaultCtx) throws IOException
+    private ImportContext<?> getImporterSpecificImportContext(FolderImporterForm form, FolderImporter<?> importer, ImportContext<?> defaultCtx) throws IOException
     {
-        ImportContext ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
+        ImportContext<?> ctx = importer.getImporterSpecificImportContext(form.getArchiveFilePath(), getUser(), getContainer());
         return ctx != null ? ctx : defaultCtx;
     }
 
@@ -1925,10 +1967,10 @@ public class CoreController extends SpringActionController
     {
         if (archiveFilePath != null)
         {
-            File archiveFile = new File(archiveFilePath);
-            if (archiveFile.exists() && archiveFile.isFile())
+            java.nio.file.Path archiveFile = FileUtil.stringToPath(getContainer(), archiveFilePath);
+            if (Files.exists(archiveFile) && Files.isRegularFile(archiveFile))
             {
-                return new FileSystemFile(archiveFile.getParentFile());
+                return new FileSystemFile(archiveFile.getParent());
             }
         }
 

@@ -224,7 +224,6 @@ public class PipelineDirectoryImpl implements PipelineDirectory
             super(f.getPath());
         }
 
-        @Override
         public boolean isFile()
         {
             return !isDirectory();

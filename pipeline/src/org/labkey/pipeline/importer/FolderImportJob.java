@@ -20,11 +20,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
+import org.labkey.api.cloud.CloudArchiveImporterSupport;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -37,13 +40,13 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 
-import java.io.File;
+import java.nio.file.Path;
 
 /**
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public class FolderImportJob extends PipelineJob implements FolderJobSupport
+public class FolderImportJob extends PipelineJob implements FolderJobSupport, CloudArchiveImporterSupport
 {
     private static final Logger LOG = LogManager.getLogger(FolderImportJob.class);
 
@@ -51,8 +54,8 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
     public static final String IMPORT_CANCELLED_NOTIFICATION = FolderImportJob.class.getName() + "." + PipelineJob.TaskStatus.cancelled.name();
     public static final String IMPORT_ERROR_NOTIFICATION = FolderImportJob.class.getName() + "." + PipelineJob.TaskStatus.error.name();
 
-    private final FolderImportContext _ctx;
-    private final VirtualFile _root;
+    private FolderImportContext _ctx;
+    private VirtualFile _root;
     private final String _originalFilename;
 
     @JsonCreator
@@ -64,12 +67,12 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         _ctx.setLoggerGetter(new PipelineJobLoggerGetter(this));
     }
 
-    public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
+    public FolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipeRoot, ImportOptions options)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = new FileSystemFile(folderXml.getParentFile());
+        _root = new FileSystemFile(folderXml.getParent());
         _originalFilename = originalFilename;
-        setLogFile(FolderImportProvider.logForInputFile(new File("folder_load"), getPipeRoot()));
+        setupLocalDirectoryAndJobLog(pipeRoot, "FolderImport", FolderImportProvider.generateLogFilename("folder_load"));
         _ctx = new FolderImportContext(user, c, folderXml, options.getDataTypes(), new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
         _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());
@@ -126,5 +129,19 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
                     case cancelled -> IMPORT_CANCELLED_NOTIFICATION;
                     default -> status.getNotificationType();
                 };
+    }
+
+    @Override
+    public void updateWorkingRoot(Path newRoot) throws PipelineJobException
+    {
+        _root = new FileSystemFile(newRoot);
+        try
+        {
+            _ctx = new FolderImportContext(_ctx, _root);
+        }
+        catch (ImportException e)
+        {
+            throw new PipelineJobException("Unable to update job context to new data root: " + newRoot, e);
+        }
     }
 }

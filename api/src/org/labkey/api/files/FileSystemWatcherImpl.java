@@ -461,7 +461,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Test
         public void testFileWatchers() throws IOException, InterruptedException
         {
-            File root = FileUtil.createTempDirectory("fileWatcherTest");
+            File root = FileUtil.createTempDirectory("fileWatcherTest").toFile(); //Conversion should be safe as temp dir should be on a local URI //TODO should convert to Path for consistencies sake
             File testFolder = new File(root, "test");
 
             // Do it twice to ensure that everything gets cleaned up on directory delete and a new watcher can be added
