@@ -615,11 +615,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
+        startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade, lockFile);  // TODO: Change search user to system user
 
         _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
-
-        lockFile.delete();
     }
 
     private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
@@ -1466,8 +1464,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     /**
-     * Initiate the module startup process.
-     *
+     * Initiate the module startup process, including any deferred upgrades and firing startup listeners.
      */
     private void initiateModuleStartup()
     {
@@ -1640,7 +1637,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
 
-    private void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade)
+    private void startNonCoreUpgradeAndStartup(User user, Execution execution, boolean coreRequiredUpgrade, File lockFile)
     {
         synchronized(UPGRADE_LOCK)
         {
@@ -1652,11 +1649,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 setUpgradeUser(user);
 
                 ModuleUpgrader upgrader = new ModuleUpgrader(modules);
-                upgrader.upgrade(() -> afterUpgrade(true), execution);
+                upgrader.upgrade(() -> afterUpgrade(true, lockFile), execution);
             }
             else
             {
-                execution.run(() -> afterUpgrade(coreRequiredUpgrade));
+                execution.run(() -> afterUpgrade(coreRequiredUpgrade, lockFile));
             }
         }
     }
@@ -1664,7 +1661,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     // Final step in upgrade process: set the upgrade state to complete, perform post-upgrade tasks, and start up the modules.
     // performedUpgrade is true if any module required upgrading
-    private void afterUpgrade(boolean performedUpgrade)
+    private void afterUpgrade(boolean performedUpgrade, File lockFile)
     {
         verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
@@ -1676,6 +1673,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         initiateModuleStartup();
+
+        // We're out of the critical section (regular and deferred upgrades are complete) so remove the lock file
+        lockFile.delete();
+
         verifyRequiredModules();
     }
 
