@@ -401,7 +401,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 {
                     // do nothing
                 }
-                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), String.valueOf(getRowId()));
+                _nameGen = new NameGenerator(s, parentTable, true, importAliasMap, getContainer(), getMaxSampleCounterFunction(), SAMPLE_COUNTER_SEQ_PREFIX + getRowId() + "-");
             }
         }
 
