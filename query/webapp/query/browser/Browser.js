@@ -237,7 +237,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
     },
 
     buildQueryPanelId : function(schemaName, queryName) {
-        return this.qdpPrefix + encodeURIComponent('&' + schemaName.toString() + '&' + queryName.toLowerCase());
+        return this.qdpPrefix + encodeURIComponent('&' + schemaName.toString() + '&' + queryName);
     },
 
     getTree : function() {
@@ -488,15 +488,28 @@ Ext4.define('LABKEY.query.browser.Browser', {
     showPanel : function(queryId, node) {
         var tabs = this.getComponent('lk-sb-details');
         var tab = tabs.getComponent(queryId);
+
+        // Find tab by id
         if (tab) {
             tabs.setActiveTab(tab);
+            return;
         }
-        else {
-            var panel = this.tabFactory.generateTab(queryId, this, node);
-            if (panel) {
-                tabs.add(panel);
-                tabs.setActiveTab(panel);
-            }
+
+        // Check for lowercase query name
+        var idMap = this.parseQueryPanelId(queryId);
+        if (idMap.queryName)
+            tab = tabs.getComponent(this.buildQueryPanelId(idMap.schemaName, idMap.queryName.toLowerCase()));
+
+        if (tab) {
+            tabs.setActiveTab(tab);
+            return;
+        }
+
+        // Tab not found so generate it
+        var panel = this.tabFactory.generateTab(queryId, this, node);
+        if (panel) {
+            tabs.add(panel);
+            tabs.setActiveTab(panel);
         }
     },
 
