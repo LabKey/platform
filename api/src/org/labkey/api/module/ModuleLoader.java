@@ -656,7 +656,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
         {
-            writer.write("LabKey instance beginning initialization at " + new Date());
+            writer.write("LabKey instance beginning initialization at " + DateUtil.formatDateTimeISO8601(new Date()));
+
         }
         catch (IOException e)
         {
