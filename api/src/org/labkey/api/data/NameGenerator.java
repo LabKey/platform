@@ -752,13 +752,13 @@ public class NameGenerator
         public String getValue(Map map)
         {
             String prefix = _parsedNameExpression.eval(map);
-            long existingCount = -1;
-
-            if (_getNonConflictCountFn != null)
-                existingCount = _getNonConflictCountFn.apply(prefix);
-
             if (!_counterSequences.containsKey(prefix))
             {
+                long existingCount = -1;
+
+                if (_getNonConflictCountFn != null)
+                    existingCount = _getNonConflictCountFn.apply(prefix);
+
                 DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
                 long currentSeqMax = newSequence.current();
 
