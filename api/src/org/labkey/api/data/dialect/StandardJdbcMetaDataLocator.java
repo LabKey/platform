@@ -15,9 +15,8 @@
  */
 package org.labkey.api.data.dialect;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.RuntimeSQLException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,28 +30,35 @@ import java.sql.SQLException;
 // This works for all cases except MySQL and SQL Server synonyms
 public class StandardJdbcMetaDataLocator extends BaseJdbcMetaDataLocator
 {
-    // Use a transaction to share the connection... revisit once we share connections by default
-    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern, Transaction transaction) throws SQLException
+    public StandardJdbcMetaDataLocator(DbScope scope) throws SQLException
     {
-        super(scope, schemaName, tableNamePattern, new ConnectionHandler()
+        super(scope, new ConnectionHandler()
         {
             @Override
             public Connection getConnection()
             {
-                return transaction.getConnection();
+                try
+                {
+                    return scope.getConnection();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
 
             @Override
             public void releaseConnection(Connection conn)
             {
-                transaction.commit();
-                transaction.close();
+                try
+                {
+                    conn.close();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
             }
         });
-    }
-
-    public StandardJdbcMetaDataLocator(DbScope scope, String schemaName, @Nullable String tableNamePattern) throws SQLException
-    {
-        this(scope, schemaName, tableNamePattern, scope.ensureTransaction());
     }
 }

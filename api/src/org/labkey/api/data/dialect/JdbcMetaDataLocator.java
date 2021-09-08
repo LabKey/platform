@@ -15,25 +15,44 @@
  */
 package org.labkey.api.data.dialect;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SchemaTableInfo;
 
 import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 
 /**
  * User: adam
  * Date: 2/8/2015
  * Time: 7:45 AM
+ *
+ * JDBC metadata methods are inconsistent with their parameters. The schema and table parameters are sometimes patterns
+ * and sometimes simple strings. Callers must be very careful to review the metadata method JavaDocs and use the
+ * appropriate parameter-providing methods: *NamePattern() methods for the pattern parameters and *Name() methods for
+ * the string-providing parameters. This ensures correct escaping of special characters; see #43821.
  */
 public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
 {
     @Override
     void close();
 
+    // Once the implementation is constructed, one of these schema methods must be called...
+    JdbcMetaDataLocator singleSchema(@NotNull String schemaName);
+    JdbcMetaDataLocator allSchemas();
+
+    // ...followed by one of these table methods.
+    JdbcMetaDataLocator singleTable(@NotNull String tableName) throws SQLException;
+    JdbcMetaDataLocator singleTable(@NotNull SchemaTableInfo tableInfo) throws SQLException;
+    JdbcMetaDataLocator allTables();
+
     DbScope getScope();
     DatabaseMetaData getDatabaseMetaData();
     String getCatalogName();
     String getSchemaName();
+    String getSchemaNamePattern();
     String getTableName();
+    String getTableNamePattern();
     String[] getTableTypes();
     boolean supportsSchemas();
 }
