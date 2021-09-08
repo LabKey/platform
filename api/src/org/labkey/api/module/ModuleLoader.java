@@ -651,7 +651,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
             else
             {
-                throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete file and restart Tomcat.");
+                throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete the file and restart Tomcat.");
+
             }
         }
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
