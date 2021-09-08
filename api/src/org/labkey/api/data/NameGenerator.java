@@ -325,7 +325,7 @@ public class NameGenerator
             _rowNumber = -1;
         }
 
-        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn, FieldKeyStringExpression altExpression)
+        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn, @Nullable FieldKeyStringExpression altExpression)
                 throws NameGenerationException
         {
             if (_rowNumber == -1)
@@ -581,13 +581,13 @@ public class NameGenerator
         private Function<String, Long> _getNonConflictCountFn;
         private String _counterSeqPrefix;
 
-        public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
+        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
         {
             super(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
             _container = container;
         }
 
-        public NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             this(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container);
             _getNonConflictCountFn = getNonConflictCountFn;
