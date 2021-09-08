@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
@@ -59,6 +60,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -110,7 +114,20 @@ public class LinkedSchema extends ExternalSchema
         String sourceSchemaName = def.getSourceSchemaName();
         if (sourceSchemaName == null && template != null)
             sourceSchemaName = template.getSourceSchemaName();
-        UserSchema sourceSchema = getSourceSchema(def, sourceSchemaName, sourceContainer, user);
+
+        // Disallow recursive linked schema
+        if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
+        {
+            LogManager.getLogger(LinkedSchema.class).warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
+            return null;
+        }
+
+        // find all containers the queries in the source schema depends on
+        Set<Container> dependentContainers = analyzeSourceSchema(sourceSchemaName, sourceContainer);
+
+        // Create the source schema again, this time with the LinkedSchemaUserWrapper with read access to only the dependent containers
+        LinkedSchemaUserWrapper sourceSchemaUser = new LinkedSchemaUserWrapper(user, dependentContainers);
+        UserSchema sourceSchema = getSourceSchema(sourceSchemaName, sourceContainer, sourceSchemaUser);
         if (sourceSchema == null)
         {
             LogManager.getLogger(LinkedSchema.class).warn("Source schema '" + sourceSchemaName + "' not found in container '" + sourceContainer.getPath() + "' for linked schema " + def.getUserSchemaName());
@@ -157,18 +174,72 @@ public class LinkedSchema extends ExternalSchema
         return new LinkedSchema(user, container, def, template, sourceSchema, metaDataMap, namedFilters, schemaCustomizers, availableTables, hiddenTables, availableQueries);
     }
 
-    private static UserSchema getSourceSchema(LinkedSchemaDef def, String sourceSchemaName, Container sourceContainer, User user)
+    // Parse the queries in the source schema and their query dependencies using the search user
+    // and return the set of containers the queries depend upon.
+    private static Set<Container> analyzeSourceSchema(String sourceSchemaName, Container sourceContainer)
+    {
+        final SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
+        final UserSchema sourceSchema = QueryService.get().getUserSchema(User.getSearchUser(), sourceContainer, sourceSchemaKey);
+
+        final Map<Container, Map<SchemaKey, UserSchema>> containerSchemaCache = new HashMap<>();
+        containerSchemaCache.computeIfAbsent(sourceContainer, x -> new HashMap<>()).put(sourceSchemaKey, sourceSchema);
+
+        final Set<Container> containers = new HashSet<>();
+        containers.add(sourceContainer);
+
+        // start with all queries in the source schema
+        final LinkedList<QueryService.DependencyObject> queriesToProcess = new LinkedList<>();
+        for (String queryName : sourceSchema.getQueryDefs().keySet())
+        {
+            queriesToProcess.add(new QueryService.DependencyObject(QueryService.DependencyType.Query, sourceContainer, sourceSchema.getSchemaPath(), queryName, null));
+        }
+
+        final Set<QueryService.DependencyObject> seen = new LinkedHashSet<>();
+        while (!queriesToProcess.isEmpty())
+        {
+            QueryService.DependencyObject dop = queriesToProcess.removeFirst();
+            if (seen.contains(dop))
+                continue;
+
+            seen.add(dop);
+
+            var errors = new ArrayList<QueryException>();
+            var warnings = new ArrayList<QueryParseException>();
+
+            Map<SchemaKey, UserSchema> schemaCache = containerSchemaCache.computeIfAbsent(dop.container, x -> new HashMap<>());
+            UserSchema schema = schemaCache.computeIfAbsent(dop.schemaKey, x -> QueryService.get().getUserSchema(User.getSearchUser(), dop.container, dop.schemaKey));
+
+            try
+            {
+                var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
+                QueryService.get().analyzeQuery(schema, dop.name, deps, errors, warnings);
+
+                // queue any query dependencies for analysis and remember the dependency container
+                for (QueryService.DependencyObject dep : deps.values())
+                {
+                    if (dep.type != QueryService.DependencyType.Query && dep.type != QueryService.DependencyType.Table)
+                        continue;
+
+                    if (seen.contains(dep))
+                        continue;
+
+                    queriesToProcess.add(dep);
+                    containers.add(dep.container);
+                }
+            }
+            catch (QueryException x)
+            {
+                /* pass - we don't want to fail because some queries don't parse */
+            }
+        }
+
+        return containers;
+    }
+
+    private static UserSchema getSourceSchema(String sourceSchemaName, Container sourceContainer, LinkedSchemaUserWrapper sourceSchemaUser)
     {
         SchemaKey sourceSchemaKey = SchemaKey.fromString(sourceSchemaName);
 
-        // Disallow recursive linked schema
-        if (def.lookupContainer() == sourceContainer && def.getUserSchemaName().equals(sourceSchemaName))
-        {
-            LogManager.getLogger(LinkedSchema.class).warn("Disallowed recursive linked schema definition '" + sourceSchemaName + "' in container '" + sourceContainer.getPath() + "'");
-            return null;
-        }
-
-        User sourceSchemaUser = new LinkedSchemaUserWrapper(user, sourceContainer);
         return QueryService.get().getUserSchema(sourceSchemaUser, sourceContainer, sourceSchemaKey);
     }
 
@@ -573,29 +644,28 @@ public class LinkedSchema extends ExternalSchema
 
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {
-        private final Container _sourceContainer;
-        private final Set<Role> _inherentRoles;
+        private final Set<String> _allowedContainerIds;
 
-        public LinkedSchemaUserWrapper(User realUser, Container sourceContainer)
+        public LinkedSchemaUserWrapper(User realUser, Set<Container> dependentContainers)
         {
             super(realUser, realUser.getGroups(), Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
-            _sourceContainer = sourceContainer;
 
-            // Site admins can inherently read any container
-            _inherentRoles = realUser.hasSiteAdminPermission() ? Collections.singleton(RoleManager.getRole(ReaderRole.class)) : Collections.emptySet();
+            // Get the policy container id for the dependent containers
+            _allowedContainerIds = dependentContainers.stream().map(Container::getPolicy).map(SecurityPolicy::getContainerId).collect(Collectors.toUnmodifiableSet());
         }
 
         @Override
         public Set<Role> getContextualRoles(SecurityPolicy policy)
         {
-            // For the linked schema's source container, grant ReaderRole via the LimitedUser implementation
-            if (policy.getContainerId().equals(_sourceContainer.getPolicy().getContainerId()))
+            // For the linked schema's source container and any dependent containers,
+            // grant ReaderRole via the LimitedUser implementation.
+            if (_allowedContainerIds.contains(policy.getContainerId()))
             {
                 return super.getContextualRoles(policy);
             }
 
             // For all other containers, just rely on normal permissions
-            return _inherentRoles;
+            return Collections.emptySet();
         }
     }
 }
