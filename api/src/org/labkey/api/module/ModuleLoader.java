@@ -644,7 +644,15 @@ public class ModuleLoader implements Filter, MemTrackerListener
         File result = new File(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
         if (result.exists())
         {
-            throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete file and restart Tomcat.");
+            if (AppProps.getInstance().isDevMode())
+            {
+                _log.warn("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state.");
+                _log.warn("Bravely continuing because this server is running in Dev mode.");
+            }
+            else
+            {
+                throw new ConfigurationException("Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists - a previous upgrade attempt may have left the server in an indeterminate state. Proceed with extreme caution as the database may not be properly upgraded. To continue, delete file and restart Tomcat.");
+            }
         }
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
         {
