@@ -187,9 +187,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
                 ret = Table.insert(user, getTableInfoCategories(), category);
 
-                ViewCategoryCache.get().clear(c);
-
-                errors = fireCreatedCategory(user, ret);
+                errors = fireCreatedCategory(user, ret); // flag. May move this outside transaction
             }
             else // update
             {
@@ -201,9 +199,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
                     ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
 
-                    ViewCategoryCache.get().clear(c);
-
-                    errors = fireUpdateCategory(user, ret);
+                    errors = fireUpdateCategory(user, ret); // flag. Also move this outside transaction
                 }
                 else
                     throw new RuntimeException("The specified category does not exist, rowid: " + category.getRowId());
