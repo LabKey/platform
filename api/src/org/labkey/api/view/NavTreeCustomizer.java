@@ -15,9 +15,16 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
+/**
+ * Via calls to {@link org.labkey.api.view.Portal .registerNavTreeCustomizer();} allows injection of menu items
+ * to existing web parts
+ */
 public interface NavTreeCustomizer
 {
+    @NotNull
     List<NavTree> getNavTrees(ViewContext viewContext);
 }
