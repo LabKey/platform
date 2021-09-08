@@ -19,6 +19,7 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -68,6 +69,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -82,6 +84,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -144,6 +147,7 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
  */
 public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
 {
+    private static final String EXPERIMENTAL_SAMPLE_STATUS = "experimental-sample-status";
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
 
@@ -204,6 +208,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_SAMPLE_STATUS,
+                "Enable sample status tracking",
+                "Enable configuration of sample status values " +
+                        "and corresponding updates to sample handling based on status values.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -548,6 +556,14 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             list.add(sampleTypeCount + " Sample Type" + (sampleTypeCount > 1 ? "s" : ""));
 
         return list;
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        json.put(EXPERIMENTAL_SAMPLE_STATUS, ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SAMPLE_STATUS));
+        return json;
     }
 
     @Override
