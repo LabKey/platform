@@ -71,11 +71,12 @@ import org.labkey.api.writer.PrintWriters;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,16 +198,16 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
     }
 
     @Override
-    public void transform(File input, File output) throws PipelineJobException
+    public void transform(Path input, Path output) throws PipelineJobException
     {
         info("Starting to transform input file " + input + " to output file " + output);
 
         try
         {
-            File labsFile = new File(input.getParent(), "labs.txt");
-            if (NetworkDrive.exists(labsFile) && labsFile.isFile())
+            Path labsFile = input.getParent().resolve("labs.txt");
+            if (NetworkDrive.exists(labsFile) && Files.isRegularFile(labsFile))
             {
-                try (FileInputStream fIn = new FileInputStream(labsFile))
+                try (InputStream fIn = Files.newInputStream(labsFile))
                 {
                     parseLabs(_labIds, Readers.getReader(fIn));
                 }
@@ -217,42 +218,45 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
                 debug("No such file " + labsFile + " so not parsing supplemental lab information");
             }
 
-            ExcelLoader loader = new ExcelLoader(input, true);
-            loader.setInferTypes(false);
-
-            // Create a ZIP archive with the appropriate TSVs
-            try (ZipOutputStream zOut = new ZipOutputStream(new FileOutputStream(output)))
+            try (InputStream is = Files.newInputStream(input))
             {
-                // Add a new file to the ZIP
-                zOut.putNextEntry(new ZipEntry("specimens.tsv"));
-                PrintWriter writer = PrintWriters.getPrintWriter(zOut);
-                final SpecimenTransformTSVWriter tsvWriter = new SpecimenTransformTSVWriter(Collections.emptyList());
-                tsvWriter.setFileHeader(Collections.singletonList("# " + "specimens"));
-                tsvWriter.setPrintWriter(writer);
-                try
-                {
-                    loader.forEach(row -> {
-                        if (MapFilter.getMapFilter(this).test(row))
-                        {
-                            tsvWriter.writeRow(MapTransformer.getMapTransformer(this, getLabIds(), getPrimaryIds(), getDerivativeIds()).apply(row));
-                        }
-                    });
-                }
-                finally
-                {
-                    writer.flush();
-                    zOut.closeEntry();
-                }
+                ExcelLoader loader = new ExcelLoader(is, true, null);
+                loader.setInferTypes(false);
 
-                if (tsvWriter.getRowCount() > 0)
-                    info("After removing duplicates, there are " + tsvWriter.getRowCount() + " rows of data");
-                else
-                    throw new PipelineJobException("There are no rows of data");
+                // Create a ZIP archive with the appropriate TSVs
+                try (ZipOutputStream zOut = new ZipOutputStream(Files.newOutputStream(output)))
+                {
+                    // Add a new file to the ZIP
+                    zOut.putNextEntry(new ZipEntry("specimens.tsv"));
+                    PrintWriter writer = PrintWriters.getPrintWriter(zOut);
+                    final SpecimenTransformTSVWriter tsvWriter = new SpecimenTransformTSVWriter(Collections.emptyList());
+                    tsvWriter.setFileHeader(Collections.singletonList("# " + "specimens"));
+                    tsvWriter.setPrintWriter(writer);
+                    try
+                    {
+                        loader.forEach(row -> {
+                            if (MapFilter.getMapFilter(this).test(row))
+                            {
+                                tsvWriter.writeRow(MapTransformer.getMapTransformer(this, getLabIds(), getPrimaryIds(), getDerivativeIds()).apply(row));
+                            }
+                        });
+                    }
+                    finally
+                    {
+                        writer.flush();
+                        zOut.closeEntry();
+                    }
 
-                writeLabs(_labIds, zOut);
-                writePrimaries(_primaryIds, zOut);
-                writeDerivatives(_derivativeIds, zOut);
-                writeAdditives(Collections.emptyMap(), zOut);
+                    if (tsvWriter.getRowCount() > 0)
+                        info("After removing duplicates, there are " + tsvWriter.getRowCount() + " rows of data");
+                    else
+                        throw new PipelineJobException("There are no rows of data");
+
+                    writeLabs(_labIds, zOut);
+                    writePrimaries(_primaryIds, zOut);
+                    writeDerivatives(_derivativeIds, zOut);
+                    writeAdditives(Collections.emptyMap(), zOut);
+                }
             }
         }
         catch (IOException e)

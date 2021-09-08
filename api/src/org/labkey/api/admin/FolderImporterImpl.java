@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 {
-    private Collection<FolderImporter> _importers;
+    private Collection<FolderImporter<?>> _importers;
     private PipelineJob _job;
 
     public FolderImporterImpl()

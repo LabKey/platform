@@ -75,7 +75,7 @@ public class VisitImporter implements InternalStudyImporter
             importer.setEnsureDatasets(_ensureDatasets);
             List<String> errorMsg = new LinkedList<>();
 
-            if (!importer.process(ctx.getUser(), study, vf, visitMapFile, VisitMapImporter.Format.getFormat(visitMapFile), errorMsg, ctx.getLogger()))
+            if (!importer.process(ctx.getUser(), study, vf, visitMapFile, VisitMapImporter.Format.getFormat(visitMapFile), errorMsg, ctx.getLoggerGetter().getLogger()))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);

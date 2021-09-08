@@ -20,6 +20,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /*
 * User: adam
@@ -29,7 +30,12 @@ import java.io.File;
 public interface SpecimenJobSupport
 {
     /** A specimen archive as originally delivered. Might be transformed before import */
-    File getSpecimenArchive() throws ImportException;
+    @Deprecated // Prefer the Path version
+    default File getSpecimenArchive() throws ImportException
+    {
+        return getSpecimenArchivePath().toFile();
+    }
+    Path getSpecimenArchivePath() throws ImportException;
     boolean isMerge();
     SimpleStudyImportContext getImportContext();
 }

@@ -20,6 +20,7 @@ import org.labkey.api.exp.AbstractFileXarSource;
 import org.labkey.api.pipeline.PipelineJob;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /*
 * User: jeckels
@@ -27,7 +28,7 @@ import java.io.File;
 */
 public class XarGeneratorSource extends AbstractFileXarSource
 {
-    public XarGeneratorSource(PipelineJob job, File xarFile)
+    public XarGeneratorSource(PipelineJob job, Path xarFile)
     {
         super(job);
         _xmlFile = xarFile;

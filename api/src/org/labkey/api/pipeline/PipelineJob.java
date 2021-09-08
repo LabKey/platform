@@ -65,9 +65,10 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.sql.Time;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,7 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A job represents the invocation of a pipeline on a certain set out inputs. It can be monolithic (a single run() method)
+ * A job represents the invocation of a pipeline on a certain set of inputs. It can be monolithic (a single run() method)
  * or be comprised of multiple tasks ({@link Task}) that can be checkpointed and restarted individually.
  */
 abstract public class PipelineJob extends Job implements Serializable
@@ -275,7 +276,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
 
-    private File _logFile;
+    private Path _logFile;
     private LocalDirectory _localDirectory;
 
     // Default constructor for serialization
@@ -440,7 +441,12 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public void setLogFile(File logFile)
     {
-        setLogFilePath(logFile.toPath());
+        setLogFile(logFile.toPath());
+    }
+
+    public void setLogFile(Path logFile)
+    {
+        setLogFilePath(logFile);
         _logFile = logFile;
     }
 
@@ -617,16 +623,16 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         catch (RuntimeException e)
         {
-            File f = this.getLogFile();
+            Path f = this.getLogFilePath();
             error("Failed to set status to '" + status + "' for '" +
-                    (f == null ? "" : f.getPath()) + "'.", e);
+                    (f == null ? "" : f.toString()) + "'.", e);
             throw e;
         }
         catch (Exception e)
         {
-            File f = this.getLogFile();
+            Path f = this.getLogFilePath();
             error("Failed to set status to '" + status + "' for '" +
-                    (f == null ? "" : f.getPath()) + "'.", e);
+                    (f == null ? "" : f.toString()) + "'.", e);
         }
         finally
         {
@@ -815,6 +821,7 @@ abstract public class PipelineJob extends Job implements Serializable
                     workDirectory = factory.createWorkDirectory(getJobGUID(), getJobSupport(FileAnalysisJobSupport.class), getLogger());
                     ((WorkDirectoryTask)task).setWorkDirectory(workDirectory);
                 }
+
                 actions = task.run();
                 success = true;
             }
@@ -1086,7 +1093,7 @@ abstract public class PipelineJob extends Job implements Serializable
     // Should be called in run()'s finally by any class that overrides run(), if class uses LocalDirectory
     protected void finallyCleanUpLocalDirectory()
     {
-        if (null != _localDirectory)
+        if (null != _localDirectory & isDone())
         {
             try
             {
@@ -1405,14 +1412,19 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         private final PipelineJob _job;
         private boolean _isSettingStatus;
-        private File _file;
+        private Path _file;
         private final String LINE_SEP = System.getProperty("line.separator");
         private final String datePattern = "dd MMM yyyy HH:mm:ss,SSS";
 
+        @Deprecated //Prefer the Path version
         protected OutputLogger(PipelineJob job, File file, String name, Level level)
         {
-            super(name, level, false, false, false, false, "", null, new PropertiesUtil(PropertiesUtil.getSystemProperties()), null);
+            this(job, file.toPath(), name, level);
+        }
 
+        protected OutputLogger(PipelineJob job, Path file, String name, Level level)
+        {
+            super(name, level, false, false, false, false, "", null, new PropertiesUtil(PropertiesUtil.getSystemProperties()), null);
             _job = job;
             _file = file;
 
@@ -1504,7 +1516,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             StringBuilder sb = new StringBuilder();
             sb.append("(from pipeline job log file ");
-            sb.append(_job.getLogFile().getPath());
+            sb.append(_job.getLogFile().toString());
             if (message != null)
             {
                 sb.append(": ");
@@ -1541,7 +1553,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             String formattedDate = DateUtil.formatDateTime(new Date(), datePattern);
 
-            try (PrintWriter writer = new PrintWriter(new FileWriter(_file, true)))
+            try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(_file, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND)))
             {
                 var line = formattedDate + " " +
                         String.format("%-5s", level) +
@@ -1556,9 +1568,19 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             catch (IOException e)
             {
-                File parentFile = _file.getParentFile();
-                if (parentFile != null && !NetworkDrive.exists(parentFile) && parentFile.mkdirs())
+                Path parentFile = _file.getParent();
+                if (parentFile != null && !NetworkDrive.exists(parentFile))
+                {
+                    try
+                    {
+                        Files.createDirectories(parentFile);
+                    }
+                    catch (IOException dirE)
+                    {
+                        _log.error("Failed appending to file. Unable to create parent directories", e);
+                    }
                     write(message, t, level);
+                }
                 else
                     _log.error("Failed appending to file.", e);
             }
@@ -1573,7 +1595,7 @@ abstract public class PipelineJob extends Job implements Serializable
             if (null == _logFilePathName || FileUtil.hasCloudScheme(_logFilePathName))
                 throw new IllegalStateException("LogFile null or cloud.");
 
-            File logFile = null != _logFile ? _logFile : new File(_logFilePathName);
+            Path logFile = null != _logFile ? _logFile : Path.of(URI.create(_logFilePathName));
 
             // Create appending logger.
             String loggerName = PipelineJob.class.getSimpleName() + ".Logger." + _logFilePathName;
@@ -1809,6 +1831,8 @@ abstract public class PipelineJob extends Job implements Serializable
         PipelineJobNotificationProvider notificationProvider = PipelineService.get().getPipelineJobNotificationProvider(getJobNotificationProvider(), this);
         if (notificationProvider != null)
             notificationProvider.onJobDone(this);
+
+        finallyCleanUpLocalDirectory();  //Since this potentially contains the job log, it should be run after the notifications tasks are executed
     }
 
     protected String getJobNotificationProvider()
@@ -1965,7 +1989,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             if (null == job1._logFile || null == job2._logFile)
                 errors.add("_logFile");
-            else if (!FileUtil.getAbsoluteCaseSensitiveFile(job1._logFile).getAbsolutePath().equalsIgnoreCase(FileUtil.getAbsoluteCaseSensitiveFile(job2._logFile).getAbsolutePath()))
+            else if (!FileUtil.getAbsoluteCaseSensitiveFile(job1._logFile.toFile()).getAbsolutePath().equalsIgnoreCase(FileUtil.getAbsoluteCaseSensitiveFile(job2._logFile.toFile()).getAbsolutePath()))
                 errors.add("_logFile");
         }
         if (!PropertyUtil.nullSafeEquals(job1._logFilePathName, job2._logFilePathName))
@@ -1980,4 +2004,26 @@ abstract public class PipelineJob extends Job implements Serializable
         return errors;
     }
 
+    /**
+     * @return Path String for a local working directory, temporary if root is cloud based
+     */
+    protected String getDefaultLocalDirectoryString()
+    {
+        return !getPipeRoot().isCloudRoot() ? getPipeRoot().getRootPath().getPath() : FileUtil.getTempDirectory().getPath();
+    }
+
+    /**
+     * Generate a LocalDirectory and log file, temporary if need be, for use by the job
+     * Note: Override getDefaultLocalDirectoryString if piperoot isn't the desired local directory
+     *
+     * @param pipeRoot Pipeline's root directory
+     * @param moduleName supplying the pipeline
+     * @param baseLogFileName base name of the log file
+     */
+    protected final void setupLocalDirectoryAndJobLog(PipeRoot pipeRoot, String moduleName, String baseLogFileName)
+    {
+        LocalDirectory localDirectory = LocalDirectory.create(pipeRoot, moduleName, baseLogFileName, getDefaultLocalDirectoryString());
+        setLocalDirectory(localDirectory);
+        setLogFile(localDirectory.determineLogFile());
+    }
 }

@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -35,6 +36,8 @@ import org.labkey.study.xml.StudyDocument;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +53,7 @@ public class StudyImportContext extends SimpleStudyImportContext
 {
     public static final String ALLOW_DOMAIN_UPDATES = "allowDomainUpdates";
 
-    private File _studyXml;
+    private Path _studyXml;
     private final HashMap<String, String> _props = new HashMap<>();
 
     // Study design table maps (primarily in Dataspace case) to help map dataset FKs
@@ -60,21 +63,29 @@ public class StudyImportContext extends SimpleStudyImportContext
     @SuppressWarnings({"UnusedDeclaration"})
     private StudyImportContext()
     {
-        //noinspection NullableProblems
         super(null, null, null, null, null, null);
     }
 
+    @Deprecated //Use Builder
     public StudyImportContext(User user, Container c, Set<String> dataTypes, LoggerGetter logger)
     {
         super(user, c, null, dataTypes, logger, null);
     }
 
+    @Deprecated //Use Builder
     public StudyImportContext(User user, Container c, File studyXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
+    {
+        this(user, c, studyXml.toPath(), dataTypes, logger, root);
+    }
+
+    @Deprecated //Use Builder
+    public StudyImportContext(User user, Container c, Path studyXml, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
         super(user, c, null, dataTypes, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _studyXml = studyXml;
     }
 
+    @Deprecated //Use Builder
     public StudyImportContext(User user, Container c, StudyDocument studyDoc, Set<String> dataTypes, LoggerGetter logger, VirtualFile root)
     {
         super(user, c, studyDoc, dataTypes, logger, root);
@@ -116,43 +127,43 @@ public class StudyImportContext extends SimpleStudyImportContext
 
     // TODO: this should go away once study import fully supports using VirtualFile -  HMMM.  Why doesn't it?
     @Deprecated
-    private File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
+    private Path getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {
-        File rootFile = new File(root.getLocation());
-        File dirFile = new File(dir.getLocation());
-        File file = new File(dirFile, name);
+        Path rootFile = FileUtil.stringToPath(getContainer(), root.getLocation());
+        Path dirFile = FileUtil.stringToPath(getContainer(), dir.getLocation());
+        Path file = dirFile.resolve(name);
         String source = "study.xml";
 
-        if (!file.exists())
+        if (!Files.exists(file))
             throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(rootFile, file));
 
-        if (!file.isFile())
+        if (!Files.isRegularFile(file))
             throw new ImportException(source + " refers to " + ImportException.getRelativePath(rootFile, file) + ": expected a file but found a directory");
 
         return file;
     }
 
-    private StudyDocument readStudyDocument(File studyXml) throws ImportException, IOException
+    private StudyDocument readStudyDocument(Path studyXml) throws ImportException, IOException
     {
-        if (!studyXml.exists())
-            throw new ImportException(studyXml.getName() + " file does not exist.");
+        if (!Files.exists(studyXml))
+            throw new ImportException(studyXml.getFileName() + " file does not exist.");
 
         StudyDocument studyDoc;
 
-        try
+        try (InputStream inputStream = Files.newInputStream(studyXml))
         {
-            studyDoc = StudyDocument.Factory.parse(studyXml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(studyDoc, studyXml.getName());
+            studyDoc = StudyDocument.Factory.parse(inputStream, XmlBeansUtil.getDefaultParseOptions());
+            XmlBeansUtil.validateXmlDocument(studyDoc, studyXml.getFileName().toString());
         }
         catch (XmlException | XmlValidationException e)
         {
-            throw new InvalidFileException(studyXml.getParentFile(), studyXml, e);
+            throw new InvalidFileException(studyXml.getParent(), studyXml, e);
         }
 
         return studyDoc;
     }
 
-    public File getSpecimenArchive(VirtualFile root) throws ImportException
+    public Path getSpecimenArchive(VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Specimens specimens = getXml().getSpecimens();
 
@@ -224,5 +235,74 @@ public class StudyImportContext extends SimpleStudyImportContext
     public void addTableIdMap(String key, @NotNull Map<Object, Object> map)
     {
         _tableIdMapMap.put(key, map);
+    }
+
+    public static class Builder {
+        private final User _user;
+        private final Container _container;
+        private StudyDocument _studyDocument;
+        private Path _studyXml;
+        private Set<String> _dataTypes;
+        private LoggerGetter _loggerGetter;
+        private VirtualFile _root;
+
+        public Builder(User user, Container c)
+        {
+            _user = user;
+            _container = c;
+        }
+
+        public Builder(StudyImportContext original) throws ImportException
+        {
+            _user = original.getUser();
+            _container = original.getContainer();
+            _studyDocument = original.getDocument();
+            _dataTypes = original.getDataTypes();
+            _loggerGetter = original.getLoggerGetter();
+            _root = original.getRoot();
+        }
+
+        public Builder withStudyXml(File studyXml)
+        {
+            _studyXml = studyXml.toPath();
+            return this;
+        }
+
+        public Builder withStudyXml(Path studyXml)
+        {
+            _studyXml = studyXml;
+            return this;
+        }
+
+        public Builder withDocument(StudyDocument studyDocument)
+        {
+            _studyDocument = studyDocument;
+            return this;
+        }
+
+        public Builder withDataTypes(Set<String> dataTypes)
+        {
+            _dataTypes = dataTypes;
+            return this;
+        }
+
+        public Builder withLogger(LoggerGetter logger)
+        {
+            _loggerGetter = logger;
+            return this;
+        }
+
+        public Builder withRoot(VirtualFile root)
+        {
+            _root = root;
+            return this;
+        }
+
+        public StudyImportContext build()
+        {
+            StudyImportContext ctx = new StudyImportContext(_user, _container, _studyDocument, _dataTypes, _loggerGetter, _root);
+            ctx._studyXml = _studyXml;
+            return ctx;
+        }
     }
 }

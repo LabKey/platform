@@ -39,5 +39,5 @@ public interface FolderSerializationRegistry
     void addImportFactory(FolderImporterFactory importerFactory);
     void addWriterFactory(FolderWriterFactory writerFactory);
     Collection<FolderWriter> getRegisteredFolderWriters();
-    Collection<FolderImporter> getRegisteredFolderImporters();
+    Collection<FolderImporter<?>> getRegisteredFolderImporters();
 }
