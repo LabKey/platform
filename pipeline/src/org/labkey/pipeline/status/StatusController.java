@@ -56,6 +56,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.NetworkDrive;
@@ -81,9 +82,10 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
@@ -556,12 +558,12 @@ public class StatusController extends SpringActionController
 
                 if (fileName != null && fileName.length() != 0)
                 {
-                    File fileStatus = new File(sf.getFilePath());
-                    String statusName = fileStatus.getName();
+                    Path fileStatus = FileUtil.getPath(getContainer(), FileUtil.createUri(sf.getFilePath()));
+                    String statusName = fileStatus.getFileName().toString();
                     String basename = statusName.substring(0, statusName.lastIndexOf('.'));
 
-                    File dir = fileStatus.getParentFile();
-                    File fileShow = new File(dir, fileName);
+                    Path dir = fileStatus.getParent();
+                    Path fileShow = dir.resolve(fileName);
 
                     if (NetworkDrive.exists(fileShow))
                     {
@@ -596,9 +598,9 @@ public class StatusController extends SpringActionController
         }
     }
 
-    private void renderFile(PrintWriter out, File f)
+    private void renderFile(PrintWriter out, Path f)
     {
-        try (BufferedReader br = Readers.getReader(f))
+        try (BufferedReader br = Files.newBufferedReader(f))
         {
             String line;
 

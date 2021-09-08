@@ -40,6 +40,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -137,7 +138,7 @@ public class ListServiceImpl implements ListService
     @Override
     public void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception
     {
-        File dir = FileUtil.createTempDirectory("list");
+        Path dir = FileUtil.createTempDirectory("list");
         ZipUtil.unzipToDirectory(is, dir);
 
         ListImporter li = new ListImporter();

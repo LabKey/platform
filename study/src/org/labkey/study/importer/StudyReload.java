@@ -29,10 +29,12 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
@@ -42,6 +44,8 @@ import org.quartz.JobExecutionContext;
 import org.springframework.validation.BindException;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 
 /*
@@ -55,7 +59,7 @@ public class StudyReload
 
     private static String getDescription(Study study)
     {
-        return study.getLabel();
+        return study != null ? study.getLabel() : "";
     }
 
     @NotNull
@@ -137,7 +141,7 @@ public class StudyReload
                 if (study == null)
                     throw new ImportException("Reload failed. Study doesn't exist.");
 
-                return reloadStudy(study, options, source, null, study.getLastReload());
+                return reloadStudy(study, options, source, null);
             }
         }
 
@@ -166,7 +170,7 @@ public class StudyReload
 
                     if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                     {
-                        return reloadStudy(study, options, source, lastModified, lastReload);
+                        return reloadStudy(study, options, source, lastModified);
                     }
                 }
                 else
@@ -178,13 +182,25 @@ public class StudyReload
             return new ReloadStatus("Reload failed");
         }
 
-        public ReloadStatus reloadStudy(StudyImpl study, ImportOptions options, String source, Long lastModified, Date lastReload) throws ImportException
+        private void userCanReloadStudy(User user, StudyImpl study)
+        {
+            if (user == null || !user.isActive())
+            {
+                throw new UnauthorizedException("Reload user is inactive");
+            }
+
+            if (!study.hasPermission(user, UpdatePermission.class))
+            {
+                throw new UnauthorizedException("Reload user has insufficient permissions");
+            }
+        }
+
+        public ReloadStatus reloadStudy(StudyImpl study, @NotNull ImportOptions options, String source, Long lastModified)
         {
             options.addMessage("Study reload was initiated by " + source);
 
             User reloadUser = options.getUser();
-
-            // TODO: Check for inactive user and not sufficient permissions
+            userCanReloadStudy(reloadUser, study);
 
             // Try to add this study to the reload queue; if it's full, wait until next time
             // We could submit reload pipeline jobs directly, but:
@@ -202,38 +218,30 @@ public class StudyReload
             study.setLastReload(lastModified == null ? new Date() : new Date(lastModified));
             StudyManager.getInstance().updateStudy(null, study);
 
-
             StudyManager manager = StudyManager.getInstance();
             Container c = null;
 
             try
             {
                 c = ContainerManager.getForId(options.getContainerId());
-                File studyXml = null;
+                Path studyXml;
                 PipeRoot root = StudyReload.getPipelineRoot(c);
 
                 // Task overrides default analysis directory, usually when study.xml is located
                 // in a subdirectory underneath the pipeline root
                 if (options.getAnalysisDir() != null)
                 {
-                    File[] files = options.getAnalysisDir().listFiles();
-                    if (files != null)
-                    {
-                        for (File f : files)
-                        {
-                            if (f.getName().equalsIgnoreCase("study.xml"))
-                            {
-                                studyXml = f;
-                                break;
-                            }
-                        }
-                    }
+                    studyXml = Files.list(options.getAnalysisDir())
+                            .filter(p -> p.getFileName().toString().equalsIgnoreCase("study.xml"))
+                            .findFirst()
+                            .orElse(null);
                 }
                 else
                 {
-                    studyXml = root.resolvePath("study.xml");
+                    studyXml = root.resolveRelativePath("study.xml");
                 }
 
+                assert c != null;
                 study = manager.getStudy(c);
                 //noinspection ThrowableInstanceNeverThrown
                 BindException errors = new NullSafeBindException(c, "reload");
@@ -242,21 +250,21 @@ public class StudyReload
                 LOG.info("Handling " + c.getPath());
 
                 // issue 15681: if there is a folder archive instead of a study archive, see if the folder.xml exists to point to the study root dir
-                if (studyXml == null || !studyXml.exists())
+                if (studyXml == null || !Files.exists(studyXml))
                 {
-                    File folderXml = root.resolvePath("folder.xml");
-                    if (folderXml.exists())
+                    Path folderXml = root.resolveToNioPath("folder.xml");
+                    if (folderXml != null && Files.exists(folderXml))
                     {
                         FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, null, new StaticLoggerGetter(LOG), null);
                         FolderDocument folderDoc = folderCtx.getDocument();
                         if (folderDoc.getFolder().getStudy() != null && folderDoc.getFolder().getStudy().getDir() != null)
                         {
-                            studyXml = root.resolvePath("/" + folderDoc.getFolder().getStudy().getDir() + "/study.xml");
+                            studyXml = root.resolveRelativePath("/" + folderDoc.getFolder().getStudy().getDir() + "/study.xml");
                         }
                     }
                 }
                 if (studyXml != null)
-                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root, options));
+                    PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getFileName().toString(), errors, root, options));
                 else
                     LOG.error("Study.xml does not exist in the analysis directory or pipeline root.");
             }

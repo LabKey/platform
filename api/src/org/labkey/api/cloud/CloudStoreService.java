@@ -15,12 +15,18 @@
  */
 package org.labkey.api.cloud;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.study.xml.StudyDocument;
+import org.springframework.validation.BindException;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -46,6 +52,8 @@ public interface CloudStoreService
     {
         ServiceRegistry.get().registerService(CloudStoreService.class, impl);
     }
+
+    Path downloadExpandedArchive(PipelineJob job) throws PipelineJobException;
 
     class StoreInfo
     {
@@ -151,6 +159,12 @@ public interface CloudStoreService
      */
     @Nullable
     Path getPathFromUrl(Container container, String url);
+
+    /**
+     * Return nio.Path matching url (which has bucket, etc.)
+     */
+    @Nullable
+    Path getPathFromUrl(String url);
 
     /**
      * Return nio.Path for otherContainer, given a cloud url/container

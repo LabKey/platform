@@ -402,6 +402,13 @@ public class PipeRootImpl implements PipeRoot
         return null;
     }
 
+    /**
+     * Get a local directory that can be used for importing (Read/Write)
+     *
+     * Cloud: Uses temp directory
+     * Default: Uses file root
+     * @return
+     */
     @Override
     @NotNull
     public File getImportDirectory()
@@ -414,24 +421,15 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException
+    public Path deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
-        File importDir = getImportDirectory();
-
-        if (importDir.exists() && !FileUtil.deleteDir(importDir))
-            throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
-
-        return importDir;
-    }
-
-    @Override
-    public void deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
-    {
-        File importDir = getImportDirectory();
-        if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
+        Path importDir = getImportDirectory().toPath();
+        if (Files.exists(importDir) && !FileUtil.deleteDir(importDir, logger))
         {
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
+
+        return importDir;
     }
 
     @Override
@@ -609,12 +607,12 @@ public class PipeRootImpl implements PipeRoot
             {
                 if (null != uri && StringUtils.isNotBlank(uri.toString()) && !FileUtil.hasCloudScheme(uri))
                 {
-                    File rootPath = new File(uri);
+                    Path rootPath = Path.of(uri);
                     if (!NetworkDrive.exists(rootPath))
                     {
                         result.add("Pipeline root does not exist.");
                     }
-                    else if (!rootPath.isDirectory())
+                    else if (!Files.isDirectory(rootPath))
                     {
                         result.add("Pipeline root is not a directory.");
                     }
