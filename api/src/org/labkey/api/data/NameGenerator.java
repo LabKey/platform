@@ -770,11 +770,11 @@ public class NameGenerator
 
             long count = _counterSequences.get(prefix).next();
 
-            Object countStr = String.valueOf(count);
+            Object countStr;
             if (_counterFormat != null)
-            {
                 countStr = _counterFormat.format(count);
-            }
+            else
+                countStr = String.valueOf(count);
 
             return prefix + countStr;
         }
@@ -870,6 +870,23 @@ public class NameGenerator
                 String s = se.eval(m);
                 assertEquals("2011-337", s);
             }
+
+            {
+                // invalid date format
+                StringExpression se = NameGenerationExpression.create("${d:date('yyy-MMMMM-dd')}", false);
+                String s = se.eval(m);
+                assertEquals("2011-D-03", s);
+            }
+
+            {
+                // parse a non date value
+                StringExpression se = NameGenerationExpression.create("${d:date('yyy-MM-dd')}", false);
+                Map<Object, Object> m2 = new HashMap<>();
+                m.put("d", "Not a date");
+                String s = se.eval(m2);
+                assertNull(s);
+            }
+
         }
 
         @Test
@@ -889,6 +906,32 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${d:number('000000000')}", false);
                 String s = se.eval(m);
                 assertEquals("000123457", s);
+            }
+
+            {
+                // invalid number format
+                StringExpression se = NameGenerationExpression.create("${d:number('abcde')}", false);
+                String s = se.eval(m);
+                assertEquals("abcde123457", s);
+
+            }
+
+            {
+                // parse a non number
+                try
+                {
+                    Map<Object, Object> m2 = new HashMap<>();
+                    m2.put("d", "not a number");
+
+                    StringExpression se = NameGenerationExpression.create("${d:number('0.00')}", false);
+                    se.eval(m2);
+                    fail("Expected exception");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // ok
+                }
+
             }
         }
 
@@ -986,6 +1029,7 @@ public class NameGenerator
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "..");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "...");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '.' + sourceMeta + ".");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + ".mouse2.");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '-');
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '-' + sourceMeta + "-");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '_');
@@ -1028,6 +1072,15 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("S100.mouse1.1", s);
+                s = se.eval(m);
+                assertEquals("S100.mouse1.2", s);
+
+                Map<Object, Object> m2 = new HashMap<>();
+                m2.put("AliquotedFrom", aliquotedFrom);
+                m2.put("SourceMeta", "mouse2");
+
+                s = se.eval(m2);
+                assertEquals("S100.mouse2.1", s);
             }
 
             {
@@ -1058,6 +1111,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("S100_1", s);
+                s = se.eval(m);
+                assertEquals("S100_2", s);
             }
 
             {

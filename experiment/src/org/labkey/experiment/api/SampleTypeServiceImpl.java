@@ -617,7 +617,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Validate the aliquot name expression length
         int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
         if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
-            throw new ExperimentException("Aliquot Name expression may not exceed " + aliquotNameExpMax + " characters.");
+            throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();

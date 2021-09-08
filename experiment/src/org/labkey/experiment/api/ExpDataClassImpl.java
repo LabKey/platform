@@ -378,35 +378,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public Function<String, Long> getMaxDataCounterFunction()
     {
-        String dataclassLsid = getLSID();
-        Container container = getContainer();
-        return (dataNamePrefix) ->
-        {
-            long max = 0;
-
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addCondition(FieldKey.fromParts("CpasType"), dataclassLsid);
-            filter.addCondition(FieldKey.fromParts("Name"), dataNamePrefix, STARTS_WITH);
-
-            TableSelector selector = new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Collections.singleton("Name"), filter, null);
-            final List<String> dataNames = new ArrayList<>();
-            selector.forEach(String.class, fullname -> dataNames.add(fullname.replace(dataNamePrefix, "")));
-
-            for (String dataName : dataNames)
-            {
-                try
-                {
-                    long id = Long.parseLong(dataName);
-                    if (id > max)
-                        max = id;
-                }
-                catch (NumberFormatException ignored) {
-                    ;
-                }
-            }
-
-            return max;
-        };
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoData());
     }
 
 }

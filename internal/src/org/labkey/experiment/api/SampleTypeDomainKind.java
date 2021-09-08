@@ -355,7 +355,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         int aliquotNameExpMax = materialSourceTI.getColumn("AliquotNameExpression").getScale();
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()) && options.getAliquotNameExpression().length() > aliquotNameExpMax)
-            throw new IllegalArgumentException("Value for Aliquot Name Expression field may not exceed " + nameExpMax + " characters.");
+            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + nameExpMax + " characters.");
 
         int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)

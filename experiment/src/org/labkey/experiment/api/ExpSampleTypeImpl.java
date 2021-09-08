@@ -808,34 +808,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public Function<String, Long> getMaxSampleCounterFunction()
     {
-        String sampleTypeLsid = getLSID();
-        Container container = getContainer();
-        return (sampleNamePrefix) ->
-        {
-            long max = 0;
-
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addCondition(FieldKey.fromParts("cpastype"), sampleTypeLsid);
-            filter.addCondition(FieldKey.fromParts("Name"), sampleNamePrefix, STARTS_WITH);
-
-            TableSelector selector = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("Name"), filter, null);
-            final List<String> sampleIds = new ArrayList<>();
-            selector.forEach(String.class, fullname -> sampleIds.add(fullname.replace(sampleNamePrefix, "")));
-
-            for (String sampleId : sampleIds)
-            {
-                try
-                {
-                    long id = Long.parseLong(sampleId);
-                    if (id > max)
-                        max = id;
-                }
-                catch (NumberFormatException ignored) {
-                    ;
-                }
-            }
-
-            return max;
-        };
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoMaterial());
     }
 }
