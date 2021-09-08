@@ -259,7 +259,8 @@ public class LinkedSchema extends ExternalSchema
             if (_availableQueries.contains(key) && (nameFilter == null || nameFilter.equalsIgnoreCase(key)))
             {
                 QueryDefinition queryDef = queries.get(key);
-                TableInfo table = queryDef.getTable(new ArrayList<>(), true);
+                var sourceErrors = new ArrayList<QueryException>();
+                TableInfo table = queryDef.getTable(sourceErrors, true);
                 if (table != null)
                 {
                     // Apply any filters that might have been specified in the schema linking process
@@ -277,6 +278,12 @@ public class LinkedSchema extends ExternalSchema
 
                     // Create a wrapper that knows how to apply the rest of the metadata correctly
                     LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, filteredQueryDef, extraMetadata);
+                    ret.put(key, wrappedQueryDef);
+                }
+                else if (!sourceErrors.isEmpty())
+                {
+                    // Issue 43860: Stash the source query errors to report them later
+                    LinkedSchemaQueryDefinition wrappedQueryDef = new LinkedSchemaQueryDefinition(this, sourceErrors, key);
                     ret.put(key, wrappedQueryDef);
                 }
             }
