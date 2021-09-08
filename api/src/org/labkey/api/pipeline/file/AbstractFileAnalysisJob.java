@@ -42,6 +42,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * <code>AbstractFileAnalysisJob</code>
@@ -62,11 +65,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private String _protocolName;
     private String _joinedBaseName;
     private String _baseName;
-    private File _dirData;
-    private File _dirAnalysis;
-    private File _fileParameters;
-    private File _fileJobInfo;
-    private List<File> _filesInput;
+    private Path _dirData;
+    private Path _dirAnalysis;
+    private Path _fileParameters;
+    private Path _fileJobInfo;
+    private List<Path> _filesInput;
     private List<FileType> _inputTypes;
     private boolean _splittable = true;
 
@@ -78,6 +81,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     // For serialization
     protected AbstractFileAnalysisJob() {}
 
+    @Deprecated //Prefer the Path version, retained for backwards compatbility
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
                                    String providerName,
                                    ViewBackgroundInfo info,
@@ -88,27 +92,50 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
                                    boolean splittable,
                                    boolean writeJobInfoFile) throws IOException
     {
+        this(
+                protocol,
+                providerName,
+                info,
+                root,
+                protocolName,
+                fileParameters.toPath(),
+                filesInput.stream().map(File::toPath).collect(Collectors.toList()),
+                splittable,
+                writeJobInfoFile
+        );
+    }
+
+    public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
+                                   String providerName,
+                                   ViewBackgroundInfo info,
+                                   PipeRoot root,
+                                   String protocolName,
+                                   Path fileParameters,
+                                   List<Path> filesInput,
+                                   boolean splittable,
+                                   boolean writeJobInfoFile) throws IOException
+    {
         super(providerName, info, root);
 
         _filesInput = filesInput;
         _inputTypes = FileType.findTypes(protocol.getInputTypes(), _filesInput);
-        _dirData = filesInput.get(0).getParentFile();
+        _dirData = filesInput.get(0).getParent();
         _protocolName = protocolName;
 
         _fileParameters = fileParameters;
         getActionSet().add(_fileParameters, ANALYSIS_PARAMETERS_ROLE_NAME); // input
-        _dirAnalysis = _fileParameters.getParentFile();
+        _dirAnalysis = _fileParameters.getParent();
 
         // Load parameter files
         _parametersOverrides = getInputParameters().getInputParameters();
 
         // Check for explicitly set default parameters.  Otherwise use the default.
         String paramDefaults = _parametersOverrides.get("list path, default parameters");
-        File fileDefaults;
+        Path fileDefaults;
         if (paramDefaults != null)
-            fileDefaults = getPipeRoot().resolvePath(paramDefaults);
+            fileDefaults = getPipeRoot().resolveToNioPath(paramDefaults);
         else
-            fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
+            fileDefaults = protocol.getFactory().getDefaultParametersFile(root).toPath();
 
         _parametersDefaults = getInputParameters(fileDefaults).getInputParameters();
 
@@ -129,7 +156,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             _baseName = protocol.getBaseName(_filesInput.get(0));
         }
 
-        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
+        setLogFilePath(FT_LOG.newFile(_dirAnalysis, _baseName));
 
         // CONSIDER: Remove writing out jobInfo file completely
 //        // Write out job information
@@ -163,10 +190,10 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _joinedBaseName = job._joinedBaseName;
 
         // Change parameters which are specific to the fraction job.
-        _filesInput = filesInput;
+        _filesInput = filesInput.stream().map(File::toPath).collect(Collectors.toList());
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
         _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
-        setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
+        setLogFilePath(FT_LOG.newFile(_dirAnalysis, _baseName));
 
         // CONSIDER: Remove writing out jobInfo file completely
         // If parent job wrote a job info file, assume the child should too
@@ -250,7 +277,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     public List<String> getSplitBaseNames()
     {
         ArrayList<String> baseNames = new ArrayList<>();
-        for (File fileInput : _filesInput)
+        for (Path fileInput : _filesInput)
         {
             for (FileType ft : _inputTypes)
             {
@@ -269,7 +296,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     {
         if (fileType != null)
         {
-            for (File fileInput : _filesInput)
+            for (Path fileInput : _filesInput)
             {
                 if (fileType.isType(fileInput))
                     return fileType.getBaseName(fileInput);
@@ -282,11 +309,17 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public File getDataDirectory()
     {
-        return _dirData;
+        return _dirData.toFile();
     }
 
     @Override
     public File getAnalysisDirectory()
+    {
+        return _dirAnalysis.toFile();
+    }
+
+    @Override
+    public Path getAnalysisDirectoryPath()
     {
         return _dirAnalysis;
     }
@@ -330,6 +363,12 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Override
     public List<File> getInputFiles()
     {
+        return getInputFilePaths().stream().map(Path::toFile).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Path> getInputFilePaths()
+    {
         return _filesInput;
     }
 
@@ -337,13 +376,21 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     @Nullable
     public File getJobInfoFile()
     {
+        return _fileJobInfo.toFile();
+    }
+
+
+    @Override
+    @Nullable
+    public Path getJobInfoFilePath()
+    {
         return _fileJobInfo;
     }
 
     @Override
     public File getParametersFile()
     {
-        return _fileParameters;
+        return _fileParameters.toFile();
     }
 
     @Override
@@ -372,28 +419,28 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         return getInputParameters(_fileParameters);
     }
 
-    public ParamParser getInputParameters(File parametersFile) throws IOException
+    public ParamParser getInputParameters(Path parametersFile) throws IOException
     {
         ParamParser parser = createParamParser();
-        parser.parse(new FileInputStream(parametersFile));
+        parser.parse(Files.newInputStream(parametersFile));
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
             if (err.getLine() == 0)
             {
-                throw new IOException("Failed parsing input xml '" + parametersFile.getPath() + "'.\n" +
+                throw new IOException("Failed parsing input xml '" + parametersFile.toString() + "'.\n" +
                         err.getMessage());
             }
             else
             {
-                throw new IOException("Failed parsing input xml '" + parametersFile.getPath() + "'.\n" +
+                throw new IOException("Failed parsing input xml '" + parametersFile.toString() + "'.\n" +
                         "Line " + err.getLine() + ": " + err.getMessage());
             }
         }
         return parser;
     }
 
-    private void logParameters(String description, File file, Map<String, String> parameters)
+    private void logParameters(String description, Path file, Map<String, String> parameters)
     {
         _log.debug(description + " " + parameters.size() + " parameters (" + file + "):");
         for (Map.Entry<String, String> entry : new TreeMap<>(parameters).entrySet())

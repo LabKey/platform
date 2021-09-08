@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -26,10 +27,10 @@ import java.util.zip.ZipInputStream;
 public class CompressedInputStreamXarSource extends AbstractFileXarSource
 {
     private final InputStream _xarInputStream;
-    private final File _logFile;
+    private final Path _logFile;
     private String _xml;
 
-    public CompressedInputStreamXarSource(InputStream xarInputStream, File xarFile, File logFile, PipelineJob job)
+    public CompressedInputStreamXarSource(InputStream xarInputStream, Path xarFile, Path logFile, PipelineJob job)
     {
         super(job.getDescription(), job.getContainer(), job.getUser(), job);
         _xarInputStream = xarInputStream;
@@ -80,7 +81,14 @@ public class CompressedInputStreamXarSource extends AbstractFileXarSource
     }
 
     @Override
-    public File getLogFile() throws IOException
+    public File getLogFile()
+    {
+        return _logFile.toFile();
+    }
+
+
+    @Override
+    public Path getLogFilePath()
     {
         return _logFile;
     }

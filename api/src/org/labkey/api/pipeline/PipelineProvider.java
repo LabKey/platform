@@ -302,6 +302,7 @@ abstract public class PipelineProvider
             return action.getName();
     }
 
+    @Deprecated //Prefer List<Path> version
     protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, File[] files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
@@ -311,6 +312,7 @@ abstract public class PipelineProvider
         entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
     }
 
+    @Deprecated //Prefer List<Path> version
     protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, File[] files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
@@ -322,6 +324,15 @@ abstract public class PipelineProvider
 //        actionURL.addParameter("gwt.codesvr", "127.0.0.1:9997");
         directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
       }
+
+    protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, List<Path> files,
+                             boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
+    {
+        if (!includeAll && (files == null || files.size() == 0))
+            return;
+
+        entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
+    }
 
     protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, List<Path> files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)

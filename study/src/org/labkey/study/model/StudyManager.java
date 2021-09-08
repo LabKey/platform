@@ -3455,6 +3455,7 @@ public class StudyManager
     /**
      * @deprecated pass in a DataIteratorContext instead of individual options
      */
+    @Deprecated
     public List<String> importDatasetData(User user, DatasetDefinition def,
                                           DataLoader loader,
                                           Map<String, String> columnMap,
@@ -3497,6 +3498,7 @@ public class StudyManager
     /**
      * @deprecated pass in a DataIteratorContext instead of individual options
      */
+    @Deprecated
     public List<String> importDatasetData(User user, DatasetDefinition def,
                                           List<Map<String, Object>> data,
                                           BatchValidationException errors,

@@ -21,9 +21,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Factory methods to create PrintWriters, ensuring standard character sets and buffering by default.
@@ -51,9 +54,26 @@ public class PrintWriters
      */
     public static PrintWriter getPrintWriter(File file) throws FileNotFoundException
     {
-        return new StandardPrintWriter(file);
+        return getPrintWriter(file.toPath());
     }
 
+    /**
+     * Create a standard PrintWriter, with standard character set and buffering, for output to a File
+     *
+     * @param file Path destination for the new PrintWriter
+     * @return A standard, buffered PrintWriter targeting the File
+     */
+    public static PrintWriter getPrintWriter(Path file)
+    {
+        try
+        {
+            return new StandardPrintWriter(Files.newOutputStream(file));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("Error creating Output file writer: ", e);
+        }
+    }
 
     // Use factory methods above, unless you really need to subclass
     public static class StandardPrintWriter extends PrintWriter

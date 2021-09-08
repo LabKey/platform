@@ -211,9 +211,16 @@ public class PipelinePathForm extends ViewForm
     }
 
     /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
+    @Deprecated //prefer the nio.Path version: getValidatedSinglePath
     public File getValidatedSingleFile(Container c)
     {
-        List<File> files = getValidatedFiles(c);
+        return getValidatedSinglePath(c).toFile();
+    }
+
+    /** Verifies that only a single file was selected and returns it, throwing an exception if there isn't exactly one */
+    public Path getValidatedSinglePath(Container c)
+    {
+        List<Path> files = getValidatedPaths(c, false);
         if (files.size() != 1)
         {
             throw new IllegalArgumentException("Expected a single file but got " + files.size());

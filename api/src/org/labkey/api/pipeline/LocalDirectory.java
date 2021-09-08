@@ -44,7 +44,7 @@ public class LocalDirectory implements Serializable
     @NotNull private final File _localDirectoryFile;
     private final boolean _isTemporary;
     private final PipeRoot _pipeRoot;
-    private File _logFile;
+    private Path _logFile;
     private final String _baseLogFileName;
     private final String _moduleName;
 
@@ -112,22 +112,22 @@ public class LocalDirectory implements Serializable
         return _localDirectoryFile;
     }
 
-    public File determineLogFile()
+    public Path determineLogFile()
     {
         // If _isTemporary, look for existing file in the parent
-        _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _baseLogFileName);
+        _logFile = PipelineJob.FT_LOG.newFile(_localDirectoryFile, _baseLogFileName).toPath();
         if (_isTemporary && null != _pipeRoot)
         {
             try
             {
-                Path remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getName());
+                Path remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getFileName().toString());
                 if (null != remoteLogFilePath && Files.exists(remoteLogFilePath))
                 {
-                    Files.copy(remoteLogFilePath, _logFile.toPath());
+                    Files.copy(remoteLogFilePath, _logFile);
                 }
                 else
                 {
-                    Files.createFile(_logFile.toPath());
+                    Files.createFile(_logFile);
                 }
             }
             catch (IOException e)
@@ -138,7 +138,7 @@ public class LocalDirectory implements Serializable
         return _logFile;
     }
 
-    public File restore()
+    public Path restore()
     {
         try
         {
@@ -241,15 +241,15 @@ public class LocalDirectory implements Serializable
         Path remoteLogFilePath = null;
         if (_isTemporary && Files.exists(_localDirectoryFile.toPath()))
         {
-            if (null != _logFile && Files.exists(_logFile.toPath()))
+            if (null != _logFile && Files.exists(_logFile))
             {
                 // Copy file back to the cloud
-                remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getName());
+                remoteLogFilePath = _pipeRoot.resolveToNioPath(_logFile.getFileName().toString());
                 if (null != remoteLogFilePath)
                 {
                     try
                     {
-                        Files.copy(_logFile.toPath(), remoteLogFilePath, StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(_logFile, remoteLogFilePath, StandardCopyOption.REPLACE_EXISTING);
                     }
                     catch (IOException e)
                     {

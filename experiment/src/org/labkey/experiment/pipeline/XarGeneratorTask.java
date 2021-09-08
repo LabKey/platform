@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment.pipeline;
 
-import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
@@ -41,9 +40,13 @@ import org.labkey.experiment.DataURLRelativizer;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -102,10 +105,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return Collections.emptyList();
         }
 
-        protected File getXarFile(PipelineJob job)
+        protected Path getXarFile(PipelineJob job)
         {
             FileAnalysisJobSupport jobSupport = job.getJobSupport(FileAnalysisJobSupport.class);
-            return getOutputType().newFile(jobSupport.getAnalysisDirectory(), jobSupport.getBaseName());
+            return getOutputType().newFile(jobSupport.getAnalysisDirectoryPath(), jobSupport.getBaseName());
         }
 
         @Override
@@ -156,7 +159,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             Set<ExpRun> importedRuns = new HashSet<>();
             if (_factory.isLoadFiles())
             {
-                File permanentXAR = _factory.getXarFile(getJob());
+                Path permanentXAR = _factory.getXarFile(getJob());
                 if (NetworkDrive.exists(permanentXAR))
                 {
                     // Be sure that it's been imported (and not already deleted from the database)
@@ -173,7 +176,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     // Load the data files for this run
                     importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false));
 
-                    getLoadingXarFile().renameTo(permanentXAR);
+                    Files.move(getLoadingXarFile(), permanentXAR);
                 }
             }
             else
@@ -211,6 +214,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         {
             throw new PipelineJobException("Failed to import data files", e);
         }
+        catch (IOException e)
+        {
+            throw new PipelineJobException("Unable to read data files", e);
+        }
         return new RecordedActionSet();
     }
 
@@ -218,36 +225,30 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     @Override
     public void writeToDisk(ExpRun run) throws PipelineJobException
     {
-        File f = getLoadingXarFile();
-        File tempFile = new File(f.getPath() + ".temp");
+        Path f = getLoadingXarFile();
+        Path tempFile = f.getParent().resolve(f.getFileName().toString() + ".temp");
 
-        FileOutputStream fOut = null;
         try
         {
             XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, DataURLRelativizer.RUN_RELATIVE_LOCATION.createURLRewriter(), getJob().getUser());
             exporter.addExperimentRun(run);
 
-            fOut = new FileOutputStream(tempFile);
-            exporter.dumpXML(fOut);
-            fOut.close();
-            FileUtils.moveFile(tempFile, f);
-            fOut = null;
+            try (OutputStream fOut = new BufferedOutputStream(Files.newOutputStream(tempFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE)))
+            {
+                exporter.dumpXML(fOut);
+                fOut.close();
+                Files.move(tempFile, f, StandardCopyOption.ATOMIC_MOVE);
+            }
         }
         catch (ExperimentException | IOException e)
         {
             throw new PipelineJobException("Failed to write XAR to disk", e);
         }
-        finally
-        {
-            if (fOut != null)
-            {
-                try { fOut.close(); } catch (IOException ignored) {}
-            }
-        }
     }
 
-    private File getLoadingXarFile()
+    private Path getLoadingXarFile()
     {
-        return new File(_factory.getXarFile(getJob()) + ".loading");
+        Path xarPath = _factory.getXarFile(getJob());
+        return xarPath.resolve(xarPath + ".loading");
     }
 }

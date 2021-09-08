@@ -27,6 +27,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.File;
+import java.nio.file.Path;
 
 /**
  * User: klum
@@ -59,7 +60,15 @@ public class SampleMindedTransform implements SpecimenTransform
     }
 
     @Override
+    @Deprecated //Prefer the Path version
     public void transform(@Nullable PipelineJob job, File input, File outputArchive) throws PipelineJobException
+    {
+        //This should be safe since the File --> Path conversion is fairly safe
+        transform(job, input.toPath(), outputArchive.toPath());
+    }
+
+    @Override
+    public void transform(@Nullable PipelineJob job, Path input, Path outputArchive) throws PipelineJobException
     {
         SampleMindedTransformTask task = new SampleMindedTransformTask(job);
         task.transform(input, outputArchive);

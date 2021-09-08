@@ -43,6 +43,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
@@ -179,7 +180,7 @@ public interface StudyService
 
     Set<? extends Study> getAllStudies(Container root);
 
-    boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
+    boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options);
 
     ColumnInfo createAlternateIdColumn(TableInfo ti, ColumnInfo column, Container c);
 

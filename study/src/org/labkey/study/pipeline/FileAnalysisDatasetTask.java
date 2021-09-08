@@ -140,7 +140,9 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
         @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), null, new PipelineJobLoggerGetter(job));
+            StudyImportContext ctx = new StudyImportContext.Builder(job.getUser(), job.getContainer())
+                    .withLogger(new PipelineJobLoggerGetter(job))
+                    .build();
             return new FileAnalysisDatasetTask(this, job, ctx);
         }
     }

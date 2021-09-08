@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
@@ -35,7 +36,7 @@ import org.labkey.experiment.XarReader;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.folder.xml.FolderDocument.Folder;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -104,7 +105,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 throw e;
             }
 
-            File xarFile = xarSourceWrapper.getXarFile();
+            Path xarFile = xarSourceWrapper.getXarFile();
             if (xarFile == null)
             {
                 ctx.getLogger().error("Could not find a xar file in the xar directory.");
@@ -124,7 +125,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
                 job = new ExperimentPipelineJob(bgInfo, xarFile, "Xar import", false, pipeRoot)
                 {
                     @Override
-                    protected XarSource createXarSource(File file)
+                    protected XarSource createXarSource(Path file)
                     {
                         // Assume this is a .xar or a .zip file
                         return xarSourceWrapper.getXarSource(this);
@@ -176,7 +177,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         private final VirtualFile _xarDir;
         private final ImportContext<Folder> _importContext;
 
-        private File _xarFile;
+        private Path _xarFile;
         private CompressedXarSource _xarSource;
 
         public FolderExportXarSourceWrapper(VirtualFile xarDir, ImportContext<Folder> ctx)
@@ -196,13 +197,13 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             {
                 if (file.toLowerCase().endsWith(".xar"))
                 {
-                    _xarFile = new File(_xarDir.getLocation(), file);
+                    _xarFile = FileUtil.getPath(_importContext.getContainer(), FileUtil.createUri(_xarDir.getLocation())).resolve(file);
                     break;
                 }
             }
         }
 
-        public File getXarFile()
+        public Path getXarFile()
         {
             return _xarFile;
         }
