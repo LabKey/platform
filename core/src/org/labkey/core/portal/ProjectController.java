@@ -1495,17 +1495,20 @@ public class ProjectController extends SpringActionController
                 List<Map<String, Object>> containerJSON = new ArrayList<>();
                 for (Container c : containers)
                 {
-                    if (c != null)
+                    if (c != null && c.hasPermission(user, ReadPermission.class)) // 43853
                         containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
                 }
-                resultMap = Collections.singletonMap("containers", containerJSON);
+                if (containerJSON.size() > 0)
+                    resultMap = Collections.singletonMap("containers", containerJSON);
+                else
+                    resultMap = Collections.emptyMap();
             }
             else
             {
                 Container c = getContainer();
                 if (form.getContainer() != null && form.getContainer().length > 0)
                     c = form.getContainer()[0];
-                if (null != c) // 17166
+                if (null != c && c.hasPermission(user, ReadPermission.class)) // 17166, 43853
                     resultMap = getContainerJSON(c, user, propertiesToSerialize);
                 else
                     resultMap = Collections.emptyMap();
