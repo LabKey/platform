@@ -198,7 +198,7 @@ public class DbSchema
     {
         final Map<String, SchemaTableInfoFactory> schemaTableInfoFactoryMap = new CaseInsensitiveHashMap<>();
 
-        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope, schemaName, "%"))
+        try (JdbcMetaDataLocator locator = scope.getSqlDialect().getJdbcMetaDataLocator(scope).singleSchema(schemaName).allTables())
         {
             new TableMetaDataLoader(locator, ignoreTemp)
             {
@@ -240,7 +240,7 @@ public class DbSchema
         {
             final SqlDialect dialect = _locator.getScope().getSqlDialect();
 
-            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, (dbmd, locator) -> dbmd.getTables(locator.getCatalogName(), locator.getSchemaName(), locator.getTableName(), locator.getTableTypes()));
+            JdbcMetaDataSelector selector = new JdbcMetaDataSelector(_locator, (dbmd, locator) -> dbmd.getTables(locator.getCatalogName(), locator.getSchemaNamePattern(), locator.getTableNamePattern(), locator.getTableTypes()));
 
             selector.forEach(rs -> {
                 String tableName = rs.getString("TABLE_NAME").trim();

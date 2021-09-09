@@ -1410,10 +1410,10 @@ public class QueryController extends SpringActionController
 
                 result.addView(scopeInfo);
 
-                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _dbSchemaName, _dbTableName))
+                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope).singleSchema(_dbSchemaName).singleTable(_dbTableName))
                 {
                     JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
-                            (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
+                            (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaNamePattern(), l.getTableNamePattern(), null));
                     result.addView(new ResultSetView(CachedResultSets.create(columnSelector.getResultSet(), true, Table.ALL_ROWS), "Table Meta Data"));
 
                     JdbcMetaDataSelector pkSelector = new JdbcMetaDataSelector(locator,
@@ -1477,10 +1477,10 @@ public class QueryController extends SpringActionController
 
             ModelAndView tablesView;
 
-            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, dbSchemaName, null))
+            try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope).singleSchema(dbSchemaName).allTables())
             {
                 JdbcMetaDataSelector selector = new JdbcMetaDataSelector(locator,
-                    (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaName(), locator1.getTableName(), null));
+                    (dbmd, locator1) -> dbmd.getTables(locator1.getCatalogName(), locator1.getSchemaNamePattern(), locator1.getTableNamePattern(), null));
 
                 ActionURL url = new ActionURL(RawTableMetaDataAction.class, getContainer());
                 url.addParameter("schemaName", _schemaName);

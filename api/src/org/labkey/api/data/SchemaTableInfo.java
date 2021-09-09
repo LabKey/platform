@@ -39,9 +39,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
-
-import org.labkey.api.query.column.BuiltInColumnTypes;
-
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -215,7 +212,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public String getMetaDataName()
+    public String getMetaDataName() // TODO: Mark @NotNull?
     {
         return _metaDataName;
     }
