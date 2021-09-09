@@ -43,9 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
-import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
-
 /**
  * User: klum
  * Date: Oct 12, 2011
