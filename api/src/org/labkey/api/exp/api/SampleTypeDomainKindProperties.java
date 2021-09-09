@@ -32,6 +32,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
             this.description = st.getDescription();
             this.idCols = Collections.emptyList();
             this.autoLinkTargetContainerId = null != st.getAutoLinkTargetContainer() ? st.getAutoLinkTargetContainer().getId() : "";
+            this.autoLinkCategory = st.getAutoLinkCategory();
             if (st.hasIdColumns())
             {
                 this.idCols = st.getIdCols().stream().map(col -> col.getPropertyId()).collect(Collectors.toList());
@@ -57,6 +58,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private String lsid;
     private List<Integer> idCols;
     private String autoLinkTargetContainerId;
+    private String autoLinkCategory;
     private Integer parentCol;
 
     //Ignored on import/save, use Domain.name & Domain.description instead
@@ -178,6 +180,16 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
     {
         this.autoLinkTargetContainerId = autoLinkTargetContainerId;
+    }
+
+    public String getAutoLinkCategory()
+    {
+        return autoLinkCategory;
+    }
+
+    public void setAutoLinkCategory(String autoLinkCategory)
+    {
+        this.autoLinkCategory = autoLinkCategory;
     }
 
     public Integer getParentCol()

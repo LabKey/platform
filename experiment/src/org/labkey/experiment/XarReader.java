@@ -514,6 +514,11 @@ public class XarReader extends AbstractXarImporter
             materialSource.setAutoLinkTargetContainer(ContainerManager.getForId(sampleSet.getAutoLinkTargetContainerId()));
         }
 
+        if (sampleSet.isSetAutoLinkCategory())
+        {
+            materialSource.setAutoLinkCategory(sampleSet.getAutoLinkCategory());
+        }
+
         SampleSetType.ParentImportAlias parentImportAlias = sampleSet.getParentImportAlias();
         if (parentImportAlias != null)
         {

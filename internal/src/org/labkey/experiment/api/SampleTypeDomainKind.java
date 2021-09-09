@@ -435,6 +435,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         String labelColor = null;
         String metricUnit = null;
         Container autoLinkTargetContainer = null;
+        String autoLinkCategory = null;
         Map<String, String> aliases = null;
 
         if (arguments != null)
@@ -450,12 +451,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             labelColor = StringUtils.trimToNull(arguments.getLabelColor());
             metricUnit = StringUtils.trimToNull(arguments.getMetricUnit());
             autoLinkTargetContainer = ContainerManager.getForId(arguments.getAutoLinkTargetContainerId());
+            autoLinkCategory = StringUtils.trimToNull(arguments.getAutoLinkCategory());
             aliases = arguments.getImportAliases();
         }
         ExpSampleType st;
         try
         {
-            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer);
+            st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory);
         }
         catch (SQLException e)
         {
