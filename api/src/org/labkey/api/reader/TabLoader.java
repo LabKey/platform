@@ -136,7 +136,7 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
+        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
