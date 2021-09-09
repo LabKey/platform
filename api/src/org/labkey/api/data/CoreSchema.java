@@ -153,9 +153,15 @@ public class CoreSchema
         return getSchema().getTable("Notifications");
     }
 
+    // Maintain for backward compatibility
     public TableInfo getTableInfoQCState()
     {
-        return getSchema().getTable("QCState");
+        return getSchema().getTable("DataStates");
+    }
+
+    public TableInfo getTableInfoDataStates()
+    {
+        return getSchema().getTable("DataStates");
     }
 
     public TableInfo getTableAPIKeys()
