@@ -33,6 +33,7 @@ public interface ExpSampleTypeTable extends ExpTable<ExpSampleTypeTable.Column>
         LabelColor,
         MetricUnit,
         AutoLinkTargetContainer,
+        AutoLinkCategory,
         MaterialLSIDPrefix,
         Created,
         Modified,

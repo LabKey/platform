@@ -1,2 +1,1 @@
-ALTER TABLE exp.MaterialSource ADD AliquotNameExpression NVARCHAR(200) NULL;
-GO
+ALTER TABLE exp.MaterialSource ADD AutoLinkCategory VARCHAR(200) NULL;
