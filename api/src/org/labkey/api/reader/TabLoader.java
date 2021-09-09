@@ -98,7 +98,7 @@ public class TabLoader extends DataLoader
     public static class CsvFactory extends AbstractDataLoaderFactory
     {
         @NotNull @Override
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public TabLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
@@ -106,8 +106,8 @@ public class TabLoader extends DataLoader
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        // A TabLoader created with this constructor does NOT close the reader
+        public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
@@ -121,21 +121,26 @@ public class TabLoader extends DataLoader
     public static class CsvFactoryNoConversions extends CsvFactory
     {
         @NotNull @Override
-        public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        public TabLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
+            TabLoader loader = super.createLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            return configParsing(loader);
+        }
 
-            DataLoader loader = super.createLoader(file, hasColumnHeaders, mvIndicatorContainer);
+        private TabLoader configParsing(TabLoader loader)
+        {
             loader.setInferTypes(false);
+            // Issue 43661 - Excessive logging when indexing a .log file containing backslash followed by "u" that confuses TabLoader
+            loader.setUnescapeBackslashes(false);
             return loader;
         }
 
         @NotNull @Override
-        // A DataLoader created with this constructor does NOT close the reader
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+        // A TabLoader created with this constructor does NOT close the reader
+        public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            DataLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
-            loader.setInferTypes(false);
-            return loader;
+            TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
+            return configParsing(loader);
         }
 
         @NotNull @Override
@@ -180,7 +185,7 @@ public class TabLoader extends DataLoader
     private TabBufferedReader _reader = null;
     private int _commentLines = 0;
     private char _chDelimiter = '\t';
-    private String _strDelimiter = new String(new char[]{_chDelimiter});
+    private String _strDelimiter = String.valueOf(_chDelimiter);
     private String _lineDelimiter = null;
 
     private String _strQuote = null;
@@ -417,7 +422,7 @@ public class TabLoader extends DataLoader
             {
                 if (_strQuote == null)
                 {
-                    _strQuote = new String(new char[] {chQuote});
+                    _strQuote = String.valueOf(chQuote);
                     _strQuoteQuote = new String(new char[] {chQuote, chQuote});
                     _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
                 }
@@ -502,7 +507,7 @@ public class TabLoader extends DataLoader
             start = end;
         }
 
-        return listParse.toArray(new String[listParse.size()]);
+        return listParse.toArray(new String[0]);
     }
 
     @Deprecated // Just use a CloseableFilteredIterator.  TODO: Remove
@@ -547,7 +552,7 @@ public class TabLoader extends DataLoader
     public void setDelimiterCharacter(char delimiter)
     {
         _chDelimiter = delimiter;
-        _strDelimiter = new String(new char[]{_chDelimiter});
+        _strDelimiter = String.valueOf(_chDelimiter);
     }
 
     public void setDelimiters(@NotNull String field, @Nullable String line)
