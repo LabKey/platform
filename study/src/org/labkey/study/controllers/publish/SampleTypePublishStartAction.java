@@ -34,6 +34,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         private String _containerFilterName;
         private boolean _sampleTypeIds;
         private Integer _rowId;
+        private boolean _isAutoLinkEnabled;
 
         @Override
         public String getDataRegionSelectionKey()
@@ -55,7 +56,12 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         @Override
         public boolean isAutoLinkEnabled()
         {
-            return false; // ToDo for Rosaline in SampleType followup story
+            return _isAutoLinkEnabled;
+        }
+
+        public void setAutoLinkEnabled(boolean autoLinkEnabled)
+        {
+            _isAutoLinkEnabled = autoLinkEnabled;
         }
 
         public void setContainerFilterName(String containerFilterName)
@@ -114,6 +120,7 @@ public class SampleTypePublishStartAction extends AbstractPublishStartAction<Sam
         {
             _ids = getCheckboxIds(getViewContext());
             _sampleType = SampleTypeService.get().getSampleType(form.getContainer(), form.getUser(), form.getRowId());
+            form.setAutoLinkEnabled(_sampleType.getAutoLinkCategory() != null);
         }
         return _ids;
     }

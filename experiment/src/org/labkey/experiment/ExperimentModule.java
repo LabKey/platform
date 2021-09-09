@@ -158,7 +158,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.010;
+        return 21.011;
     }
 
     @Nullable

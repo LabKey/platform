@@ -623,11 +623,18 @@ public class ExperimentController extends SpringActionController
                 autoLinkTargetColumn.setVisible(false);
 
                 SimpleDisplayColumn displayAutoLinkTargetColumn = new SimpleDisplayColumn();
-                displayAutoLinkTargetColumn.setCaption("Auto-Link Target Container:");
+                displayAutoLinkTargetColumn.setCaption("Auto Link Target Container:");
                 String path = autoLinkContainer.getPath();
                 displayAutoLinkTargetColumn.setDisplayHtml(path.equals("/") ? "" : path);
                 detailsView.getDataRegion().addDisplayColumn(displayAutoLinkTargetColumn);
             }
+
+            DisplayColumn autoLinkCategoryColumn = detailsView.getDataRegion().getDisplayColumn("autoLinkCategory");
+            autoLinkCategoryColumn.setVisible(false);
+            SimpleDisplayColumn displayAutoLinkCategoryColumn = new SimpleDisplayColumn();
+            displayAutoLinkCategoryColumn.setCaption("Auto Link Category:");
+            displayAutoLinkCategoryColumn.setDisplayHtml(_sampleType.getAutoLinkCategory());
+            detailsView.getDataRegion().addDisplayColumn(displayAutoLinkCategoryColumn);
 
             if (_sampleType.hasNameAsIdCol())
             {

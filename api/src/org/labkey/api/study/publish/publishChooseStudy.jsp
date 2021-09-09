@@ -101,6 +101,12 @@
     .form-group {
         display: flex !important;
     }
+
+    #chooseStudyError {
+        color: #a94442;
+        margin-bottom: 15px;
+        margin-left: 270px;
+    }
 </style>
 <script type="application/javascript">
 
@@ -122,6 +128,11 @@
         };
 
         handleNext = function(){
+            if ($("#autoLinkCategory").val().length > 200) {
+                let errorMessageDiv = $('#chooseStudyError');
+                errorMessageDiv.text("Linked Dataset Category name must be shorter than 200 characters.");
+                return;
+            }
 
             var autoLink = $("input[id='autoLink']");
             if (autoLink.prop('checked')){
@@ -185,6 +196,7 @@
     }
 %>
 
+<div id="chooseStudyError"> </div>
 <labkey:form method="POST" id="linkForm" layout="horizontal" action="<%=postURL%>">
     <%
         if (unambiguous)
@@ -217,8 +229,8 @@
     <%
         if (!autoLinkEnabled)
         {
-            String autoLinkCategoryTip = "Specify the desired category for the Assay Dataset that will be created (or appended to) in the target study when rows are linked. " +
-                    "If the category you specify does not exist, it will be created. If the Assay Dataset already exists, this setting will not overwrite a previously assigned category. " +
+            String autoLinkCategoryTip = "Specify the desired category for the Dataset that will be created (or appended to) in the target study when rows are linked. " +
+                    "If the category you specify does not exist, it will be created. If the Dataset already exists, this setting will not overwrite a previously assigned category. " +
                     "Leave blank to use the default category of \"Uncategorized\".";
     %>
     <labkey:input type="text" label="Specify Linked Dataset Category" className="form-control" name="autoLinkCategory" id="autoLinkCategory" contextContent="<%= autoLinkCategoryTip %>" forceSmallContext="true"/>
