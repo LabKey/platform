@@ -44,8 +44,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -250,7 +250,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 addColumn(qcStateColumn);
                 // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
                 // but don't include it in the default set of columns either
-                if (!QCStateManager.getInstance().showQCStates(_userSchema.getContainer()))
+                if (!DataStateManager.getInstance().showStates(_userSchema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(name))
@@ -785,7 +785,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
     private class QCStateDisplayColumn extends DataColumn
     {
-        private Map<Integer, QCState> _qcStateCache;
+        private Map<Integer, DataState> _qcStateCache;
         public QCStateDisplayColumn(ColumnInfo col)
         {
             super(col);
@@ -798,19 +798,19 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             HtmlStringBuilder formattedValue = HtmlStringBuilder.of(super.getFormattedHtml(ctx));
             if (value instanceof Integer)
             {
-                QCState state = getStateCache(ctx).get(value);
+                DataState state = getStateCache(ctx).get(value);
                 if (state != null && state.getDescription() != null)
                     formattedValue.append(HtmlString.unsafe(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription())));
             }
             return formattedValue.getHtmlString();
         }
 
-        private Map<Integer, QCState> getStateCache(RenderContext ctx)
+        private Map<Integer, DataState> getStateCache(RenderContext ctx)
         {
             if (_qcStateCache == null)
             {
                 _qcStateCache = new HashMap<>();
-                for (QCState state : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
+                for (DataState state : DataStateManager.getInstance().getStates(ctx.getContainer()))
                     _qcStateCache.put(state.getRowId(), state);
             }
             return _qcStateCache;

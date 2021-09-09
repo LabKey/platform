@@ -19,8 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 public class QCStateSet
 {
     // use sets instead of arrays, just in case duplicates are somehow passed in:
-    private Set<QCState> _states;
+    private Set<DataState> _states;
     private String _label;
 
     public static final String PUBLIC_STATES_LABEL = "Public/approved data";
@@ -57,7 +57,7 @@ public class QCStateSet
     public static final String ALL_STATES_LABEL = "All data";
     private boolean _includeUnmarked;
 
-    private QCStateSet(Container container, List<QCState> stateSet, boolean includeUnmarked, String label)
+    private QCStateSet(Container container, List<DataState> stateSet, boolean includeUnmarked, String label)
     {
         _states = new HashSet<>(stateSet);
         _includeUnmarked = includeUnmarked;
@@ -76,7 +76,7 @@ public class QCStateSet
             else
             {
                 StringBuilder setLabel = new StringBuilder();
-                for (QCState state : stateSet)
+                for (DataState state : stateSet)
                 {
                     if (setLabel.length() > 0)
                         setLabel.append(", ");
@@ -87,7 +87,7 @@ public class QCStateSet
         }
     }
 
-    private QCStateSet(Container container, List<QCState> stateSet, boolean includeUnmarked)
+    private QCStateSet(Container container, List<DataState> stateSet, boolean includeUnmarked)
     {
         this(container, stateSet, includeUnmarked, null);
     }
@@ -97,19 +97,19 @@ public class QCStateSet
         this(container, getStatesForIds(container, stateRowIds), includeUnmarked);
     }
 
-    private static List<QCState> getStatesForIds(Container container, int[] stateRowIds)
+    private static List<DataState> getStatesForIds(Container container, int[] stateRowIds)
     {
-        List<QCState> stateSet = new ArrayList<>();
+        List<DataState> stateSet = new ArrayList<>();
         for (int stateRowId : stateRowIds)
         {
-            QCState state = QCStateManager.getInstance().getQCStateForRowId(container, stateRowId);
+            DataState state = DataStateManager.getInstance().getStateForRowId(container, stateRowId);
             if (state != null)
                 stateSet.add(state);
         }
         return stateSet;
     }
 
-    public Set<QCState> getStates()
+    public Set<DataState> getStates()
     {
         return _states;
     }
@@ -153,7 +153,7 @@ public class QCStateSet
         {
             sql.append(rowIdColumnAlias).append(" IN (");
             String comma = "";
-            for (QCState state : _states)
+            for (DataState state : _states)
             {
                 sql.append(comma).append(state.getRowId());
                 comma = ", ";
@@ -179,7 +179,7 @@ public class QCStateSet
     public String getFormValue()
     {
         StringBuilder formValue = new StringBuilder();
-        for (QCState state : _states)
+        for (DataState state : _states)
         {
             if (formValue.length() > 0)
                 formValue.append(",");
@@ -196,15 +196,15 @@ public class QCStateSet
 
     public static QCStateSet getAllStates(Container container)
     {
-        List<QCState> states = QCStateManager.getInstance().getQCStates(container);
+        List<DataState> states = DataStateManager.getInstance().getStates(container);
         return new QCStateSet(container, states, true, ALL_STATES_LABEL);
     }
 
     public static QCStateSet getPublicStates(Container container)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        List<QCState> selectedStates = new ArrayList<>();
-        for (QCState state : QCStateManager.getInstance().getQCStates(container))
+        List<DataState> selectedStates = new ArrayList<>();
+        for (DataState state : DataStateManager.getInstance().getStates(container))
         {
             if (state.isPublicData())
                 selectedStates.add(state);
@@ -217,8 +217,8 @@ public class QCStateSet
     public static QCStateSet getPrivateStates(Container container)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        List<QCState> selectedStates = new ArrayList<>();
-        for (QCState state : QCStateManager.getInstance().getQCStates(container))
+        List<DataState> selectedStates = new ArrayList<>();
+        for (DataState state : DataStateManager.getInstance().getStates(container))
         {
             if (!state.isPublicData())
                 selectedStates.add(state);
@@ -241,7 +241,7 @@ public class QCStateSet
         return new QCStateSet(container, stateRowIds, includeUnmarked);
     }
 
-    private static QCStateSet getSingletonSet(Container container, QCState state)
+    private static QCStateSet getSingletonSet(Container container, DataState state)
     {
         return new QCStateSet(container, Collections.singletonList(state), false, state.getLabel());
     }
@@ -291,7 +291,7 @@ public class QCStateSet
     
         set.add(QCStateSet.getAllStates(container));
 
-        for (QCState state : QCStateManager.getInstance().getQCStates(container))
+        for (DataState state : DataStateManager.getInstance().getStates(container))
             set.add(QCStateSet.getSingletonSet(container, state));
         return set;
     }
@@ -330,7 +330,7 @@ public class QCStateSet
     {
         List<String> qcLabels = qcStates.getStates()
                 .stream()
-                .map(QCState::getLabel)
+                .map(DataState::getLabel)
                 .collect(Collectors.toList());
         String filterValue = new SimpleFilter.InClause(FieldKey.fromParts(""), qcLabels).toURLParam("").getValue();
         return filterValue != null ? filterValue : "";

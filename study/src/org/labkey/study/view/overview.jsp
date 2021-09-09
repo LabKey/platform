@@ -18,7 +18,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.CompareType" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
+<%@ page import="org.labkey.api.qc.DataStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
@@ -80,7 +80,7 @@
         cohorts = manager.getCohorts(container, user);
     }
 
-    boolean showQCStates = QCStateManager.getInstance().showQCStates(container);
+    boolean showQCStates = DataStateManager.getInstance().showStates(container);
     QCStateSet selectedQCStateSet = null;
     List<QCStateSet> qcStateSetOptions = null;
 
@@ -298,7 +298,7 @@
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
                 if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
-                    defaultReportURL.replaceParameter(eq, QCStateManager.getInstance().getQCStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                    defaultReportURL.replaceParameter(eq, DataStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
                 // Public States case
                 if (bean.qcStates != null && QCStateSet.getPublicStates(getContainer()).getFormValue().equals(bean.qcStates.getFormValue()))
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PUBLIC_STATES_LABEL, "Dataset", container);
@@ -349,7 +349,7 @@
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
                     if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
-                        datasetLink.replaceParameter(eq, QCStateManager.getInstance().getQCStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
+                        datasetLink.replaceParameter(eq, DataStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
 
                     innerHtml = "<a href=\"" + datasetLink.getLocalURIString() + "\">" + innerHtml + "</a>";
                 }

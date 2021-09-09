@@ -21,9 +21,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateHandler;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FilteredTable;
@@ -69,12 +69,12 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
 
         private boolean validateQCStateNotInUse(Map<String, Object> oldRowMap, Container container)
         {
-            Map<String, QCStateHandler> registeredHandlers = QCStateManager.getInstance().getRegisteredQCHandlers();
-            QCState QCToDelete = QCStateManager.getInstance().getQCStateForRowId(container, (Integer) oldRowMap.get("rowid"));
+            Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
+            DataState QCToDelete = DataStateManager.getInstance().getStateForRowId(container, (Integer) oldRowMap.get("rowid"));
 
-            for (QCStateHandler handler : registeredHandlers.values())
+            for (DataStateHandler handler : registeredHandlers.values())
             {
-                if (handler.isQCStateInUse(container, QCToDelete))
+                if (handler.isStateInUse(container, QCToDelete))
                     return false;
             }
             return true;
@@ -87,7 +87,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 rowToUpdate = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
-                transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> DataStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
             return rowToUpdate;
@@ -100,7 +100,7 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 rowToInsert = super.insertRow(user, container, row);
-                transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> DataStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
             return rowToInsert;
@@ -110,13 +110,13 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             if (!validateQCStateNotInUse(oldRowMap, container))
-                throw new QueryUpdateServiceException("QC state '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
+                throw new QueryUpdateServiceException("State '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
 
             Map<String, Object> rowToDelete;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 rowToDelete = super.deleteRow(user, container, oldRowMap);
-                transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> DataStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
             return rowToDelete;

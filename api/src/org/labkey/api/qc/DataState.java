@@ -22,13 +22,14 @@ import org.labkey.api.data.Container;
  * Date: Jul 15, 2008
  * Time: 2:48:55 PM
  */
-public class QCState
+public class DataState
 {
     private int _rowId;
     private String _label;
     private Container _container;
     private String _description;
     private boolean _publicData;
+    private String _stateType;
 
     public int getRowId()
     {
@@ -80,12 +81,22 @@ public class QCState
         _publicData = publicData;
     }
 
+    public String getStateType()
+    {
+        return _stateType;
+    }
+
+    public void setStateType(String stateType)
+    {
+        _stateType = stateType;
+    }
+
     public boolean equals(Object o)
     {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        QCState qcState = (QCState) o;
+        DataState qcState = (DataState) o;
 
         if (_publicData != qcState._publicData) return false;
         if (_rowId != qcState._rowId) return false;
@@ -93,6 +104,7 @@ public class QCState
         if (_description != null ? !_description.equals(qcState._description) : qcState._description != null)
             return false;
         if (_label != null ? !_label.equals(qcState._label) : qcState._label != null) return false;
+        if (_stateType != null ? !_stateType.equals(qcState._stateType) : qcState._stateType != null) return false;
 
         return true;
     }
@@ -105,6 +117,7 @@ public class QCState
         result = 31 * result + (_container != null ? _container.hashCode() : 0);
         result = 31 * result + (_description != null ? _description.hashCode() : 0);
         result = 31 * result + (_publicData ? 1 : 0);
+        result = 31 * result + (_stateType != null ? _stateType.hashCode() : 0);
         return result;
     }
 

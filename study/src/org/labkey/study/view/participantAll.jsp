@@ -29,8 +29,8 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
+<%@ page import="org.labkey.api.qc.DataState" %>
+<%@ page import="org.labkey.api.qc.DataStateManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
@@ -500,7 +500,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (QCStateManager.getInstance().showQCStates(getContainer()))
+    if (DataStateManager.getInstance().showStates(getContainer()))
     {
         row++;
         className = getShadeRowClass(row);
@@ -520,7 +520,7 @@
                     for (Map.Entry<Object, Map<String, Object>> e : keyMap.entrySet())
                     {
                         Integer id = (Integer) e.getValue().get("QCState");
-                        QCState state = getQCState(study, id);
+                        DataState state = getQCState(study, id);
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
     <td>
@@ -722,15 +722,15 @@
 </table>
 <%!
 
-    Map<Integer, QCState> qcstates = null;
+    Map<Integer, DataState> qcstates = null;
 
-    QCState getQCState(Study study, Integer id)
+    DataState getQCState(Study study, Integer id)
     {
         if (null == qcstates)
         {
-            List<QCState> states = QCStateManager.getInstance().getQCStates(study.getContainer());
+            List<DataState> states = DataStateManager.getInstance().getStates(study.getContainer());
             qcstates = new HashMap<>(2 * states.size());
-            for (QCState state : states)
+            for (DataState state : states)
                 qcstates.put(state.getRowId(), state);
         }
         return qcstates.get(id);

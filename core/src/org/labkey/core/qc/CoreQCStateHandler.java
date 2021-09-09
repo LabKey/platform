@@ -17,17 +17,17 @@ package org.labkey.core.qc;
 
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.Container;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateHandler;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.security.User;
 import org.labkey.core.CoreController;
 
 import java.util.List;
 
-public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQCStatesForm>
+public class CoreQCStateHandler implements DataStateHandler<CoreController.ManageQCStatesForm>
 {
-    protected List<QCState> _states = null;
+    protected List<DataState> _states = null;
     public static final String HANDLER_NAME = "CoreQCStateHandler";
 
     @Override
@@ -37,14 +37,14 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
     }
 
     @Override
-    public boolean isBlankQCStatePublic(Container container)
+    public boolean isBlankStatePublic(Container container)
     {
         return AssayQCService.getProvider().isBlankQCStatePublic(container);
     }
 
     public Integer getDefaultQCState(Container container)
     {
-        QCState state = AssayQCService.getProvider().getDefaultDataImportState(container);
+        DataState state = AssayQCService.getProvider().getDefaultDataImportState(container);
         return state != null ? state.getRowId() : null;
     }
 
@@ -52,32 +52,32 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
     {
         AssayQCService.getProvider().setIsBlankQCStatePublic(container, isBlankQCStatePublic);
 
-        QCState state = null;
+        DataState state = null;
         if (defaultQCState != null)
-            state = QCStateManager.getInstance().getQCStateForRowId(container, defaultQCState);
+            state = DataStateManager.getInstance().getStateForRowId(container, defaultQCState);
 
         AssayQCService.getProvider().setDefaultDataImportState(container, state);
     }
 
     @Override
-    public List<QCState> getQCStates(Container container)
+    public List<DataState> getStates(Container container)
     {
         if (_states == null)
-            _states = QCStateManager.getInstance().getQCStates(container);
+            _states = DataStateManager.getInstance().getStates(container);
         return _states;
     }
 
     @Override
-    public boolean isQCStateInUse(Container container, QCState state)
+    public boolean isStateInUse(Container container, DataState state)
     {
         return AssayQCService.getProvider().isQCStateInUse(container, state);
     }
 
     @Override
-    public void updateQcState(Container container, CoreController.ManageQCStatesForm form, User user)
+    public void updateState(Container container, CoreController.ManageQCStatesForm form, User user)
     {
-        if (!QCStateHandler.nullSafeEqual(getDefaultQCState(container), form.getDefaultQCState()) ||
-                isBlankQCStatePublic(container) != form.isBlankQCStatePublic())
+        if (!DataStateHandler.nullSafeEqual(getDefaultQCState(container), form.getDefaultQCState()) ||
+                isBlankStatePublic(container) != form.isBlankQCStatePublic())
         {
             setProps(container, form.isBlankQCStatePublic(), form.getDefaultQCState());
         }

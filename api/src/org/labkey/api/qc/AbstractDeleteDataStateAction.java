@@ -23,34 +23,34 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 @RequiresPermission(AdminPermission.class)
-public abstract class AbstractDeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
+public abstract class AbstractDeleteDataStateAction extends FormHandlerAction<DeleteDataStateForm>
 {
-    protected static QCStateHandler _qcStateHandler;
-    public abstract QCStateHandler getQCStateHandler();
+    protected static DataStateHandler _qcStateHandler;
+    public abstract DataStateHandler getDataStateHandler();
     @Override
-    public abstract ActionURL getSuccessURL(DeleteQCStateForm form);
+    public abstract ActionURL getSuccessURL(DeleteDataStateForm form);
 
     @Override
-    public void validateCommand(DeleteQCStateForm target, Errors errors)
+    public void validateCommand(DeleteDataStateForm target, Errors errors)
     {
     }
 
     @Override
-    public boolean handlePost(DeleteQCStateForm form, BindException errors) throws Exception
+    public boolean handlePost(DeleteDataStateForm form, BindException errors) throws Exception
     {
         if (form.isAll())
         {
-            for (QCState state : QCStateManager.getInstance().getQCStates(getContainer()))
+            for (DataState state : DataStateManager.getInstance().getStates(getContainer()))
             {
-                if (!getQCStateHandler().isQCStateInUse(getContainer(), state))
-                    QCStateManager.getInstance().deleteQCState(state);
+                if (!getDataStateHandler().isStateInUse(getContainer(), state))
+                    DataStateManager.getInstance().deleteState(state);
             }
         }
         else
         {
-            QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getId());
+            DataState state = DataStateManager.getInstance().getStateForRowId(getContainer(), form.getId());
             if (state != null)
-                QCStateManager.getInstance().deleteQCState(state);
+                DataStateManager.getInstance().deleteState(state);
         }
         return true;
     }

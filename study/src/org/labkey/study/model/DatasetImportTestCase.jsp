@@ -32,8 +32,8 @@
 <%@ page import="org.labkey.api.gwt.client.AuditBehaviorType" %>
 <%@ page import="org.labkey.api.gwt.client.model.PropertyValidatorType" %>
 <%@ page import="org.labkey.api.module.FolderTypeManager" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
+<%@ page import="org.labkey.api.qc.DataState" %>
+<%@ page import="org.labkey.api.qc.DataStateManager" %>
 <%@ page import="org.labkey.api.query.BatchValidationException" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
@@ -407,11 +407,11 @@ private void _testDatasetUpdateService(StudyImpl study) throws Throwable
     // QCStateLabel
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
-    List<QCState> qcstates = QCStateManager.getInstance().getQCStates(study.getContainer());
+    List<DataState> qcstates = DataStateManager.getInstance().getStates(study.getContainer());
     assertEquals(0, qcstates.size());
     qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
     assertFalse(errors.hasErrors());
-    qcstates = QCStateManager.getInstance().getQCStates(study.getContainer());
+    qcstates = DataStateManager.getInstance().getStates(study.getContainer());
     assertEquals(1, qcstates.size());
     assertEquals("dirty" , qcstates.get(0).getLabel());
 

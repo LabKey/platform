@@ -34,8 +34,8 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -66,7 +66,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     final private DatasetDefinition _datasetDefinition;
     final User user;
     boolean needsQC;
-    QCState defaultQC;
+    DataState defaultQC;
     List<String> lsids = null;
     DatasetDefinition.CheckForDuplicates checkDuplicates = DatasetDefinition.CheckForDuplicates.never;
     boolean allowImportManagedKeys = false;
@@ -77,7 +77,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
     ValidationException setupError = null;
 
-    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, QCState defaultQC, StudyImportContext studyImportContext)
+    public DatasetDataIteratorBuilder(DatasetDefinition datasetDefinition, User user, boolean qc, DataState defaultQC, StudyImportContext studyImportContext)
     {
         _datasetDefinition = datasetDefinition;
         this.user = user;
@@ -137,7 +137,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (null != contextConfig.get(DatasetUpdateService.Config.CheckForDuplicates))
             checkDuplicates = (DatasetDefinition.CheckForDuplicates)contextConfig.get(DatasetUpdateService.Config.CheckForDuplicates);
         if (null != contextConfig.get(DatasetUpdateService.Config.DefaultQCState))
-            defaultQC = (QCState)contextConfig.get(DatasetUpdateService.Config.DefaultQCState);
+            defaultQC = (DataState)contextConfig.get(DatasetUpdateService.Config.DefaultQCState);
         if (null != contextConfig.get(DatasetUpdateService.Config.StudyImportMaps))
             _tableIdMapMap = (Map)contextConfig.get(DatasetUpdateService.Config.StudyImportMaps);
 
@@ -583,7 +583,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return null == o ? "" : o.toString();
         }
 
-        int addQCStateColumn(int index, String uri, QCState defaultQCState)
+        int addQCStateColumn(int index, String uri, DataState defaultQCState)
         {
             var qcCol = new BaseColumnInfo("QCState", JdbcType.INTEGER);
             qcCol.setPropertyURI(uri);
@@ -765,17 +765,17 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             boolean _autoCreate = true;
             int _indexInputQCState = -1;
-            QCState _defaultQCState;
-            Map<String, QCState> _qcLabels;
+            DataState _defaultQCState;
+            Map<String, DataState> _qcLabels;
             Set<String> notFound = new CaseInsensitiveHashSet();
 
-            QCStateColumn(int index, QCState defaultQCState)
+            QCStateColumn(int index, DataState defaultQCState)
             {
                 _indexInputQCState = index;
                 _defaultQCState = defaultQCState;
 
                 _qcLabels = new CaseInsensitiveHashMap<>();
-                for (QCState state : QCStateManager.getInstance().getQCStates(_datasetDefinition.getContainer()))
+                for (DataState state : DataStateManager.getInstance().getStates(_datasetDefinition.getContainer()))
                     _qcLabels.put(state.getLabel(), state);
             }
 
@@ -787,7 +787,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
                 if (currentStateLabel != null)
                 {
-                    QCState state = _qcLabels.get(currentStateLabel);
+                    DataState state = _qcLabels.get(currentStateLabel);
                     if (null == state)
                     {
                         if (!_autoCreate)
@@ -799,7 +799,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                         else
                         {
 
-                            QCState newState = new QCState();
+                            DataState newState = new DataState();
                             // default to public data:
                             newState.setPublicData(true);
                             newState.setLabel(currentStateLabel);

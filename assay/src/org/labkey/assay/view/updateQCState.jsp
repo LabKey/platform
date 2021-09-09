@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.assay.AssayQCService" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.DataState" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.util.element.TextArea" %>
@@ -37,7 +37,7 @@
         ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
         if (run != null)
         {
-            QCState state = AssayQCService.getProvider().getQCState(run.getProtocol(), run.getRowId());
+            DataState state = AssayQCService.getProvider().getQCState(run.getProtocol(), run.getRowId());
             currentState = state != null ? state.getLabel() : null;
         }
     }

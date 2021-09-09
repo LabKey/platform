@@ -7,8 +7,8 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -47,7 +47,7 @@ public class QCStateWriter extends BaseFolderWriter
 
         if (helper != null)
         {
-            List<QCState> qcStates = QCStateManager.getInstance().getQCStates(ctx.getContainer());
+            List<DataState> qcStates = DataStateManager.getInstance().getStates(ctx.getContainer());
 
             FolderDocument.Folder.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
             StudyqcDocument doc = StudyqcDocument.Factory.newInstance();
@@ -56,7 +56,7 @@ public class QCStateWriter extends BaseFolderWriter
             if (!qcStates.isEmpty())
             {
                 StudyqcDocument.Studyqc.Qcstates states = qcXml.addNewQcstates();
-                for (QCState qc : qcStates)
+                for (DataState qc : qcStates)
                 {
                     StudyqcDocument.Studyqc.Qcstates.Qcstate state = states.addNewQcstate();
 

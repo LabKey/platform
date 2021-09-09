@@ -74,8 +74,8 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
@@ -454,9 +454,9 @@ public class StudyPublishManager implements StudyPublishService
                 StudyManager.getInstance().uncache(dataset);
             dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
             Integer defaultQCStateId = targetStudy.getDefaultPublishDataQCState();
-            QCState defaultQCState = null;
+            DataState defaultQCState = null;
             if (defaultQCStateId != null)
-                defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+                defaultQCState = DataStateManager.getInstance().getStateForRowId(targetContainer, defaultQCStateId.intValue());
 
             BatchValidationException validationException = new BatchValidationException();
             if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
@@ -983,9 +983,9 @@ public class StudyPublishManager implements StudyPublishService
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
-                QCState defaultQCState = null;
+                DataState defaultQCState = null;
                 if (defaultQCStateId != null)
-                    defaultQCState = QCStateManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                    defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
                         defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
                 if (!errors.hasErrors())

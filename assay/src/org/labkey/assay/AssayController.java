@@ -94,8 +94,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -1477,7 +1477,7 @@ public class AssayController extends SpringActionController
                 if (expRun != null)
                 {
                     response.put("success", true);
-                    QCState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
+                    DataState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
                     if (state != null)
                     {
                         response.put("qcState", PageFlowUtil.map("label", state.getLabel(), "rowId", state.getRowId()));
@@ -1626,7 +1626,7 @@ public class AssayController extends SpringActionController
 
                 if (run != null)
                 {
-                    QCState state = QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), form.getState());
+                    DataState state = DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), form.getState());
                     if (state != null)
                         svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }

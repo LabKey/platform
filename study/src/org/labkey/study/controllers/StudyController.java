@@ -80,14 +80,14 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.qc.AbstractDeleteQCStateAction;
+import org.labkey.api.qc.AbstractDeleteDataStateAction;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
-import org.labkey.api.qc.AbstractManageQCStatesForm;
-import org.labkey.api.qc.DeleteQCStateForm;
-import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateHandler;
-import org.labkey.api.qc.QCStateManager;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
+import org.labkey.api.qc.DeleteDataStateForm;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateHandler;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -627,7 +627,7 @@ public class StudyController extends BaseStudyController
             bean.stats = form.getVisitStatistics();
             bean.showSpecimens = SpecimenService.get() != null;
 
-            if (QCStateManager.getInstance().showQCStates(getContainer()))
+            if (DataStateManager.getInstance().showStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
             if (!bean.showCohorts)
@@ -918,7 +918,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
 
-            if (QCStateManager.getInstance().showQCStates(getContainer()))
+            if (DataStateManager.getInstance().showStates(getContainer()))
             {
                 String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
                 String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
@@ -3316,7 +3316,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class ManageQCStatesForm extends AbstractManageQCStatesForm
+    public static class ManageQCStatesForm extends AbstractManageDataStatesForm
     {
         private Integer _defaultPipelineQCState;
         private Integer _defaultPublishDataQCState;
@@ -3410,7 +3410,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler)
+        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
         {
             _study = StudyController.getStudyThrowIfNull(container);
 
@@ -3438,7 +3438,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
+        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             StringBuilder panelHtml = new StringBuilder();
             panelHtml.append("  <table class=\"lk-fields-table\">");
@@ -3463,7 +3463,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends AbstractDeleteQCStateAction
+    public class DeleteQCStateAction extends AbstractDeleteDataStateAction
     {
         public DeleteQCStateAction()
         {
@@ -3472,13 +3472,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public QCStateHandler getQCStateHandler()
+        public DataStateHandler getDataStateHandler()
         {
             return _qcStateHandler;
         }
 
         @Override
-        public ActionURL getSuccessURL(DeleteQCStateForm form)
+        public ActionURL getSuccessURL(DeleteDataStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)
@@ -3644,10 +3644,10 @@ public class StudyController extends BaseStudyController
                 return false;
             Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
 
-            QCState newState = null;
+            DataState newState = null;
             if (updateQCForm.getNewState() != null)
             {
-                newState = QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
+                newState = DataStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
                     errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
@@ -3668,7 +3668,7 @@ public class StudyController extends BaseStudyController
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
             url.addParameter(Dataset.DATASETKEY, updateQCForm.getDatasetId());
             if (updateQCForm.getNewState() != null)
-                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
+                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), DataStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
             return url;
         }
 

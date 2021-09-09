@@ -17,7 +17,7 @@ package org.labkey.api.qc;
 
 import org.labkey.api.action.ReturnUrlForm;
 
-public class AbstractManageQCStatesForm extends ReturnUrlForm
+public class AbstractManageDataStatesForm extends ReturnUrlForm
 {
     private int[] _ids;
     private String[] _labels;
