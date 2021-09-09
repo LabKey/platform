@@ -1180,9 +1180,7 @@ public class StudyPublishManager implements StudyPublishService
                         user,
                         container,
                         targetContainer,
-                        sampleType.getAutoLinkCategory() != null
-                                ? ViewCategoryManager.getInstance().ensureViewCategory(targetContainer, user, sampleType.getAutoLinkCategory())
-                                : null,
+                        sampleType.getAutoLinkCategory(),
                         sampleTypeName,
                         Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                         dataMaps,
