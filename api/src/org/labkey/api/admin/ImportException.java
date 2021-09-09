@@ -17,6 +17,7 @@
 package org.labkey.api.admin;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class ImportException extends Exception
 {
@@ -35,12 +36,20 @@ public class ImportException extends Exception
      */
     public static String getRelativePath(File root, File file)
     {
-        String rootPath = root.getAbsolutePath();
-        String filePath = file.getAbsolutePath();
+        return getRelativePath(root.toPath(), file.toPath());
+    }
+
+    /**
+     * Returns a filepath relative to root... this provides path information but hides the pipeline root path.
+     */
+    public static String getRelativePath(Path root, Path file)
+    {
+        String rootPath = root.toAbsolutePath().toString();
+        String filePath = file.toAbsolutePath().toString();
 
         if (filePath.startsWith(rootPath))
             return filePath.substring(rootPath.length());
         else
-            return file.getName();
+            return file.toString();
     }
 }

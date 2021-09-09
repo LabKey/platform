@@ -25,12 +25,14 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.cloud.CloudArchiveImporterSupport;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.importer.SimpleStudyImporter;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.FileSystemFile;
@@ -45,8 +47,9 @@ import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -60,7 +63,7 @@ import java.util.TreeMap;
 public class StudyImporterFactory extends AbstractFolderImportFactory
 {
     @Override
-    public FolderImporter create()
+    public FolderImporter<?> create()
     {
         return new StudyFolderImporter();
     }
@@ -71,7 +74,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         return 60;
     }
 
-    public class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
+    public static class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>
     {
         @Override
         public String getDataType()
@@ -86,7 +89,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         }
 
         @Override
-        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(@Nullable PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             if (!ctx.isDataTypeSelected(getDataType()))
                 return;
@@ -104,6 +107,13 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 User user = ctx.getUser();
                 BindException errors = new NullSafeBindException(c, "import");
 
+                boolean useLocalImportDir = job != null && job.getJobSupport(CloudArchiveImporterSupport.class).useLocalImportDir(job, studyDir.getLocation());
+                if (useLocalImportDir)
+                {
+                    Path dirPath = job.getPipeRoot().getRootNioPath().resolve(studyDir.getLocation());
+                    job.getJobSupport(CloudArchiveImporterSupport.class).downloadCloudArchive(job, dirPath.resolve(studyFileName), errors);
+                }
+
                 StudyDocument studyDoc;
                 XmlObject studyXml = studyDir.getXmlBean(studyFileName);
                 try
@@ -111,7 +121,7 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     if (studyXml instanceof StudyDocument)
                     {
                         studyDoc = (StudyDocument)studyXml;
-                        XmlBeansUtil.validateXmlDocument(studyDoc);
+                        XmlBeansUtil.validateXmlDocument(studyDoc, studyFileName);
                     }
                     else
                         throw new ImportException("Unable to get an instance of StudyDocument from " + studyFileName);
@@ -121,7 +131,13 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                     throw new InvalidFileException(studyDir.getRelativePath(studyFileName), e);
                 }
 
-                StudyImportContext studyImportContext = new StudyImportContext(user, c, studyDoc, ctx.getDataTypes(), ctx.getLoggerGetter(), studyDir);
+                StudyImportContext studyImportContext = new StudyImportContext.Builder(user,c)
+                        .withDocument(studyDoc)
+                        .withDataTypes(ctx.getDataTypes())
+                        .withLogger(ctx.getLoggerGetter())
+                        .withRoot(useLocalImportDir ? new FileSystemFile(job.getPipeRoot().getImportDirectory()) : studyDir)
+                        .build();
+
                 studyImportContext.setCreateSharedDatasets(ctx.isCreateSharedDatasets());
                 studyImportContext.setFailForUndefinedVisits(ctx.isFailForUndefinedVisits());
                 studyImportContext.setActivity(ctx.getActivity());
@@ -138,7 +154,13 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // import specimens, if the module is present
                 if (null != SpecimenService.get())
                 {
-                    File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
+                    Path specimenFile = studyImportContext.getSpecimenArchive(studyDir);
+                    if (useLocalImportDir)
+                    {   //TODO this should be done from the import context getSpecimenArchive
+                        specimenFile = job.getPipeRoot().getRootNioPath().relativize(specimenFile);
+                        specimenFile = job.getPipeRoot().getImportDirectory().toPath().resolve(specimenFile);
+                    }
+
                     StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false, false);
                 }
 
@@ -193,10 +215,10 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
         {
             if (archiveFilePath != null)
             {
-                File archiveFile = new File(archiveFilePath);
-                if (archiveFile.exists() && archiveFile.isFile())
+                Path archiveFile = FileUtil.stringToPath(container, archiveFilePath);
+                if (Files.exists(archiveFile) && Files.isRegularFile(archiveFile))
                 {
-                    VirtualFile vf = new FileSystemFile(archiveFile.getParentFile());
+                    VirtualFile vf = new FileSystemFile(archiveFile.getParent());
                     VirtualFile studyDir = vf.getXmlBean("study.xml") != null ? vf : vf.getDir("study");
                     XmlObject studyXml = studyDir.getXmlBean("study.xml");
 

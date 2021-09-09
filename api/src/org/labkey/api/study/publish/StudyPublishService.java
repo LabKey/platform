@@ -87,11 +87,7 @@ public interface StudyPublishService
                           Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, Map<String, PropertyType> propertyTypes, List<String> errors);
 
-    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
-                          Pair<Dataset.PublishSource, Integer> publishSource,
-                          List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
-
-    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable String datasetCategory,
+    ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
                           String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                           List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors);
 

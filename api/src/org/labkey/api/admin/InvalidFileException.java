@@ -22,10 +22,17 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class InvalidFileException extends ImportException
 {
+    @Deprecated // prefer the Path version
     public InvalidFileException(File root, File file, Throwable t)
+    {
+        this(root.toPath(), file.toPath(), t);
+    }
+
+    public InvalidFileException(Path root, Path file, Throwable t)
     {
         super(getErrorString(root, file, t.getMessage()));
     }
@@ -74,7 +81,13 @@ public class InvalidFileException extends ImportException
         return getErrorString(root.getRelativePath(file.getName()), error.getLine() + ":" + error.getColumn() + ": " + error.getMessage());
     }
 
+    @Deprecated // Prefer the Path version
     private static String getErrorString(File root, File file, String message)
+    {
+        return getErrorString(root.toPath(), file.toPath(), message);
+    }
+
+    private static String getErrorString(Path root, Path file, String message)
     {
         return getRelativePath(root, file) + " is not valid" + (null != message ? ": " + message : "");
     }

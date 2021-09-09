@@ -17,10 +17,13 @@
 package org.labkey.api.specimen.pipeline;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.PropertySource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -34,12 +37,15 @@ import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.model.VisitService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.BatchUpdateException;
 import java.util.Date;
 
@@ -64,7 +70,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         try
         {
             PipelineJob job = getJob();
-            File specimenArchive = getSpecimenFile(job);
+            Path specimenArchive = getSpecimenFile(job);
             SimpleStudyImportContext ctx = getImportContext(job);
 
             doImport(specimenArchive, job, ctx, isMerge(), true, getImportHelper());
@@ -81,10 +87,10 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return new RecordedActionSet();
     }
 
-    protected File getSpecimenFile(PipelineJob job) throws Exception
+    protected Path getSpecimenFile(PipelineJob job) throws Exception
     {
         SpecimenJobSupport support = job.getJobSupport(SpecimenJobSupport.class);
-        return support.getSpecimenArchive();
+        return support.getSpecimenArchivePath();
     }
 
     protected SimpleStudyImportContext getImportContext(PipelineJob job)
@@ -92,24 +98,24 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return job.getJobSupport(SpecimenJobSupport.class).getImportContext();
     }
 
-    public static void doImport(@Nullable File inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
+    public static void doImport(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
             boolean syncParticipantVisit) throws PipelineJobException
     {
         doImport(inputFile, job, ctx, merge, syncParticipantVisit, new DefaultImportHelper());
     }
 
-    private static void doPostTransform(SpecimenTransform transformer, File inputFile, PipelineJob job) throws PipelineJobException
+    private static void doPostTransform(SpecimenTransform transformer, Path inputFile, PipelineJob job) throws PipelineJobException
     {
         if (transformer.getFileType().isType(inputFile))
         {
             if (job != null)
                 job.setStatus("OPTIONAL POST TRANSFORMING STEP " + transformer.getName() + " DATA");
-            File specimenArchive = ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
-            transformer.postTransform(job, inputFile, specimenArchive);
+            File specimenArchive = ARCHIVE_FILE_TYPE.getFile(inputFile.getParent().toFile(), transformer.getFileType().getBaseName(inputFile));
+            transformer.postTransform(job, inputFile.toFile(), specimenArchive);
         }
     }
 
-    public static void doImport(@Nullable File inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
+    public static void doImport(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
                                 boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
     {
         if (SpecimenService.get() == null)
@@ -139,7 +145,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             if (null != activeImporter)
             {
                 SpecimenTransform activeTransformer = SpecimenService.get().getSpecimenTransform(activeImporter);
-                if (activeTransformer.getFileType().isType(inputFile))
+                if (activeTransformer != null && activeTransformer.getFileType().isType(inputFile))
                     doPostTransform(activeTransformer, inputFile, job);
             }
             else
@@ -188,30 +194,30 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
     public interface ImportHelper
     {
-        VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException;
+        VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException;
         void afterImport(SimpleStudyImportContext ctx);
     }
 
     protected static class DefaultImportHelper implements ImportHelper
     {
-        private File _unzipDir;
+        private Path _unzipDir;
 
         @Override
-        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
+        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException
         {
             // backwards compatibility, if we are given a specimen archive as a zip file, we need to extract it
             if (inputFile != null)
             {
                 // Might need to transform to a file type that we know how to import
+                Path specimenArchive = inputFile;
 
-                File specimenArchive = inputFile;
                 for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
                 {
-                    if (transformer.getFileType().isType(inputFile))
+                    if (transformer.getFileType().isType(inputFile.getFileName().toString()))
                     {
                         if (job != null)
                             job.setStatus("TRANSFORMING " + transformer.getName() + " DATA");
-                        specimenArchive = ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), transformer.getFileType().getBaseName(inputFile));
+                        specimenArchive = ARCHIVE_FILE_TYPE.getPath(inputFile.getParent(), transformer.getFileType().getBaseName(inputFile));
                         transformer.transform(job, inputFile, specimenArchive);
                         break;
                     }
@@ -227,12 +233,12 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     if (job != null)
                         job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
 
-                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive.getPath());
+                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive);
                     String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
-                    _unzipDir = new File(specimenArchive.getParentFile(), tempDirName);
+                    _unzipDir = specimenArchive.getParent().resolve(tempDirName);
                     ZipUtil.unzipToDirectory(specimenArchive, _unzipDir, ctx.getLogger());
 
-                    ctx.getLogger().info("Archive unzipped to " + _unzipDir.getPath());
+                    ctx.getLogger().info("Archive unzipped to " + _unzipDir);
                     return new FileSystemFile(_unzipDir);
                 }
             }
@@ -250,18 +256,26 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                 delete(_unzipDir, ctx);
         }
 
+        @Deprecated  //Prefer the Path version
         protected void delete(File file, SimpleStudyImportContext ctx)
         {
-            Logger log = ctx.getLogger();
+            delete(file.toPath(), ctx);
+        }
 
-            if (file.isDirectory())
+        protected void delete(Path path, SimpleStudyImportContext ctx)
+        {
+            Logger log = ctx.getLogger();
+            if (Files.isDirectory(path))
             {
-                for (File child : file.listFiles())
-                    delete(child, ctx);
+                try
+                {
+                    FileUtil.deleteDir(path);
+                }
+                catch (IOException e)
+                {
+                    log.error("Error deleting files from " + path, e);
+                }
             }
-            log.info("Deleting " + file.getPath());
-            if (!file.delete())
-                log.error("Unable to delete file: " + file.getPath());
         }
     }
 }

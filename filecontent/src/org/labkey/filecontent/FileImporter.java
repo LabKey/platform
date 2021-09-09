@@ -131,13 +131,6 @@ public class FileImporter implements FolderImporter<XmlObject>
         return Collections.emptyList();
     }
 
-    @Nullable
-    @Override
-    public Map<String, Boolean> getChildrenDataTypes(ImportContext ctx)
-    {
-        return null;
-    }
-
     public static class Factory extends AbstractFolderImportFactory
     {
         @Override

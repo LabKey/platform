@@ -382,8 +382,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                 DbSchema schema = AssayDbSchema.getInstance().getSchema();
                 try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                 {
-                    if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 300)
-                        throw new AssayException("Linked Dataset Category name must be shorter than 300 characters.");
+                    if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
+                        throw new AssayException("Linked Dataset Category name must be shorter than 200 characters.");
 
                     ExpProtocol protocol;
                     if (assay.getProtocolId() == null)

@@ -22,7 +22,10 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
+import java.util.List;
 
 // Registered by the specimen module (specimenContext.xml), so specimen module is always present when this code is invoked.
 public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisSpecimenTask.Factory>
@@ -35,13 +38,13 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
     }
 
     @Override
-    protected File getSpecimenFile(PipelineJob job)
+    protected Path getSpecimenFile(PipelineJob job)
     {
         FileAnalysisJobSupport support = job.getJobSupport(FileAnalysisJobSupport.class);
-
+        List<Path> paths = support.getInputFilePaths();
         // there should only be a single file associated with this task
-        assert support.getInputFiles().size() == 1;
-        return support.getInputFiles().get(0);
+        assert paths.size() == 1;
+        return paths.get(0);
     }
 
     @Override
@@ -71,14 +74,14 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
 
     private static class ImportHelper extends DefaultImportHelper
     {
-        private File _tempDir;
+        private Path _tempDir;
 
         @Override
-        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable File inputFile) throws IOException, ImportException, PipelineJobException
+        public VirtualFile getSpecimenDir(PipelineJob job, SimpleStudyImportContext ctx, @Nullable Path inputFile) throws IOException, ImportException, PipelineJobException
         {
             if (inputFile != null)
             {
-                try (TikaInputStream is = TikaInputStream.get(new FileInputStream(inputFile)))
+                try (TikaInputStream is = TikaInputStream.get(Files.newInputStream(inputFile)))
                 {
                     // determine the type of file being imported
                     DefaultDetector detector = new DefaultDetector();
@@ -96,8 +99,8 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
                         //
                         ctx.getLogger().info("Single specimen file detected, moving to a temp folder for processing.");
                         String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
-                        _tempDir = new File(inputFile.getParentFile(), tempDirName);
-                        FileUtils.copyToDirectory(inputFile, _tempDir);
+                        _tempDir = inputFile.getParent().resolve(tempDirName);
+                        Files.copy(inputFile, _tempDir);
 
                         return new FileSystemFile(_tempDir);
                     }

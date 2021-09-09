@@ -104,6 +104,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -123,6 +124,8 @@ import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -869,14 +872,20 @@ public class PageFlowUtil
      */
     public static MediaType getMediaTypeFor(File file)
     {
+        return getMediaTypeFor(file.toPath());
+    }
+
+    public static MediaType getMediaTypeFor(Path file)
+    {
         try
         {
             DefaultDetector detector = new DefaultDetector();
             Metadata metaData = new Metadata();
+            String filename = file.getFileName().toString();
 
             // use the metadata to hint at the type for a faster lookup
-            metaData.add(Metadata.RESOURCE_NAME_KEY, file.getName());
-            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(file.getName()));
+            metaData.add(Metadata.RESOURCE_NAME_KEY, filename);
+            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
 
             return detector.detect(TikaInputStream.get(file), metaData);
         }
@@ -897,12 +906,18 @@ public class PageFlowUtil
     /**
      * Sets up the response to stream back a file. The content type is detected by the file contents.
      */
+    @Deprecated //Prefer the Path version
     public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment)
+    {
+        prepareResponseForFile(response, responseHeaders, file.toPath(), asAttachment);
+    }
+
+    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, Path file, boolean asAttachment)
     {
         if (file == null)
             throw new IllegalArgumentException("file cannot be null");
 
-        String fileName = file.getName();
+        String fileName = file.getFileName().toString();
         MediaType mediaType = getMediaTypeFor(file);
         String contentType = getContentTypeFor(fileName);
 
@@ -975,7 +990,31 @@ public class PageFlowUtil
         }
     }
 
+    public static void streamFile(HttpServletResponse response, Path file, boolean asAttachment, boolean detectContentType) throws IOException
+    {
+        String filename = file.getFileName().toString();
+        if (detectContentType)
+            streamFile(response, Collections.emptyMap(), file, asAttachment);
+        else
+        {
+            try (InputStream is = Files.newInputStream(file))
+            {
+                streamFile(response, Collections.emptyMap(), filename, is, asAttachment);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new NotFoundException(filename);
+            }
+        }
+    }
+
+    @Deprecated // Prefer the Path version
     public static void streamFile(HttpServletResponse response, File file, boolean asAttachment) throws IOException
+    {
+        streamFile(response, file.toPath(), asAttachment, false);
+    }
+
+    public static void streamFile(HttpServletResponse response, Path file, boolean asAttachment) throws IOException
     {
         streamFile(response, file, asAttachment, false);
     }
@@ -985,9 +1024,15 @@ public class PageFlowUtil
      * Read the file and stream it to the browser through the response. The content type of the file is detected
      * from the contents of the file.
      */
+    @Deprecated //Prefer the Path version
     public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
-        try (InputStream is = new FileInputStream(file))
+        streamFile(response,responseHeaders, file.toPath(), asAttachment);
+    }
+
+    public static void streamFile(@NotNull HttpServletResponse response, @NotNull Map<String, String> responseHeaders, Path file, boolean asAttachment) throws IOException
+    {
+        try (InputStream is = Files.newInputStream(file))
         {
             prepareResponseForFile(response, responseHeaders, file, asAttachment);
             ServletOutputStream out = response.getOutputStream();

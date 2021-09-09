@@ -76,6 +76,7 @@ public interface FileContentService
      */
     @Nullable
     File getFileRoot(@NotNull Container c);
+
     @Nullable
     java.nio.file.Path getFileRootPath(@NotNull Container c);
 
@@ -84,18 +85,25 @@ public interface FileContentService
      */
     @Nullable
     File getFileRoot(@NotNull Container c, @NotNull ContentType type);
+
     @Nullable
     java.nio.file.Path getFileRootPath(@NotNull Container c, @NotNull ContentType type);
+
     @Nullable
     URI getFileRootUri(@NotNull Container c, @NotNull ContentType type, @Nullable String filePath);
 
     void setFileRoot(@NotNull Container c, @Nullable File root);
+
     void setFileRootPath(@NotNull Container c, @Nullable String root);
+
     void setCloudRoot(@NotNull Container c, String cloudRootName);
+
     boolean isCloudRoot(Container container);
+
     String getCloudRootName(Container c);
 
     void disableFileRoot(Container container);
+
     boolean isFileRootDisabled(Container container);
 
     /**
@@ -103,25 +111,30 @@ public interface FileContentService
      * a project.
      */
     boolean isUseDefaultRoot(Container container);
+
     void setIsUseDefaultRoot(Container container, boolean useDefaultRoot);
 
 
     @NotNull
     File getSiteDefaultRoot();
+
     @NotNull
     Path getSiteDefaultRootPath();
+
     void setSiteDefaultRoot(File root, User user);
 
     @NotNull
     File getUserFilesRoot();
+
     void setUserFilesRoot(File root, User user);
 
     /**
      * Create an attachmentParent object that will allow storing files in the file system
-     * @param c Container this will be attached to
-     * @param name Name of the parent used in getMappedAttachmentDirectory
-     * @param path Path to the file. If relative is true, this is the name of a subdirectory of the directory mapped to this c
-     * container. If relative is false, this is a fully qualified path name
+     *
+     * @param c        Container this will be attached to
+     * @param name     Name of the parent used in getMappedAttachmentDirectory
+     * @param path     Path to the file. If relative is true, this is the name of a subdirectory of the directory mapped to this c
+     *                 container. If relative is false, this is a fully qualified path name
      * @param relative if true, path is a relative path from the directory mapped from the container
      * @return the created attachment parent
      */
@@ -129,14 +142,16 @@ public interface FileContentService
 
     /**
      * Forget about a named directory
-     * @param c Container for this attachmentParent
+     *
+     * @param c     Container for this attachmentParent
      * @param label Name of the parent used in registerDirectory
      */
     void unregisterDirectory(Container c, String label);
 
     /**
      * Return an AttachmentParent for files in the directory mapped to this container
-     * @param c Container in the file system
+     *
+     * @param c         Container in the file system
      * @param createDir Create the mapped directory if it doesn't exist
      * @return AttachmentParent that can be passed to other methods of this interface
      */
@@ -145,6 +160,7 @@ public interface FileContentService
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container
+     *
      * @param c Container in the file system
      * @return AttachmentParent that can be passed to other methods of this interface
      */
@@ -152,6 +168,7 @@ public interface FileContentService
 
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container
+     *
      * @param c Container in the file system
      * @return AttachmentParent that can be passed to other methods of this interface
      */
@@ -159,6 +176,7 @@ public interface FileContentService
 
     /**
      * Return true if the supplied string is a valid project root
+     *
      * @param root String to use as the file path
      * @return boolean
      */
@@ -166,6 +184,7 @@ public interface FileContentService
 
     /**
      * Return all AttachmentParents for files in the directory mapped to this container
+     *
      * @param c Container in the file system
      * @return Collection of attachment directories that have previously been registered
      */
