@@ -814,25 +814,25 @@ public abstract class UploadSamplesHelper
         protected void processNextInput()
         {
             Map<String,Object> map = ((MapDataIterator)getInput()).getMap();
+
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get("AliquotedFrom");
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    aliquotedFrom = (String) aliquotedFromObj;
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
+            }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
             try
             {
-                String aliquotedFrom = null;
-                Object aliquotedFromObj = map.get("AliquotedFrom");
-                if (aliquotedFromObj != null)
-                {
-                    if (aliquotedFromObj instanceof String)
-                    {
-                        aliquotedFrom = (String) aliquotedFromObj;
-                    }
-                    else if (aliquotedFromObj instanceof Number)
-                    {
-                        aliquotedFrom = aliquotedFromObj.toString();
-                    }
-                }
-
-                boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
-
-
                 Supplier<Map<String, Object>> extraPropsFn = () -> {
                     if (importAliasMap != null)
                         return Map.of(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
@@ -851,12 +851,19 @@ public abstract class UploadSamplesHelper
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                if (sampletype.hasNameExpression())
-                    addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
-                else if (sampletype.hasNameAsIdCol())
-                    addRowError("Name is required for sample on row " + e.getRowNumber());
+                if (isAliquot)
+                {
+                    addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + sampletype.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
+                }
                 else
-                    addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                {
+                    if (sampletype.hasNameExpression())
+                        addRowError("Failed to generate name for sample on row " + e.getRowNumber() + " using naming pattern " + sampletype.getNameExpression() + ". Check the syntax of the naming pattern and the data values for the sample.");
+                    else if (sampletype.hasNameAsIdCol())
+                        addRowError("Name is required for sample on row " + e.getRowNumber());
+                    else
+                        addRowError("All id columns are required for sample on row " + e.getRowNumber());
+                }
             }
         }
 

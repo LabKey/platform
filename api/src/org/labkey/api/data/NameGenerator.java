@@ -399,9 +399,10 @@ public class NameGenerator
 
             // allow using alternative expression for evaluation.
             // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
-            String name = (altExpression != null ? altExpression : _parsedNameExpression).eval(ctx);
+            FieldKeyStringExpression expression = altExpression != null ? altExpression : _parsedNameExpression;
+            String name = expression.eval(ctx);
             if (name == null || name.length() == 0)
-                throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + _parsedNameExpression.getSource() + "'.  Check the pattern syntax and data values.");
+                throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + expression.getSource() + "'.  Check the pattern syntax and data values.");
 
             return name;
         }
