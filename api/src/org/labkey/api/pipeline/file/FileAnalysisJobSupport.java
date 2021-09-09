@@ -21,8 +21,10 @@ import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <code>FileAnalysisJobSupport</code>
@@ -61,34 +63,67 @@ public interface FileAnalysisJobSupport
     /**
      * @return the directory in which the original input file resides.
      */
+    @Deprecated //Prefer the getDataDirectoryPath version as File return type doesn't support full URIs very well
     File getDataDirectory();
+    default Path getDataDirectoryPath()
+    {
+        // TODO This needs implementation in derived classes...
+        // This is typically safe but may cause an error if FileSystem provider isn't configured
+        return getDataDirectory().toPath();
+    }
 
     /**
      * @return the directory where the input files reside, and where the
      *      final analysis should end up.
      */
+    @Deprecated // Please use getAnalysisDirectoryPath instead, as File objects may have issues with full URIs
     File getAnalysisDirectory();
+    default Path getAnalysisDirectoryPath()
+    {
+        // TODO This needs implementation in derived classes...
+        // This is typically safe but may cause an error if FileSystem provider isn't configured
+        return getAnalysisDirectory().toPath();
+    }
 
     /**
      * Returns a file for use as input in the pipeline, given its name.
      * This allows the task definitions to name files they require as input,
      * and the pipeline definition to specify where those files should come from.
      */
+    @Deprecated // Please use findInputPath instead, as File objects may have issues with full URIs
     File findInputFile(String name);
+    default Path findInputPath(String filepath)
+    {
+        // TODO This needs implementation in derived classes...
+        // This is typically safe but may cause an error if FileSystem provider isn't configured
+        return findInputFile(filepath).toPath();
+    }
 
     /**
      * Returns a file for use as output in the pipeline, given its name. 
      * This allows the task definitions to name files they create as output,
      * and the pipeline definition to specify where those files should end up.
      */
-    File findOutputFile(String name);
+    @Deprecated //Please switch to use findOutputPath
+    File findOutputFile(String name); //TODO update implementations to return nio.Path directly
+    default Path findOutputPath(String name)
+    {
+        //This is generally safe, but may fail if the appropriate filesystem providers are not registered.
+        return findOutputFile(name).toPath();
+    }
 
     /**
      * Returns a file for the output dir and file name.
      * The output dir is a directory path relative to the analysis directory,
      * or, if the path starts with "/", relative to the pipeline root.
      */
+    @Deprecated //Please switch to use findOutputPath
     File findOutputFile(@NotNull String outputDir, @NotNull String fileName);
+    default Path findOutputPath(@NotNull String outputDir, @NotNull String filename)
+    {
+        //This is generally safe, but may fail if the appropriate filesystem providers are not registered.
+        return findOutputFile(outputDir, filename).toPath();
+    }
 
     /**
      * @return a parameter parser object for writing parameters to a file.
@@ -104,18 +139,48 @@ public interface FileAnalysisJobSupport
      * @return the parameters input file used to drive the pipeline.
      */
     @Nullable
+    @Deprecated //Use Path based versions
     File getParametersFile();
 
     /**
      * @return the job info file used to provide the external executable or script task with input file context.
      */
     @Nullable
+    @Deprecated //Use Path based versions
     File getJobInfoFile();
 
     /**
      * @return a list of all input files analyzed.
      */
+    @Deprecated
     List<File> getInputFiles();
+
+
+    /**
+     * @return the parameters input file used to drive the pipeline.
+     */
+    @Nullable
+    default Path getParametersFilePath()
+    {
+        //Implemented as such for backwards compatibility
+        return getParametersFile() == null ? null : getParametersFile().toPath();
+    }
+
+    /**
+     * @return the job info file used to provide the external executable or script task with input file context.
+     */
+    @Nullable
+    default Path getJobInfoFilePath()
+    {
+        //Implemented as such for backwards compatibility
+        return getJobInfoFile() == null? null : getJobInfoFile().toPath();
+    }
+
+    default List<Path> getInputFilePaths()
+    {
+        //Implemented as such for backwards compatibility
+        return getInputFiles().stream().map(File::toPath).collect(Collectors.toList());
+    }
 
     /**
      * returns support level for .xml.gz handling:

@@ -394,7 +394,7 @@ public class ListImporter
             log.info("The following files were not imported because the server could not find a list with matching name: ");
             for (String s : fileTypeMap.keySet())
             {
-                log.info("\tSkipped " + s + fileTypeMap.get(s));
+                log.info("\tSkipped " + s + "." + fileTypeMap.get(s));
             }
         }
     }
