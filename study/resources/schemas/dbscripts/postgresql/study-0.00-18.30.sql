@@ -51,9 +51,9 @@ CREATE TABLE study.Study
     CONSTRAINT PK_Study PRIMARY KEY (Container)
 );
 
-ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.dataStates (RowId);
-ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.dataStates (RowId);
-ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.dataStates (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.DataStates (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.DataStates (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.DataStates (RowId);
 
 ALTER TABLE study.Study
     ADD COLUMN BlankQCStatePublic BOOLEAN NOT NULL DEFAULT FALSE;

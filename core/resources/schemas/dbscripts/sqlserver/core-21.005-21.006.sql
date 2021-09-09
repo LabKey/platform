@@ -1,4 +1,4 @@
-EXEC sp_rename 'core.qcstate', 'dataStates'
+EXEC sp_rename 'core.qcstate', 'DataStates'
 GO
 
-ALTER TABLE core.dataStates ADD stateType NVARCHAR(20);
+ALTER TABLE core.DataStates ADD StateType NVARCHAR(20);

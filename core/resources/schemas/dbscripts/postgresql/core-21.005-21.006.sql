@@ -1,3 +1,3 @@
-ALTER TABLE core.qcstate RENAME TO dataStates;
+ALTER TABLE core.qcstate RENAME TO DataStates;
 
-ALTER TABLE core.dataStates ADD COLUMN stateType VARCHAR(20);
+ALTER TABLE core.DataStates ADD COLUMN StateType VARCHAR(20);
