@@ -616,6 +616,11 @@ public class XarExporter
             xSampleSet.setNameExpression(sampleType.getNameExpression());
         }
 
+        if (sampleType.hasAliquotNameExpression())
+        {
+            xSampleSet.setAliquotNameExpression(sampleType.getAliquotNameExpression());
+        }
+
         if (sampleType.hasNameAsIdCol())
         {
             xSampleSet.addKeyField(ExpMaterialTable.Column.Name.name());

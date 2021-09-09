@@ -196,6 +196,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.InClauseTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
+            NameGenerator.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
             SwapQueue.TestCase.class,
