@@ -107,6 +107,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -566,7 +567,7 @@ public class StudyServiceImpl implements StudyService
     }
 
     @Override
-    public boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
+    public boolean runStudyImportJob(Container c, User user, @Nullable ActionURL url, Path studyXml, String originalFilename, BindException errors, PipeRoot pipelineRoot, ImportOptions options)
     {
         try
         {

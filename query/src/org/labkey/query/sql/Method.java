@@ -1481,6 +1481,10 @@ public abstract class Method
             }
         });
 
+        // Special functions to cast an argument to the JSON or JSONB data types without needing to support as official datatype in CAST
+        postgresMethods.put("parse_json", new ParseJSONMethod("json"));
+        postgresMethods.put("parse_jsonb", new ParseJSONMethod("jsonb"));
+
         postgresMethods.put("to_json", new PassthroughMethod("to_json", JdbcType.OTHER, 1, 1));
         postgresMethods.put("to_jsonb", new PassthroughMethod("to_jsonb", JdbcType.OTHER, 1, 1));
         postgresMethods.put("array_to_json", new PassthroughMethod("array_to_json", JdbcType.OTHER, 1, 2));
@@ -1571,4 +1575,27 @@ public abstract class Method
         oracleMethods.put("sysdate", new PassthroughMethod("sysdate", JdbcType.DATE, 0,0));
     }
 
+    private static class ParseJSONMethod extends Method
+    {
+        private final String _targetType;
+
+        ParseJSONMethod(String targetType)
+        {
+            super(JdbcType.OTHER, 1, 1);
+            _targetType = targetType;
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new AbstractMethodInfo(JdbcType.OTHER)
+            {
+                @Override
+                public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+                {
+                    return new SQLFragment("(").append(arguments[0]).append(")::").append(_targetType);
+                }
+            };
+        }
+    }
 }

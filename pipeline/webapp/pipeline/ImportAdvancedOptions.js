@@ -22,6 +22,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     isApplyToMultipleFolders: false,
     isFailForUndefinedVisits: false,
     showFailForUndefinedVisits: true,
+    isCloudRoot: false,
 
     initComponent: function()
     {
@@ -119,6 +120,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 name: 'applyToMultipleFolders',
                 initChecked: this.isApplyToMultipleFolders ? "checked": "",
                 isChecked: this.isApplyToMultipleFolders,
+                hidden: this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
                 label: 'Apply to multiple folders',
                 optionsForm: this.getApplyToMultipleFoldersForm
             }];
@@ -207,7 +209,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         if (Ext4.isDefined(this.getApplyToMultipleFoldersForm()) && this.getApplyToMultipleFoldersForm().isVisible())
             applyMultipleFoldersHeight = this.getApplyToMultipleFoldersForm().getHeight();
 
-        this.setHeight(this.baseHeight + specificImportOptionsHeight + applyMultipleFoldersHeight);
+        this.setHeight(this.baseHeight + specificImportOptionsHeight + applyMultipleFoldersHeight + this.getSubmitButton().getHeight());
     },
 
     getSubmitButton : function()

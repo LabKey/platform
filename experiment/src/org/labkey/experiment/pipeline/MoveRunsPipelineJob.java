@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.pipeline.LocalDirectory;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -55,11 +54,7 @@ public class MoveRunsPipelineJob extends PipelineJob
         _sourceContainer = sourceContainer;
 
         String baseLogFileName = FileUtil.makeFileNameWithTimestamp("moveRun", ".log");
-        LocalDirectory localDirectory = LocalDirectory.create(root, ExperimentService.MODULE_NAME, baseLogFileName,
-                root.isCloudRoot() ? FileUtil.getTempDirectory().getPath() : FileUtil.getAbsolutePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(root)));
-
-        setLocalDirectory(localDirectory);
-        setLogFile(localDirectory.determineLogFile());
+        setupLocalDirectoryAndJobLog(getPipeRoot(), ExperimentService.MODULE_NAME, baseLogFileName);
 
         getLogger().info(getDescription());
         for (int runId : _runIds)
@@ -74,6 +69,12 @@ public class MoveRunsPipelineJob extends PipelineJob
                 getLogger().info(run.getName() + " (RowId = " + runId + ")");
             }
         }
+    }
+
+    @Override
+    protected String getDefaultLocalDirectoryString()
+    {
+        return getPipeRoot().isCloudRoot() ? FileUtil.getTempDirectory().getPath() : FileUtil.getAbsolutePath(_sourceContainer, ExperimentPipelineProvider.getMoveDirectory(getPipeRoot()));
     }
 
     @Override

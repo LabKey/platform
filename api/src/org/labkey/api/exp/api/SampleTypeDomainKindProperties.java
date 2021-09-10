@@ -24,6 +24,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
         {
             this.name = st.getName();
             this.nameExpression = st.getNameExpression();
+            this.aliquotNameExpression = st.getAliquotNameExpression();
             this.labelColor = st.getLabelColor();
             this.metricUnit = st.getMetricUnit();
             this.domainId = st.getDomain().getTypeId();
@@ -32,6 +33,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
             this.description = st.getDescription();
             this.idCols = Collections.emptyList();
             this.autoLinkTargetContainerId = null != st.getAutoLinkTargetContainer() ? st.getAutoLinkTargetContainer().getId() : "";
+            this.autoLinkCategory = st.getAutoLinkCategory();
             if (st.hasIdColumns())
             {
                 this.idCols = st.getIdCols().stream().map(col -> col.getPropertyId()).collect(Collectors.toList());
@@ -49,6 +51,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     }
 
     private String nameExpression;
+    private String aliquotNameExpression;
     private String labelColor;
     private String metricUnit;
     private Map<String, String> importAliases;
@@ -57,6 +60,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private String lsid;
     private List<Integer> idCols;
     private String autoLinkTargetContainerId;
+    private String autoLinkCategory;
     private Integer parentCol;
 
     //Ignored on import/save, use Domain.name & Domain.description instead
@@ -134,6 +138,16 @@ public class SampleTypeDomainKindProperties implements Cloneable
         return this.nameExpression;
     }
 
+    public String getAliquotNameExpression()
+    {
+        return this.aliquotNameExpression;
+    }
+
+    public void setAliquotNameExpression(String nameExpression)
+    {
+        this.aliquotNameExpression = nameExpression;
+    }
+
     public void setLabelColor(String labelColor)
     {
         this.labelColor = labelColor;
@@ -178,6 +192,16 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public void setAutoLinkTargetContainerId(String autoLinkTargetContainerId)
     {
         this.autoLinkTargetContainerId = autoLinkTargetContainerId;
+    }
+
+    public String getAutoLinkCategory()
+    {
+        return autoLinkCategory;
+    }
+
+    public void setAutoLinkCategory(String autoLinkCategory)
+    {
+        this.autoLinkCategory = autoLinkCategory;
     }
 
     public Integer getParentCol()

@@ -141,7 +141,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         // MOVE PrepareDataIteratorBuilder into this file
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in);
+        return new UploadSamplesHelper.PrepareDataIteratorBuilder(_sampleType, getQueryTable(), in, getContainer());
     }
 
     @Override

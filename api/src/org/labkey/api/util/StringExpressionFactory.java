@@ -27,6 +27,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.TableInfo;
@@ -250,7 +251,8 @@ public class StringExpressionFactory
          * @return The string value or null if the part is found in the map,
          * otherwise UNDEFINED if the value does not exist in the map.
          */
-        @Nullable abstract String getValue(Map map);
+        @Nullable
+        public abstract String getValue(Map map);
 
         @NotNull
         final String valueOf(Object o)
@@ -288,7 +290,7 @@ public class StringExpressionFactory
         }
     }
 
-    private static class ConstantPart extends StringPart
+    public static class ConstantPart extends StringPart
     {
         private String _value;
         public ConstantPart(String value)
@@ -462,7 +464,7 @@ public class StringExpressionFactory
         }
     }
 
-    private static SubstitutionFormat createDateSubstitutionFormat(String format)
+    public static SubstitutionFormat createDateSubstitutionFormat(String format)
     {
         return new SubstitutionFormat.DateSubstitutionFormat(createDateFormatter(format));
     }
@@ -669,6 +671,7 @@ public class StringExpressionFactory
 
         protected String _source;
         protected ArrayList<StringPart> _parsedExpression = null;
+        protected ArrayList<StringPart> _deepParsedExpression = null;
 
         AbstractStringExpression(String source)
         {
@@ -698,6 +701,27 @@ public class StringExpressionFactory
             if (null == _parsedExpression)
                 parse();
             return _parsedExpression;
+        }
+
+        public synchronized ArrayList<StringPart> getDeepParsedExpression()
+        {
+            if (null == _deepParsedExpression)
+            {
+                ArrayList<StringPart> parts = new ArrayList<>();
+                for (StringPart part : getParsedExpression())
+                {
+                    if (part instanceof NameGenerator.CounterExpressionPart)
+                    {
+                        NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) part;
+                        parts.addAll(counterPart.getParsedNameExpression().getParsedExpression());
+                    }
+                    else
+                        parts.add(part);
+                }
+                _deepParsedExpression = parts;
+            }
+
+            return _deepParsedExpression;
         }
 
         protected void parse()
@@ -937,11 +961,11 @@ public class StringExpressionFactory
     }
 
 
-    private static class FieldPart extends SubstitutePart
+    public static class FieldPart extends SubstitutePart
     {
         @NotNull private FieldKey _key;
 
-        FieldPart(@NotNull String s, boolean urlEncodeSubstitutions)
+        public FieldPart(@NotNull String s, boolean urlEncodeSubstitutions)
         {
             super(s, urlEncodeSubstitutions);
             _key = FieldKey.decode(_value);
@@ -951,7 +975,7 @@ public class StringExpressionFactory
             }
         }
 
-        FieldPart(@NotNull FieldKey key, SubstitutionFormat sf)
+        public FieldPart(@NotNull FieldKey key, SubstitutionFormat sf)
         {
             super(key.toString(), sf);
             _key = key;

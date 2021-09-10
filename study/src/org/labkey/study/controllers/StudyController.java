@@ -230,6 +230,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -3991,8 +3992,8 @@ public class StudyController extends BaseStudyController
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
-            File studyFile = form.getValidatedSingleFile(c);
-            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyFile, true, null, false);
+            Path studyPath = form.getValidatedSinglePath(c);
+            return urlProvider(PipelineUrls.class).urlStartFolderImport(c, studyPath, true, null, false);
         }
 
         @Override

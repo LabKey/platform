@@ -31,6 +31,8 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +63,7 @@ public class FileType implements Serializable
                 }
             }
         }
+
         return support.findInputFile(getDefaultName(baseName));
     }
 
@@ -236,11 +239,11 @@ public class FileType implements Serializable
     }
 
     /** helper for supporting TPP's use of .xml.gz */
-    private String tryName(File parentDir, String name)
+    private String tryName(Path parentDir, String name)
     {
         if (_supportGZ.booleanValue())  // TPP treats xml.gz as a native format
         {   // in the case of existing files, non-gz copy wins if present
-            File f = parentDir!=null ? new File(parentDir,name) : new File(name);
+            Path f = parentDir!=null ? parentDir.resolve(name) : Path.of(name);
             if (!NetworkDrive.exists(f))
             {  // non-gz copy doesn't exist - how about .gz version?
                 String gzname = name + ".gz";
@@ -248,7 +251,7 @@ public class FileType implements Serializable
                 {   // we like .gz for new filenames, so don't care if exists
                     return gzname;
                 }
-                f = parentDir!=null ? new File(parentDir,gzname) : new File(gzname);
+                f = parentDir!=null ? parentDir.resolve(gzname) : Path.of(gzname);
                 if (NetworkDrive.exists(f))
                 { // we don't prefer .gz, but we support it if it exists
                     return gzname;
@@ -325,13 +328,18 @@ public class FileType implements Serializable
      */
     public String getName(File parentDir, String basename)
     {
+        return getName(parentDir.toPath(), basename);
+    }
+
+    public String getName(Path parentDir, String basename)
+    {
         if (_suffixes.size() > 1)
         {
             // Only bother checking if we have more than one possible suffix
             for (String suffix : _suffixes)
             {
                 String name = tryName(parentDir, basename + suffix);
-                File f = new File(parentDir, name);
+                Path f = parentDir.resolve(name);
                 if (NetworkDrive.exists(f))
                 {
                     // avoid, for example, mistaking protxml ".pep-prot.xml" for pepxml ".xml" file
@@ -355,9 +363,15 @@ public class FileType implements Serializable
      * Looks for a file in the parentDir that matches, in priority order. If one is found, returns its file name.
      * If nothing matches, uses the defaultSuffix to build a file name.
      */
+    @Deprecated //please switch to using the nio.Path version as the File class can have issues using full URIs
     public File getFile(File parentDir, String basename)
     {
         return new File(parentDir, getName(parentDir, basename));
+    }
+
+    public Path getPath(Path parentDir, String basename)
+    {
+        return parentDir.resolve(getName(parentDir, basename));
     }
 
     /**
@@ -405,15 +419,21 @@ public class FileType implements Serializable
      */
     public String getBaseName(File file)
     {
-        if (isAntiFileType(file.getName(), null) || !isType(file))
-            return file.getName();
+        return getBaseName(file.toPath());
+    }
+
+    public String getBaseName(@NotNull java.nio.file.Path file)
+    {
+        String fileName = file.getFileName().toString();
+        if (isAntiFileType(fileName, null) || !isType(file))
+            return fileName;
 
         String suffix = null;
         for (String s : _suffixes)
         {
             // run the entire list in order to assure strongest match
             // consider .msprefix.mzxml vs .mzxml for example
-            if (toLowerIfCaseInsensitive(file.getName()).endsWith(toLowerIfCaseInsensitive(s)))
+            if (toLowerIfCaseInsensitive(fileName).endsWith(toLowerIfCaseInsensitive(s)))
             {
                 if ((null==suffix) || (s.length()>suffix.length()))
                 {
@@ -423,7 +443,7 @@ public class FileType implements Serializable
             else if (_supportGZ.booleanValue()) // TPP treats .xml.gz as a native read format
             {
                 String sgz = s+".gz";
-                if (file.getName().endsWith(sgz))
+                if (fileName.endsWith(sgz))
                 {
                     if ((null==suffix) || (sgz.length()>suffix.length()))
                     {
@@ -433,7 +453,7 @@ public class FileType implements Serializable
             }
         }
         assert suffix != null : "Could not find matching suffix even though types match";
-        return file.getName().substring(0, file.getName().length() - suffix.length());
+        return fileName.substring(0, fileName.length() - suffix.length());
     }
 
     public File newFile(File parent, String basename)
@@ -441,10 +461,29 @@ public class FileType implements Serializable
         return new File(parent, getName(parent, basename));
     }
 
+    public Path newFile(Path parent, String basename)
+    {
+        return parent.resolve(getName(parent, basename));
+    }
+
     public boolean isType(File file)
     {
         return isType(file, null, null);
     }
+
+    public boolean isType(java.nio.file.Path path)
+    {
+        return isType(path, null, null);
+    }
+
+    public boolean isType(java.nio.file.Path path, String contentType, byte[] header)
+    {
+        if ((path == null) || (_dir != null && _dir.booleanValue() != Files.isDirectory(path)))
+            return false;
+
+        return isType(path.getFileName().toString(), contentType, header);
+    }
+
 
     public boolean isType(File file, String contentType, byte[] header)
     {
@@ -606,15 +645,15 @@ public class FileType implements Serializable
     }
 
     @NotNull
-    public static List<FileType> findTypes(@NotNull List<FileType> types, @NotNull List<File> files)
+    public static List<FileType> findTypes(@NotNull List<FileType> types, @NotNull List<Path> files)
     {
         ArrayList<FileType> foundTypes = new ArrayList<>();
         // This O(n*m), but these are usually very short lists.
         for (FileType type : types)
         {
-            for (File file : files)
+            for (Path file : files)
             {
-                if (type.isType(file))
+                if (type.isType(file.getFileName().toString()))
                 {
                     foundTypes.add(type);
                     break;
