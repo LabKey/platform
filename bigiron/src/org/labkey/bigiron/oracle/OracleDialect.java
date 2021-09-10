@@ -27,9 +27,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.BaseJdbcMetaDataLocator;
+import org.labkey.api.data.dialect.StandardJdbcMetaDataLocator;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
-import org.labkey.api.data.dialect.ConnectionHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -65,7 +64,7 @@ abstract class OracleDialect extends SimpleSqlDialect
         @Override
         public JdbcMetaDataLocator getJdbcMetaDataLocator(DbScope scope) throws SQLException
         {
-            return new BaseJdbcMetaDataLocator(scope, new ConnectionHandler()
+            return new StandardJdbcMetaDataLocator(scope)
             {
                 @Override
                 public Connection getConnection()
@@ -80,20 +79,7 @@ abstract class OracleDialect extends SimpleSqlDialect
                         throw new RuntimeSQLException(e);
                     }
                 }
-
-                @Override
-                public void releaseConnection(Connection conn)
-                {
-                    try
-                    {
-                        conn.close();
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
-                }
-            });
+            };
         }
     };
 

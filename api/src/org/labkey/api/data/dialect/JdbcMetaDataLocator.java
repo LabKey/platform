@@ -35,7 +35,7 @@ import java.sql.SQLException;
 public interface JdbcMetaDataLocator extends AutoCloseable, ForeignKeyResolver
 {
     @Override
-    void close();
+    void close() throws SQLException;
 
     // Once the implementation is constructed, one of these schema methods must be called...
     JdbcMetaDataLocator singleSchema(@NotNull String schemaName);
