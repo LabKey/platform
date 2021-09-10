@@ -17,15 +17,25 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 /**
  * User: jeckels
@@ -164,4 +174,35 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
     {
         return getClass().getSimpleName() + ": " + _object.getName() + " - " + _object.getLSID();
     }
+
+    protected Function<String, Long> getMaxCounterWithPrefixFunction(TableInfo tableInfo)
+    {
+        String dataTypeLsid = getLSID();
+        Container container = getContainer();
+        return (namePrefix) ->
+        {
+            long max = 0;
+
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("cpastype"), dataTypeLsid);
+            filter.addCondition(FieldKey.fromParts("Name"), namePrefix, STARTS_WITH);
+
+            TableSelector selector = new TableSelector(tableInfo, Collections.singleton("Name"), filter, null);
+            final List<String> nameSuffixes = new ArrayList<>();
+            selector.forEach(String.class, fullname -> nameSuffixes.add(fullname.replace(namePrefix, "")));
+
+            for (String nameSuffix : nameSuffixes)
+            {
+                if (nameSuffix.matches("\\d+"))
+                {
+                    long id = Long.parseLong(nameSuffix);
+                    if (id > max)
+                        max = id;
+                }
+            }
+
+            return max;
+        };
+    }
+
 }

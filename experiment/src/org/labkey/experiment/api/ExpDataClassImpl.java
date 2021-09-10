@@ -18,7 +18,9 @@ package org.labkey.experiment.api;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -32,6 +34,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -44,12 +47,17 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 /**
  * User: kevink
@@ -365,6 +373,12 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public String getDocumentId()
     {
         return SEARCH_CATEGORY_NAME + ":" + getRowId();
+    }
+
+    @Override
+    public Function<String, Long> getMaxDataCounterFunction()
+    {
+        return getMaxCounterWithPrefixFunction(ExperimentServiceImpl.get().getTinfoData());
     }
 
 }

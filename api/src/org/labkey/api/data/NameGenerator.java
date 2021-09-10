@@ -19,6 +19,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -26,6 +29,8 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
@@ -39,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +54,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +68,28 @@ import static org.labkey.api.util.SubstitutionFormat.yearlySampleCount;
 
 public class NameGenerator
 {
+    /**
+     * full expression: ${NamePrefix:withCounter(counterStartIndex?: number, counterNumberFormat?: string)}
+     * use regex to match the content inside the outer ${}
+     * Examples:
+     *  ${AliquotedFrom}-:withCounter   : parentSample-1
+     *  ${AliquotedFrom}-${SourceParent/Property}-:withCounter  : parentSample-parentSource-1
+     *  ${AliquotedFrom}.:withCounter() : parentSample.1
+     *  ${AliquotedFrom}-:withCounter(1000) : parentSample-1000
+     *  ${AliquotedFrom}-:withCounter(1, '000') : parentSample-001
+     */
+    public static final String WITH_COUNTER_REGEX = "(.+):withCounter\\(?(\\d*)?,?\\s*'?(\\d*)?'?\\)?";
+    public static final Pattern WITH_COUNTER_PATTERN = Pattern.compile(WITH_COUNTER_REGEX);
+
+    public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
+
     private final TableInfo _parentTable;
+
+    public FieldKeyStringExpression getParsedNameExpression()
+    {
+        return _parsedNameExpression;
+    }
+
     private final FieldKeyStringExpression _parsedNameExpression;
 
     // extracted from name expression after parsing
@@ -68,16 +97,16 @@ public class NameGenerator
     private boolean _exprHasLineageInputs = false;
     private Map<FieldKey, TableInfo> _exprLookups = Collections.emptyMap();
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
         _parentTable = parentTable;
-        _parsedNameExpression = FieldKeyStringExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects);
+        _parsedNameExpression = NameGenerationExpression.create(nameExpression, false, NullValueBehavior.ReplaceNullWithBlank, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
         initialize(importAliases);
     }
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
     {
-        this(nameExpression, parentTable, allowSideEffects, null);
+        this(nameExpression, parentTable, allowSideEffects, null, container, getNonConflictCountFn, counterSeqPrefix);
     }
 
     public NameGenerator(@NotNull FieldKeyStringExpression nameExpression, @Nullable TableInfo parentTable)
@@ -124,7 +153,8 @@ public class NameGenerator
         boolean hasLineageInputs = false;
         List<FieldKey> lookups = new ArrayList<>();
 
-        List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getParsedExpression();
+        // check for all parts, including those in sub nested expressions
+        List<StringExpressionFactory.StringPart> parts = _parsedNameExpression.getDeepParsedExpression();
         for (StringExpressionFactory.StringPart part : parts)
         {
             if (!part.isConstant())
@@ -218,7 +248,7 @@ public class NameGenerator
             Map<String, Object> map = li.next();
             try
             {
-                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFn);
+                String name = state.nextName(map, parentDatas, parentSamples, extraPropsFn, null);
                 map.put("name", name);
             }
             catch (DuplicateNameException dup)
@@ -246,14 +276,21 @@ public class NameGenerator
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
     {
-        return state.nextName(rowMap, null, null, null);
+        return state.nextName(rowMap, null, null, null, null);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
                                @Nullable Supplier<Map<String, Object>> extraPropsFn) throws NameGenerationException
     {
-        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn);
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn, null);
+    }
+
+    public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
+                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
+                               @Nullable Supplier<Map<String, Object>> extraPropsFn, @Nullable FieldKeyStringExpression altExpression) throws NameGenerationException
+    {
+        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFn, altExpression);
     }
 
 
@@ -288,7 +325,7 @@ public class NameGenerator
             _rowNumber = -1;
         }
 
-        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn)
+        private String nextName(Map<String, Object> rowMap, Set<ExpData> parentDatas, Set<ExpMaterial> parentSamples, @Nullable Supplier<Map<String, Object>> extraPropsFn, @Nullable FieldKeyStringExpression altExpression)
                 throws NameGenerationException
         {
             if (_rowNumber == -1)
@@ -298,7 +335,7 @@ public class NameGenerator
             String name;
             try
             {
-                name = genName(rowMap, parentDatas, parentSamples, extraPropsFn);
+                name = genName(rowMap, parentDatas, parentSamples, extraPropsFn, altExpression);
             }
             catch (IllegalArgumentException e)
             {
@@ -320,7 +357,8 @@ public class NameGenerator
         private String genName(@NotNull Map<String, Object> rowMap,
                                @Nullable Set<ExpData> parentDatas,
                                @Nullable Set<ExpMaterial> parentSamples,
-                               @Nullable Supplier<Map<String, Object>> extraPropsFn)
+                               @Nullable Supplier<Map<String, Object>> extraPropsFn,
+                               @Nullable FieldKeyStringExpression altExpression)
                 throws IllegalArgumentException
         {
             // If sample counters bound to a column are found, e.g. in the expression "${myDate:dailySampleCount}" the dailySampleCount is bound to myDate column,
@@ -359,9 +397,12 @@ public class NameGenerator
             // Add extra context variables
             Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps);
 
-            String name = _parsedNameExpression.eval(ctx);
+            // allow using alternative expression for evaluation.
+            // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
+            FieldKeyStringExpression expression = altExpression != null ? altExpression : _parsedNameExpression;
+            String name = expression.eval(ctx);
             if (name == null || name.length() == 0)
-                throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + _parsedNameExpression.getSource() + "'.  Check the pattern syntax and data values.");
+                throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + expression.getSource() + "'.  Check the pattern syntax and data values.");
 
             return name;
         }
@@ -532,6 +573,230 @@ public class NameGenerator
 
     }
 
+    /**
+     *  Same as FieldKeyExpression, but supports :withCounter syntax
+     */
+    public static class NameGenerationExpression extends FieldKeyStringExpression
+    {
+        private final Container _container;
+        private Function<String, Long> _getNonConflictCountFn;
+        private String _counterSeqPrefix;
+
+        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container)
+        {
+            super(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
+            _container = container;
+        }
+
+        NameGenerationExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        {
+            this(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container);
+            _getNonConflictCountFn = getNonConflictCountFn;
+            _counterSeqPrefix = counterSeqPrefix;
+        }
+
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions)
+        {
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, NullValueBehavior.ReplaceNullWithBlank, true, null, null, null);
+        }
+
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn)
+        {
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, null);
+        }
+        
+        public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        {
+            return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix);
+        }
+
+        @Override
+        protected StringExpressionFactory.StringPart parsePart(String expression)
+        {
+            Matcher counterMatcher = WITH_COUNTER_PATTERN.matcher(expression);
+            if (counterMatcher.find())
+            {
+                String namePrefixExpression = counterMatcher.group(1);
+                int startInd = 0;
+                String startIndStr = counterMatcher.group(2);
+                String numberFormat = counterMatcher.group(3);
+                if (!StringUtils.isEmpty(startIndStr))
+                {
+                    try
+                    {
+                        startInd = Integer.valueOf(startIndStr);
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        // ignore illegal startInd
+                    }
+                }
+
+                return new NameGenerator.CounterExpressionPart(namePrefixExpression, startInd, numberFormat, _container, _getNonConflictCountFn, _counterSeqPrefix);
+            }
+
+            return super.parsePart(expression);
+        }
+
+        @Override
+        protected void parse()
+        {
+            _parsedExpression = new ArrayList<>();
+            int start = 0;
+            int openIndex;
+            int openCount = 0;
+            final String openTag = "${";
+            final char closeTag = '}';
+
+            while (start < _source.length() && (openIndex = _source.indexOf(openTag, start)) >= 0)
+            {
+                if (openIndex > 0)
+                    _parsedExpression.add(new StringExpressionFactory.ConstantPart(_source.substring(start, openIndex)));
+
+                int subInd = openIndex + 2;
+                openCount = 1;
+
+                while (subInd < _source.length())
+                {
+                    int nextOpen = _source.indexOf(openTag, subInd);
+                    int nextClose = _source.indexOf(closeTag, subInd);
+
+                    if (nextOpen == -1 && nextClose == -1)
+                        break;
+
+                    if (nextOpen == -1 || nextClose < nextOpen)
+                    {
+                        openCount--;
+                        subInd = nextClose + 1;
+                    }
+                    else if (nextClose > nextOpen)
+                    {
+                        openCount++;
+                        subInd = nextOpen + 2;
+                    }
+
+                    if (openCount == 0)
+                        break;
+
+                    if (openCount < 0)
+                        throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
+                }
+
+                if (openCount == 0)
+                {
+                    String sub = _source.substring(openIndex + 2, subInd - 1);
+                    StringExpressionFactory.StringPart part = parsePart(sub);
+
+                    if (part.hasSideEffects() && !_allowSideEffects)
+                        throw new IllegalArgumentException("Side-effecting expression part not allowed: " + sub);
+
+                    _parsedExpression.add(part);
+                    start = subInd;
+                    continue;
+                }
+                else
+                    throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
+
+            }
+
+            if (start < _source.length())
+                _parsedExpression.add(new StringExpressionFactory.ConstantPart(_source.substring(start)));
+        }
+    }
+
+    public static class CounterExpressionPart extends StringExpressionFactory.StringPart
+    {
+        private final String _prefixExpression;
+        private final Integer _startIndex;
+
+        private final FieldKeyStringExpression _parsedNameExpression;
+
+        private final Function<String, Long> _getNonConflictCountFn;
+
+        private SubstitutionFormat _counterFormat;
+
+        private final Container _container;
+
+        private final Map<String, DbSequence> _counterSequences = new HashMap<>();
+
+        private final String _counterSeqPrefix;
+
+        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        {
+            _prefixExpression = expression;
+            _parsedNameExpression = FieldKeyStringExpression.create(expression, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank, true);
+            _startIndex = startIndex;
+            _container = container;
+            _getNonConflictCountFn = getNonConflictCountFn;
+            _counterSeqPrefix = StringUtils.isBlank(counterSeqPrefix) ? COUNTER_SEQ_PREFIX : counterSeqPrefix;
+            if (!StringUtils.isEmpty(counterFormatStr))
+                _counterFormat = new SubstitutionFormat.NumberSubstitutionFormat(counterFormatStr);
+        }
+
+        @Override
+        public boolean isConstant() { return false; }
+
+        @Override
+        public Object getToken()
+        {
+            return _prefixExpression;
+        }
+
+        @NotNull
+        @Override
+        public Collection<SubstitutionFormat> getFormats()
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public String getValue(Map map)
+        {
+            String prefix = _parsedNameExpression.eval(map);
+            if (!_counterSequences.containsKey(prefix))
+            {
+                long existingCount = -1;
+
+                if (_getNonConflictCountFn != null)
+                    existingCount = _getNonConflictCountFn.apply(prefix);
+
+                DbSequence newSequence = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix);
+                long currentSeqMax = newSequence.current();
+
+                if (existingCount >= currentSeqMax || (_startIndex - 1) > currentSeqMax)
+                    newSequence.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
+
+                _counterSequences.put(prefix, newSequence);
+            }
+
+            long count = _counterSequences.get(prefix).next();
+
+            Object countStr;
+            if (_counterFormat != null)
+                countStr = _counterFormat.format(count);
+            else
+                countStr = String.valueOf(count);
+
+            return prefix + countStr;
+        }
+
+        public FieldKeyStringExpression getParsedNameExpression()
+        {
+            return _parsedNameExpression;
+        }
+
+        @Override
+        public boolean hasSideEffects()
+        {
+            return false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "${" + _prefixExpression + "}";
+        }
+    }
 
     public class NameGenerationException extends Exception
     {
@@ -570,6 +835,327 @@ public class NameGenerator
             return _name;
         }
     }
+
+    public static class TestCase extends Assert
+    {
+        final String aliquotedFrom = "S100";
+        final String sourceMeta = "mouse1";
+
+        @Test
+        public void testDateFormats()
+        {
+            Date d = new GregorianCalendar(2011, 11, 3).getTime();
+            Map<Object, Object> m = new HashMap<>();
+            m.put("d", d);
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:date}", false);
+                String s = se.eval(m);
+                assertEquals("20111203", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:date('yy-MM-dd')}", false);
+                String s = se.eval(m);
+                assertEquals("11-12-03", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:date('& yy-MM-dd'):htmlEncode}", false);
+                String s = se.eval(m);
+                assertEquals("&amp; 11-12-03", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:date('ISO_ORDINAL_DATE')}", false);
+                String s = se.eval(m);
+                assertEquals("2011-337", s);
+            }
+
+            {
+                // invalid date format
+                StringExpression se = NameGenerationExpression.create("${d:date('yyy-MMMMM-dd')}", false);
+                String s = se.eval(m);
+                assertEquals("2011-D-03", s);
+            }
+
+            {
+                // parse a non date value
+                StringExpression se = NameGenerationExpression.create("${d:date('yyy-MM-dd')}", false);
+                Map<Object, Object> m2 = new HashMap<>();
+                m.put("d", "Not a date");
+                String s = se.eval(m2);
+                assertNull(s);
+            }
+
+        }
+
+        @Test
+        public void testNumberFormats()
+        {
+            Double d = 123456.789;
+            Map<Object, Object> m = new HashMap<>();
+            m.put("d", d);
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:number('0.0000')}", false);
+                String s = se.eval(m);
+                assertEquals("123456.7890", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:number('000000000')}", false);
+                String s = se.eval(m);
+                assertEquals("000123457", s);
+            }
+
+            {
+                // invalid number format
+                StringExpression se = NameGenerationExpression.create("${d:number('abcde')}", false);
+                String s = se.eval(m);
+                assertEquals("abcde123457", s);
+
+            }
+
+            {
+                // parse a non number
+                try
+                {
+                    Map<Object, Object> m2 = new HashMap<>();
+                    m2.put("d", "not a number");
+
+                    StringExpression se = NameGenerationExpression.create("${d:number('0.00')}", false);
+                    se.eval(m2);
+                    fail("Expected exception");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // ok
+                }
+
+            }
+        }
+
+        @Test
+        public void testStringFormats()
+        {
+            Map<Object, Object> m = new HashMap<>();
+            m.put("a", "A");
+            m.put("b", " B ");
+            m.put("empty", "");
+            m.put("null", null);
+            m.put("list", Arrays.asList("a", "b", "c"));
+
+            {
+                StringExpression se = NameGenerationExpression.create(
+                        "${null:defaultValue('foo')}|${empty:defaultValue('bar')}|${a:defaultValue('blee')}", false);
+
+                String s = se.eval(m);
+                assertEquals("foo|bar|A", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create(
+                        "${b}|${b:trim}|${empty:trim}|${null:trim}", false);
+                String s = se.eval(m);
+                assertEquals(" B |B||", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create(
+                        "${a:prefix('!')}|${a:suffix('?')}|${null:suffix('#')}|${empty:suffix('*')}|${empty:defaultValue('foo'):suffix('@')}", false);
+                String s = se.eval(m);
+                assertEquals("!A|A?|||foo@", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create(
+                        "${a:join('-')}|${list:join('-')}|${list:join('_'):prefix('['):suffix(']')}|${empty:join('-')}|${null:join('-')}", false);
+                String s = se.eval(m);
+                assertEquals("A|a-b-c|[a_b_c]||", s);
+            }
+        }
+
+        @Test
+        public void testCollectionFormats()
+        {
+            Map<Object, Object> m = new HashMap<>();
+            m.put("a", "A");
+            m.put("empty", Collections.emptyList());
+            m.put("null", null);
+            m.put("list", Arrays.asList("a", "b", "c"));
+
+            // CONSIDER: We may want to allow empty string to pass through the collection methods untouched
+            try
+            {
+                StringExpression se = NameGenerationExpression.create("${a:first}", false);
+
+                String s = se.eval(m);
+                fail("Expected exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // ok
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${null:first}|${empty:first}|${list:first}", false);
+
+                String s = se.eval(m);
+                assertEquals("||a", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create(
+                        "${null:rest}|${empty:rest:join('-')}|${list:rest:join('-')}", false);
+
+                String s = se.eval(m);
+                assertEquals("||b-c", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create(
+                        "${null:last}|${empty:last}|${list:last}", false);
+
+                String s = se.eval(m);
+                assertEquals("||c", s);
+            }
+        }
+
+        private void resetCounter()
+        {
+            Container c = JunitUtil.getTestContainer();
+
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '.');
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "..");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "...");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '.' + sourceMeta + ".");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + ".mouse2.");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '-');
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '-' + sourceMeta + "-");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '_');
+        }
+
+        @Test
+        public void testWithCounter()
+        {
+
+            Map<Object, Object> m = new HashMap<>();
+            m.put("AliquotedFrom", aliquotedFrom);
+            m.put("SourceMeta", sourceMeta);
+
+            Container c = JunitUtil.getTestContainer();
+            resetCounter();
+
+            {
+                FieldKeyStringExpression se = NameGenerationExpression.create(
+                        "${${AliquotedFrom}.:withCounter}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+
+                ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
+
+                assertEquals(1, parsedExpressions.size());
+                assertEquals(2, se.getDeepParsedExpression().size());
+                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+
+                String s = se.eval(m);
+                assertEquals("S100.1", s);
+            }
+
+            {
+                FieldKeyStringExpression se = NameGenerationExpression.create(
+                        "${${AliquotedFrom}.${SourceMeta}.:withCounter}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+
+                ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
+
+                assertEquals(1, parsedExpressions.size());
+                assertEquals(4, se.getDeepParsedExpression().size());
+                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+
+                String s = se.eval(m);
+                assertEquals("S100.mouse1.1", s);
+                s = se.eval(m);
+                assertEquals("S100.mouse1.2", s);
+
+                Map<Object, Object> m2 = new HashMap<>();
+                m2.put("AliquotedFrom", aliquotedFrom);
+                m2.put("SourceMeta", "mouse2");
+
+                s = se.eval(m2);
+                assertEquals("S100.mouse2.1", s);
+            }
+
+            {
+                FieldKeyStringExpression se = NameGenerationExpression.create(
+                        "${${AliquotedFrom}-:withCounter}-${SourceMeta}-suffix", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+
+                ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
+
+                assertEquals(4, parsedExpressions.size());
+                assertEquals(5, se.getDeepParsedExpression().size());
+                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+                assertTrue(parsedExpressions.get(1) instanceof StringExpressionFactory.ConstantPart);
+                assertTrue(parsedExpressions.get(2) instanceof StringExpressionFactory.FieldPart);
+
+                String s = se.eval(m);
+                assertEquals("S100-1-mouse1-suffix", s);
+            }
+
+            {
+                FieldKeyStringExpression se = NameGenerationExpression.create(
+                        "${${AliquotedFrom}_:withCounter()}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+
+                ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
+
+                assertEquals(1, parsedExpressions.size());
+                assertEquals(2, se.getDeepParsedExpression().size());
+                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+
+                String s = se.eval(m);
+                assertEquals("S100_1", s);
+                s = se.eval(m);
+                assertEquals("S100_2", s);
+            }
+
+            {
+                FieldKeyStringExpression se = NameGenerationExpression.create(
+                        "${${AliquotedFrom}..:withCounter(101)}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+
+                ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
+
+                assertEquals(1, parsedExpressions.size());
+                assertEquals(2, se.getDeepParsedExpression().size());
+                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+                NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) parsedExpressions.get(0);
+                assertEquals((Integer) 101, counterPart._startIndex);
+
+                String s = se.eval(m);
+                assertEquals("S100..101", s);
+            }
+
+            {
+                FieldKeyStringExpression se = NameGenerationExpression.create(
+                        "${${AliquotedFrom}...:withCounter(111, '0000')}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+
+                ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
+
+                assertEquals(1, parsedExpressions.size());
+                assertEquals(2, se.getDeepParsedExpression().size());
+                assertTrue(parsedExpressions.get(0) instanceof NameGenerator.CounterExpressionPart);
+
+                String s = se.eval(m);
+                assertEquals("S100...0111", s);
+            }
+
+        }
+
+        @After
+        public void cleanup()
+        {
+            resetCounter();
+        }
+
+    }
+
 }
 
 

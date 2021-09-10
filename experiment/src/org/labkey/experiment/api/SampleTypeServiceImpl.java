@@ -569,13 +569,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, templateInfo, null, null, null, null, null);
+                parentCol, nameExpression, null, templateInfo, null, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory)
         throws ExperimentException
     {
@@ -614,6 +614,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         int nameExpMax = materialSourceTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new ExperimentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate the aliquot name expression length
+        int aliquotNameExpMax = materialSourceTable.getColumn("AliquotNameExpression").getScale();
+        if (aliquotNameExpression != null && aliquotNameExpression.length() > aliquotNameExpMax)
+            throw new ExperimentException("Aliquot naming patten may not exceed " + aliquotNameExpMax + " characters.");
 
         // Validate the label color length
         int labelColorMax = materialSourceTable.getColumn("LabelColor").getScale();
@@ -695,6 +700,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
+        if (aliquotNameExpression != null)
+            source.setAliquotNameExpression(aliquotNameExpression);
         source.setLabelColor(labelColor);
         source.setMetricUnit(metricUnit);
         source.setAutoLinkTargetContainer(autoLinkTargetContainer);
@@ -873,6 +880,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
                 st.setNameExpression(sampleIdPattern);
+            }
+
+            String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
+            String oldAliquotPattern = st.getAliquotNameExpression();
+            if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
+            {
+                st.setAliquotNameExpression(aliquotIdPattern);
             }
 
             st.setLabelColor(options.getLabelColor());

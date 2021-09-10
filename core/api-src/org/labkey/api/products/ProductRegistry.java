@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 public class ProductRegistry
 {
+    public static final String PRODUCT_ID_PROPERTY_NAME = "productId";
     private static final Logger _logger = LogManager.getLogger(ProductRegistry.class);
     private static final Map<String, ProductMenuProvider> _productMap = new ConcurrentCaseInsensitiveSortedMap<>();
     private static final Map<String, ProductMenuProvider> _moduleProviderMap = new ConcurrentHashMap<>();
