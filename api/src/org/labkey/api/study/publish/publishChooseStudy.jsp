@@ -128,7 +128,7 @@
         };
 
         handleNext = function(){
-            if ($("#autoLinkCategory").val().length > 200) {
+            if ($("#autoLinkCategory").val() !== undefined && $("#autoLinkCategory").val().length > 200) {
                 let errorMessageDiv = $('#chooseStudyError');
                 errorMessageDiv.text("Linked Dataset Category name must be shorter than 200 characters.");
                 return;
