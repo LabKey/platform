@@ -334,9 +334,11 @@
       <column columnName="IdCol3"/>
       <column columnName="ParentCol"/>
       <column columnName="NameExpression"/>
+      <column columnName="AliquotNameExpression"/>
       <column columnName="LabelColor"/>
       <column columnName="MetricUnit"/>
       <column columnName="AutoLinkTargetContainer"/>
+      <column columnName="AutoLinkCategory"/>
       <column columnName="CreatedBy">
         <description>Contains the user that created this sample type</description>
       </column>

@@ -63,9 +63,11 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
             case MaterialLSIDPrefix:
             case Name:
             case NameExpression:
+            case AliquotNameExpression:
             case LabelColor:
             case MetricUnit:
             case AutoLinkTargetContainer:
+            case AutoLinkCategory:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
             case Created:
@@ -118,9 +120,11 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
         addColumn(ExpSampleTypeTable.Column.Name);
         addColumn(ExpSampleTypeTable.Column.Description);
         addColumn(ExpSampleTypeTable.Column.NameExpression).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.AliquotNameExpression).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LabelColor).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.MetricUnit).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.AutoLinkTargetContainer).setHidden(true);
+        addColumn(ExpSampleTypeTable.Column.AutoLinkCategory).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleTypeTable.Column.Created);

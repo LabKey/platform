@@ -265,14 +265,6 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, String sourceName,
-                                 Pair<Dataset.PublishSource, Integer> publishSource,
-                                 List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
-    {
-        return publishData(user, sourceContainer, targetContainer, sourceName, publishSource, dataMaps, Collections.emptyList(), keyPropertyName, errors);
-    }
-
-    @Override
     public ActionURL publishData(User user, Container sourceContainer, @Nullable Container targetContainer, @Nullable ViewCategory datasetCategory,
                                  String sourceName, Pair<Dataset.PublishSource, Integer> publishSource,
                                  List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
@@ -1190,6 +1182,9 @@ public class StudyPublishManager implements StudyPublishService
                         user,
                         container,
                         targetContainer,
+                        sampleType.getAutoLinkCategory() != null
+                                ? ViewCategoryManager.getInstance().ensureViewCategory(targetContainer, user, sampleType.getAutoLinkCategory())
+                                : null,
                         sampleTypeName,
                         Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                         dataMaps,

@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
@@ -99,6 +100,13 @@ public interface ExpSampleType extends ExpObject
     /** @return true if this SampleSet has a name expression. */
     boolean hasNameExpression();
 
+    /** @return aliquot name expression if set. */
+    @Nullable
+    String getAliquotNameExpression();
+
+    /** @return true if this SampleSet has an override aliquot name expression. */
+    boolean hasAliquotNameExpression();
+
     /** @return label color hex value if set. */
     @Nullable
     String getLabelColor();
@@ -110,6 +118,10 @@ public interface ExpSampleType extends ExpObject
     /** @return Auto link target container if set. */
     @Nullable
     Container getAutoLinkTargetContainer();
+
+    /** @return Auto link dataset category if set. */
+    @Nullable
+    String getAutoLinkCategory();
 
     /**
      * Generate sample names for each row map in <code>maps</code> sample group.
@@ -194,4 +206,6 @@ public interface ExpSampleType extends ExpObject
     void setImportAliasMap(Map<String, String> aliasMap);
 
     ActionURL urlEditDefinition(ContainerUser cu);
+
+    Function<String, Long> getMaxSampleCounterFunction();
 }

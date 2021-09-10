@@ -471,6 +471,11 @@ public class XarReader extends AbstractXarImporter
             materialSource.setNameExpression(sampleSet.getNameExpression());
         }
 
+        if (sampleSet.isSetAliquotNameExpression())
+        {
+            materialSource.setAliquotNameExpression(sampleSet.getAliquotNameExpression());
+        }
+
         if (keyFields.size() == 1 && keyFields.get(0).equals(ExpMaterialTable.Column.Name.name()))
         {
             // We can use Name as the idCol1 without requiring it to be a domain property
@@ -512,6 +517,11 @@ public class XarReader extends AbstractXarImporter
         if (sampleSet.isSetAutoLinkTargetContainerId())
         {
             materialSource.setAutoLinkTargetContainer(ContainerManager.getForId(sampleSet.getAutoLinkTargetContainerId()));
+        }
+
+        if (sampleSet.isSetAutoLinkCategory())
+        {
+            materialSource.setAutoLinkCategory(sampleSet.getAutoLinkCategory());
         }
 
         SampleSetType.ParentImportAlias parentImportAlias = sampleSet.getParentImportAlias();
