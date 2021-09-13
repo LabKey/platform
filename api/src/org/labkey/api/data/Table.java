@@ -89,7 +89,7 @@ public class Table
     public static final int ERROR_DELETED = 10002;
     public static final int ERROR_TABLEDELETED = 10003;
 
-    private static final Logger _log = LogHelper.getLogger(Table.class, "SQL generation and execution, some TableInfo-scoped DB scoped operations");
+    private static final Logger _log = LogHelper.getLogger(Table.class, "SQL generation and execution, some TableInfo-scoped DB operations");
 
     // Return all rows instead of limiting to the top n
     public static final int ALL_ROWS = -1;
