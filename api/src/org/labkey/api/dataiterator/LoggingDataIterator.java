@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  */
 public class LoggingDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
-    static Logger _staticLog = LogHelper.getLogger(LoggingDataIterator.class, "Shows transformations and mappings during many types of data imports and ETLs");
+    static Logger _staticLog = LogHelper.getLogger(LoggingDataIterator.class, "Transformations and mappings during many types of data imports and ETLs");
     Logger _log = _staticLog;
     Level _pri = Level.DEBUG;
 
