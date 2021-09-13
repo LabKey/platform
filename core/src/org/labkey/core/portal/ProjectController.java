@@ -1495,20 +1495,16 @@ public class ProjectController extends SpringActionController
                 List<Map<String, Object>> containerJSON = new ArrayList<>();
                 for (Container c : containers)
                 {
-                    if (c != null && c.hasPermission(user, ReadPermission.class)) // 43853
-                        containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
+                    containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
                 }
-                if (containerJSON.size() > 0)
-                    resultMap = Collections.singletonMap("containers", containerJSON);
-                else
-                    resultMap = Collections.emptyMap();
+                resultMap = Collections.singletonMap("containers", containerJSON);
             }
             else
             {
                 Container c = getContainer();
                 if (form.getContainer() != null && form.getContainer().length > 0)
                     c = form.getContainer()[0];
-                if (null != c && c.hasPermission(user, ReadPermission.class)) // 17166, 43853
+                if (null != c) // 17166
                     resultMap = getContainerJSON(c, user, propertiesToSerialize);
                 else
                     resultMap = Collections.emptyMap();
@@ -1518,13 +1514,27 @@ public class ProjectController extends SpringActionController
             return response;
         }
 
-        Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
+        private Map<String, Object> getContainerJSON(Container container, User user, List<ModuleProperty> propertiesToSerialize)
         {
-            Map<String, Object> resultMap = container.toJSON(user, _includeEffectivePermissions);
-            addModuleProperties(container, propertiesToSerialize, resultMap);
+            Map<String, Object> resultMap = new HashMap<>();
+            if (container.hasPermission(user, ReadPermission.class)) // 43853
+            {
+                resultMap = container.toJSON(user, _includeEffectivePermissions);
+                addModuleProperties(container, propertiesToSerialize, resultMap);
+            }
 
             if (_requestedDepth > 0)
-                resultMap.put("children", getVisibleChildren(container, user, propertiesToSerialize, 0));
+            {
+                List<Map<String, Object>> children = getVisibleChildren(container, user, propertiesToSerialize, 0);
+                if (children.size() > 0)
+                {
+                    // if use has perm to at least one child container, make sure that at least the parent name is shown
+                    // (even if the user doesn't have perm to that parent container)
+                    resultMap.put("name", container.getName());
+                    resultMap.put("children", children);
+                }
+            }
+
             return resultMap;
         }
 
