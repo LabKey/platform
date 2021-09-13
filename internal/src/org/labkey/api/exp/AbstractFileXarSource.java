@@ -88,15 +88,18 @@ public abstract class AbstractFileXarSource extends XarSource
     }
 
     @Override
+    @Nullable
+    @Deprecated
     public File getRoot()
     {
-        return getRootPath().toFile();
+        return null != getRootPath()? getRootPath().toFile() : null;
     }
 
     @Override
+    @Nullable
     public Path getRootPath()
     {
-        return getXmlFile().getParent();
+        return null != getXmlFile()? getXmlFile().getParent(): null;
     }
 
     @Override
