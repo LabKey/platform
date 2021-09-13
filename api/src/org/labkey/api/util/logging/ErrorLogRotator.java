@@ -51,6 +51,7 @@ public class ErrorLogRotator
         PathWithAttributes logToRetain = null;
         long bestTimeVersusStartup = Long.MAX_VALUE;
 
+        // Per Log4J specs, paths are sorted with most recently modified files first
         for (int i = MAX_RETAINED; i < paths.size(); i++)
         {
             PathWithAttributes path = paths.get(i);
@@ -78,7 +79,7 @@ public class ErrorLogRotator
             }
             catch (IOException e)
             {
-                LOG.warn("Failed to retain labkey-errors.log file", e);
+                LOG.warn("Failed to retain error log file " + logToRetain.getPath(), e);
             }
             _copiedOriginal = true;
         }
