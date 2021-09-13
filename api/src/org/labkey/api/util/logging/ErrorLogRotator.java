@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Helper class to retain labkey-errors.log file content if it's danger of rotating out and potentially losing
+ * Helper class to retain labkey-errors.log file content if it's in danger of rotating out and potentially losing
  * the root cause of a problem.
  *
  * We will retain up to three log files of 100 MB (as configured in log4j2.xml). We'll keep the first log from a given
