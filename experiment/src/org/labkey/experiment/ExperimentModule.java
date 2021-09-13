@@ -162,7 +162,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 21.012;
+        return 21.013;
     }
 
     @Nullable
@@ -209,9 +209,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_SAMPLE_STATUS,
-                "Enable sample status tracking",
-                "Enable configuration of sample status values " +
-                        "and corresponding updates to sample handling based on status values.", false);
+                "Sample status tracking",
+                "Sample status values can be provided for samples and will be checked to determine validity of " +
+                        "certain sample actions.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -670,5 +670,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         // Clear the last indexed time on all data
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoData() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+    }
+
+    public static boolean isSampleStatusEnabled()
+    {
+        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SAMPLE_STATUS);
     }
 }
