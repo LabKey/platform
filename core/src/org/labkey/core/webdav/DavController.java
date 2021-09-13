@@ -25,7 +25,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,7 +48,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.Sort;
-import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
@@ -73,6 +71,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.*;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DefaultModelAndView;
 import org.labkey.api.view.JspView;
@@ -191,7 +190,7 @@ import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
  */
 public class DavController extends SpringActionController
 {
-    private static final Logger _log = LogManager.getLogger(DavController.class);
+    private static final Logger _log = LogHelper.getLogger(DavController.class, "WebDAV request handling");
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
 
     public static final String name = "_dav_";

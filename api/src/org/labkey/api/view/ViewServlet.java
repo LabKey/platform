@@ -16,7 +16,6 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -46,6 +45,7 @@ import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.Controller;
@@ -80,7 +80,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
  */
 public class ViewServlet extends HttpServlet
 {
-    private static final Logger _log = LogManager.getLogger(ViewServlet.class);
+    private static final Logger _log = LogHelper.getLogger(ViewServlet.class, "HTTP request processing details, including failed authentication");
 
     public static final String ORIGINAL_URL_STRING = "LABKEY.OriginalURL";           // String
     public static final String ORIGINAL_URL_URLHELPER = "LABKEY.OriginalURLHelper";  // URLHelper

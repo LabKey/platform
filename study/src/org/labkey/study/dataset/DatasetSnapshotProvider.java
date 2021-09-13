@@ -16,7 +16,6 @@
 package org.labkey.study.dataset;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
@@ -64,6 +63,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -111,7 +111,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements QuerySnapshotService.AutoUpdateable, DatasetManager.DatasetListener, ParticipantCategoryListener
 {
     private static final DatasetSnapshotProvider INSTANCE = new DatasetSnapshotProvider();
-    private static final Logger LOG = LogManager.getLogger(DatasetSnapshotProvider.class);
+    private static final Logger LOG = LogHelper.getLogger(DatasetSnapshotProvider.class, "Query snapshot refresh details");
     private static final BlockingQueue<SnapshotDependency.SourceDataType> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final QuerySnapshotDependencyThread DEPENDENCY_THREAD = new QuerySnapshotDependencyThread();
 

@@ -16,11 +16,11 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.util.Formatter;
@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  */
 public class LoggingDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
 {
-    static Logger _staticLog = LogManager.getLogger(LoggingDataIterator.class);
+    static Logger _staticLog = LogHelper.getLogger(LoggingDataIterator.class, "Transformations and mappings during many types of data imports and ETLs");
     Logger _log = _staticLog;
     Level _pri = Level.DEBUG;
 
