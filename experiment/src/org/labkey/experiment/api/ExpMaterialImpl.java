@@ -178,6 +178,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public Long getStatus()
+    {
+        return _object.getStatus();
+    }
+
+    @Override
     @NotNull
     public Collection<String> getAliases()
     {

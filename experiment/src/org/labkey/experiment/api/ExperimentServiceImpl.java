@@ -73,6 +73,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
@@ -153,7 +154,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1187,6 +1187,12 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
         return new ExpFilesTableImpl(name, schema);
+    }
+
+    @Override
+    public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new SampleStatusTable(expSchema, containerFilter);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)

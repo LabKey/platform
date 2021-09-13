@@ -212,6 +212,14 @@ public class ExpSchema extends AbstractExpSchema
                 ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
+        },
+        SampleStatus
+        {
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
+            {
+                return ExperimentService.get().createSampleStatusTable(expSchema, cf);
+            }
         };
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf);
     }

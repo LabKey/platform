@@ -110,6 +110,11 @@ public abstract class UploadSamplesHelper
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Description.name());
     }
 
+    private static boolean isStatusHeader(String name)
+    {
+        return name.equalsIgnoreCase(ExpMaterialTable.Column.Status.name());
+    }
+
     private static boolean isCommentHeader(String name)
     {
         return name.equalsIgnoreCase(ExpMaterialTable.Column.Flag.name()) || name.equalsIgnoreCase("Comment");
@@ -723,6 +728,8 @@ public abstract class UploadSamplesHelper
                     if (isInputOutputHeader(name))
                         continue;
                     if (isAliasHeader(name))
+                        continue;
+                    if (isStatusHeader(name))
                         continue;
                     drop.add(name);
                 }

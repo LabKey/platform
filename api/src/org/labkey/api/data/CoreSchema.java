@@ -26,6 +26,8 @@ import org.labkey.api.data.dialect.SqlDialect;
  */
 public class CoreSchema
 {
+    public static final String DATA_STATES_TABLE_NAME = "DataStates";
+
     private static final CoreSchema instance = new CoreSchema();
     private static final String SCHEMA_NAME = "core";
 

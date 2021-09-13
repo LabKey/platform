@@ -44,4 +44,6 @@ public interface ExpMaterial extends ExpRunItem
     String getRootMaterialLSID();
 
     String getAliquotedFromLSID();
+
+    Long getStatus();
 }

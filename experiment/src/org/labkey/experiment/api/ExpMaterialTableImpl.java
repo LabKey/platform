@@ -22,25 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PHI;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -83,11 +65,11 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
+import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -104,7 +86,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
-import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -343,6 +324,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             case Properties:
                 return (BaseColumnInfo) createPropertiesColumn(alias);
+
+            case Status:
+                var ret = wrapColumn(alias, _rootTable.getColumn("Status"));
+                boolean statusEnabled = ExperimentModule.isSampleStatusEnabled();
+                ret.setHidden(!statusEnabled);
+                ret.setShownInDetailsView(!statusEnabled);
+                ret.setShownInInsertView(!statusEnabled);
+                ret.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, "datastates", "RowId", "Label")
+                {
+                    @Override
+                    public TableInfo getLookupTableInfo()
+                    {
+                        return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
+                    }
+                });
+                return ret;
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -594,6 +591,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
+        }
+
+        if (ExperimentModule.isSampleStatusEnabled())
+        {
+            var statusColInfo = addColumn(ExpMaterialTable.Column.Status);
+            statusColInfo.setShownInDetailsView(true);
+            statusColInfo.setShownInInsertView(true);
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Status));
+            statusColInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, ExpSchema.SCHEMA_NAME, CoreSchema.DATA_STATES_TABLE_NAME, "RowId", "Label")
+            {
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return ExperimentService.get().createSampleStatusTable(getExpSchema(), getContainerFilter());
+                }
+            });
         }
 
         addVocabularyDomains();
