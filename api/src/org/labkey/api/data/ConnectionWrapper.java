@@ -69,7 +69,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
-    private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC meta data and SQL execution calls being made");
+    private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC metadata and SQL execution calls being made");
+
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
     private static final Logger _logDefault = LogManager.getLogger(ConnectionWrapper.class);
