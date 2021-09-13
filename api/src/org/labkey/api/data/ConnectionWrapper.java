@@ -31,6 +31,7 @@ import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleLoggerWriter;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
 
 import java.lang.reflect.Method;
@@ -68,7 +69,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConnectionWrapper implements java.sql.Connection
 {
-    private static final Logger LOG = LogManager.getLogger(ConnectionWrapper.class);
+    private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC meta data and SQL execution calls being made");
     private static final Map<ConnectionWrapper, Pair<Thread, Throwable>> _openConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private static final Set<ConnectionWrapper> _loggedLeaks = new HashSet<>();
     private static final Logger _logDefault = LogManager.getLogger(ConnectionWrapper.class);

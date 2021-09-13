@@ -19,7 +19,6 @@ package org.labkey.pipeline.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,6 +64,7 @@ import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -113,7 +113,7 @@ import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARA
 
 public class PipelineServiceImpl implements PipelineService
 {
-    private static final Logger LOG = LogManager.getLogger(PipelineService.class);
+    private static final Logger LOG = LogHelper.getLogger(PipelineService.class, "Pipeline initialization and job requeuing during server startup");
 
     private static final String PREF_LASTPROTOCOL = "lastprotocol";
     private static final String PREF_LASTSEQUENCEDB = "lastsequencedb";
