@@ -1495,7 +1495,8 @@ public class ProjectController extends SpringActionController
                 List<Map<String, Object>> containerJSON = new ArrayList<>();
                 for (Container c : containers)
                 {
-                    containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
+                    if (c != null)
+                        containerJSON.add(getContainerJSON(c, user, propertiesToSerialize));
                 }
                 resultMap = Collections.singletonMap("containers", containerJSON);
             }
