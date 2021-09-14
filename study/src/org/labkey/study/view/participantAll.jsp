@@ -30,7 +30,7 @@
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page import="org.labkey.api.qc.DataState" %>
-<%@ page import="org.labkey.api.qc.DataStateManager" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
@@ -500,7 +500,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (DataStateManager.getInstance().showStates(getContainer()))
+    if (QCStateManager.getInstance().showStates(getContainer()))
     {
         row++;
         className = getShadeRowClass(row);
@@ -728,7 +728,7 @@
     {
         if (null == qcstates)
         {
-            List<DataState> states = DataStateManager.getInstance().getStates(study.getContainer());
+            List<DataState> states = QCStateManager.getInstance().getStates(study.getContainer());
             qcstates = new HashMap<>(2 * states.size());
             for (DataState state : states)
                 qcstates.put(state.getRowId(), state);

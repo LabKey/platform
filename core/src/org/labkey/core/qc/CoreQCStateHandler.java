@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
 import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.security.User;
 import org.labkey.core.CoreController;
 
@@ -54,7 +55,7 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
 
         DataState state = null;
         if (defaultQCState != null)
-            state = DataStateManager.getInstance().getStateForRowId(container, defaultQCState);
+            state = QCStateManager.getInstance().getStateForRowId(container, defaultQCState);
 
         AssayQCService.getProvider().setDefaultDataImportState(container, state);
     }
@@ -63,7 +64,7 @@ public class CoreQCStateHandler implements DataStateHandler<CoreController.Manag
     public List<DataState> getStates(Container container)
     {
         if (_states == null)
-            _states = DataStateManager.getInstance().getStates(container);
+            _states = QCStateManager.getInstance().getStates(container);
         return _states;
     }
 

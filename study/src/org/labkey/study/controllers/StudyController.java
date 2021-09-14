@@ -81,13 +81,13 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
 import org.labkey.api.qc.AbstractManageQCStatesBean;
-import org.labkey.api.qc.AbstractManageDataStatesForm;
-import org.labkey.api.qc.DeleteDataStateForm;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.DeleteDataStateForm;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -627,7 +627,7 @@ public class StudyController extends BaseStudyController
             bean.stats = form.getVisitStatistics();
             bean.showSpecimens = SpecimenService.get() != null;
 
-            if (DataStateManager.getInstance().showStates(getContainer()))
+            if (QCStateManager.getInstance().showStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
             if (!bean.showCohorts)
@@ -918,7 +918,7 @@ public class StudyController extends BaseStudyController
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
 
-            if (DataStateManager.getInstance().showStates(getContainer()))
+            if (QCStateManager.getInstance().showStates(getContainer()))
             {
                 String publicQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPublicStates(getContainer()));
                 String privateQCUrlFilterValue = getQCUrlFilterValue(QCStateSet.getPrivateStates(getContainer()));
@@ -3647,7 +3647,7 @@ public class StudyController extends BaseStudyController
             DataState newState = null;
             if (updateQCForm.getNewState() != null)
             {
-                newState = DataStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState());
+                newState = QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
                     errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
@@ -3668,7 +3668,7 @@ public class StudyController extends BaseStudyController
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
             url.addParameter(Dataset.DATASETKEY, updateQCForm.getDatasetId());
             if (updateQCForm.getNewState() != null)
-                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), DataStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
+                url.replaceParameter(getQCUrlFilterKey(CompareType.EQUAL, updateQCForm.getDataRegionName()), QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState().intValue()).getLabel());
             return url;
         }
 

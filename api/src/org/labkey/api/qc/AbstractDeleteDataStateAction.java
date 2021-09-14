@@ -40,10 +40,10 @@ public abstract class AbstractDeleteDataStateAction extends FormHandlerAction<De
     {
         if (form.isAll())
         {
-            for (DataState state : DataStateManager.getInstance().getStates(getContainer()))
+            for (Object state : _qcStateHandler.getStates(getContainer()))
             {
-                if (!getDataStateHandler().isStateInUse(getContainer(), state))
-                    DataStateManager.getInstance().deleteState(state);
+                if (!_qcStateHandler.isStateInUse(getContainer(), (DataState) state))
+                    DataStateManager.getInstance().deleteState((DataState) state);
             }
         }
         else

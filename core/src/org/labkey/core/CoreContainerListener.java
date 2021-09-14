@@ -64,8 +64,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
         Table.delete(TestSchema.getInstance().getTableInfoTestTable(), containerFilter);
 
-        // QC States
-        Table.delete(CoreSchema.getInstance().getTableInfoQCState(), containerFilter);
+        // Data States
+        Table.delete(CoreSchema.getInstance().getTableInfoDataStates(), containerFilter);
 
         // report engine folder mapping
         Table.delete(CoreSchema.getInstance().getTableInfoReportEngineMap(), containerFilter);

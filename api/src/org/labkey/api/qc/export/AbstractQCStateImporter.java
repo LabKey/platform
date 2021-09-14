@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
 import java.util.HashMap;
@@ -59,7 +59,7 @@ public abstract class AbstractQCStateImporter
         for (DataState orphanedState : prexistingStates.values())
         {
             if (!helper.isQCStateInUse(ctx.getContainer(), orphanedState))
-                DataStateManager.getInstance().deleteState(orphanedState);
+                QCStateManager.getInstance().deleteState(orphanedState);
             else
                 ctx.getLogger().info("Retaining existing QCState because it is still in use, even though it's missing from the new list: " + orphanedState.getLabel());
         }
@@ -87,7 +87,7 @@ public abstract class AbstractQCStateImporter
     private static Map<String, DataState> getExistingQCStates(ImportContext<?> ctx)
     {
         Map<String, DataState> prexistingStates = new HashMap<>();
-        for (DataState s : DataStateManager.getInstance().getStates(ctx.getContainer()))
+        for (DataState s : QCStateManager.getInstance().getStates(ctx.getContainer()))
         {
             prexistingStates.put(s.getLabel(), s);
         }

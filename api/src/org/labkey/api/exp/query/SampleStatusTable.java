@@ -13,6 +13,7 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
     public SampleStatusTable(ExpSchema expSchema, ContainerFilter cf)
     {
         super(CoreSchema.getInstance().getTableInfoDataStates(), expSchema, cf);
+        setName(ExpSchema.TableType.SampleStatus.name());
         if (cf != null)
             this.setContainerFilter(cf);
         SQLFragment sql = new SQLFragment(("(stateType IN ("));
@@ -23,6 +24,7 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
         addWrapColumn(getRealTable().getColumn("Label"));
         addWrapColumn(getRealTable().getColumn("Description"));
         addWrapColumn(getRealTable().getColumn("Container"));
-        addWrapColumn(getRealTable().getColumn("StateType"));
+        addWrapColumn("Status Type", getRealTable().getColumn("StateType"));
+
     }
 }

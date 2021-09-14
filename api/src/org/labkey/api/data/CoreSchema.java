@@ -155,7 +155,8 @@ public class CoreSchema
         return getSchema().getTable("Notifications");
     }
 
-    // Maintain for backward compatibility
+    // Prefer getTableInfoDataStates
+    @Deprecated (since = "21.10")
     public TableInfo getTableInfoQCState()
     {
         return getSchema().getTable("DataStates");

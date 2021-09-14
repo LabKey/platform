@@ -45,7 +45,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -250,7 +250,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 addColumn(qcStateColumn);
                 // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
                 // but don't include it in the default set of columns either
-                if (!DataStateManager.getInstance().showStates(_userSchema.getContainer()))
+                if (!QCStateManager.getInstance().showStates(_userSchema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(name))
@@ -810,7 +810,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             if (_qcStateCache == null)
             {
                 _qcStateCache = new HashMap<>();
-                for (DataState state : DataStateManager.getInstance().getStates(ctx.getContainer()))
+                for (DataState state : QCStateManager.getInstance().getStates(ctx.getContainer()))
                     _qcStateCache.put(state.getRowId(), state);
             }
             return _qcStateCache;

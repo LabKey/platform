@@ -91,6 +91,11 @@ public class DataState
         _stateType = stateType;
     }
 
+    public boolean isQCState()
+    {
+        return _stateType == null;
+    }
+
     public boolean equals(Object o)
     {
         if (this == o) return true;

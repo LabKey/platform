@@ -159,7 +159,9 @@ public class CoreQuerySchema extends UserSchema
         // Files table is not visible
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
             return getFilesTable();
-        if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name) || DATA_STATES_TABLE_NAME.equalsIgnoreCase(name))
+        if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
+           return getQCStatesTable();
+        if (DATA_STATES_TABLE_NAME.equalsIgnoreCase(name))
             return getDataStatesTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
@@ -628,6 +630,21 @@ public class CoreQuerySchema extends UserSchema
     protected TableInfo getDataStatesTable()
     {
         return new DataStatesTableInfo(this);
+    }
+
+    public TableInfo getQCStatesTable()
+    {
+        TableInfo dataStatesTable = getDataStatesTable();
+        FilteredTable table = new FilteredTable<>(dataStatesTable, this);
+        SQLFragment sql = new SQLFragment("(stateType IS NULL)");
+        table.setName(QCSTATE_TABLE_NAME);
+
+        table.addCondition(sql);
+        table.addWrapColumn(dataStatesTable.getColumn("RowId"));
+        table.addWrapColumn(dataStatesTable.getColumn("Label"));
+        table.addWrapColumn(dataStatesTable.getColumn("Description"));
+        table.addWrapColumn(dataStatesTable.getColumn("PublicData"));
+        return table;
     }
 
     protected void addNullSetFilter(FilteredTable table)

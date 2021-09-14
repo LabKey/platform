@@ -76,7 +76,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -1818,8 +1818,8 @@ public class StudyManager
      */
     public DataState insertQCState(User user, DataState state)
     {
-        boolean isFirst = DataStateManager.getInstance().getStates(state.getContainer()).isEmpty();
-        DataState newState = DataStateManager.getInstance().insertState(user, state);
+        boolean isFirst = QCStateManager.getInstance().getStates(state.getContainer()).isEmpty();
+        DataState newState = QCStateManager.getInstance().insertState(user, state);
         if (isFirst)
             // switching from zero to more than zero QC states affects the columns in our materialized datasets
             // (adding a QC State column), so we unmaterialize them here:
@@ -1834,7 +1834,7 @@ public class StudyManager
         Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
         DataState defaultQCState = null;
         if (defaultQcStateId != null)
-            defaultQCState = DataStateManager.getInstance().getStateForRowId(
+            defaultQCState = QCStateManager.getInstance().getStateForRowId(
                     study.getContainer(), defaultQcStateId);
         return defaultQCState;
     }
@@ -1948,7 +1948,7 @@ public class StudyManager
             Integer oldStateId = (Integer) row.get(DatasetTableImpl.QCSTATE_ID_COLNAME);
             DataState oldState = null;
             if (oldStateId != null)
-                oldState = DataStateManager.getInstance().getStateForRowId(container, oldStateId);
+                oldState = QCStateManager.getInstance().getStateForRowId(container, oldStateId);
 
             // check to see if we're actually changing state.  If not, no-op:
             if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))

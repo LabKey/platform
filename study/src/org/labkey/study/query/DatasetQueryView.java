@@ -42,7 +42,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
@@ -434,7 +434,7 @@ public class DatasetQueryView extends StudyQueryView
 
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 
-        if (DataStateManager.getInstance().showStates(getContainer()))
+        if (QCStateManager.getInstance().showStates(getContainer()))
             bar.add(createQCStateButton());
 
         if (SpecimenManager.get().isSpecimenModuleActive(getContainer()))

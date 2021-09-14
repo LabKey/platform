@@ -36,7 +36,7 @@ public class DataStateManager
 {
     private static final DataStateManager _instance = new DataStateManager();
     private static Map<String, DataStateHandler> _DataStateHandlers = new HashMap<>();
-    private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataStates",
+    protected static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataStates",
             (c, argument) -> new DataStateCollections(c)
     );
 
@@ -75,13 +75,13 @@ public class DataStateManager
             return _dataStateIdMap.get(rowId);
         }
 
-        List<DataState> getDataStates()
+        public List<DataState> getDataStates()
         {
             return _dataStates;
         }
     }
 
-    private DataStateManager(){}
+    protected DataStateManager(){}
 
     public static DataStateManager getInstance()
     {

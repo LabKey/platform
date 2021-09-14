@@ -45,7 +45,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
@@ -295,7 +295,7 @@ public class StudyServiceImpl implements StudyService
     @Override
     public void applyDefaultQCStateFilter(DataView view)
     {
-        if (DataStateManager.getInstance().showStates(view.getRenderContext().getContainer()))
+        if (QCStateManager.getInstance().showStates(view.getRenderContext().getContainer()))
         {
             QCStateSet stateSet = QCStateSet.getDefaultStates(view.getRenderContext().getContainer());
             if (null != stateSet)

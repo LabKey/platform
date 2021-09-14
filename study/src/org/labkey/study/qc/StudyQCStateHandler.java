@@ -20,7 +20,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.security.User;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
@@ -46,7 +46,7 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
         StudyImpl study = StudyController.getStudyThrowIfNull(container);
 
         if (_states == null)
-            _states = DataStateManager.getInstance().getStates(study.getContainer());
+            _states = QCStateManager.getInstance().getStates(study.getContainer());
         return _states;
     }
 
