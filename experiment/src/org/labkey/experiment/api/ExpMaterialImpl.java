@@ -178,7 +178,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public Long getStatus()
+    public Integer getStatus()
     {
         return _object.getStatus();
     }

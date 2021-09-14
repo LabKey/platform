@@ -31,7 +31,7 @@ public class Material extends RunItem
 {
     private String rootMaterialLSID;
     private String aliquotedFromLSID;
-    private Long status;
+    private Integer status;
 
     public Material()
     {
@@ -58,12 +58,12 @@ public class Material extends RunItem
         this.aliquotedFromLSID = aliquotedFromLSID;
     }
 
-    public Long getStatus()
+    public Integer getStatus()
     {
         return status;
     }
 
-    public void setStatus(Long status)
+    public void setStatus(Integer status)
     {
         this.status = status;
     }

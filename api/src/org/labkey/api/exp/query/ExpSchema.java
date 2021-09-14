@@ -347,9 +347,38 @@ public class ExpSchema extends AbstractExpSchema
      */
     public enum SampleStatusType
     {
-        Available,
-        Consumed,
-        Locked
+        Available(Set.of(ExperimentService.SampleOperations.values())),
+        Consumed(Set.of(
+                ExperimentService.SampleOperations.EditMetadata,
+                ExperimentService.SampleOperations.EditLineage,
+                ExperimentService.SampleOperations.CreateChildren,
+                ExperimentService.SampleOperations.RemoveFromStorage,
+                ExperimentService.SampleOperations.AddToPicklist,
+                ExperimentService.SampleOperations.Delete,
+                ExperimentService.SampleOperations.AddToWorkflow,
+                ExperimentService.SampleOperations.AddAssayData,
+                ExperimentService.SampleOperations.LinkToStudy,
+                ExperimentService.SampleOperations.RecallFromStudy
+        )),
+        Locked(Set.of(ExperimentService.SampleOperations.AddToPicklist));
+
+        Set<ExperimentService.SampleOperations> _supportedOps;
+
+
+        SampleStatusType(Set<ExperimentService.SampleOperations> supportedOps)
+        {
+            _supportedOps = supportedOps;
+        }
+
+        public Set<ExperimentService.SampleOperations> getSupportedOps()
+        {
+            return _supportedOps;
+        }
+
+        public boolean supportsOperation(ExperimentService.SampleOperations op)
+        {
+            return _supportedOps.contains(op);
+        }
     };
 
 

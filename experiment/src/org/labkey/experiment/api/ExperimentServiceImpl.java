@@ -91,6 +91,8 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -133,6 +135,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
+import org.labkey.experiment.samples.SampleStatusManager;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
 
@@ -632,11 +635,31 @@ public class ExperimentServiceImpl implements ExperimentService
     public ExpMaterialImpl getExpMaterial(Container c, User u, int rowId, @Nullable ExpSampleType sampleType)
     {
         List<ExpMaterialImpl> materials = getExpMaterials(c, u, List.of(rowId), sampleType);
-        if (materials.isEmpty())
+        if (materials == null || materials.isEmpty())
             return null;
         if (materials.size() > 1)
             throw new IllegalArgumentException("Expected 0 or 1 samples, got: " + materials.size());
         return materials.get(0);
+    }
+
+    public List<Integer> getUnsupportedForOperation(List<ExpMaterialImpl> candidates, Container container, ExperimentService.SampleOperations operation)
+    {
+        SampleStatusManager statusManager = SampleStatusManager.getInstance();
+        return candidates.stream().filter(material -> {
+            try
+            {
+                if (material.getStatus() == null)
+                    return false;
+
+                DataState state = statusManager.getStateForRowId(container, material.getStatus());
+                ExpSchema.SampleStatusType statusType = ExpSchema.SampleStatusType.valueOf(state.getStateType());
+                return !statusType.supportsOperation(operation);
+            }
+            catch (IllegalArgumentException e)
+            {
+                return true;
+            }
+        }).map(AbstractRunItemImpl::getRowId).collect(Collectors.toList());
     }
 
     @Override
