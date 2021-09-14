@@ -1527,12 +1527,13 @@ public class ProjectController extends SpringActionController
             if (_requestedDepth > 0)
             {
                 List<Map<String, Object>> children = getVisibleChildren(container, user, propertiesToSerialize, 0);
+                resultMap.put("children", children);
+
                 if (children.size() > 0)
                 {
-                    // if use has perm to at least one child container, make sure that at least the parent name is shown
+                    // if use has permissions to at least one child container, make sure that at least the parent name is shown
                     // (even if the user doesn't have perm to that parent container)
                     resultMap.put("name", container.getName());
-                    resultMap.put("children", children);
                 }
             }
 
