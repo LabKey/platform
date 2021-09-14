@@ -114,6 +114,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
@@ -181,7 +182,7 @@ import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
-    private static final Logger LOG = LogManager.getLogger(ExperimentServiceImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
     private Cache<String, ExpProtocolImpl> protocolCache;
 

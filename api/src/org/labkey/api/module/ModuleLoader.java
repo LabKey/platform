@@ -70,10 +70,10 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -100,7 +100,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -430,6 +429,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private void doInit(ServletContext servletCtx, Execution execution) throws Exception
     {
         _log.info(BANNER);
+        ErrorLogRotator.init();
 
         _servletContext = servletCtx;
 
