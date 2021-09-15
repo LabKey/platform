@@ -137,7 +137,7 @@ public class DataStateManager
         return (preDeleteStates.size() == 1);
     }
 
-    public DataState getStateForRowId(Container container, int rowId)
+    public DataState getStateForRowId(Container container, Integer rowId)
     {
         return DATA_STATE_DB_CACHE.get(container).getState(rowId);
     }

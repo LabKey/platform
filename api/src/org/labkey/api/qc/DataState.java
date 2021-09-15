@@ -129,6 +129,6 @@ public class DataState
     @Override
     public String toString()
     {
-        return getLabel() + ": " + getDescription();
+        return getLabel() + (getStateType() == null ? "" : " (type: " + getStateType() + ")") +  ": " + getDescription();
     }
 }

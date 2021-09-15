@@ -577,21 +577,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
 
         addColumn(ExpMaterialTable.Column.Flag);
-        // TODO is this a real Domain???
-        if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
-        {
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
-            setSampleType(st, filter);
-            addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null)
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
-
-            setName(_ss.getName());
-
-            ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
-            gridUrl.addParameter("rowId", st.getRowId());
-            setGridURL(new DetailsURL(gridUrl));
-        }
 
         if (ExperimentModule.isSampleStatusEnabled())
         {
@@ -608,6 +593,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
             });
         }
+        // TODO is this a real Domain???
+        if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
+        {
+            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
+            setSampleType(st, filter);
+            addSampleTypeColumns(st, defaultCols);
+            if (InventoryService.get() != null)
+                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+
+            setName(_ss.getName());
+
+            ActionURL gridUrl = new ActionURL(ExperimentController.ShowSampleTypeAction.class, getContainer());
+            gridUrl.addParameter("rowId", st.getRowId());
+            setGridURL(new DetailsURL(gridUrl));
+        }
+
 
         addVocabularyDomains();
         addColumn(Column.Properties);

@@ -64,6 +64,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.labkey.experiment.samples.SampleStatusManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.util.StringUtils;
 
@@ -396,6 +397,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
     {
+        SampleStatusManager statusManager = SampleStatusManager.getInstance();
+
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
 
         // Check for trigger scripts
@@ -414,12 +417,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
                 Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k), user, container, false);
                 if (map == null)
-                    throw new QueryUpdateServiceException("No Sample Type Material found for rowId or LSID");
+                    throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
                 if (rowId == null)
                     rowId = getMaterialRowId(map);
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
+
+                if (!statusManager.isOperationPermitted(getContainer(), (Integer) map.get("Status"), ExperimentService.SampleOperations.Delete))
+                    throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, statusManager.getStateForRowId(container, (Integer) map.get("Status"))));
 
                 ids.add(rowId);
                 result.add(map);

@@ -362,22 +362,38 @@ public class ExpSchema extends AbstractExpSchema
         )),
         Locked(Set.of(ExperimentService.SampleOperations.AddToPicklist));
 
-        Set<ExperimentService.SampleOperations> _supportedOps;
+        Set<ExperimentService.SampleOperations> _permittedOps;
 
 
-        SampleStatusType(Set<ExperimentService.SampleOperations> supportedOps)
+        SampleStatusType(Set<ExperimentService.SampleOperations> permittedOps)
         {
-            _supportedOps = supportedOps;
+            _permittedOps = permittedOps;
         }
 
-        public Set<ExperimentService.SampleOperations> getSupportedOps()
+        public Set<ExperimentService.SampleOperations> getPermittedOps()
         {
-            return _supportedOps;
+            return _permittedOps;
         }
 
-        public boolean supportsOperation(ExperimentService.SampleOperations op)
+        public boolean operationPermitted(ExperimentService.SampleOperations op)
         {
-            return _supportedOps.contains(op);
+            return _permittedOps.contains(op);
+        }
+
+        public static boolean isOperationPermitted(String statusTypeString, ExperimentService.SampleOperations op)
+        {
+            if (statusTypeString == null)
+                return true; // no status provided means all operations are supported
+            try
+            {
+                SampleStatusType statusType = SampleStatusType.valueOf(statusTypeString);
+                return statusType.operationPermitted(op);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // invalid status; default to no operations supported
+                return false;
+            }
         }
     };
 

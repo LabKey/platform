@@ -92,7 +92,6 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -126,6 +125,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
+import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
@@ -642,23 +642,21 @@ public class ExperimentServiceImpl implements ExperimentService
         return materials.get(0);
     }
 
-    public List<Integer> getUnsupportedForOperation(List<ExpMaterialImpl> candidates, Container container, ExperimentService.SampleOperations operation)
+    public List<Integer> findIdsNotPermittedForOperation(List<ExpMaterialImpl> candidates, Container container, ExperimentService.SampleOperations operation)
     {
+        if (!ExperimentModule.isSampleStatusEnabled())
+            return Collections.emptyList();
+
         SampleStatusManager statusManager = SampleStatusManager.getInstance();
         return candidates.stream().filter(material -> {
-            try
-            {
-                if (material.getStatus() == null)
-                    return false;
 
-                DataState state = statusManager.getStateForRowId(container, material.getStatus());
-                ExpSchema.SampleStatusType statusType = ExpSchema.SampleStatusType.valueOf(state.getStateType());
-                return !statusType.supportsOperation(operation);
-            }
-            catch (IllegalArgumentException e)
-            {
-                return true;
-            }
+            // no status means you can do all operations
+            if (material.getStatus() == null)
+                return false;
+
+            DataState state = statusManager.getStateForRowId(container, material.getStatus());
+            return !ExpSchema.SampleStatusType.isOperationPermitted(state.getStateType(), operation);
+
         }).map(AbstractRunItemImpl::getRowId).collect(Collectors.toList());
     }
 
