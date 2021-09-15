@@ -351,7 +351,6 @@ public class ExpSchema extends AbstractExpSchema
         Consumed(Set.of(
                 ExperimentService.SampleOperations.EditMetadata,
                 ExperimentService.SampleOperations.EditLineage,
-                ExperimentService.SampleOperations.CreateChildren,
                 ExperimentService.SampleOperations.RemoveFromStorage,
                 ExperimentService.SampleOperations.AddToPicklist,
                 ExperimentService.SampleOperations.Delete,

@@ -51,6 +51,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -298,12 +299,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!StringUtils.isEmpty(newAliquotedFromLSID) && newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
 
+        // We need to allow updating from one locked status to another locked status, but without other changes
+        // and updating from either locked or unlocked to something else while also updating other metadata
+        SampleStatusManager statusManager = SampleStatusManager.getInstance();
+        DataState oldStatus = statusManager.getStateForRowId(getContainer(), (Integer) oldRow.get("Status"));
+        boolean oldAllowsOp = statusManager.isOperationPermitted(oldStatus, ExperimentService.SampleOperations.EditMetadata);
+        DataState newStatus = statusManager.getStateForRowId(getContainer(), (Integer) rowCopy.get("Status"));
+        boolean newAllowsOp = statusManager.isOperationPermitted(newStatus, ExperimentService.SampleOperations.EditMetadata);
+
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
         Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
+        boolean hasNonStatusChange = false;
         for (String updateField : rowCopy.keySet())
         {
             Object updateValue = rowCopy.get(updateField);
@@ -320,8 +330,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
             else
             {
+                hasNonStatusChange = hasNonStatusChange || !SampleTypeServiceImpl.statusUpdateColumns.contains(updateField.toLowerCase());
                 validRowCopy.put(updateField, updateValue);
             }
+        }
+        // had a lock status before and either not updating the status or updating to a new locked status
+        if (hasNonStatusChange && !oldAllowsOp && (newStatus == null || !newAllowsOp))
+        {
+            throw new ValidationException(String.format("Updating metadata when status is '%s' is not allowed.", oldStatus.getLabel()));
         }
 
         keys = new Object[]{lsid};
@@ -388,7 +404,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Integer> id = new LinkedList<>();
         Integer rowId = getMaterialRowId(oldRowMap);
         id.add(rowId);
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id, true, _sampleType, false);
         return oldRowMap;
     }
 
@@ -431,7 +447,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 result.add(map);
             }
             // TODO check if this handle attachments???
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids, true, _sampleType, false);
         }
 
         if (result.size() > 0)

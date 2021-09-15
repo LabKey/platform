@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
@@ -67,7 +68,9 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
+import org.labkey.experiment.ExperimentModule;
 import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.experiment.samples.SampleStatusManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -177,10 +180,31 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return _object.getAliquotedFromLSID();
     }
 
-    @Override
-    public Integer getStatus()
+    public Integer getStatusId()
     {
         return _object.getStatus();
+    }
+
+    @Override
+    public DataState getDataState()
+    {
+        if (getStatusId() == null)
+            return null;
+        return SampleStatusManager.getInstance().getStateForRowId(getContainer(), getStatusId());
+    }
+
+    @Override
+    public boolean isOperationPermitted(ExperimentService.SampleOperations operation)
+    {
+        if (!ExperimentModule.isSampleStatusEnabled()) // permit everything if feature not enabled
+            return true;
+
+        DataState status = getDataState();
+        // no status means you can do all operations
+        if (status == null)
+            return true;
+
+        return ExpSchema.SampleStatusType.isOperationPermitted(status.getStateType(), operation);
     }
 
     @Override
@@ -249,7 +273,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType());
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()), true, getSampleType(), false);
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 

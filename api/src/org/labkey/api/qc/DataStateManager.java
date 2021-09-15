@@ -139,6 +139,9 @@ public class DataStateManager
 
     public DataState getStateForRowId(Container container, Integer rowId)
     {
+        if (rowId == null)
+            return null;
+
         return DATA_STATE_DB_CACHE.get(container).getState(rowId);
     }
 

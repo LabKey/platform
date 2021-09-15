@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
 
 import java.util.Map;
@@ -45,5 +46,7 @@ public interface ExpMaterial extends ExpRunItem
 
     String getAliquotedFromLSID();
 
-    Integer getStatus();
+    DataState getDataState();
+
+    boolean isOperationPermitted(ExperimentService.SampleOperations operation);
 }

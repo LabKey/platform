@@ -121,6 +121,14 @@ import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
+    // columns that may appear in a row when only the sample status is updating.
+    public static final Set<String> statusUpdateColumns = Set.of(
+            ExpMaterialTable.Column.Modified.name().toLowerCase(),
+            ExpMaterialTable.Column.ModifiedBy.name().toLowerCase(),
+            ExpMaterialTable.Column.Status.name().toLowerCase(),
+            ExpMaterialTable.Column.Folder.name().toLowerCase()
+    );
+
     public static SampleTypeServiceImpl get()
     {
         return (SampleTypeServiceImpl) SampleTypeService.get();
@@ -472,7 +480,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             Container container = ContainerManager.getForId(entry.getKey());
             // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true);
             count += entry.getValue().size();
         }
         return count;

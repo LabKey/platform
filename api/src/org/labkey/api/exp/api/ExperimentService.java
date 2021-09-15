@@ -111,7 +111,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     enum SampleOperations {
         EditMetadata,
         EditLineage,
-        CreateChildren,
         AddToStorage,
         UpdateStorageMetadata,
         RemoveFromStorage,

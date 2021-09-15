@@ -57,4 +57,11 @@ public class SampleStatusManager extends DataStateManager
         DataState status = getStateForRowId(container, stateId);
         return ExpSchema.SampleStatusType.isOperationPermitted(status.getStateType(), operation);
     }
+
+    public boolean isOperationPermitted(DataState status, @NotNull ExperimentService.SampleOperations operation)
+    {
+        if (status == null)
+            return true;
+        return ExpSchema.SampleStatusType.isOperationPermitted(status.getStateType(), operation);
+    }
 }

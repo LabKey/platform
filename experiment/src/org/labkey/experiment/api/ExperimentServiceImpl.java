@@ -91,7 +91,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -135,7 +134,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.pipeline.ExpGeneratorHelper;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
-import org.labkey.experiment.samples.SampleStatusManager;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
 
@@ -642,22 +640,14 @@ public class ExperimentServiceImpl implements ExperimentService
         return materials.get(0);
     }
 
-    public List<Integer> findIdsNotPermittedForOperation(List<ExpMaterialImpl> candidates, Container container, ExperimentService.SampleOperations operation)
+    public List<Integer> findIdsNotPermittedForOperation(List<ExpMaterialImpl> candidates, SampleOperations operation)
     {
         if (!ExperimentModule.isSampleStatusEnabled())
             return Collections.emptyList();
 
-        SampleStatusManager statusManager = SampleStatusManager.getInstance();
-        return candidates.stream().filter(material -> {
-
-            // no status means you can do all operations
-            if (material.getStatus() == null)
-                return false;
-
-            DataState state = statusManager.getStateForRowId(container, material.getStatus());
-            return !ExpSchema.SampleStatusType.isOperationPermitted(state.getStateType(), operation);
-
-        }).map(AbstractRunItemImpl::getRowId).collect(Collectors.toList());
+        return candidates.stream()
+                .filter(material -> !material.isOperationPermitted(operation))
+                .map(AbstractRunItemImpl::getRowId).collect(Collectors.toList());
     }
 
     @Override
@@ -4211,9 +4201,10 @@ public class ExperimentServiceImpl implements ExperimentService
     public void deleteMaterialByRowIds(User user, Container container,
                                        Collection<Integer> selectedMaterialIds,
                                        boolean deleteRunsUsingMaterials,
-                                       @Nullable ExpSampleType stDeleteFrom)
+                                       @Nullable ExpSampleType stDeleteFrom,
+                                       boolean ignoreStatus)
     {
-        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom);
+        deleteMaterialByRowIds(user, container, selectedMaterialIds, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus);
     }
 
     /**
@@ -4224,10 +4215,11 @@ public class ExperimentServiceImpl implements ExperimentService
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
      */
     private void deleteMaterialByRowIds(User user, Container container,
-                                       Collection<Integer> selectedMaterialIds,
-                                       boolean deleteRunsUsingMaterials,
-                                       boolean deleteFromAllSampleTypes,
-                                       @Nullable ExpSampleType stDeleteFrom)
+                                        Collection<Integer> selectedMaterialIds,
+                                        boolean deleteRunsUsingMaterials,
+                                        boolean deleteFromAllSampleTypes,
+                                        @Nullable ExpSampleType stDeleteFrom,
+                                        boolean ignoreStatus)
     {
         if (selectedMaterialIds.isEmpty())
             return;
@@ -4258,6 +4250,9 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     throw new UnauthorizedException();
+
+                if (!ignoreStatus && !material.isOperationPermitted(SampleOperations.Delete))
+                    throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getDataState()));
 
                 if (null == stDeleteFrom)
                 {
@@ -4824,7 +4819,7 @@ public class ExperimentServiceImpl implements ExperimentService
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
             Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
-            deleteMaterialByRowIds(user, c, matIds, true, true, null);
+            deleteMaterialByRowIds(user, c, matIds, true, true, null, true);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
