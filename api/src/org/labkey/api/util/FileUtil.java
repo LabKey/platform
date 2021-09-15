@@ -180,7 +180,7 @@ public class FileUtil
                 try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
             }
         }
-        log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()));
+        log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()));
         return false;
     }
 
