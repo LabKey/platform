@@ -349,7 +349,7 @@ public abstract class UploadSamplesHelper
      * @param runItem the item whose parents are being modified.  If provided, existing parents of the item
      *                will be incorporated into the resolved inputs and outputs
      * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
-     *                    indicate tha parent should be removed.
+     *                    indicate the parent should be removed.
      * @throws ExperimentException
      */
     @NotNull
