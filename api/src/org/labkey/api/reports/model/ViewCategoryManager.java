@@ -181,6 +181,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                         throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
                 }
                 category.beforeInsert(user, c.getId());
+                ViewCategoryCache.get().clear(c);
 
                 ret = Table.insert(user, getTableInfoCategories(), category);
 
@@ -195,6 +196,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                     existing.setDisplayOrder(category.getDisplayOrder());
 
                     ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
+                    ViewCategoryCache.get().clear(c);
 
                     errors = fireUpdateCategory(user, ret);
                 }
