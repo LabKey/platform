@@ -208,6 +208,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public String getNameAndStatus()
+    {
+        return String.format("%s (status: %s)", getName(), getDataState().getLabel());
+    }
+
+    @Override
     @NotNull
     public Collection<String> getAliases()
     {
