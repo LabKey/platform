@@ -921,6 +921,7 @@
       <column columnName="ObjectId"/>
       <column columnName="RootMaterialLSID"/>
       <column columnName="AliquotedFromLSID"/>
+      <column columnName="Status"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">
