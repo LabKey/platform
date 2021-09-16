@@ -164,6 +164,8 @@ public class FileUtil
             }
         }
 
+        IOException lastException = null;
+
         // The directory is now either a sym-link or empty, so delete it
         for (int i = 0; i < 5 ; i++)
         {
@@ -174,13 +176,14 @@ public class FileUtil
             }
             catch (IOException e)
             {
+                lastException = e;
                 // Issue 39579: Folder import sometimes fails to delete temp directory
                 // wait a little then try again
-                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()));
+                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()), e);
                 try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
             }
         }
-        log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()));
+        log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()), lastException);
         return false;
     }
 
