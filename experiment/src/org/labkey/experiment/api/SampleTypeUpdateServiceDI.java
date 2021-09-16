@@ -337,7 +337,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // had a lock status before and either not updating the status or updating to a new locked status
         if (hasNonStatusChange && !oldAllowsOp && (newStatus == null || !newAllowsOp))
         {
-            throw new ValidationException(String.format("Updating metadata when status is '%s' is not allowed.", oldStatus.getLabel()));
+            throw new ValidationException(String.format("Updating sample metadata when status is '%s' is not allowed.", oldStatus.getLabel()));
         }
 
         keys = new Object[]{lsid};
