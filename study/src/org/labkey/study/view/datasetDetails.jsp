@@ -260,9 +260,17 @@ if (!pipelineSet)
                 %>msg +="<b>This will delete data in sub-folders that use this dataset.</b><br>";<%
         } %>
         msg += "This action cannot be undone and will result in an empty dataset.";
-        Ext4.Msg.confirm("Confirm Deletion", msg, function(button){
-            if (button === 'yes') {
-                truncate();
+
+        Ext4.Msg.show({
+            title: "Confirm Deletion",
+            msg: msg,
+            width: 450,
+            buttons: Ext4.MessageBox.YESNO,
+            icon: Ext4.MessageBox.QUESTION,
+            fn : function(buttonId) {
+                if (buttonId === 'yes') {
+                    truncate();
+                }
             }
         });
 
