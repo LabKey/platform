@@ -41,6 +41,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -84,6 +85,7 @@ public class LoggerController extends SpringActionController
         private String parent;
         private String level;
         private boolean inherited;
+        private String notes;
 
         public static LoggerLevel fromLoggerConfig(LoggerConfig log)
         {
@@ -109,6 +111,7 @@ public class LoggerController extends SpringActionController
             loggerLevel.setLevel(level.toString());
             boolean inherited = parent != null && !parent.equalsIgnoreCase(name);
             loggerLevel.setInherited(inherited);
+            loggerLevel.setNotes(LogHelper.getNote(name));
             return loggerLevel;
         }
 
@@ -152,6 +155,16 @@ public class LoggerController extends SpringActionController
             this.inherited = inherited;
         }
 
+        public String getNotes()
+        {
+            return notes;
+        }
+
+        public void setNotes(String notes)
+        {
+            this.notes = notes;
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -161,13 +174,14 @@ public class LoggerController extends SpringActionController
             return inherited == that.inherited &&
                     name.equals(that.name) &&
                     Objects.equals(parent, that.parent) &&
+                    Objects.equals(notes, that.notes) &&
                     level.equals(that.level);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(name, parent, level, inherited);
+            return Objects.hash(name, parent, level, inherited, notes);
         }
     }
 

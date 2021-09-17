@@ -1301,7 +1301,9 @@ public class PipelineController extends SpringActionController
                 _navTrail = "Import Study";
             _navTrail += form.isFromTemplateSourceFolder() ? " from Existing Folder" : form.isFromZip() ? " from Zip Archive" : " from Pipeline";
 
-            form.setCloudRoot(getPipelineRoot(getContainer()).isCloudRoot()); // Remove as part of Issue #43835
+            // Remove as part of Issue #43835
+            PipeRoot root = getPipelineRoot(getContainer());
+            form.setCloudRoot(null != root && root.isCloudRoot());
 
             return new JspView<>("/org/labkey/pipeline/startPipelineImport.jsp", form, errors);
         }

@@ -48,6 +48,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
@@ -100,7 +101,7 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String PIPELINE_TASK_INFO_PARAM = "pipeline, taskInfo";
     public static final String PIPELINE_TASK_OUTPUT_PARAMS_PARAM = "pipeline, taskOutputParams";
 
-    protected static Logger _log = LogManager.getLogger(PipelineJob.class);
+    protected static Logger _log = LogHelper.getLogger(PipelineJob.class, "Execution and queuing of pipeline jobs");
     // Send start/stop messages to a separate logger because the default logger for this class is set to
     // only write ERROR level events to the system log
     private static final Logger _logJobStopStart = LogManager.getLogger(Job.class);

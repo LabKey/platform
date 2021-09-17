@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.BlockingCache;
@@ -26,6 +25,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.logging.LogHelper;
 
 /*
 * User: adam
@@ -34,7 +34,7 @@ import org.labkey.api.util.ExceptionUtil;
 */
 public class SchemaTableInfoCache
 {
-    private static final Logger LOG = LogManager.getLogger(SchemaTableInfoCache.class);
+    private static final Logger LOG = LogHelper.getLogger(SchemaTableInfoCache.class, "See loading of schema and table metadata from database schemas");
 
     private final BlockingCache<String, SchemaTableInfo> _blockingCache;
 

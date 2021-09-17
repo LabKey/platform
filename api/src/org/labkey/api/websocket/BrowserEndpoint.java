@@ -15,12 +15,12 @@
  */
 package org.labkey.api.websocket;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
@@ -33,9 +33,6 @@ import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.MessageHandler;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnOpen;
 import javax.websocket.PongMessage;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
@@ -53,7 +50,7 @@ import java.util.Map;
 
 public abstract class BrowserEndpoint extends Endpoint
 {
-    static Logger LOG = LogManager.getLogger(BrowserEndpoint.class);
+    static final Logger LOG = LogHelper.getLogger(BrowserEndpoint.class, "Server side websocket communication status");
 
     protected Session browserSession;
     ServerEndpoint serverEndpoint = null;

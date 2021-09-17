@@ -81,6 +81,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
@@ -136,7 +137,7 @@ import java.util.stream.Collectors;
  */
 public class ContainerManager
 {
-    private static final Logger LOG = LogManager.getLogger(ContainerManager.class);
+    private static final Logger LOG = LogHelper.getLogger(ContainerManager.class, "Container (projects, folders, and workbooks) retrieval and management");
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
     private static final String CONTAINER_PREFIX = ContainerManager.class.getName() + "/";
