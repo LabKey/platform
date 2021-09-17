@@ -1404,7 +1404,7 @@ public class FileContentServiceImpl implements FileContentService
                             }
                             catch (MissingRootDirectoryException e)
                             {
-                                _log.error("Unable to list files for fileset: " + rootName);
+                                _log.error("Unable to list files for fileset: " + rootName, e);
                             }
                             break;
                         }
@@ -1430,7 +1430,7 @@ public class FileContentServiceImpl implements FileContentService
             }
             catch (Exception e)
             {
-                _log.error("Error listing content of directory: " + file.getAbsolutePath());
+                _log.error("Error listing content of directory: " + file.getAbsolutePath(), e);
             }
         }
     }

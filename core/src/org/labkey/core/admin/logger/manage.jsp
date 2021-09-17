@@ -197,7 +197,7 @@
         var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
 
         return "<tr class='logger-row' " + (visible ? "" : " style='display:none;'") +
-                "data-name='" + LABKEY.Utils.encodeHtml(logger.name) + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + LABKEY.Utils.encodeHtml(logger.parent) + "'>" +
+                "data-name='" + LABKEY.Utils.encodeHtml(logger.name) + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + LABKEY.Utils.encodeHtml(logger.parent) + "' data-notes='" + LABKEY.Utils.encodeHtml(logger.notes) + "'>" +
                 "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + logger.level + "'>" +
                 logger.level +
                 "</td>" +
