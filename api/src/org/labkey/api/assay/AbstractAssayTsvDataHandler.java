@@ -88,6 +88,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -1094,6 +1095,22 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 map.put(ProvenanceService.PROVENANCE_INPUT_PROPERTY, rowInputLSIDs);
                 iter.set(map);
             }
+        }
+
+        List<ExpMaterial> lockedSamples = materialInputs.keySet().stream()
+                .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.AddAssayData))
+                .collect(Collectors.toList());
+        if (!lockedSamples.isEmpty())
+        {
+            String message;
+            if (lockedSamples.size() == 1)
+                message = "Sample " + lockedSamples.get(0).getName() + " has status " + lockedSamples.get(0).getDataState().getLabel() + ", which prevents";
+            else if (lockedSamples.size() <= 10)
+                message = "Samples " + lockedSamples.stream().map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", ")) + " have statuses that prevent";
+            else
+                message = lockedSamples.size() + " samples have statuses that prevent";
+
+            throw new ValidationException(message + " the addition of associated assay data.");
         }
 
         return materialInputs;
