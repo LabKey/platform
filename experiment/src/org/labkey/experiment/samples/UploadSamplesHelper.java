@@ -28,8 +28,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -80,6 +78,7 @@ import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -180,20 +179,23 @@ public abstract class UploadSamplesHelper
      * If the run has more than the sample as an output, the material is removed as an output of the run
      * otherwise the run will be deleted.
      */
-    public static void clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
+    @NotNull
+    public static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearSampleSourceRun(User user, ExpMaterial material) throws ValidationException
     {
         ExpProtocolApplication existingSourceApp = material.getSourceApplication();
+        Set<ExpMaterial> previousSampleParents = Collections.emptySet();
+        Set<ExpMaterial> previousSampleChildren = Collections.emptySet();
         if (existingSourceApp == null)
-            return;
+            return Pair.of(previousSampleParents, previousSampleChildren);
 
         ExpRun existingDerivationRun = existingSourceApp.getRun();
         if (existingDerivationRun == null)
-            return;
+            return Pair.of(previousSampleParents, previousSampleChildren);
 
         ExpProtocol protocol = existingDerivationRun.getProtocol();
 
         if (ExperimentServiceImpl.get().isSampleAliquot(protocol))
-            return;
+            return Pair.of(previousSampleParents, previousSampleChildren);;
 
         if (!ExperimentServiceImpl.get().isSampleDerivation(protocol))
         {
@@ -202,6 +204,9 @@ public abstract class UploadSamplesHelper
                     " of protocol '" + protocol.getName() + "'" +
                     " for sample '" + material.getName() + "' since it is not a sample derivation run");
         }
+
+        previousSampleParents = existingDerivationRun.getMaterialInputs().keySet();
+        previousSampleChildren = new HashSet<>(existingDerivationRun.getMaterialOutputs());
 
         List<ExpData> dataOutputs = existingDerivationRun.getDataOutputs();
         List<ExpMaterial> materialOutputs = existingDerivationRun.getMaterialOutputs();
@@ -226,6 +231,7 @@ public abstract class UploadSamplesHelper
             existingSourceApp.removeMaterialInput(user, material);
             ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
+        return Pair.of(previousSampleParents, previousSampleChildren);
     }
 
     /**
@@ -348,14 +354,13 @@ public abstract class UploadSamplesHelper
      *
      * @param runItem the item whose parents are being modified.  If provided, existing parents of the item
      *                will be incorporated into the resolved inputs and outputs
-     * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
+     * @param entityNamePairs set of (parent column name, parent value) pairs.  Parent values that are empty
      *                    indicate the parent should be removed.
      * @throws ExperimentException
      */
     @NotNull
     public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, @Nullable ExpRunItem runItem,
-                                                                                       Set<Pair<String, String>> parentNames,
-                                                                                       @Nullable MaterialSource source,
+                                                                                       Set<Pair<String, String>> entityNamePairs,
                                                                                        RemapCache cache,
                                                                                        Map<Integer, ExpMaterial> materialMap,
                                                                                        Map<Integer, ExpData> dataMap,
@@ -390,20 +395,24 @@ public abstract class UploadSamplesHelper
                 String message = "Aliquot parent '" + aliquotedFrom + "' not found.";
                 throw new ValidationException(message);
             }
+            else if (!aliquotParent.isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
+            {
+                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getDataState().getLabel()));
+            }
         }
 
-        for (Pair<String, String> pair : parentNames)
+        for (Pair<String, String> pair : entityNamePairs)
         {
-            String parentColName = pair.first;
-            String parentValue = pair.second;
-            boolean isEmptyParent = StringUtils.isEmpty(parentValue);
+            String entityColName = pair.first;
+            String entityName = pair.second;
+            boolean isEmptyEntity = StringUtils.isEmpty(entityName);
 
-            String[] parts = parentColName.split("\\.|/");
+            String[] parts = entityColName.split("\\.|/");
             if (parts.length == 1)
             {
                 if (parts[0].equalsIgnoreCase("parent"))
                 {
-                    if (!isEmptyParent)
+                    if (!isEmptyEntity)
                     {
                         if (isAliquot)
                         {
@@ -411,12 +420,12 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, null, null, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, null, null, entityName, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
                         {
-                            String message = "Sample input '" + parentValue + "' not found";
+                            String message = "Sample input '" + entityName + "' not found";
                             throw new ValidationException(message);
                         }
                     }
@@ -431,7 +440,7 @@ public abstract class UploadSamplesHelper
                     if (sampleType == null)
                         throw new ValidationException(String.format("Invalid import alias: parent SampleType [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (isEmptyParent)
+                    if (isEmptyEntity)
                     {
                         if (isMerge && !isAliquot)
                             parentSampleTypesToRemove.add(namePart);
@@ -444,11 +453,11 @@ public abstract class UploadSamplesHelper
                             throw new ValidationException(message);
                         }
 
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
-                            throw new ValidationException("Sample '" + parentValue + "' not found in Sample Type '" + namePart + "'.");
+                            throw new ValidationException("Sample '" + entityName + "' not found in Sample Type '" + namePart + "'.");
 
                     }
                  }
@@ -458,9 +467,9 @@ public abstract class UploadSamplesHelper
                     if (sampleType == null)
                         throw new ValidationException(String.format("Invalid import alias: child SampleType [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (!isEmptyParent)
+                    if (!isEmptyEntity)
                     {
-                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, parentValue, cache, materialMap);
+                        ExpMaterial sample = findMaterial(c, user, sampleType, namePart, entityName, cache, materialMap);
                         if (sample != null)
                         {
                             if (StringUtils.isEmpty(sample.getAliquotedFromLSID()))
@@ -472,7 +481,7 @@ public abstract class UploadSamplesHelper
                             }
                         }
                         else
-                            throw new ValidationException("Sample output '" + parentValue + "' not found in Sample Type '" + namePart + "'.");
+                            throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
@@ -481,7 +490,7 @@ public abstract class UploadSamplesHelper
                     if (dataClass == null)
                         throw new ValidationException(String.format("Invalid import alias: parent DataClass [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (isEmptyParent)
+                    if (isEmptyEntity)
                     {
                         if (isMerge && !isAliquot)
                             parentDataTypesToRemove.add(namePart);
@@ -490,20 +499,20 @@ public abstract class UploadSamplesHelper
                     {
                         if (isAliquot)
                         {
-                            String message = parentColName + " is not allowed for aliquots";
+                            String message = entityColName + " is not allowed for aliquots";
                             throw new ValidationException(message);
                         }
 
-                        ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
                             parentData.put(data, dataRole(data, user));
                         else
                         {
 
                             if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
-                                throw new ValidationException("Source '" + parentValue + "' not found in Source Type  '" + namePart + "'.");
+                                throw new ValidationException("Source '" + entityName + "' not found in Source Type  '" + namePart + "'.");
                             else
-                                throw new ValidationException("Data input '" + parentValue + "' not found in in Data Class '" + namePart + "'.");
+                                throw new ValidationException("Data input '" + entityName + "' not found in in Data Class '" + namePart + "'.");
                         }
                     }
                 }
@@ -513,13 +522,13 @@ public abstract class UploadSamplesHelper
                     if (dataClass == null)
                         throw new ValidationException(String.format("Invalid import alias: child DataClass [%1$s] does not exist or may have been deleted", namePart));
 
-                    if (!isEmptyParent)
+                    if (!isEmptyEntity)
                     {
-                        ExpData data = findData(c, user, dataClass, namePart, parentValue, cache, dataMap);
+                        ExpData data = findData(c, user, dataClass, namePart, entityName, cache, dataMap);
                         if (data != null)
                             childData.put(data, dataRole(data, user));
                         else
-                            throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                            throw new ValidationException("Data output '" + entityName + "' in DataClass '" + namePart + "' not found");
                     }
                 }
             }
