@@ -38,7 +38,25 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -250,6 +268,7 @@ import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtmlFragment;
 import static org.labkey.api.util.HtmlString.NBSP;
 import static org.labkey.api.util.HtmlString.unsafe;
+import static org.labkey.api.util.logging.LogHelper.getLabKeyLogDir;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
@@ -2449,22 +2468,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private static File getTomcatBaseDir()
-    {
-        // Issue 43823 - catalina.base and catalina.home typically match, but we should prefer catalina.base
-        String baseDir = System.getProperty("catalina.base");
-        if (baseDir == null)
-        {
-            baseDir = System.getProperty("catalina.home");
-        }
-        if (baseDir == null)
-        {
-            throw new IllegalStateException("Neither catalina.base nor catalina.home system property was set");
-
-        }
-        return new File(baseDir);
-    }
-
     @AdminConsoleAction
     public class ShowPrimaryLogAction extends ExportAction<Object>
     {
@@ -2472,14 +2475,14 @@ public class AdminController extends SpringActionController
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             getPageConfig().setNoIndex();
-            File logFile = new File(getTomcatBaseDir(), "logs/labkey.log");
+            File logFile = new File(getLabKeyLogDir(), "labkey.log");
             PageFlowUtil.streamLogFile(response, 0, logFile);
         }
     }
 
     private File getErrorLogFile()
     {
-        return new File(getTomcatBaseDir(), "logs/labkey-errors.log");
+        return new File(getLabKeyLogDir(), "labkey-errors.log");
     }
 
     private static ActionURL getActionsURL()
