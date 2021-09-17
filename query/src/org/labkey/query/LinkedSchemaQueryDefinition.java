@@ -106,6 +106,17 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     {
         // Parse/resolve the wrapped query in the context of the original source schema
         UserSchema sourceSchema = getSchema().getSourceSchema();
+
+        if (_sourceQueryErrors != null && !_sourceQueryErrors.isEmpty())
+        {
+            if (errors != null)
+                errors.addAll(_sourceQueryErrors);
+            Query q = new Query(schema, getName(), parent);
+            q.setDebugName(getSchemaName() + "." + getName());
+            q.getParseErrors().addAll(_sourceQueryErrors);
+            return q;
+        }
+
         return super.getQuery(sourceSchema, errors, parent, includeMetadata, skipSuggestedColumns);
     }
 
