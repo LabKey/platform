@@ -1173,7 +1173,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         if (null == tomcat)
         {
-            _log.warn("Could not find CATALINA_HOME environment variable");
+            _log.debug("Could not find CATALINA_HOME environment variable");
             return null;
         }
 
