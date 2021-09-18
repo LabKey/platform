@@ -47,6 +47,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.di.DataIntegrationService;
@@ -2149,12 +2150,23 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         {
             long start = System.currentTimeMillis();
             {
-                UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), StudyQuerySchema.SCHEMA_NAME);
-                TableInfo table = schema.getTable(getName());
-                if (table != null)
+                // issue 43946 - avoid updating using the QUS so trigger scripts don't get fired multiple
+                // times for the same update
+                if (context.getConfigParameterBoolean(DatasetUpdateService.Config.CalledFromQUS))
                 {
-                    QueryUpdateService qus = table.getUpdateService();
-                    qus.loadRows(user, getContainer(), in, context, null);
+                    DataIteratorBuilder insert = getInsertDataIterator(user, in, context);
+                    Pump p = new Pump(insert.getDataIterator(context), context);
+                    p.run();
+                }
+                else
+                {
+                    UserSchema schema = QueryService.get().getUserSchema(user, getContainer(), StudyQuerySchema.SCHEMA_NAME);
+                    TableInfo table = schema.getTable(getName());
+                    if (table != null)
+                    {
+                        QueryUpdateService qus = table.getUpdateService();
+                        qus.loadRows(user, getContainer(), in, context, null);
+                    }
                 }
             }
             long end = System.currentTimeMillis();
@@ -2697,7 +2709,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
             BatchValidationException errors = new BatchValidationException();
             List<String> result = StudyManager.getInstance().importDatasetData(
-                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true);
+                    u, this, dataMap, errors, CheckForDuplicates.sourceAndDestination, defaultQCState, null, true, true);
 
             if (errors.hasErrors())
             {
