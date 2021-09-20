@@ -32,7 +32,6 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
-import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Search;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
@@ -44,7 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Category({Daily.class, Search.class})
+@Category({Search.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 5)
 public class DataClassSearchTest extends BaseWebDriverTest
 {
