@@ -16,10 +16,11 @@
 package org.labkey.test.tests.search;
 
 import org.junit.experimental.categories.Category;
+import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Search;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
-@Category({Search.class})
+@Category({Search.class, Daily.class})
 public class SearchTestDefault extends SearchTest
 {
     @Override
