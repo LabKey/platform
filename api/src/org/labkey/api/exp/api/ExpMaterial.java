@@ -48,6 +48,8 @@ public interface ExpMaterial extends ExpRunItem
 
     DataState getDataState();
 
+    String getStatusLabel();
+
     boolean isOperationPermitted(ExperimentService.SampleOperations operation);
 
     String getNameAndStatus();

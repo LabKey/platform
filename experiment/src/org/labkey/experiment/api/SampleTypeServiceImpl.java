@@ -73,6 +73,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -85,6 +86,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.experiment.samples.SampleStatusManager;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
@@ -431,6 +433,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl getSampleType(String lsid)
     {
         return getSampleTypeByType(lsid, null);
+    }
+
+    @Nullable
+    @Override
+    public DataState getSampleStatus(Container container, Integer statusRowId)
+    {
+        return SampleStatusManager.getInstance().getStateForRowId(container, statusRowId);
     }
 
     private ExpSampleTypeImpl _getSampleType(String lsid)

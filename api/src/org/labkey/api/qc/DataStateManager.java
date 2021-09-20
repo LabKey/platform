@@ -145,6 +145,14 @@ public class DataStateManager
         return DATA_STATE_DB_CACHE.get(container).getState(rowId);
     }
 
+    public DataState getStateForLabel(Container container, String label)
+    {
+        if (label == null)
+            return null;
+
+        return DATA_STATE_DB_CACHE.get(container).getState(label);
+    }
+
     public void clearCache(Container c)
     {
         DATA_STATE_DB_CACHE.remove(c);

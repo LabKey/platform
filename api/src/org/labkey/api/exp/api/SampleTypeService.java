@@ -26,6 +26,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -86,6 +87,9 @@ public interface SampleTypeService
 
     @Nullable
     ExpSampleType getSampleType(String lsid);
+
+    @Nullable
+    DataState getSampleStatus(Container container, Integer statusRowId);
 
     void removeAutoLinkedStudy(@NotNull Container studyContainer, @Nullable User user);
 

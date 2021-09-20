@@ -194,6 +194,15 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public String getStatusLabel()
+    {
+        DataState state = getDataState();
+        if (state == null)
+            return null;
+        return state.getLabel();
+    }
+
+    @Override
     public boolean isOperationPermitted(ExperimentService.SampleOperations operation)
     {
         if (!ExperimentModule.isSampleStatusEnabled()) // permit everything if feature not enabled
