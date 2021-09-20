@@ -179,7 +179,7 @@ public class FileUtil
                 lastException = e;
                 // Issue 39579: Folder import sometimes fails to delete temp directory
                 // wait a little then try again
-                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir.toFile()), e);
+                log.warn("Failed to delete file. Sleep and try to delete again. " + e.getMessage());
                 try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
             }
         }
