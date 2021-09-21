@@ -3474,13 +3474,13 @@ public class StudyController extends BaseStudyController
         public DeleteQCStateAction()
         {
             super();
-            _qcStateHandler = new StudyQCStateHandler();
+            _dataStateHandler = new StudyQCStateHandler();
         }
 
         @Override
         public DataStateHandler getDataStateHandler()
         {
-            return _qcStateHandler;
+            return _dataStateHandler;
         }
 
         @Override
