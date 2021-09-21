@@ -2595,13 +2595,13 @@ public class CoreController extends SpringActionController
         public DeleteQCStateAction()
         {
             super();
-            _qcStateHandler = new CoreQCStateHandler();
+            _dataStateHandler = new CoreQCStateHandler();
         }
 
         @Override
         public DataStateHandler getDataStateHandler()
         {
-            return _qcStateHandler;
+            return _dataStateHandler;
         }
 
         @Override
