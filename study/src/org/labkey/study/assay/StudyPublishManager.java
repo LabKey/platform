@@ -498,11 +498,11 @@ public class StudyPublishManager implements StudyPublishService
         switch (sourceType)
         {
             case SampleType -> {
-                ExpSampleType sampleType = (ExpSampleType)source;
+                ExpSampleType sampleType = (ExpSampleType) source;
                 createProvenanceRun(user, targetContainer, sampleType, errors, dataset, datasetLsids);
             }
             case Assay -> {
-                ExpProtocol protocol = (ExpProtocol)source;
+                ExpProtocol protocol = (ExpProtocol) source;
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider == null)
                 {
@@ -601,7 +601,7 @@ public class StudyPublishManager implements StudyPublishService
     private Map<Optional<String>, List<Map<String, Object>>> groupBySourceLsid(List<Map<String, Object>> dataMaps)
     {
         // source LSID may be null
-        return dataMaps.stream().collect(Collectors.groupingBy(m -> Optional.ofNullable((String)m.get(SOURCE_LSID_PROPERTY_NAME))));
+        return dataMaps.stream().collect(Collectors.groupingBy(m -> Optional.ofNullable((String) m.get(SOURCE_LSID_PROPERTY_NAME))));
     }
 
     // TODO : consider pushing this into PublishSource
@@ -634,7 +634,7 @@ public class StudyPublishManager implements StudyPublishService
                     eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
                     String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
 
-                    List<Integer> sampleIds = rows.stream().map(m -> (Integer)m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
+                    List<Integer> sampleIds = rows.stream().map(m -> (Integer) m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
                     List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
                     List<AuditTypeEvent> events = new ArrayList<>(samples.size());
                     for (ExpMaterial sample : samples)
@@ -1192,7 +1192,9 @@ public class StudyPublishManager implements StudyPublishService
                 {
                     LOG.error("Insufficient permission to link assay data to study in folder : " + targetContainerPath);
                 }
-            } else {
+            }
+            else
+            {
                 LOG.info("Unable to link the assay data, there is no study in the folder: " + targetContainerPath);
             }
         }
@@ -1335,8 +1337,8 @@ public class StudyPublishManager implements StudyPublishService
         Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
         for (Map<String, Object> row : rows)
         {
-            String containerId = (String)row.get("container");
-            int datasetId = ((Number)row.get("datasetid")).intValue();
+            String containerId = (String) row.get("container");
+            int datasetId = ((Number) row.get("datasetid")).intValue();
             Container container = ContainerManager.getForId(containerId);
             result.add(StudyServiceImpl.INSTANCE.getDataset(container, datasetId));
         }
@@ -1396,6 +1398,25 @@ public class StudyPublishManager implements StudyPublishService
         }
 
         return result;
+    }
+
+    @Override
+    public String checkForLockedLinks(Dataset def, @Nullable  List<Integer> rowIds)
+    {
+        Dataset.PublishSource sourceType = def.getPublishSource();
+        if (sourceType != null)
+        {
+            if (sourceType == Dataset.PublishSource.SampleType && rowIds != null)
+            {
+                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(rowIds);
+                Optional<? extends ExpMaterial>  optLocked = samples.stream()
+                        .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.RecallFromStudy))
+                        .findAny();
+                if (optLocked.isPresent())
+                    return "One or more of the chosen samples cannot be recalled from this dataset due to status.";
+            }
+        }
+        return null;
     }
 
     @Override

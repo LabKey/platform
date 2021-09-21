@@ -1,7 +1,10 @@
 package org.labkey.study.controllers.publish;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -11,7 +14,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Dataset;
@@ -38,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.study.query.PublishResultsQueryView.ExtraColFieldKeys;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
@@ -206,6 +209,13 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     {
         List<Map<String, Object>> dataMaps = new ArrayList<>();
         Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<>();
+        List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(dataKeys.keySet());
+        String unlinkablesMsg = samples.stream()
+                .filter(sample -> !sample.isOperationPermitted(ExperimentService.SampleOperations.LinkToStudy))
+                .map(ExpMaterial::getNameAndStatus)
+                .collect(Collectors.joining(", "));
+        if (!StringUtils.isEmpty(unlinkablesMsg))
+            errors.add("The following samples have a status that prevents linking to the study: " + unlinkablesMsg);
 
         for (PublishKey publishKey : dataKeys.values())
         {

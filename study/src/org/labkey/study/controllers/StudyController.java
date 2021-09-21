@@ -2819,72 +2819,78 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(DeletePermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
+        private DatasetDefinition _def;
+        private Collection<String> _allLsids;
+        private MultiValuedMap<String,Pair<String,Integer>> _sourceLsidToLsidPair;
+        private Integer _sourceRowId = null;
+
         @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
         {
-        }
-
-        @Override
-        public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
-        {
-            final DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
-            if (def == null)
-                throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
-
-            Collection<String> allLsids;
-            if (!form.isDeleteAllData())
+            _def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), target.getDatasetId());
+            if (_def == null)
+                throw new IllegalArgumentException("Could not find a dataset definition for id: " + target.getDatasetId());
+            if (!target.isDeleteAllData())
             {
-                allLsids = DataRegionSelection.getSelected(getViewContext(), true);
+                _allLsids = DataRegionSelection.getSelected(getViewContext(), true);
 
-                if (allLsids.isEmpty())
+                if (_allLsids.isEmpty())
                 {
                     errors.reject("deletePublishedRows", "No rows were selected");
-                    return false;
                 }
             }
             else
             {
-                allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
+                _allLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), _def);
             }
 
-            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
-
             // Need to handle this by groups of source lsids -- each assay or SampleType container needs logging
-            MultiValuedMap<String,Pair<String,Integer>> sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
-            List<Map<String,Object>> data = def.getDatasetRows(getUser(), allLsids);
-            Integer sourceRowId = null;
+            _sourceLsidToLsidPair = new ArrayListValuedHashMap<>();
+            List<Integer> rowIds = new ArrayList<>();
+            List<Map<String,Object>> data = _def.getDatasetRows(getUser(), _allLsids);
+
             for (Map<String,Object> row : data)
             {
                 String sourceLSID = (String)row.get(StudyPublishService.SOURCE_LSID_PROPERTY_NAME);
                 String datasetRowLsid = (String)row.get(StudyPublishService.LSID_PROPERTY_NAME);
                 Integer rowId = (Integer)row.get(StudyPublishService.ROWID_PROPERTY_NAME);
+                rowIds.add(rowId);
                 if (sourceLSID != null && datasetRowLsid != null)
-                {
-                    sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
-                }
+                    _sourceLsidToLsidPair.put(sourceLSID, Pair.of(datasetRowLsid, rowId));
 
-                if (sourceRowId == null && rowId != null)
-                    sourceRowId = rowId;
+                if (_sourceRowId == null && rowId != null)
+                    _sourceRowId = rowId;
             }
 
-            Dataset.PublishSource publishSource = def.getPublishSource();
+            String errorMsg = StudyPublishService.get().checkForLockedLinks(_def, rowIds);
+            if (!StringUtils.isEmpty(errorMsg))
+                errors.reject(ERROR_MSG, errorMsg);
+        }
+
+        @Override
+        public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
+        {
+            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
+
+            Dataset.PublishSource publishSource = _def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
             {
-                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : sourceLsidToLsidPair.asMap().entrySet())
+                for (Map.Entry<String, Collection<Pair<String,Integer>>> entry : _sourceLsidToLsidPair.asMap().entrySet())
                 {
                     String sourceLsid = entry.getKey();
                     Collection<Pair<String, Integer>> pairs = entry.getValue();
-                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, sourceRowId);
+                    Container sourceContainer = publishSource.resolveSourceLsidContainer(sourceLsid, _sourceRowId);
                     if (sourceContainer != null)
-                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), def, pairs.size(), pairs);
+                        StudyPublishService.get().addRecallAuditEvent(sourceContainer, getUser(), _def, pairs.size(), pairs);
                 }
             }
-            def.deleteDatasetRows(getUser(), allLsids);
+
+            _def.deleteDatasetRows(getUser(), _allLsids);
 
             // if the recall was initiated from link to study details view of the publish source, redirect back to the same view
             if (publishSource != null && originalSourceLsid != null && form.getPublishSourceId() != null)
             {
-                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, sourceRowId);
+                Container container = publishSource.resolveSourceLsidContainer(originalSourceLsid, _sourceRowId);
                 if (container != null)
                     throw new RedirectException(StudyPublishService.get().getPublishHistory(container, publishSource, form.getPublishSourceId()));
             }
