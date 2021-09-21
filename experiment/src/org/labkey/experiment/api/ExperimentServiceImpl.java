@@ -4252,7 +4252,7 @@ public class ExperimentServiceImpl implements ExperimentService
                     throw new UnauthorizedException();
 
                 if (!ignoreStatus && !material.isOperationPermitted(SampleOperations.Delete))
-                    throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getDataState()));
+                    throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStatusLabel()));
 
                 if (null == stDeleteFrom)
                 {

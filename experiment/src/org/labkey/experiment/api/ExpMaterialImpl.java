@@ -219,7 +219,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public String getNameAndStatus()
     {
-        return String.format("%s (status: %s)", getName(), getDataState().getLabel());
+        String statusLabel = getStatusLabel();
+        return getName() + (statusLabel == null ? "" : " (status: " + statusLabel + ")");
     }
 
     @Override
