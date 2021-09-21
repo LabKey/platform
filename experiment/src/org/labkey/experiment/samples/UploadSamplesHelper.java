@@ -397,7 +397,7 @@ public abstract class UploadSamplesHelper
             }
             else if (!aliquotParent.isOperationPermitted(ExperimentService.SampleOperations.EditLineage))
             {
-                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getDataState().getLabel()));
+                throw new ValidationException(String.format("Creation of aliquots is not allowed for sample '%s' with status '%s'", aliquotParent.getName(), aliquotParent.getStatusLabel()));
             }
         }
 
