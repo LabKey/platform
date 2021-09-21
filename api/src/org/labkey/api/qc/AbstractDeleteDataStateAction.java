@@ -25,7 +25,7 @@ import org.springframework.validation.Errors;
 @RequiresPermission(AdminPermission.class)
 public abstract class AbstractDeleteDataStateAction extends FormHandlerAction<DeleteDataStateForm>
 {
-    protected static DataStateHandler _qcStateHandler;
+    protected static DataStateHandler _dataStateHandler;
     public abstract DataStateHandler getDataStateHandler();
     @Override
     public abstract ActionURL getSuccessURL(DeleteDataStateForm form);
@@ -40,9 +40,9 @@ public abstract class AbstractDeleteDataStateAction extends FormHandlerAction<De
     {
         if (form.isAll())
         {
-            for (Object state : _qcStateHandler.getStates(getContainer()))
+            for (Object state : _dataStateHandler.getStates(getContainer()))
             {
-                if (!_qcStateHandler.isStateInUse(getContainer(), (DataState) state))
+                if (!_dataStateHandler.isStateInUse(getContainer(), (DataState) state))
                     DataStateManager.getInstance().deleteState((DataState) state);
             }
         }
