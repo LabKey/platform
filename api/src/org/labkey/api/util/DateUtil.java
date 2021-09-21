@@ -837,7 +837,7 @@ validNum:       {
     }
 
 
-    public static long parseDateTime(String s, MonthDayOption md)
+    private static long parseDateTime(String s, MonthDayOption md)
     {
         return parseDateTime(s, md, true);
     }
