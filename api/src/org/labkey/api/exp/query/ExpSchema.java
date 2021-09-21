@@ -355,6 +355,7 @@ public class ExpSchema extends AbstractExpSchema
                 ExperimentService.SampleOperations.AddToPicklist,
                 ExperimentService.SampleOperations.Delete,
                 ExperimentService.SampleOperations.AddToWorkflow,
+                ExperimentService.SampleOperations.RemoveFromWorkflow,
                 ExperimentService.SampleOperations.AddAssayData,
                 ExperimentService.SampleOperations.LinkToStudy,
                 ExperimentService.SampleOperations.RecallFromStudy

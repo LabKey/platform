@@ -117,6 +117,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         AddToPicklist,
         Delete,
         AddToWorkflow,
+        RemoveFromWorkflow,
         AddAssayData,
         LinkToStudy,
         RecallFromStudy,
