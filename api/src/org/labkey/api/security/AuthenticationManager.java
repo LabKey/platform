@@ -1475,7 +1475,6 @@ public class AuthenticationManager
         }
     }
 
-    // In most cases, callers will want to add a "revision" parameter with the look & feel revision value to defeat browser caching
     public static @Nullable String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
     {
         Attachment logo = AttachmentService.get().getAttachment(configuration, logoType.getFileName());
