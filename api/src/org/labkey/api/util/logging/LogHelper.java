@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class LogHelper
 {
+    public static final String LOG_HOME_PROPERTY_NAME = "labkey.log.home";
+
     private static final Map<String, String> LOGGER_NOTES = new ConcurrentHashMap<>();
 
     public static Logger getLogger(Class<?> c, String note)
@@ -24,5 +26,10 @@ public class LogHelper
     public static String getNote(String className)
     {
         return LOGGER_NOTES.get(className);
+    }
+
+    public static String getLabKeyLogDir()
+    {
+        return System.getProperty(LOG_HOME_PROPERTY_NAME);
     }
 }
