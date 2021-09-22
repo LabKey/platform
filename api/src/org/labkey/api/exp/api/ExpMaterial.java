@@ -53,4 +53,6 @@ public interface ExpMaterial extends ExpRunItem
     boolean isOperationPermitted(ExperimentService.SampleOperations operation);
 
     String getNameAndStatus();
+
+    void setSampleStateId(Integer stateId);
 }

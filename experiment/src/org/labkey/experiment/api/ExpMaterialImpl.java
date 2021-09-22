@@ -185,12 +185,19 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public void setSampleStateId(Integer stateId)
+    {
+        _object.setSampleState(stateId);
+    }
+
+    @Override
     public DataState getSampleState()
     {
         if (getSampleStateId() == null)
             return null;
         return SampleStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
     }
+
 
     @Override
     public String getStateLabel()
